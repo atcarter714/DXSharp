@@ -13,7 +13,7 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-
+		<!--<TargetFrameworks>net6.0;net7.0;</TargetFrameworks>-->
 
 		<!-- This entire repo has just one version.json file, so compute the version once and share with all projects in a large build. -->
 		<GitVersionBaseDirectory>$(MSBuildThisFileDirectory)</GitVersionBaseDirectory>

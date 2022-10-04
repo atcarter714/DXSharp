@@ -1,9 +1,33 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+	<TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>A modern C#/.NET wrapper for DirectX</Description>
+    <AutoGenerateBindingRedirects></AutoGenerateBindingRedirects>
+    <AnalysisLevel>preview</AnalysisLevel>
+    <BaseIntermediateOutputPath>$(RepoRootPath)obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <DocumentationFile>$(RepoRootPath)doc\$(MSBuildProjectName).xml</DocumentationFile>
+    <Title>DXSharp</Title>
+    <Version>$(VersionPrefix)</Version>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>interop; directx; wrapper; 3d; graphics; d3d; dxgi; win32; com;</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.2.63-beta">
+      <PrivateAssets>all</PrivateAssets>
+      <!--<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
+    </PackageReference>
+  </ItemGroup>
 
 </Project>
