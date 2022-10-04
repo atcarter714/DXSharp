@@ -1,1 +1,6 @@
-﻿
+﻿dxgi.*
+d3d12.*
+d3d11.*
+IDXGIFactory7
+IDXGIAdapter4
+IDXGIOutput6
