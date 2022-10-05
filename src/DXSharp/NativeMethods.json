@@ -1,0 +1,11 @@
+﻿{
+  "$schema": "https://aka.ms/CsWin32.schema.json",
+  "emitSingleFile": false,
+
+  "comInterop": {
+    "preserveSigMethods": [
+      "EnumAdapters",
+      "EnumAdapters1"
+    ]
+  }
+}
