@@ -6,6 +6,9 @@ IDXGIFactory7
 IDXGIAdapter4
 IDXGIOutput6
 
+// Win32 API
+GetClientRect
+
 // HRESULT constants:
 S_OK 			// Operation successful 				-	0x00000000
 E_ABORT 		// Operation aborted 					-	0x80004004

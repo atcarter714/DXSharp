@@ -10,6 +10,12 @@ using DXSharp.DXGI;
 
 namespace Windows.Win32.Graphics.Dxgi.Common
 {
+	/// <summary>
+	/// Represents a rational number.
+	/// </summary>
+	/// <remarks>
+	/// https://learn.microsoft.com/en-us/windows/win32/api/dxgicommon/ns-dxgicommon-dxgi_rational
+	/// </remarks>
 	internal partial struct DXGI_RATIONAL
 	{
 		internal DXGI_RATIONAL( uint numerator, uint denominator )

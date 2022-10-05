@@ -51,6 +51,8 @@ using System.Windows;
 using System.Diagnostics;
 using System.ComponentModel;
 using System.Drawing;
+using Windows.Win32;
+using Windows.Win32.Foundation;
 #endregion
 
 namespace DXSharp.Windows
@@ -106,7 +108,7 @@ namespace DXSharp.Windows
 				ResizeRedraw = true;
 				SetStyle( ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true );
 
-				Icon = Desktop.Properties.Resources.logo;
+				//Icon = Desktop.Properties.Resources.logo;
 
 				previousWindowState = FormWindowState.Normal;
 				AllowUserResizing = true;
@@ -364,10 +366,9 @@ namespace DXSharp.Windows
 						}
 						else
 						{
-							RawRectangle rect;
-
-							Win32Native.GetClientRect( m.HWnd, out rect );
-							if ( rect.Bottom - rect.Top == 0 )
+							RECT rect = default;
+							PInvoke.GetClientRect( (HWND)m.HWnd, out rect );
+							if ( rect.bottom - rect.top == 0 )
 							{
 								// Rapidly clicking the task bar to minimize and restore a window
 								// can cause a WM_SIZE message with SIZE_RESTORED when 
