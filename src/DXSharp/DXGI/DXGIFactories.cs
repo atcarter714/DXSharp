@@ -19,6 +19,13 @@ namespace DXSharp.DXGI;
 
 public interface IFactory: IDisposable
 {
+	/// <summary>
+	/// Gets the GUID of the underlying COM interface IDXGIFactory
+	/// </summary>
+	public Guid COM_GUID => typeof( IDXGIFactory ).GUID; 
+
+
+
 	void SetPrivateData<T>( in Guid Name, uint DataSize, IntPtr pData );
 	void SetPrivateDataInterface<T>( in Guid Name, object pUnknown );
 	void GetPrivateData<T>( in Guid Name, in uint pDataSize, IntPtr pData );
@@ -88,7 +95,7 @@ public interface IFactory: IDisposable
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	HRESULT CreateSwapChain( object pDevice, in DXGI_SWAP_CHAIN_DESC pDesc, out DXSharp.DXGI.ISwapChain ppSwapChain );
+	HRESULT CreateSwapChain( object pDevice, in SwapChainDescription pDesc, out DXSharp.DXGI.ISwapChain ppSwapChain );
 
 	/// <summary>Create an adapter interface that represents a software adapter.</summary>
 	/// <param name="Module">

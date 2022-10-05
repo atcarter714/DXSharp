@@ -1,12 +1,18 @@
-﻿// DirectX libraries and types
+﻿// DirectX libraries:
 dxgi.*
 d3d12.*
 d3d11.*
+
+// DXGI COM Interfaces:
 IDXGIFactory7
 IDXGIAdapter4
 IDXGIOutput6
 
-// Win32 API
+// DXGI Enumerations:
+DXGI_USAGE
+DXGI_SWAP_CHAIN_FLAG 
+
+// Win32 API Functions:
 GetClientRect
 
 // HRESULT constants:

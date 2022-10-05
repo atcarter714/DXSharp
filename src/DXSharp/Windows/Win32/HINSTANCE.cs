@@ -25,7 +25,7 @@ namespace Windows.Win32.Foundation;
 /// A Win32 handle equivalent to a pointer
 /// </summary>
 [DebuggerDisplay( "{Value}" )]
-public readonly struct HINSTANCE : IEquatable<HINSTANCE>
+public readonly struct HINSTANCE: IEquatable<HINSTANCE>
 {
 	/// <summary>
 	/// The value of this HINSTANCE
