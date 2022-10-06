@@ -20,6 +20,7 @@ using DXGI_MODE_DESC1 = Windows.Win32.Graphics.Dxgi.DXGI_MODE_DESC1;
 using DXGI_SWAP_EFFECT = Windows.Win32.Graphics.Dxgi.DXGI_SWAP_EFFECT;
 using DXGI_SAMPLE_DESC = Windows.Win32.Graphics.Dxgi.Common.DXGI_SAMPLE_DESC;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
 
 #endregion
 
@@ -438,6 +439,7 @@ public enum SwapEffect
 /// <para>If you are representing a whole number, the denominator should be 1.</para>
 /// 
 /// </remarks>
+[DebuggerDisplay( "Fraction: {numerator}/{denominator} (Float: {AsFloat}f)", Name = "DXGI_RATIONAL" )]
 public struct Rational: IEquatable<Rational>
 {
 	/// <summary>
@@ -448,7 +450,8 @@ public struct Rational: IEquatable<Rational>
 	/// <summary>
 	/// Gets the rational value as a float
 	/// </summary>
-	public float AsFloat => (float) (numerator / denominator);
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
+	public float AsFloat => denominator == 0 ? 0f : (float) (numerator / denominator);
 
 
 
@@ -512,8 +515,9 @@ public struct Rational: IEquatable<Rational>
 		this.denominator = values.denominator;
 	}
 
-
+	[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 	uint numerator;
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	uint denominator;
 
 
@@ -631,6 +635,13 @@ public struct Rational: IEquatable<Rational>
 	/// </summary>
 	/// <param name="value">A whole, unsigned value</param>
 	public static implicit operator Rational( uint value ) => new Rational( value );
+
+	public static bool operator ==( Rational a, Rational b ) => a.Equals( b );
+	public static bool operator !=( Rational a, Rational b ) => !a.Equals( b );
+	public static bool operator ==( Rational a, uint b ) => a.Equals( b );
+	public static bool operator !=( Rational a, uint b ) => !a.Equals( b );
+	public static bool operator ==( uint a, Rational b ) => a.Equals( b );
+	public static bool operator !=( uint a, Rational b ) => !a.Equals( b );
 };
 
 
@@ -1058,12 +1069,13 @@ public struct SwapChainFullscreenDescription
 /// <remarks>
 /// For more info see: <a href="https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a>
 /// </remarks>
+[DebuggerDisplay("")]
 public struct ModeDescription
 {
 	internal ModeDescription( in DXGI_MODE_DESC modeDesc ) => this.desc = modeDesc;
 
 	internal unsafe ModeDescription( DXGI_MODE_DESC* pModeDesc ) => this.desc = *pModeDesc;
-	
+
 	/// <summary>
 	/// Creates a new DXGI.ModeDescription
 	/// </summary>
@@ -1076,6 +1088,17 @@ public struct ModeDescription
 	public ModeDescription( uint width, uint height, Rational refreshRate, Format format = Format.R8G8B8A8_UNORM,
 		ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered ) =>
 		this.desc = new DXGI_MODE_DESC( width, height, refreshRate, format, scanlineOrdering, scaling );
+
+	/// <summary>
+	/// Creates a new ModeDescription out of a ModeDescription1
+	/// </summary>
+	/// <param name="modeDesc1">A ModeDescription1 structure</param>
+	public ModeDescription( in ModeDescription1 modeDesc1 ) {
+		unsafe {
+			fixed ( ModeDescription1* pData = (&modeDesc1) )
+				this.desc = *((DXGI_MODE_DESC*) pData);
+		}
+	}
 
 
 
@@ -1142,6 +1165,8 @@ public struct ModeDescription
 	//	*(&desc) = *((ModeDescription*) pMode);
 	//	return desc;
 	//}
+
+	public static explicit operator ModeDescription( ModeDescription1 mode ) => new( mode );
 
 };
 
@@ -1265,4 +1290,6 @@ public struct ModeDescription1
 	/// </summary>
 	/// <param name="desc">A ModeDescription structure</param>
 	public static implicit operator ModeDescription1( ModeDescription desc ) => new ModeDescription1( desc );
+
+
 };

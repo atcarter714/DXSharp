@@ -1,7 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<TargetFrameworks>net6.0-windows;net7.0-windows</TargetFrameworks>
+	
+	<TargetFrameworks>net6.0-windows10.0.22621.0;net7.0-windows10.0.22621.0</TargetFrameworks>
+	<!--<TargetFrameworks>net6.0-windows;net7.0-windows</TargetFrameworks>-->
+	<!--<TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>-->
+	  
 	<UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -18,6 +22,7 @@
     <ApplicationIcon>DXSharp_ICON_512.ico</ApplicationIcon>
     <PackageIcon>DXSharp_Logo_00_512.png</PackageIcon>
     <RepositoryUrl>https://github.com/atcarter714/DXSharp</RepositoryUrl>
+	
   </PropertyGroup>
 
   <ItemGroup>

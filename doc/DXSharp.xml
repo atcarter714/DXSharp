@@ -798,6 +798,12 @@
             <param name="scanlineOrdering">The scanline ordering of the display mode</param>
             <param name="scaling">The scaling of the display mode</param>
         </member>
+        <member name="M:DXSharp.DXGI.ModeDescription.#ctor(DXSharp.DXGI.ModeDescription1@)">
+            <summary>
+            Creates a new ModeDescription out of a ModeDescription1
+            </summary>
+            <param name="modeDesc1">A ModeDescription1 structure</param>
+        </member>
         <member name="P:DXSharp.DXGI.ModeDescription.Width">
             <summary>
             A value that describes the resolution width. If you specify the width as zero 

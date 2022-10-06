@@ -11,6 +11,7 @@ using Windows.Win32.Graphics.Dxgi;
 
 using global::Windows.Win32;
 using Win32 = global::Windows.Win32;
+using System.Runtime.Versioning;
 #endregion
 
 namespace Windows.Win32
