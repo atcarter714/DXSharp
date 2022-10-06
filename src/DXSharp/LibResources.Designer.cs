@@ -89,5 +89,14 @@ namespace DXSharp {
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DXSharp.
+        /// </summary>
+        internal static string LibraryName {
+            get {
+                return ResourceManager.GetString("LibraryName", resourceCulture);
+            }
+        }
     }
 }

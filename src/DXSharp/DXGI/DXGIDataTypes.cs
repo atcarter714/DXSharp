@@ -185,6 +185,10 @@ public enum ScalingMode
 public enum Usage: long
 {
 	/// <summary>
+	/// No flags
+	/// </summary>
+	Unknown = 0x0000,
+	/// <summary>
 	/// The surface or resource is used as a back buffer. You don’t need to pass 
 	/// Usage.BackBuffer when you create a swap chain. But you can determine 
 	/// whether a resource belongs to a swap chain when you call DXGI.IResource.GetUsage 
@@ -270,8 +274,12 @@ public enum SwapEffect
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a>
 /// </para>
 /// </remarks>
-[Flags] public enum SwapChainFlag
+[Flags] public enum SwapChainFlags
 {
+	/// <summary>
+	/// No flags
+	/// </summary>
+	NONE = 0,
 	/// <summary>
 	/// <para><b>Value: 1</b></para>
 	/// Set this flag to turn off automatic image rotation; that is, do not perform a 
@@ -700,6 +708,43 @@ public struct SampleDescription
 /// </remarks>
 public struct SwapChainDescription
 {
+	internal SwapChainDescription( in DXGI_SWAP_CHAIN_DESC desc ) {
+		//this.BufferDesc = desc.BufferDesc;
+		//this.SampleDesc = desc.SampleDesc;
+		//this.BufferUsage = (Usage) desc.BufferUsage;
+		//this.BufferCount = desc.BufferCount;
+		//this.OutputWindow = desc.OutputWindow;
+		//this.Windowed = desc.Windowed;
+		//this.SwapEffect = (SwapEffect) desc.SwapEffect;
+		//this.Flags = (SwapChainFlags) desc.Flags;
+		this.desc = desc;
+	}
+
+	internal unsafe SwapChainDescription( DXGI_SWAP_CHAIN_DESC* pDesc ) => desc = *pDesc;
+
+	/// <summary>
+	/// Creates a new SwapChainDescription
+	/// </summary>
+	/// <param name="bufferDesc">The swapchain ModeDescription for the display</param>
+	/// <param name="sampleDesc">The multisampling settings description</param>
+	/// <param name="bufferUsage">The DXGI Usage flags</param>
+	/// <param name="bufferCount">The backbuffer count</param>
+	/// <param name="outputWindow">Handle to the output window</param>
+	/// <param name="windowed">Indicates if swapchain is in windowed mode</param>
+	/// <param name="swapEffect">The swap effect flags</param>
+	/// <param name="flags">Additional swapchain flags</param>
+	public SwapChainDescription( ModeDescription bufferDesc, SampleDescription sampleDesc, Usage bufferUsage,
+		uint bufferCount, HWND outputWindow, bool windowed, SwapEffect swapEffect, SwapChainFlags flags ) {
+		this.BufferDesc = bufferDesc;
+		this.SampleDesc = sampleDesc;
+		this.BufferUsage = bufferUsage;
+		this.BufferCount = bufferCount;
+		this.OutputWindow = outputWindow;
+		this.Windowed = windowed;
+		this.SwapEffect = swapEffect;
+		this.Flags = flags;
+	}
+
 	//ModeDescription bufferDesc;
 	//SampleDescription sampleDesc;
 	//Usage bufferUsage;
@@ -709,7 +754,7 @@ public struct SwapChainDescription
 	//SwapEffect swapEffect;
 	//uint flags;
 
-	// wrap the internal type:
+	// just wrap the internal type:
 	DXGI_SWAP_CHAIN_DESC desc;
 	internal DXGI_SWAP_CHAIN_DESC InternalValue => desc;
 	
@@ -752,7 +797,7 @@ public struct SwapChainDescription
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a> enumerated type that describes options for swap-chain behavior.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public SwapChainFlag Flags { get => (SwapChainFlag)desc.Flags; set => desc.Flags = (uint)value; }
+	public SwapChainFlags Flags { get => (SwapChainFlags)desc.Flags; set => desc.Flags = (uint)value; }
 };
 
 /// <summary>Describes a swap chain.</summary>
@@ -762,6 +807,76 @@ public struct SwapChainDescription
 /// </remarks>
 public struct SwapChainDescription1
 {
+	internal SwapChainDescription1( in DXGI_SWAP_CHAIN_DESC1 desc ) {
+		//this.Width = desc.Width;
+		//this.Height = desc.Height;
+		//this.Format = (Format)desc.Format;
+		//this.Stereo = desc.Stereo;
+		//this.SampleDesc = desc.SampleDesc;
+		//this.BufferUsage = (Usage)desc.BufferUsage;
+		//this.BufferCount = desc.BufferCount;
+		//this.Scaling = (Scaling)desc.Scaling;
+		//this.SwapEffect = (SwapEffect)desc.SwapEffect;
+		//this.AlphaMode = (AlphaMode)desc.AlphaMode;
+		//this.Flags = (SwapChainFlags)desc.Flags;
+		this.desc = desc;
+	}
+
+	internal unsafe SwapChainDescription1( DXGI_SWAP_CHAIN_DESC1* pDesc ) => desc = *pDesc;
+
+	/// <summary>
+	/// Creates a new SwapChainDescription1
+	/// </summary>
+	/// <param name="width">The buffer width</param>
+	/// <param name="height">The buffer height</param>
+	/// <param name="format">The DXGI buffer format</param>
+	/// <param name="stereo">Will swapchain render in stereoscopic mode (e.g., VR mode?)</param>
+	/// <param name="sampleDesc">The multisample settings description</param>
+	/// <param name="bufferUsage">The buffer usage flags</param>
+	/// <param name="bufferCount">Number of backbuffers to use</param>
+	/// <param name="scaling">The scaling flags</param>
+	/// <param name="swapEffect">The swap effect flags</param>
+	/// <param name="alphaMode">The alpha blending settings description</param>
+	/// <param name="flags">Additional swapchain flags</param>
+	public SwapChainDescription1(
+		uint width, uint height, Format format, bool stereo, SampleDescription sampleDesc,
+		Usage bufferUsage, uint bufferCount, Scaling scaling, SwapEffect swapEffect,
+		AlphaMode alphaMode, SwapChainFlags flags = default )
+	{
+		this.Width = width;
+		this.Height = height;
+		this.Format = format;
+		this.Stereo = stereo;
+		this.SampleDesc = sampleDesc;
+		this.BufferUsage = bufferUsage;
+		this.BufferCount = bufferCount;
+		this.Scaling = scaling;
+		this.SwapEffect = swapEffect;
+		this.AlphaMode = alphaMode;
+		this.Flags = flags;
+	}
+
+	/// <summary>
+	/// Creates a SwapChainDescription1 from a SwapChainDescription
+	/// </summary>
+	/// <param name="desc">A SwapChainDescription structure</param>
+	/// <param name="scaling">Additional Scaling flags (default is None)</param>
+	/// <param name="alphaMode">Additional AlphaMode flags (default is Straight)</param>
+	public SwapChainDescription1( SwapChainDescription desc, Scaling scaling = Scaling.None, 
+		AlphaMode alphaMode = AlphaMode.Straight ) {
+		this.Width = desc.BufferDesc.Width;
+		this.Height = desc.BufferDesc.Height;
+		this.Format = desc.BufferDesc.Format;
+		this.Stereo = false;
+		this.SampleDesc = desc.SampleDesc;
+		this.BufferUsage = desc.BufferUsage;
+		this.BufferCount = desc.BufferCount;
+		this.Scaling = scaling;
+		this.SwapEffect = desc.SwapEffect;
+		this.AlphaMode = alphaMode;
+		this.Flags = desc.Flags;
+	}
+
 	//ModeDescription bufferDesc;
 	//SampleDescription sampleDesc;
 	//Usage bufferUsage;
@@ -774,6 +889,7 @@ public struct SwapChainDescription1
 	// wrap the internal type:
 	DXGI_SWAP_CHAIN_DESC1 desc;
 	internal DXGI_SWAP_CHAIN_DESC1 InternalValue => desc;
+
 
 	/// <summary>
 	/// A value that describes the resolution width. If you specify the width as zero 
@@ -843,7 +959,15 @@ public struct SwapChainDescription1
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a> enumerated type that describes options for swap-chain behavior.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public SwapChainFlag Flags { get => (SwapChainFlag) desc.Flags; set => desc.Flags = (uint) value; }
+	public SwapChainFlags Flags { get => (SwapChainFlags) desc.Flags; set => desc.Flags = (uint) value; }
+
+
+	/// <summary>
+	/// Converts a SwapChainDescription to a SwapChainDescription1 structure
+	/// </summary>
+	/// <param name="desc">A SwapChainDescription strcuture</param>
+	public static explicit operator SwapChainDescription1( SwapChainDescription desc ) => 
+		new SwapChainDescription1( desc );
 
 };
 
@@ -863,7 +987,35 @@ public struct SwapChainDescription1
 /// </summary>
 public struct SwapChainFullscreenDescription
 {
+	internal SwapChainFullscreenDescription( in DXGI_SWAP_CHAIN_FULLSCREEN_DESC desc ) {
+		//this.desc.RefreshRate = desc.RefreshRate;
+		//this.desc.ScanlineOrdering = desc.ScanlineOrdering;
+		//this.desc.Scaling = desc.Scaling;
+		//this.desc.Windowed = desc.Windowed;
+		this.desc = desc;
+	}
+
+	internal unsafe SwapChainFullscreenDescription( DXGI_SWAP_CHAIN_FULLSCREEN_DESC* pDesc ) => this.desc = *pDesc;
+
+	/// <summary>
+	/// Creates a new SwapChainFullscreenDescription structure
+	/// </summary>
+	/// <param name="refreshRate">The refresh rate</param>
+	/// <param name="scanlineOrdering">The scaline ordering flags</param>
+	/// <param name="scalingMode">The scaling mode flags</param>
+	/// <param name="windowed">Indicates if display mode is windowed</param>
+	public SwapChainFullscreenDescription( Rational refreshRate, ScanlineOrder scanlineOrdering, 
+		ScalingMode scalingMode, bool windowed ) {
+		this.desc.RefreshRate = refreshRate;
+		this.desc.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)scanlineOrdering;
+		this.desc.Scaling = (DXGI_MODE_SCALING)scalingMode;
+		this.desc.Windowed = windowed;
+	}
+
+
 	DXGI_SWAP_CHAIN_FULLSCREEN_DESC desc;
+	internal DXGI_SWAP_CHAIN_FULLSCREEN_DESC InternalValue => desc;
+
 
 	/// <summary>
 	/// A <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgicommon/ns-dxgicommon-dxgi_rational?redirectedfrom=MSDN">DXGI.Rational</a> 
@@ -910,13 +1062,8 @@ public struct ModeDescription
 {
 	internal ModeDescription( in DXGI_MODE_DESC modeDesc ) => this.desc = modeDesc;
 
-	internal unsafe ModeDescription( DXGI_MODE_DESC* pModeDesc ) {
-		//fixed ( ModeDescription* pThis = &this ) {
-		//	*pThis = *((ModeDescription*) pModeDesc);
-		//}
-		this.desc = *pModeDesc;
-	}
-
+	internal unsafe ModeDescription( DXGI_MODE_DESC* pModeDesc ) => this.desc = *pModeDesc;
+	
 	/// <summary>
 	/// Creates a new DXGI.ModeDescription
 	/// </summary>
@@ -927,17 +1074,10 @@ public struct ModeDescription
 	/// <param name="scanlineOrdering">The scanline ordering of the display mode</param>
 	/// <param name="scaling">The scaling of the display mode</param>
 	public ModeDescription( uint width, uint height, Rational refreshRate, Format format = Format.R8G8B8A8_UNORM,
-		ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered )
-	{
-		//this.width = width;
-		//this.height = height;
-		//this.refreshRate = refreshRate;
-		//this.format = format;
-		//this.scanlineOrdering = scanlineOrdering;
-		//this.scaling = scaling;
+		ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered ) =>
+		this.desc = new DXGI_MODE_DESC( width, height, refreshRate, format, scanlineOrdering, scaling );
 
-		this.desc = new DXGI_MODE_DESC();
-	}
+
 
 	//uint width;
 	//uint height;
@@ -947,6 +1087,8 @@ public struct ModeDescription
 	//ScalingMode scaling;
 
 	DXGI_MODE_DESC desc;
+
+
 
 	/// <summary>
 	/// A value that describes the resolution width. If you specify the width as zero 
@@ -1026,11 +1168,7 @@ public struct ModeDescription1
 {
 	internal ModeDescription1( in DXGI_MODE_DESC1 modeDesc ) => this.desc = modeDesc;
 
-	internal unsafe ModeDescription1( DXGI_MODE_DESC1* pModeDesc ) {
-		fixed ( ModeDescription1* pThis = &this ) {
-			*pThis = *((ModeDescription1*) pModeDesc);
-		}
-	}
+	internal unsafe ModeDescription1( DXGI_MODE_DESC1* pModeDesc ) => desc = *pModeDesc;
 
 	/// <summary>
 	/// Creates a new DXGI.ModeDescription
@@ -1044,16 +1182,27 @@ public struct ModeDescription1
 	public ModeDescription1( uint width, uint height, Rational refreshRate, Format format = Format.R8G8B8A8_UNORM,
 		ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered, bool stereo = false )
 	{
-		this.desc.Width = width;
-		this.desc.Height = height;
-		this.desc.RefreshRate = refreshRate;
-		this.desc.Format = (DXGI_FORMAT)format;
-		this.desc.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)scanlineOrdering;
-		this.desc.Scaling = (DXGI_MODE_SCALING)scaling;
-		this.desc.Stereo = stereo;
+		//this.desc.Width = width;
+		//this.desc.Height = height;
+		//this.desc.RefreshRate = refreshRate;
+		//this.desc.Format = (DXGI_FORMAT)format;
+		//this.desc.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)scanlineOrdering;
+		//this.desc.Scaling = (DXGI_MODE_SCALING)scaling;
+		//this.desc.Stereo = stereo;
+
+		this.desc = new DXGI_MODE_DESC1( width, height, refreshRate, 
+			format, scanlineOrdering, scaling, stereo );
 	}
 
-
+	/// <summary>
+	/// Creates a new ModeDescription1 from a ModeDescription and optional stereo (bool) value
+	/// </summary>
+	/// <param name="desc">A ModeDescription structure</param>
+	/// <param name="stereo">Indicates if rendering in stereo (e.g., for VR/Mixed Reality) mode</param>
+	public ModeDescription1( ModeDescription desc, bool stereo = false ) {
+		this.desc = desc;
+		this.desc.Stereo = stereo;
+	}
 
 	//uint width;
 	//uint height;
@@ -1111,17 +1260,9 @@ public struct ModeDescription1
 
 
 
-	//! NOTE: May be removed if no longer needed/wanted
-	[MethodImpl( MethodImplOptions.AggressiveInlining )]
-	internal unsafe static ModeDescription1 MemCopyFrom( in DXGI_MODE_DESC1 mode ) {
-		fixed ( DXGI_MODE_DESC1* pMode = &mode )
-			return MemCopyFrom( pMode );
-	}
-
-	[MethodImpl( MethodImplOptions.AggressiveInlining )]
-	internal static unsafe ModeDescription1 MemCopyFrom( DXGI_MODE_DESC1* pMode ) {
-		ModeDescription1 desc = default;
-		*(&desc) = *((ModeDescription1*) pMode);
-		return desc;
-	}
+	/// <summary>
+	/// Converts a ModeDescription to a ModeDescription1 structure
+	/// </summary>
+	/// <param name="desc">A ModeDescription structure</param>
+	public static implicit operator ModeDescription1( ModeDescription desc ) => new ModeDescription1( desc );
 };
