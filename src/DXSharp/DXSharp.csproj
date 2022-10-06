@@ -14,10 +14,21 @@
     <Version>$(VersionPrefix)</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>interop; directx; wrapper; 3d; graphics; d3d; dxgi; win32; com;</PackageTags>
+    <PackageTags>interop; directx; wrapper; 2d; 3d; graphics; d3d; dxgi; win32; com; gamedev;</PackageTags>
+    <ApplicationIcon>DXSharp_ICON_512.ico</ApplicationIcon>
+    <PackageIcon>DXSharp_Logo_00_512.png</PackageIcon>
+    <RepositoryUrl>https://github.com/atcarter714/DXSharp</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="DXSharp_ICON_512.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\file\img\DXSharp_Logo_00_512.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="..\..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
@@ -29,6 +40,7 @@
       <PrivateAssets>all</PrivateAssets>
       <!--<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
     </PackageReference>
+    <PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" Version="34.0.8-preview" />
   </ItemGroup>
 
   <ItemGroup>
