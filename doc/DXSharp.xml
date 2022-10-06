@@ -4,6 +4,34 @@
         <name>DXSharp</name>
     </assembly>
     <members>
+        <member name="T:DXSharp.DXGI.AlphaMode">
+            <summary>Identifies the alpha value, transparency behavior, of a surface.</summary>
+            <remarks>
+            <para>For more information about alpha mode, see <a href="https://docs.microsoft.com/windows/desktop/api/dcommon/ne-dcommon-d2d1_alpha_mode">DXGI_ALPHA_MODE</a>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ne-dxgi1_2-dxgi_alpha_mode#">Read more on docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="F:DXSharp.DXGI.AlphaMode.Unspecified">
+            <summary>Indicates that the transparency behavior is not specified.</summary>
+        </member>
+        <member name="F:DXSharp.DXGI.AlphaMode.Premultiplied">
+            <summary>Indicates that the transparency behavior is premultiplied. Each color is first scaled by the alpha value. The alpha value itself is the same in both straight and premultiplied alpha. Typically, no color channel value is greater than the alpha channel value. If a color channel value in a premultiplied format is greater than the alpha channel, the standard source-over blending math results in an additive blend.</summary>
+        </member>
+        <member name="F:DXSharp.DXGI.AlphaMode.Straight">
+            <summary>Indicates that the transparency behavior is not premultiplied. The alpha channel indicates the transparency of the color.</summary>
+        </member>
+        <member name="F:DXSharp.DXGI.AlphaMode.Ignore">
+            <summary>Indicates to ignore the transparency behavior.</summary>
+        </member>
+        <member name="F:DXSharp.DXGI.AlphaMode.ForceDWORD">
+            <summary>
+            <para>Forces this enumeration to compile to 32 bits in size. Without this value, some compilers would allow this enumeration to compile to a size other than 32 bits. This value is not used.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ne-dxgi1_2-dxgi_alpha_mode#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+            <remarks>
+            For these C# bindings this should be a non-issue. The underlying type is already uint/UInt32, which is 32-bit.
+            </remarks>
+        </member>
         <member name="T:DXSharp.DXGI.ScanlineOrder">
             <summary>
             Flags indicating the method the raster uses to create an image on a surface.
@@ -30,6 +58,68 @@
         <member name="F:DXSharp.DXGI.ScanlineOrder.LowerFieldFirst">
             <summary>
             The image is created beginning with the lower field.
+            </summary>
+        </member>
+        <member name="T:DXSharp.DXGI.Scaling">
+            <summary>Identifies resize behavior when the back-buffer size does not match the size of the target output.</summary>
+            <remarks>
+            <para>The DXGI_SCALING_NONE value is supported only for flip presentation model swap chains that you create with the 
+            <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_effect">DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL</a> 
+            value. You pass these values in a call to 
+            <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforhwnd">IDXGIFactory2::CreateSwapChainForHwnd</a>, 
+            <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforcorewindow">IDXGIFactory2::CreateSwapChainForCoreWindow</a>, 
+            or  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforcomposition">IDXGIFactory2::CreateSwapChainForComposition</a>. 
+            
+            DXGI_SCALING_ASPECT_RATIO_STRETCH will prefer to use a horizontal fill, otherwise it will use a vertical fill, using the 
+            following logic. 
+            <pre class="syntax" xml:space="preserve"><code>
+            // C++ version (C# translation needed):
+            float aspectRatio = backBufferWidth / float(backBufferHeight); 
+            
+            // Horizontal fill float scaledWidth = outputWidth; float scaledHeight = outputWidth / aspectRatio; 
+            if (scaledHeight &gt;= outputHeight) { 
+            	// Do vertical fill 
+            	scaledWidth = outputHeight * aspectRatio; 
+            	scaledHeight = outputHeight; 
+            } 
+            
+            float offsetX = (outputWidth - scaledWidth) * 0.5f; 
+            float offsetY = (outputHeight - scaledHeight) * 0.5f; 
+            rect.left = static_cast&lt;LONG&gt;(offsetX); 
+            rect.top = static_cast&lt;LONG&gt;(offsetY); 
+            rect.right = static_cast&lt;LONG&gt;(offsetX + scaledWidth); 
+            rect.bottom = static_cast&lt;LONG&gt;(offsetY + scaledHeight); 
+            rect.left = std::max&lt;LONG&gt;(0, rect.left); 
+            rect.top = std::max&lt;LONG&gt;(0, rect.top); 
+            rect.right = std::min&lt;LONG&gt;(static_cast&lt;LONG&gt;(outputWidth), rect.right); 
+            rect.bottom = std::min&lt;LONG&gt;(static_cast&lt;LONG&gt;(outputHeight), rect.bottom); 
+            </code></pre> 
+            
+            Note that <i>outputWidth</i> and <i>outputHeight</i> are the pixel sizes of the presentation target size. In the case of <b>CoreWindow</b>, this requires converting the <i>logicalWidth</i> and <i>logicalHeight</i> values from DIPS to pixels using the window's DPI property.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ne-dxgi1_2-dxgi_scaling#">Read more on docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="F:DXSharp.DXGI.Scaling.Stretch">
+            <summary>
+            Directs DXGI to make the back-buffer contents scale to fit the presentation target size. 
+            This is the implicit behavior of DXGI when you call the 
+            <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">IDXGIFactory::CreateSwapChain</a> method.
+            </summary>
+        </member>
+        <member name="F:DXSharp.DXGI.Scaling.None">
+            <summary>
+            <para>Directs DXGI to make the back-buffer contents appear without any scaling when the presentation target size is not equal to the back-buffer size. The top edges of the back buffer and presentation target are aligned together. If the WS_EX_LAYOUTRTL style is associated with the <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a> handle to the target output window, the right edges of the back buffer and presentation target are aligned together; otherwise, the left edges are aligned together. All target area outside the back buffer is filled with window background color. This value specifies that all target areas outside the back buffer of a swap chain are filled with the background color that you specify in a call to <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-setbackgroundcolor">IDXGISwapChain1::SetBackgroundColor</a>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ne-dxgi1_2-dxgi_scaling#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="F:DXSharp.DXGI.Scaling.AspectRatioStretch">
+            <summary>
+            <para>Directs DXGI to make the back-buffer contents scale to fit the presentation 
+            target size, while preserving the aspect ratio of the back-buffer. If the scaled 
+            back-buffer does not fill the presentation area, it will be centered with black 
+            borders. This constant is supported on Windows Phone 8 and Windows 10. Note that 
+            with legacy Win32 window swapchains, this works the same as DXGI_SCALING_STRETCH.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ne-dxgi1_2-dxgi_scaling#members">Read more on docs.microsoft.com</see>.</para>
             </summary>
         </member>
         <member name="T:DXSharp.DXGI.ScalingMode">
@@ -333,6 +423,21 @@
             
             </remarks>
         </member>
+        <member name="F:DXSharp.DXGI.Rational.Zero">
+            <summary>
+            A Rational with a value of zero
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.Rational.AsFloat">
+            <summary>
+            Gets the rational value as a float
+            </summary>
+        </member>
+        <member name="M:DXSharp.DXGI.Rational.#ctor">
+            <summary>
+            Creates a new rational value
+            </summary>
+        </member>
         <member name="M:DXSharp.DXGI.Rational.#ctor(System.UInt32)">
             <summary>
             Creates a new rational value
@@ -365,6 +470,60 @@
             <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> An unsigned integer value representing the bottom of the rational number.</para>
             <para><see href="https://docs.microsoft.com/windows/win32/api//dxgicommon/ns-dxgicommon-dxgi_rational#members">Read more on docs.microsoft.com</see>.</para>
             </summary>
+        </member>
+        <member name="M:DXSharp.DXGI.Rational.Reduce">
+            <summary>
+            Reduces the rational/fraction value
+            </summary>
+        </member>
+        <member name="M:DXSharp.DXGI.Rational.Reduced">
+            <summary>
+            Gets the reduced value of this rational/fraction value
+            </summary>
+            <returns>Reduced rationa/fraction value</returns>
+        </member>
+        <member name="M:DXSharp.DXGI.Rational.Equals(System.Object)">
+            <summary>
+            Determines if the given object and this value are equal
+            </summary>
+            <param name="obj">object to compare to</param>
+            <returns>True if equal, otherwise false</returns>
+        </member>
+        <member name="M:DXSharp.DXGI.Rational.Equals(DXSharp.DXGI.Rational)">
+            <summary>
+            Determines if the given rational value and this value are equal
+            </summary>
+            <param name="other">Rational value to compare to</param>
+            <returns>True if equal, otherwise false</returns>
+        </member>
+        <member name="M:DXSharp.DXGI.Rational.GetHashCode">
+            <summary>
+            Gets the 32-bit hash code of this rational value
+            </summary>
+            <returns>32-bit hash code</returns>
+        </member>
+        <member name="M:DXSharp.DXGI.Rational.GDC(DXSharp.DXGI.Rational)">
+            <summary>
+            Finds the greatest common denominator of a rational value
+            </summary>
+            <param name="r">A rational/fraction value</param>
+            <returns>Greatest common denominator</returns>
+            <exception cref="T:DXSharp.PerformanceException">
+            Thrown in DEBUG build if the search for greatest common 
+            denominator takes an unreasonably long amount of time 
+            </exception>
+        </member>
+        <member name="M:DXSharp.DXGI.Rational.op_Implicit(System.ValueTuple{System.UInt32,System.UInt32})~DXSharp.DXGI.Rational">
+            <summary>
+            Converts a tuple of uints to Rational
+            </summary>
+            <param name="values">Value tuple of two uint values</param>
+        </member>
+        <member name="M:DXSharp.DXGI.Rational.op_Implicit(System.UInt32)~DXSharp.DXGI.Rational">
+            <summary>
+            Converts an unsigned value into rational form
+            </summary>
+            <param name="value">A whole, unsigned value</param>
         </member>
         <member name="T:DXSharp.DXGI.SampleDescription">
             <summary>Describes multi-sampling parameters for a resource.</summary>
@@ -452,6 +611,110 @@
             <summary>
             <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a> enumerated type that describes options for swap-chain behavior.</para>
             <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="T:DXSharp.DXGI.SwapChainDescription1">
+            <summary>Describes a swap chain.</summary>
+            <remarks>
+            <para>This structure is used by the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiswapchain-getdesc">GetDesc</a> and <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">CreateSwapChain</a> methods. In full-screen mode, there is a dedicated front buffer; in windowed mode, the desktop is the front buffer. If you create a swap chain with one buffer, specifying <b>DXGI_SWAP_EFFECT_SEQUENTIAL</b> does not cause the contents of the single buffer to be swapped with the front buffer. For performance information about flipping swap-chain buffers in full-screen application, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/d3d10-graphics-programming-guide-dxgi">Full-Screen Application Performance Hints</a>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#">Read more on docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.Width">
+            <summary>
+            A value that describes the resolution width. If you specify the width as zero 
+            when you call the DXGI.IFactory.CreateSwapChain method to create a swap chain, 
+            the runtime obtains the width from the output window and assigns this width 
+            value to the swap-chain description. You can subsequently call the 
+            DXGI.ISwapChain.GetDesc method to retrieve the assigned width value.
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.Height">
+            <summary>
+            A value that describes the resolution height. If you specify the height as zero 
+            when you call the DXGI.IFactory.CreateSwapChain method to create a swap chain, 
+            the runtime obtains the height from the output window and assigns this height 
+            value to the swap-chain description. You can subsequently call the 
+            DXGI.ISwapChain.GetDesc method to retrieve the assigned height value.
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.Format">
+            <summary>
+            A DXGI.Format structure describing the display format.
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.Stereo">
+            <summary>
+            Specifies whether the full-screen display mode is stereo. True if stereo; otherwise, false.
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.SampleDesc">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc">DXGI_SAMPLE_DESC</a></b> A <a href="https://docs.microsoft.com/windows/desktop/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc">DXGI_SAMPLE_DESC</a> structure that describes multi-sampling parameters.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.BufferUsage">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a> enumerated type that describes the surface usage and CPU access options for the back buffer. The back buffer can be used for shader input or render-target output.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.BufferCount">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A value that describes the number of buffers in the swap chain. When you call  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">IDXGIFactory::CreateSwapChain</a> to create a full-screen swap chain, you typically include the front buffer in this value. For more information about swap-chain buffers, see Remarks.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.Scaling">
+            <summary>
+            <para>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ne-dxgi1_2-dxgi_scaling">DXGI_SCALING</a>-typed value that identifies resize behavior if the size of the back buffer is not equal to the target output.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ns-dxgi1_2-dxgi_swap_chain_desc1#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.SwapEffect">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_effect">DXGI_SWAP_EFFECT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_effect">DXGI_SWAP_EFFECT</a> enumerated type that describes options for handling the contents of the presentation buffer after presenting a surface.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.AlphaMode">
+            <summary>
+            <para>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ne-dxgi1_2-dxgi_alpha_mode">DXGI_ALPHA_MODE</a>-typed value that identifies the transparency behavior of the swap-chain back buffer.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ns-dxgi1_2-dxgi_swap_chain_desc1#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainDescription1.Flags">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a> enumerated type that describes options for swap-chain behavior.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="T:DXSharp.DXGI.SwapChainFullscreenDescription">
+            <summary>
+            Describes full-screen mode for a swap chain.
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainFullscreenDescription.RefreshRate">
+            <summary>
+            A <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgicommon/ns-dxgicommon-dxgi_rational?redirectedfrom=MSDN">DXGI.Rational</a> 
+            structure describing the refresh rate in hertz
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainFullscreenDescription.ScanlineOrdering">
+            <summary>
+            A member of the DXGI.ScanlineOrdering enumerated type describing the scanline drawing mode.
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainFullscreenDescription.Scaling">
+            <summary>
+            A member of the DXGI.ScalingMode enumerated type describing the scaling mode.
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.SwapChainFullscreenDescription.Windowed">
+            <summary>
+            A Boolean value that specifies whether the swap chain is in windowed mode. 
+            TRUE if the swap chain is in windowed mode; otherwise, FALSE.
             </summary>
         </member>
         <member name="T:DXSharp.DXGI.ModeDescription">
@@ -669,11 +932,11 @@
             at the bottom of the page more fully describes each format type.
             </summary>
             <remarks>
-            <para><h3>Byte Order (LSB/MSB):</h3></para>
+            <para><h3><b>Byte Order (LSB/MSB):</b></h3></para>
             Most formats have byte-aligned components, and the components are in C-array order 
             (the least address comes first). For those formats that don't have power-of-2-aligned 
             components, the first named component is in the least-significant bits.
-            <para><h3>Portable Coding for Endian-Independence:</h3></para>
+            <para><h3><b>Portable Coding for Endian-Independence:</b></h3></para>
             Rather than adjusting for whether a system uses big-endian or little-endian byte ordering, 
             you should write portable code, as follows.
             <para></para>
@@ -1167,6 +1430,62 @@
             <typeparam name="T">Type of DXGIFactoryX</typeparam>
             <param name="Flags">Creation flags</param>
             <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
+        </member>
+        <member name="T:DXSharp.LibResources">
+            <summary>
+              A strongly-typed resource class, for looking up localized strings, etc.
+            </summary>
+        </member>
+        <member name="P:DXSharp.LibResources.ResourceManager">
+            <summary>
+              Returns the cached ResourceManager instance used by this class.
+            </summary>
+        </member>
+        <member name="P:DXSharp.LibResources.Culture">
+            <summary>
+              Overrides the current thread's CurrentUICulture property for all
+              resource lookups using this strongly typed resource class.
+            </summary>
+        </member>
+        <member name="P:DXSharp.LibResources.DXSharp_ICON_512">
+            <summary>
+              Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+            </summary>
+        </member>
+        <member name="P:DXSharp.LibResources.DXSharp_Logo_00">
+            <summary>
+              Looks up a localized resource of type System.Drawing.Bitmap.
+            </summary>
+        </member>
+        <member name="P:DXSharp.LibResources.DXSharp_Logo_00_512">
+            <summary>
+              Looks up a localized resource of type System.Drawing.Bitmap.
+            </summary>
+        </member>
+        <member name="T:DXSharp.PerformanceException">
+            <summary>
+            Type of exception thrown when something happens which can be
+            deterimental to performance.
+            </summary>
+            <remarks>
+            <b>NOTE:</b> Generally, PerformanceExceptions will only ever be thrown by
+            the Debug assembly of DXSharp except in some rare situations where something 
+            may halt the program indefinitely or cause other serious problems.
+            </remarks>
+        </member>
+        <member name="M:DXSharp.PerformanceException.#ctor(System.String)">
+            <summary>
+            Creates a new PerformanceException with the specified exception message
+            </summary>
+            <param name="message">Exception message</param>
+        </member>
+        <member name="M:DXSharp.PerformanceException.#ctor(System.String,System.Exception)">
+            <summary>
+            Creates a new PerformanceException with the specified exception message
+            and inner exception info
+            </summary>
+            <param name="message">Exception message</param>
+            <param name="innerException">Inner exception</param>
         </member>
         <member name="T:DXSharp.Windows.SharpDX.Windows.RenderForm">
             <summary>
@@ -2589,6 +2908,61 @@
         <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_MODE_DESC1.Stereo">
             <summary>Specifies whether the full-screen display mode is stereo. <b>TRUE</b> if stereo; otherwise, <b>FALSE</b>.</summary>
         </member>
+        <member name="T:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC">
+            <summary>Describes a swap chain.</summary>
+            <remarks>
+            <para>This structure is used by the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiswapchain-getdesc">GetDesc</a> and <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">CreateSwapChain</a> methods. In full-screen mode, there is a dedicated front buffer; in windowed mode, the desktop is the front buffer. If you create a swap chain with one buffer, specifying <b>DXGI_SWAP_EFFECT_SEQUENTIAL</b> does not cause the contents of the single buffer to be swapped with the front buffer. For performance information about flipping swap-chain buffers in full-screen application, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/d3d10-graphics-programming-guide-dxgi">Full-Screen Application Performance Hints</a>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#">Read more on docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.BufferDesc">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a></b> A <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a> structure that describes the backbuffer display mode.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.SampleDesc">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc">DXGI_SAMPLE_DESC</a></b> A <a href="https://docs.microsoft.com/windows/desktop/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc">DXGI_SAMPLE_DESC</a> structure that describes multi-sampling parameters.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.BufferUsage">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a> enumerated type that describes the surface usage and CPU access options for the back buffer. The back buffer can be used for shader input or render-target output.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.BufferCount">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A value that describes the number of buffers in the swap chain. When you call  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">IDXGIFactory::CreateSwapChain</a> to create a full-screen swap chain, you typically include the front buffer in this value. For more information about swap-chain buffers, see Remarks.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.OutputWindow">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a></b> An <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a> handle to the output window. This member must not be <b>NULL</b>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.Windowed">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">BOOL</a></b> A Boolean value that specifies whether the output is in windowed mode. <b>TRUE</b> if the output is in windowed mode; otherwise, <b>FALSE</b>. We recommend that you create a windowed swap chain and allow the end user to change the swap chain to full screen through <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiswapchain-setfullscreenstate">IDXGISwapChain::SetFullscreenState</a>; that is, do not set this member to FALSE to force the swap chain to be full screen. However, if you create the swap chain as full screen, also provide the end user with a list of supported display modes through the <b>BufferDesc</b> member because a swap chain that is created with an unsupported display mode might cause the display to go black and prevent the end user from seeing anything. For more information about choosing windowed verses full screen, see <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">IDXGIFactory::CreateSwapChain</a>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.SwapEffect">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_effect">DXGI_SWAP_EFFECT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_effect">DXGI_SWAP_EFFECT</a> enumerated type that describes options for handling the contents of the presentation buffer after presenting a surface.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
+        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.Flags">
+            <summary>
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a> enumerated type that describes options for swap-chain behavior.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
+            </summary>
+        </member>
         <member name="T:Windows.Win32.Graphics.Dxgi.DXGI_ADAPTER_DESC">
             <summary>Describes an adapter (or video card) by using DXGI 1.0.</summary>
             <remarks>
@@ -3528,61 +3902,6 @@
             <summary>
             <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc">DXGI_SAMPLE_DESC</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc">DXGI_SAMPLE_DESC</a> structure that describes multi-sampling parameters for the surface.</para>
             <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_surface_desc#members">Read more on docs.microsoft.com</see>.</para>
-            </summary>
-        </member>
-        <member name="T:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC">
-            <summary>Describes a swap chain.</summary>
-            <remarks>
-            <para>This structure is used by the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiswapchain-getdesc">GetDesc</a> and <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">CreateSwapChain</a> methods. In full-screen mode, there is a dedicated front buffer; in windowed mode, the desktop is the front buffer. If you create a swap chain with one buffer, specifying <b>DXGI_SWAP_EFFECT_SEQUENTIAL</b> does not cause the contents of the single buffer to be swapped with the front buffer. For performance information about flipping swap-chain buffers in full-screen application, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/d3d10-graphics-programming-guide-dxgi">Full-Screen Application Performance Hints</a>.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#">Read more on docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.BufferDesc">
-            <summary>
-            <para>Type: <b><a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a></b> A <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a> structure that describes the backbuffer display mode.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
-            </summary>
-        </member>
-        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.SampleDesc">
-            <summary>
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc">DXGI_SAMPLE_DESC</a></b> A <a href="https://docs.microsoft.com/windows/desktop/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc">DXGI_SAMPLE_DESC</a> structure that describes multi-sampling parameters.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
-            </summary>
-        </member>
-        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.BufferUsage">
-            <summary>
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a> enumerated type that describes the surface usage and CPU access options for the back buffer. The back buffer can be used for shader input or render-target output.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
-            </summary>
-        </member>
-        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.BufferCount">
-            <summary>
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A value that describes the number of buffers in the swap chain. When you call  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">IDXGIFactory::CreateSwapChain</a> to create a full-screen swap chain, you typically include the front buffer in this value. For more information about swap-chain buffers, see Remarks.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
-            </summary>
-        </member>
-        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.OutputWindow">
-            <summary>
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a></b> An <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a> handle to the output window. This member must not be <b>NULL</b>.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
-            </summary>
-        </member>
-        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.Windowed">
-            <summary>
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">BOOL</a></b> A Boolean value that specifies whether the output is in windowed mode. <b>TRUE</b> if the output is in windowed mode; otherwise, <b>FALSE</b>. We recommend that you create a windowed swap chain and allow the end user to change the swap chain to full screen through <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiswapchain-setfullscreenstate">IDXGISwapChain::SetFullscreenState</a>; that is, do not set this member to FALSE to force the swap chain to be full screen. However, if you create the swap chain as full screen, also provide the end user with a list of supported display modes through the <b>BufferDesc</b> member because a swap chain that is created with an unsupported display mode might cause the display to go black and prevent the end user from seeing anything. For more information about choosing windowed verses full screen, see <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">IDXGIFactory::CreateSwapChain</a>.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
-            </summary>
-        </member>
-        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.SwapEffect">
-            <summary>
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_effect">DXGI_SWAP_EFFECT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_effect">DXGI_SWAP_EFFECT</a> enumerated type that describes options for handling the contents of the presentation buffer after presenting a surface.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
-            </summary>
-        </member>
-        <member name="F:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC.Flags">
-            <summary>
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a> enumerated type that describes options for swap-chain behavior.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
             </summary>
         </member>
         <member name="T:Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC1">

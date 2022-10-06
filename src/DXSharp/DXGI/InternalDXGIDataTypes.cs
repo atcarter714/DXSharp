@@ -2,6 +2,9 @@
 using System;
 using System.Runtime.CompilerServices;
 
+using Windows.Win32.Graphics.Dxgi.Common;
+using Format = DXSharp.DXGI.Format;
+
 using DXSharp.DXGI;
 #endregion
 
@@ -46,12 +49,33 @@ namespace Windows.Win32.Graphics.Dxgi
 
 		internal partial struct DXGI_MODE_DESC
 		{
+			internal DXGI_MODE_DESC( in ModeDescription mode ) {
+				this.Width = mode.Width;
+				this.Height = mode.Height;
+				this.RefreshRate = mode.RefreshRate;
+				this.Format = (DXGI_FORMAT) mode.Format;
+				this.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER) mode.ScanlineOrdering;
+				this.Scaling = (DXGI_MODE_SCALING) mode.Scaling;
+			}
+
 			internal unsafe DXGI_MODE_DESC( ModeDescription* pMode )
 			{
 				fixed ( DXGI_MODE_DESC* pThis = &this )
 					*pThis = *((DXGI_MODE_DESC*) pMode);
 			}
 
+			internal DXGI_MODE_DESC( uint width, uint height, Rational refreshRate, Format format = DXSharp.DXGI.Format.R8G8B8A8_UNORM,
+				ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered )
+			{
+				this.Width = width;
+				this.Height = height;
+				this.RefreshRate = refreshRate;
+				this.Format = (DXGI_FORMAT)format;
+				this.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)scanlineOrdering;
+				this.Scaling = (DXGI_MODE_SCALING)scaling;
+			}
+
+			//! NOTE: These may be useless now ... consider removing
 			[MethodImpl( MethodImplOptions.AggressiveInlining )]
 			internal unsafe static DXGI_MODE_DESC MemCopyFrom( in ModeDescription mode )
 			{
@@ -67,22 +91,48 @@ namespace Windows.Win32.Graphics.Dxgi
 				return desc;
 			}
 
-			public static implicit operator DXGI_MODE_DESC( ModeDescription mode ) => MemCopyFrom( mode );
-			public static implicit operator ModeDescription( DXGI_MODE_DESC mode ) => ModeDescription.MemCopyFrom( mode );
+
+
+			public static implicit operator DXGI_MODE_DESC( ModeDescription mode ) => new DXGI_MODE_DESC( mode );
+			public static implicit operator ModeDescription( DXGI_MODE_DESC mode ) => new ModeDescription( mode );
 		};
 	}
 
 	internal partial struct DXGI_MODE_DESC1
 	{
+		internal DXGI_MODE_DESC1( in ModeDescription1 mode ) {
+			this.Width = mode.Width;
+			this.Height = mode.Height;
+			this.RefreshRate = mode.RefreshRate;
+			this.Format = (DXGI_FORMAT) mode.Format;
+			this.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER) mode.ScanlineOrdering;
+			this.Scaling = (DXGI_MODE_SCALING) mode.Scaling;
+			this.Stereo = mode.Stereo;
+		}
+
 		internal unsafe DXGI_MODE_DESC1( ModeDescription1* pMode )
 		{
 			fixed ( DXGI_MODE_DESC1* pThis = &this )
 				*pThis = *((DXGI_MODE_DESC1*) pMode);
 		}
 
-		public static implicit operator DXGI_MODE_DESC1( ModeDescription1 mode ) => MemCopyFrom( mode );
-		public static implicit operator ModeDescription1( DXGI_MODE_DESC1 mode ) => ModeDescription1.MemCopyFrom( mode );
+		internal DXGI_MODE_DESC1( uint width, uint height, Rational refreshRate, Format format = DXSharp.DXGI.Format.R8G8B8A8_UNORM,
+			ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered, bool stereo = false )
+		{
+			this.Width = width;
+			this.Height = height;
+			this.RefreshRate = refreshRate;
+			this.Format = (DXGI_FORMAT) format;
+			this.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER) scanlineOrdering;
+			this.Scaling = (DXGI_MODE_SCALING) scaling;
+			this.Stereo = stereo;
+		}
 
+
+		public static implicit operator DXGI_MODE_DESC1( ModeDescription1 mode ) => new DXGI_MODE_DESC1( mode );
+		public static implicit operator ModeDescription1( DXGI_MODE_DESC1 mode ) => new ModeDescription1( mode );
+
+		//! NOTE: May be removed (might be useless now)
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		internal unsafe static DXGI_MODE_DESC1 MemCopyFrom( in ModeDescription1 mode )
 		{
@@ -96,6 +146,18 @@ namespace Windows.Win32.Graphics.Dxgi
 			DXGI_MODE_DESC1 desc = default;
 			*(&desc) = *((DXGI_MODE_DESC1*) pMode);
 			return desc;
+		}
+	};
+
+	internal partial struct DXGI_SWAP_CHAIN_DESC
+	{
+		internal DXGI_SWAP_CHAIN_DESC( SwapChainDescription desc )
+		{
+			this.BufferCount = desc.BufferCount;
+			this.BufferDesc = desc.BufferDesc;
+			this.BufferUsage = (uint)desc.BufferUsage;
+			this.OutputWindow = desc.OutputWindow;
+			this.Flags = (uint)desc.Flags;
 		}
 	};
 }

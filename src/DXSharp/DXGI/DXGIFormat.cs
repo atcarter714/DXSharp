@@ -11,11 +11,11 @@ namespace DXSharp.DXGI
 	/// at the bottom of the page more fully describes each format type.
 	/// </summary>
 	/// <remarks>
-	/// <para><h3>Byte Order (LSB/MSB):</h3></para>
+	/// <para><h3><b>Byte Order (LSB/MSB):</b></h3></para>
 	/// Most formats have byte-aligned components, and the components are in C-array order 
 	/// (the least address comes first). For those formats that don't have power-of-2-aligned 
 	/// components, the first named component is in the least-significant bits.
-	/// <para><h3>Portable Coding for Endian-Independence:</h3></para>
+	/// <para><h3><b>Portable Coding for Endian-Independence:</b></h3></para>
 	/// Rather than adjusting for whether a system uses big-endian or little-endian byte ordering, 
 	/// you should write portable code, as follows.
 	/// <para></para>
