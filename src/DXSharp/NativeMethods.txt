@@ -12,7 +12,8 @@ IDXGIOutput6
 DXGI_USAGE
 DXGI_SWAP_CHAIN_FLAG 
 
-// Win32 API Functions:
+// Win32 API Stuff:
+IUnknown
 GetClientRect
 
 // HRESULT constants:

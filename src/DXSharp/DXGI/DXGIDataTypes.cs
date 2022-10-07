@@ -439,7 +439,7 @@ public enum SwapEffect
 /// <para>If you are representing a whole number, the denominator should be 1.</para>
 /// 
 /// </remarks>
-[DebuggerDisplay( "Fraction: {numerator}/{denominator} (Float: {AsFloat}f)", Name = "DXGI_RATIONAL" )]
+[DebuggerDisplay( "Fraction: {numerator}/{denominator} (Float: {AsFloat}f)" )]
 public struct Rational: IEquatable<Rational>
 {
 	/// <summary>
@@ -682,8 +682,10 @@ public struct SampleDescription
 		this.count = values.count;
 		this.quality = values.quality;
 	}
-	
+
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	uint count;
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	uint quality;
 
 	/// <summary>
@@ -766,7 +768,9 @@ public struct SwapChainDescription
 	//uint flags;
 
 	// just wrap the internal type:
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	DXGI_SWAP_CHAIN_DESC desc;
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	internal DXGI_SWAP_CHAIN_DESC InternalValue => desc;
 	
 	/// <summary>
@@ -898,7 +902,9 @@ public struct SwapChainDescription1
 	//uint flags;
 
 	// wrap the internal type:
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )] 
 	DXGI_SWAP_CHAIN_DESC1 desc;
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	internal DXGI_SWAP_CHAIN_DESC1 InternalValue => desc;
 
 
@@ -996,6 +1002,7 @@ public struct SwapChainDescription1
 /// <summary>
 /// Describes full-screen mode for a swap chain.
 /// </summary>
+[DebuggerDisplay( "FullScreen Mode = Windowed: {Windowed} @ {RefreshRate.AsFloat}Hz ({Scaling})" )]
 public struct SwapChainFullscreenDescription
 {
 	internal SwapChainFullscreenDescription( in DXGI_SWAP_CHAIN_FULLSCREEN_DESC desc ) {
@@ -1024,8 +1031,12 @@ public struct SwapChainFullscreenDescription
 	}
 
 
+
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	DXGI_SWAP_CHAIN_FULLSCREEN_DESC desc;
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	internal DXGI_SWAP_CHAIN_FULLSCREEN_DESC InternalValue => desc;
+
 
 
 	/// <summary>
@@ -1069,7 +1080,7 @@ public struct SwapChainFullscreenDescription
 /// <remarks>
 /// For more info see: <a href="https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a>
 /// </remarks>
-[DebuggerDisplay("")]
+[DebuggerDisplay("Mode = {Width}x{Height} @ {RefreshRate.AsFloat}Hz ({Scaling})")]
 public struct ModeDescription
 {
 	internal ModeDescription( in DXGI_MODE_DESC modeDesc ) => this.desc = modeDesc;
@@ -1109,7 +1120,7 @@ public struct ModeDescription
 	//ScanlineOrder scanlineOrdering;
 	//ScalingMode scaling;
 
-	DXGI_MODE_DESC desc;
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )] DXGI_MODE_DESC desc;
 
 
 
@@ -1189,6 +1200,7 @@ public struct ModeDescription
 /// <remarks>
 /// ModeDescription1 is identical to ModeDescription except that ModeDescription1 includes the Stereo member.
 /// </remarks>
+[DebuggerDisplay( "Mode = {Width}x{Height} @ {RefreshRate.AsFloat}Hz ({Scaling})" )]
 public struct ModeDescription1
 {
 	internal ModeDescription1( in DXGI_MODE_DESC1 modeDesc ) => this.desc = modeDesc;

@@ -2,37 +2,66 @@
 using global::System;
 using global::System.Runtime.CompilerServices;
 using global::System.Runtime.InteropServices;
+using global::System.Runtime.InteropServices.ComTypes;
+using global::System.Runtime.InteropServices.WindowsRuntime;
 
 using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Direct3D;
-using Windows.Win32.Graphics.Direct3D11;
-using Windows.Win32.Graphics.Direct3D12;
 using Windows.Win32.Graphics.Dxgi;
 
 using global::Windows.Win32;
 using Win32 = global::Windows.Win32;
 
+
+using WinRT.Interop;
+using System.Windows.Input;
+
 using DXSharp.DXGI;
+using DXSharp.Windows.COM;
 #endregion
 
 namespace DXSharp.DXGI;
 
-public interface IFactory: IDisposable
+
+
+/// <summary>
+/// Flags for making window association between
+/// a SwapChain and a HWND (Window handle)
+/// </summary>
+[Flags] public enum MWAFlags: uint
 {
 	/// <summary>
-	/// Gets the GUID of the underlying COM interface IDXGIFactory
+	/// No flags
 	/// </summary>
-	public Guid COM_GUID => typeof( IDXGIFactory ).GUID; 
+	None			= 0x0,
+	/// <summary>
+	/// Ignore all
+	/// </summary>
+	NoWindowChanges = 0x1,
+	/// <summary>
+	/// Ignore Alt+Enter
+	/// </summary>
+	NoAltEnter		= 0x2,
+	/// <summary>
+	/// Ignore Print Screen key
+	/// </summary>
+	NoPrintScreen	= 0x4,
+	/// <summary>
+	/// Valid? (Needs documentation)
+	/// </summary>
+	Valid			= 0x7,
+};
 
 
 
-	void SetPrivateData<T>( in Guid Name, uint DataSize, IntPtr pData );
-	void SetPrivateDataInterface<T>( in Guid Name, object pUnknown );
-	void GetPrivateData<T>( in Guid Name, in uint pDataSize, IntPtr pData );
-	void GetParent<T>( in Guid riid, out object ppParent );
-
+/// <summary>
+/// An IFactory is a wrapper of the native DirectX COM interface
+/// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>. 
+/// The interface implements methods for generating DXGI objects (which also handle full screen transitions).
+/// </summary>
+public interface IFactory: IObject
+{
 	/// <summary>Enumerates the adapters (video cards).</summary>
-	/// <param name="Adapter">
+	/// <param name="index">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The index of the adapter to enumerate.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
@@ -46,21 +75,21 @@ public interface IFactory: IDisposable
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void EnumAdapters( uint Adapter, out DXSharp.DXGI.IAdapter ppAdapter );
+	HRESULT EnumAdapters( uint index, out IAdapter ppAdapter );
 
 	/// <summary>Allows DXGI to monitor an application's message queue for the alt-enter key sequence (which causes the application to switch from windowed to full screen or vice versa).</summary>
 	/// <param name="WindowHandle">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a></b> The handle of the window that is to be monitored. This parameter can be <b>NULL</b>; but only if *Flags* is also 0.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-makewindowassociation#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
-	/// <param name="Flags">Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b></param>
+	/// <param name="Flags">Type: <b><a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgifactory-makewindowassociation">UINT</a></b></param>
 	/// <returns>
 	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a> if <i>WindowHandle</i> is invalid, or E_OUTOFMEMORY.</para>
 	/// </returns>
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-makewindowassociation">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void MakeWindowAssociation( HWND WindowHandle, uint Flags );
+	void MakeWindowAssociation( HWND WindowHandle, MWAFlags Flags );
 
 	/// <summary>Get the window through which the user controls the transition to and from full screen.</summary>
 	/// <param name="pWindowHandle">
@@ -95,7 +124,7 @@ public interface IFactory: IDisposable
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	HRESULT CreateSwapChain( object pDevice, in SwapChainDescription pDesc, out DXSharp.DXGI.ISwapChain ppSwapChain );
+	HRESULT CreateSwapChain( object pDevice, in SwapChainDescription pDesc, out ISwapChain ppSwapChain );
 
 	/// <summary>Create an adapter interface that represents a software adapter.</summary>
 	/// <param name="Module">
@@ -112,5 +141,36 @@ public interface IFactory: IDisposable
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createsoftwareadapter">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void CreateSoftwareAdapter( HINSTANCE Module, out DXSharp.DXGI.IAdapter ppAdapter );
+	void CreateSoftwareAdapter( HINSTANCE Module, out IAdapter ppAdapter );
+
+};
+
+public class Factory: Object, IFactory
+{
+	Factory( IDXGIFactory factory ): base(factory) { }
+
+	public void CreateSoftwareAdapter(HINSTANCE Module, out IAdapter ppAdapter)
+	{
+		throw new NotImplementedException();
+	}
+
+	public HRESULT CreateSwapChain(object pDevice, in SwapChainDescription pDesc, out ISwapChain ppSwapChain)
+	{
+		throw new NotImplementedException();
+	}
+
+	public HRESULT EnumAdapters(uint index, out IAdapter ppAdapter)
+	{
+		throw new NotImplementedException();
+	}
+
+	public void GetWindowAssociation(in HWND pWindowHandle)
+	{
+		throw new NotImplementedException();
+	}
+
+	public void MakeWindowAssociation(HWND WindowHandle, MWAFlags Flags)
+	{
+		throw new NotImplementedException();
+	}
 }

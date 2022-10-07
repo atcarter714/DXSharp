@@ -919,14 +919,47 @@
             </summary>
             <param name="desc">A ModeDescription structure</param>
         </member>
-        <member name="P:DXSharp.DXGI.IFactory.COM_GUID">
+        <member name="T:DXSharp.DXGI.MWAFlags">
             <summary>
-            Gets the GUID of the underlying COM interface IDXGIFactory
+            Flags for making window association between
+            a SwapChain and a HWND (Window handle)
+            </summary>
+        </member>
+        <member name="F:DXSharp.DXGI.MWAFlags.None">
+            <summary>
+            No flags
+            </summary>
+        </member>
+        <member name="F:DXSharp.DXGI.MWAFlags.NoWindowChanges">
+            <summary>
+            Ignore all
+            </summary>
+        </member>
+        <member name="F:DXSharp.DXGI.MWAFlags.NoAltEnter">
+            <summary>
+            Ignore Alt+Enter
+            </summary>
+        </member>
+        <member name="F:DXSharp.DXGI.MWAFlags.NoPrintScreen">
+            <summary>
+            Ignore Print Screen key
+            </summary>
+        </member>
+        <member name="F:DXSharp.DXGI.MWAFlags.Valid">
+            <summary>
+            Valid? (Needs documentation)
+            </summary>
+        </member>
+        <member name="T:DXSharp.DXGI.IFactory">
+            <summary>
+            An IFactory is a wrapper of the native DirectX COM interface
+            <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>. 
+            The interface implements methods for generating DXGI objects (which also handle full screen transitions).
             </summary>
         </member>
         <member name="M:DXSharp.DXGI.IFactory.EnumAdapters(System.UInt32,DXSharp.DXGI.IAdapter@)">
             <summary>Enumerates the adapters (video cards).</summary>
-            <param name="Adapter">
+            <param name="index">
             <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The index of the adapter to enumerate.</para>
             <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters#parameters">Read more on docs.microsoft.com</see>.</para>
             </param>
@@ -941,13 +974,13 @@
             <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters">Learn more about this API from docs.microsoft.com</see>.</para>
             </remarks>
         </member>
-        <member name="M:DXSharp.DXGI.IFactory.MakeWindowAssociation(Windows.Win32.Foundation.HWND,System.UInt32)">
+        <member name="M:DXSharp.DXGI.IFactory.MakeWindowAssociation(Windows.Win32.Foundation.HWND,DXSharp.DXGI.MWAFlags)">
             <summary>Allows DXGI to monitor an application's message queue for the alt-enter key sequence (which causes the application to switch from windowed to full screen or vice versa).</summary>
             <param name="WindowHandle">
             <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a></b> The handle of the window that is to be monitored. This parameter can be <b>NULL</b>; but only if *Flags* is also 0.</para>
             <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-makewindowassociation#parameters">Read more on docs.microsoft.com</see>.</para>
             </param>
-            <param name="Flags">Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b></param>
+            <param name="Flags">Type: <b><a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nf-dxgi-idxgifactory-makewindowassociation">UINT</a></b></param>
             <returns>
             <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a> if <i>WindowHandle</i> is invalid, or E_OUTOFMEMORY.</para>
             </returns>
@@ -1463,7 +1496,40 @@
             Contains DXGI related extension methods
             </summary>
         </member>
-        <member name="M:DXSharp.DXGI.Factory.CreateDXGIFactory``1(Windows.Win32.Foundation.HRESULT@)">
+        <member name="M:DXSharp.DXGI.XTensions.DXGIXTensions.IsAlive(DXSharp.Windows.COM.IUnknown)">
+            <summary>
+            Indicates if this IUknown COM interface is alive
+            </summary>
+            <param name="comObj">This IUnknown instance</param>
+            <returns>True if alive, otherwise false</returns>
+        </member>
+        <member name="M:DXSharp.DXGI.XTensions.DXGIXTensions.GetAllAdapters(DXSharp.DXGI.IFactory)">
+            <summary>
+            <para><b><h3>Extension Method:</h3></b></para>
+            Retrieves a list of all installed adapters (GPUs)
+            </summary>
+            <returns>List of all installed adapters as IAdapter references</returns>
+            <remarks>
+            <b>NOTE:</b> This method is not part of the native IDXGIFactory COM interface and it
+            does not increment/decrement ref counts or dispose of the underlying native
+            resources. This responsibility is left to the application. This exists purely for
+            developer "quality of life".
+            </remarks>
+        </member>
+        <member name="T:DXSharp.DXGI.FactoryCreateFlags">
+            <summary>
+            Valid values include the DXGI_CREATE_FACTORY_DEBUG (0x01) flag, and zero.
+            </summary>
+            <remarks>
+            <b><h3>Note:</h3></b> 
+            This flag will be set by the D3D runtime if:
+            The system creates an implicit factory during device creation.
+            The D3D11_CREATE_DEVICE_DEBUG flag is specified during device creation, 
+            for example using D3D11CreateDevice (or the swapchain method, or the 
+            Direct3D 10 equivalents).
+            </remarks>
+        </member>
+        <member name="M:DXSharp.DXGI.DXGIFunctions.CreateDXGIFactory``1(Windows.Win32.Foundation.HRESULT@)">
             <summary>
             Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
             </summary>
@@ -1471,7 +1537,7 @@
             <param name="hr">HRESULT to capture the result and indicate success/failure</param>
             <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
         </member>
-        <member name="M:DXSharp.DXGI.Factory.CreateDXGIFactory``1">
+        <member name="M:DXSharp.DXGI.DXGIFunctions.CreateDXGIFactory``1">
             <summary>
             Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
             </summary>
@@ -1479,7 +1545,7 @@
             <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
             <exception cref="T:System.Runtime.InteropServices.COMException">Thrown if the call fails and contains detailed error information</exception>
         </member>
-        <member name="M:DXSharp.DXGI.Factory.CreateDXGIFactory1``1(Windows.Win32.Foundation.HRESULT@)">
+        <member name="M:DXSharp.DXGI.DXGIFunctions.CreateDXGIFactory1``1(Windows.Win32.Foundation.HRESULT@)">
             <summary>
             Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
             </summary>
@@ -1487,7 +1553,7 @@
             <param name="hr">HRESULT to capture the result and indicate success/failure</param>
             <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
         </member>
-        <member name="M:DXSharp.DXGI.Factory.CreateDXGIFactory1``1">
+        <member name="M:DXSharp.DXGI.DXGIFunctions.CreateDXGIFactory1``1">
             <summary>
             Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
             </summary>
@@ -1495,7 +1561,7 @@
             <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
             <exception cref="T:System.Runtime.InteropServices.COMException">Thrown if the call fails and contains detailed error information</exception>
         </member>
-        <member name="M:DXSharp.DXGI.Factory.CreateDXGIFactory2``1(System.UInt32,Windows.Win32.Foundation.HRESULT@)">
+        <member name="M:DXSharp.DXGI.DXGIFunctions.CreateDXGIFactory2``1(DXSharp.DXGI.FactoryCreateFlags,Windows.Win32.Foundation.HRESULT@)">
             <summary>
             Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
             </summary>
@@ -1504,13 +1570,109 @@
             <param name="hr">HRESULT to capture the result and indicate success/failure</param>
             <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
         </member>
-        <member name="M:DXSharp.DXGI.Factory.CreateDXGIFactory2``1(System.UInt32)">
+        <member name="M:DXSharp.DXGI.DXGIFunctions.CreateDXGIFactory2``1(DXSharp.DXGI.FactoryCreateFlags)">
             <summary>
             Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
             </summary>
             <typeparam name="T">Type of DXGIFactoryX</typeparam>
             <param name="Flags">Creation flags</param>
             <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
+        </member>
+        <member name="T:DXSharp.DXGI.IObject">
+            <summary>
+            Wrapper interface for the native IDXGIObject COM interface
+            </summary>
+        </member>
+        <member name="M:DXSharp.DXGI.IObject.SetPrivateData``1(System.UInt32,System.IntPtr)">
+            <summary>Sets application-defined data to the object and associates that data with a GUID.</summary>
+            <param name="Name">
+            <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> A GUID that identifies the data. Use this GUID in a call to <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiobject-getprivatedata">GetPrivateData</a> to get the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="DataSize">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The size of the object's data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pData">
+            <para>Type: <b>const void*</b> A pointer to the object's data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a> values.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:DXSharp.DXGI.IObject.SetPrivateDataInterface``1(``0)">
+            <summary>Set an interface in the object's private data.</summary>
+            <param name="Name">
+            <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> A GUID identifying the interface.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pUnknown">
+            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/unknwn/nn-unknwn-iunknown">IUnknown</a>*</b> The interface to set.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the following <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:DXSharp.DXGI.IObject.GetPrivateData(System.UInt32@,System.IntPtr)">
+            <summary>Get a pointer to the object's data.</summary>
+            <param name="Name">
+            <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> A GUID identifying the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pDataSize">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a>*</b> The size of the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pData">
+            <para>Type: <b>void*</b> Pointer to the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the following <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:DXSharp.DXGI.IObject.GetParent(System.Guid@,System.Object@)">
+            <summary>Gets the parent of the object.</summary>
+            <param name="riid">
+            <para>Type: <b>REFIID</b> The ID of the requested interface.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppParent">
+            <para>Type: <b>void**</b> The address of a pointer to the parent object.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a> values.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:DXSharp.DXGI.Object.Finalize">
+            <summary>
+            Destructor
+            </summary>
+        </member>
+        <member name="P:DXSharp.DXGI.Object.Pointer">
+            <summary>
+            Gets the pointer to the underyling COM interface
+            </summary>
+        </member>
+        <member name="M:DXSharp.DXGI.Object.Dispose">
+            <summary>
+            Diposes of this instance and frees its native COM resources
+            </summary>
         </member>
         <member name="T:DXSharp.LibResources">
             <summary>
@@ -1572,6 +1734,50 @@
             </summary>
             <param name="message">Exception message</param>
             <param name="innerException">Inner exception</param>
+        </member>
+        <member name="T:DXSharp.Windows.COM.IUnknown">
+            <summary>
+            Wrapper of the base IUnknown COM interface
+            </summary>
+            <remarks>
+            More info on COM IUnknown interface can be found
+            <a href="https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iunknown">here</a>.
+            </remarks>
+        </member>
+        <member name="P:DXSharp.Windows.COM.IUnknown.Pointer">
+            <summary>
+            Gets the address of the underlying IUnknown COM interface
+            </summary>
+        </member>
+        <member name="P:DXSharp.Windows.COM.IUnknown.Disposed">
+            <summary>
+            Indicates if this instance has disposed of
+            its native COM resources
+            </summary>
+        </member>
+        <member name="M:DXSharp.Windows.COM.IUnknown.AddRef">
+            <summary>
+            Increments the reference count for an interface pointer to a COM object. 
+            You should call this method whenever you make a copy of an interface pointer.
+            </summary>
+            <returns>Updated reference count</returns>
+        </member>
+        <member name="M:DXSharp.Windows.COM.IUnknown.Release">
+            <summary>
+            Decrements the reference count for an interface on a COM object.
+            </summary>
+            <returns>Updated reference count</returns>
+        </member>
+        <member name="M:DXSharp.Windows.COM.IUnknown.QueryInterface``1(``0@)">
+            <summary>
+            Retrieves reference to the supported interfaces on an object.
+            </summary>
+            <typeparam name="T">Type of COM interface</typeparam>
+            <param name="ppvObject">object to hold COM interface reference</param>
+            <returns>A Win32 HRESULT error code indicating success or failure</returns>
+            <remarks>
+            Wrapper of native <a href="https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)">QueryInterface</a>(REFIID,void) function.
+            </remarks>
         </member>
         <member name="T:DXSharp.Windows.RenderForm">
             <summary>
@@ -1731,518 +1937,6 @@
             Override windows message loop handling.
             </summary>
             <param name="m">The Windows <see cref="T:System.Windows.Forms.Message"/> to process.</param>
-        </member>
-        <member name="T:Windows.Win32.PInvoke">
-            <content>
-            Contains extern methods from "api-ms-win-core-winrt-string-l1-1-0.dll".
-            </content>
-            <content>
-            Contains extern methods from "d3d11.dll".
-            </content>
-            <content>
-            Contains extern methods from "d3d12.dll".
-            </content>
-            <content>
-            Contains extern methods from "dxgi.dll".
-            </content>
-            <content>
-            Contains extern methods from "KERNEL32.dll".
-            </content>
-            <content>
-            Contains extern methods from "USER32.dll".
-            </content>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.WindowsDeleteString(Windows.Win32.System.WinRT.HSTRING)">
-            <summary>Decrements the reference count of a string buffer.</summary>
-            <returns>
-            <para>Type: <b>HRESULT</b> This function always returns <b>S_OK</b>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//winstring/nf-winstring-windowsdeletestring">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D11CreateDevice(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,System.Runtime.InteropServices.SafeHandle,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,System.ReadOnlySpan{Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL},System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D11CreateDevice(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,Windows.Win32.Foundation.HINSTANCE,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D11CreateDevice(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,Windows.Win32.Foundation.HINSTANCE,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)">
-            <summary>Creates a device that represents the display adapter.</summary>
-            <param name="pAdapter">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a>*</b> A pointer to the video adapter to use when creating a <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-intro">device</a>. Pass <b>NULL</b> to use the default adapter, which is the first adapter that is enumerated by <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-enumadapters">IDXGIFactory1::EnumAdapters</a>. <div class="alert"><b>Note</b>  Do not mix the use of DXGI 1.0 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>) and DXGI 1.1 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory1">IDXGIFactory1</a>) in an application. Use <b>IDXGIFactory</b> or <b>IDXGIFactory1</b>, but not both in an application. </div> <div> </div></para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="DriverType">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE</a></b> The <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE</a>, which represents the driver type to create.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="Software">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HMODULE</a></b> A handle to a DLL that implements a software rasterizer. If <i>DriverType</i> is <i>D3D_DRIVER_TYPE_SOFTWARE</i>, <i>Software</i> must not be <b>NULL</b>. Get the handle by calling <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-loadlibrarya">LoadLibrary</a>, <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-loadlibraryexa">LoadLibraryEx</a> , or <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-getmodulehandlea">GetModuleHandle</a>.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="Flags">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The runtime <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">layers</a> to enable (see <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_FLAG</a>); values can be bitwise OR'd together.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pFeatureLevels">
-            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>*</b> A pointer to an array of <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>s, which determine the order of feature levels to attempt to create. If <i>pFeatureLevels</i> is set to <b>NULL</b>, this function uses the following array of feature levels:</para>
-            <para></para>
-            <para>This doc was truncated.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="FeatureLevels">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of elements in <i>pFeatureLevels</i>.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="SDKVersion">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The SDK version; use <i>D3D11_SDK_VERSION</i>.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppDevice">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11device">ID3D11Device</a>**</b> Returns the address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11device">ID3D11Device</a> object that represents the device created. If this parameter is <b>NULL</b>, no ID3D11Device will be returned.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pFeatureLevel">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>*</b> If successful, returns the first <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a> from the <i>pFeatureLevels</i> array which succeeded. Supply <b>NULL</b> as an input if you don't need to determine which feature level is supported.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppImmediateContext">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11devicecontext">ID3D11DeviceContext</a>**</b> Returns the address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11devicecontext">ID3D11DeviceContext</a> object that represents the device context. If this parameter is <b>NULL</b>, no ID3D11DeviceContext will be returned.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method can return one of the <a href="/windows/desktop/direct3d11/d3d11-graphics-reference-returnvalues">Direct3D 11 Return Codes</a>.</para>
-            <para>This method returns E_INVALIDARG if you set the <i>pAdapter</i> parameter to a non-<b>NULL</b> value and the <i>DriverType</i> parameter to the D3D_DRIVER_TYPE_HARDWARE value.</para>
-            <para>This method returns <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_SDK_COMPONENT_MISSING</a> if you specify <a href="/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_DEBUG</a> in <i>Flags</i> and the incorrect version of the <a href="/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">debug layer</a> is installed on your computer. Install the latest Windows SDK to get the correct version.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D11CreateDeviceAndSwapChain(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,System.Runtime.InteropServices.SafeHandle,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,System.ReadOnlySpan{Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL},System.UInt32,System.Nullable{Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC},Windows.Win32.Graphics.Dxgi.IDXGISwapChain@,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D11CreateDeviceAndSwapChain(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,Windows.Win32.Foundation.HINSTANCE,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.UInt32,Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC*,Windows.Win32.Graphics.Dxgi.IDXGISwapChain@,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D11CreateDeviceAndSwapChain(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,Windows.Win32.Foundation.HINSTANCE,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.UInt32,Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC*,Windows.Win32.Graphics.Dxgi.IDXGISwapChain@,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)">
-            <summary>Creates a device that represents the display adapter and a swap chain used for rendering.</summary>
-            <param name="pAdapter">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a>*</b> A pointer to the video adapter to use when creating a <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-intro">device</a>. Pass <b>NULL</b> to use the default adapter, which is the first adapter enumerated by <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-enumadapters">IDXGIFactory1::EnumAdapters</a>. <div class="alert"><b>Note</b>  Do not mix the use of DXGI 1.0 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>) and DXGI 1.1 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory1">IDXGIFactory1</a>) in an application. Use <b>IDXGIFactory</b> or <b>IDXGIFactory1</b>, but not both in an application. </div> <div> </div></para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="DriverType">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE</a></b> The <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE</a>, which represents the driver type to create.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="Software">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HMODULE</a></b> A handle to a DLL that implements a software rasterizer. If <i>DriverType</i> is <i>D3D_DRIVER_TYPE_SOFTWARE</i>, <i>Software</i> must not be <b>NULL</b>. Get the handle by calling <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-loadlibrarya">LoadLibrary</a>, <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-loadlibraryexa">LoadLibraryEx</a> , or <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-getmodulehandlea">GetModuleHandle</a>. The value should be non-<b>NULL</b>when <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE</a> is <b>D3D_DRIVER_TYPE_SOFTWARE</b> and <b>NULL</b> otherwise.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="Flags">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The runtime <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">layers</a> to enable (see <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_FLAG</a>); values can be bitwise OR'd together.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pFeatureLevels">
-            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>*</b> A pointer to an array of <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>s, which determine the order of feature levels to attempt to create. If <i>pFeatureLevels</i> is set to <b>NULL</b>, this function uses the following array of feature levels:</para>
-            <para></para>
-            <para>This doc was truncated.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="FeatureLevels">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of elements in <i>pFeatureLevels</i>.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="SDKVersion">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The SDK version; use <i>D3D11_SDK_VERSION</i>.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pSwapChainDesc">
-            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_swap_chain_desc">DXGI_SWAP_CHAIN_DESC</a>*</b> A pointer to a swap chain description (see <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_swap_chain_desc">DXGI_SWAP_CHAIN_DESC</a>) that contains initialization parameters for the swap chain.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppSwapChain">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiswapchain">IDXGISwapChain</a>**</b> Returns the address of a pointer to the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiswapchain">IDXGISwapChain</a> object that represents the swap chain used for rendering.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppDevice">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11device">ID3D11Device</a>**</b> Returns the address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11device">ID3D11Device</a> object that represents the device created. If this parameter is  <b>NULL</b>, no ID3D11Device will be returned'.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pFeatureLevel">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>*</b> Returns a pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>, which represents the first element in an array of feature levels supported by the device. Supply <b>NULL</b> as an input if you don't need to determine which feature level is supported.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppImmediateContext">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11devicecontext">ID3D11DeviceContext</a>**</b> Returns the address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11devicecontext">ID3D11DeviceContext</a> object that represents the device context. If this parameter is <b>NULL</b>, no ID3D11DeviceContext will be returned.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method can return one of the <a href="/windows/desktop/direct3d11/d3d11-graphics-reference-returnvalues">Direct3D 11 Return Codes</a>.</para>
-            <para>This method returns <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_NOT_CURRENTLY_AVAILABLE</a> if you call it in a Session 0 process.</para>
-            <para>This method returns E_INVALIDARG if you set the <i>pAdapter</i> parameter to a non-<b>NULL</b> value and the <i>DriverType</i> parameter to the D3D_DRIVER_TYPE_HARDWARE value.</para>
-            <para>This method returns <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_SDK_COMPONENT_MISSING</a> if you specify <a href="/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_DEBUG</a> in <i>Flags</i> and the incorrect version of the <a href="/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">debug layer</a> is installed on your computer. Install the latest Windows SDK to get the correct version.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D11On12CreateDevice(System.Object,System.UInt32,System.ReadOnlySpan{Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL},System.Object[],System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D11On12CreateDevice(System.Object,System.UInt32,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.Object[],System.UInt32,System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D11On12CreateDevice(System.Object,System.UInt32,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.Object[],System.UInt32,System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*)">
-            <summary>Creates a device that uses Direct3D 11 functionality in Direct3D 12, specifying a pre-existing Direct3D 12 device to use for Direct3D 11 interop.</summary>
-            <param name="pDevice">
-            <para>Type: <b>IUnknown*</b> Specifies a pre-existing Direct3D 12 device to use for Direct3D 11 interop. May not be NULL.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="Flags">
-            <para>Type: <b>UINT</b> One or more bitwise OR'd flags from <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_FLAG</a>. These are the same flags as those used by <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nf-d3d11-d3d11createdeviceandswapchain">D3D11CreateDeviceAndSwapChain</a>. Specifies which runtime <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">layers</a> to enable. <i>Flags</i> must be compatible with device flags, and its <i>NodeMask</i> must be a subset of the <i>NodeMask</i> provided to the present API.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pFeatureLevels">
-            <para>Type: <b>const D3D_FEATURE_LEVEL*</b> An array of any of the following: </para>
-            <para>This doc was truncated.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="FeatureLevels">
-            <para>Type: <b>UINT</b> The size of (that is, the number of elements in) the *pFeatureLevels* array.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppCommandQueues">
-            <para>Type: <b>IUnknown* const *</b> An array of unique queues for D3D11On12 to use. The queues must be of the 3D command queue type.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="NumQueues">
-            <para>Type: <b>UINT</b> The size of (that is, the number of elements in) the *ppCommandQueues* array.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="NodeMask">
-            <para>Type: <b>UINT</b> Which node of the Direct3D 12 device to use. Only 1 bit may be set.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppDevice">
-            <para>Type: <b>ID3D11Device**</b> Pointer to the returned <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11device">ID3D11Device</a>. May be NULL.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppImmediateContext">
-            <para>Type: <b>ID3D11DeviceContext**</b> A pointer to the returned <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11devicecontext">ID3D11DeviceContext</a>. May be NULL.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pChosenFeatureLevel">
-            <para>Type: <b>D3D_FEATURE_LEVEL*</b> A pointer to the returned feature level. May be NULL.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> that are documented for <a href="/windows/desktop/api/d3d11/nf-d3d11-d3d11createdevice">D3D11CreateDevice</a>. This method returns <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_SDK_COMPONENT_MISSING</a>if you specify <a href="/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_DEBUG</a>in <i>Flags</i>and the incorrect version of the <a href="/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">debug layer</a> is installed on your computer. Install the latest Windows SDK to get the correct version.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12SerializeRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_ROOT_SIGNATURE_DESC@,Windows.Win32.Graphics.Direct3D12.D3D_ROOT_SIGNATURE_VERSION,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12SerializeRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_ROOT_SIGNATURE_DESC*,Windows.Win32.Graphics.Direct3D12.D3D_ROOT_SIGNATURE_VERSION,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12SerializeRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_ROOT_SIGNATURE_DESC*,Windows.Win32.Graphics.Direct3D12.D3D_ROOT_SIGNATURE_VERSION,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)">
-            <summary>Serializes a root signature version 1.0 that can be passed to ID3D12Device::CreateRootSignature.</summary>
-            <param name="pRootSignature">
-            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_root_signature_desc">D3D12_ROOT_SIGNATURE_DESC</a>*</b> The description of the root signature, as a pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_root_signature_desc">D3D12_ROOT_SIGNATURE_DESC</a> structure.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializerootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="Version">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d_root_signature_version">D3D_ROOT_SIGNATURE_VERSION</a></b> A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d_root_signature_version">D3D_ROOT_SIGNATURE_VERSION</a>-typed value that specifies the version of root signature.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializerootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppBlob">
-            <para>Type: <b><a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a>**</b> A pointer to a memory block that receives a pointer to the <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a> interface that you can use to access the serialized root signature.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializerootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppErrorBlob">
-            <para>Type: <b><a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a>**</b> A pointer to a memory block that receives a pointer to the <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a> interface that you can use to access serializer error messages, or <b>NULL</b> if there are no errors.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializerootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns <b>S_OK</b> if successful; otherwise, returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializerootsignature">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12CreateRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid@,System.Void*@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12CreateRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid*,System.Void**)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12CreateRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid*,System.Void**)">
-            <summary>Deserializes a root signature so you can determine the layout definition (D3D12_ROOT_SIGNATURE_DESC).</summary>
-            <param name="pSrcData">
-            <para>Type: <b>LPCVOID</b> A pointer to the source data for the serialized root signature.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="SrcDataSizeInBytes">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">SIZE_T</a></b> The size, in bytes, of the block of memory that <i>pSrcData</i> points to.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pRootSignatureDeserializerInterface">
-            <para>Type: <b><b>REFIID</b></b> The globally unique identifier (<b>GUID</b>) for the root signature deserializer interface. See remarks.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppRootSignatureDeserializer">
-            <para>Type: <b><b>void</b>**</b> A pointer to a memory block that receives a pointer to the root signature deserializer.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns <b>S_OK</b> if successful; otherwise, returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createrootsignaturedeserializer">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12SerializeVersionedRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_VERSIONED_ROOT_SIGNATURE_DESC@,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12SerializeVersionedRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_VERSIONED_ROOT_SIGNATURE_DESC*,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12SerializeVersionedRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_VERSIONED_ROOT_SIGNATURE_DESC*,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)">
-            <summary>Serializes a root signature of any version that can be passed to ID3D12Device::CreateRootSignature.</summary>
-            <param name="pRootSignature">
-            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_versioned_root_signature_desc">D3D12_VERSIONED_ROOT_SIGNATURE_DESC</a>*</b> Specifies a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_versioned_root_signature_desc">D3D12_VERSIONED_ROOT_SIGNATURE_DESC</a> that contains a description of any version of a root signature.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializeversionedrootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppBlob">
-            <para>Type: <b>ID3DBlob**</b> A pointer to a memory block that receives a pointer to the <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a> interface that you can use to access the serialized root signature.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializeversionedrootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppErrorBlob">
-            <para>Type: <b>ID3DBlob**</b> A pointer to a memory block that receives a pointer to the <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a> interface that you can use to access serializer error messages, or <b>NULL</b> if there are no errors.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializeversionedrootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns <b>S_OK</b> if successful; otherwise, returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializeversionedrootsignature">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12CreateVersionedRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid@,System.Void*@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12CreateVersionedRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid*,System.Void**)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12CreateVersionedRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid*,System.Void**)">
-            <summary>Generates an interface that can return the deserialized data structure, via GetUnconvertedRootSignatureDesc.</summary>
-            <param name="pSrcData">
-            <para>Type: <b>LPCVOID</b> A pointer to the source data for the serialized root signature.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createversionedrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="SrcDataSizeInBytes">
-            <para>Type: <b>SIZE_T</b> The size, in bytes, of the block of memory that <i>pSrcData</i> points to.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createversionedrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pRootSignatureDeserializerInterface">
-            <para>Type: <b>REFIID</b> The globally unique identifier (<b>GUID</b>) for the root signature deserializer interface. See remarks.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createversionedrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppRootSignatureDeserializer">
-            <para>Type: <b>void**</b> A pointer to a memory block that receives a pointer to the root signature deserializer.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createversionedrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns <b>S_OK</b> if successful; otherwise, returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createversionedrootsignaturedeserializer">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12CreateDevice(System.Object,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL,System.Guid@,System.Object@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12CreateDevice(System.Object,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL,System.Guid*,System.Object@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12CreateDevice(System.Object,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL,System.Guid*,System.Object@)">
-            <summary>Creates a device that represents the display adapter.</summary>
-            <param name="pAdapter">
-            <para>Type: <b>IUnknown*</b> A pointer to the video adapter to use when creating a <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-intro">device</a>. Pass <b>NULL</b> to use the default adapter, which is the first adapter that is enumerated by <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-enumadapters">IDXGIFactory1::EnumAdapters</a>.</para>
-            <para><div class="alert"><b>Note</b>  Don't mix the use of DXGI 1.0 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>) and DXGI 1.1 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory1">IDXGIFactory1</a>) in an application. Use <b>IDXGIFactory</b> or <b>IDXGIFactory1</b>, but not both in an application. </div> <div> </div></para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="MinimumFeatureLevel">
-            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a></b> The minimum <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a> required for successful device creation.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="riid">
-            <para>Type: <b><b>REFIID</b></b> The globally unique identifier (<b>GUID</b>) for the device interface. This parameter, and <i>ppDevice</i>, can be addressed with the single macro <a href="https://docs.microsoft.com/windows/desktop/api/combaseapi/nf-combaseapi-iid_ppv_args">IID_PPV_ARGS</a>.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppDevice">
-            <para>Type: <b><b>void</b>**</b> A pointer to a memory block that receives a pointer to the device. Pass **NULL** to test if device creation would succeed, but to not actually create the device. If **NULL** is passed and device creation would succeed, **S_FALSE** is returned.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method can return one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
-            <para>Possible return values include those documented for <a href="/windows/desktop/api/dxgi/nf-dxgi-createdxgifactory1">CreateDXGIFactory1</a> and  <a href="/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-enumadapters">IDXGIFactory::EnumAdapters</a>. If **ppDevice** is **NULL** and the function succeeds, **S_FALSE** is returned, rather than **S_OK**.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createdevice">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12GetDebugInterface(System.Guid@,System.Object@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12GetDebugInterface(System.Guid*,System.Object@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12GetDebugInterface(System.Guid*,System.Object@)">
-            <summary>Gets a debug interface.</summary>
-            <param name="riid">
-            <para>Type: <b>REFIID</b> The globally unique identifier (<b>GUID</b>) for the debug interface. The <b>REFIID</b>, or <b>GUID</b>, of the debug interface can be obtained by using the __uuidof() macro. For example, __uuidof(<a href="https://docs.microsoft.com/windows/desktop/api/d3d12sdklayers/nn-d3d12sdklayers-id3d12debug">ID3D12Debug</a>) will get the <b>GUID</b> of the debug interface.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12getdebuginterface#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppvDebug">
-            <para>Type: <b>void**</b> The debug interface, as a pointer to pointer to void. See <a href="https://docs.microsoft.com/windows/desktop/api/d3d12sdklayers/nn-d3d12sdklayers-id3d12debug">ID3D12Debug</a>and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12sdklayers/nn-d3d12sdklayers-id3d12debugdevice">ID3D12DebugDevice</a>.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12getdebuginterface#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12getdebuginterface">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12EnableExperimentalFeatures(System.ReadOnlySpan{System.Guid},System.Void*,System.Span{System.UInt32})">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12EnableExperimentalFeatures(System.UInt32,System.Guid*,System.Void*,System.UInt32*)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12EnableExperimentalFeatures(System.UInt32,System.Guid*,System.Void*,System.UInt32*)">
-            <summary>Enables a list of experimental features.</summary>
-            <param name="NumFeatures">
-            <para>Type: <b>UINT</b> The number of experimental features to enable.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12enableexperimentalfeatures#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pIIDs">
-            <para>Type: <b>const IID*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values?view=vs-2015">SAL</a>: <c>__in_ecount(NumFeatures)</c> A pointer to an array of IDs that specify which of the available experimental features to enable.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12enableexperimentalfeatures#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pConfigurationStructs">
-            <para>Type: <b>void*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values?view=vs-2015">SAL</a>: <c>__in_ecount(NumFeatures)</c> Structures that contain additional configuration details that some experimental features might need to be enabled.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12enableexperimentalfeatures#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="pConfigurationStructSizes">
-            <para>Type: <b>UINT*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values?view=vs-2015">SAL</a>: <c>__in_ecount(NumFeatures)</c> The sizes of any configuration structs passed in pConfigurationStructs parameter.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12enableexperimentalfeatures#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns an HRESULT success or error code that can include E_NOINTERFACE if an unrecognized feature is specified or Developer Mode is not enabled, or E_INVALIDARG if the configuration of a feature is in correct, the experimental features specified are not compatible, or other errors.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12enableexperimentalfeatures">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.D3D12GetInterface(System.Guid@,System.Guid@,System.Object@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12GetInterface(System.Guid*,System.Guid*,System.Object@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory(System.Guid@,System.Object@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.CreateDXGIFactory(System.Guid*,System.Object@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory(System.Guid*,System.Object@)">
-            <summary>Creates a DXGI 1.0 factory that you can use to generate other DXGI objects.</summary>
-            <param name="riid">
-            <para>Type: <b>REFIID</b> The globally unique identifier (GUID) of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a> object referenced by the <i>ppFactory</i> parameter.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppFactory">
-            <para>Type: <b>void**</b> Address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a> object.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns <b>S_OK</b> if successful; otherwise, returns one of the following <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory1(System.Guid@,System.Object@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.CreateDXGIFactory1(System.Guid*,System.Object@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory1(System.Guid*,System.Object@)">
-            <summary>Creates a DXGI 1.1 factory that you can use to generate other DXGI objects.</summary>
-            <param name="riid">
-            <para>Type: <b>REFIID</b> The globally unique identifier (GUID) of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory1">IDXGIFactory1</a> object referenced by the <i>ppFactory</i> parameter.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory1#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppFactory">
-            <para>Type: <b>void**</b> Address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory1">IDXGIFactory1</a> object.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory1#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; an error code otherwise. For a list of error codes, see <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory1">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory2(System.UInt32,System.Guid@,System.Object@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.CreateDXGIFactory2(System.UInt32,System.Guid*,System.Object@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory2(System.UInt32,System.Guid*,System.Object@)">
-            <summary>Creates a DXGI 1.3 factory that you can use to generate other DXGI objects.</summary>
-            <param name="Flags">
-            <para>Type: <b>UINT</b> Valid values include the <b>DXGI_CREATE_FACTORY_DEBUG (0x01)</b> flag, and zero. </para>
-            <para>This doc was truncated.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_3/nf-dxgi1_3-createdxgifactory2#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="riid">
-            <para>Type: <b>REFIID</b> The globally unique identifier (GUID) of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nn-dxgi1_2-idxgifactory2">IDXGIFactory2</a> object referenced by the <i>ppFactory</i> parameter.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_3/nf-dxgi1_3-createdxgifactory2#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="ppFactory">
-            <para>Type: <b>void**</b> Address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nn-dxgi1_2-idxgifactory2">IDXGIFactory2</a> object.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_3/nf-dxgi1_3-createdxgifactory2#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; an error code otherwise. For a list of error codes, see <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_3/nf-dxgi1_3-createdxgifactory2">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.DXGIGetDebugInterface1(System.UInt32,System.Guid@,System.Object@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.DXGIGetDebugInterface1(System.UInt32,System.Guid*,System.Object@)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.DXGIGetDebugInterface1(System.UInt32,System.Guid*,System.Object@)">
-            <summary>Retrieves an interface that Windows Store apps use for debugging the Microsoft DirectX Graphics Infrastructure (DXGI).</summary>
-            <param name="Flags">Not used.</param>
-            <param name="riid">The globally unique identifier (GUID) of the requested interface type, which can be the identifier for the <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/nn-dxgidebug-idxgidebug">IDXGIDebug</a>, <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/nn-dxgidebug-idxgidebug1">IDXGIDebug1</a>, or <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/nn-dxgidebug-idxgiinfoqueue">IDXGIInfoQueue</a> interfaces.</param>
-            <param name="pDebug">A pointer to a buffer that receives a pointer to the debugging interface.</param>
-            <returns>If this function succeeds, it returns <b xmlns:loc="http://microsoft.com/wdcml/l10n">S_OK</b>. Otherwise, it returns an <b xmlns:loc="http://microsoft.com/wdcml/l10n">HRESULT</b> error code.</returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_3/nf-dxgi1_3-dxgigetdebuginterface1">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.DXGIDeclareAdapterRemovalSupport">
-            <summary>Allows a process to indicate that it's resilient to any of its graphics devices being removed.</summary>
-            <returns>
-            <para>Type: <b>HRESULT</b> Returns <b>S_OK</b> if successful; an error code otherwise. If this function is called after device creation, it returns <b>DXGI_ERROR_INVALID_CALL</b>. If this is not the first time that this function is called, it returns <b>DXGI_ERROR_ALREADY_EXISTS</b>. For a full list of error codes, see <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_6/nf-dxgi1_6-dxgideclareadapterremovalsupport">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="F:Windows.Win32.PInvoke.S_OK">
-            <summary>Documentation varies per use. Refer to each: <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnradioevents-onsetsoftwareradiostatecomplete">IMbnRadioEvents.OnSetSoftwareRadioStateComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsmssendcomplete">IMbnSmsEvents.OnSmsSendComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinmanagerevents-ongetpinstatecomplete">IMbnPinManagerEvents.OnGetPinStateComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onchangecomplete">IMbnPinEvents.OnChangeComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsetsmsconfigurationcomplete">IMbnSmsEvents.OnSetSmsConfigurationComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onentercomplete">IMbnPinEvents.OnEnterComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onunblockcomplete">IMbnPinEvents.OnUnblockComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsmsdeletecomplete">IMbnSmsEvents.OnSmsDeleteComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsmsreadcomplete">IMbnSmsEvents.OnSmsReadComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnconnectioncontextevents-onsetprovisionedcontextcomplete">IMbnConnectionContextEvents.OnSetProvisionedContextComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onenablecomplete">IMbnPinEvents.OnEnableComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnconnectionevents-onconnectcomplete">IMbnConnectionEvents.OnConnectComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-ondisablecomplete">IMbnPinEvents.OnDisableComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnserviceactivationevents-onactivationcomplete">IMbnServiceActivationEvents.OnActivationComplete</see>.</summary>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.CloseHandle(Windows.Win32.Foundation.HANDLE)">
-            <summary>Closes an open object handle.</summary>
-            <param name="hObject">A valid handle to an open object.</param>
-            <returns>
-            <para>If the function succeeds, the return value is nonzero. If the function fails, the return value is zero. To get extended error information, call <a href="/windows/desktop/api/errhandlingapi/nf-errhandlingapi-getlasterror">GetLastError</a>. If the application is running under a debugger,  the function will throw an exception if it receives either a  handle value that is not valid  or a pseudo-handle value. This can happen if you close a handle twice, or if you  call <b>CloseHandle</b> on a handle returned by the <a href="/windows/desktop/api/fileapi/nf-fileapi-findfirstfilea">FindFirstFile</a> function instead of calling the <a href="/windows/desktop/api/fileapi/nf-fileapi-findclose">FindClose</a> function.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//handleapi/nf-handleapi-closehandle">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.GetClientRect(Windows.Win32.Foundation.HWND,Windows.Win32.Foundation.RECT@)">
-            <inheritdoc cref="M:Windows.Win32.PInvoke.GetClientRect(Windows.Win32.Foundation.HWND,Windows.Win32.Foundation.RECT*)"/>
-        </member>
-        <member name="M:Windows.Win32.PInvoke.GetClientRect(Windows.Win32.Foundation.HWND,Windows.Win32.Foundation.RECT*)">
-            <summary>Retrieves the coordinates of a window's client area.</summary>
-            <param name="hWnd">
-            <para>Type: <b>HWND</b> A handle to the window whose client coordinates are to be retrieved.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-getclientrect#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <param name="lpRect">
-            <para>Type: <b>LPRECT</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/windef/ns-windef-rect">RECT</a> structure that receives the client coordinates. The <b>left</b> and <b>top</b> members are zero. The <b>right</b> and <b>bottom</b> members contain the width and height of the window.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-getclientrect#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b>BOOL</b> If the function succeeds, the return value is nonzero. If the function fails, the return value is zero. To get extended error information, call <a href="/windows/desktop/api/errhandlingapi/nf-errhandlingapi-getlasterror">GetLastError</a>.</para>
-            </returns>
-            <remarks>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-getclientrect">Learn more about this API from docs.microsoft.com</see>.</para>
-            </remarks>
         </member>
         <member name="T:Windows.Win32.Graphics.Dxgi.Common.DXGI_SAMPLE_DESC">
             <summary>Describes multi-sampling parameters for a resource.</summary>
@@ -14673,6 +14367,518 @@
         </member>
         <member name="F:Windows.Win32.System.WinRT.TrustLevel.FullTrust">
             <summary>The component requires the full privileges of the user.</summary>
+        </member>
+        <member name="T:Windows.Win32.PInvoke">
+            <content>
+            Contains extern methods from "api-ms-win-core-winrt-string-l1-1-0.dll".
+            </content>
+            <content>
+            Contains extern methods from "d3d11.dll".
+            </content>
+            <content>
+            Contains extern methods from "d3d12.dll".
+            </content>
+            <content>
+            Contains extern methods from "dxgi.dll".
+            </content>
+            <content>
+            Contains extern methods from "KERNEL32.dll".
+            </content>
+            <content>
+            Contains extern methods from "USER32.dll".
+            </content>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.WindowsDeleteString(Windows.Win32.System.WinRT.HSTRING)">
+            <summary>Decrements the reference count of a string buffer.</summary>
+            <returns>
+            <para>Type: <b>HRESULT</b> This function always returns <b>S_OK</b>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winstring/nf-winstring-windowsdeletestring">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D11CreateDevice(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,System.Runtime.InteropServices.SafeHandle,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,System.ReadOnlySpan{Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL},System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D11CreateDevice(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,Windows.Win32.Foundation.HINSTANCE,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D11CreateDevice(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,Windows.Win32.Foundation.HINSTANCE,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)">
+            <summary>Creates a device that represents the display adapter.</summary>
+            <param name="pAdapter">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a>*</b> A pointer to the video adapter to use when creating a <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-intro">device</a>. Pass <b>NULL</b> to use the default adapter, which is the first adapter that is enumerated by <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-enumadapters">IDXGIFactory1::EnumAdapters</a>. <div class="alert"><b>Note</b>  Do not mix the use of DXGI 1.0 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>) and DXGI 1.1 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory1">IDXGIFactory1</a>) in an application. Use <b>IDXGIFactory</b> or <b>IDXGIFactory1</b>, but not both in an application. </div> <div> </div></para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="DriverType">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE</a></b> The <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE</a>, which represents the driver type to create.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="Software">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HMODULE</a></b> A handle to a DLL that implements a software rasterizer. If <i>DriverType</i> is <i>D3D_DRIVER_TYPE_SOFTWARE</i>, <i>Software</i> must not be <b>NULL</b>. Get the handle by calling <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-loadlibrarya">LoadLibrary</a>, <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-loadlibraryexa">LoadLibraryEx</a> , or <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-getmodulehandlea">GetModuleHandle</a>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="Flags">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The runtime <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">layers</a> to enable (see <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_FLAG</a>); values can be bitwise OR'd together.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pFeatureLevels">
+            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>*</b> A pointer to an array of <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>s, which determine the order of feature levels to attempt to create. If <i>pFeatureLevels</i> is set to <b>NULL</b>, this function uses the following array of feature levels:</para>
+            <para></para>
+            <para>This doc was truncated.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="FeatureLevels">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of elements in <i>pFeatureLevels</i>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="SDKVersion">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The SDK version; use <i>D3D11_SDK_VERSION</i>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppDevice">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11device">ID3D11Device</a>**</b> Returns the address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11device">ID3D11Device</a> object that represents the device created. If this parameter is <b>NULL</b>, no ID3D11Device will be returned.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pFeatureLevel">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>*</b> If successful, returns the first <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a> from the <i>pFeatureLevels</i> array which succeeded. Supply <b>NULL</b> as an input if you don't need to determine which feature level is supported.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppImmediateContext">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11devicecontext">ID3D11DeviceContext</a>**</b> Returns the address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11devicecontext">ID3D11DeviceContext</a> object that represents the device context. If this parameter is <b>NULL</b>, no ID3D11DeviceContext will be returned.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method can return one of the <a href="/windows/desktop/direct3d11/d3d11-graphics-reference-returnvalues">Direct3D 11 Return Codes</a>.</para>
+            <para>This method returns E_INVALIDARG if you set the <i>pAdapter</i> parameter to a non-<b>NULL</b> value and the <i>DriverType</i> parameter to the D3D_DRIVER_TYPE_HARDWARE value.</para>
+            <para>This method returns <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_SDK_COMPONENT_MISSING</a> if you specify <a href="/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_DEBUG</a> in <i>Flags</i> and the incorrect version of the <a href="/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">debug layer</a> is installed on your computer. Install the latest Windows SDK to get the correct version.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdevice">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D11CreateDeviceAndSwapChain(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,System.Runtime.InteropServices.SafeHandle,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,System.ReadOnlySpan{Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL},System.UInt32,System.Nullable{Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC},Windows.Win32.Graphics.Dxgi.IDXGISwapChain@,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D11CreateDeviceAndSwapChain(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,Windows.Win32.Foundation.HINSTANCE,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.UInt32,Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC*,Windows.Win32.Graphics.Dxgi.IDXGISwapChain@,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D11CreateDeviceAndSwapChain(Windows.Win32.Graphics.Dxgi.IDXGIAdapter,Windows.Win32.Graphics.Direct3D.D3D_DRIVER_TYPE,Windows.Win32.Foundation.HINSTANCE,Windows.Win32.Graphics.Direct3D11.D3D11_CREATE_DEVICE_FLAG,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.UInt32,Windows.Win32.Graphics.Dxgi.DXGI_SWAP_CHAIN_DESC*,Windows.Win32.Graphics.Dxgi.IDXGISwapChain@,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@)">
+            <summary>Creates a device that represents the display adapter and a swap chain used for rendering.</summary>
+            <param name="pAdapter">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a>*</b> A pointer to the video adapter to use when creating a <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-intro">device</a>. Pass <b>NULL</b> to use the default adapter, which is the first adapter enumerated by <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-enumadapters">IDXGIFactory1::EnumAdapters</a>. <div class="alert"><b>Note</b>  Do not mix the use of DXGI 1.0 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>) and DXGI 1.1 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory1">IDXGIFactory1</a>) in an application. Use <b>IDXGIFactory</b> or <b>IDXGIFactory1</b>, but not both in an application. </div> <div> </div></para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="DriverType">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE</a></b> The <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE</a>, which represents the driver type to create.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="Software">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HMODULE</a></b> A handle to a DLL that implements a software rasterizer. If <i>DriverType</i> is <i>D3D_DRIVER_TYPE_SOFTWARE</i>, <i>Software</i> must not be <b>NULL</b>. Get the handle by calling <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-loadlibrarya">LoadLibrary</a>, <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-loadlibraryexa">LoadLibraryEx</a> , or <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-getmodulehandlea">GetModuleHandle</a>. The value should be non-<b>NULL</b>when <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE</a> is <b>D3D_DRIVER_TYPE_SOFTWARE</b> and <b>NULL</b> otherwise.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="Flags">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The runtime <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">layers</a> to enable (see <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_FLAG</a>); values can be bitwise OR'd together.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pFeatureLevels">
+            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>*</b> A pointer to an array of <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>s, which determine the order of feature levels to attempt to create. If <i>pFeatureLevels</i> is set to <b>NULL</b>, this function uses the following array of feature levels:</para>
+            <para></para>
+            <para>This doc was truncated.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="FeatureLevels">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of elements in <i>pFeatureLevels</i>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="SDKVersion">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The SDK version; use <i>D3D11_SDK_VERSION</i>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pSwapChainDesc">
+            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_swap_chain_desc">DXGI_SWAP_CHAIN_DESC</a>*</b> A pointer to a swap chain description (see <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_swap_chain_desc">DXGI_SWAP_CHAIN_DESC</a>) that contains initialization parameters for the swap chain.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppSwapChain">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiswapchain">IDXGISwapChain</a>**</b> Returns the address of a pointer to the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiswapchain">IDXGISwapChain</a> object that represents the swap chain used for rendering.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppDevice">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11device">ID3D11Device</a>**</b> Returns the address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11device">ID3D11Device</a> object that represents the device created. If this parameter is  <b>NULL</b>, no ID3D11Device will be returned'.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pFeatureLevel">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>*</b> Returns a pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a>, which represents the first element in an array of feature levels supported by the device. Supply <b>NULL</b> as an input if you don't need to determine which feature level is supported.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppImmediateContext">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11devicecontext">ID3D11DeviceContext</a>**</b> Returns the address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11devicecontext">ID3D11DeviceContext</a> object that represents the device context. If this parameter is <b>NULL</b>, no ID3D11DeviceContext will be returned.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method can return one of the <a href="/windows/desktop/direct3d11/d3d11-graphics-reference-returnvalues">Direct3D 11 Return Codes</a>.</para>
+            <para>This method returns <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_NOT_CURRENTLY_AVAILABLE</a> if you call it in a Session 0 process.</para>
+            <para>This method returns E_INVALIDARG if you set the <i>pAdapter</i> parameter to a non-<b>NULL</b> value and the <i>DriverType</i> parameter to the D3D_DRIVER_TYPE_HARDWARE value.</para>
+            <para>This method returns <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_SDK_COMPONENT_MISSING</a> if you specify <a href="/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_DEBUG</a> in <i>Flags</i> and the incorrect version of the <a href="/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">debug layer</a> is installed on your computer. Install the latest Windows SDK to get the correct version.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11/nf-d3d11-d3d11createdeviceandswapchain">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D11On12CreateDevice(System.Object,System.UInt32,System.ReadOnlySpan{Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL},System.Object[],System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D11On12CreateDevice(System.Object,System.UInt32,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.Object[],System.UInt32,System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D11On12CreateDevice(System.Object,System.UInt32,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*,System.UInt32,System.Object[],System.UInt32,System.UInt32,Windows.Win32.Graphics.Direct3D11.ID3D11Device@,Windows.Win32.Graphics.Direct3D11.ID3D11DeviceContext@,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL*)">
+            <summary>Creates a device that uses Direct3D 11 functionality in Direct3D 12, specifying a pre-existing Direct3D 12 device to use for Direct3D 11 interop.</summary>
+            <param name="pDevice">
+            <para>Type: <b>IUnknown*</b> Specifies a pre-existing Direct3D 12 device to use for Direct3D 11 interop. May not be NULL.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="Flags">
+            <para>Type: <b>UINT</b> One or more bitwise OR'd flags from <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_FLAG</a>. These are the same flags as those used by <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nf-d3d11-d3d11createdeviceandswapchain">D3D11CreateDeviceAndSwapChain</a>. Specifies which runtime <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">layers</a> to enable. <i>Flags</i> must be compatible with device flags, and its <i>NodeMask</i> must be a subset of the <i>NodeMask</i> provided to the present API.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pFeatureLevels">
+            <para>Type: <b>const D3D_FEATURE_LEVEL*</b> An array of any of the following: </para>
+            <para>This doc was truncated.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="FeatureLevels">
+            <para>Type: <b>UINT</b> The size of (that is, the number of elements in) the *pFeatureLevels* array.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppCommandQueues">
+            <para>Type: <b>IUnknown* const *</b> An array of unique queues for D3D11On12 to use. The queues must be of the 3D command queue type.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="NumQueues">
+            <para>Type: <b>UINT</b> The size of (that is, the number of elements in) the *ppCommandQueues* array.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="NodeMask">
+            <para>Type: <b>UINT</b> Which node of the Direct3D 12 device to use. Only 1 bit may be set.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppDevice">
+            <para>Type: <b>ID3D11Device**</b> Pointer to the returned <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11device">ID3D11Device</a>. May be NULL.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppImmediateContext">
+            <para>Type: <b>ID3D11DeviceContext**</b> A pointer to the returned <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nn-d3d11-id3d11devicecontext">ID3D11DeviceContext</a>. May be NULL.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pChosenFeatureLevel">
+            <para>Type: <b>D3D_FEATURE_LEVEL*</b> A pointer to the returned feature level. May be NULL.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> that are documented for <a href="/windows/desktop/api/d3d11/nf-d3d11-d3d11createdevice">D3D11CreateDevice</a>. This method returns <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_SDK_COMPONENT_MISSING</a>if you specify <a href="/windows/desktop/api/d3d11/ne-d3d11-d3d11_create_device_flag">D3D11_CREATE_DEVICE_DEBUG</a>in <i>Flags</i>and the incorrect version of the <a href="/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers">debug layer</a> is installed on your computer. Install the latest Windows SDK to get the correct version.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d11on12/nf-d3d11on12-d3d11on12createdevice">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12SerializeRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_ROOT_SIGNATURE_DESC@,Windows.Win32.Graphics.Direct3D12.D3D_ROOT_SIGNATURE_VERSION,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12SerializeRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_ROOT_SIGNATURE_DESC*,Windows.Win32.Graphics.Direct3D12.D3D_ROOT_SIGNATURE_VERSION,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12SerializeRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_ROOT_SIGNATURE_DESC*,Windows.Win32.Graphics.Direct3D12.D3D_ROOT_SIGNATURE_VERSION,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)">
+            <summary>Serializes a root signature version 1.0 that can be passed to ID3D12Device::CreateRootSignature.</summary>
+            <param name="pRootSignature">
+            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_root_signature_desc">D3D12_ROOT_SIGNATURE_DESC</a>*</b> The description of the root signature, as a pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_root_signature_desc">D3D12_ROOT_SIGNATURE_DESC</a> structure.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializerootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="Version">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d_root_signature_version">D3D_ROOT_SIGNATURE_VERSION</a></b> A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d_root_signature_version">D3D_ROOT_SIGNATURE_VERSION</a>-typed value that specifies the version of root signature.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializerootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppBlob">
+            <para>Type: <b><a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a>**</b> A pointer to a memory block that receives a pointer to the <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a> interface that you can use to access the serialized root signature.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializerootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppErrorBlob">
+            <para>Type: <b><a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a>**</b> A pointer to a memory block that receives a pointer to the <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a> interface that you can use to access serializer error messages, or <b>NULL</b> if there are no errors.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializerootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns <b>S_OK</b> if successful; otherwise, returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializerootsignature">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12CreateRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid@,System.Void*@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12CreateRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid*,System.Void**)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12CreateRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid*,System.Void**)">
+            <summary>Deserializes a root signature so you can determine the layout definition (D3D12_ROOT_SIGNATURE_DESC).</summary>
+            <param name="pSrcData">
+            <para>Type: <b>LPCVOID</b> A pointer to the source data for the serialized root signature.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="SrcDataSizeInBytes">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">SIZE_T</a></b> The size, in bytes, of the block of memory that <i>pSrcData</i> points to.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pRootSignatureDeserializerInterface">
+            <para>Type: <b><b>REFIID</b></b> The globally unique identifier (<b>GUID</b>) for the root signature deserializer interface. See remarks.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppRootSignatureDeserializer">
+            <para>Type: <b><b>void</b>**</b> A pointer to a memory block that receives a pointer to the root signature deserializer.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns <b>S_OK</b> if successful; otherwise, returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createrootsignaturedeserializer">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12SerializeVersionedRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_VERSIONED_ROOT_SIGNATURE_DESC@,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12SerializeVersionedRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_VERSIONED_ROOT_SIGNATURE_DESC*,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12SerializeVersionedRootSignature(Windows.Win32.Graphics.Direct3D12.D3D12_VERSIONED_ROOT_SIGNATURE_DESC*,Windows.Win32.Graphics.Direct3D.ID3DBlob@,Windows.Win32.Graphics.Direct3D.ID3DBlob@)">
+            <summary>Serializes a root signature of any version that can be passed to ID3D12Device::CreateRootSignature.</summary>
+            <param name="pRootSignature">
+            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_versioned_root_signature_desc">D3D12_VERSIONED_ROOT_SIGNATURE_DESC</a>*</b> Specifies a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_versioned_root_signature_desc">D3D12_VERSIONED_ROOT_SIGNATURE_DESC</a> that contains a description of any version of a root signature.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializeversionedrootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppBlob">
+            <para>Type: <b>ID3DBlob**</b> A pointer to a memory block that receives a pointer to the <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a> interface that you can use to access the serialized root signature.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializeversionedrootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppErrorBlob">
+            <para>Type: <b>ID3DBlob**</b> A pointer to a memory block that receives a pointer to the <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/ff728743(v=vs.85)">ID3DBlob</a> interface that you can use to access serializer error messages, or <b>NULL</b> if there are no errors.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializeversionedrootsignature#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns <b>S_OK</b> if successful; otherwise, returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12serializeversionedrootsignature">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12CreateVersionedRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid@,System.Void*@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12CreateVersionedRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid*,System.Void**)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12CreateVersionedRootSignatureDeserializer(System.Void*,System.UIntPtr,System.Guid*,System.Void**)">
+            <summary>Generates an interface that can return the deserialized data structure, via GetUnconvertedRootSignatureDesc.</summary>
+            <param name="pSrcData">
+            <para>Type: <b>LPCVOID</b> A pointer to the source data for the serialized root signature.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createversionedrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="SrcDataSizeInBytes">
+            <para>Type: <b>SIZE_T</b> The size, in bytes, of the block of memory that <i>pSrcData</i> points to.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createversionedrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pRootSignatureDeserializerInterface">
+            <para>Type: <b>REFIID</b> The globally unique identifier (<b>GUID</b>) for the root signature deserializer interface. See remarks.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createversionedrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppRootSignatureDeserializer">
+            <para>Type: <b>void**</b> A pointer to a memory block that receives a pointer to the root signature deserializer.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createversionedrootsignaturedeserializer#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns <b>S_OK</b> if successful; otherwise, returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createversionedrootsignaturedeserializer">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12CreateDevice(System.Object,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL,System.Guid@,System.Object@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12CreateDevice(System.Object,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL,System.Guid*,System.Object@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12CreateDevice(System.Object,Windows.Win32.Graphics.Direct3D.D3D_FEATURE_LEVEL,System.Guid*,System.Object@)">
+            <summary>Creates a device that represents the display adapter.</summary>
+            <param name="pAdapter">
+            <para>Type: <b>IUnknown*</b> A pointer to the video adapter to use when creating a <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-intro">device</a>. Pass <b>NULL</b> to use the default adapter, which is the first adapter that is enumerated by <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-enumadapters">IDXGIFactory1::EnumAdapters</a>.</para>
+            <para><div class="alert"><b>Note</b>  Don't mix the use of DXGI 1.0 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>) and DXGI 1.1 (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory1">IDXGIFactory1</a>) in an application. Use <b>IDXGIFactory</b> or <b>IDXGIFactory1</b>, but not both in an application. </div> <div> </div></para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="MinimumFeatureLevel">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a></b> The minimum <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_feature_level">D3D_FEATURE_LEVEL</a> required for successful device creation.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="riid">
+            <para>Type: <b><b>REFIID</b></b> The globally unique identifier (<b>GUID</b>) for the device interface. This parameter, and <i>ppDevice</i>, can be addressed with the single macro <a href="https://docs.microsoft.com/windows/desktop/api/combaseapi/nf-combaseapi-iid_ppv_args">IID_PPV_ARGS</a>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppDevice">
+            <para>Type: <b><b>void</b>**</b> A pointer to a memory block that receives a pointer to the device. Pass **NULL** to test if device creation would succeed, but to not actually create the device. If **NULL** is passed and device creation would succeed, **S_FALSE** is returned.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createdevice#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method can return one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
+            <para>Possible return values include those documented for <a href="/windows/desktop/api/dxgi/nf-dxgi-createdxgifactory1">CreateDXGIFactory1</a> and  <a href="/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-enumadapters">IDXGIFactory::EnumAdapters</a>. If **ppDevice** is **NULL** and the function succeeds, **S_FALSE** is returned, rather than **S_OK**.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12createdevice">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12GetDebugInterface(System.Guid@,System.Object@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12GetDebugInterface(System.Guid*,System.Object@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12GetDebugInterface(System.Guid*,System.Object@)">
+            <summary>Gets a debug interface.</summary>
+            <param name="riid">
+            <para>Type: <b>REFIID</b> The globally unique identifier (<b>GUID</b>) for the debug interface. The <b>REFIID</b>, or <b>GUID</b>, of the debug interface can be obtained by using the __uuidof() macro. For example, __uuidof(<a href="https://docs.microsoft.com/windows/desktop/api/d3d12sdklayers/nn-d3d12sdklayers-id3d12debug">ID3D12Debug</a>) will get the <b>GUID</b> of the debug interface.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12getdebuginterface#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppvDebug">
+            <para>Type: <b>void**</b> The debug interface, as a pointer to pointer to void. See <a href="https://docs.microsoft.com/windows/desktop/api/d3d12sdklayers/nn-d3d12sdklayers-id3d12debug">ID3D12Debug</a>and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12sdklayers/nn-d3d12sdklayers-id3d12debugdevice">ID3D12DebugDevice</a>.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12getdebuginterface#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12getdebuginterface">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12EnableExperimentalFeatures(System.ReadOnlySpan{System.Guid},System.Void*,System.Span{System.UInt32})">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12EnableExperimentalFeatures(System.UInt32,System.Guid*,System.Void*,System.UInt32*)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12EnableExperimentalFeatures(System.UInt32,System.Guid*,System.Void*,System.UInt32*)">
+            <summary>Enables a list of experimental features.</summary>
+            <param name="NumFeatures">
+            <para>Type: <b>UINT</b> The number of experimental features to enable.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12enableexperimentalfeatures#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pIIDs">
+            <para>Type: <b>const IID*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values?view=vs-2015">SAL</a>: <c>__in_ecount(NumFeatures)</c> A pointer to an array of IDs that specify which of the available experimental features to enable.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12enableexperimentalfeatures#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pConfigurationStructs">
+            <para>Type: <b>void*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values?view=vs-2015">SAL</a>: <c>__in_ecount(NumFeatures)</c> Structures that contain additional configuration details that some experimental features might need to be enabled.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12enableexperimentalfeatures#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pConfigurationStructSizes">
+            <para>Type: <b>UINT*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values?view=vs-2015">SAL</a>: <c>__in_ecount(NumFeatures)</c> The sizes of any configuration structs passed in pConfigurationStructs parameter.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12enableexperimentalfeatures#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns an HRESULT success or error code that can include E_NOINTERFACE if an unrecognized feature is specified or Developer Mode is not enabled, or E_INVALIDARG if the configuration of a feature is in correct, the experimental features specified are not compatible, or other errors.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//d3d12/nf-d3d12-d3d12enableexperimentalfeatures">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.D3D12GetInterface(System.Guid@,System.Guid@,System.Object@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.D3D12GetInterface(System.Guid*,System.Guid*,System.Object@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory(System.Guid@,System.Object@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.CreateDXGIFactory(System.Guid*,System.Object@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory(System.Guid*,System.Object@)">
+            <summary>Creates a DXGI 1.0 factory that you can use to generate other DXGI objects.</summary>
+            <param name="riid">
+            <para>Type: <b>REFIID</b> The globally unique identifier (GUID) of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a> object referenced by the <i>ppFactory</i> parameter.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppFactory">
+            <para>Type: <b>void**</b> Address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a> object.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns <b>S_OK</b> if successful; otherwise, returns one of the following <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory1(System.Guid@,System.Object@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.CreateDXGIFactory1(System.Guid*,System.Object@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory1(System.Guid*,System.Object@)">
+            <summary>Creates a DXGI 1.1 factory that you can use to generate other DXGI objects.</summary>
+            <param name="riid">
+            <para>Type: <b>REFIID</b> The globally unique identifier (GUID) of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory1">IDXGIFactory1</a> object referenced by the <i>ppFactory</i> parameter.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory1#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppFactory">
+            <para>Type: <b>void**</b> Address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgifactory1">IDXGIFactory1</a> object.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory1#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; an error code otherwise. For a list of error codes, see <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-createdxgifactory1">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory2(System.UInt32,System.Guid@,System.Object@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.CreateDXGIFactory2(System.UInt32,System.Guid*,System.Object@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.CreateDXGIFactory2(System.UInt32,System.Guid*,System.Object@)">
+            <summary>Creates a DXGI 1.3 factory that you can use to generate other DXGI objects.</summary>
+            <param name="Flags">
+            <para>Type: <b>UINT</b> Valid values include the <b>DXGI_CREATE_FACTORY_DEBUG (0x01)</b> flag, and zero. </para>
+            <para>This doc was truncated.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_3/nf-dxgi1_3-createdxgifactory2#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="riid">
+            <para>Type: <b>REFIID</b> The globally unique identifier (GUID) of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nn-dxgi1_2-idxgifactory2">IDXGIFactory2</a> object referenced by the <i>ppFactory</i> parameter.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_3/nf-dxgi1_3-createdxgifactory2#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppFactory">
+            <para>Type: <b>void**</b> Address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nn-dxgi1_2-idxgifactory2">IDXGIFactory2</a> object.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_3/nf-dxgi1_3-createdxgifactory2#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; an error code otherwise. For a list of error codes, see <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_3/nf-dxgi1_3-createdxgifactory2">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.DXGIGetDebugInterface1(System.UInt32,System.Guid@,System.Object@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.DXGIGetDebugInterface1(System.UInt32,System.Guid*,System.Object@)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.DXGIGetDebugInterface1(System.UInt32,System.Guid*,System.Object@)">
+            <summary>Retrieves an interface that Windows Store apps use for debugging the Microsoft DirectX Graphics Infrastructure (DXGI).</summary>
+            <param name="Flags">Not used.</param>
+            <param name="riid">The globally unique identifier (GUID) of the requested interface type, which can be the identifier for the <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/nn-dxgidebug-idxgidebug">IDXGIDebug</a>, <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/nn-dxgidebug-idxgidebug1">IDXGIDebug1</a>, or <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/nn-dxgidebug-idxgiinfoqueue">IDXGIInfoQueue</a> interfaces.</param>
+            <param name="pDebug">A pointer to a buffer that receives a pointer to the debugging interface.</param>
+            <returns>If this function succeeds, it returns <b xmlns:loc="http://microsoft.com/wdcml/l10n">S_OK</b>. Otherwise, it returns an <b xmlns:loc="http://microsoft.com/wdcml/l10n">HRESULT</b> error code.</returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_3/nf-dxgi1_3-dxgigetdebuginterface1">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.DXGIDeclareAdapterRemovalSupport">
+            <summary>Allows a process to indicate that it's resilient to any of its graphics devices being removed.</summary>
+            <returns>
+            <para>Type: <b>HRESULT</b> Returns <b>S_OK</b> if successful; an error code otherwise. If this function is called after device creation, it returns <b>DXGI_ERROR_INVALID_CALL</b>. If this is not the first time that this function is called, it returns <b>DXGI_ERROR_ALREADY_EXISTS</b>. For a full list of error codes, see <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_6/nf-dxgi1_6-dxgideclareadapterremovalsupport">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="F:Windows.Win32.PInvoke.S_OK">
+            <summary>Documentation varies per use. Refer to each: <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnradioevents-onsetsoftwareradiostatecomplete">IMbnRadioEvents.OnSetSoftwareRadioStateComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsmssendcomplete">IMbnSmsEvents.OnSmsSendComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinmanagerevents-ongetpinstatecomplete">IMbnPinManagerEvents.OnGetPinStateComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onchangecomplete">IMbnPinEvents.OnChangeComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsetsmsconfigurationcomplete">IMbnSmsEvents.OnSetSmsConfigurationComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onentercomplete">IMbnPinEvents.OnEnterComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onunblockcomplete">IMbnPinEvents.OnUnblockComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsmsdeletecomplete">IMbnSmsEvents.OnSmsDeleteComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsmsreadcomplete">IMbnSmsEvents.OnSmsReadComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnconnectioncontextevents-onsetprovisionedcontextcomplete">IMbnConnectionContextEvents.OnSetProvisionedContextComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onenablecomplete">IMbnPinEvents.OnEnableComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnconnectionevents-onconnectcomplete">IMbnConnectionEvents.OnConnectComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-ondisablecomplete">IMbnPinEvents.OnDisableComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnserviceactivationevents-onactivationcomplete">IMbnServiceActivationEvents.OnActivationComplete</see>.</summary>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.CloseHandle(Windows.Win32.Foundation.HANDLE)">
+            <summary>Closes an open object handle.</summary>
+            <param name="hObject">A valid handle to an open object.</param>
+            <returns>
+            <para>If the function succeeds, the return value is nonzero. If the function fails, the return value is zero. To get extended error information, call <a href="/windows/desktop/api/errhandlingapi/nf-errhandlingapi-getlasterror">GetLastError</a>. If the application is running under a debugger,  the function will throw an exception if it receives either a  handle value that is not valid  or a pseudo-handle value. This can happen if you close a handle twice, or if you  call <b>CloseHandle</b> on a handle returned by the <a href="/windows/desktop/api/fileapi/nf-fileapi-findfirstfilea">FindFirstFile</a> function instead of calling the <a href="/windows/desktop/api/fileapi/nf-fileapi-findclose">FindClose</a> function.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//handleapi/nf-handleapi-closehandle">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.GetClientRect(Windows.Win32.Foundation.HWND,Windows.Win32.Foundation.RECT@)">
+            <inheritdoc cref="M:Windows.Win32.PInvoke.GetClientRect(Windows.Win32.Foundation.HWND,Windows.Win32.Foundation.RECT*)"/>
+        </member>
+        <member name="M:Windows.Win32.PInvoke.GetClientRect(Windows.Win32.Foundation.HWND,Windows.Win32.Foundation.RECT*)">
+            <summary>Retrieves the coordinates of a window's client area.</summary>
+            <param name="hWnd">
+            <para>Type: <b>HWND</b> A handle to the window whose client coordinates are to be retrieved.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-getclientrect#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="lpRect">
+            <para>Type: <b>LPRECT</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/windef/ns-windef-rect">RECT</a> structure that receives the client coordinates. The <b>left</b> and <b>top</b> members are zero. The <b>right</b> and <b>bottom</b> members contain the width and height of the window.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-getclientrect#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b>BOOL</b> If the function succeeds, the return value is nonzero. If the function fails, the return value is zero. To get extended error information, call <a href="/windows/desktop/api/errhandlingapi/nf-errhandlingapi-getlasterror">GetLastError</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//winuser/nf-winuser-getclientrect">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
         </member>
         <member name="T:Windows.Win32.WindowsDeleteStringSafeHandle">
             <summary>
