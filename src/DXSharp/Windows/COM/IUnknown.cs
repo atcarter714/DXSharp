@@ -26,7 +26,7 @@ namespace DXSharp.Windows.COM;
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iunknown">here</a>.
 /// </remarks>
 //[ComImport, Guid("00000000-0000-0000-C000-000000000046")]
-public interface IUnknown : IDisposable
+public interface IUnknown : IDisposable, IAsyncDisposable
 {
 	/// <summary>
 	/// Gets the address of the underlying IUnknown COM interface

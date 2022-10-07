@@ -168,6 +168,8 @@ public class Object: IObject
 		GC.SuppressFinalize(this);
 	}
 
+	public ValueTask DisposeAsync() => throw new NotImplementedException();
+
 	#endregion
 
 

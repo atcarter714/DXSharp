@@ -75,8 +75,7 @@ public static partial class DXGIFunctions
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	/// <exception cref="COMException">Thrown if the call fails and contains detailed error information</exception>
 	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
-	internal static T? CreateDXGIFactory<T>() where T : IDXGIFactory
-	{
+	internal static T? CreateDXGIFactory<T>() where T : IDXGIFactory {
 		var factory = DXGIFunctions.CreateDXGIFactory<T>( out var hr );
 		hr.ThrowOnFailure();
 		return factory;
