@@ -16,14 +16,13 @@ namespace BasicTests.COM;
 
 
 
-[TestFixture]
+[TestFixture, FixtureLifeCycle(LifeCycle.SingleInstance)]
 internal class ComPtrTests
 {
-	HRESULT hr;
-	IntPtr address;
-	IDXGIFactory7? factory7;
-	
-	ComPtr<IDXGIFactory7>? factory7Ptr;
+	static HRESULT hr;
+	static IntPtr address;
+	static IDXGIFactory7? factory7;
+	static ComPtr<IDXGIFactory7>? factory7Ptr;
 
 	[OneTimeSetUp]
 	public void SetUp() {
@@ -63,7 +62,7 @@ internal class ComPtrTests
 	{
 		// Create a ComPtr<IDXGIFactory7>:
 		factory7Ptr = new ComPtr<IDXGIFactory7>(factory7);
-		this.address = factory7Ptr.Pointer;
+		address = factory7Ptr.Pointer;
 
 		// Assert that the ComPtr has a valid internal pointer:
 		Assert.That(factory7Ptr.Pointer, Is.Not.EqualTo(IntPtr.Zero));

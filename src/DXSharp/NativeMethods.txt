@@ -1,7 +1,6 @@
 ﻿// DirectX libraries:
 dxgi.*
 d3d12.*
-D3D12Core.*
 d3d11.*
 
 // DXGI COM Interfaces:
@@ -10,7 +9,6 @@ IDXGIAdapter4
 IDXGIOutput6
 
 // DXGI Enumerations:
-DXGI_USAGE
 DXGI_SWAP_CHAIN_FLAG
 DXGI_FEATURE_DATA_FORMAT_INFO
 

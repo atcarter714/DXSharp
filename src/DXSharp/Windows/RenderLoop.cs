@@ -1,4 +1,11 @@
-﻿// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
+﻿// -----------------------------------------------------------------------------------
+// NOTE: This code was adapted from the implementation by the SharpDX project.
+// It has been ported to this DXSharp library implementation and it has been
+// cleaned up and polished to modern C# 10.0/11.0 style and code standards ...
+// -----------------------------------------------------------------------------------
+// ORIGINAL COPYRIGHT NOTICE:
+// -----------------------------------------------------------------------------------
+// Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -17,6 +24,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
+// -----------------------------------------------------------------------------------
 
 #region Using Directives
 using System;
@@ -59,10 +67,19 @@ namespace DXSharp.Windows;
 /// </remarks>
 public class RenderLoop : IDisposable
 {
+	/// <summary>
+	/// Delegate for the rendering loop.
+	/// </summary>
+	public delegate void RenderCallback();
+
+
+
 	IntPtr controlHandle;
 	Control? control;
 	bool isControlAlive;
 	bool switchControl;
+
+
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="RenderLoop"/> class.
@@ -72,10 +89,7 @@ public class RenderLoop : IDisposable
 	/// <summary>
 	/// Initializes a new instance of the <see cref="RenderLoop"/> class.
 	/// </summary>
-	public RenderLoop( Control control )
-	{
-		Control = control;
-	}
+	public RenderLoop( Control control ) => Control = control;
 
 	/// <summary>
 	/// Gets or sets the control to associate with the current render loop.
@@ -84,27 +98,23 @@ public class RenderLoop : IDisposable
 	/// <exception cref="System.InvalidOperationException">Control is already disposed</exception>
 	public Control? Control
 	{
-		get
-		{
-			return control;
-		}
+		get => control;
+		
 		set
 		{
 			if (control == value) return;
 
 			// Remove any previous control
-			if (control != null && !switchControl)
+			if ( control is not null && !switchControl )
 			{
 				isControlAlive = false;
 				control.Disposed -= ControlDisposed;
 				controlHandle = IntPtr.Zero;
 			}
 
-			if (value != null && value.IsDisposed)
-			{
-				throw new InvalidOperationException("Control is already disposed");
-			}
-
+			if ( value is not null && value.IsDisposed )
+				throw new InvalidOperationException( "Control is already disposed" );
+			
 			control = value;
 			switchControl = true;
 		}
@@ -117,6 +127,11 @@ public class RenderLoop : IDisposable
 	/// <remarks>By default, RenderLoop is using a custom window message loop that is more lightweight than <see cref="Application.DoEvents" /> to process windows event message. 
 	/// Set this parameter to true to use the default <see cref="Application.DoEvents"/>.</remarks>
 	public bool UseApplicationDoEvents { get; set; }
+
+
+
+	void ControlDisposed( object? sender, EventArgs e ) => isControlAlive = false;
+
 
 	/// <summary>
 	/// Calls this method on each frame.
@@ -180,11 +195,6 @@ public class RenderLoop : IDisposable
 		return isControlAlive || switchControl;
 	}
 
-	void ControlDisposed( object sender, EventArgs e )
-	{
-		isControlAlive = false;
-	}
-
 	/// <summary>
 	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
 	/// </summary>
@@ -193,18 +203,11 @@ public class RenderLoop : IDisposable
 		Control = null;
 	}
 
-	/// <summary>
-	/// Delegate for the rendering loop.
-	/// </summary>
-	public delegate void RenderCallback();
 
 	/// <summary>
 	/// Runs the specified main loop in the specified context.
 	/// </summary>
-	public static void Run( ApplicationContext context, RenderCallback renderCallback )
-	{
-		Run(context.MainForm, renderCallback);
-	}
+	public static void Run( ApplicationContext context, RenderCallback renderCallback ) => Run( context.MainForm, renderCallback );
 
 	/// <summary>
 	/// Runs the specified main loop for the specified windows form.
@@ -215,16 +218,14 @@ public class RenderLoop : IDisposable
 	/// <exception cref="System.ArgumentNullException">form
 	/// or
 	/// renderCallback</exception>
-	public static void Run( Control form, RenderCallback renderCallback, bool useApplicationDoEvents = false )
+	public static void Run( Control? form, RenderCallback renderCallback, bool useApplicationDoEvents = false )
 	{
-		if (form == null) throw new ArgumentNullException("form");
-		if (renderCallback == null) throw new ArgumentNullException("renderCallback");
+		if ( form is null ) throw new ArgumentNullException( "form" );
+		if ( renderCallback is null ) throw new ArgumentNullException( "renderCallback" );
 
 		form.Show();
-		using (var renderLoop = new RenderLoop(form) { UseApplicationDoEvents = useApplicationDoEvents })
-		{
-			while (renderLoop.NextFrame())
-			{
+		using ( var renderLoop = new RenderLoop( form ) { UseApplicationDoEvents = useApplicationDoEvents } ) {
+			while ( renderLoop.NextFrame() ) {
 				renderCallback();
 			}
 		}
@@ -236,12 +237,6 @@ public class RenderLoop : IDisposable
 	/// <value>
 	/// 	<c>true</c> if this instance is application idle; otherwise, <c>false</c>.
 	/// </value>
-	public static bool IsIdle
-	{
-		get
-		{
-			MSG msg;
-			return (bool)(PInvoke.PeekMessage(out msg, HWND.Null, 0, 0, 0) == 0);
-		}
-	}
-}
+	public static bool IsIdle => PInvoke.PeekMessage( out var msg, HWND.Null, 0, 0, 0 );
+
+};

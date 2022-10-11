@@ -329,7 +329,15 @@ namespace DXSharp.DXGI
 		V208 = 131U,
 		/// <summary>An 8 bit YCbCrA 4:4:4:4 rendering format.</summary>
 		V408 = 132U,
+		/// <summary>
+		/// For information about sampler feedback please see the 
+		/// <a href="https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html">article by Microsoft</a> ...
+		/// </summary>
 		SAMPLER_FEEDBACK_MIN_MIP_OPAQUE = 189U,
+		/// <summary>
+		/// For information about sampler feedback please see the 
+		/// <a href="https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html">article by Microsoft</a> ...
+		/// </summary>
 		SAMPLER_FEEDBACK_MIP_REGION_USED_OPAQUE = 190U,
 		/// <summary>
 		/// <para>Forces this enumeration to compile to 32 bits in size. Without this value, some compilers would allow this enumeration to compile to a size other than 32 bits. This value is not used.</para>

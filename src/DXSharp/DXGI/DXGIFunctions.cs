@@ -29,12 +29,25 @@ namespace DXSharp.DXGI;
 /// </remarks>
 public enum FactoryCreateFlags: uint
 {
+	/// <summary>
+	/// No flags
+	/// </summary>
 	None = 0x00,
+	/// <summary>
+	/// Enable debug layer
+	/// </summary>
 	DEBUG = 0x01,
 };
 
 
-
+/// <summary>
+/// Defines the DXGI-related functions of the Windows SDK
+/// </summary>
+/// <remarks>
+/// See the documentation for the 
+/// <a href="https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/d3d10-graphics-reference-dxgi-functions">DXGI functions</a> 
+/// for a complete list with additional information
+/// </remarks>
 public static partial class DXGIFunctions
 {
 	// Native Interop Signatures:

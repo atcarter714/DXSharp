@@ -84,7 +84,7 @@ public interface IUnknown : IDisposable, IAsyncDisposable
 
 internal interface IUnknown<T>: IUnknown where T: class
 {
-	internal ComPtr<T> ComPtr { get; }
+	internal ComPtr<T>? ComPtr { get; }
 
-	new IntPtr Pointer => ComPtr.Pointer;
+	new IntPtr Pointer => (ComPtr is null) ? IntPtr.Zero : ComPtr.Pointer;
 };

@@ -1408,6 +1408,18 @@
         <member name="F:DXSharp.DXGI.Format.V408">
             <summary>An 8 bit YCbCrA 4:4:4:4 rendering format.</summary>
         </member>
+        <member name="F:DXSharp.DXGI.Format.SAMPLER_FEEDBACK_MIN_MIP_OPAQUE">
+            <summary>
+            For information about sampler feedback please see the 
+            <a href="https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html">article by Microsoft</a> ...
+            </summary>
+        </member>
+        <member name="F:DXSharp.DXGI.Format.SAMPLER_FEEDBACK_MIP_REGION_USED_OPAQUE">
+            <summary>
+            For information about sampler feedback please see the 
+            <a href="https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html">article by Microsoft</a> ...
+            </summary>
+        </member>
         <member name="F:DXSharp.DXGI.Format.FORCE_UINT">
             <summary>
             <para>Forces this enumeration to compile to 32 bits in size. Without this value, some compilers would allow this enumeration to compile to a size other than 32 bits. This value is not used.</para>
@@ -1440,6 +1452,26 @@
             The D3D11_CREATE_DEVICE_DEBUG flag is specified during device creation, 
             for example using D3D11CreateDevice (or the swapchain method, or the 
             Direct3D 10 equivalents).
+            </remarks>
+        </member>
+        <member name="F:DXSharp.DXGI.FactoryCreateFlags.None">
+            <summary>
+            No flags
+            </summary>
+        </member>
+        <member name="F:DXSharp.DXGI.FactoryCreateFlags.DEBUG">
+            <summary>
+            Enable debug layer
+            </summary>
+        </member>
+        <member name="T:DXSharp.DXGI.DXGIFunctions">
+            <summary>
+            Defines the DXGI-related functions of the Windows SDK
+            </summary>
+            <remarks>
+            See the documentation for the 
+            <a href="https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/d3d10-graphics-reference-dxgi-functions">DXGI functions</a> 
+            for a complete list with additional information
             </remarks>
         </member>
         <member name="M:DXSharp.DXGI.DXGIFunctions.CreateDXGIFactory``1(Windows.Win32.Foundation.HRESULT@)">
@@ -1648,6 +1680,19 @@
             <param name="message">Exception message</param>
             <param name="innerException">Inner exception</param>
         </member>
+        <member name="T:DXSharp.Windows.COM.ComPtr">
+            <summary>
+            Base class of COM object pointers which provides a somewhat
+            similar set of functionality to the native 
+            <a href="https://learn.microsoft.com/en-us/cpp/cppcx/wrl/comptr-class?view=msvc-170"><c>wrl::ComPtr&lt;T&gt;</c></a> template 
+            class used in C++ COM programming, like DirectX.
+            </summary>
+            <remarks>
+            The <c>ComPtr</c> type is a type of "smart pointer" which holds the actual memory address of a COM object
+            and helps automatically relinquish native resources when it is <i>disposed</i> or goes out of scope. It 
+            also provides methods for reference counting and COM interface management functionality.
+            </remarks>
+        </member>
         <member name="P:DXSharp.Windows.COM.ComPtr.Interface">
             <summary>
             The underlying COM interface
@@ -1678,10 +1723,29 @@
             disposed of from this call
             </param>
         </member>
+        <member name="M:DXSharp.Windows.COM.ComPtr.Dispose">
+            <summary>
+            Releases native COM interface references so that they can be
+            freed from memory when the reference count reaches zero.
+            </summary>
+        </member>
+        <member name="M:DXSharp.Windows.COM.ComPtr.DisposeAsync">
+            <summary>
+            Asynchronously releases references to underlying native COM interfaces
+            so that the memory can be freed when the reference count reaches zero.
+            </summary>
+            <returns>An async ValueTask</returns>
+        </member>
         <member name="T:DXSharp.Windows.COM.ComPtr`1">
             <summary>
-            Wraps a COM object interface
+            Provides a set of functionality similar to the native 
+            <a href="https://learn.microsoft.com/en-us/cpp/cppcx/wrl/comptr-class?view=msvc-170"><c>wrl::ComPtr&lt; <typeparamref name="T"/> &gt;</c></a> template.
             </summary>
+            <remarks>
+            The <c>ComPtr&lt; <typeparamref name="T"/> &gt;</c> type is a type of "smart pointer" which holds the actual memory address of a COM object
+            and helps automatically relinquish native resources when it is <i>disposed</i> or goes out of scope. It 
+            also provides methods for reference counting and COM interface management functionality.
+            </remarks>
             <typeparam name="T">Type of COM interface</typeparam>
         </member>
         <member name="P:DXSharp.Windows.COM.ComPtr`1.Interface">
@@ -1737,6 +1801,11 @@
             <summary>
             Default Rendering Form.
             </summary>
+            <remarks>
+            <para><h3><b>NOTE:</b></h3></para>
+            This code was adapter from SharpDX project's SharpDX.Windows.RenderForm type.
+            It is provided as a helper class, and for its familiarity and usefulness.
+            </remarks>
         </member>
         <member name="M:DXSharp.Windows.RenderForm.#ctor">
             <summary>
@@ -1838,6 +1907,12 @@
             </summary>
             <param name="e">A <see cref="T:System.Windows.Forms.PaintEventArgs"/> that contains the event data.</param>
         </member>
+        <member name="M:DXSharp.Windows.RenderForm.WndProc(System.Windows.Forms.Message@)">
+            <summary>
+            Override windows message loop handling.
+            </summary>
+            <param name="m">The Windows <see cref="T:System.Windows.Forms.Message"/> to process.</param>
+        </member>
         <member name="M:DXSharp.Windows.RenderForm.OnPauseRendering(System.EventArgs)">
             <summary>
             Raises the Pause Rendering event.
@@ -1855,6 +1930,12 @@
             Raises the User resized event.
             </summary>
             <param name="e">The <see cref="T:System.EventArgs"/> instance containing the event data.</param>
+        </member>
+        <member name="M:DXSharp.Windows.RenderForm.OnMonitorChanged(System.EventArgs)">
+            <summary>
+            Raises the MonitorChanged event
+            </summary>
+            <param name="e">Event arguments</param>
         </member>
         <member name="M:DXSharp.Windows.RenderForm.OnAppActivated(System.EventArgs)">
             <summary>
@@ -1886,12 +1967,6 @@
             </summary>
             <param name="e">The <see cref="T:System.ComponentModel.CancelEventArgs"/> instance containing the event data.</param>
         </member>
-        <member name="M:DXSharp.Windows.RenderForm.WndProc(System.Windows.Forms.Message@)">
-            <summary>
-            Override windows message loop handling.
-            </summary>
-            <param name="m">The Windows <see cref="T:System.Windows.Forms.Message"/> to process.</param>
-        </member>
         <member name="T:DXSharp.Windows.RenderLoop">
             <summary>
             RenderLoop provides a rendering loop infrastructure. See remarks for usage. 
@@ -1918,6 +1993,11 @@
             RenderForms and WinForms and potentially a native Win32 window.
             </para>
             </remarks>
+        </member>
+        <member name="T:DXSharp.Windows.RenderLoop.RenderCallback">
+            <summary>
+            Delegate for the rendering loop.
+            </summary>
         </member>
         <member name="M:DXSharp.Windows.RenderLoop.#ctor">
             <summary>
@@ -1954,11 +2034,6 @@
         <member name="M:DXSharp.Windows.RenderLoop.Dispose">
             <summary>
             Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-            </summary>
-        </member>
-        <member name="T:DXSharp.Windows.RenderLoop.RenderCallback">
-            <summary>
-            Delegate for the rendering loop.
             </summary>
         </member>
         <member name="M:DXSharp.Windows.RenderLoop.Run(System.Windows.Forms.ApplicationContext,DXSharp.Windows.RenderLoop.RenderCallback)">
@@ -19768,7 +19843,7 @@
             <summary>
             Determines if the given object is equal to this one
             </summary>
-            <param name="other">object to compare</param>
+            <param name="obj">object to compare</param>
             <returns>True if they are equal, otherwise false</returns>
         </member>
         <member name="M:Windows.Win32.Foundation.HINSTANCE.GetHashCode">

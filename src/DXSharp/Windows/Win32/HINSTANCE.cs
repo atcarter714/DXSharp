@@ -65,7 +65,7 @@ public readonly struct HINSTANCE: IEquatable<HINSTANCE>
 	/// <summary>
 	/// Determines if the given object is equal to this one
 	/// </summary>
-	/// <param name="other">object to compare</param>
+	/// <param name="obj">object to compare</param>
 	/// <returns>True if they are equal, otherwise false</returns>
 	public override bool Equals( object obj ) => obj is HINSTANCE other && this.Equals( other );
 
