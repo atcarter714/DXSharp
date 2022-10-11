@@ -16,32 +16,48 @@ namespace BasicTests.COM;
 
 
 
-[TestFixture(Author ="Aaron T. Carter", Category = "COM Interop", 
-	Description ="Testing the COM pointer wrapper class")]
+[TestFixture]
 internal class ComPtrTests
 {
 	HRESULT hr;
 	IntPtr address;
 	IDXGIFactory7? factory7;
+	
 	ComPtr<IDXGIFactory7>? factory7Ptr;
 
-	[SetUp]
+	[OneTimeSetUp]
 	public void SetUp() {
 		hr = PInvoke.CreateDXGIFactory2(0x00u, typeof(IDXGIFactory7).GUID, out var ppFactory);
 		factory7 = (IDXGIFactory7)ppFactory;
 	}
 
+	[OneTimeTearDown]
+	public void Cleanup()
+	{
+		hr = default;
+		address = default;
+		factory7 = null;
+		factory7Ptr = null;
+	}
 
 
 	[Test]
-	public void Test_ComPtr()
+	public void Test_Create_ComPtr()
 	{
 		// Ensure PInvoke call succeeded:
 		Assert.True(hr.Succeeded);
 
 		Create_ComPtr_Factory7();
+	}
+
+	[Test]
+	public void Test_Dispose_ComPtr()
+	{
 		Release_ComPtr_Factory7();
 	}
+
+
+
 
 	void Create_ComPtr_Factory7()
 	{
@@ -60,7 +76,7 @@ internal class ComPtrTests
 	{
 		Assert.NotNull(factory7Ptr);
 		factory7Ptr?.Dispose();
-
+		
 		Assert.IsTrue(factory7Ptr.Disposed);
 		Assert.That(IntPtr.Zero, Is.EqualTo(factory7Ptr.Pointer));
 		Assert.IsNull(factory7Ptr.Interface);

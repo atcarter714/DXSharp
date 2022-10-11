@@ -81,3 +81,10 @@ public interface IUnknown : IDisposable, IAsyncDisposable
 		return hr;
 	}
 };
+
+internal interface IUnknown<T>: IUnknown where T: class
+{
+	internal ComPtr<T> ComPtr { get; }
+
+	new IntPtr Pointer => ComPtr.Pointer;
+};

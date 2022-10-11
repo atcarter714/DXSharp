@@ -8,6 +8,8 @@ using DXSharp.DXGI;
 using DXSharp.DXGI.XTensions;
 
 using NUnit.Framework.Internal;
+
+using Windows.Win32.Graphics.Dxgi;
 #endregion
 
 namespace BasicTests.DXGI;
@@ -88,6 +90,6 @@ internal class DXGITests
 	[Test(TestOf = typeof(DXGIFunctions) )]
 	public void DXGI_Factory_Static_Tests()
 	{
-		
+
 	}
 }

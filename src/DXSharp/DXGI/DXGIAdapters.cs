@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DXSharp.DXGI;
 
-public interface IAdapter: IObject
+internal interface IAdapter: IObject
 {
 
 }

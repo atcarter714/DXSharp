@@ -50,22 +50,22 @@ public static partial class DXGIXTensions
 	/// resources. This responsibility is left to the application. This exists purely for
 	/// developer "quality of life".
 	/// </remarks>
-	public static List<IAdapter> GetAllAdapters( this IFactory factory )
-	{
-		uint index = 0x00;
-		HRESULT hr = default;
-		const uint MAX_INDEX = 0x10;
+	//public static List<IAdapter> GetAllAdapters( this IFactory factory )
+	//{
+	//	uint index = 0x00;
+	//	HRESULT hr = default;
+	//	const uint MAX_INDEX = 0x10;
 
-		var adapters = new List<IAdapter>();
+	//	var adapters = new List<IAdapter>();
 
-		while ( HRESULT.DXGI_ERROR_NOT_FOUND !=
-			( hr = factory.EnumAdapters( index++, out var pAdapter ) ) && index <= MAX_INDEX ) {
-			if (pAdapter is null) continue;
-			adapters.Add(pAdapter);
-		}
+	//	while ( HRESULT.DXGI_ERROR_NOT_FOUND !=
+	//		( hr = factory.EnumAdapters( index++, out var pAdapter ) ) && index <= MAX_INDEX ) {
+	//		if (pAdapter is null) continue;
+	//		adapters.Add(pAdapter);
+	//	}
 
-		return adapters;
-	}
+	//	return adapters;
+	//}
 
 	
 };

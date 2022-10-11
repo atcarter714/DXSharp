@@ -19,6 +19,7 @@ using System.Windows.Input;
 
 using DXSharp.DXGI;
 using DXSharp.Windows.COM;
+using Accessibility;
 #endregion
 
 namespace DXSharp.DXGI;
@@ -28,7 +29,7 @@ namespace DXSharp.DXGI;
 /// <summary>
 /// Wrapper interface for the native IDXGIObject COM interface
 /// </summary>
-public interface IObject : IUnknown
+internal interface IObject : IUnknown<IDXGIObject>
 {
 	/// <summary>Sets application-defined data to the object and associates that data with a GUID.</summary>
 	/// <param name="Name">
@@ -111,6 +112,11 @@ public interface IObject : IUnknown
 	void GetParent(in Guid riid, out object ppParent);
 };
 
+internal interface IObject<T>: IObject where T: class
+{
+
+};
+
 
 public class Object: IObject
 {
@@ -137,6 +143,8 @@ public class Object: IObject
 	#region IDisposable Implementation
 	protected bool disposedValue;
 	public bool Disposed => disposedValue;
+
+	ComPtr<IDXGIObject> IUnknown<IDXGIObject>.ComPtr { get; }
 
 	protected virtual void Dispose( bool disposing )
 	{
@@ -222,5 +230,4 @@ public class Object: IObject
 
 		return newDxgiObject;
 	}
-};
-
+}

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DXSharp": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

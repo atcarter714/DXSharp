@@ -26,13 +26,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="DXSharp_ICON_512.ico" />
+    <Content Include="DXSharp_ICON_512.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <None Include="..\..\file\img\DXSharp_Logo_00_512.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="..\..\README.md">
       <Pack>True</Pack>

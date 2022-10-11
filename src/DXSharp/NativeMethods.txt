@@ -1,6 +1,7 @@
 ﻿// DirectX libraries:
 dxgi.*
 d3d12.*
+D3D12Core.*
 d3d11.*
 
 // DXGI COM Interfaces:
@@ -13,9 +14,52 @@ DXGI_USAGE
 DXGI_SWAP_CHAIN_FLAG
 DXGI_FEATURE_DATA_FORMAT_INFO
 
+
+
+// D3D12 Structures:
+D3D12_VIEWPORT					// NOTE: D3D12_RECT is just a typedef of RECT
+
+
+// D3D12 Interfaces:
+ID3D12Device
+ID3D12Device1
+ID3D12Device2
+ID3D12Device3
+ID3D12Device4
+ID3D12Device5
+ID3D12Device6
+ID3D12Device7
+ID3D12Device8
+ID3D12Device9
+
+ID3D12CommandQueue
+ID3D12CommandList
+ID3D12GraphicsCommandList1
+ID3D12GraphicsCommandList2
+ID3D12GraphicsCommandList3
+ID3D12GraphicsCommandList4
+ID3D12GraphicsCommandList5
+
+ID3D12Debug
+ID3D12Debug1
+ID3D12Debug2
+ID3D12Debug3
+ID3D12Debug4
+ID3D12Debug5
+
+IDXGISwapChain
+IDXGISwapChain1
+IDXGISwapChain2
+IDXGISwapChain3
+IDXGISwapChain4
+
 // Win32 API Stuff:
 IUnknown
 GetClientRect
+PeekMessage
+GetMessage
+TranslateMessage
+DispatchMessage
 
 // HRESULT constants:
 S_OK 			// Operation successful 				-	0x00000000

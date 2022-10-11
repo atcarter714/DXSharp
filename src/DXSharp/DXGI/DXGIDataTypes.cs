@@ -699,6 +699,14 @@ public struct SampleDescription
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgicommon/ns-dxgicommon-dxgi_sample_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
 	public uint Quality { get => quality; set => quality = value; }
+
+
+
+	public static implicit operator SampleDescription( 
+		(uint count, uint quality) values ) => new( values.count, values.quality );
+
+	public static implicit operator (uint count, uint quality)(SampleDescription sDesc) => 
+		( count: sDesc.Count, quality: sDesc.Quality );
 };
 
 
@@ -860,6 +868,37 @@ public struct SwapChainDescription1
 	{
 		this.Width = width;
 		this.Height = height;
+		this.Format = format;
+		this.Stereo = stereo;
+		this.SampleDesc = sampleDesc;
+		this.BufferUsage = bufferUsage;
+		this.BufferCount = bufferCount;
+		this.Scaling = scaling;
+		this.SwapEffect = swapEffect;
+		this.AlphaMode = alphaMode;
+		this.Flags = flags;
+	}
+
+	/// <summary>
+	/// Creates a new SwapChainDescription1
+	/// </summary>
+	/// <param name="width">The buffer width</param>
+	/// <param name="height">The buffer height</param>
+	/// <param name="format">The DXGI buffer format</param>
+	/// <param name="stereo">Will swapchain render in stereoscopic mode (e.g., VR mode?)</param>
+	/// <param name="sampleDesc">The multisample settings description</param>
+	/// <param name="bufferUsage">The buffer usage flags</param>
+	/// <param name="bufferCount">Number of backbuffers to use</param>
+	/// <param name="scaling">The scaling flags</param>
+	/// <param name="swapEffect">The swap effect flags</param>
+	/// <param name="alphaMode">The alpha blending settings description</param>
+	/// <param name="flags">Additional swapchain flags</param>
+	public SwapChainDescription1(
+		int width, int height, Format format, bool stereo, SampleDescription sampleDesc,
+		Usage bufferUsage, uint bufferCount, Scaling scaling, SwapEffect swapEffect,
+		AlphaMode alphaMode, SwapChainFlags flags = default) {
+		this.Width = (uint)width;
+		this.Height = (uint)height;
 		this.Format = format;
 		this.Stereo = stereo;
 		this.SampleDesc = sampleDesc;

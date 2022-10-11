@@ -1,4 +1,5 @@
-﻿using System;
+﻿#region Using Directives
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -11,10 +12,13 @@ using DXSharp.DXGI.XTensions;
 
 using DXSharp.Windows;
 using DXSharp.Windows.COM;
+#endregion
 
 namespace DXSharp.Windows.COM;
 
-public class COMBaseObject<T> : IUnknown, IAsyncDisposable
+
+
+public class COMBaseObject<T> : IUnknown, IAsyncDisposable where T: class
 {
 	// TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
 	~COMBaseObject()
@@ -23,14 +27,15 @@ public class COMBaseObject<T> : IUnknown, IAsyncDisposable
 		Dispose(disposing: false);
 	}
 	
-	private bool disposedValue;
+	
 	public IntPtr Pointer { get; set; }
 	
-	internal virtual ComPtr<object>? COMPointer { get; set; }
+	internal virtual ComPtr<T>? COMPointer { get; set; }
 
 	#region Disposable Pattern
 
 	public bool Disposed { get; }
+	private bool disposedValue;
 
 	protected virtual void Dispose(bool disposing)
 	{
