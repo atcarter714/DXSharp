@@ -1,10 +1,13 @@
-﻿// -----------------------------------------------------------------------------------
+﻿// COPYRIGHT NOTICES:
+// --------------------------------------------------------------------------------
 // NOTE: This code was adapted from the implementation by the SharpDX project.
 // It has been ported to this DXSharp library implementation and it has been
 // cleaned up and polished to modern C# 10.0/11.0 style and code standards ...
-// -----------------------------------------------------------------------------------
+// Special thanks to Alexandre Mutel and all contributors who worked on both the
+// SharpDX and SlimDX projects in the good ol' days!
+// --------------------------------------------------------------------------------
 // ORIGINAL COPYRIGHT NOTICE:
-// -----------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 // Copyright (c) 2010-2014 SharpDX - Alexandre Mutel
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,7 +31,7 @@
 // Original code from SlimDX project.
 // Greetings to SlimDX Group. Original code published with the following license:
 // -----------------------------------------------------------------------------
-/*
+/* SlimDX Copyright Notice (original):
  * Copyright (c) 2007-2011 SlimDX Group
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -62,9 +65,9 @@ using Windows.Win32;
 using Windows.Win32.Foundation;
 #endregion
 
+
+
 namespace DXSharp.Windows;
-
-
 
 /// <summary>
 /// Default Rendering Form.

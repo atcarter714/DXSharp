@@ -1,6 +1,32 @@
-﻿#region Using Directives
+﻿// COPYRIGHT NOTICES:
+// --------------------------------------------------------------------------------
+// Copyright © 2022 DXSharp - ATC - Aaron T. Carter
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+// -----------------------------------------------------------------------------
+
+
+
+#region Using Directives
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 #endregion
@@ -28,15 +54,12 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 			throw new ArgumentNullException( "comObj" );
 
 		if ( !Marshal.IsComObject(comObj) )
-			throw new COMException( $"ComPtr< object >( comObj ): " +
-				@$"The parameter ""{comObj}"" is not a valid COM interface object!" );
+			throw new COMException( $"ComPtr( {comObj.GetType().Name} {nameof(comObj)} ): " +
+				@$"The parameter ""{nameof(comObj)}"" ({comObj.GetType().Name}) is not a valid COM object!" );
 #endif
 
-		IntPtr pComObj = Marshal.GetIUnknownForObject( comObj) ;
-
-		if ( pComObj == IntPtr.Zero )
-			throw new COMException($"ComPtr< object >( object comObj ): " +
-				$"Unable to obtain pointer to IUnknown from {comObj}!");
+		// Get pointer to IUnknown interface:
+		IntPtr pComObj = getPointerTo( comObj );
 
 		// Assign our valid data:
 		this.Interface = comObj;
@@ -50,9 +73,8 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 			throw new COMException( $"ComPtr< object >( IntPtr pComObj ): " +
 				"The given address is a null pointer!" );
 
-		var comObj = Marshal.GetObjectForIUnknown( pComObj ) ??
-			throw new COMException( $"ComPtr< object >( IntPtr ): " +
-				$"Unable to obtain object reference to COM interface from 0x{Pointer.ToString("X8")}!" );
+		// Get object ref to COM interface:
+		var comObj = getCOMObjectFrom( pComObj );
 		
 		// Assign our valid data:
 		this.Interface = comObj;
@@ -118,7 +140,11 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 
 			this.Interface = null;
 			this.Pointer = IntPtr.Zero;
-			this.GUID = Guid.Empty;
+			
+			// We may actually want to leave GUID alone so it can be determined
+			// after Dispose is called in case it's ever needed -- it's not a
+			// thing that ever changes anyways and can't really do any harm ...
+			//this.GUID = Guid.Empty;
 
 			this.disposedValue = true;
 		}
@@ -157,6 +183,45 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	}
 
 	#endregion
+
+	//! TODO: Find out if there's a better way!
+	internal int getCurrentRefCount() {
+		try {
+			int refCount	= Marshal.AddRef(this.Pointer);
+			int prev		= refCount;
+			refCount		= Marshal.Release(this.Pointer);
+			return refCount;
+		}
+		catch { return -1; }
+	}
+
+	protected static IntPtr getPointerTo( object comObj ) {
+
+		IntPtr pComObj = Marshal.GetIUnknownForObject( comObj );
+
+#if DEBUG || !STRIP_CHECKS
+		if ( pComObj == IntPtr.Zero )
+			throw new COMException( $"ComPtr< object >( object comObj ): " +
+				$"Unable to obtain pointer to IUnknown from {comObj}!" );
+#endif
+
+		return pComObj;
+	}
+
+	protected static object getCOMObjectFrom( IntPtr ptr ) {
+
+		var comObj = Marshal.GetObjectForIUnknown( ptr )
+#if DEBUG || !STRIP_CHECKS
+			?? throw new COMException($"ComPtr< object >( IntPtr ): " +
+				$"Unable to obtain object reference to COM interface from 0x{ptr.ToString("X8")}!");
+#else
+			;
+#endif
+
+		return comObj;
+	}
+
+
 };
 
 /// <summary>
@@ -173,23 +238,8 @@ internal sealed class ComPtr<T>: ComPtr where T: class
 {
 	//ComPtr() => GUID = typeof(T).GUID;
 	
-	internal ComPtr( T comObj ): base( comObj )
-	{
-//#if DEBUG || !STRIP_CHECKS
-//		if (comObj is null)
-//			throw new ArgumentNullException("comObj");
-
-//		if (!Marshal.IsComObject(comObj))
-//			throw new COMException($"ComPtr<{typeof(T).Name}>( comObj ): " +
-//				@$"The parameter ""{comObj}"" is not a valid COM interface object!");
-//#endif
-
-		//		IntPtr pComObj = Marshal.GetIUnknownForObject(comObj);
-
-		//		if (pComObj == IntPtr.Zero)
-		//			throw new COMException($"ComPtr< {typeof(T).Name} >( {typeof(T).Name} comObj ): " +
-		//				$"Unable to obtain pointer to IUnknown from {comObj}!");
-
+	internal ComPtr( T comObj ): base( comObj ) {
+		
 		// Assign our valid data:
 		this.Interface = comObj as T ??
 			throw new COMException( $"ComPtr< {typeof(T).Name} >( {typeof(T).Name} comObj ): " +
@@ -199,23 +249,14 @@ internal sealed class ComPtr<T>: ComPtr where T: class
 		this.GUID = typeof(T).GUID;
 	}
 
-	internal ComPtr( IntPtr pComObj ): base( pComObj )
-	{
-		//if ( pComObj == IntPtr.Zero )
-		//	throw new COMException($"ComPtr<{typeof(T).Name}>( IntPtr pComObj ): " +
-		//		"The given address is a null pointer!");
-
-		//var objRef = Marshal.GetObjectForIUnknown(pComObj) ??
-		//	throw new COMException($"ComPtr< {typeof(T).Name} >( IntPtr pComObj ): " +
-		//		$"Unable to obtain object reference to COM interface from 0x{Pointer.ToString("X8")}!");
-
+	internal ComPtr( IntPtr pComObj ): base( pComObj ) {
 #if DEBUG || !STRIP_CHECKS
 		if (base.Interface is null)
 			throw new NullReferenceException($"ComPtr( object ) constructor was unable to obtain a valid COM interface " +
 				$"reference from the given address 0x{Pointer.ToString("X8")}!");
 #endif
 
-		//// Assign our valid data:
+		// Assign our valid data:
 		this.Interface = base.Interface as T ??
 			throw new COMException($"ComPtr< {typeof(T).Name} >( IntPtr pComObj ): " +
 				$"Unable to convert COM object reference at 0x{Pointer.ToString("X8")} to COM interface type {typeof(T).Name}!");
@@ -323,3 +364,28 @@ internal sealed class ComPtr<T>: ComPtr where T: class
 	//	}
 
 };
+
+//#if DEBUG || !STRIP_CHECKS
+//		if (comObj is null)
+//			throw new ArgumentNullException("comObj");
+
+//		if (!Marshal.IsComObject(comObj))
+//			throw new COMException($"ComPtr<{typeof(T).Name}>( comObj ): " +
+//				@$"The parameter ""{comObj}"" is not a valid COM interface object!");
+//#endif
+
+//		IntPtr pComObj = Marshal.GetIUnknownForObject(comObj);
+
+//		if (pComObj == IntPtr.Zero)
+//			throw new COMException($"ComPtr< {typeof(T).Name} >( {typeof(T).Name} comObj ): " +
+//				$"Unable to obtain pointer to IUnknown from {comObj}!");
+
+// ----------------------------------------------------------------------------------------
+
+//if ( pComObj == IntPtr.Zero )
+//	throw new COMException($"ComPtr<{typeof(T).Name}>( IntPtr pComObj ): " +
+//		"The given address is a null pointer!");
+
+//var objRef = Marshal.GetObjectForIUnknown(pComObj) ??
+//	throw new COMException($"ComPtr< {typeof(T).Name} >( IntPtr pComObj ): " +
+//		$"Unable to obtain object reference to COM interface from 0x{Pointer.ToString("X8")}!");
