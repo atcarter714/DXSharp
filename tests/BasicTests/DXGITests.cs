@@ -15,12 +15,11 @@ using Windows.Win32.Graphics.Dxgi;
 namespace BasicTests.DXGI;
 
 
-
 [TestFixture(Author = "Aaron T. Carter", Category = "DXGI Interop", 
 	Description = "Testing DXSharp.DXGI interop code", TestName = "DXSharp.DXGI")]
 internal class DXGITests
 {
-#region DXGI Structures
+	#region DXGI Structures
 
 	[Test( TestOf = typeof( ModeDescription ), 
 		Description = "Test that DXGI.ModeDescription constructors, operators, etc work correctly" )]
@@ -87,9 +86,9 @@ internal class DXGITests
 
 	#endregion
 
-	[Test(TestOf = typeof(DXGIFunctions) )]
-	public void DXGI_Factory_Static_Tests()
-	{
+	//[Test(TestOf = typeof(DXGIFunctions) )]
+	//public void DXGI_Factory_Static_Tests()
+	//{
 
-	}
-}
+	//}
+};

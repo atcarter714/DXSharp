@@ -22,7 +22,6 @@
 // -----------------------------------------------------------------------------
 
 
-
 #region Using Directives
 using System;
 using System.Collections.Generic;
@@ -32,7 +31,6 @@ using System.Threading.Tasks;
 #endregion
 
 namespace DXSharp.Windows.COM;
-
 
 
 /// <summary>
@@ -48,6 +46,13 @@ namespace DXSharp.Windows.COM;
 /// </remarks>
 internal class ComPtr: IDisposable, IAsyncDisposable
 {
+	/// <summary>
+	/// The GUID of the IUnknown COM interface
+	/// </summary>
+	public static readonly Guid GUID_IUNKNOWN = 
+		Guid.Parse( "00000000-0000-0000-C000-000000000046" );
+
+
 	internal ComPtr( object comObj ) {
 #if DEBUG || !STRIP_CHECKS
 		if ( comObj is null )
@@ -64,7 +69,9 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 		// Assign our valid data:
 		this.Interface = comObj;
 		this.Pointer = pComObj;
-		this.GUID = comObj.GetType().GUID;
+		this.GUID = GUID_IUNKNOWN;
+
+		++nRefs;
 	}
 
 	internal ComPtr( IntPtr pComObj ) {
@@ -80,9 +87,12 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 		this.Interface = comObj;
 		this.Pointer = pComObj;
 		this.GUID = comObj.GetType().GUID;
+
+		++nRefs;
 	}
 
 	~ComPtr() => Dispose( disposing: false );
+
 
 	/// <summary>
 	/// The underlying COM interface
@@ -99,6 +109,11 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	/// </summary>
 	internal Guid GUID { get; private protected set; }
 
+	/// <summary>
+	/// Counts the number of extra references obtained to
+	/// this COM object interface
+	/// </summary>
+	internal int nRefs { get; private set; } = 0;
 
 
 	#region IDisposable/IAsyncDisposable
@@ -147,6 +162,7 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 			//this.GUID = Guid.Empty;
 
 			this.disposedValue = true;
+			--nRefs;
 		}
 	}
 
@@ -185,7 +201,7 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	#endregion
 
 	//! TODO: Find out if there's a better way!
-	internal int getCurrentRefCount() {
+	internal int GetNativeRefCount() {
 		try {
 			int refCount	= Marshal.AddRef(this.Pointer);
 			int prev		= refCount;
@@ -222,7 +238,23 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	}
 
 
+	public int AddRef() => ++nRefs;
+	
+	public int Release() {
+#if DEBUG || !STRIP_CHECKS
+		if ( disposedValue )
+			throw new InvalidOperationException( "ComPtr.Release(): " +
+				"Release was called after this instance has been disposed!" ); 
+#endif
+
+		if ( --nRefs <= 0 )
+			this.Dispose();
+
+		return nRefs;
+	}
 };
+
+
 
 /// <summary>
 /// Provides a set of functionality similar to the native 
@@ -236,8 +268,14 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 /// <typeparam name="T">Type of COM interface</typeparam>
 internal sealed class ComPtr<T>: ComPtr where T: class
 {
-	//ComPtr() => GUID = typeof(T).GUID;
-	
+	//! TODO: We can probably just make a static GUID property
+
+	/// <summary>
+	/// The GUID of the type pointed to by the ComPtr
+	/// </summary>
+	public static readonly Guid RIID = typeof(T).GUID;
+
+
 	internal ComPtr( T comObj ): base( comObj ) {
 		
 		// Assign our valid data:
@@ -246,7 +284,7 @@ internal sealed class ComPtr<T>: ComPtr where T: class
 				$"Unable to obtain COM interface reference to {comObj} of type {typeof(T).Name}!" +
 				$"There may be a COM type mismatch between {comObj.GetType().Name} and {typeof(T).Name}.");
 
-		this.GUID = typeof(T).GUID;
+		this.GUID = RIID;
 	}
 
 	internal ComPtr( IntPtr pComObj ): base( pComObj ) {
@@ -262,7 +300,7 @@ internal sealed class ComPtr<T>: ComPtr where T: class
 				$"Unable to convert COM object reference at 0x{Pointer.ToString("X8")} to COM interface type {typeof(T).Name}!");
 
 		//this.Pointer = pComObj;
-		this.GUID = typeof(T).GUID;
+		this.GUID = RIID;
 	}
 
 	~ComPtr() => Dispose( disposing: false );
@@ -272,98 +310,19 @@ internal sealed class ComPtr<T>: ComPtr where T: class
 	/// </summary>
 	internal new T? Interface { get; private set; }
 
-	protected override void Dispose( bool disposing )
-	{
-		if ( !Disposed )
-		{
+	protected override void Dispose( bool disposing ) {
+		if ( !Disposed ) {
 			base.Dispose( disposing );
 			this.Interface = null;
 		}
 	}
 
-	//	/// <summary>
-	//	/// The underlying COM interface
-	//	/// </summary>
-	//	internal T? Interface { get; private set; }
-
-	//	/// <summary>
-	//	/// Pointer to the underlying COM interface
-	//	/// </summary>
-	//	internal IntPtr Pointer { get; private set; }
-
-	//	/// <summary>
-	//	/// The GUID of the COM interface
-	//	/// </summary>
-	//	internal Guid GUID { get; private set; }
-
-	//	/// <summary>
-	//	/// Indicates if this instance has been disposed
-	//	/// and released its resources and memory
-	//	/// </summary>
-	//	public bool Disposed => disposedValue;
-	//	private bool disposedValue = false;
-
-
-	//	/// <summary>
-	//	/// Disposes of this instance's resources
-	//	/// </summary>
-	//	/// <param name="disposing">
-	//	/// Indicates if managed resources should be
-	//	/// disposed of from this call
-	//	/// </param>
-	//	protected virtual void Dispose(bool disposing)
-	//	{
-	//		if (!disposedValue)
-	//		{
-	//			if (disposing)
-	//			{
-	//				// TODO: dispose managed state (managed objects)
-	//			}
-
-	//			// TODO: free unmanaged resources (unmanaged objects) and override finalizer
-	//			// TODO: set large fields to null
-
-	//			if (Interface is not null)
-	//			{
-	//				int refCount = Marshal.ReleaseComObject(Interface);
-	//			}
-	//			else if (Pointer != IntPtr.Zero)
-	//			{
-	//				int refCount = Marshal.Release(this.Pointer);
-	//			}
-
-	//			this.Interface = null;
-	//			this.Pointer = IntPtr.Zero;
-	//			this.GUID = Guid.Empty;
-
-	//			disposedValue = true;
-	//		}
-	//	}
-
-	//	public void Dispose()
-	//	{
-	//		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-	//		Dispose(disposing: true);
-	//		GC.SuppressFinalize(this);
-	//	}
-
-	//	protected virtual async ValueTask DisposeAsyncCore() { }
-
-	//	public async ValueTask DisposeAsync()
-	//	{
-	//		// Perform async cleanup.
-	//		await DisposeAsyncCore();
-
-	//		// Dispose of unmanaged resources.
-	//		Dispose(false);
-
-	//#pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
-	//		// Suppress finalization.
-	//		GC.SuppressFinalize(this);
-	//#pragma warning restore CA1816 // Dispose methods should call SuppressFinalize
-	//	}
-
 };
+
+
+
+
+// CODE JUNKYARD - Should delete soon if everything works without needing this crap
 
 //#if DEBUG || !STRIP_CHECKS
 //		if (comObj is null)
@@ -389,3 +348,85 @@ internal sealed class ComPtr<T>: ComPtr where T: class
 //var objRef = Marshal.GetObjectForIUnknown(pComObj) ??
 //	throw new COMException($"ComPtr< {typeof(T).Name} >( IntPtr pComObj ): " +
 //		$"Unable to obtain object reference to COM interface from 0x{Pointer.ToString("X8")}!");
+
+//	/// <summary>
+//	/// The underlying COM interface
+//	/// </summary>
+//	internal T? Interface { get; private set; }
+
+//	/// <summary>
+//	/// Pointer to the underlying COM interface
+//	/// </summary>
+//	internal IntPtr Pointer { get; private set; }
+
+//	/// <summary>
+//	/// The GUID of the COM interface
+//	/// </summary>
+//	internal Guid GUID { get; private set; }
+
+//	/// <summary>
+//	/// Indicates if this instance has been disposed
+//	/// and released its resources and memory
+//	/// </summary>
+//	public bool Disposed => disposedValue;
+//	private bool disposedValue = false;
+
+
+//	/// <summary>
+//	/// Disposes of this instance's resources
+//	/// </summary>
+//	/// <param name="disposing">
+//	/// Indicates if managed resources should be
+//	/// disposed of from this call
+//	/// </param>
+//	protected virtual void Dispose(bool disposing)
+//	{
+//		if (!disposedValue)
+//		{
+//			if (disposing)
+//			{
+//				// TODO: dispose managed state (managed objects)
+//			}
+
+//			// TODO: free unmanaged resources (unmanaged objects) and override finalizer
+//			// TODO: set large fields to null
+
+//			if (Interface is not null)
+//			{
+//				int refCount = Marshal.ReleaseComObject(Interface);
+//			}
+//			else if (Pointer != IntPtr.Zero)
+//			{
+//				int refCount = Marshal.Release(this.Pointer);
+//			}
+
+//			this.Interface = null;
+//			this.Pointer = IntPtr.Zero;
+//			this.GUID = Guid.Empty;
+
+//			disposedValue = true;
+//		}
+//	}
+
+//	public void Dispose()
+//	{
+//		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+//		Dispose(disposing: true);
+//		GC.SuppressFinalize(this);
+//	}
+
+//	protected virtual async ValueTask DisposeAsyncCore() { }
+
+//	public async ValueTask DisposeAsync()
+//	{
+//		// Perform async cleanup.
+//		await DisposeAsyncCore();
+
+//		// Dispose of unmanaged resources.
+//		Dispose(false);
+
+//#pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
+//		// Suppress finalization.
+//		GC.SuppressFinalize(this);
+//#pragma warning restore CA1816 // Dispose methods should call SuppressFinalize
+//	}

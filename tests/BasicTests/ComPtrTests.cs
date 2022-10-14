@@ -17,7 +17,7 @@ namespace BasicTests.COM;
 
 
 
-[TestFixture, FixtureLifeCycle(LifeCycle.SingleInstance)]
+[TestFixture, FixtureLifeCycle( LifeCycle.SingleInstance )]
 internal class ComPtrTests
 {
 	static HRESULT hr;
@@ -27,7 +27,10 @@ internal class ComPtrTests
 
 	[OneTimeSetUp]
 	public void SetUp() {
-		hr = PInvoke.CreateDXGIFactory2(0x00u, typeof(IDXGIFactory7).GUID, out var ppFactory);
+
+		hr = PInvoke.CreateDXGIFactory2(
+			0x00u, typeof( IDXGIFactory7 ).GUID, out var ppFactory );
+
 		factory7 = (IDXGIFactory7)ppFactory;
 	}
 
@@ -44,9 +47,6 @@ internal class ComPtrTests
 	[Test, Order(0)]
 	public void Test_Create_ComPtr()
 	{
-		IntPtr iptr = (IntPtr)0x00FF;
-		UIntPtr uptr = new(0x00ACu);
-
 		// Ensure PInvoke call succeeded:
 		Assert.True( hr.Succeeded );
 		Assert.IsNotNull( factory7 );
@@ -56,7 +56,7 @@ internal class ComPtrTests
 		Assert.IsNotNull( factory7Ptr );
 		Assert.IsFalse( factory7Ptr.Disposed );
 		Assert.IsNotNull( factory7Ptr.Interface );
-		Assert.That( factory7Ptr.GUID, Is.EqualTo( typeof(IDXGIFactory7).GUID ) );
+		Assert.That( factory7Ptr.GUID, Is.EqualTo( typeof( IDXGIFactory7 ).GUID ) );
 
 		// Save & verify the COM interface address:
 		address = factory7Ptr.Pointer;

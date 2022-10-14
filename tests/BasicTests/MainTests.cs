@@ -1,3 +1,5 @@
+#pragma warning disable CS1591
+
 #region Using Directives
 using Microsoft.Win32;
 using Microsoft.Win32.SafeHandles;
@@ -41,10 +43,13 @@ public class D3D12_Graphics_Interop
 	 */
 
 	RECT rect;
-	D3D12_VIEWPORT	viewport;
-	static int width = 1024, height	= 768, bufferCount = 2;
+	D3D12_VIEWPORT viewport;
+	
+	static int	width			= 1024, 
+				height			= 768, 
+				bufferCount		= 2;
 
-	static RenderForm renderForm;
+	static RenderForm? renderForm;
 	static IDXGIFactory7? factory;
 	static List<IDXGIAdapter4> adapters;
 	static ID3D12Debug5? debugController;
@@ -52,10 +57,10 @@ public class D3D12_Graphics_Interop
 	static ID3D12Fence? fence1;
 	static ID3D12Device9? device;
 	static IDXGISwapChain4? swapChain;
-	static ID3D12DescriptorHeap rtvHeap;
-	static ID3D12Resource[] renderTargets;
-	static ID3D12RootSignature rootSignature;
-	static ID3D12PipelineState pipelineState;
+	static ID3D12DescriptorHeap? rtvHeap;
+	static ID3D12Resource[]? renderTargets;
+	static ID3D12RootSignature? rootSignature;
+	static ID3D12PipelineState? pipelineState;
 
 	static ID3D12CommandQueue? commandQueue;
 	static ID3D12CommandAllocator? commandAlloc;
@@ -124,7 +129,8 @@ public class D3D12_Graphics_Interop
 	[OneTimeSetUp]
 	public void Setup() {
 		adapters = new List<IDXGIAdapter4>( 0x04 );
-		rect = new RECT() { top = 0, left = 0, right = width, bottom = height, };
+
+		rect = new RECT( 0, 0, width, height );
 		viewport = new D3D12_VIEWPORT() { Height = height, Width = width, 
 			MaxDepth = 1, MinDepth = 0, TopLeftX = 0, TopLeftY = 0 };
 	}
@@ -243,6 +249,7 @@ public class D3D12_Graphics_Interop
 		commandQueue = default;
 		var creatorID = typeof(ID3D12Device9).GUID;
 		var cmdQueueID = typeof(ID3D12CommandQueue).GUID;
+
 		D3D12_COMMAND_QUEUE_DESC queueDesc = new D3D12_COMMAND_QUEUE_DESC() {
 			Flags = D3D12_COMMAND_QUEUE_FLAGS.D3D12_COMMAND_QUEUE_FLAG_NONE,
 			Type = D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -261,7 +268,7 @@ public class D3D12_Graphics_Interop
 	{
 		Assert.IsNotNull(device);
 
-		Assert.DoesNotThrow(() =>
+		Assert.DoesNotThrow( () =>
 		{
 			device.CreateCommandList1(	0x00u,
 										D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -270,7 +277,8 @@ public class D3D12_Graphics_Interop
 										out object cmdListObj);
 
 			commandList = cmdListObj as ID3D12GraphicsCommandList5 ??
-				throw new COMException("Create_D3D12_CommandList(): Cannot obtain ");
+				throw new COMException("Create_D3D12_CommandList(): " +
+					"Cannot obtain reference to D3D12 command list!");
 		});
 		Assert.IsNotNull(commandList);
 	}
@@ -278,6 +286,9 @@ public class D3D12_Graphics_Interop
 	[Test, Order(7)]
 	public void Create_DXGI_SwapChain()
 	{
+		Assert.IsNotNull( renderForm );
+		Assert.IsNotNull( commandQueue );
+
 		// Create swapchain descriptions:
 		var scDesc = new SwapChainDescription1( renderForm.ClientSize.Width, renderForm.ClientSize.Height,
 			Format.R8G8B8A8_UNORM, false, new SampleDescription(1, 0), Usage.RenderTargetOutput, (uint)bufferCount,
@@ -294,117 +305,29 @@ public class D3D12_Graphics_Interop
 				out var swapChainObj);
 
 			swapChain = swapChainObj as IDXGISwapChain4 ??
-				throw new COMException("Initialization of IDXGISwapChain4 interface failed!");
+				throw new COMException( "Initialization of IDXGISwapChain4 interface failed!" );
 		});
 		Assert.IsNotNull(swapChain);
 	}
 
+	[Test, Order(8)]
+	public void Create_D3D12_CommandAlloc() {
 
+		Assert.IsNotNull( device );
 
+		Assert.DoesNotThrow( () => {
+		
+			device.CreateCommandAllocator( 
+				D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT, 
+				typeof( ID3D12CommandAllocator ).GUID, out var allocObj );
 
-	//[Test, Order(0)]
-	public unsafe void DXGI_WIN32_Interop_Internal()
-	{
-		// Prove that essential DXGI internal interop code works
-		// this should be broken down and organized into smaller
-		// tests but for now this works ...
-
-		var hr = CreateDXGIFactory2( 0u, typeof(IDXGIFactory7).GUID, out var factoryObj );
-		Assert.True(hr.Succeeded);
-
-		IDXGIFactory7? factory7 = factoryObj as IDXGIFactory7;
-		Assert.NotNull(factory7);
-
-		Assert.DoesNotThrow(() =>
-		{
-			enumAdapters(factory7);
-		});
-
-		int factoryRefCount = Marshal.ReleaseComObject(factory7);
+			commandAlloc = allocObj as ID3D12CommandAllocator ??
+				throw new COMException( "Create_D3D12_CommandAlloc(): " +
+					"Cannot obtain reference to D3D12 command allocator!" );
+		} );
+		Assert.IsNotNull( commandList );
 	}
-
-	//[Test, Order(1)]
-	public unsafe void DirectX12_Device_In_Window()
-	{
-		// Create a debug layer:
-		ID3D12Debug5? debugController = default;
-		if ( D3D12GetDebugInterface(typeof(ID3D12Debug5).GUID, out var debugLayerObj).Succeeded )
-		{
-			// Verify and cast the results:
-			debugController = debugLayerObj as ID3D12Debug5 ??
-				throw new COMException("Could not create ID3D12Debug5 layer!");
-			Assert.IsNotNull(debugController);
-
-			debugController.EnableDebugLayer();
-		}
-		else throw new COMException("Failed to create debug layer for Direct3D12!");
-
-
-
-		var hr = PInvoke.CreateDXGIFactory2( 0x01u, typeof(IDXGIFactory7).GUID, out var factoryObj );
-		Assert.IsTrue(hr.Succeeded);
-
-		IDXGIFactory7? factory = null;
-		Assert.DoesNotThrow(() => {
-			factory = factoryObj as IDXGIFactory7 ??
-				throw new COMException("Unable to create IDXGIFactory7!");
-		});
-
-		var renderform = new RenderForm("Test Renderform") { 
-			ClientSize = new System.Drawing.Size(1680, 1050) };
-		Assert.IsNotNull(renderform);
-		
-		renderform.Show(); renderform.Activate();
-		Assert.IsTrue(renderform.Visible);
-
-		// Get an adapter:
-		enumAdapters(factory);
-		var adapter = getBestAdapter();
-
-		// Create swapchain description info:
-		var scDesc = new SwapChainDescription1( renderform.ClientSize.Width, renderform.ClientSize.Height, 
-			Format.R8G8B8A8_UNORM, false, new SampleDescription(1,0), Usage.RenderTargetOutput, 2, 
-			Scaling.Stretch, SwapEffect.FlipDiscard, AlphaMode.Ignore, SwapChainFlags.FrameLatencyWaitableObject);
-		var scfsDesc = new SwapChainFullscreenDescription(60u, ScanlineOrder.Unspecified, ScalingMode.Stretched, true);
-		
-		// Create device and swapchain for d3d12
-		D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_12_0, typeof(ID3D12Device9).GUID, out var deviceObj);
-		ID3D12Device9 device = deviceObj as ID3D12Device9 ??
-			throw new COMException("Initialization of ID3D12Device9 interface failed!");
-		
-		// Describe and create the command queue:
-		ID3D12CommandQueue? m_commandQueue = default;
-		D3D12_COMMAND_QUEUE_DESC queueDesc = default;
-		queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAGS.D3D12_COMMAND_QUEUE_FLAG_NONE;
-		queueDesc.Type = D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT;
-		Guid cmdQueueID = typeof(ID3D12CommandQueue).GUID;
-		device.CreateCommandQueue( &queueDesc, &cmdQueueID, out var cmdQObj );
-		m_commandQueue = cmdQObj as ID3D12CommandQueue;
-		
-		Assert.IsNotNull(m_commandQueue);
-		device.SetName("TestDevice12_9");
-
-		IDXGISwapChain4? swapChain = default;
-		try
-		{
-			factory.CreateSwapChainForHwnd(
-				m_commandQueue,
-				(HWND)renderform.Handle,
-				scDesc.InternalValue,
-				null,
-				null,
-				out var swapChainObj);
-
-			swapChain = swapChainObj as IDXGISwapChain4 ??
-				throw new COMException("Initialization of IDXGISwapChain4 interface failed!");
-
-		}
-		catch (COMException ex)
-		{
-
-		}
-	}
-}
+};
 
 /*
  
