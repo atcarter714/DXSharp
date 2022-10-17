@@ -57,7 +57,6 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	public static readonly Guid GUID_IUNKNOWN = 
 		Guid.Parse( "00000000-0000-0000-C000-000000000046" );
 
-	void f() {  }
 	internal ComPtr( object comObj ) {
 #if DEBUG || !STRIP_CHECKS
 		if ( comObj is null )
