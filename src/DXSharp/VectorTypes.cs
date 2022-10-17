@@ -31,12 +31,12 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Numerics;
+using System.Runtime.Intrinsics;
+using System.Diagnostics.CodeAnalysis;
 
 using SysVec2 = System.Numerics.Vector2;
 using SysVec3 = System.Numerics.Vector3;
 using SysVec4 = System.Numerics.Vector4;
-using System.Runtime.Intrinsics;
-using System.Diagnostics.CodeAnalysis;
 #endregion
 
 
@@ -236,7 +236,7 @@ public struct Vector3: IEquatable<Vector3>, IFormattable
 	/// </summary>
 	/// <param name="other">Vector to compare to</param>
 	/// <returns>True if equal, otherwise false</returns>
-	public bool Equals( Vector3 other ) => this == other;
+	public bool Equals( Vector3 other ) => this.v == other.v;
 
 
 
@@ -308,14 +308,14 @@ public struct Vector3: IEquatable<Vector3>, IFormattable
 	public static Vector3 operator /( Vector3 vec, float value ) => vec.v / value;
 
 
-	// Matrix ops:
-	[MethodImpl( MethodImplOptions.AggressiveInlining )]
-	public static Vector3 operator *( Vector3 left, Matrix4x4 right ) => Transform( left, right );
+	//! TODO: Matrix ops:
+	//[MethodImpl( MethodImplOptions.AggressiveInlining )]
+	//public static Vector3 operator *( Vector3 left, Matrix4x4 right ) => Transform( left, right );
 
 	#endregion
+};
 
-
-
+/*
 	/// <summary>Transforms a vector using a matrix.</summary>
 	/// <param name="value">The vector to transform.</param>
 	/// <param name="matrix">The transformation matrix.</param>
@@ -341,4 +341,4 @@ public struct Vector3: IEquatable<Vector3>, IFormattable
 	//	result = MultiplyAddByZ( result, matrix.Z.Value, vValue );
 	//	return Create( result );
 	//}
-};
+	 */

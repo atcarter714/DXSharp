@@ -22722,6 +22722,15 @@
         <member name="F:Windows.Win32.PInvoke.S_OK">
             <summary>Documentation varies per use. Refer to each: <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnradioevents-onsetsoftwareradiostatecomplete">IMbnRadioEvents.OnSetSoftwareRadioStateComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsmssendcomplete">IMbnSmsEvents.OnSmsSendComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinmanagerevents-ongetpinstatecomplete">IMbnPinManagerEvents.OnGetPinStateComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onchangecomplete">IMbnPinEvents.OnChangeComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsetsmsconfigurationcomplete">IMbnSmsEvents.OnSetSmsConfigurationComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onentercomplete">IMbnPinEvents.OnEnterComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onunblockcomplete">IMbnPinEvents.OnUnblockComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsmsdeletecomplete">IMbnSmsEvents.OnSmsDeleteComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsmsreadcomplete">IMbnSmsEvents.OnSmsReadComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnconnectioncontextevents-onsetprovisionedcontextcomplete">IMbnConnectionContextEvents.OnSetProvisionedContextComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onenablecomplete">IMbnPinEvents.OnEnableComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnconnectionevents-onconnectcomplete">IMbnConnectionEvents.OnConnectComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-ondisablecomplete">IMbnPinEvents.OnDisableComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnserviceactivationevents-onactivationcomplete">IMbnServiceActivationEvents.OnActivationComplete</see>.</summary>
         </member>
+        <member name="F:Windows.Win32.PInvoke.E_FAIL">
+            <summary>The operation could not be completed.</summary>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnpinevents-onentercomplete">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="F:Windows.Win32.PInvoke.E_INVALIDARG">
+            <summary>Documentation varies per use. Refer to each: <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnsmsevents-onsmssendcomplete">IMbnSmsEvents.OnSmsSendComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnconnectioncontextevents-onsetprovisionedcontextcomplete">IMbnConnectionContextEvents.OnSetProvisionedContextComplete</see>, <see href="https://docs.microsoft.com/windows/win32/api//mbnapi/nf-mbnapi-imbnserviceactivationevents-onactivationcomplete">IMbnServiceActivationEvents.OnActivationComplete</see>.</summary>
+        </member>
         <member name="M:Windows.Win32.PInvoke.CloseHandle(Windows.Win32.Foundation.HANDLE)">
             <summary>Closes an open object handle.</summary>
             <param name="hObject">A valid handle to an open object.</param>
@@ -23742,6 +23751,7 @@
             <param name="format">The resource format of the display mode</param>
             <param name="scanlineOrdering">The scanline ordering of the display mode</param>
             <param name="scaling">The scaling of the display mode</param>
+            <param name="stereo">Indicates if rendering in stereo (e.g., for VR/Mixed Reality) mode</param>
         </member>
         <member name="M:DXSharp.DXGI.ModeDescription1.#ctor(DXSharp.DXGI.ModeDescription,System.Boolean)">
             <summary>
@@ -24394,11 +24404,9 @@
             </summary>
         </member>
         <member name="M:DXSharp.DXGI.IObject.SetPrivateData``1(System.UInt32,System.IntPtr)">
-            <summary>Sets application-defined data to the object and associates that data with a GUID.</summary>
-            <param name="Name">
-            <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> A GUID that identifies the data. Use this GUID in a call to <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiobject-getprivatedata">GetPrivateData</a> to get the data.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
+            <summary>
+            Sets application-defined data to the object and associates that data with a GUID.
+            </summary>
             <param name="DataSize">
             <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The size of the object's data.</para>
             <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
@@ -24410,6 +24418,10 @@
             <returns>
             <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a> values.</para>
             </returns>
+            <typeparam name="T">
+            <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> A GUID that identifies the data.Use this GUID in a call to<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiobject-getprivatedata"> GetPrivateData</a> to get the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </typeparam>
             <remarks>
             <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
             </remarks>
@@ -24550,6 +24562,153 @@
             <param name="message">Exception message</param>
             <param name="innerException">Inner exception</param>
         </member>
+        <member name="T:DXSharp.Vector2">
+            <summary>
+            A 2D Euclidean vector.
+            </summary>
+        </member>
+        <member name="F:DXSharp.Vector2.UnitX">
+            <summary>
+            The Unit X vector (right)
+            </summary>
+        </member>
+        <member name="F:DXSharp.Vector2.UnitY">
+            <summary>
+            The Unit Y vector (up) 
+            </summary>
+        </member>
+        <member name="M:DXSharp.Vector2.#ctor(System.Single,System.Single)">
+            <summary>
+            Creates a new 2D vector
+            </summary>
+            <param name="x">X-coordinate</param>
+            <param name="y">Y-coordinate</param>
+        </member>
+        <member name="M:DXSharp.Vector2.#ctor(System.Numerics.Vector2)">
+            <summary>
+            Creates a new 2D vector
+            </summary>
+            <param name="vec">A System.Numerics.Vector2 value</param>
+        </member>
+        <member name="P:DXSharp.Vector2.X">
+            <summary>
+            Gets or sets the X component of the vector
+            </summary>
+        </member>
+        <member name="P:DXSharp.Vector2.Y">
+            <summary>
+            Gets or sets the Y component of the vector
+            </summary>
+        </member>
+        <member name="M:DXSharp.Vector2.ToString">
+            <summary>
+            Gets the string representation of this vector value
+            </summary>
+            <returns>Vector in string form</returns>
+        </member>
+        <member name="M:DXSharp.Vector2.Equals(System.Object)">
+            <summary>
+            Indicates whether this vector and the specified object are equal
+            </summary>
+            <param name="obj">Object to compare to</param>
+            <returns>True if equal, otherwise false</returns>
+        </member>
+        <member name="M:DXSharp.Vector2.GetHashCode">
+            <summary>
+            Returns the hash code this this vector
+            </summary>
+            <returns>32-bit integer hash code</returns>
+        </member>
+        <member name="T:DXSharp.Vector3">
+            <summary>
+            A 3D Euclidean vector.
+            </summary>
+        </member>
+        <member name="F:DXSharp.Vector3.UnitX">
+            <summary>
+            The Unit X vector (right)
+            </summary>
+        </member>
+        <member name="F:DXSharp.Vector3.UnitY">
+            <summary>
+            The Unit Y vector (up) 
+            </summary>
+        </member>
+        <member name="F:DXSharp.Vector3.UnitZ">
+            <summary>
+            The Unit Z vector (forward) 
+            </summary>
+        </member>
+        <member name="M:DXSharp.Vector3.#ctor(System.Single,System.Single,System.Single)">
+            <summary>
+            Creates a new 3D vector
+            </summary>
+            <param name="x">X-coordinate</param>
+            <param name="y">Y-coordinate</param>
+            <param name="z">Z-coordinate</param>
+        </member>
+        <member name="M:DXSharp.Vector3.#ctor(System.Numerics.Vector3)">
+            <summary>
+            Creates a new 3D vector
+            </summary>
+            <param name="vec">A System.Numerics.Vector3 value</param>
+        </member>
+        <member name="M:DXSharp.Vector3.#ctor(DXSharp.Vector2)">
+            <summary>
+            Creates a new 3D vector
+            </summary>
+            <param name="vec">A Vector2 value</param>
+        </member>
+        <member name="M:DXSharp.Vector3.#ctor(System.Numerics.Vector2)">
+            <summary>
+            Creates a new 3D vector
+            </summary>
+            <param name="vec">A System.Numerics.Vector2 value</param>
+        </member>
+        <member name="P:DXSharp.Vector3.X">
+            <summary>
+            Gets or sets the X component of the vector
+            </summary>
+        </member>
+        <member name="P:DXSharp.Vector3.Y">
+            <summary>
+            Gets or sets the Y component of the vector
+            </summary>
+        </member>
+        <member name="P:DXSharp.Vector3.Z">
+            <summary>
+            Gets or sets the Z component of the vector
+            </summary>
+        </member>
+        <member name="M:DXSharp.Vector3.ToString">
+            <summary>
+            Gets the string representation of this vector value
+            </summary>
+            <returns>Vector in string form</returns>
+        </member>
+        <member name="M:DXSharp.Vector3.ToString(System.String,System.IFormatProvider)">
+            <inheritdoc />
+        </member>
+        <member name="M:DXSharp.Vector3.Equals(System.Object)">
+            <summary>
+            Indicates whether this instance and the specified object are equal
+            </summary>
+            <param name="obj">Object to compare to</param>
+            <returns>True if equal, otherwise false</returns>
+        </member>
+        <member name="M:DXSharp.Vector3.GetHashCode">
+            <summary>
+            Returns the hash code this this vector
+            </summary>
+            <returns>32-bit integer hash code</returns>
+        </member>
+        <member name="M:DXSharp.Vector3.Equals(DXSharp.Vector3)">
+            <summary>
+            Determines if this vector and the specified vector are equal
+            </summary>
+            <param name="other">Vector to compare to</param>
+            <returns>True if equal, otherwise false</returns>
+        </member>
         <member name="T:DXSharp.Viewport">
             <summary>
             Represents a graphics viewport for DirectX
@@ -24622,6 +24781,26 @@
             <summary>
             The maximum depth value (between 0.0 and 1.0)
             </summary>
+        </member>
+        <member name="P:DXSharp.Windows.COM.COMBaseObject`1.Pointer">
+            <inheritdoc/>
+        </member>
+        <member name="P:DXSharp.Windows.COM.COMBaseObject`1.COMPointer">
+            <summary>
+            A ComPtr "smart pointer" to a native COM interface
+            </summary>
+        </member>
+        <member name="P:DXSharp.Windows.COM.COMBaseObject`1.Disposed">
+            <inheritdoc/>
+        </member>
+        <member name="M:DXSharp.Windows.COM.COMBaseObject`1.Dispose">
+            <inheritdoc/>
+        </member>
+        <member name="M:DXSharp.Windows.COM.COMBaseObject`1.DisposeAsync">
+            <summary>
+            Asynchronously disposes of this instance's resources
+            </summary>
+            <returns>A ValueTask</returns>
         </member>
         <member name="T:DXSharp.Windows.COM.ComPtr">
             <summary>
@@ -25018,6 +25197,169 @@
             <value>
             	<c>true</c> if this instance is application idle; otherwise, <c>false</c>.
             </value>
+        </member>
+        <member name="M:xxx.IDXObject`1.SetPrivateData``1(System.UInt32,System.IntPtr)">
+            <summary>Sets application-defined data to the object and associates that data with a GUID.</summary>
+            <param name="Name">
+            <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> A GUID that identifies the data. Use this GUID in a call to <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiobject-getprivatedata">GetPrivateData</a> to get the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="DataSize">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The size of the object's data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pData">
+            <para>Type: <b>const void*</b> A pointer to the object's data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a> values.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:xxx.IDXObject`1.SetPrivateDataInterface``1(``0)">
+            <summary>Set an interface in the object's private data.</summary>
+            <param name="Name">
+            <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> A GUID identifying the interface.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pUnknown">
+            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/unknwn/nn-unknwn-iunknown">IUnknown</a>*</b> The interface to set.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the following <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:xxx.IDXObject`1.GetPrivateData``1(System.UInt32@,System.IntPtr)">
+            <summary>Get a pointer to the object's data.</summary>
+            <param name="Name">
+            <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> A GUID identifying the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pDataSize">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a>*</b> The size of the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pData">
+            <para>Type: <b>void*</b> Pointer to the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the following <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:xxx.IDXObject`1.GetParent``1(``0@)">
+            <summary>Gets the parent of the object.</summary>
+            <param name="riid">
+            <para>Type: <b>REFIID</b> The ID of the requested interface.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppParent">
+            <para>Type: <b>void**</b> The address of a pointer to the parent object.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a> values.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="T:xxx.Object`1">
+            <summary>
+            The DXGI.Object&lt;T&gt; class is an abstract wrapper class around the 
+            <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiobject">IDXGIObject</a> interface.
+            <para>
+            The IDXGIObject interface is a base interface for all DXGI objects; 
+            IDXGIObject supports associating caller-defined (private data) with 
+            an object and retrieval of an interface to the parent object.
+            </para>
+            </summary>
+            <typeparam name="T">Type of IDXGIObject interface wrapped by this class</typeparam>
+        </member>
+    </members>
+</doc>
+sktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a> values.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:xxx.IDXObject`1.SetPrivateDataInterface``1(``0)">
+            <summary>Set an interface in the object's private data.</summary>
+            <param name="Name">
+            <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> A GUID identifying the interface.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pUnknown">
+            <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/unknwn/nn-unknwn-iunknown">IUnknown</a>*</b> The interface to set.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the following <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:xxx.IDXObject`1.GetPrivateData``1(System.UInt32@,System.IntPtr)">
+            <summary>Get a pointer to the object's data.</summary>
+            <param name="Name">
+            <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> A GUID identifying the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pDataSize">
+            <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a>*</b> The size of the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="pData">
+            <para>Type: <b>void*</b> Pointer to the data.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the following <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="M:xxx.IDXObject`1.GetParent``1(``0@)">
+            <summary>Gets the parent of the object.</summary>
+            <param name="riid">
+            <para>Type: <b>REFIID</b> The ID of the requested interface.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <param name="ppParent">
+            <para>Type: <b>void**</b> The address of a pointer to the parent object.</para>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent#parameters">Read more on docs.microsoft.com</see>.</para>
+            </param>
+            <returns>
+            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a> values.</para>
+            </returns>
+            <remarks>
+            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent">Learn more about this API from docs.microsoft.com</see>.</para>
+            </remarks>
+        </member>
+        <member name="T:xxx.Object`1">
+            <summary>
+            The DXGI.Object&lt;T&gt; class is an abstract wrapper class around the 
+            <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiobject">IDXGIObject</a> interface.
+            <para>
+            The IDXGIObject interface is a base interface for all DXGI objects; 
+            IDXGIObject supports associating caller-defined (private data) with 
+            an object and retrieval of an interface to the parent object.
+            </para>
+            </summary>
+            <typeparam name="T">Type of IDXGIObject interface wrapped by this class</typeparam>
         </member>
     </members>
 </doc>

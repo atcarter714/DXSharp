@@ -39,6 +39,7 @@ public static partial class DXGIXTensions
 		return false;
 	}
 
+	/*
 	/// <summary>
 	/// <para><b><h3>Extension Method:</h3></b></para>
 	/// Retrieves a list of all installed adapters (GPUs)
@@ -66,6 +67,6 @@ public static partial class DXGIXTensions
 
 	//	return adapters;
 	//}
-
+	 */
 	
 };

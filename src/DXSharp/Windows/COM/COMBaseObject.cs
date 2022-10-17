@@ -26,14 +26,18 @@ public class COMBaseObject<T> : IUnknown, IAsyncDisposable where T: class
 		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
 		Dispose(disposing: false);
 	}
-	
-	
+
+	/// <inheritdoc/>
 	public IntPtr Pointer { get; set; }
 	
+	/// <summary>
+	/// A ComPtr "smart pointer" to a native COM interface
+	/// </summary>
 	internal virtual ComPtr<T>? COMPointer { get; set; }
 
 	#region Disposable Pattern
 
+	/// <inheritdoc/>
 	public bool Disposed { get; }
 	private bool disposedValue;
 
@@ -52,6 +56,7 @@ public class COMBaseObject<T> : IUnknown, IAsyncDisposable where T: class
 		}
 	}
 
+	/// <inheritdoc/>
 	public void Dispose()
 	{
 		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
@@ -64,6 +69,10 @@ public class COMBaseObject<T> : IUnknown, IAsyncDisposable where T: class
 
 	}
 
+	/// <summary>
+	/// Asynchronously disposes of this instance's resources
+	/// </summary>
+	/// <returns>A ValueTask</returns>
 	public async ValueTask DisposeAsync()
 	{
 		// Perform async cleanup.

@@ -492,7 +492,7 @@ public struct Rational: IEquatable<Rational>
 	public Rational( uint numerator, uint denominator ) {
 #if DEBUG || !STRIP_CHECKS
 		if ( denominator == 0 )
-			throw new ArgumentOutOfRangeException( "denominator", 
+			throw new ArgumentOutOfRangeException( nameof(denominator), 
 				"Rationals should not have a denominator of zero!" );
 #endif
 
@@ -563,7 +563,7 @@ public struct Rational: IEquatable<Rational>
 	/// <param name="obj">object to compare to</param>
 	/// <returns>True if equal, otherwise false</returns>
 	public override bool Equals( [NotNullWhen( true )] object? obj ) =>
-		obj is Rational r ? Equals(r) : false;
+		obj is Rational r && Equals(r);
 
 	/// <summary>
 	/// Determines if the given rational value and this value are equal
@@ -1255,6 +1255,7 @@ public struct ModeDescription1
 	/// <param name="format">The resource format of the display mode</param>
 	/// <param name="scanlineOrdering">The scanline ordering of the display mode</param>
 	/// <param name="scaling">The scaling of the display mode</param>
+	/// <param name="stereo">Indicates if rendering in stereo (e.g., for VR/Mixed Reality) mode</param>
 	public ModeDescription1( uint width, uint height, Rational refreshRate, Format format = Format.R8G8B8A8_UNORM,
 		ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered, bool stereo = false )
 	{

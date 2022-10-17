@@ -66,14 +66,19 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <ItemGroup Condition="$(Configuration) != 'Release'">
-   <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-	<_Parameter1>
-		BasicTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100894fae0919aeb23bddcca2687ce855f3649b017c69bbb5f494a7261763dcd01937ebf398222f41977837a77af70995d7a4b7a8ffc6f3dd031ffd6804134c3678af91e99348f25a4fb7125e03ac5d16de4d1944c70a248b27c91a5a75715d856f321be121bd547a4a098a28be8e1b600b7d4136946e7ed1033a692c34495900cc
-	</_Parameter1>
-	<!-- The name of the project that you want the Internal class to be visible To it -->
-   </AssemblyAttribute>
+  <!--<ItemGroup Condition="$(Configuration) != 'Release'">-->
+  <ItemGroup>
+	<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+	  <_Parameter1>
+			BasicTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100894fae0919aeb23bddcca2687ce855f3649b017c69bbb5f494a7261763dcd01937ebf398222f41977837a77af70995d7a4b7a8ffc6f3dd031ffd6804134c3678af91e99348f25a4fb7125e03ac5d16de4d1944c70a248b27c91a5a75715d856f321be121bd547a4a098a28be8e1b600b7d4136946e7ed1033a692c34495900cc
+	  </_Parameter1>
+	  <!-- The name of the project that you want the Internal class to be visible To it -->
+	</AssemblyAttribute>
   </ItemGroup>
 
-
+	<!-- Remove files with features unsupported for .NET 6 -->
+	<ItemGroup Condition="$(TargetFramework.StartsWith('net6.0'))">
+		<Compile Remove="VectorDTypes.cs"/>
+	</ItemGroup>
+	
 </Project>

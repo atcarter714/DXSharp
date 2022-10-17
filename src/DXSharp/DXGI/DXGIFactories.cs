@@ -49,7 +49,7 @@ namespace DXSharp.DXGI;
 	Valid			= 0x7,
 };
 
-
+/*
 
 /// <summary>
 /// An IFactory is a wrapper of the native DirectX COM interface
@@ -172,3 +172,5 @@ namespace DXSharp.DXGI;
 //		throw new NotImplementedException();
 //	}
 //}
+
+ */

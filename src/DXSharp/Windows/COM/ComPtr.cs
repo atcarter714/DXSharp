@@ -28,6 +28,11 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+
+using Windows.Win32.Graphics.Dxgi;
+using Windows.Win32.Graphics.Direct3D;
+using Windows.Win32.Graphics.Direct3D11;
+using Windows.Win32.Graphics.Direct3D12;
 #endregion
 
 namespace DXSharp.Windows.COM;
@@ -52,7 +57,7 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	public static readonly Guid GUID_IUNKNOWN = 
 		Guid.Parse( "00000000-0000-0000-C000-000000000046" );
 
-
+	void f() {  }
 	internal ComPtr( object comObj ) {
 #if DEBUG || !STRIP_CHECKS
 		if ( comObj is null )
