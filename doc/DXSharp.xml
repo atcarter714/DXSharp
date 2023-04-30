@@ -24744,110 +24744,106 @@
             <summary>
             Creates a new Viewport structure
             </summary>
-            <param n<summary>
-            Returns the hash code this this vector
-            </summary>
-            <returns>32-bit integer hash code</returns>
+            <param name="width">Width of viewport</param>
+            <param name="height">Height of viewport</param>
+            <param name="minDepth">Minimum depth value (between 0.0 and 1.0)</param>
+            <param name="maxDepth">Maximum depth value (between 0.0 and 1.0)</param>
+            <remarks>
+            Assumes 0.0, 0.0 for the top-left X and Y coordinates
+            </remarks>
         </member>
-        <member name="T:DXSharp.Vector3">
+        <member name="P:DXSharp.Viewport.TopLeftX">
             <summary>
-            A 3D Euclidean vector.
-            </summary>
-        </member>
-        <member name="F:DXSharp.Vector3.UnitX">
-            <summary>
-            The Unit X vector (right)
+            The top-left X coordinate
             </summary>
         </member>
-        <member name="F:DXSharp.Vector3.UnitY">
+        <member name="P:DXSharp.Viewport.TopLeftY">
             <summary>
-            The Unit Y vector (up) 
+            The top-left Y coordinate
             </summary>
         </member>
-        <member name="F:DXSharp.Vector3.UnitZ">
+        <member name="P:DXSharp.Viewport.Width">
             <summary>
-            The Unit Z vector (forward) 
+            The width of the viewport
             </summary>
         </member>
-        <member name="M:DXSharp.Vector3.#ctor(System.Single,System.Single,System.Single)">
+        <member name="P:DXSharp.Viewport.Height">
             <summary>
-            Creates a new 3D vector
-            </summary>
-            <param name="x">X-coordinate</param>
-            <param name="y">Y-coordinate</param>
-            <param name="z">Z-coordinate</param>
-        </member>
-        <member name="M:DXSharp.Vector3.#ctor(System.Numerics.Vector3)">
-            <summary>
-            Creates a new 3D vector
-            </summary>
-            <param name="vec">A System.Numerics.Vector3 value</param>
-        </member>
-        <member name="M:DXSharp.Vector3.#ctor(DXSharp.Vector2)">
-            <summary>
-            Creates a new 3D vector
-            </summary>
-            <param name="vec">A Vector2 value</param>
-        </member>
-        <member name="M:DXSharp.Vector3.#ctor(System.Numerics.Vector2)">
-            <summary>
-            Creates a new 3D vector
-            </summary>
-            <param name="vec">A System.Numerics.Vector2 value</param>
-        </member>
-        <member name="P:DXSharp.Vector3.X">
-            <summary>
-            Gets or sets the X component of the vector
+            The height of the viewport
             </summary>
         </member>
-        <member name="P:DXSharp.Vector3.Y">
+        <member name="P:DXSharp.Viewport.MinDepth">
             <summary>
-            Gets or sets the Y component of the vector
+            The minimum depth value (between 0.0 and 1.0)
             </summary>
         </member>
-        <member name="P:DXSharp.Vector3.Z">
+        <member name="P:DXSharp.Viewport.MaxDepth">
             <summary>
-            Gets or sets the Z component of the vector
+            The maximum depth value (between 0.0 and 1.0)
             </summary>
         </member>
-        <member name="M:DXSharp.Vector3.ToString">
+        <member name="P:DXSharp.Windows.COM.COMBaseObject`1.Pointer">
+            <inheritdoc/>
+        </member>
+        <member name="P:DXSharp.Windows.COM.COMBaseObject`1.COMPointer">
             <summary>
-            Gets the string representation of this vector value
+            A ComPtr "smart pointer" to a native COM interface
             </summary>
-            <returns>Vector in string form</returns>
         </member>
-        <member name="M:DXSharp.Vector3.ToString(System.String,System.IFormatProvider)">
-            <inheritdoc />
+        <member name="P:DXSharp.Windows.COM.COMBaseObject`1.Disposed">
+            <inheritdoc/>
         </member>
-        <member name="M:DXSharp.Vector3.Equals(System.Object)">
+        <member name="M:DXSharp.Windows.COM.COMBaseObject`1.Dispose">
+            <inheritdoc/>
+        </member>
+        <member name="M:DXSharp.Windows.COM.COMBaseObject`1.DisposeAsync">
             <summary>
-            Indicates whether this instance and the specified object are equal
+            Asynchronously disposes of this instance's resources
             </summary>
-            <param name="obj">Object to compare to</param>
-            <returns>True if equal, otherwise false</returns>
+            <returns>A ValueTask</returns>
         </member>
-        <member name="M:DXSharp.Vector3.GetHashCode">
+        <member name="T:DXSharp.Windows.COM.ComPtr">
             <summary>
-            Returns the hash code this this vector
-            </summary>
-            <returns>32-bit integer hash code</returns>
-        </member>
-        <member name="M:DXSharp.Vector3.Equals(DXSharp.Vector3)">
-            <summary>
-            Determines if this vector and the specified vector are equal
-            </summary>
-            <param name="other">Vector to compare to</param>
-            <returns>True if equal, otherwise false</returns>
-        </member>
-        <member name="T:DXSharp.Viewport">
-            <summary>
-            Represents a graphics viewport for DirectX
+            Base class of COM object pointers which provides a somewhat
+            similar set of functionality to the native 
+            <a href="https://learn.microsoft.com/en-us/cpp/cppcx/wrl/comptr-class?view=msvc-170"><c>wrl::ComPtr&lt;T&gt;</c></a> template 
+            class used in C++ COM programming, like DirectX.
             </summary>
             <remarks>
-            <para><h3><b>NOTE:</b></h3></para> 
-            <para>D3D11 and D3D12 each define their own viewport structures:</para>
-            <para><a href="https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_viewport">D3D12_VIEWPORT</a></para>
-            <para><a href="https://learn.microsoas been disposed
+            The <c>ComPtr</c> type is a type of "smart pointer" which holds the actual memory address of a COM object
+            and helps automatically relinquish native resources when it is <i>disposed</i> or goes out of scope. It 
+            also provides methods for reference counting and COM interface management functionality.
+            </remarks>
+        </member>
+        <member name="F:DXSharp.Windows.COM.ComPtr.GUID_IUNKNOWN">
+            <summary>
+            The GUID of the IUnknown COM interface
+            </summary>
+        </member>
+        <member name="P:DXSharp.Windows.COM.ComPtr.Interface">
+            <summary>
+            The underlying COM interface
+            </summary>
+        </member>
+        <member name="P:DXSharp.Windows.COM.ComPtr.Pointer">
+            <summary>
+            Pointer to the underlying COM interface
+            </summary>
+        </member>
+        <member name="P:DXSharp.Windows.COM.ComPtr.GUID">
+            <summary>
+            The GUID of the COM interface
+            </summary>
+        </member>
+        <member name="P:DXSharp.Windows.COM.ComPtr.nRefs">
+            <summary>
+            Counts the number of extra references obtained to
+            this COM object interface
+            </summary>
+        </member>
+        <member name="P:DXSharp.Windows.COM.ComPtr.Disposed">
+            <summary>
+            Indicates if this instance has been disposed
             and released its resources and memory
             </summary>
         </member>
@@ -25281,12 +25277,18 @@
         <member name="T:xxx.Object`1">
             <summary>
             The DXGI.Object&lt;T&gt; class is an abstract wrapper class around the 
-            <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiobject">IDXGIObjectram name="pData">
-            <para>Type: <b>const void*</b> A pointer to the object's data.</para>
-            <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata#parameters">Read more on docs.microsoft.com</see>.</para>
-            </param>
-            <returns>
-            <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns one of the <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a> values.</para>
+            <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiobject">IDXGIObject</a> interface.
+            <para>
+            The IDXGIObject interface is a base interface for all DXGI objects; 
+            IDXGIObject supports associating caller-defined (private data) with 
+            an object and retrieval of an interface to the parent object.
+            </para>
+            </summary>
+            <typeparam name="T">Type of IDXGIObject interface wrapped by this class</typeparam>
+        </member>
+    </members>
+</doc>
+sktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a> values.</para>
             </returns>
             <remarks>
             <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
