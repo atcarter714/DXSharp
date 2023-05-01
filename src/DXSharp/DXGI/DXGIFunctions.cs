@@ -1,17 +1,38 @@
 ﻿#region Using Directives
-using global::System;
 using global::System.Runtime.CompilerServices;
+
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using global::System.Runtime.InteropServices;
+After:
+using global::System.Runtime.InteropServices;
+using global::Windows.Win32;
+*/
+using global::System.Runtime.InteropServices;
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
+using Windows.Win32.Foundation;
+After:
+using System.Runtime.Versioning;
 
 using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Direct3D;
-using Windows.Win32.Graphics.Direct3D11;
-using Windows.Win32.Graphics.Direct3D12;
-using Windows.Win32.Graphics.Dxgi;
+*/
 
+using global::Windows.Win32;
+
+using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Dxgi;
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using global::Windows.Win32;
 using Win32 = global::Windows.Win32;
 using System.Runtime.Versioning;
+#endregion
+After:
+using Win32 = global::Windows.Win32;
+#endregion
+*/
+
 #endregion
 
 namespace DXSharp.DXGI;
@@ -71,13 +92,11 @@ public static partial class DXGIFunctions
 	/// <param name="hr">HRESULT to capture the result and indicate success/failure</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
-	internal static T? CreateDXGIFactory<T>( out HRESULT hr ) where T : IDXGIFactory
-	{
-		unsafe
-		{
+	internal static T? CreateDXGIFactory<T>( out HRESULT hr ) where T : IDXGIFactory {
+		unsafe {
 			var riid = typeof( T ).GUID;
-			hr = PInvoke.CreateDXGIFactory( &riid, out var factoryObj );
-			return hr.Succeeded ? (T) factoryObj : default( T );
+			hr = PInvoke.CreateDXGIFactory( &riid, out object? factoryObj );
+			return hr.Succeeded ? (T)factoryObj : default( T );
 		}
 	}
 
@@ -90,7 +109,7 @@ public static partial class DXGIFunctions
 	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
 	internal static T? CreateDXGIFactory<T>() where T : IDXGIFactory {
 		var factory = DXGIFunctions.CreateDXGIFactory<T>( out var hr );
-		hr.ThrowOnFailure();
+		_ = hr.ThrowOnFailure();
 		return factory;
 	}
 
@@ -102,13 +121,11 @@ public static partial class DXGIFunctions
 	/// <param name="hr">HRESULT to capture the result and indicate success/failure</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
-	internal static T? CreateDXGIFactory1<T>( out HRESULT hr ) where T : IDXGIFactory
-	{
-		unsafe
-		{
+	internal static T? CreateDXGIFactory1<T>( out HRESULT hr ) where T : IDXGIFactory {
+		unsafe {
 			var riid = typeof( T ).GUID;
-			hr = PInvoke.CreateDXGIFactory1( &riid, out var factoryObj );
-			return hr.Succeeded ? (T) factoryObj : default( T );
+			hr = PInvoke.CreateDXGIFactory1( &riid, out object? factoryObj );
+			return hr.Succeeded ? (T)factoryObj : default( T );
 		}
 	}
 
@@ -119,10 +136,9 @@ public static partial class DXGIFunctions
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	/// <exception cref="COMException">Thrown if the call fails and contains detailed error information</exception>
 	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
-	internal static T? CreateDXGIFactory1<T>() where T : IDXGIFactory
-	{
+	internal static T? CreateDXGIFactory1<T>() where T : IDXGIFactory {
 		var factory = CreateDXGIFactory1<T>( out var hr );
-		hr.ThrowOnFailure();
+		_ = hr.ThrowOnFailure();
 		return factory;
 	}
 
@@ -136,11 +152,10 @@ public static partial class DXGIFunctions
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
 	internal static T? CreateDXGIFactory2<T>( FactoryCreateFlags Flags, out HRESULT hr ) where T : IDXGIFactory2 {
-		unsafe
-		{
+		unsafe {
 			var riid = typeof( T ).GUID;
-			hr = PInvoke.CreateDXGIFactory2( (uint)Flags, &riid, out var factoryObj );
-			return hr.Succeeded ? (T) factoryObj : default( T );
+			hr = PInvoke.CreateDXGIFactory2( (uint)Flags, &riid, out object? factoryObj );
+			return hr.Succeeded ? (T)factoryObj : default( T );
 		}
 	}
 
@@ -153,12 +168,12 @@ public static partial class DXGIFunctions
 	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
 	internal static T? CreateDXGIFactory2<T>( FactoryCreateFlags Flags ) where T : IDXGIFactory2 {
 		var factory = CreateDXGIFactory2<T>( Flags, out var hr );
-		hr.ThrowOnFailure();
+		_ = hr.ThrowOnFailure();
 		return factory;
 	}
 
 	#endregion
-	
+
 
 };
 

@@ -1,31 +1,71 @@
 #pragma warning disable CS1591
 
 #region Using Directives
-using Microsoft.Win32;
-using Microsoft.Win32.SafeHandles;
 
-using Windows.Win32;
+/* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
+Before:
+using Microsoft.Win32;
+After:
+using ABI.Windows.UI;
+
+using DXSharp.DXGI;
+
+using Microsoft.Win32;
+*/
+using DXSharp.DXGI;
+
+
+/* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
+Before:
+using System.Runtime.InteropServices;
+
+using System.Drawing;
+After:
+using System.Drawing;
+using System.Runtime.InteropServices;
+*/
+using System.Drawing;
+using System.Runtime.InteropServices;
 using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Direct3D;
+/* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
+Before:
 using Windows.Win32.Graphics.Dxgi;
 using static Windows.Win32.PInvoke;
 
 using DXSharp.DXGI;
 using System.Runtime.InteropServices;
 using Windows.Win32.Graphics.Dxgi.Common;
-using Windows.Win32.Graphics.Direct3D12;
+After:
+using Windows.Win32.Sms;
+using static Windows.Win32;
+using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Direct3D;
+*/
+using Windows.Win32.Graphics.Direct3D12;
+using Windows.Win32.Graphics.Dxgi;
+/* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
+Before:
 using WinRT;
 using Windows.Devices.Sms;
 using ABI.Windows.UI;
 using System.Drawing;
+After:
+using Windows.Devices.Graphics.Dxgi.Common;
+
+using WinRT;
+
+using static Windows.Win32.PInvoke;
+*/
+using static Windows.Win32.PInvoke;
 
 #endregion
 
-namespace BasicTests.DirectX12;
+namespace BasicTests;
 
 
-[TestFixture, FixtureLifeCycle(LifeCycle.SingleInstance)]
-public class D3D12_Graphics_Interop
+[TestFixture, FixtureLifeCycle( LifeCycle.SingleInstance )]
+public class D3D12GraphicsInterop
 {
 	/* Native Pipeline Objects
 		D3D12_VIEWPORT m_viewport;
@@ -42,296 +82,327 @@ public class D3D12_Graphics_Interop
 		UINT m_rtvDescriptorSize;
 	 */
 
-	RECT rect;
-	D3D12_VIEWPORT viewport;
-	
-	static int	width			= 1024, 
-				height			= 768, 
-				bufferCount		= 2;
+	RECT _rect;
+	D3D12_VIEWPORT _viewport;
+	const int   _width = 1024,
+				_height = 768,
+				_bufferCount = 2;
 
-	static RenderForm? renderForm;
-	static IDXGIFactory7? factory;
-	static List<IDXGIAdapter4> adapters;
-	static ID3D12Debug5? debugController;
+	static RenderForm? _renderForm;
+	static IDXGIFactory7? _factory;
+	static List<IDXGIAdapter4> _adapters;
+	static ID3D12Debug5? _debugController;
 
-	static ID3D12Fence? fence1;
-	static ID3D12Device9? device;
-	static IDXGISwapChain4? swapChain;
-	static ID3D12DescriptorHeap? rtvHeap;
-	static ID3D12Resource[]? renderTargets;
-	static ID3D12RootSignature? rootSignature;
-	static ID3D12PipelineState? pipelineState;
+	static readonly ID3D12Fence? _fence1;
+	static ID3D12Device9? _device;
+	static IDXGISwapChain4? _swapChain;
+	static readonly ID3D12DescriptorHeap? _rtvHeap;
+	static readonly ID3D12Resource[]? _renderTargets;
+	static readonly ID3D12RootSignature? _rootSignature;
+	static readonly ID3D12PipelineState? _pipelineState;
 
-	static ID3D12CommandQueue? commandQueue;
-	static ID3D12CommandAllocator? commandAlloc;
-	static ID3D12GraphicsCommandList1? commandList;
-
+	static ID3D12CommandQueue? _commandQueue;
+	static ID3D12CommandAllocator? _commandAlloc;
+	static ID3D12GraphicsCommandList1? _commandList;
 
 
-	IDXGIAdapter4? getBestAdapter() {
-		int i = 0, index = -1; long maxvRam = long.MinValue;
-		foreach( var adapter in adapters ) {
-			adapter.GetDesc3(out var desc);
-			if ( desc.Flags.HasFlag(DXGI_ADAPTER_FLAG3.DXGI_ADAPTER_FLAG3_SOFTWARE) ) continue;
+	static IDXGIAdapter4? GetBestAdapter() {
+		int i = 0, index = -1; long maxvRam = Int64.MinValue;
+		DXGI_ADAPTER_DESC3 desc = default;
 
-			// Most VRAM yet?
-			if((long)desc.DedicatedVideoMemory > maxvRam) {
-				index = i;
-				maxvRam = (long)desc.DedicatedVideoMemory;
+		unsafe
+		{
+			DXGI_ADAPTER_DESC3* pDesc = &desc;
+			foreach (var adapter in _adapters)
+			{
+				adapter.GetDesc3(pDesc);
+				if (desc.Flags.HasFlag(DXGI_ADAPTER_FLAG3.DXGI_ADAPTER_FLAG3_SOFTWARE)) continue;
+
+				// Most VRAM yet?
+				if ((long)desc.DedicatedVideoMemory > maxvRam)
+				{
+					index = i;
+					maxvRam = (long)desc.DedicatedVideoMemory;
+				}
+
+				++i;
 			}
-			++i;
+
 		}
 
-		return index > -1 ? adapters[ index ]: null;
+		return index > -1 ? _adapters[ index ] : null;
 	}
 
-	bool enumAdapters<T>( T? factoryX ) where T : IDXGIFactory2 {
+	static bool EnumAdapters<T>( T? factoryX ) where T : IDXGIFactory2 {
 		Assert.IsNotNull( factoryX );
 
 		// Iterate over adapters (maximum of 16 times)
-		for ( uint index = 0; index <= 0x10; ++index ) { try {
+		for( uint index = 0; index <= 0x10; ++index ) {
+			try {
 
 				// Try to get next adapter"
 				factoryX.EnumAdapters1( index, out var ppAdapter );
 				Assert.IsNotNull( ppAdapter );
 
 				// Validate adapter object and obtain DXGI COM interface:
-				if (ppAdapter is null)
-					throw new NullReferenceException($"enumAdapters< {typeof(T).Name} >(): " +
-						"Adapter interface from EnumAdapters1 is null!");
+				if( ppAdapter is null )
+					throw new NullReferenceException( $"enumAdapters< {typeof( T ).Name} >(): " +
+						"Adapter interface from EnumAdapters1 is null!" );
 
 				// Get COM interface ref:
 				IDXGIAdapter4? adptr4 = default;
-				Assert.DoesNotThrow( () => {
+				Assert.DoesNotThrow( () =>
+				{
 					adptr4 = ppAdapter as IDXGIAdapter4 ??
-						throw new COMException($"enumAdapters< {typeof(T).Name} >(): " +
-						$"Cannot obtain IDXGIAdapter4* from {ppAdapter.GetType().Name} {nameof(ppAdapter)}!"); });
+						throw new COMException( $"enumAdapters< {typeof( T ).Name} >(): " +
+						$"Cannot obtain IDXGIAdapter4* from {ppAdapter.GetType().Name} {nameof( ppAdapter )}!" );
+				} );
 
 				// Assert and add it to list:
-				Assert.IsNotNull(adptr4);
-				adapters.Add(adptr4);
+				Assert.IsNotNull( adptr4 );
+				_adapters.Add( adptr4 );
 			}
-			catch ( COMException comEx ) {
+			catch( COMException comEx ) {
 
 				// Are we finished with all adapters?
-				if ( comEx.HResult == HRESULT.DXGI_ERROR_NOT_FOUND )
+				if( comEx.HResult == HRESULT.DXGI_ERROR_NOT_FOUND )
 					return true;
 
-				throw comEx;
+				throw;
 			}
 		}
 
-		return adapters?.Count > 0;
+		return _adapters?.Count > 0;
 	}
 
 
 
 	[OneTimeSetUp]
 	public void Setup() {
-		adapters = new List<IDXGIAdapter4>( 0x04 );
+		_adapters = new List<IDXGIAdapter4>( 0x04 );
 
-		rect = new RECT( 0, 0, width, height );
-		viewport = new D3D12_VIEWPORT() { Height = height, Width = width, 
-			MaxDepth = 1, MinDepth = 0, TopLeftX = 0, TopLeftY = 0 };
+		_rect = new RECT( 0, 0, _width, _height );
+		_viewport = new D3D12_VIEWPORT()
+		{
+			Height = _height, Width = _width,
+			MaxDepth = 1, MinDepth = 0, TopLeftX = 0, TopLeftY = 0
+		};
 	}
 
 	[OneTimeTearDown]
-	public void Cleanup()
-	{
-		if(factory is not null) 
-			Marshal.ReleaseComObject(factory);
-		if(adapters is not null)
-			foreach (var a in adapters)
-				if (a is not null) Marshal.ReleaseComObject(a);
-		if (debugController is not null)
-			Marshal.ReleaseComObject(debugController);
-		if (fence1 is not null)
-			Marshal.ReleaseComObject(fence1);
-		if (commandList is not null)
-			Marshal.ReleaseComObject(commandList);
-		if (commandQueue is not null)
-			Marshal.ReleaseComObject(commandQueue);
-		if (commandAlloc is not null)
-			Marshal.ReleaseComObject(commandAlloc);
-		if (device is not null)
-			Marshal.ReleaseComObject(device);
-		if (swapChain is not null)
-			Marshal.ReleaseComObject(swapChain);
+	public void Cleanup() {
+		if( _factory is not null )
+			_ = Marshal.ReleaseComObject( _factory );
+		if( _adapters is not null )
+			foreach( var a in _adapters )
+				if( a is not null ) _ = Marshal.ReleaseComObject( a );
+		if( _debugController is not null )
+			_ = Marshal.ReleaseComObject( _debugController );
+		if( _fence1 is not null )
+			_ = Marshal.ReleaseComObject( _fence1 );
+
+		/* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
+		Before:
+				if (_commandList is not null)
+		After:
+				if( _commandList is not null)
+		*/
+		if( _commandList is not null )
+			_ = Marshal.ReleaseComObject( _commandList );
+		if( _commandQueue is not null )
+			_ = Marshal.ReleaseComObject( _commandQueue );
+		if( _commandAlloc is not null )
+			_ = Marshal.ReleaseComObject( _commandAlloc );
+		if( _device is not null )
+			_ = Marshal.ReleaseComObject( _device );
+		if( _swapChain is not null )
+			_ = Marshal.ReleaseComObject( _swapChain );
 	}
 
 
-	[Test, Order(0)]
-	public void Create_DXGI_Factory()
-	{
-		var hr = CreateDXGIFactory2(0u, typeof(IDXGIFactory7).GUID, out var factoryObj);
-		Assert.True(hr.Succeeded);
+	[Test, Order( 0 )]
+	public void Create_DXGI_Factory() {
+		var hr = CreateDXGIFactory2(0u, typeof(IDXGIFactory7).GUID, out object? factoryObj);
+		Assert.True( hr.Succeeded );
 
-		Assert.DoesNotThrow( () => {
-			factory = factoryObj as IDXGIFactory7 ??
-				throw new COMException("Create_DXGI_Factory(): Failed to obtain IDXGIFactory7 reference!");
-		});
-		Assert.NotNull(factory);
+		Assert.DoesNotThrow( () =>
+		{
+			_factory = factoryObj as IDXGIFactory7 ??
+				throw new COMException( "Create_DXGI_Factory(): Failed to obtain IDXGIFactory7 reference!" );
+		} );
+		Assert.NotNull( _factory );
 	}
 
-	[Test, Order(1)]
-	public void Get_DXGI_Adapters()
-	{
-		Assert.IsNotNull(factory);
-		Assert.DoesNotThrow(() => { enumAdapters( factory ); });
-		Assert.NotZero(adapters.Count);
+	[Test, Order( 1 )]
+	public void Get_DXGI_Adapters() {
+		Assert.That( _factory, Is.Not.Null );
+		Assert.DoesNotThrow( () => { _ = EnumAdapters( _factory ); } );
+		Assert.NotZero( _adapters.Count );
 	}
 
-	[Test, Order(2)]
-	public void Create_Direct3D_Debug_Layer()
-	{
+	[Test, Order( 2 )]
+	public void Create_Direct3D_Debug_Layer() {
 		// Create a debug layer:
-		debugController = default;
-		var hr = D3D12GetDebugInterface( typeof(ID3D12Debug5).GUID, out var debugLayerObj );
+		_debugController = default;
+		var hr = D3D12GetDebugInterface( typeof(ID3D12Debug5).GUID, out object? debugLayerObj );
 
-		if ( hr.Succeeded ) {
-			Assert.DoesNotThrow( () => {
+		if( hr.Succeeded ) {
+			Assert.DoesNotThrow( () =>
+			{
 
 				// Verify and cast the results:
-				debugController = debugLayerObj as ID3D12Debug5 ??
-					throw new COMException("Could not create ID3D12Debug5 layer!");
-			});
-			Assert.IsNotNull(debugController);
-			debugController.EnableDebugLayer();
+				_debugController = debugLayerObj as ID3D12Debug5 ??
+					throw new COMException( "Could not create ID3D12Debug5 layer!" );
+			} );
+			Assert.IsNotNull( _debugController );
+			_debugController.EnableDebugLayer();
 		}
-		else throw new COMException("Failed to create debug layer for Direct3D12!");
+		else throw new COMException( "Failed to create debug layer for Direct3D12!" );
 	}
 
-	[Test, Order(3)]
-	public void Create_RenderForm()
-	{
+	[Test, Order( 3 )]
+	public void Create_RenderForm() {
 		// Initialize the render form:
-		renderForm = new RenderForm( "DX# Render Form (Unit Test)" ) {
-			ClientSize = new System.Drawing.Size( width, height ),
+		_renderForm = new RenderForm( "DX# Render Form (Unit Test)" )
+		{
+			ClientSize = new Size( _width, _height ),
 			FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D,
-			BackColor = System.Drawing.Color.White,
+			BackColor = Color.White,
 		};
-		Assert.IsNotNull( renderForm );
+		Assert.IsNotNull( _renderForm );
 
-		renderForm.Show();
-		renderForm.Activate();
-		renderForm.Focus();
-		Assert.IsTrue( renderForm.Visible );
+		_renderForm.Show();
+		_renderForm.Activate();
+		_ = _renderForm.Focus();
+		Assert.IsTrue( _renderForm.Visible );
 	}
 
-	[Test, Order(4)]
-	public void Create_D3D12_Device()
-	{
-		Assert.IsNotNull(factory);
+	[Test, Order( 4 )]
+	public void Create_D3D12_Device() {
+		Assert.IsNotNull( _factory );
 
 		// Get an adapter:
-		Assert.IsNotEmpty( adapters );
-		var adapter = getBestAdapter();
+		Assert.IsNotEmpty( _adapters );
+		var adapter = GetBestAdapter();
 		Assert.IsNotNull( adapter );
 
 		// Create device and swapchain for d3d12
 		var hr = D3D12CreateDevice( adapter, D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_12_0,
-			typeof(ID3D12Device9).GUID, out var deviceObj );
-		
+			typeof(ID3D12Device9).GUID, out object? deviceObj );
+
 		Assert.IsTrue( hr.Succeeded );
 
-		device = null;
-		Assert.DoesNotThrow( () => {
-			device = deviceObj as ID3D12Device9 ??
-				throw new COMException( "Initialization of ID3D12Device9 interface failed!" ); });
+		_device = null;
+		Assert.DoesNotThrow( () =>
+		{
+			_device = deviceObj as ID3D12Device9 ??
+				throw new COMException( "Initialization of ID3D12Device9 interface failed!" );
+		} );
 
-		Assert.IsNotNull( device );
+		Assert.IsNotNull( _device );
 	}
 
-	[Test, Order(5)]
-	public void Create_D3D12_CommandQueue()
-	{
+	[Test, Order( 5 )]
+	public unsafe void Create_D3D12_CommandQueue() {
 		// Describe and create the command queue:
-		commandQueue = default;
-		var creatorID = typeof(ID3D12Device9).GUID;
-		var cmdQueueID = typeof(ID3D12CommandQueue).GUID;
+		_commandQueue = default;
+		var creatorId = typeof(ID3D12Device9).GUID;
+		var cmdQueueId = typeof(ID3D12CommandQueue).GUID;
 
-		D3D12_COMMAND_QUEUE_DESC queueDesc = new D3D12_COMMAND_QUEUE_DESC() {
+		var queueDesc = new D3D12_COMMAND_QUEUE_DESC()
+		{
 			Flags = D3D12_COMMAND_QUEUE_FLAGS.D3D12_COMMAND_QUEUE_FLAG_NONE,
 			Type = D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT,
 		};
-		
-		device.CreateCommandQueue1( queueDesc, creatorID, cmdQueueID, out var cmdQObj );
 
-		Assert.DoesNotThrow( () => {
-			commandQueue = cmdQObj as ID3D12CommandQueue ??
-				throw new COMException("Create_D3D12_CommandQueue(): Cannot obtain ID3D12CommandQueue* for COM interface!"); });
-		Assert.IsNotNull( commandQueue );
-	}
-
-	[Test, Order(6)]
-	public void Create_D3D12_CommandList()
-	{
-		Assert.IsNotNull(device);
+		_device.CreateCommandQueue1( &queueDesc, &creatorId, &cmdQueueId, out object? cmdQObj );
 
 		Assert.DoesNotThrow( () =>
 		{
-			device.CreateCommandList1(	0x00u,
-										D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT,
-										D3D12_COMMAND_LIST_FLAGS.D3D12_COMMAND_LIST_FLAG_NONE,
-										typeof( ID3D12GraphicsCommandList5 ).GUID,
-										out object cmdListObj);
-
-			commandList = cmdListObj as ID3D12GraphicsCommandList5 ??
-				throw new COMException("Create_D3D12_CommandList(): " +
-					"Cannot obtain reference to D3D12 command list!");
-		});
-		Assert.IsNotNull(commandList);
+			_commandQueue = cmdQObj as ID3D12CommandQueue ??
+				throw new COMException( "Create_D3D12_CommandQueue(): Cannot obtain ID3D12CommandQueue* for COM interface!" );
+		} );
+		Assert.IsNotNull( _commandQueue );
 	}
 
-	[Test, Order(7)]
-	public void Create_DXGI_SwapChain()
+	[Test, Order( 6 )]
+	public void Create_D3D12_CommandList()
 	{
-		Assert.IsNotNull( renderForm );
-		Assert.IsNotNull( commandQueue );
+		unsafe {
+			Guid uid = default; Guid* pId = &uid;
+
+			Assert.IsNotNull( _device );
+			Assert.DoesNotThrow( () =>
+			{
+				_device.CreateCommandList1( 0x00u,
+											D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT,
+											D3D12_COMMAND_LIST_FLAGS.D3D12_COMMAND_LIST_FLAG_NONE,
+											pId,
+											out object cmdListObj );
+
+				_commandList = cmdListObj as ID3D12GraphicsCommandList5 ??
+					throw new COMException( "Create_D3D12_CommandList(): " +
+						"Cannot obtain reference to D3D12 command list!" );
+			} );
+			Assert.IsNotNull( _commandList ); 
+		}
+	}
+
+	[Test, Order( 7 )]
+	public unsafe void Create_DXGI_SwapChain() {
+		Assert.IsNotNull( _renderForm );
+		Assert.IsNotNull( _commandQueue );
 
 		// Create swapchain descriptions:
-		var scDesc = new SwapChainDescription1( renderForm.ClientSize.Width, renderForm.ClientSize.Height,
-			Format.R8G8B8A8_UNORM, false, new SampleDescription(1, 0), Usage.RenderTargetOutput, (uint)bufferCount,
+		var scDesc = new SwapChainDescription1( _renderForm.ClientSize.Width, _renderForm.ClientSize.Height,
+			Format.R8G8B8A8_UNORM, false, new SampleDescription(1, 0), Usage.RenderTargetOutput, _bufferCount,
 			Scaling.Stretch, SwapEffect.FlipDiscard, AlphaMode.Ignore, SwapChainFlags.FrameLatencyWaitableObject );
 		var scfsDesc = new SwapChainFullscreenDescription( 60u, ScanlineOrder.Unspecified, ScalingMode.Stretched, true );
 
-		Assert.DoesNotThrow( () => {
-			factory.CreateSwapChainForHwnd(
-				commandQueue,
-				(HWND)renderForm.Handle,
-				scDesc.InternalValue,
-				scfsDesc.InternalValue,
-				null,
-				out var swapChainObj);
+		var pSwapChainDesc = (DXGI_SWAP_CHAIN_DESC1*)&scDesc;
+		var pScfsDesc = (DXGI_SWAP_CHAIN_FULLSCREEN_DESC*)&scDesc;
+		IDXGISwapChain1 swapChainObj = default;
 
-			swapChain = swapChainObj as IDXGISwapChain4 ??
+		Assert.DoesNotThrow( () =>
+		{
+			_factory?.CreateSwapChainForHwnd(
+				_commandQueue,
+				(HWND)_renderForm.Handle,
+				pSwapChainDesc,
+				pScfsDesc,
+				null,
+				out swapChainObj );
+
+			_swapChain = swapChainObj as IDXGISwapChain4 ??
 				throw new COMException( "Initialization of IDXGISwapChain4 interface failed!" );
-		});
-		Assert.IsNotNull(swapChain);
+		} );
+		Assert.IsNotNull( _swapChain );
 	}
 
-	[Test, Order(8)]
-	public void Create_D3D12_CommandAlloc() {
+	[Test, Order( 8 )]
+	public unsafe void Create_D3D12_CommandAlloc() {
 
-		Assert.IsNotNull( device );
+		Assert.IsNotNull( _device );
 
-		Assert.DoesNotThrow( () => {
-		
-			device.CreateCommandAllocator( 
-				D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT, 
-				typeof( ID3D12CommandAllocator ).GUID, out var allocObj );
+		Assert.DoesNotThrow( () =>
+		{
+			Guid id = typeof(ID3D12CommandAllocator).GUID;
 
-			commandAlloc = allocObj as ID3D12CommandAllocator ??
+			_device.CreateCommandAllocator(
+				D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT,
+				&id, out object? allocObj );
+
+			_commandAlloc = allocObj as ID3D12CommandAllocator ??
 				throw new COMException( "Create_D3D12_CommandAlloc(): " +
 					"Cannot obtain reference to D3D12 command allocator!" );
 		} );
-		Assert.IsNotNull( commandList );
+		Assert.IsNotNull( _commandList );
 	}
 };
 
 /*
  
- 		// Get the size of the message.
+		// Get the size of the message.
 		uint messageLength = 0;
 		HRESULT hr = pInfoQueue->GetMessage(DXGI_DEBUG_ALL, 0, NULL, &messageLength);
 		if (hr == S_FALSE)

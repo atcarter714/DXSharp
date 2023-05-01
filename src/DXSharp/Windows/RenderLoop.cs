@@ -30,13 +30,19 @@
 // --------------------------------------------------------------------------------
 
 #region Using Directives
-using System;
 using System.Globalization;
+using System.Runtime.InteropServices;
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
+After:
+using System.Runtime.InteropServices;
+using System.Windows.InteropServices;
+*/
 using Windows.Win32;
-using Windows.Win32.UI.WindowsAndMessaging;
 using Windows.Win32.Foundation;
+using Windows.Win32.UI.WindowsAndMessaging;
 #endregion
 
 namespace DXSharp.Windows;
@@ -47,7 +53,7 @@ namespace DXSharp.Windows;
 /// RenderLoop provides a rendering loop infrastructure. See remarks for usage. 
 /// </summary>
 /// <remarks>
-/// Use static <see cref="Run(System.Windows.Forms.Control,SharpDX.Windows.RenderLoop.RenderCallback)"/>  
+/// Use static <see cref="Run(System.Windows.Forms.Control,RenderCallback)"/>  
 /// method to directly use a renderloop with a render callback or use your own loop:
 /// <code>
 /// control.Show();
@@ -68,7 +74,7 @@ namespace DXSharp.Windows;
 /// RenderForms and WinForms and potentially a native Win32 window.
 /// </para>
 /// </remarks>
-public class RenderLoop : IDisposable
+public class RenderLoop: IDisposable
 {
 	/// <summary>
 	/// Delegate for the rendering loop.
@@ -99,25 +105,22 @@ public class RenderLoop : IDisposable
 	/// </summary>
 	/// <value>The control.</value>
 	/// <exception cref="System.InvalidOperationException">Control is already disposed</exception>
-	public Control? Control
-	{
+	public Control? Control {
 		get => control;
-		
-		set
-		{
-			if (control == value) return;
+
+		set {
+			if( control == value ) return;
 
 			// Remove any previous control
-			if ( control is not null && !switchControl )
-			{
+			if( control is not null && !switchControl ) {
 				isControlAlive = false;
 				control.Disposed -= ControlDisposed;
 				controlHandle = IntPtr.Zero;
 			}
 
-			if ( value is not null && value.IsDisposed )
+			if( value is not null && value.IsDisposed )
 				throw new InvalidOperationException( "Control is already disposed" );
-			
+
 			control = value;
 			switchControl = true;
 		}
@@ -141,54 +144,44 @@ public class RenderLoop : IDisposable
 	/// </summary>
 	/// <returns><c>true</c> if if the control is still active, <c>false</c> otherwise.</returns>
 	/// <exception cref="System.InvalidOperationException">An error occured </exception>
-	public bool NextFrame()
-	{
+	public bool NextFrame() {
 		// Setup new control
 		// TODO this is not completely thread-safe. We should use a lock to handle this correctly
-		if (switchControl && control != null)
-		{
+		if( switchControl && control != null ) {
 			controlHandle = control.Handle;
 			control.Disposed += ControlDisposed;
 			isControlAlive = true;
 			switchControl = false;
 		}
 
-		if (isControlAlive)
-		{
-			if (UseApplicationDoEvents)
-			{
+		if( isControlAlive ) {
+			if( UseApplicationDoEvents ) {
 				// Revert back to Application.DoEvents in order to support Application.AddMessageFilter
 				// Seems that DoEvents is compatible with Mono unlike Application.Run that was not running
 				// correctly.
 				Application.DoEvents();
 			}
-			else
-			{
-				var localHandle = controlHandle;
-				if (localHandle != IntPtr.Zero)
-				{
+			else {
+				nint localHandle = controlHandle;
+				if( localHandle != IntPtr.Zero ) {
 					// Previous code not compatible with Application.AddMessageFilter but faster then DoEvents
 					MSG msg;
-					while (PInvoke.PeekMessage(out msg, HWND.Null, 0, 0, 0) != 0)
-					{
-						if (PInvoke.GetMessage(out msg, HWND.Null, 0, 0) == -1)
-						{
-							throw new InvalidOperationException(String.Format(CultureInfo.InvariantCulture,
+					while( PInvoke.PeekMessage( out msg, HWND.Null, 0, 0, 0 ) != 0 ) {
+						if( PInvoke.GetMessage( out msg, HWND.Null, 0, 0 ) == -1 ) {
+							throw new InvalidOperationException( String.Format( CultureInfo.InvariantCulture,
 								"An error happened in rendering loop while processing windows messages. Error: {0}",
-								Marshal.GetLastWin32Error()));
+								Marshal.GetLastWin32Error() ) );
 						}
 
 						// NCDESTROY event?
-						if (msg.message == 130)
-						{
+						if( msg.message == 130 ) {
 							isControlAlive = false;
 						}
 
 						var message = new Message() { HWnd = msg.hwnd, LParam = msg.lParam, Msg = (int)msg.message, WParam = (IntPtr)msg.wParam };
-						if (!Application.FilterMessage(ref message))
-						{
-							PInvoke.TranslateMessage( msg );
-							PInvoke.DispatchMessage( msg );
+						if( !Application.FilterMessage( ref message ) ) {
+							_ = PInvoke.TranslateMessage( msg );
+							_ = PInvoke.DispatchMessage( msg );
 						}
 					}
 				}
@@ -218,16 +211,14 @@ public class RenderLoop : IDisposable
 	/// <exception cref="System.ArgumentNullException">form
 	/// or
 	/// renderCallback</exception>
-	public static void Run( Control? form, RenderCallback renderCallback, bool useApplicationDoEvents = false )
-	{
-		if ( form is null ) throw new ArgumentNullException( "form" );
-		if ( renderCallback is null ) throw new ArgumentNullException( "renderCallback" );
+	public static void Run( Control? form, RenderCallback renderCallback, bool useApplicationDoEvents = false ) {
+		if( form is null ) throw new ArgumentNullException( "form" );
+		if( renderCallback is null ) throw new ArgumentNullException( "renderCallback" );
 
 		form.Show();
-		using ( var renderLoop = new RenderLoop( form ) { UseApplicationDoEvents = useApplicationDoEvents } ) {
-			while ( renderLoop.NextFrame() ) {
-				renderCallback();
-			}
+		using var renderLoop = new RenderLoop( form ) { UseApplicationDoEvents = useApplicationDoEvents };
+		while( renderLoop.NextFrame() ) {
+			renderCallback();
 		}
 	}
 
@@ -237,6 +228,6 @@ public class RenderLoop : IDisposable
 	/// <value>
 	/// 	<c>true</c> if this instance is application idle; otherwise, <c>false</c>.
 	/// </value>
-	public static bool IsIdle => PInvoke.PeekMessage( out var msg, HWND.Null, 0, 0, 0 );
+	public static bool IsIdle => PInvoke.PeekMessage( out _, HWND.Null, 0, 0, 0 );
 
 };

@@ -1,16 +1,6 @@
 ﻿#pragma warning disable CS8981, CS1591
 
 #region Using Directives
-using global::System;
-using global::System.Diagnostics;
-using global::System.Diagnostics.CodeAnalysis;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
-using global::System.Runtime.Versioning;
-
-using Windows.Win32.Graphics.Dxgi;
-
-using winmdroot = global::Windows.Win32;
 #endregion
 
 namespace Windows.Win32.Graphics.Direct3D12;
@@ -33,9 +23,9 @@ internal partial struct D3D12_VIEWPORT
 		this.MaxDepth = 1f;
 	}
 
-	internal D3D12_VIEWPORT( 
+	internal D3D12_VIEWPORT(
 		float topLeftX, float topLeftY,
-		float width, float height, 
+		float width, float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
 
 		this.TopLeftX = topLeftX;
@@ -47,7 +37,7 @@ internal partial struct D3D12_VIEWPORT
 	}
 
 	internal D3D12_VIEWPORT(
-		float width, float height, 
+		float width, float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
 
 		this.TopLeftX = 0;

@@ -1,15 +1,33 @@
 ﻿#pragma warning disable CS1591
 
 #region Using Directives
+
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using global::System;
-using global::System.Runtime.CompilerServices;
+After:
+using Accessibility;
+
+using DXSharp.DXGI;
+using DXSharp.Windows.COM;
+
+using global::System;
+*/
+using DXSharp.Windows.COM;
+
 using global::System.Runtime.InteropServices;
-using global::System.Runtime.InteropServices.ComTypes;
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using global::System.Runtime.InteropServices.WindowsRuntime;
+After:
+using global::System.Runtime.InteropServices.WindowsRuntime;
+using global::Windows.Win32;
+*/
 
-using Windows.Win32.Foundation;
+
 using Windows.Win32.Graphics.Dxgi;
-
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using global::Windows.Win32;
 using Win32 = global::Windows.Win32;
 
@@ -21,6 +39,14 @@ using DXSharp.DXGI;
 using DXSharp.Windows.COM;
 using Accessibility;
 #endregion
+After:
+using WinRT.Interop;
+
+using Win32 = global::Windows.Win32;
+#endregion
+*/
+
+#endregion
 
 namespace DXSharp.DXGI;
 
@@ -29,7 +55,7 @@ namespace DXSharp.DXGI;
 /// <summary>
 /// Wrapper interface for the native IDXGIObject COM interface
 /// </summary>
-internal interface IObject : IUnknown<IDXGIObject>
+internal interface IObject: IUnknown<IDXGIObject>
 {
 	/// <summary>
 	/// Sets application-defined data to the object and associates that data with a GUID.
@@ -53,7 +79,7 @@ internal interface IObject : IUnknown<IDXGIObject>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	//unsafe void SetPrivateData( global::System.Guid* Name, uint DataSize, void* pData );
-	void SetPrivateData<T>(uint DataSize, IntPtr pData);
+	void SetPrivateData<T>( uint DataSize, IntPtr pData );
 
 	/// <summary>Set an interface in the object's private data.</summary>
 	/// <param name="Name">
@@ -71,7 +97,7 @@ internal interface IObject : IUnknown<IDXGIObject>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	//unsafe void SetPrivateDataInterface( global::System.Guid* Name, [MarshalAs( UnmanagedType.IUnknown )] object pUnknown );
-	void SetPrivateDataInterface<T>(T pUnknown);
+	void SetPrivateDataInterface<T>( T pUnknown );
 
 	/// <summary>Get a pointer to the object's data.</summary>
 	/// <param name="Name">
@@ -93,7 +119,7 @@ internal interface IObject : IUnknown<IDXGIObject>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	//unsafe void GetPrivateData( global::System.Guid* Name, uint* pDataSize, void* pData );
-	void GetPrivateData(out uint pDataSize, IntPtr pData);
+	void GetPrivateData( out uint pDataSize, IntPtr pData );
 
 	/// <summary>Gets the parent of the object.</summary>
 	/// <param name="riid">
@@ -111,10 +137,10 @@ internal interface IObject : IUnknown<IDXGIObject>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	//unsafe void GetParent( global::System.Guid* riid, [MarshalAs( UnmanagedType.IUnknown )] out object ppParent );
-	void GetParent(in Guid riid, out object ppParent);
+	void GetParent( in Guid riid, out object ppParent );
 };
 
-internal interface IObject<T>: IObject where T: class
+internal interface IObject<T>: IObject where T : class
 {
 
 };
@@ -122,18 +148,16 @@ internal interface IObject<T>: IObject where T: class
 
 public class Object: IObject
 {
-	private protected Object( IDXGIObject dxgiObj )
-	{
+	private protected Object( IDXGIObject dxgiObj ) {
 		this.m_dxgiObject = dxgiObj;
 	}
 
 	/// <summary>
 	/// Destructor
 	/// </summary>
-	~Object() => Dispose(false);
+	~Object() => Dispose( false );
 
-	
-	IDXGIObject? m_dxgiObject;
+	readonly IDXGIObject? m_dxgiObject;
 
 	/// <summary>
 	/// Gets the pointer to the underyling COM interface
@@ -148,20 +172,23 @@ public class Object: IObject
 
 	ComPtr<IDXGIObject> IUnknown<IDXGIObject>.ComPtr { get; }
 
-	protected virtual void Dispose( bool disposing )
-	{
-		if ( !disposedValue )
-		{
-			if ( disposing )
-			{
+	protected virtual void Dispose( bool disposing ) {
+		if( !disposedValue ) {
+			if( disposing ) {
 				// TODO: dispose managed state (managed objects)
 			}
 
 			// TODO: free unmanaged resources (unmanaged objects) and override finalizer
 			// TODO: set large fields to null
-			if( m_dxgiObject is not null )
-			{
-				int refCount = Marshal.ReleaseComObject( m_dxgiObject );
+			if( m_dxgiObject is not null ) {
+
+				/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+				Before:
+								int refCount = Marshal.ReleaseComObject( m_dxgiObject );
+				After:
+								_ = Marshal.ReleaseComObject( m_dxgiObject );
+				*/
+				_ = Marshal.ReleaseComObject( m_dxgiObject );
 			}
 
 			disposedValue = true;
@@ -171,11 +198,10 @@ public class Object: IObject
 	/// <summary>
 	/// Diposes of this instance and frees its native COM resources
 	/// </summary>
-	public void Dispose()
-	{
+	public void Dispose() {
 		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-		Dispose(disposing: true);
-		GC.SuppressFinalize(this);
+		Dispose( disposing: true );
+		GC.SuppressFinalize( this );
 	}
 
 	public ValueTask DisposeAsync() => throw new NotImplementedException();
@@ -183,31 +209,27 @@ public class Object: IObject
 	#endregion
 
 
-	public void GetParent(in Guid riid, out object ppParent)
-	{
+	public void GetParent( in Guid riid, out object ppParent ) {
 		throw new NotImplementedException();
 	}
 
-	public void GetPrivateData(out uint pDataSize, IntPtr pData)
-	{
+	public void GetPrivateData( out uint pDataSize, IntPtr pData ) {
 		throw new NotImplementedException();
 	}
 
-	public void SetPrivateData<T>(uint DataSize, IntPtr pData)
-	{
+	public void SetPrivateData<T>( uint DataSize, IntPtr pData ) {
 		throw new NotImplementedException();
 	}
 
-	public void SetPrivateDataInterface<T>(T pUnknown)
-	{
+	public void SetPrivateDataInterface<T>( T pUnknown ) {
 		throw new NotImplementedException();
 	}
 
 
 	internal static Object Create( IDXGIObject dxgiObj ) {
-#if DEBUG || ! STRIP_CHECKS
-		if (dxgiObj is null)
-			throw new ArgumentNullException("dxgiObj");
+#if DEBUG || !STRIP_CHECKS
+		if( dxgiObj is null )
+			throw new ArgumentNullException( "dxgiObj" );
 #endif
 
 		var newObj = new Object( dxgiObj );
@@ -218,12 +240,12 @@ public class Object: IObject
 
 	public static Object Create( IntPtr pComObj ) {
 #if DEBUG || !STRIP_CHECKS
-		if ( pComObj == IntPtr.Zero )
-			throw new ArgumentNullException("dxgiObj");
+		if( pComObj == IntPtr.Zero )
+			throw new ArgumentNullException( "dxgiObj" );
 #endif
 
-		var comObj = Marshal.GetObjectForIUnknown( pComObj );
-		if (comObj is null)
+		object? comObj = Marshal.GetObjectForIUnknown( pComObj );
+		if( comObj is null )
 			throw new COMException( $"DXGI.Object.Create( {pComObj} ): " +
 				$"Unable to initialize COM object reference from the given address!" );
 

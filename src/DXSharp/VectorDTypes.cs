@@ -1,16 +1,9 @@
 ﻿
 #region Using Directives
-using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using System.Diagnostics.CodeAnalysis;
-
-using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
-using SysVec2 = System.Numerics.Vector2;
-using SysVec3 = System.Numerics.Vector3;
+
 using SysVec4 = System.Numerics.Vector4;
 #endregion
 
@@ -141,23 +134,21 @@ public struct Vector4D: IEquatable<Vector4D>, IFormattable
 	/// </exception>
 	public double this[ int index ] {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
-		get
-		{
-			switch ( index ) {
-				case 0: return v.GetElement( X_INDEX );
-				case 1: return v.GetElement( Y_INDEX );
-				case 2: return v.GetElement( Z_INDEX );
-				case 3: return v.GetElement( W_INDEX );
-				default:
-					throw new IndexOutOfRangeException( $"Vector4D[ {index} ] Accessor: " +
-						$"The index {index} is not within the valid range of 0 to {nITEMS}!" );
-			}
+		get {
+			return index switch
+			{
+				0 => v.GetElement( X_INDEX ),
+				1 => v.GetElement( Y_INDEX ),
+				2 => v.GetElement( Z_INDEX ),
+				3 => v.GetElement( W_INDEX ),
+				_ => throw new IndexOutOfRangeException( $"Vector4D[ {index} ] Accessor: " +
+										$"The index {index} is not within the valid range of 0 to {nITEMS}!" ),
+			};
 		}
 
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
-		set
-		{
-			switch ( index ) {
+		set {
+			switch( index ) {
 				case 0: SetMem( X_INDEX, value ); break;
 				case 1: SetMem( Y_INDEX, value ); break;
 				case 2: SetMem( Z_INDEX, value ); break;
@@ -217,13 +208,13 @@ public struct Vector4D: IEquatable<Vector4D>, IFormattable
 	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
 	internal void SetMem( int offset, double value ) {
 #if DEBUG || !STRIP_CHECKS
-		if ( offset < 0 || offset > nITEMS ) {
+		if( offset is < 0 or > nITEMS ) {
 			throw new IndexOutOfRangeException( $"WriteMem({offset}, {value}): " +
 				$"The specified memory offset ({offset}) is out of range!" );
 		}
 #endif
 		unsafe {
-			fixed ( Vector256<double>* ptr = &v ) {
+			fixed( Vector256<double>* ptr = &v ) {
 				double* pItems = (double*)ptr;
 				*(pItems + offset) = value;
 			}
@@ -233,7 +224,7 @@ public struct Vector4D: IEquatable<Vector4D>, IFormattable
 	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
 	internal void SetMem( Vector128<double> lower, Vector128<double> upper ) {
 		unsafe {
-			fixed ( Vector256<double>* ptr = &v ) {
+			fixed( Vector256<double>* ptr = &v ) {
 				Unsafe.Write( (Vector128<double>*)ptr, lower );
 				Unsafe.Write( ((Vector128<double>*)ptr) + 0x1, upper );
 			}

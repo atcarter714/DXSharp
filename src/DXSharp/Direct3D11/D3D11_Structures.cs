@@ -1,18 +1,6 @@
-﻿
-#pragma warning disable CS8981, CS1591
+﻿#pragma warning disable CS8981, CS1591
 
 #region Using Directives
-using global::System;
-using global::System.Diagnostics;
-using global::System.Diagnostics.CodeAnalysis;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
-using global::System.Runtime.Versioning;
-
-using Windows.Win32.Graphics.Direct3D11;
-using Windows.Win32.Graphics.Direct3D12;
-
-using winmdroot = global::Windows.Win32;
 #endregion
 
 namespace Windows.Win32.Graphics.Direct3D11;
@@ -56,8 +44,19 @@ internal partial struct D3D11_VIEWPORT
 		this.MaxDepth = maxDepth;
 	}
 
+
+	/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+	Before:
+		internal static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
+
+			try {
+	After:
+		internal static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
+
+			try {
+	*/
 	internal static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
-		
+
 		try {
 			unsafe {
 				uint count = 0x08u;
@@ -69,7 +68,7 @@ internal partial struct D3D11_VIEWPORT
 			}
 		}
 		// Failed:
-		catch ( Exception ) { return null; }
+		catch( Exception ) { return null; }
 	}
 
 

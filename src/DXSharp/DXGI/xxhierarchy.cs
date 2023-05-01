@@ -1,14 +1,12 @@
 ﻿#region Using Directives
 using DXSharp.Windows.COM;
 
-using System.Configuration;
-using System.Reflection.Metadata;
 using System.Runtime.InteropServices;
 
 using Windows.Win32.Graphics.Dxgi;
 #endregion
 
-namespace xxx;
+namespace DXSharp.DXGI;
 
 
 
@@ -159,7 +157,7 @@ interface IFactory7: IFactory6, IFactoryX<IDXGIFactory7> { }
 
 
 
-internal interface IDXObject<T> where T: class, IDXGIObject
+internal interface IDXObject<T> where T : class, IDXGIObject
 {
 	//ComPtr? IUnknown.ComPtr => (ComPtr?)this.ComPtr;
 	internal ComPtr<T>? ComPtr { get; }
@@ -185,7 +183,7 @@ internal interface IDXObject<T> where T: class, IDXGIObject
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void SetPrivateData<I>( uint DataSize, nint pData ) where I: T;
+	void SetPrivateData<I>( uint DataSize, nint pData ) where I : T;
 
 	/// <summary>Set an interface in the object's private data.</summary>
 	/// <param name="Name">
@@ -202,7 +200,7 @@ internal interface IDXObject<T> where T: class, IDXGIObject
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void SetPrivateDataInterface<I>( I pUnknown ) where I: T;
+	void SetPrivateDataInterface<I>( I pUnknown ) where I : T;
 
 	/// <summary>Get a pointer to the object's data.</summary>
 	/// <param name="Name">
@@ -223,7 +221,7 @@ internal interface IDXObject<T> where T: class, IDXGIObject
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getprivatedata">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void GetPrivateData<I>( in uint pDataSize, nint pData ) where I: T;
+	void GetPrivateData<I>( in uint pDataSize, nint pData ) where I : T;
 
 	/// <summary>Gets the parent of the object.</summary>
 	/// <param name="riid">
@@ -240,22 +238,22 @@ internal interface IDXObject<T> where T: class, IDXGIObject
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void GetParent<I>( out I? ppParent ) where I: class, T;
+	void GetParent<I>( out I? ppParent ) where I : class, T;
 
 };
 
 
-public interface IUnknown {  }
+public interface IUnknown { }
 
-public interface IObject
-{
-	void SetPrivateData<I>( uint DataSize, nint pData ) where I: class;
-	void SetPrivateDataInterface<I>( I pUnknown ) where I: class;
-	void GetPrivateData<I>( in uint pDataSize, nint pData ) where I: class;
-	void GetParent<I>( out I? ppParent ) where I: class;
-};
+//public interface IObject
+//{
+//	void SetPrivateData<I>( uint DataSize, nint pData ) where I : class;
+//	void SetPrivateDataInterface<I>( I pUnknown ) where I : class;
+//	void GetPrivateData<I>( in uint pDataSize, nint pData ) where I : class;
+//	void GetParent<I>( out I? ppParent ) where I : class;
+//};
 
-interface IFactory<T>: IDXObject<T> where T: class, IDXGIFactory
+interface IFactory<T>: IDXObject<T> where T : class, IDXGIFactory
 {
 
 };
@@ -277,16 +275,25 @@ interface IFactory<T>: IDXObject<T> where T: class, IDXGIFactory
 /// <typeparam name="T">Type of IDXGIObject interface wrapped by this class</typeparam>
 internal abstract class Object<T>: IDXObject<T> where T : class, IDXGIObject
 {
-	ComPtr<T>? IDXObject<T>.ComPtr => this.ComPtr;
+	ComPtr<T>? IDXObject<T>.ComPtr => ComPtr;
 	internal abstract ComPtr<T>? ComPtr { get; private protected set; }
 
 	public void SetPrivateData<I>( uint DataSize, nint pData ) where I : T {
 #if DEBUG || !STRIP_CHECKS
-		if ( ComPtr is null || ComPtr.Interface is null )
-			throw new COMException( $"{ this.GetType().Name }<{ nameof(T) }>" +
-				$"{ nameof( SetPrivateData ) }<{ nameof(I) }>( " +
-				$"{ DataSize }, { pData.ToString("X8") } ): " +
-				(ComPtr is null ? $"Internal ComPtr<{ nameof(T) }> is null!" : 
+		if( ComPtr is null || ComPtr.Interface is null )
+			throw new COMException( $"{GetType().Name}<{nameof( T )}>" +
+
+				/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+				Before:
+								$"{ nameof( SetPrivateData ) }<{ nameof(I) }>( " +
+								$"{ DataSize }, { pData.ToString("X8") } ): " +
+				After:
+								$"{ nameof( SetPrivateData ) }<{ nameof(I )}>( " +
+								$"{ DataSize }, { pData.ToString("X8" )} ): " +
+				*/
+				$"{nameof( SetPrivateData )}<{nameof( I )}>( " +
+				$"{DataSize}, {pData.ToString( "X8" )} ): " +
+				(ComPtr is null ? $"Internal ComPtr<{nameof( T )}> is null!" :
 					$"Internal ComPtr<{nameof( T )}> has a null pointer!") );
 #endif
 
@@ -295,11 +302,11 @@ internal abstract class Object<T>: IDXObject<T> where T : class, IDXGIObject
 			ComPtr.Interface.SetPrivateData( &riid, DataSize, (void*)pData );
 		}
 	}
-	
+
 	public void SetPrivateDataInterface<I>( I pUnknown ) where I : T {
 #if DEBUG || !STRIP_CHECKS
-		if ( ComPtr is null || ComPtr.Interface is null )
-			throw new COMException( $"{this.GetType().Name}<{nameof( T )}>" +
+		if( ComPtr is null || ComPtr.Interface is null )
+			throw new COMException( $"{GetType().Name}<{nameof( T )}>" +
 				$"{nameof( SetPrivateDataInterface )}<{nameof( I )}>( {pUnknown} ): " +
 				(ComPtr is null ? $"Internal ComPtr<{nameof( T )}> is null!" :
 					$"Internal ComPtr<{nameof( T )}> has a null pointer!") );
@@ -310,8 +317,8 @@ internal abstract class Object<T>: IDXObject<T> where T : class, IDXGIObject
 
 	public void GetPrivateData<I>( in uint pDataSize, nint pData ) where I : T {
 #if DEBUG || !STRIP_CHECKS
-		if ( ComPtr is null || ComPtr.Interface is null )
-			throw new COMException( $"{this.GetType().Name}<{nameof( T )}>" +
+		if( ComPtr is null || ComPtr.Interface is null )
+			throw new COMException( $"{GetType().Name}<{nameof( T )}>" +
 				$"{nameof( GetPrivateData )}<{nameof( I )}>( " +
 				$"{pDataSize}, {pData.ToString( "X8" )} ): " +
 				(ComPtr is null ? $"Internal ComPtr<{nameof( T )}> is null!" :
@@ -321,11 +328,11 @@ internal abstract class Object<T>: IDXObject<T> where T : class, IDXGIObject
 
 	}
 
-	public void GetParent<I>( out I? ppParent ) where I: class, T {
+	public void GetParent<I>( out I? ppParent ) where I : class, T {
 #if DEBUG || !STRIP_CHECKS
-		if ( ComPtr is null || ComPtr.Interface is null )
-			throw new COMException( $"{this.GetType().Name}<{nameof( T )}>" +
-				$"{nameof( GetParent )}<{nameof( I )}>( { nameof(ppParent)} ): " +
+		if( ComPtr is null || ComPtr.Interface is null )
+			throw new COMException( $"{GetType().Name}<{nameof( T )}>" +
+				$"{nameof( GetParent )}<{nameof( I )}>( {nameof( ppParent )} ): " +
 				(ComPtr is null ? $"Internal ComPtr<{nameof( T )}> is null!" :
 					$"Internal ComPtr<{nameof( T )}> has a null pointer!") );
 #endif
@@ -333,10 +340,10 @@ internal abstract class Object<T>: IDXObject<T> where T : class, IDXGIObject
 		unsafe {
 			object? parentObj = default;
 			var riid = typeof(I).GUID;
-			
+
 			ComPtr.Interface.GetParent( &riid, out parentObj );
 
-			if ( parentObj is not null )
+			if( parentObj is not null )
 				ppParent = parentObj as I;
 			else
 				ppParent = null;
@@ -344,35 +351,35 @@ internal abstract class Object<T>: IDXObject<T> where T : class, IDXGIObject
 	}
 };
 
-internal abstract class Factory<T>: Object<T> where T: class, IDXGIFactory
+internal abstract class Factory<T>: Object<T> where T : class, IDXGIFactory
 {
 
 };
-internal abstract class Factory1<T>: Factory<T> where T: class, IDXGIFactory1
+internal abstract class Factory1<T>: Factory<T> where T : class, IDXGIFactory1
 {
 
 };
-internal abstract class Factory2<T> : Factory1<T> where T : class, IDXGIFactory2
+internal abstract class Factory2<T>: Factory1<T> where T : class, IDXGIFactory2
 {
 
 };
-internal abstract class Factory3<T> : Factory2<T> where T : class, IDXGIFactory3
+internal abstract class Factory3<T>: Factory2<T> where T : class, IDXGIFactory3
 {
 
 };
-internal abstract class Factory4<T> : Factory3<T> where T : class, IDXGIFactory4
+internal abstract class Factory4<T>: Factory3<T> where T : class, IDXGIFactory4
 {
 
 };
-internal abstract class Factory5<T> : Factory4<T> where T : class, IDXGIFactory5
+internal abstract class Factory5<T>: Factory4<T> where T : class, IDXGIFactory5
 {
 
 };
-internal abstract class Factory6<T> : Factory5<T> where T : class, IDXGIFactory6
+internal abstract class Factory6<T>: Factory5<T> where T : class, IDXGIFactory6
 {
 
 };
-internal abstract class Factory7<T>: Factory6<T> where T: class, IDXGIFactory7
+internal abstract class Factory7<T>: Factory6<T> where T : class, IDXGIFactory7
 {
 
 };
@@ -391,19 +398,19 @@ internal class Factory2: Factory2<IDXGIFactory2>
 {
 	internal override ComPtr<IDXGIFactory2>? ComPtr { get; private protected set; }
 };
-internal class Factory3 : Factory3<IDXGIFactory3>
+internal class Factory3: Factory3<IDXGIFactory3>
 {
 	internal override ComPtr<IDXGIFactory3>? ComPtr { get; private protected set; }
 };
-internal class Factory4 : Factory4<IDXGIFactory4>
+internal class Factory4: Factory4<IDXGIFactory4>
 {
 	internal override ComPtr<IDXGIFactory4>? ComPtr { get; private protected set; }
 };
-internal class Factory5 : Factory5<IDXGIFactory5>
+internal class Factory5: Factory5<IDXGIFactory5>
 {
 	internal override ComPtr<IDXGIFactory5>? ComPtr { get; private protected set; }
 };
-internal class Factory6 : Factory6<IDXGIFactory6>
+internal class Factory6: Factory6<IDXGIFactory6>
 {
 	internal override ComPtr<IDXGIFactory6>? ComPtr { get; private protected set; }
 };

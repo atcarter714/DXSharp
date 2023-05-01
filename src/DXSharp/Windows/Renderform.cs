@@ -56,11 +56,27 @@
 #pragma warning disable CS1591
 
 #region Using Directives
-using System;
+using System
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using System.Windows;
-using System.Diagnostics;
+After:
+using System.ComponentModel;
+*/
+.
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using System.ComponentModel;
 using System.Drawing;
+using Windows.Win32;
+After:
+using System.Drawing;
+using System.Windows;
+
+using Windows.Win32;
+*/
+ComponentModel;
+
 using Windows.Win32;
 using Windows.Win32.Foundation;
 #endregion
@@ -77,7 +93,7 @@ namespace DXSharp.Windows;
 /// This code was adapter from SharpDX project's SharpDX.Windows.RenderForm type.
 /// It is provided as a helper class, and for its familiarity and usefulness.
 /// </remarks>
-public class RenderForm : Form
+public class RenderForm: Form
 {
 	#region Constant Values
 	const int WM_SIZE = 0x0005;
@@ -123,8 +139,7 @@ public class RenderForm : Form
 	/// Initializes a new instance of the <see cref="RenderForm"/> class.
 	/// </summary>
 	/// <param name="text">The text.</param>
-	public RenderForm( string text )
-	{
+	public RenderForm( string text ) {
 		Text = text;
 		ClientSize = new System.Drawing.Size( 800, 600 );
 		//MinimumSize = new System.Drawing.Size(200, 200);
@@ -200,14 +215,11 @@ public class RenderForm : Form
 	/// for <c>false</c> - <see cref="FormBorderStyle.FixedSingle"/>.
 	/// </remarks>
 	/// <value><c>true</c> if this form can be resized by the user (by default); otherwise, <c>false</c>.</value>
-	public bool AllowUserResizing
-	{
-		get =>  allowUserResizing;
+	public bool AllowUserResizing {
+		get => allowUserResizing;
 
-		set
-		{
-			if ( allowUserResizing != value )
-			{
+		set {
+			if( allowUserResizing != value ) {
 				allowUserResizing = value;
 				MaximizeBox = allowUserResizing;
 				FormBorderStyle = IsFullscreen
@@ -232,8 +244,7 @@ public class RenderForm : Form
 	/// Raises the <see cref="E:System.Windows.Forms.Form.ResizeBegin"/> event.
 	/// </summary>
 	/// <param name="e">A <see cref="T:System.EventArgs"/> that contains the event data.</param>
-	protected override void OnResizeBegin( EventArgs e )
-	{
+	protected override void OnResizeBegin( EventArgs e ) {
 		isUserResizing = true;
 
 		base.OnResizeBegin( e );
@@ -245,12 +256,10 @@ public class RenderForm : Form
 	/// Raises the <see cref="E:System.Windows.Forms.Form.ResizeEnd"/> event.
 	/// </summary>
 	/// <param name="e">A <see cref="T:System.EventArgs"/> that contains the event data.</param>
-	protected override void OnResizeEnd( EventArgs e )
-	{
+	protected override void OnResizeEnd( EventArgs e ) {
 		base.OnResizeEnd( e );
 
-		if ( isUserResizing && cachedSize != Size )
-		{
+		if( isUserResizing && cachedSize != Size ) {
 			OnUserResized( e );
 			// UpdateScreen();
 		}
@@ -263,26 +272,22 @@ public class RenderForm : Form
 	/// Raises the <see cref="E:System.Windows.Forms.Form.Load"/> event.
 	/// </summary>
 	/// <param name="e">An <see cref="T:System.EventArgs"/> that contains the event data.</param>
-	protected override void OnLoad(EventArgs e) => base.OnLoad(e);// UpdateScreen();
+	protected override void OnLoad( EventArgs e ) => base.OnLoad( e );// UpdateScreen();
 
 	/// <summary>
 	/// Paints the background of the control.
 	/// </summary>
 	/// <param name="e">A <see cref="T:System.Windows.Forms.PaintEventArgs"/> that contains the event data.</param>
-	protected override void OnPaintBackground( PaintEventArgs e )
-	{
-		if ( !isBackgroundFirstDraw )
-		{
+	protected override void OnPaintBackground( PaintEventArgs e ) {
+		if( !isBackgroundFirstDraw ) {
 			base.OnPaintBackground( e );
 			isBackgroundFirstDraw = true;
 		}
 	}
 
-	protected override void OnClientSizeChanged(EventArgs e)
-	{
+	protected override void OnClientSizeChanged( EventArgs e ) {
 		base.OnClientSizeChanged( e );
-		if ( !isUserResizing && (isSizeChangedWithoutResizeBegin || cachedSize != Size) )
-		{
+		if( !isUserResizing && (isSizeChangedWithoutResizeBegin || cachedSize != Size) ) {
 			isSizeChangedWithoutResizeBegin = false;
 			cachedSize = Size;
 			OnUserResized( EventArgs.Empty );
@@ -294,52 +299,50 @@ public class RenderForm : Form
 	/// Override windows message loop handling.
 	/// </summary>
 	/// <param name="m">The Windows <see cref="T:System.Windows.Forms.Message"/> to process.</param>
-	protected override void WndProc(ref Message m)
-	{
+	protected override void WndProc( ref Message m ) {
 		long wparam = m.WParam.ToInt64();
 
-		switch (m.Msg)
-		{
+		switch( m.Msg ) {
 			case WM_SIZE:
-				if (wparam == SIZE_MINIMIZED)
-				{
+				if( wparam == SIZE_MINIMIZED ) {
 					previousWindowState = FormWindowState.Minimized;
-					OnPauseRendering(EventArgs.Empty);
+					OnPauseRendering( EventArgs.Empty );
 				}
-				else
-				{
-					RECT rect = default;
-					PInvoke.GetClientRect((HWND)m.HWnd, out rect);
-					if (rect.bottom - rect.top == 0)
-					{
+				else {
+					RECT rect;
+					_ = PInvoke.GetClientRect( (HWND)m.HWnd, out rect );
+					if( rect.bottom - rect.top == 0 ) {
 						// Rapidly clicking the task bar to minimize and restore a window
 						// can cause a WM_SIZE message with SIZE_RESTORED when 
 						// the window has actually become minimized due to rapid change
 						// so just ignore this message
 					}
-					else if (wparam == SIZE_MAXIMIZED)
-					{
-						if (previousWindowState == FormWindowState.Minimized)
-							OnResumeRendering(EventArgs.Empty);
+					else if( wparam == SIZE_MAXIMIZED ) {
+						if( previousWindowState == FormWindowState.Minimized )
+							OnResumeRendering( EventArgs.Empty );
 
 						previousWindowState = FormWindowState.Maximized;
 
-						OnUserResized(EventArgs.Empty);
+						OnUserResized( EventArgs.Empty );
 						//UpdateScreen();
 						cachedSize = Size;
 					}
-					else if (wparam == SIZE_RESTORED)
-					{
-						if (previousWindowState == FormWindowState.Minimized)
-							OnResumeRendering(EventArgs.Empty);
+					else if( wparam == SIZE_RESTORED ) {
+						if( previousWindowState == FormWindowState.Minimized )
+							OnResumeRendering( EventArgs.Empty );
 
-						if (!isUserResizing && (Size != cachedSize || previousWindowState == FormWindowState.Maximized))
-						{
+						if( !isUserResizing && (Size != cachedSize || previousWindowState == FormWindowState.Maximized) ) {
 							previousWindowState = FormWindowState.Normal;
 
 							// Only update when cachedSize is != 0
-							if (cachedSize != Size.Empty)
-							{
+
+							/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+							Before:
+														if (cachedSize != Size.Empty)
+							After:
+														if( cachedSize != Size.Empty)
+							*/
+							if( cachedSize != Size.Empty ) {
 								isSizeChangedWithoutResizeBegin = true;
 							}
 						}
@@ -349,55 +352,50 @@ public class RenderForm : Form
 				}
 				break;
 			case WM_ACTIVATEAPP:
-				if (wparam != 0)
-					OnAppActivated(EventArgs.Empty);
+				if( wparam != 0 )
+					OnAppActivated( EventArgs.Empty );
 				else
-					OnAppDeactivated(EventArgs.Empty);
+					OnAppDeactivated( EventArgs.Empty );
 				break;
 			case WM_POWERBROADCAST:
-				if (wparam == PBT_APMQUERYSUSPEND)
-				{
-					OnSystemSuspend(EventArgs.Empty);
-					m.Result = new IntPtr(1);
+				if( wparam == PBT_APMQUERYSUSPEND ) {
+					OnSystemSuspend( EventArgs.Empty );
+					m.Result = new IntPtr( 1 );
 					return;
 				}
-				else if (wparam == PBT_APMRESUMESUSPEND)
-				{
-					OnSystemResume(EventArgs.Empty);
-					m.Result = new IntPtr(1);
+				else if( wparam == PBT_APMRESUMESUSPEND ) {
+					OnSystemResume( EventArgs.Empty );
+					m.Result = new IntPtr( 1 );
 					return;
 				}
 				break;
 			case WM_MENUCHAR:
-				m.Result = new IntPtr(MNC_CLOSE << 16); // IntPtr(MAKELRESULT(0, MNC_CLOSE));
+				m.Result = new IntPtr( MNC_CLOSE << 16 ); // IntPtr(MAKELRESULT(0, MNC_CLOSE));
 				return;
 			case WM_SYSCOMMAND:
 				wparam &= 0xFFF0;
-				if (wparam == SC_MONITORPOWER || wparam == SC_SCREENSAVE)
-				{
+				if( wparam is SC_MONITORPOWER or SC_SCREENSAVE ) {
 					var e = new CancelEventArgs();
-					OnScreensaver(e);
-					if (e.Cancel)
-					{
+					OnScreensaver( e );
+					if( e.Cancel ) {
 						m.Result = IntPtr.Zero;
 						return;
 					}
 				}
 				break;
 			case WM_DISPLAYCHANGE:
-				OnMonitorChanged(EventArgs.Empty);
+				OnMonitorChanged( EventArgs.Empty );
 				break;
 		}
 
-		base.WndProc(ref m);
+		base.WndProc( ref m );
 	}
 
-	protected override bool ProcessDialogKey(Keys keyData)
-	{
-		if (keyData == (Keys.Menu | Keys.Alt) || keyData == Keys.F10)
+	protected override bool ProcessDialogKey( Keys keyData ) {
+		if( keyData is (Keys.Menu | Keys.Alt) or Keys.F10 )
 			return true;
 
-		return base.ProcessDialogKey(keyData);
+		return base.ProcessDialogKey( keyData );
 	}
 
 	// Private Methods -----------------------------------------------------------------------
@@ -406,19 +404,19 @@ public class RenderForm : Form
 	/// Raises the Pause Rendering event.
 	/// </summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-	void OnPauseRendering(EventArgs e) => PauseRendering?.Invoke(this, e);
+	void OnPauseRendering( EventArgs e ) => PauseRendering?.Invoke( this, e );
 
 	/// <summary>
 	/// Raises the Resume Rendering event.
 	/// </summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-	void OnResumeRendering(EventArgs e) => ResumeRendering?.Invoke(this, e);
+	void OnResumeRendering( EventArgs e ) => ResumeRendering?.Invoke( this, e );
 
 	/// <summary>
 	/// Raises the User resized event.
 	/// </summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-	void OnUserResized(EventArgs e) => UserResized?.Invoke(this, e);
+	void OnUserResized( EventArgs e ) => UserResized?.Invoke( this, e );
 
 	/// <summary>
 	/// Raises the MonitorChanged event
@@ -430,43 +428,42 @@ public class RenderForm : Form
 	/// Raises the On App Activated event.
 	/// </summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-	void OnAppActivated(EventArgs e) => AppActivated?.Invoke(this, e);
+	void OnAppActivated( EventArgs e ) => AppActivated?.Invoke( this, e );
 
 	/// <summary>
 	/// Raises the App Deactivated event
 	/// </summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-	void OnAppDeactivated(EventArgs e) => AppDeactivated?.Invoke(this, e);
+	void OnAppDeactivated( EventArgs e ) => AppDeactivated?.Invoke( this, e );
 
 	/// <summary>
 	/// Raises the System Suspend event
 	/// </summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-	void OnSystemSuspend(EventArgs e) => SystemSuspend?.Invoke(this, e);
+	void OnSystemSuspend( EventArgs e ) => SystemSuspend?.Invoke( this, e );
 
 	/// <summary>
 	/// Raises the System Resume event
 	/// </summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-	void OnSystemResume(EventArgs e) => SystemResume?.Invoke(this, e);
+	void OnSystemResume( EventArgs e ) => SystemResume?.Invoke( this, e );
 
 	/// <summary>
 	/// Raises the <see cref="E:Screensaver"/> event.
 	/// </summary>
 	/// <param name="e">The <see cref="System.ComponentModel.CancelEventArgs"/> instance containing the event data.</param>
-	void OnScreensaver(CancelEventArgs e) => Screensaver?.Invoke(this, e);
+	void OnScreensaver( CancelEventArgs e ) => Screensaver?.Invoke( this, e );
 
-	private void InitializeComponent()
-	{
-			this.SuspendLayout();
-			// 
-			// RenderForm
-			// 
-			this.ClientSize = new System.Drawing.Size(608, 392);
-			this.Font = new System.Drawing.Font("Cambria", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-			this.Name = "RenderForm";
-			this.Text = "DXSharp";
-			this.ResumeLayout(false);
+	private void InitializeComponent() {
+		this.SuspendLayout();
+		// 
+		// RenderForm
+		// 
+		this.ClientSize = new System.Drawing.Size( 608, 392 );
+		this.Font = new System.Drawing.Font( "Cambria", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point );
+		this.Name = "RenderForm";
+		this.Text = "DXSharp";
+		this.ResumeLayout( false );
 
 	}
 };

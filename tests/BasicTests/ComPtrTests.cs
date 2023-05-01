@@ -1,19 +1,14 @@
 ﻿#region Using Directives
 using DXSharp.Windows.COM;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dxgi;
 #endregion
 
-namespace BasicTests.COM;
+namespace BasicTests;
 
 
 
@@ -29,7 +24,7 @@ internal class ComPtrTests
 	public void SetUp() {
 
 		hr = PInvoke.CreateDXGIFactory2(
-			0x00u, typeof( IDXGIFactory7 ).GUID, out var ppFactory );
+			0x00u, typeof( IDXGIFactory7 ).GUID, out object? ppFactory );
 
 		factory7 = (IDXGIFactory7)ppFactory;
 	}
@@ -44,9 +39,8 @@ internal class ComPtrTests
 
 
 
-	[Test, Order(0)]
-	public void Test_Create_ComPtr()
-	{
+	[Test, Order( 0 )]
+	public void Test_Create_ComPtr() {
 		// Ensure PInvoke call succeeded:
 		Assert.True( hr.Succeeded );
 		Assert.IsNotNull( factory7 );
@@ -63,9 +57,8 @@ internal class ComPtrTests
 		Assert.That( address, Is.Not.EqualTo( IntPtr.Zero ) );
 	}
 
-	[Test, Order(1)]
-	public void Test_Dispose_ComPtr()
-	{
+	[Test, Order( 1 )]
+	public void Test_Dispose_ComPtr() {
 		// Validate that the objects are alive:
 		Assert.IsNotNull( factory7 );
 		Assert.IsNotNull( factory7Ptr );
@@ -73,28 +66,28 @@ internal class ComPtrTests
 		release_ComPtr( factory7Ptr );
 	}
 
-	[Test, Order(2)]
-	public void Test_Native_Interface_Freed()
-	{
+	[Test, Order( 2 )]
+	public void Test_Native_Interface_Freed() {
 		// Verify the initial state:
-		Assert.IsNotNull( factory7Ptr );			// should be non-null
-		Assert.IsTrue( factory7Ptr.Disposed );		// should be disposed
-		Assert.IsFalse( address == IntPtr.Zero );	// should have old ptr
+		Assert.IsNotNull( factory7Ptr );            // should be non-null
+		Assert.IsTrue( factory7Ptr.Disposed );      // should be disposed
+		Assert.IsFalse( address == IntPtr.Zero );   // should have old ptr
 	}
 
 
 
 
 
-	ComPtr<T> create_ComPtr<T>( T? comObj ) where T : class
-	{
+	ComPtr<T> create_ComPtr<T>( T? comObj ) where T : class {
 		Assert.NotNull( comObj );
 
 		ComPtr<T>? comPtr = null;
 
 		// Create a ComPtr<T> and validate constructor:
-		Assert.DoesNotThrow( () => {
-			comPtr = new ComPtr<T>(comObj); });
+		Assert.DoesNotThrow( () =>
+		{
+			comPtr = new ComPtr<T>( comObj );
+		} );
 
 		// Assert that the ComPtr object is non-null:
 		Assert.IsNotNull( comPtr );
@@ -109,7 +102,7 @@ internal class ComPtrTests
 		Assert.NotNull( comPtr.Interface );
 
 		// Assert that we've obtained the GUID of the COM interface:
-		Assert.That(comPtr.GUID, Is.EqualTo( typeof(T).GUID ) );
+		Assert.That( comPtr.GUID, Is.EqualTo( typeof( T ).GUID ) );
 
 		// Check if the object is actually a valid COM interface:
 		Assert.IsTrue( Marshal.IsComObject( comPtr.Interface ) );
@@ -117,12 +110,11 @@ internal class ComPtrTests
 		return comPtr;
 	}
 
-	void release_ComPtr( ComPtr? comPtr )
-	{
+	void release_ComPtr( ComPtr? comPtr ) {
 		// Ensure the ComPtr is alive and call Dispose:
 		Assert.NotNull( comPtr );
 		comPtr?.Dispose();
-		
+
 		// Ensure it has disposed and cleared its internal state:
 		Assert.IsTrue( comPtr?.Disposed );
 		Assert.That( IntPtr.Zero, Is.EqualTo( comPtr?.Pointer ) );

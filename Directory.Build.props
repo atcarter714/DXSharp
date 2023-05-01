@@ -5,6 +5,7 @@
 		<BaseIntermediateOutputPath>$(RepoRootPath)obj\$([MSBuild]::MakeRelative($(RepoRootPath), $(MSBuildProjectDirectory)))\</BaseIntermediateOutputPath>
 		<BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(RepoRootPath)bin\$(MSBuildProjectName)\</BaseOutputPath>
 		<PackageOutputPath>$(RepoRootPath)bin\Packages\$(Configuration)\</PackageOutputPath>
+		
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>true</ImplicitUsings>
 		<Nullable>enable</Nullable>
@@ -24,13 +25,14 @@
 		<SignAssembly>true</SignAssembly>
 		<AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)file\keys\strongname.snk</AssemblyOriginatorKeyFile>
 
-		<Company>ATC</Company>
-		<Authors>Aaron T. Carter</Authors>
+		<Company>Arkaen Solutions</Company>
+		<Authors>Aaron T. Carter, $(Company), Contributors</Authors>
 		<Copyright>© Aaron T. Carter. All rights reserved.</Copyright>
 		<PackageProjectUrl>https://github.com/atcarter714/DXSharp</PackageProjectUrl>
-		<!--<PublishRepositoryUrl>true</PublishRepositoryUrl>-->
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		
 	</PropertyGroup>
 </Project>

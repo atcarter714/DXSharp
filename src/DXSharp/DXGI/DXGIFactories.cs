@@ -1,13 +1,25 @@
 ﻿#region Using Directives
+
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using global::System;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
-using global::System.Runtime.InteropServices.ComTypes;
+After:
+using DXSharp.DXGI;
+using DXSharp.Windows.COM;
+
+using global::System;
+*/
+
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using global::System.Runtime.InteropServices.WindowsRuntime;
+After:
+using global::System.Runtime.InteropServices.WindowsRuntime;
+using global::Windows.Win32;
+*/
 
-using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Dxgi;
-
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using global::Windows.Win32;
 using Win32 = global::Windows.Win32;
 
@@ -15,6 +27,11 @@ using WinRT.Interop;
 
 using DXSharp.DXGI;
 using DXSharp.Windows.COM;
+After:
+using WinRT.Interop;
+
+using Win32 = global::Windows.Win32;
+*/
 #endregion
 
 namespace DXSharp.DXGI;
@@ -25,12 +42,13 @@ namespace DXSharp.DXGI;
 /// Flags for making window association between
 /// a SwapChain and a HWND (Window handle)
 /// </summary>
-[Flags] public enum MWAFlags: uint
+[Flags]
+public enum MWAFlags: uint
 {
 	/// <summary>
 	/// No flags
 	/// </summary>
-	None			= 0x0,
+	None            = 0x0,
 	/// <summary>
 	/// Ignore all
 	/// </summary>
@@ -38,15 +56,15 @@ namespace DXSharp.DXGI;
 	/// <summary>
 	/// Ignore Alt+Enter
 	/// </summary>
-	NoAltEnter		= 0x2,
+	NoAltEnter      = 0x2,
 	/// <summary>
 	/// Ignore Print Screen key
 	/// </summary>
-	NoPrintScreen	= 0x4,
+	NoPrintScreen   = 0x4,
 	/// <summary>
 	/// Valid? (Needs documentation)
 	/// </summary>
-	Valid			= 0x7,
+	Valid           = 0x7,
 };
 
 /*

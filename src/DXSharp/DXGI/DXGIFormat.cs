@@ -1,6 +1,4 @@
 ﻿#region Using Directives
-using System;
-
 using Windows.Win32.Graphics.Dxgi.Common;
 #endregion
 
@@ -21,7 +19,7 @@ namespace DXSharp.DXGI
 	/// <para></para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgiformat/ne-dxgiformat-dxgi_format#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	public enum Format : uint
+	public enum Format: uint
 	{
 		/// <summary>The format is not known.</summary>
 		UNKNOWN = 0U,
@@ -353,8 +351,8 @@ namespace DXSharp.DXGI
 		/// </summary>
 		public static partial class DXGIXTensions
 		{
-			internal static DXGI_FORMAT AsDXGI_FORMAT( this Format format ) => (DXGI_FORMAT) format;
-			internal static Format AsFormat( this DXGI_FORMAT format ) => (Format) format;
+			internal static DXGI_FORMAT AsDXGI_FORMAT( this Format format ) => (DXGI_FORMAT)format;
+			internal static Format AsFormat( this DXGI_FORMAT format ) => (Format)format;
 		}
 	}
 }

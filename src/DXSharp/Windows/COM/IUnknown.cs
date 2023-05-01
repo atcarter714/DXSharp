@@ -1,12 +1,20 @@
 ﻿#region Using Directives
-using global::System;
 using global::System.Runtime.InteropServices;
-using global::System.Runtime.InteropServices.ComTypes;
-using global::System.Runtime.InteropServices.WindowsRuntime;
 
+
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using global::Windows.Win32;
 using Windows.Win32.Foundation;
 using Win32 = global::Windows.Win32;
+After:
+using global::Windows.Win32;
+
+using Windows.Win32.Foundation;
+
+using Win32 = global::Windows.Win32;
+*/
+using Windows.Win32.Foundation;
 #endregion
 
 namespace DXSharp.Windows.COM;
@@ -26,7 +34,7 @@ namespace DXSharp.Windows.COM;
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nn-unknwn-iunknown">here</a>.
 /// </remarks>
 //[ComImport, Guid("00000000-0000-0000-C000-000000000046")]
-public interface IUnknown : IDisposable, IAsyncDisposable
+public interface IUnknown: IDisposable, IAsyncDisposable
 {
 	/// <summary>
 	/// Gets the address of the underlying IUnknown COM interface
@@ -46,13 +54,13 @@ public interface IUnknown : IDisposable, IAsyncDisposable
 	/// You should call this method whenever you make a copy of an interface pointer.
 	/// </summary>
 	/// <returns>Updated reference count</returns>
-	uint AddRef() => (uint)Marshal.AddRef(Pointer);
+	uint AddRef() => (uint)Marshal.AddRef( Pointer );
 
 	/// <summary>
 	/// Decrements the reference count for an interface on a COM object.
 	/// </summary>
 	/// <returns>Updated reference count</returns>
-	uint Release() => (uint)Marshal.Release(Pointer);
+	uint Release() => (uint)Marshal.Release( Pointer );
 
 	/// <summary>
 	/// Retrieves reference to the supported interfaces on an object.
@@ -63,13 +71,12 @@ public interface IUnknown : IDisposable, IAsyncDisposable
 	/// <remarks>
 	/// Wrapper of native <a href="https://learn.microsoft.com/en-us/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(refiid_void)">QueryInterface</a>(REFIID,void) function.
 	/// </remarks>
-	HRESULT QueryInterface<T>(out T ppvObject) where T : IUnknown
-	{
+	HRESULT QueryInterface<T>( out T ppvObject ) where T : IUnknown {
 		var riid = typeof(T).GUID;
-		HRESULT hr = (HRESULT)Marshal.QueryInterface(
-			Pointer, ref riid, out var ppObj);
+		var hr = (HRESULT)Marshal.QueryInterface(
+			Pointer, ref riid, out nint ppObj);
 
-		hr.ThrowOnFailure();
+		_ = hr.ThrowOnFailure();
 		//if (hr.Failed)
 		//	throw new COMException("ERROR: Call to QueryInterface failed!", hr);
 
@@ -82,7 +89,7 @@ public interface IUnknown : IDisposable, IAsyncDisposable
 	}
 };
 
-internal interface IUnknown<T>: IUnknown where T: class
+internal interface IUnknown<T>: IUnknown where T : class
 {
 	internal ComPtr<T>? ComPtr { get; }
 

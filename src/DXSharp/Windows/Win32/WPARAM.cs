@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Windows.Win32.Foundation;
+﻿namespace Windows.Win32.Foundation;
 
 internal readonly partial struct WPARAM
 {

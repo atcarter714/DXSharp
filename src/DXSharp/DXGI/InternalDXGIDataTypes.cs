@@ -1,13 +1,20 @@
 ﻿#region Using Directives
+
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using System;
-using System.Runtime.CompilerServices;
+After:
+using DXSharp.DXGI;
+using DXSharp.Windows;
+
+using System;
+*/
+using DXSharp.DXGI;
 
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dxgi.Common;
-using Format = DXSharp.DXGI.Format;
 
-using DXSharp.DXGI;
-using DXSharp.Windows;
+using Format = DXSharp.DXGI.Format;
 #endregion
 
 namespace Windows.Win32.Graphics.Dxgi
@@ -34,12 +41,12 @@ namespace Windows.Win32.Graphics.Dxgi
 
 
 			public static implicit operator SampleDescription( DXGI_SAMPLE_DESC desc ) =>
-				new SampleDescription( desc );
+				new( desc );
 
 			public static implicit operator DXGI_SAMPLE_DESC( SampleDescription desc ) =>
-				new DXGI_SAMPLE_DESC( desc );
+				new( desc );
 
-			public static implicit operator DXGI_SAMPLE_DESC( 
+			public static implicit operator DXGI_SAMPLE_DESC(
 				(uint count, uint quality) values ) => new( values );
 		};
 
@@ -47,10 +54,10 @@ namespace Windows.Win32.Graphics.Dxgi
 		internal partial struct DXGI_RATIONAL
 		{
 			internal unsafe DXGI_RATIONAL( Rational* pRational ) {
-				fixed(DXGI_RATIONAL* pThis = &this)
-					*pThis = *( (DXGI_RATIONAL *)pRational );
+				fixed( DXGI_RATIONAL* pThis = &this )
+					*pThis = *((DXGI_RATIONAL*)pRational);
 			}
-			internal DXGI_RATIONAL( uint numerator ): this(numerator, 1 ) { }
+			internal DXGI_RATIONAL( uint numerator ) : this( numerator, 1 ) { }
 			internal DXGI_RATIONAL( uint numerator, uint denominator ) {
 				this.Numerator = numerator;
 				this.Denominator = denominator;
@@ -64,12 +71,12 @@ namespace Windows.Win32.Graphics.Dxgi
 
 
 			public static implicit operator DXGI_RATIONAL( Rational r ) =>
-				new DXGI_RATIONAL( r.Numerator, r.Denominator );
+				new( r.Numerator, r.Denominator );
 
 			public static implicit operator Rational( DXGI_RATIONAL r ) =>
-				new Rational( r.Numerator, r.Denominator );
+				new( r.Numerator, r.Denominator );
 
-			public static implicit operator DXGI_RATIONAL( 
+			public static implicit operator DXGI_RATIONAL(
 				(uint numerator, uint denominator) values ) => new( values );
 		};
 
@@ -80,21 +87,19 @@ namespace Windows.Win32.Graphics.Dxgi
 				this.Width = mode.Width;
 				this.Height = mode.Height;
 				this.RefreshRate = mode.RefreshRate;
-				this.Format = (DXGI_FORMAT) mode.Format;
-				this.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER) mode.ScanlineOrdering;
-				this.Scaling = (DXGI_MODE_SCALING) mode.Scaling;
+				this.Format = (DXGI_FORMAT)mode.Format;
+				this.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)mode.ScanlineOrdering;
+				this.Scaling = (DXGI_MODE_SCALING)mode.Scaling;
 			}
 
-			internal unsafe DXGI_MODE_DESC( ModeDescription* pMode )
-			{
-				fixed ( DXGI_MODE_DESC* pThis = &this )
-					*pThis = *((DXGI_MODE_DESC*) pMode);
+			internal unsafe DXGI_MODE_DESC( ModeDescription* pMode ) {
+				fixed( DXGI_MODE_DESC* pThis = &this )
+					*pThis = *((DXGI_MODE_DESC*)pMode);
 			}
 
-			internal DXGI_MODE_DESC( 
+			internal DXGI_MODE_DESC(
 				uint width, uint height, Rational refreshRate, Format format = DXSharp.DXGI.Format.R8G8B8A8_UNORM,
-				ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered )
-			{
+				ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered ) {
 				this.Width = width;
 				this.Height = height;
 				this.RefreshRate = refreshRate;
@@ -103,7 +108,7 @@ namespace Windows.Win32.Graphics.Dxgi
 				this.Scaling = (DXGI_MODE_SCALING)scaling;
 			}
 
-			internal DXGI_MODE_DESC( 
+			internal DXGI_MODE_DESC(
 				uint width, uint height, DXGI_RATIONAL refreshRate,
 				DXGI_FORMAT format = DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM,
 				DXGI_MODE_SCANLINE_ORDER scanlineOrdering = DXGI_MODE_SCANLINE_ORDER.DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED,
@@ -117,9 +122,9 @@ namespace Windows.Win32.Graphics.Dxgi
 			}
 
 
-			
-			public static implicit operator DXGI_MODE_DESC( ModeDescription mode ) => new DXGI_MODE_DESC( mode );
-			public static implicit operator ModeDescription( DXGI_MODE_DESC mode ) => new ModeDescription( mode );
+
+			public static implicit operator DXGI_MODE_DESC( ModeDescription mode ) => new( mode );
+			public static implicit operator ModeDescription( DXGI_MODE_DESC mode ) => new( mode );
 			public static explicit operator DXGI_MODE_DESC( DXGI_MODE_DESC1 mode ) {
 				unsafe {
 					var p = (DXGI_MODE_DESC*)&mode;
@@ -138,39 +143,36 @@ namespace Windows.Win32.Graphics.Dxgi
 			this.Width = mode.Width;
 			this.Height = mode.Height;
 			this.RefreshRate = mode.RefreshRate;
-			this.Format = (DXGI_FORMAT) mode.Format;
-			this.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER) mode.ScanlineOrdering;
-			this.Scaling = (DXGI_MODE_SCALING) mode.Scaling;
+			this.Format = (DXGI_FORMAT)mode.Format;
+			this.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)mode.ScanlineOrdering;
+			this.Scaling = (DXGI_MODE_SCALING)mode.Scaling;
 			this.Stereo = mode.Stereo;
 		}
 
-		internal unsafe DXGI_MODE_DESC1( ModeDescription1* pMode )
-		{
-			fixed ( DXGI_MODE_DESC1* pThis = &this )
-				*pThis = *((DXGI_MODE_DESC1*) pMode);
+		internal unsafe DXGI_MODE_DESC1( ModeDescription1* pMode ) {
+			fixed( DXGI_MODE_DESC1* pThis = &this )
+				*pThis = *((DXGI_MODE_DESC1*)pMode);
 		}
 
 		internal DXGI_MODE_DESC1( uint width, uint height, Rational refreshRate, Format format = DXSharp.DXGI.Format.R8G8B8A8_UNORM,
-			ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered, bool stereo = false )
-		{
+			ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered, bool stereo = false ) {
 			this.Width = width;
 			this.Height = height;
 			this.RefreshRate = refreshRate;
-			this.Format = (DXGI_FORMAT) format;
-			this.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER) scanlineOrdering;
-			this.Scaling = (DXGI_MODE_SCALING) scaling;
+			this.Format = (DXGI_FORMAT)format;
+			this.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)scanlineOrdering;
+			this.Scaling = (DXGI_MODE_SCALING)scaling;
 			this.Stereo = stereo;
 		}
 
-		internal DXGI_MODE_DESC1( in DXGI_MODE_DESC mode ): this( mode.Width, mode.Height, mode.RefreshRate,
+		internal DXGI_MODE_DESC1( in DXGI_MODE_DESC mode ) : this( mode.Width, mode.Height, mode.RefreshRate,
 				mode.Format, mode.ScanlineOrdering, mode.Scaling, false ) { }
 
-		internal DXGI_MODE_DESC1( 
-			uint width, uint height, DXGI_RATIONAL refreshRate, 
+		internal DXGI_MODE_DESC1(
+			uint width, uint height, DXGI_RATIONAL refreshRate,
 			DXGI_FORMAT format = DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM,
-			DXGI_MODE_SCANLINE_ORDER scanlineOrdering = DXGI_MODE_SCANLINE_ORDER.DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED, 
-			DXGI_MODE_SCALING scaling = DXGI_MODE_SCALING.DXGI_MODE_SCALING_CENTERED, bool stereo = false )
-		{
+			DXGI_MODE_SCANLINE_ORDER scanlineOrdering = DXGI_MODE_SCANLINE_ORDER.DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED,
+			DXGI_MODE_SCALING scaling = DXGI_MODE_SCALING.DXGI_MODE_SCALING_CENTERED, bool stereo = false ) {
 			this.Width = width;
 			this.Height = height;
 			this.RefreshRate = refreshRate;
@@ -182,21 +184,20 @@ namespace Windows.Win32.Graphics.Dxgi
 
 
 		public static implicit operator DXGI_MODE_DESC1( ModeDescription mode ) =>
-			new DXGI_MODE_DESC1( mode.Width, mode.Height, mode.RefreshRate, mode.Format, mode.ScanlineOrdering, mode.Scaling, false );
+			new( mode.Width, mode.Height, mode.RefreshRate, mode.Format, mode.ScanlineOrdering, mode.Scaling, false );
 		public static implicit operator DXGI_MODE_DESC1( DXGI_MODE_DESC mode ) =>
-			new DXGI_MODE_DESC1( mode.Width, mode.Height, mode.RefreshRate,
+			new( mode.Width, mode.Height, mode.RefreshRate,
 				mode.Format, mode.ScanlineOrdering, mode.Scaling, false );
 
-		public static implicit operator DXGI_MODE_DESC1( ModeDescription1 mode ) => new DXGI_MODE_DESC1( mode );
-		public static implicit operator ModeDescription1( DXGI_MODE_DESC1 mode ) => new ModeDescription1( mode );
-		
+		public static implicit operator DXGI_MODE_DESC1( ModeDescription1 mode ) => new( mode );
+		public static implicit operator ModeDescription1( DXGI_MODE_DESC1 mode ) => new( mode );
+
 	};
 
 
 	internal partial struct DXGI_SWAP_CHAIN_DESC
 	{
-		internal DXGI_SWAP_CHAIN_DESC( in SwapChainDescription desc )
-		{
+		internal DXGI_SWAP_CHAIN_DESC( in SwapChainDescription desc ) {
 			this.BufferDesc = desc.BufferDesc;
 			this.SampleDesc = desc.SampleDesc;
 			this.BufferUsage = (uint)desc.BufferUsage;
@@ -209,39 +210,37 @@ namespace Windows.Win32.Graphics.Dxgi
 
 		internal unsafe DXGI_SWAP_CHAIN_DESC( SwapChainDescription* pDesc ) {
 			fixed( DXGI_SWAP_CHAIN_DESC* pThis = &this ) {
-				*pThis = *((DXGI_SWAP_CHAIN_DESC*) pDesc);
+				*pThis = *((DXGI_SWAP_CHAIN_DESC*)pDesc);
 			}
 		}
 
 		internal DXGI_SWAP_CHAIN_DESC( ModeDescription bufferDesc, SampleDescription sampleDesc, Usage bufferUsage,
-			uint bufferCount, HWND outputWindow, bool windowed, SwapEffect swapEffect, SwapChainFlags flags )
-		{
+			uint bufferCount, HWND outputWindow, bool windowed, SwapEffect swapEffect, SwapChainFlags flags ) {
 			this.BufferDesc = bufferDesc;
 			this.SampleDesc = sampleDesc;
-			this.BufferUsage = (uint) bufferUsage;
+			this.BufferUsage = (uint)bufferUsage;
 			this.BufferCount = bufferCount;
 			this.OutputWindow = outputWindow;
 			this.Windowed = windowed;
 			this.SwapEffect = (DXGI_SWAP_EFFECT)swapEffect;
-			this.Flags = (uint) flags;
+			this.Flags = (uint)flags;
 		}
 
 		internal DXGI_SWAP_CHAIN_DESC( DXGI_MODE_DESC bufferDesc, DXGI_SAMPLE_DESC sampleDesc, Usage bufferUsage,
-	uint bufferCount, HWND outputWindow, bool windowed, DXGI_SWAP_EFFECT swapEffect, DXGI_SWAP_CHAIN_FLAG flags )
-		{
+	uint bufferCount, HWND outputWindow, bool windowed, DXGI_SWAP_EFFECT swapEffect, DXGI_SWAP_CHAIN_FLAG flags ) {
 			this.BufferDesc = bufferDesc;
 			this.SampleDesc = sampleDesc;
-			this.BufferUsage = (uint) bufferUsage;
+			this.BufferUsage = (uint)bufferUsage;
 			this.BufferCount = bufferCount;
 			this.OutputWindow = outputWindow;
 			this.Windowed = windowed;
 			this.SwapEffect = swapEffect;
-			this.Flags = (uint) flags;
+			this.Flags = (uint)flags;
 		}
 
 
 		public static implicit operator DXGI_SWAP_CHAIN_DESC( SwapChainDescription desc ) => desc.InternalValue;
-		public static implicit operator SwapChainDescription( DXGI_SWAP_CHAIN_DESC desc ) => new SwapChainDescription( desc );
+		public static implicit operator SwapChainDescription( DXGI_SWAP_CHAIN_DESC desc ) => new( desc );
 
 	};
 
@@ -251,28 +250,27 @@ namespace Windows.Win32.Graphics.Dxgi
 		internal DXGI_SWAP_CHAIN_DESC1( in SwapChainDescription1 desc ) {
 			this.Width = desc.Width;
 			this.Height = desc.Height;
-			this.Format = (DXGI_FORMAT) desc.Format;
+			this.Format = (DXGI_FORMAT)desc.Format;
 			this.Stereo = desc.Stereo;
 			this.SampleDesc = desc.SampleDesc;
-			this.BufferUsage = (uint) desc.BufferUsage;
+			this.BufferUsage = (uint)desc.BufferUsage;
 			this.BufferCount = desc.BufferCount;
-			this.Scaling = (DXGI_SCALING) desc.Scaling;
-			this.SwapEffect = (DXGI_SWAP_EFFECT) desc.SwapEffect;
-			this.AlphaMode = (DXGI_ALPHA_MODE) desc.AlphaMode;
-			this.Flags = (uint) desc.Flags;
+			this.Scaling = (DXGI_SCALING)desc.Scaling;
+			this.SwapEffect = (DXGI_SWAP_EFFECT)desc.SwapEffect;
+			this.AlphaMode = (DXGI_ALPHA_MODE)desc.AlphaMode;
+			this.Flags = (uint)desc.Flags;
 		}
 
 		internal unsafe DXGI_SWAP_CHAIN_DESC1( SwapChainDescription1* pDesc ) {
-			fixed ( DXGI_SWAP_CHAIN_DESC1* pThis = &this ) {
-				*pThis = *((DXGI_SWAP_CHAIN_DESC1*) pDesc);
+			fixed( DXGI_SWAP_CHAIN_DESC1* pThis = &this ) {
+				*pThis = *((DXGI_SWAP_CHAIN_DESC1*)pDesc);
 			}
 		}
 
-		internal DXGI_SWAP_CHAIN_DESC1( 
+		internal DXGI_SWAP_CHAIN_DESC1(
 			uint width, uint height, Format format, bool stereo, SampleDescription sampleDesc,
 			Usage bufferUsage, uint bufferCount, Scaling scaling, SwapEffect swapEffect,
-			AlphaMode alphaMode, SwapChainFlags flags = default )
-		{
+			AlphaMode alphaMode, SwapChainFlags flags = default ) {
 			this.Width = width;
 			this.Height = height;
 			this.Format = (DXGI_FORMAT)format;
@@ -287,7 +285,7 @@ namespace Windows.Win32.Graphics.Dxgi
 		}
 
 		public static implicit operator DXGI_SWAP_CHAIN_DESC1( SwapChainDescription1 desc ) => desc.InternalValue;
-		public static implicit operator SwapChainDescription1( DXGI_SWAP_CHAIN_DESC1 desc ) => new SwapChainDescription1( desc );
+		public static implicit operator SwapChainDescription1( DXGI_SWAP_CHAIN_DESC1 desc ) => new( desc );
 	}
 }
 

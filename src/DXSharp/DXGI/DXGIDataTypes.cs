@@ -1,26 +1,51 @@
 ﻿#region Using Directives
-using global::System;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
+using global::Windows.Win32;
 
+
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+After:
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+*/
+
+
+
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using Windows.Win32.Foundation;
 
 using Windows.Win32.Graphics.Direct3D;
-using Windows.Win32.Graphics.Direct3D11;
-using Windows.Win32.Graphics.Direct3D12;
+After:
+using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Direct3D;
+*/
+
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
+using System.Diagnostics;
+After:
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+*/
+using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dxgi;
 using Windows.Win32.Graphics.Dxgi.Common;
 
-using global::Windows.Win32;
-using Win32 = global::Windows.Win32;
-
 using DXGI_MODE_DESC = Windows.Win32.Graphics.Dxgi.Common.DXGI_MODE_DESC;
 using DXGI_MODE_DESC1 = Windows.Win32.Graphics.Dxgi.DXGI_MODE_DESC1;
-
-using DXGI_SWAP_EFFECT = Windows.Win32.Graphics.Dxgi.DXGI_SWAP_EFFECT;
 using DXGI_SAMPLE_DESC = Windows.Win32.Graphics.Dxgi.Common.DXGI_SAMPLE_DESC;
+using DXGI_SWAP_EFFECT = Windows.Win32.Graphics.Dxgi.DXGI_SWAP_EFFECT;
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics;
+After:
+using Win32 = global::Windows.Win32;
+*/
+
 
 #endregion
 
@@ -199,27 +224,27 @@ public enum Usage: long
 	/// <summary>
 	/// This flag is for internal use only.
 	/// </summary>
-	DiscardOnPresent_internal	= 1L << (5 + 4),
+	DiscardOnPresent_internal   = 1L << (5 + 4),
 	/// <summary>
 	/// Use the surface or resource for reading only.
 	/// </summary>
-	ReadOnly					= 1L << (4 + 4),
+	ReadOnly                    = 1L << (4 + 4),
 	/// <summary>
 	/// Use the surface or resource as an output render target.
 	/// </summary>
-	RenderTargetOutput			= 1L << (1 + 4),
+	RenderTargetOutput          = 1L << (1 + 4),
 	/// <summary>
 	/// Use the surface or resource as an input to a shader.
 	/// </summary>
-	ShaderInput					= 1L << (0 + 4),
+	ShaderInput                 = 1L << (0 + 4),
 	/// <summary>
 	/// Share the surface or resource.
 	/// </summary>
-	Shared						= 1L << (3 + 4),
+	Shared                      = 1L << (3 + 4),
 	/// <summary>
 	/// Use the surface or resource for unordered access.
 	/// </summary>
-	UnorderedAccess				= 1L << (6 + 4),
+	UnorderedAccess             = 1L << (6 + 4),
 };
 
 /// <summary>Options for handling pixels in a display surface after calling DXGI.ISwapChain1.Present1.</summary>
@@ -234,26 +259,26 @@ public enum SwapEffect
 	/// <para>Use this flag to specify the bit-block transfer (bitblt) model and to specify that DXGI discard the contents of the back buffer after you call <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-present1">IDXGISwapChain1::Present1</a>. This flag is valid for a swap chain with more than one back buffer, although, applications only have read and write access to buffer 0. Use this flag to enable the display driver to select the most efficient presentation technique for the swap chain. <b>Direct3D 12:  </b>This enumeration value is never supported. D3D12 apps must using <b>FlipSequential</b> or <b>FlipDiscard</b>. <div class="alert"><b>Note</b>  There are differences between full screen exclusive and full screen UWP. If you are porting a Direct3D 11 application to UWP on a Windows PC, be aware that the use of  <b>Discard</b> when creating swap chains does not behave the same way in UWP as it does in Win32, and its use may be detrimental to GPU performance. This is because UWP applications are forced into FLIP swap modes (even if other swap modes are set), because this reduces the computation time used by the memory copies originally done by the older bitblt model. The recommended approach is to manually convert DX11 Discard swap chains to use flip models within UWP,  using <b>FlipDiscard</b> instead of <b>Discard</b> where possible. Refer to the Example below, and see <a href="https://docs.microsoft.com/windows/win32/direct3ddxgi/for-best-performance--use-dxgi-flip-model">this article</a> for more information.</div> <div> </div></para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ne-dxgi-dxgi_swap_effect#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	Discard			= 0,
+	Discard         = 0,
 	/// <summary>
 	/// <para>Use this flag to specify the bitblt model and to specify that DXGI persist the contents of the back buffer after you call <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-present1">IDXGISwapChain1::Present1</a>. Use this option to present the contents of the swap chain in order, from the first buffer (buffer 0) to the last buffer. This flag cannot be used with multisampling. <b>Direct3D 12:  </b>This enumeration value is never supported. D3D12 apps must using <b>FlipSequential</b> or <b>FlipDiscard</b>.</para>
 	/// <para><div class="alert"><b>Note</b>  For best performance, use <b>FlipSequential</b> instead of <b>Sequential</b>. See <a href="https://docs.microsoft.com/windows/win32/direct3ddxgi/for-best-performance--use-dxgi-flip-model">this article</a> for more information.</div> <div> </div></para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ne-dxgi-dxgi_swap_effect#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	Sequential		= 1,
+	Sequential      = 1,
 	/// <summary>
 	/// <para>Use this flag to specify the flip presentation model and to specify that DXGI persist the contents of the back buffer after you call <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-present1">IDXGISwapChain1::Present1</a>. This flag cannot be used with multisampling.</para>
 	/// <para><b>Direct3D 11:  </b>This enumeration value is supported starting with Windows 8.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ne-dxgi-dxgi_swap_effect#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	FlipSequential	= 3,
+	FlipSequential  = 3,
 	/// <summary>
 	/// <para>Use this flag to specify the flip presentation model and to specify that DXGI discard the contents of the back buffer after you call <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-present1">IDXGISwapChain1::Present1</a>. This flag cannot be used with multisampling and partial presentation. See <a href="https://docs.microsoft.com/windows/win32/direct3ddxgi/dxgi-1-4-improvements">DXGI 1.4 Improvements</a>.</para>
 	/// <para><b>Direct3D 11:  </b>This enumeration value is supported starting with Windows 10.</para>
 	/// <para><div class="alert"><b>Note</b>  Windows Store apps must use <b>FlipSequential</b> or <b>FlipDiscard</b>. </div> <div> </div></para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ne-dxgi-dxgi_swap_effect#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	FlipDiscard		= 4,
+	FlipDiscard     = 4,
 };
 
 // CsWin32 did not generate an enumerated type for this?
@@ -275,7 +300,8 @@ public enum SwapEffect
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a>
 /// </para>
 /// </remarks>
-[Flags] public enum SwapChainFlags
+[Flags]
+public enum SwapChainFlags
 {
 	/// <summary>
 	/// No flags
@@ -451,7 +477,7 @@ public struct Rational: IEquatable<Rational>
 	/// Gets the rational value as a float
 	/// </summary>
 	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
-	public float AsFloat => denominator == 0 ? 0f : (float) (numerator / denominator);
+	public float AsFloat => denominator == 0 ? 0f : numerator / denominator;
 
 
 
@@ -461,8 +487,8 @@ public struct Rational: IEquatable<Rational>
 	}
 
 	internal unsafe Rational( DXGI_RATIONAL* pRational ) {
-		fixed ( Rational* pThis = &this )
-			*pThis = *((Rational*) pRational);
+		fixed( Rational* pThis = &this )
+			*pThis = *((Rational*)pRational);
 	}
 
 	/// <summary>
@@ -491,8 +517,8 @@ public struct Rational: IEquatable<Rational>
 	/// <param name="denominator">The denominator value</param>
 	public Rational( uint numerator, uint denominator ) {
 #if DEBUG || !STRIP_CHECKS
-		if ( denominator == 0 )
-			throw new ArgumentOutOfRangeException( nameof(denominator), 
+		if( denominator == 0 )
+			throw new ArgumentOutOfRangeException( nameof( denominator ),
 				"Rationals should not have a denominator of zero!" );
 #endif
 
@@ -506,8 +532,8 @@ public struct Rational: IEquatable<Rational>
 	/// <param name="values">Tuple holding numerator and denominator values</param>
 	public Rational( (uint numerator, uint denominator) values ) {
 #if DEBUG || !STRIP_CHECKS
-		if ( values.denominator == 0 )
-			throw new ArgumentOutOfRangeException( "denominator", 
+		if( values.denominator == 0 )
+			throw new ArgumentOutOfRangeException( "denominator",
 				"Rationals should not have a denominator of zero!" );
 #endif
 
@@ -563,7 +589,7 @@ public struct Rational: IEquatable<Rational>
 	/// <param name="obj">object to compare to</param>
 	/// <returns>True if equal, otherwise false</returns>
 	public override bool Equals( [NotNullWhen( true )] object? obj ) =>
-		obj is Rational r && Equals(r);
+		obj is Rational r && Equals( r );
 
 	/// <summary>
 	/// Determines if the given rational value and this value are equal
@@ -571,7 +597,7 @@ public struct Rational: IEquatable<Rational>
 	/// <param name="other">Rational value to compare to</param>
 	/// <returns>True if equal, otherwise false</returns>
 	public bool Equals( Rational other ) =>
-		(other.numerator == 0 && this.numerator == 0) || 
+		(other.numerator == 0 && this.numerator == 0) ||
 		(other.denominator == 0 && this.denominator == 0) ||
 		(other.numerator == this.numerator && other.denominator == this.denominator);
 
@@ -595,23 +621,21 @@ public struct Rational: IEquatable<Rational>
 	public static uint GDC( Rational r ) {
 		uint n = r.numerator, m = r.denominator;
 
-		if ( n < m ) {
-			uint tmp = n;
-			n = m;
-			m = tmp;
+		if( n < m ) {
+			(m, n) = (n, m);
 		}
-		
+
 #if DEBUG || !STRIP_CHECKS
 		uint count = 0x00;
 		const uint MAX_ITERATIONS = 100000;
 #endif
-		while ( m > 0 ) {
+		while( m > 0 ) {
 			uint tmp = n % m;
 			n = m;
 			m = tmp;
 
 #if DEBUG || !STRIP_CHECKS
-			if ( ++count > MAX_ITERATIONS ) {
+			if( ++count > MAX_ITERATIONS ) {
 				throw new PerformanceException( $"Rational.GDC(): " +
 					$"Algorithm has run over {MAX_ITERATIONS} iterations to determine greatest common demoninator. " +
 					$"Consider expressing this value in a more reduced form or check to ensure it is valid." );
@@ -628,13 +652,13 @@ public struct Rational: IEquatable<Rational>
 	/// Converts a tuple of uints to Rational
 	/// </summary>
 	/// <param name="values">Value tuple of two uint values</param>
-	public static implicit operator Rational( (uint numerator, uint denominator) values ) => new Rational( values );
+	public static implicit operator Rational( (uint numerator, uint denominator) values ) => new( values );
 
 	/// <summary>
 	/// Converts an unsigned value into rational form
 	/// </summary>
 	/// <param name="value">A whole, unsigned value</param>
-	public static implicit operator Rational( uint value ) => new Rational( value );
+	public static implicit operator Rational( uint value ) => new( value );
 
 	public static bool operator ==( Rational a, Rational b ) => a.Equals( b );
 	public static bool operator !=( Rational a, Rational b ) => !a.Equals( b );
@@ -660,7 +684,7 @@ public struct SampleDescription
 
 	internal unsafe SampleDescription( DXGI_SAMPLE_DESC* pDesc ) {
 		fixed( SampleDescription* pThis = &this ) {
-			*pThis = *((SampleDescription*) pDesc);
+			*pThis = *((SampleDescription*)pDesc);
 		}
 	}
 
@@ -702,11 +726,11 @@ public struct SampleDescription
 
 
 
-	public static implicit operator SampleDescription( 
+	public static implicit operator SampleDescription(
 		(uint count, uint quality) values ) => new( values.count, values.quality );
 
-	public static implicit operator (uint count, uint quality)(SampleDescription sDesc) => 
-		( count: sDesc.Count, quality: sDesc.Quality );
+	public static implicit operator (uint count, uint quality)( SampleDescription sDesc ) =>
+		(count: sDesc.Count, quality: sDesc.Quality);
 };
 
 
@@ -780,7 +804,7 @@ public struct SwapChainDescription
 	DXGI_SWAP_CHAIN_DESC desc;
 	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	internal DXGI_SWAP_CHAIN_DESC InternalValue => desc;
-	
+
 	/// <summary>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a></b> A <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a> structure that describes the backbuffer display mode.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
@@ -864,8 +888,7 @@ public struct SwapChainDescription1
 	public SwapChainDescription1(
 		uint width, uint height, Format format, bool stereo, SampleDescription sampleDesc,
 		Usage bufferUsage, uint bufferCount, Scaling scaling, SwapEffect swapEffect,
-		AlphaMode alphaMode, SwapChainFlags flags = default )
-	{
+		AlphaMode alphaMode, SwapChainFlags flags = default ) {
 		this.Width = width;
 		this.Height = height;
 		this.Format = format;
@@ -896,7 +919,7 @@ public struct SwapChainDescription1
 	public SwapChainDescription1(
 		int width, int height, Format format, bool stereo, SampleDescription sampleDesc,
 		Usage bufferUsage, uint bufferCount, Scaling scaling, SwapEffect swapEffect,
-		AlphaMode alphaMode, SwapChainFlags flags = default) {
+		AlphaMode alphaMode, SwapChainFlags flags = default ) {
 		this.Width = (uint)width;
 		this.Height = (uint)height;
 		this.Format = format;
@@ -916,7 +939,7 @@ public struct SwapChainDescription1
 	/// <param name="desc">A SwapChainDescription structure</param>
 	/// <param name="scaling">Additional Scaling flags (default is None)</param>
 	/// <param name="alphaMode">Additional AlphaMode flags (default is Straight)</param>
-	public SwapChainDescription1( SwapChainDescription desc, Scaling scaling = Scaling.None, 
+	public SwapChainDescription1( SwapChainDescription desc, Scaling scaling = Scaling.None,
 		AlphaMode alphaMode = AlphaMode.Straight ) {
 		this.Width = desc.BufferDesc.Width;
 		this.Height = desc.BufferDesc.Height;
@@ -941,7 +964,7 @@ public struct SwapChainDescription1
 	//uint flags;
 
 	// wrap the internal type:
-	[DebuggerBrowsable( DebuggerBrowsableState.Never )] 
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	DXGI_SWAP_CHAIN_DESC1 desc;
 	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	internal DXGI_SWAP_CHAIN_DESC1 InternalValue => desc;
@@ -968,7 +991,7 @@ public struct SwapChainDescription1
 	/// <summary>
 	/// A DXGI.Format structure describing the display format.
 	/// </summary>
-	public Format Format { get => (Format) desc.Format; set => desc.Format = (DXGI_FORMAT) value; }
+	public Format Format { get => (Format)desc.Format; set => desc.Format = (DXGI_FORMAT)value; }
 
 	/// <summary>
 	/// Specifies whether the full-screen display mode is stereo. True if stereo; otherwise, false.
@@ -985,7 +1008,7 @@ public struct SwapChainDescription1
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a> enumerated type that describes the surface usage and CPU access options for the back buffer. The back buffer can be used for shader input or render-target output.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public Usage BufferUsage { get => (Usage) desc.BufferUsage; set => desc.BufferUsage = (uint) value; }
+	public Usage BufferUsage { get => (Usage)desc.BufferUsage; set => desc.BufferUsage = (uint)value; }
 
 	/// <summary>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A value that describes the number of buffers in the swap chain. When you call  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">IDXGIFactory::CreateSwapChain</a> to create a full-screen swap chain, you typically include the front buffer in this value. For more information about swap-chain buffers, see Remarks.</para>
@@ -997,13 +1020,13 @@ public struct SwapChainDescription1
 	/// <para>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ne-dxgi1_2-dxgi_scaling">DXGI_SCALING</a>-typed value that identifies resize behavior if the size of the back buffer is not equal to the target output.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ns-dxgi1_2-dxgi_swap_chain_desc1#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public Scaling Scaling { get => (Scaling)desc.Scaling; set => desc.Scaling = (DXGI_SCALING) value; }
+	public Scaling Scaling { get => (Scaling)desc.Scaling; set => desc.Scaling = (DXGI_SCALING)value; }
 
 	/// <summary>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_effect">DXGI_SWAP_EFFECT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_effect">DXGI_SWAP_EFFECT</a> enumerated type that describes options for handling the contents of the presentation buffer after presenting a surface.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public SwapEffect SwapEffect { get => (SwapEffect) desc.SwapEffect; set => desc.SwapEffect = (DXGI_SWAP_EFFECT) value; }
+	public SwapEffect SwapEffect { get => (SwapEffect)desc.SwapEffect; set => desc.SwapEffect = (DXGI_SWAP_EFFECT)value; }
 
 	/// <summary>
 	/// <para>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ne-dxgi1_2-dxgi_alpha_mode">DXGI_ALPHA_MODE</a>-typed value that identifies the transparency behavior of the swap-chain back buffer.</para>
@@ -1015,15 +1038,15 @@ public struct SwapChainDescription1
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a> enumerated type that describes options for swap-chain behavior.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public SwapChainFlags Flags { get => (SwapChainFlags) desc.Flags; set => desc.Flags = (uint) value; }
+	public SwapChainFlags Flags { get => (SwapChainFlags)desc.Flags; set => desc.Flags = (uint)value; }
 
 
 	/// <summary>
 	/// Converts a SwapChainDescription to a SwapChainDescription1 structure
 	/// </summary>
 	/// <param name="desc">A SwapChainDescription strcuture</param>
-	public static explicit operator SwapChainDescription1( SwapChainDescription desc ) => 
-		new SwapChainDescription1( desc );
+	public static explicit operator SwapChainDescription1( SwapChainDescription desc ) =>
+		new( desc );
 
 };
 
@@ -1061,7 +1084,7 @@ public struct SwapChainFullscreenDescription
 	/// <param name="scanlineOrdering">The scaline ordering flags</param>
 	/// <param name="scalingMode">The scaling mode flags</param>
 	/// <param name="windowed">Indicates if display mode is windowed</param>
-	public SwapChainFullscreenDescription( Rational refreshRate, ScanlineOrder scanlineOrdering, 
+	public SwapChainFullscreenDescription( Rational refreshRate, ScanlineOrder scanlineOrdering,
 		ScalingMode scalingMode, bool windowed ) {
 		this.desc.RefreshRate = refreshRate;
 		this.desc.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)scanlineOrdering;
@@ -1087,12 +1110,12 @@ public struct SwapChainFullscreenDescription
 	/// <summary>
 	/// A member of the DXGI.ScanlineOrdering enumerated type describing the scanline drawing mode.
 	/// </summary>
-	public ScanlineOrder ScanlineOrdering { get => (ScanlineOrder) desc.ScanlineOrdering; set => desc.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER) value; }
+	public ScanlineOrder ScanlineOrdering { get => (ScanlineOrder)desc.ScanlineOrdering; set => desc.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)value; }
 
 	/// <summary>
 	/// A member of the DXGI.ScalingMode enumerated type describing the scaling mode.
 	/// </summary>
-	public ScalingMode Scaling { get => (ScalingMode) desc.Scaling; set => desc.Scaling = (DXGI_MODE_SCALING) value; }
+	public ScalingMode Scaling { get => (ScalingMode)desc.Scaling; set => desc.Scaling = (DXGI_MODE_SCALING)value; }
 
 	/// <summary>
 	/// A Boolean value that specifies whether the swap chain is in windowed mode. 
@@ -1119,7 +1142,7 @@ public struct SwapChainFullscreenDescription
 /// <remarks>
 /// For more info see: <a href="https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a>
 /// </remarks>
-[DebuggerDisplay("Mode = {Width}x{Height} @ {RefreshRate.AsFloat}Hz ({Scaling})")]
+[DebuggerDisplay( "Mode = {Width}x{Height} @ {RefreshRate.AsFloat}Hz ({Scaling})" )]
 public struct ModeDescription
 {
 	internal ModeDescription( in DXGI_MODE_DESC modeDesc ) => this.desc = modeDesc;
@@ -1145,8 +1168,8 @@ public struct ModeDescription
 	/// <param name="modeDesc1">A ModeDescription1 structure</param>
 	public ModeDescription( in ModeDescription1 modeDesc1 ) {
 		unsafe {
-			fixed ( ModeDescription1* pData = (&modeDesc1) )
-				this.desc = *((DXGI_MODE_DESC*) pData);
+			fixed( ModeDescription1* pData = (&modeDesc1) )
+				this.desc = *((DXGI_MODE_DESC*)pData);
 		}
 	}
 
@@ -1195,7 +1218,7 @@ public struct ModeDescription
 	/// <summary>
 	/// A member of the DXGI.ScanlineOrder enumerated type describing the scanline drawing mode.
 	/// </summary>
-	public ScanlineOrder ScanlineOrdering { get => (ScanlineOrder)desc.ScanlineOrdering; set => desc.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER) value; }
+	public ScanlineOrder ScanlineOrdering { get => (ScanlineOrder)desc.ScanlineOrdering; set => desc.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)value; }
 
 	/// <summary>
 	/// A member of the DXGI.ScalingMode enumerated type describing the scaling mode.
@@ -1257,8 +1280,7 @@ public struct ModeDescription1
 	/// <param name="scaling">The scaling of the display mode</param>
 	/// <param name="stereo">Indicates if rendering in stereo (e.g., for VR/Mixed Reality) mode</param>
 	public ModeDescription1( uint width, uint height, Rational refreshRate, Format format = Format.R8G8B8A8_UNORM,
-		ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered, bool stereo = false )
-	{
+		ScanlineOrder scanlineOrdering = ScanlineOrder.Unspecified, ScalingMode scaling = ScalingMode.Centered, bool stereo = false ) {
 		//this.desc.Width = width;
 		//this.desc.Height = height;
 		//this.desc.RefreshRate = refreshRate;
@@ -1267,7 +1289,7 @@ public struct ModeDescription1
 		//this.desc.Scaling = (DXGI_MODE_SCALING)scaling;
 		//this.desc.Stereo = stereo;
 
-		this.desc = new DXGI_MODE_DESC1( width, height, refreshRate, 
+		this.desc = new DXGI_MODE_DESC1( width, height, refreshRate,
 			format, scanlineOrdering, scaling, stereo );
 	}
 
@@ -1318,17 +1340,17 @@ public struct ModeDescription1
 	/// <summary>
 	/// A DXGI.Format structure describing the display format.
 	/// </summary>
-	public Format Format { get => (Format) desc.Format; set => desc.Format = (DXGI_FORMAT) value; }
+	public Format Format { get => (Format)desc.Format; set => desc.Format = (DXGI_FORMAT)value; }
 
 	/// <summary>
 	/// A member of the DXGI.ScanlineOrder enumerated type describing the scanline drawing mode.
 	/// </summary>
-	public ScanlineOrder ScanlineOrdering { get => (ScanlineOrder) desc.ScanlineOrdering; set => desc.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER) value; }
+	public ScanlineOrder ScanlineOrdering { get => (ScanlineOrder)desc.ScanlineOrdering; set => desc.ScanlineOrdering = (DXGI_MODE_SCANLINE_ORDER)value; }
 
 	/// <summary>
 	/// A member of the DXGI.ScalingMode enumerated type describing the scaling mode.
 	/// </summary>
-	public ScalingMode Scaling { get => (ScalingMode) desc.Scaling; set => desc.Scaling = (DXGI_MODE_SCALING) value; }
+	public ScalingMode Scaling { get => (ScalingMode)desc.Scaling; set => desc.Scaling = (DXGI_MODE_SCALING)value; }
 
 	/// <summary>
 	/// Specifies whether the full-screen display mode is stereo. True if stereo; otherwise, false.
@@ -1341,7 +1363,7 @@ public struct ModeDescription1
 	/// Converts a ModeDescription to a ModeDescription1 structure
 	/// </summary>
 	/// <param name="desc">A ModeDescription structure</param>
-	public static implicit operator ModeDescription1( ModeDescription desc ) => new ModeDescription1( desc );
+	public static implicit operator ModeDescription1( ModeDescription desc ) => new( desc );
 
 
 };

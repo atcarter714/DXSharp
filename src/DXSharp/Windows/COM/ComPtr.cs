@@ -23,16 +23,20 @@
 
 
 #region Using Directives
-using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using Windows.Win32.Graphics.Dxgi;
 using Windows.Win32.Graphics.Direct3D;
 using Windows.Win32.Graphics.Direct3D11;
 using Windows.Win32.Graphics.Direct3D12;
+After:
+using Windows.Win32.Graphics.Direct3D;
+using Windows.Win32.Graphics.Direct3D11;
+using Windows.Win32.Graphics.Direct3D12;
+using Windows.Win32.Graphics.Dxgi;
+*/
 #endregion
 
 namespace DXSharp.Windows.COM;
@@ -54,21 +58,21 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	/// <summary>
 	/// The GUID of the IUnknown COM interface
 	/// </summary>
-	public static readonly Guid GUID_IUNKNOWN = 
+	public static readonly Guid GUID_IUNKNOWN =
 		Guid.Parse( "00000000-0000-0000-C000-000000000046" );
 
 	internal ComPtr( object comObj ) {
 #if DEBUG || !STRIP_CHECKS
-		if ( comObj is null )
+		if( comObj is null )
 			throw new ArgumentNullException( "comObj" );
 
-		if ( !Marshal.IsComObject(comObj) )
-			throw new COMException( $"ComPtr( {comObj.GetType().Name} {nameof(comObj)} ): " +
-				@$"The parameter ""{nameof(comObj)}"" ({comObj.GetType().Name}) is not a valid COM object!" );
+		if( !Marshal.IsComObject( comObj ) )
+			throw new COMException( $"ComPtr( {comObj.GetType().Name} {nameof( comObj )} ): " +
+				@$"The parameter ""{nameof( comObj )}"" ({comObj.GetType().Name}) is not a valid COM object!" );
 #endif
 
 		// Get pointer to IUnknown interface:
-		IntPtr pComObj = getPointerTo( comObj );
+		nint pComObj = getPointerTo( comObj );
 
 		// Assign our valid data:
 		this.Interface = comObj;
@@ -80,13 +84,24 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 
 	internal ComPtr( IntPtr pComObj ) {
 
-		if ( pComObj == IntPtr.Zero )
+		if( pComObj == IntPtr.Zero )
 			throw new COMException( $"ComPtr< object >( IntPtr pComObj ): " +
 				"The given address is a null pointer!" );
 
 		// Get object ref to COM interface:
-		var comObj = getCOMObjectFrom( pComObj );
-		
+
+		/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+		Before:
+				var comObj = getCOMObjectFrom( pComObj );
+
+				// Assign our valid data:
+		After:
+				var comObj = getCOMObjectFrom( pComObj );
+
+				// Assign our valid data:
+		*/
+		object comObj = getCOMObjectFrom( pComObj );
+
 		// Assign our valid data:
 		this.Interface = comObj;
 		this.Pointer = pComObj;
@@ -136,30 +151,50 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	/// Indicates if managed resources should be
 	/// disposed of from this call
 	/// </param>
-	protected virtual void Dispose( bool disposing )
-	{
-		if ( !disposedValue )
-		{
-			if ( disposing )
-			{
+	protected virtual void Dispose( bool disposing ) {
+		if( !disposedValue ) {
+			if( disposing ) {
 				// TODO: dispose managed state (managed objects)
 			}
 
 			// TODO: free unmanaged resources (unmanaged objects) and override finalizer
 			// TODO: set large fields to null
 
-			if ( Interface is not null )
-			{
-				int refCount = Marshal.ReleaseComObject( this.Interface );
+			if( Interface is not null ) {
+
+				/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+				Before:
+								int refCount = Marshal.ReleaseComObject( this.Interface );
+				After:
+								_ = Marshal.ReleaseComObject( this.Interface );
+				*/
+				_ = Marshal.ReleaseComObject( this.Interface );
 			}
-			else if ( Pointer != IntPtr.Zero )
-			{
-				int refCount = Marshal.Release( this.Pointer );
+			else if( Pointer != IntPtr.Zero ) {
+
+				/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+				Before:
+								int refCount = Marshal.Release( this.Pointer );
+				After:
+								int = Marshal.Release( this.Pointer );
+				*/
+				int refCount  = Marshal.Release( this.Pointer );
 			}
 
 			this.Interface = null;
+
+			/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+			Before:
+						this.Pointer = IntPtr.Zero;
+
+						// We may actually want to leave GUID alone so it can be determined
+			After:
+						this.Pointer = IntPtr.Zero;
+
+						// We may actually want to leave GUID alone so it can be determined
+			*/
 			this.Pointer = IntPtr.Zero;
-			
+
 			// We may actually want to leave GUID alone so it can be determined
 			// after Dispose is called in case it's ever needed -- it's not a
 			// thing that ever changes anyways and can't really do any harm ...
@@ -174,8 +209,7 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	/// Releases native COM interface references so that they can be
 	/// freed from memory when the reference count reaches zero.
 	/// </summary>
-	public void Dispose()
-	{
+	public void Dispose() {
 		// Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
 		Dispose( disposing: true );
 		GC.SuppressFinalize( this );
@@ -188,8 +222,7 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	/// so that the memory can be freed when the reference count reaches zero.
 	/// </summary>
 	/// <returns>An async ValueTask</returns>
-	public async ValueTask DisposeAsync()
-	{
+	public async ValueTask DisposeAsync() {
 		// Perform async cleanup.
 		await DisposeAsyncCore();
 
@@ -207,9 +240,9 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 	//! TODO: Find out if there's a better way!
 	internal int GetNativeRefCount() {
 		try {
-			int refCount	= Marshal.AddRef(this.Pointer);
-			int prev		= refCount;
-			refCount		= Marshal.Release(this.Pointer);
+			int refCount    = Marshal.AddRef(this.Pointer);
+			int prev        = refCount;
+			refCount = Marshal.Release( this.Pointer );
 			return refCount;
 		}
 		catch { return -1; }
@@ -217,10 +250,10 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 
 	protected static IntPtr getPointerTo( object comObj ) {
 
-		IntPtr pComObj = Marshal.GetIUnknownForObject( comObj );
+		nint pComObj = Marshal.GetIUnknownForObject( comObj );
 
 #if DEBUG || !STRIP_CHECKS
-		if ( pComObj == IntPtr.Zero )
+		if( pComObj == IntPtr.Zero )
 			throw new COMException( $"ComPtr< object >( object comObj ): " +
 				$"Unable to obtain pointer to IUnknown from {comObj}!" );
 #endif
@@ -230,7 +263,7 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 
 	protected static object getCOMObjectFrom( IntPtr ptr ) {
 
-		var comObj = Marshal.GetObjectForIUnknown( ptr )
+		object comObj = Marshal.GetObjectForIUnknown( ptr )
 #if DEBUG || !STRIP_CHECKS
 			?? throw new COMException($"ComPtr< object >( IntPtr ): " +
 				$"Unable to obtain object reference to COM interface from 0x{ptr.ToString("X8")}!");
@@ -243,15 +276,15 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 
 
 	public int AddRef() => ++nRefs;
-	
+
 	public int Release() {
 #if DEBUG || !STRIP_CHECKS
-		if ( disposedValue )
+		if( disposedValue )
 			throw new InvalidOperationException( "ComPtr.Release(): " +
-				"Release was called after this instance has been disposed!" ); 
+				"Release was called after this instance has been disposed!" );
 #endif
 
-		if ( --nRefs <= 0 )
+		if( --nRefs <= 0 )
 			this.Dispose();
 
 		return nRefs;
@@ -270,7 +303,7 @@ internal class ComPtr: IDisposable, IAsyncDisposable
 /// also provides methods for reference counting and COM interface management functionality.
 /// </remarks>
 /// <typeparam name="T">Type of COM interface</typeparam>
-internal sealed class ComPtr<T>: ComPtr where T: class
+internal sealed class ComPtr<T>: ComPtr where T : class
 {
 	//! TODO: We can probably just make a static GUID property
 
@@ -280,28 +313,28 @@ internal sealed class ComPtr<T>: ComPtr where T: class
 	public static readonly Guid RIID = typeof(T).GUID;
 
 
-	internal ComPtr( T comObj ): base( comObj ) {
-		
+	internal ComPtr( T comObj ) : base( comObj ) {
+
 		// Assign our valid data:
-		this.Interface = comObj as T ??
-			throw new COMException( $"ComPtr< {typeof(T).Name} >( {typeof(T).Name} comObj ): " +
-				$"Unable to obtain COM interface reference to {comObj} of type {typeof(T).Name}!" +
-				$"There may be a COM type mismatch between {comObj.GetType().Name} and {typeof(T).Name}.");
+		this.Interface = comObj ??
+			throw new COMException( $"ComPtr< {typeof( T ).Name} >( {typeof( T ).Name} comObj ): " +
+				$"Unable to obtain COM interface reference to {comObj} of type {typeof( T ).Name}!" +
+				$"There may be a COM type mismatch between {comObj.GetType().Name} and {typeof( T ).Name}." );
 
 		this.GUID = RIID;
 	}
 
-	internal ComPtr( IntPtr pComObj ): base( pComObj ) {
+	internal ComPtr( IntPtr pComObj ) : base( pComObj ) {
 #if DEBUG || !STRIP_CHECKS
-		if (base.Interface is null)
-			throw new NullReferenceException($"ComPtr( object ) constructor was unable to obtain a valid COM interface " +
-				$"reference from the given address 0x{Pointer.ToString("X8")}!");
+		if( base.Interface is null )
+			throw new NullReferenceException( $"ComPtr( object ) constructor was unable to obtain a valid COM interface " +
+				$"reference from the given address 0x{Pointer.ToString( "X8" )}!" );
 #endif
 
 		// Assign our valid data:
 		this.Interface = base.Interface as T ??
-			throw new COMException($"ComPtr< {typeof(T).Name} >( IntPtr pComObj ): " +
-				$"Unable to convert COM object reference at 0x{Pointer.ToString("X8")} to COM interface type {typeof(T).Name}!");
+			throw new COMException( $"ComPtr< {typeof( T ).Name} >( IntPtr pComObj ): " +
+				$"Unable to convert COM object reference at 0x{Pointer.ToString( "X8" )} to COM interface type {typeof( T ).Name}!" );
 
 		//this.Pointer = pComObj;
 		this.GUID = RIID;
@@ -315,7 +348,7 @@ internal sealed class ComPtr<T>: ComPtr where T: class
 	internal new T? Interface { get; private set; }
 
 	protected override void Dispose( bool disposing ) {
-		if ( !Disposed ) {
+		if( !Disposed ) {
 			base.Dispose( disposing );
 			this.Interface = null;
 		}

@@ -1,84 +1,101 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
+	<!--Common Project Properties-->
+	<PropertyGroup>
+		<TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>
+		<!--<TargetFrameworks>net6.0-windows;net7.0-windows</TargetFrameworks>-->
+		<TargetFrameworks>net6.0-windows10.0.22621.0;net7.0-windows10.0.22621.0;</TargetFrameworks>
+
+		<Title>DXSharp</Title>
+		<Version>$(VersionPrefix)</Version>
+		<ApplicationIcon>DXSharp_ICON_512.ico</ApplicationIcon>
+		<Description>A modern C#/.NET Core wrapper for native DirectX</Description>
+
+		<Nullable>enable</Nullable>
+		<AnalysisLevel>preview</AnalysisLevel>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<UseWindowsForms>true</UseWindowsForms>
+		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+		<DocumentationFile>$(RepoRootPath)doc\$(MSBuildProjectName).xml</DocumentationFile>
+		<BaseIntermediateOutputPath>$(RepoRootPath)obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/atcarter714/DXSharp</RepositoryUrl>
+		<PackageTags>interop; directx; wrapper; 2d; 3d; graphics; d3d; dxgi; win32; com; gamedev; arkaen;</PackageTags>
+		<PackageIcon>DXSharp_Logo_00_512.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+
+	</PropertyGroup>
+
 	
-	<TargetFrameworks>net6.0-windows10.0.22621.0;net7.0-windows10.0.22621.0</TargetFrameworks>
-	<!--<TargetFrameworks>net6.0-windows;net7.0-windows</TargetFrameworks>-->
-	<!--<TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>-->
-	  
-	<UseWindowsForms>true</UseWindowsForms>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <Description>A modern C#/.NET wrapper for DirectX</Description>
-    <AutoGenerateBindingRedirects></AutoGenerateBindingRedirects>
-    <AnalysisLevel>preview</AnalysisLevel>
-    <BaseIntermediateOutputPath>$(RepoRootPath)obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
-    <DocumentationFile>$(RepoRootPath)doc\$(MSBuildProjectName).xml</DocumentationFile>
-    <Title>DXSharp</Title>
-    <Version>$(VersionPrefix)</Version>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>interop; directx; wrapper; 2d; 3d; graphics; d3d; dxgi; win32; com; gamedev;</PackageTags>
-    <ApplicationIcon>DXSharp_ICON_512.ico</ApplicationIcon>
-    <PackageIcon>DXSharp_Logo_00_512.png</PackageIcon>
-    <RepositoryUrl>https://github.com/atcarter714/DXSharp</RepositoryUrl>
-	
-  </PropertyGroup>
 
-  <ItemGroup>
-    <Content Include="DXSharp_ICON_512.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+	<!--Icons & Resources-->	
 
-  <ItemGroup>
-    <None Include="..\..\file\img\DXSharp_Logo_00_512.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<Content Include="DXSharp_ICON_512.ico" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Windows.CsWin32" Version="0.2.63-beta">
-      <PrivateAssets>all</PrivateAssets>
-      <!--<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
-    </PackageReference>
-    <PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" Version="34.0.8-preview" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="..\..\file\img\DXSharp_Logo_00_512.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 
-  <ItemGroup>
-    <Compile Update="LibResources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>LibResources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
+		<None Include="..\..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Update="LibResources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>LibResources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
 
-  <!--<ItemGroup Condition="$(Configuration) != 'Release'">-->
-  <ItemGroup>
-	<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-	  <_Parameter1>
-			BasicTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100894fae0919aeb23bddcca2687ce855f3649b017c69bbb5f494a7261763dcd01937ebf398222f41977837a77af70995d7a4b7a8ffc6f3dd031ffd6804134c3678af91e99348f25a4fb7125e03ac5d16de4d1944c70a248b27c91a5a75715d856f321be121bd547a4a098a28be8e1b600b7d4136946e7ed1033a692c34495900cc
-	  </_Parameter1>
-	  <!-- The name of the project that you want the Internal class to be visible To it -->
-	</AssemblyAttribute>
-  </ItemGroup>
+
+	<!--Package References-->
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Windows.CsWin32" Version="0.2.63-beta">
+			<PrivateAssets>all</PrivateAssets>
+			<!--<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
+		</PackageReference>
+
+		<PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" Version="34.0.8-preview" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<Compile Update="LibResources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>LibResources.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<EmbeddedResource Update="LibResources.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>LibResources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
+
+
+
+	<!--<ItemGroup Condition="$(Configuration) != 'Release'">-->
+	<ItemGroup>
+		<!-- The name of the project that you want the Internal class to be visible To it -->
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>
+				BasicTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100894fae0919aeb23bddcca2687ce855f3649b017c69bbb5f494a7261763dcd01937ebf398222f41977837a77af70995d7a4b7a8ffc6f3dd031ffd6804134c3678af91e99348f25a4fb7125e03ac5d16de4d1944c70a248b27c91a5a75715d856f321be121bd547a4a098a28be8e1b600b7d4136946e7ed1033a692c34495900cc
+			</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
+
 
 	<!-- Remove files with features unsupported for .NET 6 -->
 	<ItemGroup Condition="$(TargetFramework.StartsWith('net6.0'))">
 		<Compile Remove="VectorDTypes.cs"/>
 	</ItemGroup>
 	
+
 </Project>

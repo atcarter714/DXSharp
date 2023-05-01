@@ -1,9 +1,4 @@
 ﻿#region Using Directives
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 #endregion
 
 namespace DXSharp;
@@ -23,7 +18,7 @@ public class PerformanceException: Exception
 	/// Creates a new PerformanceException with the specified exception message
 	/// </summary>
 	/// <param name="message">Exception message</param>
-	public PerformanceException(string? message ): base( message ) { }
+	public PerformanceException( string? message ) : base( message ) { }
 
 	/// <summary>
 	/// Creates a new PerformanceException with the specified exception message

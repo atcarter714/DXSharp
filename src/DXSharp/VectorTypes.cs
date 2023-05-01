@@ -25,14 +25,27 @@
 
 
 #region Using Directives
-using System;
-using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Intrinsics;
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Numerics;
-using System.Runtime.Intrinsics;
+After:
+using System.Runtime.CodeAnalysis;
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+*/
+/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
+Before:
 using System.Diagnostics.CodeAnalysis;
+After:
+using System.Threading.Tasks;
+*/
+
 
 using SysVec2 = System.Numerics.Vector2;
 using SysVec3 = System.Numerics.Vector3;
@@ -184,7 +197,7 @@ public struct Vector3: IEquatable<Vector3>, IFormattable
 
 	public Vector3( Vector128<float> v128 ) => this.v = v128.AsVector3();
 
-	
+
 	SysVec3 v = default;
 	internal SysVec3 V => v;
 
@@ -211,7 +224,7 @@ public struct Vector3: IEquatable<Vector3>, IFormattable
 	public override string ToString() => ToString( format: null, formatProvider: null );
 
 	/// <inheritdoc />
-	public string ToString( string? format, IFormatProvider? formatProvider ) => 
+	public string ToString( string? format, IFormatProvider? formatProvider ) =>
 		$"{this.GetType().Name} {{ " +
 		$"{nameof( X )} = {X.ToString( format, formatProvider )}, " +
 		$"{nameof( Y )} = {Y.ToString( format, formatProvider )}, " +
@@ -293,7 +306,7 @@ public struct Vector3: IEquatable<Vector3>, IFormattable
 	public static Vector3 operator *( Vector3 a, SysVec3 b ) => a.v * b;
 	public static Vector3 operator *( Vector3 a, SysVec2 b ) =>
 		a.v * new SysVec3( b.X, b.Y, 1f );
-	
+
 	public static Vector3 operator *( Vector3 vec, float value ) => vec.v * value;
 	public static Vector3 operator *( float value, Vector3 vec ) => value * vec.v;
 
