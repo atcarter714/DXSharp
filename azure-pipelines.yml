@@ -13,7 +13,7 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  environment: AtC - Arkaen Desktop Hosted
+  environment: 'AtC - Arkaen Desktop Hosted'
 
 steps:
 - task: NuGetToolInstaller@1
