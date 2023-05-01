@@ -7,7 +7,7 @@ trigger:
 - main
 
 pool: 
-   name: 'AtC - Arkaen Desktop Hosted'
+   name: default
 
 variables:
   solution: '**/*.sln'
