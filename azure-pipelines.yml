@@ -29,5 +29,11 @@ steps:
 
 - task: VSTest@2
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    testAssemblyVer2: |
+      **\tests\BasicTests\bin\$(buildConfiguration)\*test*.dll
+      !**\*TestAdapter.dll
+      !**\obj\**
+    searchFolder: '$(System.DefaultWorkingDirectory)'
+    runSettingsFile: 'tests\BasicTests\.runsettings'
+    codeCoverageEnabled: true
+    
