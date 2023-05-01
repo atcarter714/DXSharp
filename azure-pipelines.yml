@@ -6,14 +6,13 @@
 trigger:
 - main
 
-pool:
-  vmImage: 'windows-latest'
+pool: 
+   name: 'AtC - Arkaen Desktop Hosted'
 
 variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  environment: 'AtC - Arkaen Desktop Hosted'
 
 steps:
 - task: NuGetToolInstaller@1
