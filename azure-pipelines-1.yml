@@ -7,7 +7,8 @@ trigger:
 - main
 
 pool:
-  vmImage: 'windows-latest'
+  name: Arkaen-Games-Pool-0
+  
 
 variables:
   solution: '**/*.sln'
