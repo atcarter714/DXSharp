@@ -21,19 +21,32 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 
+
+# ---------------------------------------------------------------------------
+# BUILD SOLUTION ::
+# ---------------------------------------------------------------------------
+
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
+
+# ---------------------------------------------------------------------------
+# RUN TESTS ::
+# ---------------------------------------------------------------------------
+# Make the VSTest step smarter:
+# Look for any .dll inside the \tests directory with "Test" in the name ...
+
 - task: VSTest@2
   inputs:
     testAssemblyVer2: |
-      **\tests\BasicTests\bin\$(buildConfiguration)\*test*.dll
+      **\tests\**\*Test*\bin\$(buildConfiguration)\*\*test*.dll
       !**\*TestAdapter.dll
       !**\obj\**
     searchFolder: '$(System.DefaultWorkingDirectory)'
     runSettingsFile: 'tests\BasicTests\.runsettings'
     codeCoverageEnabled: true
+
     
