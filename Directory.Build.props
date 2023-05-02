@@ -10,7 +10,6 @@
 		<ImplicitUsings>true</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AnalysisLevel>latest</AnalysisLevel>
-		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>

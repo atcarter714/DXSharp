@@ -24605,6 +24605,11 @@
               resource lookups using this strongly typed resource class.
             </summary>
         </member>
+        <member name="P:DXSharp.LibResources.CompanyName">
+            <summary>
+              Looks up a localized string similar to Arkaen Solutions.
+            </summary>
+        </member>
         <member name="P:DXSharp.LibResources.DXSharp_ICON_512">
             <summary>
               Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
@@ -24649,147 +24654,6 @@
             </summary>
             <param name="message">Exception message</param>
             <param name="innerException">Inner exception</param>
-        </member>
-        <member name="T:DXSharp.Vector4D">
-            <summary>
-            A 4-dimensional double-precision floating-point vector with
-            SIMD-enabled arithmetic and operations
-            </summary>
-            <remarks>
-            <h3><b>NOTE:</b></h3>
-            <para>
-            This structure type is only available for .NET 7 for Windows
-            </para>
-            </remarks>
-        </member>
-        <member name="F:DXSharp.Vector4D.nITEMS">
-            <summary>
-            Number of items in the vector
-            </summary>
-        </member>
-        <member name="F:DXSharp.Vector4D.Zero">
-            <summary>
-            A vector with all zero values
-            </summary>
-        </member>
-        <member name="F:DXSharp.Vector4D.One">
-            <summary>
-            A vector with all 1.0 values
-            </summary>
-        </member>
-        <member name="F:DXSharp.Vector4D.UnitX">
-            <summary>
-            The Unit X vector (right)
-            </summary>
-        </member>
-        <member name="F:DXSharp.Vector4D.UnitY">
-            <summary>
-            The Unit Y vector (up) 
-            </summary>
-        </member>
-        <member name="F:DXSharp.Vector4D.UnitZ">
-            <summary>
-            The Unit Z vector (forward) 
-            </summary>
-        </member>
-        <member name="F:DXSharp.Vector4D.UnitW">
-            <summary>
-            The Unit W vector (forward) 
-            </summary>
-        </member>
-        <member name="M:DXSharp.Vector4D.#ctor(System.Runtime.Intrinsics.Vector256{System.Double})">
-            <summary>
-            Creates a new Vector4D
-            </summary>
-            <param name="vec">A System.Numerics.Vector256</param>
-        </member>
-        <member name="M:DXSharp.Vector4D.#ctor(System.Runtime.Intrinsics.Vector128{System.Double},System.Runtime.Intrinsics.Vector128{System.Double})">
-            <summary>
-            Creates a new Vector4D
-            </summary>
-            <param name="lower">A System.Numerics.Vector128 for the lower memory chunk</param>
-            <param name="upper">A System.Numerics.Vector128 for the upper memory chunk</param>
-        </member>
-        <member name="M:DXSharp.Vector4D.#ctor(System.Numerics.Vector4)">
-            <summary>
-            Creates a new Vector4D
-            </summary>
-            <param name="vec">A System.Numerics.Vector4</param>
-            <remarks>
-            The Vector4 will be expanded to a double-precision vector
-            </remarks>
-        </member>
-        <member name="M:DXSharp.Vector4D.#ctor(System.Double,System.Double,System.Double,System.Double)">
-            <summary>
-            Creates a new Vector4D
-            </summary>
-            <param name="x">The X coordinate/value</param>
-            <param name="y">The Y coordinate/value</param>
-            <param name="z">The Z coordinate/value</param>
-            <param name="w">The W coordinate/value</param>
-        </member>
-        <member name="M:DXSharp.Vector4D.#ctor(System.ValueTuple{System.Double,System.Double})">
-            <summary>
-            Creates a new Vector4D
-            </summary>
-            <param name="values">Tuple of the X and Y values</param>
-        </member>
-        <member name="M:DXSharp.Vector4D.#ctor(System.ValueTuple{System.Double,System.Double,System.Double})">
-            <summary>
-            Creates a new Vector4D
-            </summary>
-            <param name="values">Tuple of the X, Y and Z values</param>
-        </member>
-        <member name="M:DXSharp.Vector4D.#ctor(System.ValueTuple{System.Double,System.Double,System.Double,System.Double})">
-            <summary>
-            Creates a new Vector4D
-            </summary>
-            <param name="values">Tuple of the X, Y, Z and W values</param>
-        </member>
-        <member name="P:DXSharp.Vector4D.Item(System.Int32)">
-            <summary>
-            Gets or sets the element at the specified index
-            </summary>
-            <param name="index">Index/offset</param>
-            <returns>Element of the vector</returns>
-            <exception cref="T:System.IndexOutOfRangeException">
-            Thrown if the given index is out of range
-            </exception>
-        </member>
-        <member name="P:DXSharp.Vector4D.X">
-            <summary>
-            The X component of the vector
-            </summary>
-        </member>
-        <member name="P:DXSharp.Vector4D.Y">
-            <summary>
-            The Y component of the vector
-            </summary>
-        </member>
-        <member name="P:DXSharp.Vector4D.Z">
-            <summary>
-            The Z component of the vector
-            </summary>
-        </member>
-        <member name="P:DXSharp.Vector4D.W">
-            <summary>
-            The W component of the vector
-            </summary>
-        </member>
-        <member name="M:DXSharp.Vector4D.ToString">
-            <inheritdoc />
-        </member>
-        <member name="M:DXSharp.Vector4D.ToString(System.String,System.IFormatProvider)">
-            <inheritdoc />
-        </member>
-        <member name="M:DXSharp.Vector4D.Equals(System.Object)">
-            <inheritdoc />
-        </member>
-        <member name="M:DXSharp.Vector4D.Equals(DXSharp.Vector4D)">
-            <inheritdoc />
-        </member>
-        <member name="M:DXSharp.Vector4D.GetHashCode">
-            <inheritdoc />
         </member>
         <member name="T:DXSharp.Vector2">
             <summary>
@@ -25328,6 +25192,108 @@
             </summary>
             <param name="e">The <see cref="T:System.EventArgs"/> instance containing the event data.</param>
         </member>
+        <member name="M:DXSharp.Windows.RenderForm.OnScreensaver(System.ComponentModel.CancelEventArgs)">
+            <summary>
+            Raises the <see cref="E:Screensaver"/> event.
+            </summary>
+            <param name="e">The <see cref="T:System.ComponentModel.CancelEventArgs"/> instance containing the event data.</param>
+        </member>
+        <member name="T:DXSharp.Windows.RenderLoop">
+            <summary>
+            RenderLoop provides a rendering loop infrastructure. See remarks for usage. 
+            </summary>
+            <remarks>
+            Use static <see cref="!:Run(System.Windows.Forms.Control,RenderCallback)"/>  
+            method to directly use a renderloop with a render callback or use your own loop:
+            <code>
+            control.Show();
+            using (var loop = new RenderLoop(control))
+            {
+                while (loop.NextFrame())
+                {
+                   // Perform draw operations here.
+                }
+            }
+            </code>
+            Note that the main control can be changed at anytime inside the loop.
+            
+            /// <para><b><h3>NOTE:</h3></b></para>
+            <para>
+            This is an adaptation from the classic SharpDX.Windows.RenderLoop
+            provided as a helper class for its convenience and familiarity. It can be used along with
+            RenderForms and WinForms and potentially a native Win32 window.
+            </para>
+            </remarks>
+        </member>
+        <member name="T:DXSharp.Windows.RenderLoop.RenderCallback">
+            <summary>
+            Delegate for the rendering loop.
+            </summary>
+        </member>
+        <member name="M:DXSharp.Windows.RenderLoop.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:DXSharp.Windows.RenderLoop"/> class.
+            </summary>
+        </member>
+        <member name="M:DXSharp.Windows.RenderLoop.#ctor(System.Windows.Forms.Control)">
+            <summary>
+            Initializes a new instance of the <see cref="T:DXSharp.Windows.RenderLoop"/> class.
+            </summary>
+        </member>
+        <member name="P:DXSharp.Windows.RenderLoop.Control">
+            <summary>
+            Gets or sets the control to associate with the current render loop.
+            </summary>
+            <value>The control.</value>
+            <exception cref="T:System.InvalidOperationException">Control is already disposed</exception>
+        </member>
+        <member name="P:DXSharp.Windows.RenderLoop.UseApplicationDoEvents">
+            <summary>
+            Gets or sets a value indicating whether the render loop should use the default <see cref="M:System.Windows.Forms.Application.DoEvents"/> instead of a custom window message loop lightweight for GC. Default is false.
+            </summary>
+            <value><c>true</c> if the render loop should use the default <see cref="M:System.Windows.Forms.Application.DoEvents"/> instead of a custom window message loop (default false); otherwise, <c>false</c>.</value>
+            <remarks>By default, RenderLoop is using a custom window message loop that is more lightweight than <see cref="M:System.Windows.Forms.Application.DoEvents" /> to process windows event message. 
+            Set this parameter to true to use the default <see cref="M:System.Windows.Forms.Application.DoEvents"/>.</remarks>
+        </member>
+        <member name="M:DXSharp.Windows.RenderLoop.NextFrame">
+            <summary>
+            Calls this method on each frame.
+            </summary>
+            <returns><c>true</c> if if the control is still active, <c>false</c> otherwise.</returns>
+            <exception cref="T:System.InvalidOperationException">An error occured </exception>
+        </member>
+        <member name="M:DXSharp.Windows.RenderLoop.Dispose">
+            <summary>
+            Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            </summary>
+        </member>
+        <member name="M:DXSharp.Windows.RenderLoop.Run(System.Windows.Forms.ApplicationContext,DXSharp.Windows.RenderLoop.RenderCallback)">
+            <summary>
+            Runs the specified main loop in the specified context.
+            </summary>
+        </member>
+        <member name="M:DXSharp.Windows.RenderLoop.Run(System.Windows.Forms.Control,DXSharp.Windows.RenderLoop.RenderCallback,System.Boolean)">
+            <summary>
+            Runs the specified main loop for the specified windows form.
+            </summary>
+            <param name="form">The form.</param>
+            <param name="renderCallback">The rendering callback.</param>
+            <param name="useApplicationDoEvents">if set to <c>true</c> indicating whether the render loop should use the default <see cref="M:System.Windows.Forms.Application.DoEvents"/> instead of a custom window message loop lightweight for GC. Default is false.</param>
+            <exception cref="T:System.ArgumentNullException">form
+            or
+            renderCallback</exception>
+        </member>
+        <member name="P:DXSharp.Windows.RenderLoop.IsIdle">
+            <summary>
+            Gets a value indicating whether this instance is application idle.
+            </summary>
+            <value>
+            	<c>true</c> if this instance is application idle; otherwise, <c>false</c>.
+            </value>
+        </member>
+    </members>
+</doc>
+r>
         <member name="M:DXSharp.Windows.RenderForm.OnScreensaver(System.ComponentModel.CancelEventArgs)">
             <summary>
             Raises the <see cref="E:Screensaver"/> event.

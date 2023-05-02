@@ -2,7 +2,7 @@
 
 
 namespace DXSharp;
-
+// ReSharper disable ConvertToAutoPropertyWhenPossible
 
 /// <summary>
 /// Represents a graphics viewport for DirectX
@@ -24,12 +24,12 @@ public struct Viewport
 	/// </summary>
 	public Viewport() {
 
-		this.topLeftX = 0f;
-		this.topLeftY = 0f;
-		this.width = 0f;
-		this.height = 0f;
-		this.minDepth = 0f;
-		this.maxDepth = 1f;
+		this._topLeftX = 0f;
+		this._topLeftY = 0f;
+		this._width = 0f;
+		this._height = 0f;
+		this._minDepth = 0f;
+		this._maxDepth = 1f;
 	}
 
 	/// <summary>
@@ -46,12 +46,12 @@ public struct Viewport
 		float width, float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
 
-		this.topLeftX = topLeftX;
-		this.topLeftY = topLeftY;
-		this.width = width;
-		this.height = height;
-		this.minDepth = minDepth;
-		this.maxDepth = maxDepth;
+		this._topLeftX = topLeftX;
+		this._topLeftY = topLeftY;
+		this._width = width;
+		this._height = height;
+		this._minDepth = minDepth;
+		this._maxDepth = maxDepth;
 	}
 
 	/// <summary>
@@ -68,59 +68,70 @@ public struct Viewport
 		float width, float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
 
-		this.topLeftX = 0;
-		this.topLeftY = 0;
-		this.width = width;
-		this.height = height;
-		this.minDepth = minDepth;
-		this.maxDepth = maxDepth;
+		this._topLeftX = 0;
+		this._topLeftY = 0;
+		this._width = width;
+		this._height = height;
+		this._minDepth = minDepth;
+		this._maxDepth = maxDepth;
 	}
 
-	float topLeftX;
-	float topLeftY;
-	float width;
-	float height;
-	float minDepth;
-	float maxDepth;
+	float _topLeftX;
+	float _topLeftY;
+	float _width;
+	float _height;
+	float _minDepth;
+	float _maxDepth;
 
 	/// <summary>
 	/// The top-left X coordinate
 	/// </summary>
-	public float TopLeftX { get => topLeftX; set => topLeftX = value; }
+	public float TopLeftX { get => _topLeftX; set => _topLeftX = value; }
 	/// <summary>
 	/// The top-left Y coordinate
 	/// </summary>
-	public float TopLeftY { get => topLeftY; set => topLeftY = value; }
+	public float TopLeftY { get => _topLeftY; set => _topLeftY = value; }
 	/// <summary>
 	/// The width of the viewport
 	/// </summary>
-	public float Width { get => width; set => width = value; }
+	public float Width { get => _width; set => _width = value; }
 	/// <summary>
 	/// The height of the viewport
 	/// </summary>
-	public float Height { get => height; set => height = value; }
+	public float Height { get => _height; set => _height = value; }
 	/// <summary>
 	/// The minimum depth value (between 0.0 and 1.0)
 	/// </summary>
-	public float MinDepth { get => minDepth; set => minDepth = value; }
+	public float MinDepth { get => _minDepth; set => _minDepth = value; }
 	/// <summary>
 	/// The maximum depth value (between 0.0 and 1.0)
 	/// </summary>
-	public float MaxDepth { get => maxDepth; set => maxDepth = value; }
+	public float MaxDepth { get => _maxDepth; set => _maxDepth = value; }
 
 
-
-	internal static unsafe void setAllMembers( Viewport* pViewport,
+	/// <summary>
+	/// Write data to all fields of the Viewport structure
+	/// </summary>
+	/// <param name="pViewport">The viewport pointer</param>
+	/// <param name="topLeftX">The viewport Top-Left (X)</param>
+	/// <param name="topLeftY">The viewport Top-Left (Y)</param>
+	/// <param name="width">The viewport width</param>
+	/// <param name="height">The viewport height</param>
+	/// <param name="minDepth">The min depth</param>
+	/// <param name="maxDepth">The max depth</param>
+	internal static unsafe void SetAllMembers( Viewport* pViewport,
 		float topLeftX, float topLeftY,
 		float width, float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
 
-		pViewport->topLeftX = topLeftX;
-		pViewport->topLeftY = topLeftY;
-		pViewport->width = width;
-		pViewport->height = height;
-		pViewport->minDepth = minDepth;
-		pViewport->maxDepth = maxDepth;
+		pViewport->_topLeftX = topLeftX;
+		pViewport->_topLeftY = topLeftY;
+		pViewport->_width = width;
+		pViewport->_height = height;
+		pViewport->_minDepth = minDepth;
+		pViewport->_maxDepth = maxDepth;
 	}
 
 };
+
+// ReSharper restore ConvertToAutoPropertyWhenPossible

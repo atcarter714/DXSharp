@@ -13,7 +13,8 @@ IDXGIOutput6
 DXGI_SWAP_CHAIN_FLAG
 DXGI_FEATURE_DATA_FORMAT_INFO
 
-
+DXGI_FORMAT
+DXGI_SAMPLE_DESC
 
 // D3D12 Structures:
 D3D12_VIEWPORT					// NOTE: D3D12_RECT is just a typedef of RECT
@@ -52,6 +53,22 @@ IDXGISwapChain2
 IDXGISwapChain3
 IDXGISwapChain4
 
+ID3D11DeviceContext
+ID3D11Buffer
+ID3D11Texture2D
+ID3D11RenderTargetView
+ID3D11ShaderResourceView
+ID3D11InputLayout
+ID3D11VertexShader
+ID3D11PixelShader
+
+ID3D12Resource
+ID3D12DescriptorHeap
+ID3D12CommandAllocator
+ID3D12RootSignature
+ID3D12PipelineState
+ID3D12Fence
+
 // Win32 API Stuff:
 IUnknown
 GetClientRect
@@ -59,6 +76,13 @@ PeekMessage
 GetMessage
 TranslateMessage
 DispatchMessage
+
+CreateWindowEx	// (for creating the window)
+RegisterClassEx // (for registering the window class)
+DefWindowProc	// (for handling default window messages)
+PostQuitMessage // (for posting a quit message)
+ShowWindow		// (for displaying the window)
+UpdateWindow	// (for updating the window)
 
 // HRESULT constants:
 S_OK
@@ -98,3 +122,6 @@ DXGI_ERROR_SESSION_DISCONNECTED
 DXGI_ERROR_UNSUPPORTED
 DXGI_ERROR_WAIT_TIMEOUT
 DXGI_ERROR_WAS_STILL_DRAWING
+DXGI_ERROR_DEVICE_REMOVED
+DXGI_ERROR_DEVICE_RESET
+DXGI_ERROR_DEVICE_HUNG

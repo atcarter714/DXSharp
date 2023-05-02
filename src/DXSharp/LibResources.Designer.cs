@@ -61,6 +61,15 @@ namespace DXSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Arkaen Solutions.
+        /// </summary>
+        internal static string CompanyName {
+            get {
+                return ResourceManager.GetString("CompanyName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
         internal static System.Drawing.Icon DXSharp_ICON_512 {
