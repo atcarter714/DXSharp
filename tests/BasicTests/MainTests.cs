@@ -59,6 +59,8 @@ using static Windows.Win32.PInvoke;
 */
 using static Windows.Win32.PInvoke;
 
+using HRESULT = DXSharp.Windows.HRESULT;
+
 #endregion
 
 namespace BasicTests;
@@ -141,7 +143,7 @@ public class D3D12GraphicsInterop
 			try {
 
 				// Try to get next adapter"
-				factoryX.EnumAdapters1( index, out var ppAdapter );
+				factoryX!.EnumAdapters1( index, out var ppAdapter );
 				Assert.IsNotNull( ppAdapter );
 
 				// Validate adapter object and obtain DXGI COM interface:

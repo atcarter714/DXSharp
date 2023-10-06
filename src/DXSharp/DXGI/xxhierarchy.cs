@@ -157,7 +157,7 @@ interface IFactory7: IFactory6, IFactoryX<IDXGIFactory7> { }
 
 
 
-internal interface IDXObject<T> where T : class, IDXGIObject
+public interface IDXObject<T> where T: class, IDXGIObject
 {
 	//ComPtr? IUnknown.ComPtr => (ComPtr?)this.ComPtr;
 	internal ComPtr<T>? ComPtr { get; }
@@ -253,7 +253,7 @@ public interface IUnknown { }
 //	void GetParent<I>( out I? ppParent ) where I : class;
 //};
 
-interface IFactory<T>: IDXObject<T> where T : class, IDXGIFactory
+public interface IFactory<T>: IDXObject<T> where T : class, IDXGIFactory
 {
 
 };

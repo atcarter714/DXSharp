@@ -46,6 +46,10 @@
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
 		</None>
+
+		<Compile Remove="DXGI\xxhierarchy.cs" />
+
+		<None Include="DXGI\xxhierarchy.cs" />
 	</ItemGroup>
 
 
@@ -53,12 +57,12 @@
 	<!--Package References-->
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Windows.CsWin32" Version="0.2.63-beta">
+		<PackageReference Include="Microsoft.Windows.CsWin32" Version="0.3.18-beta">
 			<PrivateAssets>all</PrivateAssets>
 			<!--<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
 		</PackageReference>
 
-		<PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" Version="34.0.8-preview" />
+		<PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" Version="53.0.14-preview" />
 	</ItemGroup>
 
 
@@ -94,7 +98,7 @@
 
 	<!-- Remove files with features unsupported for .NET 6 -->
 	<ItemGroup Condition="$(TargetFramework.StartsWith('net6.0'))">
-		<Compile Remove="VectorDTypes.cs"/>
+		<Compile Remove="VectorDTypes.cs" />
 	</ItemGroup>
 	
 

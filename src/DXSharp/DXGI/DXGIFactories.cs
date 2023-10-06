@@ -42,8 +42,7 @@ namespace DXSharp.DXGI;
 /// Flags for making window association between
 /// a SwapChain and a HWND (Window handle)
 /// </summary>
-[Flags]
-public enum MWAFlags: uint
+[Flags] public enum MWAFlags: uint
 {
 	/// <summary>
 	/// No flags
@@ -65,9 +64,8 @@ public enum MWAFlags: uint
 	/// Valid? (Needs documentation)
 	/// </summary>
 	Valid           = 0x7,
-};
+} ;
 
-/*
 
 /// <summary>
 /// An IFactory is a wrapper of the native DirectX COM interface
@@ -190,5 +188,3 @@ public enum MWAFlags: uint
 //		throw new NotImplementedException();
 //	}
 //}
-
- */

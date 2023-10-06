@@ -17,6 +17,8 @@ using Windows.Win32.Graphics.Dxgi.Common;
 using WinRT;
 */
 Graphics.Dxgi.Common;
+
+using DXSharp.Windows.COM ;
 #endregion
 
 namespace DXSharp.DXGI.XTensions;

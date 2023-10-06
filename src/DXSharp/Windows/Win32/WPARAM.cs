@@ -1,6 +1,6 @@
 ﻿namespace Windows.Win32.Foundation;
 
-internal readonly partial struct WPARAM
+public readonly partial struct WPARAM
 {
 	// Error CS0030  Cannot convert type 'nuint' to 'System.IntPtr'	
 	//! The compiler was very weird about nint/IntPtr and nuint/UIntPtr for some

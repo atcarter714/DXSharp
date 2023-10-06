@@ -11,9 +11,9 @@ namespace Windows.Win32.Graphics.Direct3D12;
 // identical structures with the same fields and
 // the same layout ...
 
-internal partial struct D3D12_VIEWPORT
+public partial struct D3D12_VIEWPORT
 {
-	public D3D12_VIEWPORT() {
+	public D3D12_VIEWPORT( ) {
 
 		this.TopLeftX = 0f;
 		this.TopLeftY = 0f;
@@ -23,7 +23,7 @@ internal partial struct D3D12_VIEWPORT
 		this.MaxDepth = 1f;
 	}
 
-	internal D3D12_VIEWPORT(
+	public D3D12_VIEWPORT(
 		float topLeftX, float topLeftY,
 		float width, float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
@@ -36,7 +36,7 @@ internal partial struct D3D12_VIEWPORT
 		this.MaxDepth = maxDepth;
 	}
 
-	internal D3D12_VIEWPORT(
+	public D3D12_VIEWPORT(
 		float width, float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
 

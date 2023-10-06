@@ -18,7 +18,7 @@ using global::System.Runtime.Versioning;
 using winmdroot = global::Windows.Win32;
 #endregion
 
-namespace Windows.Win32.Foundation;
+namespace DXSharp.Windows ;
 
 /// <summary>
 /// A 32-bit value that is used to describe an error or warning.
@@ -43,6 +43,11 @@ public readonly struct HRESULT: IEquatable<HRESULT>
 	public static bool operator !=( HRESULT left, HRESULT right ) => !(left == right);
 	public static implicit operator uint( HRESULT value ) => (uint) value.Value;
 	public static explicit operator HRESULT( uint value ) => new HRESULT( (int) value );
+
+	public static implicit operator HRESULT( winmdroot.Foundation.HRESULT value ) => 
+			new HRESULT( value.Value );
+	public static implicit operator winmdroot.Foundation.HRESULT( HRESULT value ) => 
+		new winmdroot.Foundation.HRESULT( value.Value );
 
 	/// <summary>
 	/// Determines if the given HRESULT is equal to this one

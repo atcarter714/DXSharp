@@ -3,6 +3,10 @@ dxgi.*
 d3d12.*
 d3d11.*
 dxguid.*
+user32.*
+
+LPSTR
+LPWSTR
 
 // DXGI COM Interfaces:
 IDXGIFactory7
@@ -76,13 +80,24 @@ PeekMessage
 GetMessage
 TranslateMessage
 DispatchMessage
+SetWindowText
 
 CreateWindowEx	// (for creating the window)
-RegisterClassEx // (for registering the window class)
 DefWindowProc	// (for handling default window messages)
 PostQuitMessage // (for posting a quit message)
 ShowWindow		// (for displaying the window)
 UpdateWindow	// (for updating the window)
+
+WNDCLASSEX
+RegisterClassEx
+CreateWindowEx
+DefWindowProc
+PostQuitMessage
+ShowWindow
+UpdateWindow
+RegisterClassExW
+CreateWindowExW
+
 
 // HRESULT constants:
 S_OK
@@ -125,3 +140,26 @@ DXGI_ERROR_WAS_STILL_DRAWING
 DXGI_ERROR_DEVICE_REMOVED
 DXGI_ERROR_DEVICE_RESET
 DXGI_ERROR_DEVICE_HUNG
+
+DXGI_GAMMA_CONTROL
+
+// ------------------------------------------
+// Additional Win32 Functions needed:
+// 5/14/23 - AtC
+// ------------------------------------------
+CommandLineToArgv
+CommandLineToArgvW
+GetCommandLineW
+
+GetWindowLongPtr
+SetWindowLongPtr
+
+WindowMessage
+LoadCursor = user32.dll
+
+// Additional Win32 Functions needed:
+CommandLineToArgvW = shell32.dll
+GetCommandLineW = kernel32.dll
+GetWindowLongPtrW = user32.dll
+EnumDisplayAdapters1 = user32.dll
+LoadCursorW = user32.dll

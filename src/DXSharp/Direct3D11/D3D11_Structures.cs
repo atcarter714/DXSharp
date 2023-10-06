@@ -7,7 +7,7 @@ namespace Windows.Win32.Graphics.Direct3D11;
 
 
 
-internal partial struct D3D11_VIEWPORT
+public partial struct D3D11_VIEWPORT
 {
 	public D3D11_VIEWPORT() {
 
@@ -19,7 +19,7 @@ internal partial struct D3D11_VIEWPORT
 		this.MaxDepth = 1f;
 	}
 
-	internal D3D11_VIEWPORT(
+	public D3D11_VIEWPORT(
 		float topLeftX, float topLeftY,
 		float width, float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
@@ -32,7 +32,7 @@ internal partial struct D3D11_VIEWPORT
 		this.MaxDepth = maxDepth;
 	}
 
-	internal D3D11_VIEWPORT(
+	public D3D11_VIEWPORT(
 		float width, float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
 
@@ -47,21 +47,21 @@ internal partial struct D3D11_VIEWPORT
 
 	/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
 	Before:
-		internal static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
+		public static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
 
 			try {
 	After:
-		internal static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
+		public static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
 
 			try {
 	*/
-	internal static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
+	public static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
 
 		try {
 			unsafe {
 				uint count = 0x08u;
 				var pViewports = stackalloc D3D11_VIEWPORT[ 8 ];
-				context?.RSGetViewports( &count, pViewports );
+				context?.RSGetViewports( ref count, pViewports );
 
 				var sviewports = new ReadOnlySpan<D3D11_VIEWPORT>( pViewports, (int)count );
 				return sviewports;

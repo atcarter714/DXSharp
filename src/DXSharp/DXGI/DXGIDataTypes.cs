@@ -1,6 +1,7 @@
 ﻿#region Using Directives
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 /* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
 Before:
 using global::Windows.Win32;
@@ -33,7 +34,7 @@ using System.Diagnostics.CodeAnalysis;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dxgi;
 using Windows.Win32.Graphics.Dxgi.Common;
-
+using DXGI;
 using DXGI_MODE_DESC = Windows.Win32.Graphics.Dxgi.Common.DXGI_MODE_DESC;
 using DXGI_MODE_DESC1 = Windows.Win32.Graphics.Dxgi.DXGI_MODE_DESC1;
 using DXGI_SAMPLE_DESC = Windows.Win32.Graphics.Dxgi.Common.DXGI_SAMPLE_DESC;
@@ -819,7 +820,7 @@ public struct SwapChainDescription
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a> enumerated type that describes the surface usage and CPU access options for the back buffer. The back buffer can be used for shader input or render-target output.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public Usage BufferUsage { get => (Usage)desc.BufferUsage; set => desc.BufferUsage = (uint)value; }
+	public Usage BufferUsage { get => (Usage)desc.BufferUsage; set => desc.BufferUsage = (DXGI_USAGE)value; }
 	/// <summary>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A value that describes the number of buffers in the swap chain. When you call  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">IDXGIFactory::CreateSwapChain</a> to create a full-screen swap chain, you typically include the front buffer in this value. For more information about swap-chain buffers, see Remarks.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
@@ -1008,7 +1009,7 @@ public struct SwapChainDescription1
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a> enumerated type that describes the surface usage and CPU access options for the back buffer. The back buffer can be used for shader input or render-target output.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public Usage BufferUsage { get => (Usage)desc.BufferUsage; set => desc.BufferUsage = (uint)value; }
+	public Usage BufferUsage { get => (Usage)desc.BufferUsage; set => desc.BufferUsage = (DXGI_USAGE)value; }
 
 	/// <summary>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A value that describes the number of buffers in the swap chain. When you call  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">IDXGIFactory::CreateSwapChain</a> to create a full-screen swap chain, you typically include the front buffer in this value. For more information about swap-chain buffers, see Remarks.</para>
@@ -1038,7 +1039,8 @@ public struct SwapChainDescription1
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> A member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a> enumerated type that describes options for swap-chain behavior.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public SwapChainFlags Flags { get => (SwapChainFlags)desc.Flags; set => desc.Flags = (uint)value; }
+	public SwapChainFlags Flags { get => (SwapChainFlags)desc.Flags; set => 
+			desc.Flags = (DXGI_SWAP_CHAIN_FLAG)(uint)value; }
 
 
 	/// <summary>
@@ -1367,3 +1369,90 @@ public struct ModeDescription1
 
 
 };
+
+[StructLayout( LayoutKind.Sequential )]
+public struct GammaControl
+{
+	public RGB Scale;
+	public RGB Offset;
+
+	[MarshalAs( UnmanagedType.ByValArray, SizeConst = 1025 )]
+	public RGB[] GammaCurve;
+};
+
+[StructLayout(LayoutKind.Sequential)]
+public struct RGB
+{
+	public float Red;
+	public float Green;
+	public float Blue;
+};
+
+[StructLayout(LayoutKind.Sequential)]
+public struct GammaControlCapabilities
+{
+	public bool  ScaleAndOffsetSupported;
+	public float MaxConvertedValue;
+	public float MinConvertedValue;
+	public uint  NumGammaControlPoints;
+	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 1025)]
+	public float[] ControlPoints;
+};
+
+[StructLayout(LayoutKind.Sequential)]
+public struct OutputDescription
+{
+	public string   DeviceName;
+	public RECT     DesktopCoordinates;
+	public bool     AttachedToDesktop;
+	public Rotation Rotation;
+	public IntPtr   Monitor;
+}
+
+[ComImport, Guid("cafcb56c-6ac3-4889-bf47-9e23bbd260ec")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface ISurface
+{
+	void GetDesc(out SurfaceDescription pDesc);
+	void Map(ref     MappedRect         pLockedRect, uint MapFlags);
+	void Unmap();
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct FrameStatistics
+{
+	public uint PresentCount;
+	public uint PresentRefreshCount;
+	public uint SyncRefreshCount;
+	public long SyncQPCTime;
+	public long SyncGPUTime;
+}
+
+public enum Rotation
+{
+	Identity  = 1,
+	Rotate90  = 2,
+	Rotate180 = 3,
+	Rotate270 = 4
+}
+
+public struct AdapterDescription
+{
+	public string Description; // A string that contains the adapter description.
+	public uint VendorId; // The PCI ID of the hardware vendor.
+	public uint DeviceId; // The PCI ID of the hardware device.
+	public uint SubSysId; // The PCI ID of the sub system.
+	public uint Revision; // The PCI ID of the revision number of the adapter.
+	public ulong DedicatedVideoMemory; // The amount of video memory that is not shared with the CPU.
+	public ulong DedicatedSystemMemory; // The amount of system memory that is not shared with the CPU.
+	public ulong SharedSystemMemory; // The amount of system memory that is shared with the CPU.
+	public Luid AdapterLuid; // A unique value that identifies the adapter.
+	public uint Flags; // Identifies the adapter type. The value is a bitwise OR of DXGI_ADAPTER_FLAG enumeration constants.
+}
+
+public struct Luid
+{
+	public uint LowPart;
+	public int  HighPart;
+}
+
