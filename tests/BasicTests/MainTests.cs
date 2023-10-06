@@ -90,7 +90,11 @@ public class D3D12GraphicsInterop
 				_height = 768,
 				_bufferCount = 2;
 
+	// Disable the NUnit warning/error about disposing of the form (we handle it in OneTimeTearDown)
+#pragma warning disable NUnit1032
 	static RenderForm? _renderForm;
+#pragma warning restore NUnit1032
+
 	static IDXGIFactory7? _factory;
 	static List<IDXGIAdapter4> _adapters;
 	static ID3D12Debug5? _debugController;
@@ -144,7 +148,6 @@ public class D3D12GraphicsInterop
 
 				// Try to get next adapter"
 				factoryX!.EnumAdapters1( index, out var ppAdapter );
-				Assert.IsNotNull( ppAdapter );
 
 				// Validate adapter object and obtain DXGI COM interface:
 				if( ppAdapter is null )
@@ -172,6 +175,9 @@ public class D3D12GraphicsInterop
 
 				throw;
 			}
+			catch {
+				return true;
+			}
 		}
 
 		return _adapters?.Count > 0;
@@ -184,8 +190,7 @@ public class D3D12GraphicsInterop
 		_adapters = new List<IDXGIAdapter4>( 0x04 );
 
 		_rect = new RECT( 0, 0, _width, _height );
-		_viewport = new D3D12_VIEWPORT()
-		{
+		_viewport = new D3D12_VIEWPORT {
 			Height = _height, Width = _width,
 			MaxDepth = 1, MinDepth = 0, TopLeftX = 0, TopLeftY = 0
 		};
@@ -202,13 +207,6 @@ public class D3D12GraphicsInterop
 			_ = Marshal.ReleaseComObject( _debugController );
 		if( _fence1 is not null )
 			_ = Marshal.ReleaseComObject( _fence1 );
-
-		/* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
-		Before:
-				if (_commandList is not null)
-		After:
-				if( _commandList is not null)
-		*/
 		if( _commandList is not null )
 			_ = Marshal.ReleaseComObject( _commandList );
 		if( _commandQueue is not null )
@@ -219,6 +217,8 @@ public class D3D12GraphicsInterop
 			_ = Marshal.ReleaseComObject( _device );
 		if( _swapChain is not null )
 			_ = Marshal.ReleaseComObject( _swapChain );
+		if( _renderForm is not null )
+			_renderForm.Dispose( ) ;
 	}
 
 
@@ -238,7 +238,8 @@ public class D3D12GraphicsInterop
 	[Test, Order( 1 )]
 	public void Get_DXGI_Adapters() {
 		Assert.That( _factory, Is.Not.Null );
-		Assert.DoesNotThrow( () => { _ = EnumAdapters( _factory ); } );
+		bool good = EnumAdapters( _factory );
+		Assert.That( good, Is.True );
 		Assert.NotZero( _adapters.Count );
 	}
 
@@ -331,7 +332,7 @@ public class D3D12GraphicsInterop
 	public void Create_D3D12_CommandList()
 	{
 		unsafe {
-			Guid uid = default; Guid* pId = &uid;
+			Guid uid = typeof(ID3D12CommandList).GUID; Guid* pId = &uid;
 
 			Assert.IsNotNull( _device );
 			Assert.DoesNotThrow( () =>

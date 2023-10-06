@@ -20,7 +20,10 @@ internal class ComPtrTests
 	static HRESULT hr;
 	static IntPtr address;
 	static IDXGIFactory7? factory7;
+
+#pragma warning disable NUnit1032 // An IDisposable field/property should be Disposed in a TearDown method
 	static ComPtr<IDXGIFactory7>? factory7Ptr;
+#pragma warning restore NUnit1032 // An IDisposable field/property should be Disposed in a TearDown method
 
 	[OneTimeSetUp]
 	public void SetUp( ) {
@@ -32,6 +35,11 @@ internal class ComPtrTests
 
 	[OneTimeTearDown]
 	public void Cleanup() {
+
+		// Release the ComPtr:
+		if( factory7 is not null ) Marshal.ReleaseComObject( factory7 ) ;
+		if( factory7Ptr is not null) factory7Ptr?.Dispose( ) ;
+
 		hr = default;
 		address = default;
 		factory7 = null;
