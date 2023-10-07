@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using Windows.Win32.Graphics.Dxgi;
 #endregion
 
-namespace DXSharp.DXGI;
+namespace DXSharp.DXGI ;
 
 
 
@@ -82,8 +82,6 @@ interface IFactory7: IFactory6, IFactoryX<IDXGIFactory7> { }
 // ========================================================
 // Classes:
 // ========================================================
-
-
 
 //internal class COMBaseObject : IUnknown
 //{

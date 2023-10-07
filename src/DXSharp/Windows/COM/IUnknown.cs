@@ -2,50 +2,47 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
-using static DXSharp.Windows.HRESULT ;
+using Windows.Win32.Graphics.Dxgi ;
+using static DXSharp.Windows.HResult ;
 #endregion
 
 namespace DXSharp.Windows.COM ;
 
-[ComImport, Guid( "00000000-0000-0000-C000-000000000046" )]
+
+//[ComImport, Guid( "00000000-0000-0000-C000-000000000046" )]
 [InterfaceType( ComInterfaceType.InterfaceIsIUnknown )]
-public unsafe interface IUnknown
-{
-	[PreserveSig]
-	int QueryInterface( ref Guid riid, out IntPtr ppvObject );
-
-	[PreserveSig]
-	uint AddRef();
-
-	[PreserveSig]
-	uint Release();
-};
-
-public interface IUnknownWrapper: IDisposable, IAsyncDisposable
-{
+public unsafe interface IUnknown {
 	IntPtr Pointer { get; }
+	[PreserveSig] int QueryInterface( ref Guid riid, out IntPtr ppvObject ) ;
+	[PreserveSig] uint AddRef( ) => (uint)Marshal.AddRef( Pointer ) ;
+	[PreserveSig] uint Release( ) => (uint)Marshal.Release( Pointer ) ;
+} ;
+
+
+
+/// <summary>Contract for .NET objects wrapping native COM types.</summary>
+public interface IUnknownWrapper: IUnknown,
+								  IDisposable,
+								  IAsyncDisposable {
 	bool Disposed { get; }
-
-	uint AddRef() => (uint)Marshal.AddRef( Pointer );
-	uint Release() => (uint)Marshal.Release( Pointer );
-
-	HRESULT QueryInterface<T>( out T ppvObject ) where T : IUnknown {
-		var riid = typeof(T).GUID;
-		var hr = (HRESULT)Marshal.QueryInterface(Pointer, ref riid, out var ppObj);
-
-		_ = hr.ThrowOnFailure();
-
-		object comObjectRef = Marshal.GetUniqueObjectForIUnknown(ppObj);
-
-		ppvObject = (T)comObjectRef;
-		return hr;
+	HResult QueryInterface< T >( out T ppvObject ) where T : IUnknown {
+		var riid = typeof(T).GUID ;
+		
+		var hr = (HResult)Marshal
+			.QueryInterface( Pointer, ref riid, out var ppCOMObj ) ;
+		_ = hr.ThrowOnFailure( ) ;
+		
+		object comObjectRef = Marshal.GetUniqueObjectForIUnknown( ppCOMObj ) ;
+		ppvObject = (T)comObjectRef ;
+		
+		return hr ;
 	}
-};
+} ;
 
-public interface IUnknown<T>: IUnknownWrapper where T : class
-{
-	internal ComPtr<T>? ComPtr { get; }
-
-	new IntPtr Pointer => (ComPtr is null) ? IntPtr.Zero : ComPtr.Address ;
-};
+/// <summary>Contract for COM object wrapper.</summary>
+public interface IUnknown< TSelf >: IUnknownWrapper
+									where TSelf: IUnknown< TSelf >,
+												 IUnknownWrapper {
+	internal ComPtr< IUnknown >? ComPtr { get ; }
+	new IntPtr Pointer => ComPtr?.Address ?? IntPtr.Zero ;
+} ;

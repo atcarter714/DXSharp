@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace DXSharp.Windows.Win32;
+namespace DXSharp.Windows.Win32 ;
 
 //! TODO: Incomplete definitions generated via AI
 

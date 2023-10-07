@@ -16,12 +16,12 @@ namespace DXSharp.Windows.Win32.Helpers;
 
 public class DXApp: IDisposable
 {
-    private readonly uint _width;
-    private readonly uint _height;
-    private string _title;
-    private readonly string _assetsPath;
-    private readonly float _aspectRatio;
-    private bool _useWarpDevice;
+    readonly uint _width;
+    readonly uint _height;
+    string _title;
+    readonly string _assetsPath;
+    readonly float _aspectRatio;
+    bool _useWarpDevice ;
 
     public string AssetsPath => _assetsPath ;
     public string Title => _title ;
@@ -43,33 +43,27 @@ public class DXApp: IDisposable
         return Path.Combine(_assetsPath, assetName);
     }
 
-    public static void GetHardwareAdapter<T>( IDXGIFactory2?     dxgiFactory,
-                                              out IDXGIAdapter1? dxgiAdapter ,
-                                              bool               requestHighPerformanceAdapter ) 
-                                                    //where T: class, IDXGIFactory2, new( ) 
-    {
-        dxgiAdapter = null;
-        var adapterIndex = 0U;
-        while ( dxgiFactory.EnumAdapters1(adapterIndex, out var adapter).Succeeded )
-        {
-            if (IsHardwareAdapterSupported(adapter))
-            {
-                dxgiAdapter = adapter;
-                break;
+    public static void GetHardwareAdapter< T >( IDXGIFactory2? dxgiFactory,
+                                                out IDXGIAdapter1? dxgiAdapter,
+                                                bool requestHighPerformanceAdapter ) {
+        dxgiAdapter = null ;
+        var adapterIndex = 0U ;
+        while ( dxgiFactory?.EnumAdapters1( adapterIndex, out var adapter ).Succeeded ?? false ) {
+            if ( IsHardwareAdapterSupported(adapter) ) {
+                dxgiAdapter = adapter ;
+                break ;
             }
-            adapterIndex++;
+            adapterIndex++ ;
         }
     }
 
-    private static bool IsHardwareAdapterSupported(IDXGIAdapter1 adapter)
-    {
-        adapter.GetDesc1(out var desc);
+    static bool IsHardwareAdapterSupported( IDXGIAdapter1 adapter ) {
+        adapter.GetDesc1( out var desc ) ;
 
-        if ((desc.Flags & (uint)DXGI_ADAPTER_FLAG3.DXGI_ADAPTER_FLAG3_SOFTWARE) != 0)
-        {
+        if ( (desc.Flags & (uint)DXGI_ADAPTER_FLAG3.DXGI_ADAPTER_FLAG3_SOFTWARE) != 0 ) {
             // Don't select the Basic Render Driver adapter.
             // If you want a software adapter, pass in "/warp" on the command line.
-            return false;
+            return false ;
         }
 
         // Check to see whether the adapter supports Direct3D 12, but don't create the

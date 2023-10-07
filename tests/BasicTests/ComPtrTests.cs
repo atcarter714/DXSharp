@@ -7,7 +7,6 @@ using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dxgi;
 
-using HRESULT = DXSharp.Windows.HRESULT;
 #endregion
 
 namespace BasicTests;
@@ -17,7 +16,7 @@ namespace BasicTests;
 [TestFixture, FixtureLifeCycle( LifeCycle.SingleInstance )]
 internal class ComPtrTests
 {
-	static HRESULT hr;
+	static HResult hr;
 	static IntPtr address;
 	static IDXGIFactory7? factory7;
 
@@ -55,7 +54,7 @@ internal class ComPtrTests
 		Assert.IsNotNull( factory7 );
 
 		// Create the ComPtr object:
-		factory7Ptr = create_ComPtr( factory7 );
+		factory7Ptr = create_ComPtr( Marshal.GetIUnknownForObject( factory7 ) ) ;
 		Assert.IsNotNull( factory7Ptr );
 		Assert.IsFalse( factory7Ptr.Disposed );
 		Assert.IsNotNull( factory7Ptr.Interface );
@@ -87,15 +86,15 @@ internal class ComPtrTests
 
 
 
-	ComPtr<T> create_ComPtr<T>( T? comObj ) where T : class {
-		Assert.NotNull( comObj );
-
-		ComPtr<T>? comPtr = null;
+	ComPtr<T> create_ComPtr< T >( T? comObj ) where T: IUnknown 
+	{
+		Assert.NotNull( comObj ) ;
+		ComPtr< T >? comPtr = null ;
 
 		// Create a ComPtr<T> and validate constructor:
 		Assert.DoesNotThrow( () =>
 		{
-			comPtr = new ComPtr<T>( comObj );
+			comPtr = new ComPtr<T>( comObj! ) ;
 		} );
 
 		// Assert that the ComPtr object is non-null:
@@ -115,7 +114,7 @@ internal class ComPtrTests
 		//Assert.That( comPtr.GUID, Is.EqualTo( typeof( T ).GUID ) );
 
 		// Check if the object is actually a valid COM interface:
-		Assert.IsTrue( Marshal.IsComObject( comPtr.Interface ) );
+		Assert.IsTrue( Marshal.IsComObject( comPtr.Interface! ) );
 
 		return comPtr;
 	}

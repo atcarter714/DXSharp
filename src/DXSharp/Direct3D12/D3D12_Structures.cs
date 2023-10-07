@@ -54,4 +54,4 @@ public partial struct D3D12_VIEWPORT
 
 	public static implicit operator DXSharp.Viewport( D3D12_VIEWPORT vp ) =>
 		new( vp.TopLeftX, vp.TopLeftY, vp.Width, vp.Height, vp.MinDepth, vp.MaxDepth );
-};
+} ;

@@ -23,6 +23,8 @@
 
 
 #region Using Directives
+
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.InteropServices;
 
 /* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
@@ -42,40 +44,36 @@ using Windows.Win32.Graphics.Dxgi;
 namespace DXSharp.Windows.COM ;
 
 
-public class ComPtr: IDisposable
-{
+public class ComPtr: IDisposable {
 	/// <summary>The GUID of the IUnknown COM interface</summary>
 	public static readonly Guid GUID_IUNKNOWN =
-		Guid.Parse( "00000000-0000-0000-C000-000000000046" );
-
+		Guid.Parse( "00000000-0000-0000-C000-000000000046" ) ;
+	
 	internal IntPtr Address { get; private set; }
-	public bool Disposed => Address == IntPtr.Zero;
-
-
+	
 	public ComPtr( IntPtr address ) {
 		Address = address;
 	}
-
-	~ComPtr() {
-		Dispose();
-	}
-
-	public void Dispose() {
+	
+	public bool Disposed => Address == IntPtr.Zero ;
+	~ComPtr( ) => Dispose( ) ;
+	public void Dispose( ) {
 		if( Address != IntPtr.Zero ) {
-			Marshal.Release( Address );
-			Address = IntPtr.Zero;
+			Marshal.Release( Address ) ;
+			Address = IntPtr.Zero ;
 		}
-		GC.SuppressFinalize( this );
+		GC.SuppressFinalize( this ) ;
 	}
-}
+} ;
 
 
 
-public sealed class ComPtr< T >: ComPtr where T : class
-{
-	internal T? Interface { get; private set; }
+public sealed class ComPtr< T >: ComPtr
+								where T: IUnknown {
+	internal T? Interface { get ; init ; }
 
-	public ComPtr( T? comInterface ): 
-				base( Marshal.GetIUnknownForObject( comInterface! ) ) 
-											=> Interface = comInterface ;
-}
+	public ComPtr( [NotNull] in T comInterface ):
+		base( Marshal.GetIUnknownForObject( comInterface ) ) => Interface = comInterface ;
+	public ComPtr( IntPtr address ):
+		base( address ) => Interface = (T?)Marshal.GetObjectForIUnknown( address ) ;
+} ;

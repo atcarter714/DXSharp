@@ -2,55 +2,22 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-Before:
-using global::Windows.Win32;
 
-
-/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-After:
-/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-*/
-
-
-
-/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-Before:
-using Windows.Win32.Foundation;
-
-using Windows.Win32.Graphics.Direct3D;
-After:
-using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Direct3D;
-*/
-
-/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-Before:
-using System.Diagnostics;
-After:
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-*/
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dxgi;
 using Windows.Win32.Graphics.Dxgi.Common;
-using DXGI;
+using DXSharp.Windows.Win32 ;
+using DXSharp.Windows.Win32.Helpers ;
+using winMD = Windows.Win32.Foundation ;
+
 using DXGI_MODE_DESC = Windows.Win32.Graphics.Dxgi.Common.DXGI_MODE_DESC;
 using DXGI_MODE_DESC1 = Windows.Win32.Graphics.Dxgi.DXGI_MODE_DESC1;
 using DXGI_SAMPLE_DESC = Windows.Win32.Graphics.Dxgi.Common.DXGI_SAMPLE_DESC;
 using DXGI_SWAP_EFFECT = Windows.Win32.Graphics.Dxgi.DXGI_SWAP_EFFECT;
-/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-Before:
-using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics;
-After:
-using Win32 = global::Windows.Win32;
-*/
-
-
 #endregion
 
-namespace DXSharp.DXGI;
+namespace DXSharp.DXGI ;
+
 
 // ---------------------------------------------------------------------------------------
 // DXGI Enumerations ::
@@ -58,13 +25,14 @@ namespace DXSharp.DXGI;
 
 // Issue: the auto-documentation had "D2D1_ALPHA_MODE" instead of DXGI_ALPHA_MODE
 // but the link was actually correct, oddly enough ...
+
+
 /// <summary>Identifies the alpha value, transparency behavior, of a surface.</summary>
 /// <remarks>
 /// <para>For more information about alpha mode, see <a href="https://docs.microsoft.com/windows/desktop/api/dcommon/ne-dcommon-d2d1_alpha_mode">DXGI_ALPHA_MODE</a>.</para>
 /// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ne-dxgi1_2-dxgi_alpha_mode#">Read more on docs.microsoft.com</see>.</para>
 /// </remarks>
-public enum AlphaMode: uint
-{
+public enum AlphaMode: uint {
 	/// <summary>Indicates that the transparency behavior is not specified.</summary>
 	Unspecified = 0U,
 	/// <summary>Indicates that the transparency behavior is premultiplied. Each color is first scaled by the alpha value. The alpha value itself is the same in both straight and premultiplied alpha. Typically, no color channel value is greater than the alpha channel value. If a color channel value in a premultiplied format is greater than the alpha channel, the standard source-over blending math results in an additive blend.</summary>
@@ -89,8 +57,7 @@ public enum AlphaMode: uint
 /// <remarks>
 /// <para>See <a href="https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb173067(v=vs.85)">DXGI_MODE_SCANLINE_ORDER</a> for more info.</para>
 /// </remarks>
-public enum ScanlineOrder
-{
+public enum ScanlineOrder {
 	/// <summary>
 	/// Scanline order is unspecified.
 	/// </summary>
@@ -146,8 +113,7 @@ public enum ScanlineOrder
 /// Note that <i>outputWidth</i> and <i>outputHeight</i> are the pixel sizes of the presentation target size. In the case of <b>CoreWindow</b>, this requires converting the <i>logicalWidth</i> and <i>logicalHeight</i> values from DIPS to pixels using the window's DPI property.</para>
 /// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ne-dxgi1_2-dxgi_scaling#">Read more on docs.microsoft.com</see>.</para>
 /// </remarks>
-public enum Scaling
-{
+public enum Scaling {
 	/// <summary>
 	/// Directs DXGI to make the back-buffer contents scale to fit the presentation target size. 
 	/// This is the implicit behavior of DXGI when you call the 
@@ -184,8 +150,7 @@ public enum Scaling
 /// </para>
 /// More information at <a href="https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb173066(v=vs.85)">DXGI_MODE_SCALING enumeration</a>
 /// </remarks>
-public enum ScalingMode
-{
+public enum ScalingMode {
 	/// <summary>
 	/// Unspecified scaling.
 	/// </summary>
@@ -209,8 +174,7 @@ public enum ScalingMode
 /// For more information see: 
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/dxgi-usage">DXGI_USAGE</a>
 /// </remarks>
-public enum Usage: long
-{
+public enum Usage: long {
 	/// <summary>
 	/// No flags
 	/// </summary>
@@ -254,8 +218,7 @@ public enum Usage: long
 /// <see href="https://docs.microsoft.com/windows/win32/api//dxgi/ne-dxgi-dxgi_swap_effect#">Read more on docs.microsoft.com</see>.
 /// </para>
 /// </remarks>
-public enum SwapEffect
-{
+public enum SwapEffect {
 	/// <summary>
 	/// <para>Use this flag to specify the bit-block transfer (bitblt) model and to specify that DXGI discard the contents of the back buffer after you call <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-present1">IDXGISwapChain1::Present1</a>. This flag is valid for a swap chain with more than one back buffer, although, applications only have read and write access to buffer 0. Use this flag to enable the display driver to select the most efficient presentation technique for the swap chain. <b>Direct3D 12:  </b>This enumeration value is never supported. D3D12 apps must using <b>FlipSequential</b> or <b>FlipDiscard</b>. <div class="alert"><b>Note</b>  There are differences between full screen exclusive and full screen UWP. If you are porting a Direct3D 11 application to UWP on a Windows PC, be aware that the use of  <b>Discard</b> when creating swap chains does not behave the same way in UWP as it does in Win32, and its use may be detrimental to GPU performance. This is because UWP applications are forced into FLIP swap modes (even if other swap modes are set), because this reduces the computation time used by the memory copies originally done by the older bitblt model. The recommended approach is to manually convert DX11 Discard swap chains to use flip models within UWP,  using <b>FlipDiscard</b> instead of <b>Discard</b> where possible. Refer to the Example below, and see <a href="https://docs.microsoft.com/windows/win32/direct3ddxgi/for-best-performance--use-dxgi-flip-model">this article</a> for more information.</div> <div> </div></para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ne-dxgi-dxgi_swap_effect#members">Read more on docs.microsoft.com</see>.</para>
@@ -302,8 +265,7 @@ public enum SwapEffect
 /// </para>
 /// </remarks>
 [Flags]
-public enum SwapChainFlags
-{
+public enum SwapChainFlags {
 	/// <summary>
 	/// No flags
 	/// </summary>
@@ -449,6 +411,17 @@ public enum SwapChainFlags
 };
 
 
+public enum Residency {
+	/// <summary>The resource is located in video memory.</summary>
+	FullResident = 1,
+	/// <summary>At least some of the resource is located in CPU memory.</summary>
+	SharedMemory = 2,
+	/// <summary>At least some of the resource has been paged out to the hard drive.</summary>
+	EvictedToDisk = 3,
+} ;
+
+
+
 // ---------------------------------------------------------------------------------------
 // DXGI Structures ::
 // ---------------------------------------------------------------------------------------
@@ -467,8 +440,7 @@ public enum SwapChainFlags
 /// 
 /// </remarks>
 [DebuggerDisplay( "Fraction: {numerator}/{denominator} (Float: {AsFloat}f)" )]
-public struct Rational: IEquatable<Rational>
-{
+public struct Rational: IEquatable< Rational > {
 	/// <summary>
 	/// A Rational with a value of zero
 	/// </summary>
@@ -667,7 +639,7 @@ public struct Rational: IEquatable<Rational>
 	public static bool operator !=( Rational a, uint b ) => !a.Equals( b );
 	public static bool operator ==( uint a, Rational b ) => a.Equals( b );
 	public static bool operator !=( uint a, Rational b ) => !a.Equals( b );
-};
+} ;
 
 
 /// <summary>Describes multi-sampling parameters for a resource.</summary>
@@ -676,8 +648,7 @@ public struct Rational: IEquatable<Rational>
 /// <para>This doc was truncated.</para>
 /// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgicommon/ns-dxgicommon-dxgi_sample_desc#">Read more on docs.microsoft.com</see>.</para>
 /// </remarks>
-public struct SampleDescription
-{
+public struct SampleDescription {
 	internal SampleDescription( in DXGI_SAMPLE_DESC desc ) {
 		this.count = desc.Count;
 		this.quality = desc.Quality;
@@ -708,10 +679,7 @@ public struct SampleDescription
 		this.quality = values.quality;
 	}
 
-	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
-	uint count;
-	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
-	uint quality;
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )] uint count, quality ;
 
 	/// <summary>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of multisamples per pixel.</para>
@@ -725,14 +693,13 @@ public struct SampleDescription
 	/// </summary>
 	public uint Quality { get => quality; set => quality = value; }
 
-
-
+	
 	public static implicit operator SampleDescription(
 		(uint count, uint quality) values ) => new( values.count, values.quality );
 
 	public static implicit operator (uint count, uint quality)( SampleDescription sDesc ) =>
 		(count: sDesc.Count, quality: sDesc.Quality);
-};
+} ;
 
 
 //typedef struct DXGI_SWAP_CHAIN_DESC
@@ -752,8 +719,7 @@ public struct SampleDescription
 /// <para>This structure is used by the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiswapchain-getdesc">GetDesc</a> and <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">CreateSwapChain</a> methods. In full-screen mode, there is a dedicated front buffer; in windowed mode, the desktop is the front buffer. If you create a swap chain with one buffer, specifying <b>DXGI_SWAP_EFFECT_SEQUENTIAL</b> does not cause the contents of the single buffer to be swapped with the front buffer. For performance information about flipping swap-chain buffers in full-screen application, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/d3d10-graphics-programming-guide-dxgi">Full-Screen Application Performance Hints</a>.</para>
 /// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#">Read more on docs.microsoft.com</see>.</para>
 /// </remarks>
-public struct SwapChainDescription
-{
+public struct SwapChainDescription {
 	internal SwapChainDescription( in DXGI_SWAP_CHAIN_DESC desc ) {
 		//this.BufferDesc = desc.BufferDesc;
 		//this.SampleDesc = desc.SampleDesc;
@@ -846,30 +812,33 @@ public struct SwapChainDescription
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
 	public SwapChainFlags Flags { get => (SwapChainFlags)desc.Flags; set => desc.Flags = (uint)value; }
-};
+} ;
+
+
+
+// -----------------------------------------------
+
+#region SwapChainDescription1 Structure Layout
+//ModeDescription bufferDesc;
+//SampleDescription sampleDesc;
+//Usage bufferUsage;
+//uint bufferCount;
+//HWND outputWindow;
+//BOOL windowed;
+//SwapEffect swapEffect;
+//uint flags;
+#endregion
+
+// -----------------------------------------------
 
 /// <summary>Describes a swap chain.</summary>
 /// <remarks>
 /// <para>This structure is used by the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiswapchain-getdesc">GetDesc</a> and <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgifactory-createswapchain">CreateSwapChain</a> methods. In full-screen mode, there is a dedicated front buffer; in windowed mode, the desktop is the front buffer. If you create a swap chain with one buffer, specifying <b>DXGI_SWAP_EFFECT_SEQUENTIAL</b> does not cause the contents of the single buffer to be swapped with the front buffer. For performance information about flipping swap-chain buffers in full-screen application, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/d3d10-graphics-programming-guide-dxgi">Full-Screen Application Performance Hints</a>.</para>
 /// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#">Read more on docs.microsoft.com</see>.</para>
 /// </remarks>
-public struct SwapChainDescription1
-{
-	internal SwapChainDescription1( in DXGI_SWAP_CHAIN_DESC1 desc ) {
-		//this.Width = desc.Width;
-		//this.Height = desc.Height;
-		//this.Format = (Format)desc.Format;
-		//this.Stereo = desc.Stereo;
-		//this.SampleDesc = desc.SampleDesc;
-		//this.BufferUsage = (Usage)desc.BufferUsage;
-		//this.BufferCount = desc.BufferCount;
-		//this.Scaling = (Scaling)desc.Scaling;
-		//this.SwapEffect = (SwapEffect)desc.SwapEffect;
-		//this.AlphaMode = (AlphaMode)desc.AlphaMode;
-		//this.Flags = (SwapChainFlags)desc.Flags;
-		this.desc = desc;
-	}
-
+[DebuggerDisplay("{this.ToString()}")]
+public struct SwapChainDescription1 {
+	internal SwapChainDescription1( in DXGI_SWAP_CHAIN_DESC1 desc ) => this.desc = desc ;
 	internal unsafe SwapChainDescription1( DXGI_SWAP_CHAIN_DESC1* pDesc ) => desc = *pDesc;
 
 	/// <summary>
@@ -954,21 +923,13 @@ public struct SwapChainDescription1
 		this.AlphaMode = alphaMode;
 		this.Flags = desc.Flags;
 	}
-
-	//ModeDescription bufferDesc;
-	//SampleDescription sampleDesc;
-	//Usage bufferUsage;
-	//uint bufferCount;
-	//HWND outputWindow;
-	//BOOL windowed;
-	//SwapEffect swapEffect;
-	//uint flags;
-
-	// wrap the internal type:
+	
+	
+	//! simply wrap up the internal struct type:
 	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
 	DXGI_SWAP_CHAIN_DESC1 desc;
 	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
-	internal DXGI_SWAP_CHAIN_DESC1 InternalValue => desc;
+	internal DXGI_SWAP_CHAIN_DESC1 _InternalValue => desc;
 
 
 	/// <summary>
@@ -1044,13 +1005,28 @@ public struct SwapChainDescription1
 
 
 	/// <summary>
+	/// Converts this <see cref="SwapChainDescription1"/> structure to a string
+	/// formatted in a JSON-like way, which is easy to save, load and parse ...
+	/// </summary>
+	/// <returns>This SwapChainDescription1 value as a formatted string.</returns>
+	/// <remarks>May need to change ordering/naming a bit in the future (OK for now) ...</remarks>
+	public override string ToString( ) =>
+		$"\"SwapChainDescription1\": [\n" +
+			$"\t\"Resolution\": \"{Width}x{Height}\", \"Format\": \"{Format}\", \n" +
+			$"\t\"Buffers\": [ \"Count\": {BufferCount}, \"Usage\": {BufferUsage} ], \n" +
+			$"\t\"SampleDesc\": [ \"Count\": {SampleDesc.Count}, \"Quality\": {SampleDesc.Quality} ], \n" +
+			$"\t\"SwapEffect\": {SwapEffect}, \"Stereo\": {Stereo}, \"Scaling\": {Scaling}, \n" +
+			$"\t\"AlphaMode\": {AlphaMode}, \"Flags\": {Flags} \n" +
+		$"]" ;
+
+
+	/// <summary>
 	/// Converts a SwapChainDescription to a SwapChainDescription1 structure
 	/// </summary>
 	/// <param name="desc">A SwapChainDescription strcuture</param>
-	public static explicit operator SwapChainDescription1( SwapChainDescription desc ) =>
-		new( desc );
+	public static explicit operator SwapChainDescription1( SwapChainDescription desc ) => new( desc );
 
-};
+} ;
 
 
 
@@ -1067,8 +1043,7 @@ public struct SwapChainDescription1
 /// Describes full-screen mode for a swap chain.
 /// </summary>
 [DebuggerDisplay( "FullScreen Mode = Windowed: {Windowed} @ {RefreshRate.AsFloat}Hz ({Scaling})" )]
-public struct SwapChainFullscreenDescription
-{
+public struct SwapChainFullscreenDescription {
 	internal SwapChainFullscreenDescription( in DXGI_SWAP_CHAIN_FULLSCREEN_DESC desc ) {
 		//this.desc.RefreshRate = desc.RefreshRate;
 		//this.desc.ScanlineOrdering = desc.ScanlineOrdering;
@@ -1145,8 +1120,7 @@ public struct SwapChainFullscreenDescription
 /// For more info see: <a href="https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a>
 /// </remarks>
 [DebuggerDisplay( "Mode = {Width}x{Height} @ {RefreshRate.AsFloat}Hz ({Scaling})" )]
-public struct ModeDescription
-{
+public struct ModeDescription {
 	internal ModeDescription( in DXGI_MODE_DESC modeDesc ) => this.desc = modeDesc;
 
 	internal unsafe ModeDescription( DXGI_MODE_DESC* pModeDesc ) => this.desc = *pModeDesc;
@@ -1183,8 +1157,7 @@ public struct ModeDescription
 	//Format format;
 	//ScanlineOrder scanlineOrdering;
 	//ScalingMode scaling;
-
-	[DebuggerBrowsable( DebuggerBrowsableState.Never )] DXGI_MODE_DESC desc;
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )] DXGI_MODE_DESC desc ;
 
 
 
@@ -1226,24 +1199,9 @@ public struct ModeDescription
 	/// A member of the DXGI.ScalingMode enumerated type describing the scaling mode.
 	/// </summary>
 	public ScalingMode Scaling { get => (ScalingMode)desc.Scaling; set => desc.Scaling = (DXGI_MODE_SCALING)value; }
-
-
-	//[MethodImpl( MethodImplOptions.AggressiveInlining )]
-	//internal unsafe static ModeDescription MemCopyFrom( in DXGI_MODE_DESC mode ) {
-	//	fixed ( DXGI_MODE_DESC* pMode = &mode )
-	//		return MemCopyFrom( pMode );
-	//}
-
-	//[MethodImpl( MethodImplOptions.AggressiveInlining )]
-	//internal static unsafe ModeDescription MemCopyFrom( DXGI_MODE_DESC* pMode ) {
-	//	ModeDescription desc = default;
-	//	*(&desc) = *((ModeDescription*) pMode);
-	//	return desc;
-	//}
-
+	
 	public static explicit operator ModeDescription( ModeDescription1 mode ) => new( mode );
-
-};
+} ;
 
 
 //typedef struct DXGI_MODE_DESC1
@@ -1265,8 +1223,7 @@ public struct ModeDescription
 /// ModeDescription1 is identical to ModeDescription except that ModeDescription1 includes the Stereo member.
 /// </remarks>
 [DebuggerDisplay( "Mode = {Width}x{Height} @ {RefreshRate.AsFloat}Hz ({Scaling})" )]
-public struct ModeDescription1
-{
+public struct ModeDescription1 {
 	internal ModeDescription1( in DXGI_MODE_DESC1 modeDesc ) => this.desc = modeDesc;
 
 	internal unsafe ModeDescription1( DXGI_MODE_DESC1* pModeDesc ) => desc = *pModeDesc;
@@ -1368,77 +1325,88 @@ public struct ModeDescription1
 	public static implicit operator ModeDescription1( ModeDescription desc ) => new( desc );
 
 
-};
+} ;
+
+
 
 [StructLayout( LayoutKind.Sequential )]
-public struct GammaControl
-{
-	public RGB Scale;
-	public RGB Offset;
+public struct OutputDescription {
+	[MarshalAs(UnmanagedType.LPStr, SizeConst = 32)]
+	public NativeStr32 DeviceName ;
+	
+	public Rect        DesktopCoordinates ;
+	public bool        AttachedToDesktop ;
+	public Rotation    Rotation ;
+	public Win32Handle Monitor ;
+	
+	public OutputDescription( in OutputDescription desc ) {
+		unsafe { fixed( OutputDescription* pThis = &this )
+				*( (OutputDescription*)pThis ) = desc ; }
+	}
+	
+	public OutputDescription( in NativeStr32 deviceName, 
+							  in Rect desktopCoordinates, 
+							  bool attachedToDesktop, 
+							  Rotation rotation, 
+							  nint monitor ) {
+		this.DeviceName = deviceName ;
+		this.DesktopCoordinates = desktopCoordinates ;
+		this.AttachedToDesktop = attachedToDesktop ;
+		this.Rotation = rotation ;
+		this.Monitor = monitor ;
+	}
+	
+	public OutputDescription( in NativeStr32 deviceName, 
+							  in Rect desktopCoordinates, 
+							  bool attachedToDesktop, 
+							  Rotation rotation, 
+							  Win32Handle monitor ) {
+		this.DeviceName = deviceName ;
+		this.DesktopCoordinates = desktopCoordinates ;
+		this.AttachedToDesktop = attachedToDesktop ;
+		this.Rotation = rotation ;
+		this.Monitor = monitor ;
+	}
+	
+	public OutputDescription( in DXGI_OUTPUT_DESC desc) {
+		this.DeviceName         = new( desc.DeviceName ) ;
+		this.DesktopCoordinates = desc.DesktopCoordinates ;
+		this.AttachedToDesktop  = desc.AttachedToDesktop ;
+		this.Rotation           = (Rotation)desc.Rotation ;
+		this.Monitor            = desc.Monitor ;
+	}
+	
+	public static implicit operator OutputDescription( in DXGI_OUTPUT_DESC desc ) => new( desc ) ;
+	public static implicit operator DXGI_OUTPUT_DESC( in OutputDescription desc ) {
+		DXGI_OUTPUT_DESC d = default ;
+		d.DeviceName         = desc.DeviceName.ToString( ) ;
+		d.DesktopCoordinates = desc.DesktopCoordinates ;
+		d.AttachedToDesktop  = desc.AttachedToDesktop ;
+		d.Rotation           = (DXGI_MODE_ROTATION)desc.Rotation ;
+		d.Monitor            = desc.Monitor ;
+		return d ;
+	}
+} ;
 
-	[MarshalAs( UnmanagedType.ByValArray, SizeConst = 1025 )]
-	public RGB[] GammaCurve;
-};
 
-[StructLayout(LayoutKind.Sequential)]
-public struct RGB
-{
-	public float Red;
-	public float Green;
-	public float Blue;
-};
 
-[StructLayout(LayoutKind.Sequential)]
-public struct GammaControlCapabilities
-{
-	public bool  ScaleAndOffsetSupported;
-	public float MaxConvertedValue;
-	public float MinConvertedValue;
-	public uint  NumGammaControlPoints;
-	[MarshalAs(UnmanagedType.ByValArray, SizeConst = 1025)]
-	public float[] ControlPoints;
-};
+[StructLayout( LayoutKind.Sequential )]
+public struct FrameStatistics {
+	public uint PresentCount, PresentRefreshCount, SyncRefreshCount ;
+	public long SyncQPCTime, SyncGPUTime ;
+} ;
 
-[StructLayout(LayoutKind.Sequential)]
-public struct OutputDescription
-{
-	public string   DeviceName;
-	public RECT     DesktopCoordinates;
-	public bool     AttachedToDesktop;
-	public Rotation Rotation;
-	public IntPtr   Monitor;
-}
-
-[ComImport, Guid("cafcb56c-6ac3-4889-bf47-9e23bbd260ec")]
-[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface ISurface
-{
-	void GetDesc(out SurfaceDescription pDesc);
-	void Map(ref     MappedRect         pLockedRect, uint MapFlags);
-	void Unmap();
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct FrameStatistics
-{
-	public uint PresentCount;
-	public uint PresentRefreshCount;
-	public uint SyncRefreshCount;
-	public long SyncQPCTime;
-	public long SyncGPUTime;
-}
-
-public enum Rotation
-{
+public enum Rotation {
 	Identity  = 1,
 	Rotate90  = 2,
 	Rotate180 = 3,
-	Rotate270 = 4
-}
+	Rotate270 = 4,
+} ;
 
-public struct AdapterDescription
-{
-	public string Description; // A string that contains the adapter description.
+
+[StructLayout( LayoutKind.Sequential )]
+public struct AdapterDescription {
+	public NativeStr128 Description; // A string that contains the adapter description.
 	public uint VendorId; // The PCI ID of the hardware vendor.
 	public uint DeviceId; // The PCI ID of the hardware device.
 	public uint SubSysId; // The PCI ID of the sub system.
@@ -1448,11 +1416,68 @@ public struct AdapterDescription
 	public ulong SharedSystemMemory; // The amount of system memory that is shared with the CPU.
 	public Luid AdapterLuid; // A unique value that identifies the adapter.
 	public uint Flags; // Identifies the adapter type. The value is a bitwise OR of DXGI_ADAPTER_FLAG enumeration constants.
-}
+	
+	public AdapterDescription( in AdapterDescription desc ) {
+		this.Description = desc.Description ;
+		this.VendorId = desc.VendorId ;
+		this.DeviceId = desc.DeviceId ;
+		this.SubSysId = desc.SubSysId ;
+		this.Revision = desc.Revision ;
+		this.DedicatedVideoMemory = desc.DedicatedVideoMemory ;
+		this.DedicatedSystemMemory = desc.DedicatedSystemMemory ;
+		this.SharedSystemMemory = desc.SharedSystemMemory ;
+		this.AdapterLuid = desc.AdapterLuid ;
+		this.Flags = desc.Flags ;
+	}
+	
+	public AdapterDescription( in DXGI_ADAPTER_DESC desc ) {
+		this.Description           = new( desc.Description ) ;
+		this.VendorId              = desc.VendorId ;
+		this.DeviceId              = desc.DeviceId ;
+		this.SubSysId              = desc.SubSysId ;
+		this.Revision              = desc.Revision ;
+		this.DedicatedVideoMemory  = desc.DedicatedVideoMemory ;
+		this.DedicatedSystemMemory = desc.DedicatedSystemMemory ;
+		this.SharedSystemMemory    = desc.SharedSystemMemory ;
+		this.AdapterLuid           = new( desc.AdapterLuid ) ;
+		this.Flags                 = default ;
+	}
+} ;
 
-public struct Luid
-{
-	public uint LowPart;
-	public int  HighPart;
-}
+
+
+[Serializable,
+ DebuggerDisplay("LUID: {LowPart}:{HighPart}"),
+ StructLayout(LayoutKind.Sequential)]
+public struct Luid: IEquatable<Luid> {
+	public uint LowPart ; public int HighPart ;
+	public Luid( uint low, int high ) { LowPart = low ; HighPart = high ; }
+	public Luid( in LUID luid ) { LowPart = luid.LowPart ; HighPart = luid.HighPart ; }
+	public unsafe Luid( LUID* pLuid ) { LowPart = pLuid->LowPart ; HighPart = pLuid->HighPart ; }
+	public static implicit operator Luid( in LUID luid ) => new( luid ) ;
+	public static implicit operator LUID( in Luid luid ) => new LUID {
+		LowPart = luid.LowPart, HighPart = luid.HighPart
+	} ;
+	
+	public static bool operator ==( in Luid a, in Luid b ) => 
+		a.LowPart == b.LowPart && a.HighPart == b.HighPart ;
+	public static bool operator !=( in Luid a, in Luid b ) =>
+	 		a.LowPart != b.LowPart || a.HighPart != b.HighPart ;
+	
+	public override int GetHashCode( ) => HashCode.Combine( LowPart, HighPart ) ;
+	public override bool Equals( object? obj ) => obj is Luid luid && this == luid ;
+	public override string ToString( ) => $"LUID: {{ {LowPart}, {HighPart} }}" ;
+	public bool Equals( Luid other ) => LowPart == other.LowPart 
+										&& HighPart == other.HighPart ;
+} ;
+
+
+public struct SharedResource {
+	public Win32Handle Handle ;
+	public SharedResource( Win32Handle handle ) => Handle = handle ;
+	public static implicit operator SharedResource( Win32Handle handle ) => new( handle ) ;
+	public static implicit operator Win32Handle( SharedResource handle ) => handle.Handle ;
+} ;
+
+
 

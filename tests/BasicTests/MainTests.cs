@@ -59,8 +59,6 @@ using static Windows.Win32.PInvoke;
 */
 using static Windows.Win32.PInvoke;
 
-using HRESULT = DXSharp.Windows.HRESULT;
-
 #endregion
 
 namespace BasicTests;
@@ -170,7 +168,7 @@ public class D3D12GraphicsInterop
 			catch( COMException comEx ) {
 
 				// Are we finished with all adapters?
-				if( comEx.HResult == HRESULT.DXGI_ERROR_NOT_FOUND )
+				if( comEx.HResult == HResult.DXGI_ERROR_NOT_FOUND )
 					return true;
 
 				throw;

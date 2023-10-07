@@ -7,54 +7,41 @@ namespace Windows.Win32.Graphics.Direct3D11;
 
 
 
-public partial struct D3D11_VIEWPORT
-{
-	public D3D11_VIEWPORT() {
-
-		this.TopLeftX = 0f;
-		this.TopLeftY = 0f;
-		this.Width = 0f;
-		this.Height = 0f;
-		this.MinDepth = 0f;
-		this.MaxDepth = 1f;
+public partial struct D3D11_VIEWPORT {
+	public D3D11_VIEWPORT( ) {
+		this.TopLeftX = 0f ;
+		this.TopLeftY = 0f ;
+		this.Width    = 0f ;
+		this.Height   = 0f ;
+		this.MinDepth = 0f ;
+		this.MaxDepth = 1f ;
 	}
 
 	public D3D11_VIEWPORT(
-		float topLeftX, float topLeftY,
-		float width, float height,
+		float topLeftX,      float topLeftY,
+		float width,         float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
-
-		this.TopLeftX = topLeftX;
-		this.TopLeftY = topLeftY;
-		this.Width = width;
-		this.Height = height;
-		this.MinDepth = minDepth;
-		this.MaxDepth = maxDepth;
+		this.TopLeftX = topLeftX ;
+		this.TopLeftY = topLeftY ;
+		this.Width    = width ;
+		this.Height   = height ;
+		this.MinDepth = minDepth ;
+		this.MaxDepth = maxDepth ;
 	}
 
 	public D3D11_VIEWPORT(
-		float width, float height,
+		float width,         float height,
 		float minDepth = 0f, float maxDepth = 1f ) {
 
-		this.TopLeftX = 0;
-		this.TopLeftY = 0;
-		this.Width = width;
-		this.Height = height;
-		this.MinDepth = minDepth;
-		this.MaxDepth = maxDepth;
+		this.TopLeftX = 0 ;
+		this.TopLeftY = 0 ;
+		this.Width    = width ;
+		this.Height   = height ;
+		this.MinDepth = minDepth ;
+		this.MaxDepth = maxDepth ;
 	}
 
 
-	/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-	Before:
-		public static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
-
-			try {
-	After:
-		public static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
-
-			try {
-	*/
 	public static ReadOnlySpan<D3D11_VIEWPORT> GetFrom( ID3D11DeviceContext? context ) {
 
 		try {
@@ -77,4 +64,4 @@ public partial struct D3D11_VIEWPORT
 
 	public static implicit operator DXSharp.Viewport( D3D11_VIEWPORT vp ) =>
 		new( vp.TopLeftX, vp.TopLeftY, vp.Width, vp.Height, vp.MinDepth, vp.MaxDepth );
-};
+} ;

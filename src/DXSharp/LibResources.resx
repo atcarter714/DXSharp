@@ -135,4 +135,7 @@
     <value>DXSharp</value>
     <comment>The name of the library/API</comment>
   </data>
+  <data name="Object_Object__0_____Cannot_be_null_" xml:space="preserve">
+    <value>{0} :: Cannot be null!</value>
+  </data>
 </root>

@@ -284,7 +284,7 @@ namespace Windows.Win32.Graphics.Dxgi
 			this.Flags = (DXGI_SWAP_CHAIN_FLAG)(uint)flags;
 		}
 
-		public static implicit operator DXGI_SWAP_CHAIN_DESC1( SwapChainDescription1 desc ) => desc.InternalValue;
+		public static implicit operator DXGI_SWAP_CHAIN_DESC1( SwapChainDescription1 desc ) => desc._InternalValue;
 		public static implicit operator SwapChainDescription1( DXGI_SWAP_CHAIN_DESC1 desc ) => new( desc );
 	}
 }
