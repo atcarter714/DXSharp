@@ -46,15 +46,22 @@ public interface IUnknownWrapper: IDisposable,
 /// <summary>Contract for COM object wrapper.</summary>
 public interface IUnknownWrapper< TInterface >: IUnknownWrapper 
 												where TInterface: IUnknown {
-	Type ComType => typeof(TInterface) ;
 	ComPtr< TInterface >? ComPointer { get ; }
+	
+	public static virtual Guid InterfaceGUID => typeof( TInterface ).GUID ;
+	internal nint Pointer => ComPointer?.BaseAddress ?? nint.Zero ;
 	internal TInterface? ComObject => ComPointer!.Interface ;
-	internal nint Pointer => ComPointer?.IUnknownAddress ?? nint.Zero ;
+	Type ComType => typeof(TInterface) ;
+	
 	
 	/// <summary>Indicates if the DXSharp object is fully initialized.</summary>
 	bool IsInitialized => (ComPointer is not null)
 							&& ComPointer.InterfaceVPtr.IsValid()
 								&& ComPointer.Interface is not null ;
+	
+	
+	internal void SetComPointer( ComPtr< TInterface >? comPtr ) =>
+									ComPointer?.Set( comPtr!.Interface! ) ;
 } ;
 
 
@@ -65,6 +72,6 @@ public interface IUnknownWrapper< TSelf, TInterface >: IUnknownWrapper< TInterfa
 	Type WrapperType => typeof( TSelf ) ;
 	
 	HResult QueryInterface< T >( out T pInterface ) where T: IUnknown => 
-		COMUtility.QueryInterface<T>( Pointer, out pInterface ) ;
+		COMUtility.QueryInterface< T >( Pointer, out pInterface ) ;
 } ;
 

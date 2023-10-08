@@ -1394,6 +1394,25 @@ public struct OutputDescription {
 public struct FrameStatistics {
 	public uint PresentCount, PresentRefreshCount, SyncRefreshCount ;
 	public long SyncQPCTime, SyncGPUTime ;
+	
+	public FrameStatistics( in DXGI_FRAME_STATISTICS stats ) {
+		this.PresentCount       = stats.PresentCount ;
+		this.PresentRefreshCount = stats.PresentRefreshCount ;
+		this.SyncRefreshCount   = stats.SyncRefreshCount ;
+		this.SyncQPCTime        = stats.SyncQPCTime ;
+		this.SyncGPUTime        = stats.SyncGPUTime ;
+	}
+	
+	public static implicit operator FrameStatistics( in DXGI_FRAME_STATISTICS stats ) => new( stats ) ;
+	public static implicit operator DXGI_FRAME_STATISTICS( in FrameStatistics stats ) {
+		 DXGI_FRAME_STATISTICS s = default ;
+		 s.PresentCount       = stats.PresentCount ;
+		 s.PresentRefreshCount = stats.PresentRefreshCount ;
+		 s.SyncRefreshCount   = stats.SyncRefreshCount ;
+		 s.SyncQPCTime        = stats.SyncQPCTime ;
+		 s.SyncGPUTime        = stats.SyncGPUTime ;
+		 return s ;
+	 }
 } ;
 
 public enum Rotation {
@@ -1442,6 +1461,23 @@ public struct AdapterDescription {
 		this.AdapterLuid           = new( desc.AdapterLuid ) ;
 		this.Flags                 = default ;
 	}
+	
+	public static implicit operator AdapterDescription( in DXGI_ADAPTER_DESC desc ) => new( desc ) ;
+	public static implicit operator DXGI_ADAPTER_DESC( in AdapterDescription desc ) {
+		DXGI_ADAPTER_DESC d = default ;
+		d.Description           = desc.Description.ToString( ) ;
+		d.VendorId              = desc.VendorId ;
+		d.DeviceId              = desc.DeviceId ;
+		d.SubSysId              = desc.SubSysId ;
+		d.Revision              = desc.Revision ;
+		d.DedicatedVideoMemory  = (nuint)desc.DedicatedVideoMemory ;
+		d.DedicatedSystemMemory = (nuint)desc.DedicatedSystemMemory ;
+		d.SharedSystemMemory    = (nuint)desc.SharedSystemMemory ;
+		d.AdapterLuid           = desc.AdapterLuid ;
+		//d.Flags                 = (uint)desc.Flags ;
+		#warning "DXGI_ADAPTER_DESC" doesn't have a "Flags", that is in DXGI_ADAPTER_DESC1+ ...
+		return d ;
+	}
 } ;
 
 
@@ -1477,7 +1513,158 @@ public struct SharedResource {
 	public SharedResource( Win32Handle handle ) => Handle = handle ;
 	public static implicit operator SharedResource( Win32Handle handle ) => new( handle ) ;
 	public static implicit operator Win32Handle( SharedResource handle ) => handle.Handle ;
+	public static implicit operator DXGI_SHARED_RESOURCE( SharedResource res ) => 
+		new( ) { Handle = res.Handle } ;
 } ;
 
 
+/// <summary>
+/// Represents flags that can be used with the DXGI present operations.
+/// </summary>
+/// <remarks>
+/// These flags specify how the presentation will behave in various situations.
+/// For detailed information, see the
+/// <a href="https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/dxgi-present">
+/// official documentation
+/// </a>.
+/// </remarks>
+[Flags] public enum PresentFlags: uint {
+	Default = 0,                             // Present a frame from each buffer (starting with the current buffer) to the output.
+	DoNotSequence = 0x00000002,              // Present a frame from the current buffer to the output.
+	Test = 0x00000001,                       // Do not present the frame to the output.
+	Restart = 0x00000004,                    // Specifies that the runtime will discard outstanding queued presents.
+	DoNotWait = 0x00000008,                  // Specifies that the runtime will fail the presentation.
+	RestrictToOutput = 0x00000010,           // Indicates that presentation content will be shown only on the particular output.
+	StereoPreferRight = 0x00000020,          // Indicates that if the stereo present must be reduced to mono, right-eye viewing is used.
+	StereoTemporaryMono = 0x00000040,        // Indicates that the presentation should use the left buffer as a mono buffer.
+	UseDuration = 0x00000100,                // This flag must be set by media apps that are currently using a custom present duration.
+	AllowTearing = 0x00000200                // This value is supported starting in Windows 8.1.
+} ;
+
+
+public struct PresentParameters {
+	/// <summary>
+	/// The number of updated rectangles that you update in the
+	/// back buffer for the presented frame. The operating system
+	/// uses this information to optimize presentation. You can set
+	/// this member to 0 to indicate that you update the whole frame.
+	/// </summary>
+	public uint DirtyRectsCount ;
+
+	/// <summary>
+	/// A list of updated rectangles that you update in the back buffer
+	/// for the presented frame. An application must update every single
+	/// pixel in each rectangle that it reports to the runtime; the
+	/// application cannot assume that the pixels are saved from the
+	/// previous frame. For more information about updating dirty
+	/// rectangles, see Remarks. You can set this member to <b>NULL</b>
+	/// if <b>DirtyRectsCount</b> is 0. An application must not update
+	/// any pixel outside of the dirty rectangles.
+	/// </summary>
+	public unsafe Rect* pDirtyRects ;
+
+	/// <summary>
+	/// <para>A pointer to the scrolled rectangle. The scrolled rectangle is the
+	/// rectangle of the previous frame from which the runtime bit-block transfers
+	/// (bitblts) content. The runtime also uses the scrolled rectangle to optimize
+	/// presentation in terminal server and indirect display scenarios. The scrolled
+	/// rectangle also describes the destination rectangle, that is, the region on the
+	/// current frame that is filled with scrolled content. You can set this member to
+	/// <b>NULL</b> to indicate that no content is scrolled from the previous frame.</para>
+	/// <para>
+	/// <see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/ns-dxgi1_2-dxgi_present_parameters#members">
+	/// Read more on docs.microsoft.com</see>.
+	/// </para>
+	/// </summary>
+	public unsafe Rect* pScrollRect ;
+
+	/// <summary>
+	/// A pointer to the offset of the scrolled area that goes from the source rectangle
+	/// (of previous frame) to the destination rectangle (of current frame). You can set
+	/// this member to <b>NULL</b> to indicate no offset.
+	/// </summary>
+	public unsafe Point* pScrollOffset ;
+	
+	
+	public unsafe PresentParameters( uint dirtyRectsCount = 0,
+										  Rect* pDirtyRects = null,
+										  Rect* pScrollRect = null, 
+										  Point* pScrollOffset = null ) {
+		this.pDirtyRects     = pDirtyRects ;
+		this.pScrollRect     = pScrollRect ;
+		this.pScrollOffset   = pScrollOffset ;
+		this.DirtyRectsCount = dirtyRectsCount ;
+	}
+	
+	public unsafe PresentParameters( DXGI_PRESENT_PARAMETERS parameters ) {
+		this.pDirtyRects     = (Rect *)parameters.pDirtyRects ;
+		this.pScrollRect     = (Rect *)parameters.pScrollRect ;
+		this.DirtyRectsCount = parameters.DirtyRectsCount ;
+		this.pScrollOffset   = parameters.pScrollOffset ;
+	}
+	
+	public static implicit operator PresentParameters( in DXGI_PRESENT_PARAMETERS parameters ) => new( parameters ) ;
+	public static unsafe implicit operator DXGI_PRESENT_PARAMETERS( in PresentParameters parameters ) => new( ) {
+			pDirtyRects     = (RECT *)parameters.pDirtyRects,
+			pScrollRect     = (RECT *)parameters.pScrollRect,
+			DirtyRectsCount = parameters.DirtyRectsCount,
+			pScrollOffset   = parameters.pScrollOffset
+		} ;
+} ;
+
+
+
+public enum ModeRotation {
+	Unspecified = 0,
+	Identity    = 1,
+	Rotate90    = 2,
+	Rotate180   = 3,
+	Rotate270   = 4
+} ;
+
+
+
+[StructLayout( LayoutKind.Sequential )]
+public struct RGBA {
+	public float R, G, B, A ;
+	public RGBA(float r, float g, float b, float a) {
+		R = r; G = g; B = b; A = a;
+	}
+	
+	public static implicit operator DXGI_RGBA(RGBA color) => new DXGI_RGBA {
+			r = color.R, g = color.G, b = color.B, a = color.A
+	} ;
+	public static implicit operator RGBA(DXGI_RGBA color) => new RGBA(color.r, color.g, color.b, color.a);
+} ;
+
+
+
+public enum ColorSpaceType: uint {
+	RGBFullG22NoneP709           = 0,
+	RGBFullG10NoneP709           = 1,
+	RGBStudioG22NoneP709         = 2,
+	RGBStudioG22NoneP2020        = 3,
+	Reserved                     = 4,
+	YCbCrFullG22NoneP709X601     = 5,
+	YCbCrStudioG22LeftP601       = 6,
+	YCbCrFullG22LeftP601         = 7,
+	YCbCrStudioG22LeftP709       = 8,
+	YCbCrFullG22LeftP709         = 9,
+	YCbCrStudioG22LeftP2020      = 10,
+	YCbCrFullG22LeftP2020        = 11,
+	RGBFullG2084NoneP2020        = 12,
+	YCbCrStudioG2084LeftP2020    = 13,
+	RGBStudioG2084NoneP2020      = 14,
+	YCbCrStudioG22TopLeftP2020   = 15,
+	YCbCrStudioG2084TopLeftP2020 = 16,
+	RGBFullG22NoneP2020          = 17,
+	YCbCrStudioGHlgTopLeftP2020  = 18,
+	YCbCrFullGHlgTopLeftP2020    = 19,
+	RGBStudioG24NoneP709         = 20,
+	RGBStudioG24NoneP2020        = 21,
+	YCbCrStudioG24LeftP709       = 22,
+	YCbCrStudioG24LeftP2020      = 23,
+	YCbCrStudioG24TopLeftP2020   = 24,
+	Custom                       = 0xFFFFFFFF,
+} ;
 

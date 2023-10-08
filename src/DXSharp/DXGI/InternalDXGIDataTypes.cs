@@ -17,6 +17,14 @@ using Windows.Win32.Graphics.Dxgi.Common;
 using Format = DXSharp.DXGI.Format;
 #endregion
 
+// -----------------------------------
+// About "InternalDXGIDataTypes.cs":
+// -----------------------------------
+//! Here we declare our own user-defined `partial` versions of certain auto-generated DXGI structs ...
+//  ... so that we can add implicit conversions to/from our own structs and bits of extended functionality.
+// -----------------------------------
+
+
 namespace Windows.Win32.Graphics.Dxgi
 {
 	namespace Common

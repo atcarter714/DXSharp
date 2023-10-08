@@ -3,10 +3,11 @@ using DXSharp.Windows.COM;
 
 using System.Runtime.InteropServices;
 
-using Windows.Win32;
-using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Dxgi;
+using Windows.Win32 ;
+using Windows.Win32.Foundation ;
+using Windows.Win32.Graphics.Dxgi ;
 
+using DXGIFactory = Windows.Win32.Graphics.Dxgi.IDXGIFactory7 ;
 #endregion
 
 namespace BasicTests;
@@ -18,18 +19,20 @@ internal class ComPtrTests
 {
 	static HResult hr;
 	static IntPtr address;
-	static IDXGIFactory7? factory7;
-
+	
+	static DXGIFactory? factory7;
 #pragma warning disable NUnit1032 // An IDisposable field/property should be Disposed in a TearDown method
-	static ComPtr<IDXGIFactory7>? factory7Ptr;
+	static ComPtr< DXGIFactory >? factory7Ptr ;
 #pragma warning restore NUnit1032 // An IDisposable field/property should be Disposed in a TearDown method
 
+	
+	
 	[OneTimeSetUp]
 	public void SetUp( ) {
 		hr = PInvoke.CreateDXGIFactory2(
-			0x00u, typeof( IDXGIFactory7 ).GUID, out object? ppFactory );
+			0x00u, typeof( DXGIFactory ).GUID, out object? ppFactory );
 
-		factory7 = (IDXGIFactory7)ppFactory;
+		factory7 = (DXGIFactory)ppFactory;
 	}
 
 	[OneTimeTearDown]
@@ -53,15 +56,16 @@ internal class ComPtrTests
 		Assert.True( hr.Succeeded );
 		Assert.IsNotNull( factory7 );
 
-		// Create the ComPtr object:
-		factory7Ptr = create_ComPtr( Marshal.GetIUnknownForObject( factory7 ) ) ;
+		// Create a ComPtr object with COMUtility using the factory7 object:
+		var ptr = COMUtility.GetIUnknownForObject( factory7 ) ;
+		factory7Ptr = create_ComPtr< DXGIFactory >( ptr ) ;
 		Assert.IsNotNull( factory7Ptr );
 		Assert.IsFalse( factory7Ptr.Disposed );
 		Assert.IsNotNull( factory7Ptr.Interface );
-		//Assert.That( factory7Ptr.Interface, Is.EqualTo( typeof( IDXGIFactory7 ).GUID ) );
+		//Assert.That( factory7Ptr.Interface, Is.EqualTo( typeof( DXGIFactory ).GUID ) );
 
 		// Save & verify the COM interface address:
-		address = factory7Ptr.IUnknownAddress;
+		address = factory7Ptr.BaseAddress;
 		Assert.That( address, Is.Not.EqualTo( IntPtr.Zero ) );
 	}
 
@@ -86,25 +90,23 @@ internal class ComPtrTests
 
 
 
-	ComPtr<T> create_ComPtr< T >( T? comObj ) where T: IUnknownWrapper 
-	{
+	ComPtr< T > create_ComPtr< T >( T? comObj ) where T: IUnknown {
 		Assert.NotNull( comObj ) ;
 		ComPtr< T >? comPtr = null ;
 
 		// Create a ComPtr<T> and validate constructor:
-		Assert.DoesNotThrow( () =>
-		{
-			comPtr = new ComPtr<T>( comObj! ) ;
-		} );
+		Assert.DoesNotThrow( () => {
+			comPtr = new( comObj! ) ;
+		} ) ;
 
 		// Assert that the ComPtr object is non-null:
-		Assert.IsNotNull( comPtr );
+		Assert.IsNotNull( comPtr ) ;
 
 		// Assert that the "disposed" state is *false* as it should be:
-		Assert.IsFalse( comPtr.Disposed );
+		Assert.IsFalse( comPtr!.Disposed ) ;
 
 		// Assert that the ComPtr has a valid internal pointer:
-		Assert.That( comPtr.IUnknownAddress, Is.Not.EqualTo( IntPtr.Zero ) );
+		Assert.That( comPtr.BaseAddress, Is.Not.EqualTo( IntPtr.Zero ) );
 
 		// Assert that the ComPtr interface reference is valid:
 		Assert.NotNull( comPtr.Interface );
@@ -118,23 +120,54 @@ internal class ComPtrTests
 
 		return comPtr;
 	}
+	
+	ComPtr< T > create_ComPtr< T >( nint p ) where T: IUnknown {
+		Assert.IsTrue( p.IsValid() ) ;
+		ComPtr< T >? comPtr = null ;
+
+		// Create a ComPtr<T> and validate constructor:
+		Assert.DoesNotThrow( () =>
+								 comPtr = new(p) ) ;
+
+		// Assert that the ComPtr object is non-null:
+		Assert.IsNotNull( comPtr ) ;
+
+		// Assert that the "disposed" state is *false* as it should be:
+		Assert.IsFalse( comPtr!.Disposed ) ;
+
+		// Assert that the ComPtr has a valid internal pointer:
+		Assert.That( comPtr.BaseAddress,
+					 Is.Not.EqualTo(COMUtility.NULL_PTR) ) ;
+
+		// Assert that the ComPtr interface reference is valid:
+		Assert.NotNull( comPtr.Interface );
+
+		// Assert that we've obtained the GUID of the COM interface:
+		//! TODO: This is not working anymore because of changes and won't compile ...
+		//Assert.That( comPtr.GUID, Is.EqualTo( typeof( T ).GUID ) );
+
+		// Check if the object is actually a valid COM interface:
+		Assert.IsTrue( Marshal.IsComObject( comPtr.Interface! ) );
+
+		return comPtr ;
+	}
 
 	void release_ComPtr( ComPtr? comPtr ) {
 		// Ensure the ComPtr is alive and call Dispose:
-		Assert.NotNull( comPtr );
-		comPtr?.Dispose();
+		Assert.NotNull( comPtr ) ;
+		comPtr?.Dispose( );
 
 		// Ensure it has disposed and cleared its internal state:
-		Assert.IsTrue( comPtr?.Disposed );
-		Assert.That( IntPtr.Zero, Is.EqualTo( comPtr?.IUnknownAddress ) );
-		Assert.IsTrue( comPtr?.Disposed );
+		Assert.IsTrue( comPtr?.Disposed ) ;
+		Assert.That( nint.Zero, Is.EqualTo(comPtr?.BaseAddress) ) ;
+		Assert.IsTrue( comPtr?.Disposed ) ;
 	}
 }
 
 //void create_ComPtr_Factory7()
 //{
-//	// Create a ComPtr<IDXGIFactory7>:
-//	factory7Ptr = new ComPtr<IDXGIFactory7>(factory7);
+//	// Create a ComPtr<DXGIFactory>:
+//	factory7Ptr = new ComPtr<DXGIFactory>(factory7);
 //	address = factory7Ptr.Pointer;
 
 //	// Assert that the ComPtr has a valid internal pointer:

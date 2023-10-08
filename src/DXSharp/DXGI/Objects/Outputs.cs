@@ -38,18 +38,28 @@ public class Output: Object, IOutput,
 		}
 	}
 
-	public void GetDisplayModeList( Format enumFormat, uint flags,
-									out uint pNumModes, ModeDescription[ ] pDescription ) {
-		pNumModes = 0 ;
-		uint modeCount = 0 ;
-		pDescription = Array.Empty< ModeDescription >( ) ; //! (zero allocation/garbage)
+	public uint GetDisplayModeCount( Format enumFormat, uint flags ) {
+		uint modeCount = 0U ;
+		unsafe {
+			dxgiOutput.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
+										   flags, ref modeCount ) ;
+		}
+		return modeCount ;
+	}
+	
+	public void GetDisplayModeList( Format enumFormat,
+									uint flags, out uint pNumModes,
+									out Span< ModeDescription > pDescription ) {
+		pDescription = default ; pNumModes = 0U ; uint modeCount = 0U ;
+		
 		unsafe {
 			// First, call the function just to get the count (no pointer for results):
 			dxgiOutput.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
 										   flags, ref modeCount ) ;
+			pNumModes = modeCount ;
+			if ( pNumModes is 0U ) return ;
 			
 			// Now, allocate the memory and call the function again:
-			if ( pNumModes is 0 ) return ;
 			var _alloc = stackalloc DXGI_MODE_DESC[ (int)pNumModes ] ;
 			
 			// This time, we have a pointer telling it where to write the results:
@@ -57,12 +67,16 @@ public class Output: Object, IOutput,
 										   flags, ref pNumModes,
 											_alloc ) ; // (ptr to stack allocation)
 			
-			// Finally, copy the results into the managed array:
+			// Initialize the Span (out) with the pointer and length:
+			var descSpan = new Span< ModeDescription >( _alloc, (int)pNumModes ) ;
 			pDescription = new ModeDescription[ pNumModes ] ;
+			descSpan.CopyTo( pDescription ) ;
+			
+			// Copies the results into the managed array:
+			/*pDescription = new ModeDescription[ pNumModes ] ;
 			for ( int i = 0 ; i < pNumModes && i < pDescription.Length ; ++i )
-				pDescription[ i ] = new( _alloc[ i ] ) ;
+				pDescription[ i ] = new( _alloc[ i ] ) ;*/
 		}
-		//! Stack allocation 
 	}
 
 	public void FindClosestMatchingMode( in ModeDescription pModeToMatch, 
@@ -109,13 +123,27 @@ public class Output: Object, IOutput,
 		}
 	}
 
-	public void SetDisplaySurface< T >( T pScanoutSurface ) where T: Surface {
-		if ( pScanoutSurface is null ) throw new 
-			ArgumentNullException( nameof(pScanoutSurface) ) ;
-		var ptr = pScanoutSurface.BasePointer ;
-		dxgiOutput.SetDisplaySurface( COMObject.GetDisplaySurfaceData(  ) ) ;
+	public void SetDisplaySurface<T>( T pScanoutSurface ) where T: class, ISurface {
+		ArgumentNullException.ThrowIfNull( pScanoutSurface, nameof(pScanoutSurface) ) ;
+		dxgiOutput.SetDisplaySurface( pScanoutSurface.COMObject ) ;
 	}
-	public void GetDisplaySurfaceData( ISurface pDestination ) { }
 
-	public void GetFrameStatistics( out FrameStatistics pStats ) { }
-}
+	public void GetDisplaySurfaceData( ISurface pDestination ) {
+		unsafe {
+			#warning Is this a CsWin32 bug? Seems like IDXGISurface::GetDisplaySurfaceData should take a pointer ...
+			dxgiOutput.GetDisplaySurfaceData( pDestination.COMObject ) ;
+		}
+	}
+	
+	public void GetFrameStatistics( out FrameStatistics pStats ) {
+		pStats = default ;
+		unsafe {
+			pStats = default ;
+			DXGI_FRAME_STATISTICS result = default ;
+			var pResult = &result ;
+			dxgiOutput.GetFrameStatistics( pResult ) ;
+			pStats = *( (FrameStatistics *)pResult ) ;
+		}
+	}
+	
+} ;

@@ -53,7 +53,8 @@ public interface IObject: IUnknownWrapper< IObject, IDXGIObject > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-setprivatedatainterface">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	//unsafe void SetPrivateDataInterface( Guid* Name, [MarshalAs(UnmanagedType.IUnknown)] object pUnknown );
-	void SetPrivateDataInterface< T >( in T pUnknown ) where T: IUnknownWrapper ;
+	void SetPrivateDataInterface< T >( in T pUnknown )
+		where T: IUnknownWrapper< IUnknown > ;
 	
 	/// <summary>Get a pointer to the object's data.</summary>
 	/// <param name="pDataSize">
@@ -86,16 +87,33 @@ public interface IObject: IUnknownWrapper< IObject, IDXGIObject > {
 	/// </remarks>
 	//unsafe void GetParent( Guid* riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppParent );
 	void GetParent< T >( out T ppParent ) where T: IUnknownWrapper ;
+
+	
+	// ----------------------------------------------------------------------------------------
+	
+	public static virtual TObject CreateInstanceOf< TObject, TInterface >( TInterface pComObj )
+										where TObject: class, IObject,
+										IUnknownWrapper< TObject, TInterface >, new()
+															where TInterface: IUnknown {
+		TObject obj = new( ) ;
+		( (IUnknownWrapper<TInterface>)obj )
+							.ComPointer!.Set( pComObj ) ;
+		return obj ;
+	}
+	
+	// ========================================================================================
 } ;
 
+//! Testing an idea (may remove later)
+public interface IObject< TWrapper, TInterface >:
+				IUnknownWrapper< TWrapper, TInterface >
+							where TWrapper:     Object, IUnknownWrapper< TWrapper, TInterface >, new( )
+							where TInterface:   unmanaged, IUnknown { } ;
 
-/*public interface IObject< T >: IObject,
-							   IDXGIObjWrapper< T >
-									where T: IDXGIObject { } ;*/
 
 
 public abstract class Object: IObject {
-	internal Object( ) { }
+	internal Object( ) => this.ComPointer = new( ) ;
 	internal Object( IDXGIObject dxgiObject ) {
 		if( dxgiObject is null ) throw new
 			ArgumentNullException( nameof(dxgiObject) ) ;
@@ -121,7 +139,7 @@ public abstract class Object: IObject {
 	
 	public int RefCount { get ; protected set ; }
 	public nint BasePointer { get ; internal init ; }
-	public ComPtr< IDXGIObject >? ComPointer { get ; protected internal set ; }
+	public ComPtr< IDXGIObject >? ComPointer { get ; init ; }
 	IDXGIObject? _interface => ComPointer?.Interface ;
 	
 	public uint AddRef( ) => this.ComPointer?.Interface?.AddRef( ) ?? 0U ;
@@ -133,7 +151,6 @@ public abstract class Object: IObject {
 				ObjectDisposedException( nameof( Object ), $"{nameof( Object )} :: " + 
 							$"Internal object \"{nameof( ComPointer )}\" is destroyed/null." ) ;
 	}
-
 	
 	public void GetParent< T >( out T ppParent ) where T: IUnknownWrapper {
 		_throwIfDestroyed( ) ;
@@ -141,7 +158,7 @@ public abstract class Object: IObject {
 		ppParent = default! ;
 		unsafe {
 			var riid = typeof( T ).GUID ;
-			_interface?.GetParent( &riid, out object ppObj ) ;
+			_interface?.GetParent( &riid, out IUnknown ppObj ) ;
 		}
 		ppParent = (T)ppParent ;
 	}
@@ -167,11 +184,16 @@ public abstract class Object: IObject {
 	}
 	
 	public void SetPrivateDataInterface< T >( in T pUnknown )
-												where T: IUnknownWrapper {
+												where T: IUnknownWrapper< IUnknown > {
+#if DEBUG || DEV_BUILD
+		ArgumentNullException.ThrowIfNull( pUnknown, nameof(pUnknown) ) ;
+		ArgumentNullException.ThrowIfNull( pUnknown.ComObject, nameof(pUnknown.ComObject) ) ;
+#endif
+		
 		_throwIfDestroyed( ) ;
 		Guid name     = typeof(IDXGIObject).GUID ;
 		unsafe {
-			_interface!.SetPrivateDataInterface( &name, pUnknown ) ;
+			_interface!.SetPrivateDataInterface( &name, pUnknown.ComObject! ) ;
 		}
 	}
 	

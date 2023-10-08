@@ -22,16 +22,15 @@ namespace DXSharp.DXGI ;
 //! Concrete Base Implementation:
 public class DeviceSubObject: Object,
 							  IDeviceSubObject {
-	
 	internal IDXGIDeviceSubObject? COMObject { get ; init ; }
 	public new ComPtr< IDXGIDeviceSubObject >? ComPointer { get ; init ; }
-
 	void _throwIfNull( ) {
 		if ( this.COMObject is null || this.ComPointer?.Interface is null ) 
 			throw new NullReferenceException( $"{nameof(DeviceSubObject)} :: " + 
 										$"The internal COM interface is destroyed/null." ) ;
 	}
 	
+	internal DeviceSubObject( ) => this.ComPointer = new( ) ;
 	
 	public DeviceSubObject( nint ptr ): base( ptr ) {
 		if( !ptr.IsValid() ) throw new NullReferenceException( $"{nameof(DeviceSubObject)} :: " +
@@ -46,38 +45,28 @@ public class DeviceSubObject: Object,
 		//! TODO: Calling :base(ptr) constructor is assigning this, but for IDXGIObject ... needs investigation/testing
 		this.ComPointer = new( dxgiObj ) ;
 	}
+	public DeviceSubObject( in IDXGIDeviceSubObject dxgiObj ): base( dxgiObj ) {
+		this.COMObject = dxgiObj ?? throw new ArgumentNullException( nameof(dxgiObj) ) ;
+		this.ComPointer = new( dxgiObj ) ;
+	}
 
-	public T GetDevice< T >( ) where T: class, IDevice {
+	
+	public T GetDevice< T >( ) where T: Device {
 		_throwIfNull( ) ;
 
 		unsafe {
 			var riid = typeof( T ).GUID ;
-			this.COMObject?.GetDevice( &riid, out var ppDevice ) ;
-			return new Device(  ) ;
+			this.COMObject!.GetDevice( &riid, out var ppDevice ) ;
+			return (T)( new Device( ( ppDevice as IDXGIDevice )! ) ) ;
 		}
 	}
-
-	/*=>
-	this.COMObject ??= COMUtility.GetDXGIObject<IDXGIDeviceSubObject>(ptr) as IDXGIDeviceSubObject
-						  ?? throw new NullReferenceException( $"{nameof(DeviceSubObject)} :: " +
-															   $"The internal COM interface is destroyed/null." ) ;*/
-	
-	/*public void GetDevice< T >( out T ppDevice ) where T: class, IDevice {
-		var _obj = Marshal.GetObjectForIUnknown( this.ComPtr?.IUnknownAddress ?? 0 ) ;
-		if ( _obj is IDXGIDeviceSubObject subObject ) {
-			subObject.GetDevice( typeof(IDXGIDevice).GUID, out var pDevice ) ;
-			ppDevice = (T) pDevice ;
-		}
-		else throw new NullReferenceException( $"{nameof(DeviceSubObject)} :: " +
-											   $"The internal COM interface is destroyed/null." ) ;
-	}*/
 } ;
 
-public class Device: Object,
-					 IDevice
-{
 
-	internal IDXGIDevice? COMObject { get ; init ; }
+
+public class Device: Object,
+					 IDevice {
+	public IDXGIDevice? COMObject { get ; init ; }
 	public new ComPtr< IDXGIDevice >? ComPointer { get ; init ; }
 
 	public Device( nint ptr ): base( ptr ) {
@@ -93,35 +82,57 @@ public class Device: Object,
 
 		this.COMObject = dxgiObj ;
 	}
+	public Device( in IDXGIDevice dxgiObj ): base( dxgiObj ) {
+		this.COMObject = dxgiObj ?? throw new ArgumentNullException( nameof(dxgiObj) ) ;
+	}
 
-	public T GetAdapter< T >() where T: class, IAdapter {
+	
+	public T GetAdapter<T>( ) where T: class, IAdapter {
 		_throwIfNull( ) ;
 
 		unsafe {
 			var riid = typeof( T ).GUID ;
-			this.COMObject?.GetAdapter( &riid, out var ppAdapter ) ;
-			return new Adapter( ) ;
+			this.COMObject!.GetAdapter( out var ppAdapter ) ;
+			return (T)( (IAdapter)new Adapter(ppAdapter) ) ;
 		}
 	}
 
+	
+	
+	/* NOTE: -----------------------------------
+		 The CreateSurface method creates a buffer to exchange data between one or more devices. 
+		 It is used internally, and you should not directly call it.
+		 The runtime automatically creates an IDXGISurface interface when it creates a Direct3D 
+		 resource object that represents a surface. 
+		 ---------------------------------------------------------------------------------------- */
 	public void CreateSurface( in SurfaceDescription pDesc,
-							   uint                  numSurfaces, uint usage,
-							   in  SharedResource    pSharedResource,
-							   out Surface           ppSurface ) {
+								  uint numSurfaces, uint usage,
+								  in  SharedResource pSharedResource,
+												out Span< Surface > ppSurface ) {
+		ppSurface = default! ;
+		if( numSurfaces is 0U ) return ;
 		_throwIfNull( ) ;
 
 		unsafe {
+			SharedResource sharedResOut = pSharedResource ;
 			fixed ( SurfaceDescription* pDescPtr = &pDesc ) {
-				this.COMObject?.CreateSurface( pDescPtr, numSurfaces, usage,
-											   pSharedResource, out var ppSurfacePtr ) ;
-				ppSurface = new Surface( ppSurfacePtr ) ;
+				IDXGISurface[ ] surfaceData = new IDXGISurface[ numSurfaces ] ;
+				this.COMObject?.CreateSurface( (DXGI_SURFACE_DESC *) pDescPtr, 
+											   numSurfaces, (DXGI_USAGE)usage,
+											   (DXGI_SHARED_RESOURCE *)&sharedResOut, 
+													surfaceData ) ;
+				
+				ppSurface = new Surface[ numSurfaces ] ;
+				for ( var i = 0; i < numSurfaces; i++ ) {
+					ppSurface[ i ] = new( surfaceData[i] ) ;
+				}
 			}
 		}
 	}
-
-	public void QueryResourceResidency( in  IUnknownWrapper[] ppResources,
-										out Residency[]       pResidencyStatus,
-										uint                  numResources ) {
+	
+	public void QueryResourceResidency( in IResource[ ] ppResources, 
+										out Residency[ ] pResidencyStatus, 
+										uint numResources ) {
 		_throwIfNull( ) ;
 
 		unsafe {
@@ -129,9 +140,12 @@ public class Device: Object,
 			for ( var i = 0; i < ppResources.Length; i++ )
 				pResourcesPtr[ i ] = ppResources[ i ].BasePointer ;
 
-			var pResidencyStatusPtr = stackalloc Residency[ ppResources.Length ] ;
-			this.COMObject?.QueryResourceResidency( pResourcesPtr, pResidencyStatusPtr,
-													numResources ) ;
+			Residency* pResidencyStatusPtr = stackalloc Residency[ ppResources.Length ] ;
+			
+			Span< object > ppResourcesSpan = new( pResourcesPtr, ppResources.Length ) ;
+			this.COMObject?.QueryResourceResidency( ppResources, 
+													(DXGI_RESIDENCY *)pResidencyStatusPtr,
+														numResources ) ;
 
 			pResidencyStatus = new Residency[ ppResources.Length ] ;
 			for ( var i = 0; i < ppResources.Length; i++ )
@@ -141,35 +155,29 @@ public class Device: Object,
 
 	public void SetGPUThreadPriority( int priority ) {
 		_throwIfNull( ) ;
-
 		this.COMObject?.SetGPUThreadPriority( priority ) ;
 	}
 
 	public void GetGPUThreadPriority( out int pPriority ) {
 		_throwIfNull( ) ;
-
-		this.COMObject?.GetGPUThreadPriority( out pPriority ) ;
+		this.COMObject!.GetGPUThreadPriority( out pPriority ) ;
 	}
+	
 
-	internal Guid GetDXGIInterfaceGuid() {
-		_throwIfNull( ) ;
-
-		unsafe {
-			this.COMObject?.Get( out var riid ) ;
-			return riid ;
-		}
-	}
-
+	
+	//! warning -----------------------------------
+	#warning Potentially unnecessary overrides/duplication of base methods
+	//! TODO: Figure out if we actually need to override/hide the base versions
 	public new void GetParent< T >( out T ppParent ) where T: IUnknownWrapper {
 		_throwIfDestroyed( ) ;
 		_throwIfNull( ) ;
 		ppParent = default! ;
 		
 		unsafe {
-			object ppParentPtr = null ;
+			object parent = default! ;
 			var riid = typeof( T ).GUID ;
-			this.COMObject?.GetParent( &riid, out ppParentPtr ) ;
-			ppParent = (T)ppParentPtr! ;
+			this.COMObject?.GetParent( &riid, out parent ) ;
+			ppParent = (T)parent! ;
 		}
 	}
 
@@ -195,7 +203,7 @@ public class Device: Object,
 		}
 	}
 
-	public new void SetPrivateDataInterface< T >( in T pUnknown ) where T: IUnknownWrapper {
+	public new void SetPrivateDataInterface< T >( in T pUnknown ) where T: IUnknownWrapper< IUnknown > {
 		_throwIfDestroyed( ) ;
 		_throwIfNull( ) ;
 		
@@ -204,7 +212,9 @@ public class Device: Object,
 			this.COMObject!.SetPrivateDataInterface( &name, pUnknown ) ;
 		}
 	}
-
+	//! warning -----------------------------------
+	
+	
 	
 	protected virtual void _throwIfNull( ) {
 		if ( this.COMObject is null || this.ComPointer is null )

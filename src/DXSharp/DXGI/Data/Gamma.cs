@@ -1,6 +1,7 @@
 ﻿#region Using Directives
 using System.Collections ;
 using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi.Common ;
 #endregion
 
@@ -127,9 +128,8 @@ public struct GammaControlCapabilities {
 	}
 
 	public GammaControlCapabilities( in DXGI_GAMMA_CONTROL_CAPABILITIES caps ) {
-		unsafe { fixed ( __DXGI_RGB_1025* pControlPoints = 
-							&caps.ControlPointPositions ) {
-				this.ControlPoints = *pControlPoints ; }
+		unsafe { fixed ( __float_1025* pControlPoints = &caps.ControlPointPositions ) {
+				this.ControlPoints = *((GammaCurve*)pControlPoints) ; }
 			this.ScaleAndOffsetSupported = caps.ScaleAndOffsetSupported ;
 			this.MaxConvertedValue       = caps.MaxConvertedValue ;
 			this.MinConvertedValue       = caps.MinConvertedValue ;

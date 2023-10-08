@@ -75,7 +75,7 @@ public static class COMUtility {
 	
 	[MethodImpl(_MAXOPT_)]
 	public static T? GetCOMObject< T >( [NotNull] in ComPtr< T > pUnknown ) where T: IUnknown =>
-															(T)GetCOM_RCW( pUnknown.IUnknownAddress )! ;
+															(T)GetCOM_RCW( pUnknown.BaseAddress )! ;
 	
 	
 	[MethodImpl(_MAXOPT_)]

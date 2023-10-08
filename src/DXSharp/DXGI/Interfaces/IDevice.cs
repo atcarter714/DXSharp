@@ -12,10 +12,10 @@ public interface IDevice: IObject,
 	
 	T GetAdapter< T >(  ) where T: class, IAdapter ;
 	
-	void CreateSurface( in SurfaceDescription pDesc,
-						uint                  numSurfaces, uint usage,
-						in  SharedResource    pSharedResource,
-						out Surface           ppSurface ) ;
+	internal void CreateSurface( in SurfaceDescription pDesc,
+									uint numSurfaces, uint usage,
+									in  SharedResource pSharedResource,
+												out Span< Surface > ppSurface ) ;
 	
 	
 	void QueryResourceResidency( in  IResource[ ] ppResources,
@@ -34,5 +34,5 @@ public interface IDevice: IObject,
 
 //! Abstract Base Interface:
 public interface IDeviceSubObject: IObject {
-	T GetDevice< T >( ) where T: class, IDevice ;
+	T GetDevice<T>( ) where T: Device ;
 } ;

@@ -108,7 +108,17 @@ namespace DXSharp.Windows {
 		/// <summary>
 		/// Result was successful / OK
 		/// </summary>
-		public static readonly HResult S_OK = (HResult)( 0 ) ;
+		public static readonly HResult S_OK = (HResult)( 0x00000000 ) ;
+		
+		/// <summary>The operation could not be completed.</summary>
+		/// <remarks>
+		/// <para>
+		/// <see href="https://docs.microsoft.com/windows/win32/api/mbnapi/nf-mbnapi-imbnpinevents-ondisablecomplete">
+		/// Learn more about this API from docs.microsoft.com
+		/// </see>.
+		/// </para>
+		/// </remarks>
+		public static readonly HResult E_FAIL = (HResult)( -2147467259 ) ;
 
 		/// <summary>
 		/// You tried to use a resource to which you did not have the required access privileges. 

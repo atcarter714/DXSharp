@@ -1,6 +1,7 @@
 ﻿#region Using Directives
 using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Dxgi ;
+using Windows.Win32.Graphics.Dxgi.Common ;
 using DXSharp.DXGI ;
 using DXSharp.Windows.COM ;
 
@@ -21,6 +22,13 @@ public struct SurfaceDescription {
 		Width = width ; Height = height ;
 		Format = format ; SampleDesc = sampleDesc ;
 	}
+	
+	public static implicit operator SurfaceDescription( in DXGI_SURFACE_DESC desc ) =>
+		new( desc.Width, desc.Height, (Format)desc.Format, desc.SampleDesc ) ;
+	public static unsafe implicit operator DXGI_SURFACE_DESC( in SurfaceDescription desc ) =>
+	 		new DXGI_SURFACE_DESC {
+			Width = desc.Width, Height = desc.Height,
+			Format = (DXGI_FORMAT)desc.Format, SampleDesc = desc.SampleDesc, } ;
 } ;
 
 
@@ -40,41 +48,63 @@ public struct MappedRect {
 } ;
 
 
-[ComImport, Guid( "cafcb56c-6ac3-4889-bf47-9e23bbd260ec" )]
-[InterfaceType( ComInterfaceType.InterfaceIsIUnknown )]
-public interface ISurface: IObject<ISurface> {
+// Wrapper Interface of IDXGISurface ::
+//[ComImport, Guid( "cafcb56c-6ac3-4889-bf47-9e23bbd260ec" )]
+//[InterfaceType( ComInterfaceType.InterfaceIsIUnknown )]
+
+public interface ISurface:  IDeviceSubObject,
+							IDXGIObjWrapper< IDXGISurface > {
 	void GetDesc( out SurfaceDescription pDesc ) ;
 	void Map( ref MappedRect pLockedRect, uint MapFlags ) ;
 	void Unmap( ) ;
 } ;
 
 
-
-// ------------------------------------------------------------
-//! TODO: Decide if we should remove this / don't need it
-/*[ComImport, Guid( "cafcb56c-6ac3-4889-bf47-9e23bbd260ec" )]
-[InterfaceType( ComInterfaceType.InterfaceIsIUnknown )]
-public interface IDXGISurface {
-	void GetDesc( out SurfaceDescription pDesc ) ;
-	void Map( ref MappedRect pLockedRect, uint MapFlags ) ;
-	void Unmap( ) ;
-} ;*/
-
-
-public class Surface: Object,
+//! Concrete Implementation of an IDXGISurface wrapper/proxy ::
+public class Surface: DeviceSubObject,
 					  ISurface,
-					  IObject< Surface >,
 					  IDeviceSubObject,
-					  IDXGIObjWrapper<IDXGISurface> {
+					  IDXGIObjWrapper< IDXGISurface > {
 	IDXGISurface? _surface ;
 	internal IDXGISurface? _dxgiSurface ;
-	
 	public new IDXGISurface? COMObject { get ; init ; }
-	public new ComPtr< ISurface >? ComPtr { get ; init ; }
+	public new ComPtr< IDXGISurface >? ComPtr { get ; init ; }
+
+	internal Surface( ) => this.ComPointer = new( ) ;
+	public Surface( nint ptr ): base( ptr ) {
+		if ( !ptr.IsValid() )
+			throw new NullReferenceException( $"{nameof( Surface )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		
+		var dxgiObj = COMUtility.GetDXGIObject< IDXGISurface >( ptr ) ;
+		this.COMObject = dxgiObj ??
+			 throw new COMException( $"{nameof( Surface )}.ctor( {nameof( ptr )}: 0x{ptr:X} ): " + 
+									 $"Unable to initialize COM object reference from given address!" ) ;
+	}
+
+	public Surface( in IDXGISurface dxgiObj ):
+		base( COMUtility.GetInterfaceAddress( dxgiObj ) ) =>
+			this.COMObject = dxgiObj ?? throw new ArgumentNullException( nameof( dxgiObj ) ) ;
 
 	
-	public void GetDevice< T >( out T ppDevice ) where T: class, IDevice {
-		var _obj = COMUtility.GetDXGIObject< IDXGIDeviceSubObject >( this.ComPtr?.IUnknownAddress ?? 0 ) ;
+	public void GetDesc( out SurfaceDescription pDesc ) { pDesc = default ; }
+	public void Map( ref MappedRect pLockedRect, uint MapFlags ) { }
+	public void Unmap( ) { }
+} ;
+
+
+	/*public T GetDevice< T >( ) where T: class, IDevice {
+		this._throwIfDestroyed( ) ;
+		unsafe {
+			var riid = typeof( T ).GUID ;
+			this.COMObject?.GetDevice( &riid, out var ppDevice ) ;
+			return new Device( ppDevice as IDXGIDevice ) ;
+		}
+	}*/
+	
+	/*public void GetDevice< T >( out T ppDevice ) where T: class, IDevice {
+		ppDevice = default ;
+		var _obj = COMUtility.GetDXGIObject< IDXGIDeviceSubObject >( this.BasePointer ) ;
 		if ( _obj is { } subObject ) {
 			unsafe {
 				var riid = typeof(IDXGIDevice).GUID ;
@@ -84,10 +114,4 @@ public class Surface: Object,
 		}
 		else throw new NullReferenceException( $"{nameof(Surface)} :: " +
 											   $"The internal COM interface is destroyed/null." ) ;
-	}
-
-	public void GetDesc( out SurfaceDescription pDesc ) { pDesc = default ; }
-	public void Map( ref MappedRect pLockedRect, uint MapFlags ) { }
-	public void Unmap( ) { }
-
-} ;
+	}*/

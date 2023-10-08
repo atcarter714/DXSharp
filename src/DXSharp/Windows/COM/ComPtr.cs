@@ -43,28 +43,32 @@ public class ComPtr: IDisposable {
 	static readonly HashSet< nint > _allPtrs = new( ) ;
 	#endregion
 	
-	nint _unknownAddress ;
-	internal nint IUnknownAddress => _unknownAddress ;
+	nint _baseAddr ;
+	internal nint BaseAddress => _baseAddr ;
 	
 	//! Constructors & Initializers:
-	void _setBasePointer( IntPtr pUnknown ) {
-		this._unknownAddress = pUnknown ;
-		TrackPointer( this._unknownAddress ) ;
-		AddRef( this._unknownAddress ) ;
+	protected void _setBasePointer( nint pUnknown ) {
+		this._baseAddr = pUnknown ;
+		TrackPointer( this._baseAddr ) ;
+		AddRef( this._baseAddr ) ;
 	}
 	
+	internal ComPtr( ) { }
+	public unsafe ComPtr( void* ptr ): this( (nint)ptr ) { }
 	public ComPtr( nint ptr ) {
+#if (DEBUG || DEBUG_COM) || DEV_BUILD
 		if( !ptr.IsValid() ) throw new ArgumentNullException( nameof(ptr), 
-							$"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
-							$"The pointer is a {nameof(NULL_PTR)} (0x00000000) value!" ) ;
+															  $"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
+															  $"The pointer is a {nameof(NULL_PTR)} (0x00000000) value!" ) ;
 		if( !Exists(ptr) ) throw new ArgumentException( nameof(ptr),
-							$"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
-							$"The pointer is not a valid COM object!" ) ;
+														$"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
+														$"The pointer is not a valid COM object!" ) ;
 
 		var _hr = QueryInterface< IUnknown >( ptr, out nint pUnknown ) ;
 		if( _hr.Failed ) throw new ArgumentException( nameof(ptr),
-							$"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
-							$"The pointer is not a valid COM object implementing {nameof(IUnknown)} interface!" ) ;
+													  $"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
+													  $"The pointer is not a valid COM object implementing {nameof(IUnknown)} interface!" ) ;
+#endif
 		
 		_setBasePointer( pUnknown ) ;
 	}
@@ -91,24 +95,52 @@ public class ComPtr: IDisposable {
 	}
 	
 	//! System.Object overrides:
-	public override string ToString( ) => $"COM OBJECT[ 0x{IUnknownAddress:X} ]" ;
-	public override int GetHashCode( ) => IUnknownAddress.GetHashCode( ) ;
+	public override string ToString( ) => $"COM OBJECT[ 0x{BaseAddress:X} ]" ;
+	public override int GetHashCode( ) => BaseAddress.GetHashCode( ) ;
 	public override bool Equals( object? obj ) => 
-		( obj is ComPtr ptr && ptr.IUnknownAddress == IUnknownAddress )
-			|| ( obj is nint address && address == IUnknownAddress ) ;
+		( obj is ComPtr ptr && ptr.BaseAddress == BaseAddress )
+			|| ( obj is nint address && address == BaseAddress ) ;
 	
 	//! IDisposable:
-	public bool Disposed => !IUnknownAddress.IsValid() ;
+	public bool Disposed => !BaseAddress.IsValid() ;
 	~ComPtr( ) => Dispose( ) ;
-	public void Dispose( ) {
-		if( IUnknownAddress.IsValid() ) 
-			Release( ref _unknownAddress ) ;
-		UntrackPointer( this._unknownAddress ) ;
+	public virtual void Dispose( ) {
+		if( BaseAddress.IsValid() ) Release( ref _baseAddr ) ;
+		UntrackPointer( this._baseAddr ) ;
 		GC.SuppressFinalize( this ) ;
 	}
 	
 	
-	//! Internal Pointer Tracking:
+	//! Internal Pointer Tracking & Management:
+	internal virtual void Set( nint newPtr ) {
+#if DEBUG
+		string errMsg = $"{nameof(ComPtr)} -> {nameof(Set)}( {nameof(IntPtr)} ) :: " ;
+		if( !newPtr.IsValid() ) throw new ArgumentNullException( nameof(newPtr), errMsg +
+																	 $"The pointer is a \"{nameof(NULL_PTR)}\" (null/0x00000000) value!" ) ;
+		if( !Exists(newPtr) ) throw new 
+			ArgumentException( nameof(newPtr), errMsg + 
+											   $"The pointer is not a valid COM object!" ) ;
+		
+		var _hr = QueryInterface< IUnknown >( newPtr, out nint pUnknown ) ;
+		if( _hr.Failed ) throw new 
+			ArgumentException( nameof(newPtr), errMsg +
+											   $"Failed to obtain {nameof(IUnknown)} interface!" ) ;
+#endif
+		
+		Release( ref _baseAddr ) ;
+		_setBasePointer( pUnknown ) ;
+	}
+
+	internal virtual void Set< TInterface >( in TInterface newComObject ) 
+												where TInterface: IUnknown {
+		nint pUnknown = GetIUnknownForObject( newComObject ) ;
+		if ( !pUnknown.IsValid() ) throw new ArgumentException( nameof(newComObject), 
+					$"{nameof(ComPtr)} -> Set( {nameof(Object)} ) :: " +
+						$"The object is not a valid COM object implementing {nameof(IUnknown)}!" ) ;
+		
+		this.Set( pUnknown ) ;
+	}
+	
 	internal static nint[ ] GetAllAllocations( ) =>
 		_allPtrs.Where( p => p.IsValid() && !IsDestroyed(p) )
 					.ToArray( ) ;
@@ -122,17 +154,19 @@ public class ComPtr: IDisposable {
 
 public sealed class ComPtr< T >: ComPtr 
 								 where T: IUnknown {
-	public readonly nint InterfaceVPtr ;
-	public T? Interface { get ; init ; }
+	public T? Interface { get ; private set ; }
+	public nint InterfaceVPtr => _interfaceVPtr ;
+	nint _interfaceVPtr ;
 	
+	internal ComPtr( ) { }
 	public ComPtr( [NotNull] in T comInterface ): 
 					base( GetAddressIUnknown(comInterface) ) {
 		if( comInterface is null ) throw new ArgumentNullException( nameof(comInterface) ) ;
-		var _hr = QueryInterface<T>( base.IUnknownAddress, out nint ptrToInterface ) ;
+		var _hr = QueryInterface<T>( base.BaseAddress, out nint ptrToInterface ) ;
 		if( _hr.Failed ) throw new COMException($"{nameof(ComPtr<T>)} -> c'tor( {nameof(IUnknown)} ) :: " +
 												$"Failed to get a COM interface pointer to {nameof(T)}!", _hr.Value ) ;
-		this.Interface = comInterface ;
-		this.InterfaceVPtr = ptrToInterface ;
+		this.Interface      = comInterface ;
+		this._interfaceVPtr = ptrToInterface ;
 	}
 	
 	public ComPtr( nint address ): base( address ) {
@@ -145,7 +179,63 @@ public sealed class ComPtr< T >: ComPtr
 		if( _hr.Failed ) throw new COMException($"{nameof(ComPtr<T>)} -> c'tor( {nameof(IntPtr)} ) :: " +
 												$"Failed to get the interface pointer!", _hr.Value ) ;
 		
-		this.InterfaceVPtr = ptrToInterface ;
-		Interface = _interface ;
+		Interface           = _interface ;
+		this._interfaceVPtr = ptrToInterface ;
+	}
+	
+	public T GetReference( ) {
+		if( !BaseAddress.IsValid() ) throw new ObjectDisposedException( nameof(ComPtr<T>) ) ;
+		if( Interface is null ) throw new NullReferenceException( $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " +
+																   $"{nameof(GetReference)}( ) :: " +
+																   $"The internal {nameof(Interface)} is null!" ) ;
+		return Interface ;
+	}
+	
+	
+	
+	internal override void Set< TInterface >( in TInterface newComObject ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		ArgumentNullException.ThrowIfNull( nameof(newComObject) ) ;
+		if( !typeof(TInterface).IsCOMObject )
+			throw new ArgumentException( nameof(newComObject), 
+										 $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " + 
+										 $"{nameof(Set)}( {newComObject.GetType().Name} {nameof(newComObject)} ) :: " +
+										 $"The object is not a valid COM object!" ) ;
+		
+		// Query the interface and see if it's actually part of the COM object:
+		var _hr = QueryInterface< TInterface >( GetIUnknownForObject(newComObject), 
+												out nint pInterface ) ;
+		if ( _hr.Failed ) {
+			throw new ArgumentException( nameof(newComObject), 
+										 $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " + 
+										 $"{nameof(Set)}( {newComObject.GetType().Name} {nameof(newComObject)} ) :: " +
+										 $"The object is not a valid COM object implementing {typeof(T).FullName}!" ) ;
+		}
+		
+		// Get the base IUnknown pointer:
+		nint pUnknown = GetIUnknownForObject( newComObject ) ;
+		if ( !pUnknown.IsValid() ) 
+			throw new ArgumentException( nameof(newComObject), 
+										 $"{nameof(ComPtr)}<{typeof(T).FullName}> -> Set( {nameof(Object)} ) :: " +
+										 $"The object is not a valid COM object implementing {nameof(IUnknown)}!" ) ;
+#endif
+		
+		// All checks passed, set the pointers:
+		base.Set( pUnknown ) ; // _setBasePointer( pUnknown ) ;
+		_interfaceVPtr = pInterface ;
+		
+		if( newComObject is T newComObjectAsT )
+			Interface = newComObjectAsT ;
+		else {
+			Interface = GetCOMObject< T >( _interfaceVPtr )
+#if DEBUG || DEBUG_COM || DEV_BUILD
+						?? throw new NullReferenceException( 
+															$"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " +
+															$"{nameof(Set)}( {newComObject.GetType().Name} {nameof(newComObject)} ) :: " +
+															$"Failed to get the COM object!" )
+#endif
+						;
+			
+		}
 	}
 } ;
