@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using DXSharp.DXGI;
 using DXSharp.Windows.COM;
-using IUnknown = DXSharp.Windows.COM.IUnknown;
+
 #endregion
 
 namespace DXGI ;
@@ -34,7 +34,7 @@ internal interface IAdapter: IObject
 
 
 //https://learn.microsoft.com/en-us/windows/desktop/api/DXGI/nn-dxgi-idxgioutput
-internal interface IOutput: IObject {
+public interface IOutput: IObject {
 	void GetDescription( out OutputDescription pDescription ) ;
 	
 	void GetDisplayModeList( Format enumFormat,
@@ -43,11 +43,11 @@ internal interface IOutput: IObject {
 
 	void FindClosestMatchingMode( in ModeDescription pModeToMatch, 
 								  out ModeDescription pClosestMatch,
-								  IUnknown pConcernedDevice ) ;
+								  IUnknownWrapper pConcernedDevice ) ;
 
 	void WaitForVBlank( ) ;
 	
-	void TakeOwnership( IUnknown pDevice, bool exclusive ) ;
+	void TakeOwnership( IUnknownWrapper pDevice, bool exclusive ) ;
 	void ReleaseOwnership( ) ;
 	
 	void GetGammaControlCapabilities( out GammaControlCapabilities pGammaCaps ) ;

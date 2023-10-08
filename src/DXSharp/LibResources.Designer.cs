@@ -60,6 +60,15 @@ namespace DXSharp {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to {0} :: Cannot be null!.
+        /// </summary>
+        internal static string CantBeNull {
+            get {
+                return ResourceManager.GetString("CantBeNull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Arkaen Solutions.
         /// </summary>
         internal static string CompanyName {
@@ -104,15 +113,6 @@ namespace DXSharp {
         internal static string LibraryName {
             get {
                 return ResourceManager.GetString("LibraryName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to {0} :: Cannot be null!.
-        /// </summary>
-        internal static string Object_Object__0_____Cannot_be_null_ {
-            get {
-                return ResourceManager.GetString("Object_Object__0_____Cannot_be_null_", resourceCulture);
             }
         }
     }

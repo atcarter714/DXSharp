@@ -41,7 +41,7 @@ public static partial class DXGIXTensions {
 	/// </summary>
 	/// <param name="comObj">This IUnknown instance</param>
 	/// <returns>True if alive, otherwise false</returns>
-	public static bool IsAlive( this IUnknown? comObj ) => comObj is { Pointer: not 0 } ;
+	public static bool IsAlive( this IUnknownWrapper? comObj ) => comObj is { BasePointer: not 0 } ;
 	
 	
 	internal static DXGI_FORMAT AsDXGI_FORMAT( this Format format ) => (DXGI_FORMAT)format ;

@@ -9,40 +9,62 @@ using static DXSharp.Windows.HResult ;
 namespace DXSharp.Windows.COM ;
 
 
-//[ComImport, Guid( "00000000-0000-0000-C000-000000000046" )]
+// -----------------------------------------------------------------
+// COM Interfaces:
+// -----------------------------------------------------------------
+
+//! Imports the native COM IUnknown interface:
 [InterfaceType( ComInterfaceType.InterfaceIsIUnknown )]
-public unsafe interface IUnknown {
-	IntPtr Pointer { get; }
-	[PreserveSig] int QueryInterface( ref Guid riid, out IntPtr ppvObject ) ;
-	[PreserveSig] uint AddRef( ) => (uint)Marshal.AddRef( Pointer ) ;
-	[PreserveSig] uint Release( ) => (uint)Marshal.Release( Pointer ) ;
+[ComImport, Guid( "00000000-0000-0000-C000-000000000046" )]
+public interface IUnknown {
+	[PreserveSig] uint AddRef( ) ;
+	[PreserveSig] uint Release( ) ;
+	[PreserveSig] int QueryInterface( ref Guid riid, out nint ppvObject ) ;
 } ;
 
+
+// -----------------------------------------------------------------
+// DXSharp Wrapper Interfaces:
+// -----------------------------------------------------------------
+
+/// <summary>Base interface of all DXSharp COM wrapper types.</summary>
+public interface IUnknownWrapper: IDisposable,
+								  IAsyncDisposable {
+	bool Disposed { get; }
+	internal int RefCount { get ; }
+	internal nint BasePointer { get; }
+	
+	uint AddRef( ) => (uint)Marshal.AddRef( BasePointer ) ;
+	uint Release( ) => (uint)Marshal.Release( BasePointer ) ;
+	
+	HResult QueryInterface< T >( out nint ppvInterface ) where T: IUnknown =>
+		COMUtility.QueryInterface<T>( BasePointer, out ppvInterface ) ;
+} ;
+
+
+
+/// <summary>Contract for COM object wrapper.</summary>
+public interface IUnknownWrapper< TInterface >: IUnknownWrapper 
+												where TInterface: IUnknown {
+	Type ComType => typeof(TInterface) ;
+	ComPtr< TInterface >? ComPointer { get ; }
+	internal TInterface? ComObject => ComPointer!.Interface ;
+	internal nint Pointer => ComPointer?.IUnknownAddress ?? nint.Zero ;
+	
+	/// <summary>Indicates if the DXSharp object is fully initialized.</summary>
+	bool IsInitialized => (ComPointer is not null)
+							&& ComPointer.InterfaceVPtr.IsValid()
+								&& ComPointer.Interface is not null ;
+} ;
 
 
 /// <summary>Contract for .NET objects wrapping native COM types.</summary>
-public interface IUnknownWrapper: IUnknown,
-								  IDisposable,
-								  IAsyncDisposable {
-	bool Disposed { get; }
-	HResult QueryInterface< T >( out T ppvObject ) where T : IUnknown {
-		var riid = typeof(T).GUID ;
-		
-		var hr = (HResult)Marshal
-			.QueryInterface( Pointer, ref riid, out var ppCOMObj ) ;
-		_ = hr.ThrowOnFailure( ) ;
-		
-		object comObjectRef = Marshal.GetUniqueObjectForIUnknown( ppCOMObj ) ;
-		ppvObject = (T)comObjectRef ;
-		
-		return hr ;
-	}
+public interface IUnknownWrapper< TSelf, TInterface >: IUnknownWrapper< TInterface > 
+									where TSelf: IUnknownWrapper<TSelf, TInterface>
+									where TInterface: IUnknown {
+	Type WrapperType => typeof( TSelf ) ;
+	
+	HResult QueryInterface< T >( out T pInterface ) where T: IUnknown => 
+		COMUtility.QueryInterface<T>( Pointer, out pInterface ) ;
 } ;
 
-/// <summary>Contract for COM object wrapper.</summary>
-public interface IUnknown< TSelf >: IUnknownWrapper
-									where TSelf: IUnknown< TSelf >,
-												 IUnknownWrapper {
-	internal ComPtr< IUnknown >? ComPtr { get ; }
-	new IntPtr Pointer => ComPtr?.Address ?? IntPtr.Zero ;
-} ;

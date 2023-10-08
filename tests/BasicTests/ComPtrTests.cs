@@ -61,7 +61,7 @@ internal class ComPtrTests
 		//Assert.That( factory7Ptr.Interface, Is.EqualTo( typeof( IDXGIFactory7 ).GUID ) );
 
 		// Save & verify the COM interface address:
-		address = factory7Ptr.Address;
+		address = factory7Ptr.IUnknownAddress;
 		Assert.That( address, Is.Not.EqualTo( IntPtr.Zero ) );
 	}
 
@@ -86,7 +86,7 @@ internal class ComPtrTests
 
 
 
-	ComPtr<T> create_ComPtr< T >( T? comObj ) where T: IUnknown 
+	ComPtr<T> create_ComPtr< T >( T? comObj ) where T: IUnknownWrapper 
 	{
 		Assert.NotNull( comObj ) ;
 		ComPtr< T >? comPtr = null ;
@@ -104,7 +104,7 @@ internal class ComPtrTests
 		Assert.IsFalse( comPtr.Disposed );
 
 		// Assert that the ComPtr has a valid internal pointer:
-		Assert.That( comPtr.Address, Is.Not.EqualTo( IntPtr.Zero ) );
+		Assert.That( comPtr.IUnknownAddress, Is.Not.EqualTo( IntPtr.Zero ) );
 
 		// Assert that the ComPtr interface reference is valid:
 		Assert.NotNull( comPtr.Interface );
@@ -126,7 +126,7 @@ internal class ComPtrTests
 
 		// Ensure it has disposed and cleared its internal state:
 		Assert.IsTrue( comPtr?.Disposed );
-		Assert.That( IntPtr.Zero, Is.EqualTo( comPtr?.Address ) );
+		Assert.That( IntPtr.Zero, Is.EqualTo( comPtr?.IUnknownAddress ) );
 		Assert.IsTrue( comPtr?.Disposed );
 	}
 }

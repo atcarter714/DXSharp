@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices ;
 using Windows.Win32.Foundation ;
+using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXGI ;
 using DXSharp.Windows ;
@@ -10,7 +11,9 @@ namespace DXSharp.DXGI ;
 
 // Implements an idiomatic C# version of IDXGIAdapter interface:
 // https://docs.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter
-internal interface IAdapter: IObject {
+public interface IAdapter: IObject,
+						   IDXGIObjWrapper< IDXGIAdapter > {
+	
 	//void SetPrivateData( in Guid Name, uint DataSize, nint pData ) ;
 	//void SetPrivateDataInterface( in Guid Name, IUnknown pUnknown) ;
 	//void GetPrivateData( in Guid Name, ref uint pDataSize, nint pData ) ;
@@ -32,7 +35,7 @@ internal interface IAdapter: IObject {
 	/// <para><div class="alert"><b>Note</b>  If you call this API in a Session 0 process, it returns <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_NOT_CURRENTLY_AVAILABLE</a>.</div> <div> </div> When the <b>EnumOutputs</b> method succeeds and fills the <i>ppOutput</i> parameter with the address of the pointer to the output interface, <b>EnumOutputs</b> increments the output interface's reference count. To avoid a memory leak, when you finish using the output interface, call the <a href="https://docs.microsoft.com/windows/desktop/api/unknwn/nf-unknwn-iunknown-release">Release</a> method to decrement the reference count. <b>EnumOutputs</b> first returns the output on which the desktop primary is displayed. This output corresponds with an index of zero. <b>EnumOutputs</b> then returns other outputs.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgiadapter-enumoutputs#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	HResult EnumOutputs< T >( uint Output, out T ppOutput ) where T: Output ;
+	HResult EnumOutputs< T >( uint Output, out T ppOutput ) where T: class, IOutput ;
 
 	/// <summary>Gets a DXGI 1.0 description of an adapter (or video card).</summary>
 	/// <param name="pDesc">
@@ -73,14 +76,16 @@ public class Adapter: Object, IAdapter {
 	internal Adapter( IObject dxObject ): base(dxObject) { }
 	internal Adapter( IntPtr  nativePtr ): base(nativePtr) { }
 
-	IDXGIAdapter? _dxgiAdapter = default ;
+	/*IDXGIAdapter? _dxgiAdapter = default ;
 	protected IDXGIAdapter nativeAdapter => _dxgiAdapter ??=
-		(IDXGIAdapter)Marshal.GetObjectForIUnknown(this.Pointer);
-
+		(IDXGIAdapter)COMUtility.GetDXGIObject<IDXGIDevice>(this.ComPtr);*/
+	
+	public new IDXGIAdapter? COMObject { get ; init ; }
+	
 	public void GetDesc( out AdapterDescription pDesc ) {
 		DXGI_ADAPTER_DESC desc = default ;
 		unsafe {
-			nativeAdapter.GetDesc( &desc ) ;
+			COMObject?.GetDesc( &desc ) ;
 			pDesc = desc ;
 		}
 	}

@@ -25,31 +25,11 @@
 
 
 #region Using Directives
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.Intrinsics;
-/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-Before:
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using System.Numerics;
-After:
-using System.Runtime.CodeAnalysis;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-*/
-/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-Before:
-using System.Diagnostics.CodeAnalysis;
-After:
-using System.Threading.Tasks;
-*/
-
-
-using SysVec2 = System.Numerics.Vector2;
-using SysVec3 = System.Numerics.Vector3;
-using SysVec4 = System.Numerics.Vector4;
+using System.Runtime.Intrinsics ;
+using System.Diagnostics.CodeAnalysis ;
+using SysVec2 = System.Numerics.Vector2 ;
+using SysVec3 = System.Numerics.Vector3 ;
+using SysVec4 = System.Numerics.Vector4 ;
 #endregion
 
 
@@ -59,8 +39,7 @@ namespace DXSharp;
 /// <summary>
 /// A 2D Euclidean vector.
 /// </summary>
-public struct Vector2
-{
+public struct Vector2 {
 	#region Const & Readonly Values
 	/// <summary>
 	/// The Unit X vector (right)
@@ -88,7 +67,7 @@ public struct Vector2
 	public Vector2( SysVec2 vec ) => this.v = vec;
 
 
-	SysVec2 v = default;
+	SysVec2 v = default ;
 	internal SysVec2 V => v;
 
 
@@ -145,15 +124,14 @@ public struct Vector2
 	// Vector2 >> SysVec:
 	public static implicit operator SysVec2( Vector2 vec ) => vec.v;
 	public static implicit operator SysVec3( Vector2 vec ) => new( vec.X, vec.Y, 0f );
-};
+} ;
 
 
 
 /// <summary>
 /// A 3D Euclidean vector.
 /// </summary>
-public struct Vector3: IEquatable<Vector3>, IFormattable
-{
+public struct Vector3: IEquatable< Vector3 >, IFormattable {
 	#region Const & Readonly Values
 	/// <summary>
 	/// The Unit X vector (right)
@@ -327,6 +305,7 @@ public struct Vector3: IEquatable<Vector3>, IFormattable
 
 	#endregion
 };
+
 
 /*
 	/// <summary>Transforms a vector using a matrix.</summary>

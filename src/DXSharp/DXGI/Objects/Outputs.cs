@@ -8,20 +8,23 @@ namespace DXSharp.DXGI ;
 
 //public interface IOuput: IUnknown< IOuput > { } ;
 
-public class Output: Object, IOutput {
+public class Output: Object, IOutput, 
+					 IDXGIObjWrapper<IDXGIOutput> {
 	#region Internal Constructors
 	internal Output( nint ptr ): base( ptr ) =>
-		this._idxgiOutput ??= Marshal.GetObjectForIUnknown( ptr ) as IDXGIOutput 
-							  ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
-																   $"The internal COM interface is destroyed/null." ) ;
+		this.COMObject ??= COMUtility.GetDXGIObject< IDXGIOutput >( ptr )
+						   ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+																$"The internal COM interface is destroyed/null." ) ;
 	internal Output( in IDXGIOutput dxgiObj ):
-		base( Marshal.GetIUnknownForObject(dxgiObj) ) =>
-		this._idxgiOutput ??= dxgiObj ?? throw new ArgumentNullException( nameof(dxgiObj) ) ;
+		base( COMUtility.GetInterfaceAddress( dxgiObj ) ) =>
+		this.COMObject = dxgiObj ?? throw new ArgumentNullException( nameof(dxgiObj) ) ;
 	#endregion
 	
+	
+	public IDXGIOutput? COMObject { get ; init ; }
 	protected IDXGIOutput? _idxgiOutput ;
 	protected IDXGIOutput dxgiOutput => _idxgiOutput ??=
-				Marshal.GetObjectForIUnknown( this.Pointer ) as IDXGIOutput 
+				Marshal.GetObjectForIUnknown( this.BasePointer ) as IDXGIOutput 
 					?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														 $"The internal COM interface is destroyed/null." ) ;
 	
@@ -64,7 +67,7 @@ public class Output: Object, IOutput {
 
 	public void FindClosestMatchingMode( in ModeDescription pModeToMatch, 
 										 out ModeDescription pClosestMatch,
-										 IUnknown pConcernedDevice ) {
+										 IUnknownWrapper pConcernedDevice ) {
 		pClosestMatch = default ;
 		unsafe {
 			DXGI_MODE_DESC result = default, modeToMatch_ = pModeToMatch ;
@@ -76,7 +79,7 @@ public class Output: Object, IOutput {
 
 	public void WaitForVBlank( ) => dxgiOutput.WaitForVBlank( ) ;
 
-	public void TakeOwnership( IUnknown pDevice, bool exclusive ) {
+	public void TakeOwnership( IUnknownWrapper pDevice, bool exclusive ) {
 		if ( pDevice is null ) throw new ArgumentNullException( nameof(pDevice) ) ;
 		dxgiOutput.TakeOwnership( pDevice, exclusive ) ;
 	}
@@ -109,8 +112,8 @@ public class Output: Object, IOutput {
 	public void SetDisplaySurface< T >( T pScanoutSurface ) where T: Surface {
 		if ( pScanoutSurface is null ) throw new 
 			ArgumentNullException( nameof(pScanoutSurface) ) ;
-		
-		dxgiOutput.SetDisplaySurface( pScanoutSurface.ComPtr.Interface.Pointer ) ;
+		var ptr = pScanoutSurface.BasePointer ;
+		dxgiOutput.SetDisplaySurface( COMObject.GetDisplaySurfaceData(  ) ) ;
 	}
 	public void GetDisplaySurfaceData( ISurface pDestination ) { }
 

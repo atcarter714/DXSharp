@@ -121,8 +121,8 @@ public struct Vector4D: IEquatable<Vector4D>, IFormattable
 
 
 
-	Vector256<double> v = default;
-	internal Vector256<double> V => v;
+	Vector256< double > v = default;
+	internal Vector256< double > V => v;
 
 	/// <summary>
 	/// Gets or sets the element at the specified index
