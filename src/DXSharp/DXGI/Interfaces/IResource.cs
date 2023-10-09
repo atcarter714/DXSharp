@@ -13,4 +13,4 @@ public interface IResource: IDeviceSubObject,
 	
 	HResult GetUsage( [Out] out Usage pUsage ) ;
 	HResult GetSharedHandle( [Out] out Win32Handle pSharedHandle ) ;
-}
+};

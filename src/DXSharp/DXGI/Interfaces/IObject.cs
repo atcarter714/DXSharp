@@ -106,9 +106,9 @@ public interface IObject: IUnknownWrapper< IObject, IDXGIObject > {
 
 //! Testing an idea (may remove later)
 public interface IObject< TWrapper, TInterface >:
-				IUnknownWrapper< TWrapper, TInterface >
-							where TWrapper:     Object, IUnknownWrapper< TWrapper, TInterface >, new( )
-							where TInterface:   unmanaged, IUnknown { } ;
+					IUnknownWrapper< TWrapper, TInterface >
+							where TWrapper: Object, IUnknownWrapper< TWrapper, TInterface >, new( )
+							where TInterface: unmanaged, IUnknown { } ;
 
 
 
@@ -146,7 +146,7 @@ public abstract class Object: IObject {
 	public uint Release( ) => this.ComPointer?.Interface?.Release( ) ?? 0U ;
 	
 	protected virtual void _throwIfDestroyed( ) {
-		if ( ComPointer is null || ComPointer.Disposed || ComPointer.Interface is null )
+		if ( ComPointer is null || ComPointer.Disposed || ComPointer.Interface is null || BasePointer is 0x00 )
 			throw new
 				ObjectDisposedException( nameof( Object ), $"{nameof( Object )} :: " + 
 							$"Internal object \"{nameof( ComPointer )}\" is destroyed/null." ) ;
@@ -238,3 +238,11 @@ public abstract class Object: IObject {
 	}
 #endregion
 } ;
+
+
+public abstract class WrapperObject< TWrapper, TInterface >: Object,
+															 IObject< TWrapper, TInterface >
+								where TWrapper: Object, IUnknownWrapper< TWrapper, TInterface >, new( )
+								where TInterface: unmanaged, IUnknown {
+	public new ComPtr< TInterface >? ComPointer { get ; protected set ; }
+}

@@ -1668,3 +1668,224 @@ public enum ColorSpaceType: uint {
 	Custom                       = 0xFFFFFFFF,
 } ;
 
+
+
+// ----------------------------------------------------
+// Output Duplication Data Structures:
+// ----------------------------------------------------
+
+[StructLayout( LayoutKind.Sequential )]
+public struct OutputDuplicationDescription {
+	/// <summary>A <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/bb173064(v=vs.85)">DXGI_MODE_DESC</a> structure that describes the display mode of the duplicated output.</summary>
+	public ModeDescription ModeDescription ;
+	/// <summary>A member of the <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/bb173065(v=vs.85)">DXGI_MODE_ROTATION</a> enumerated type that describes how the duplicated output rotates an image.</summary>
+	public ModeRotation Rotation ;
+	/// <summary>Specifies whether the resource that contains the desktop image is already located in system memory. <b>TRUE</b> if the resource is in system memory; otherwise, <b>FALSE</b>. If this value is <b>TRUE</b> and  the application requires CPU access, it can use the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-mapdesktopsurface">IDXGIOutputDuplication::MapDesktopSurface</a> and <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-unmapdesktopsurface">IDXGIOutputDuplication::UnMapDesktopSurface</a> methods to avoid copying the data into a staging buffer.</summary>
+	public bool DesktopImageInSystemMemory ;
+	
+	public OutputDuplicationDescription( in DXGI_OUTDUPL_DESC desc ) {
+		this.ModeDescription = desc.ModeDesc ;
+		this.Rotation = (ModeRotation)desc.Rotation ;
+		this.DesktopImageInSystemMemory = desc.DesktopImageInSystemMemory ;
+	}
+	
+	public static implicit operator OutputDuplicationDescription( in DXGI_OUTDUPL_DESC desc ) => new( desc ) ;
+	public static implicit operator DXGI_OUTDUPL_DESC( in OutputDuplicationDescription desc ) => new( ) {
+		ModeDesc = desc.ModeDescription,
+		Rotation = (DXGI_MODE_ROTATION)desc.Rotation,
+		DesktopImageInSystemMemory = desc.DesktopImageInSystemMemory
+	} ;
+} ;
+
+
+[StructLayout( LayoutKind.Sequential )]
+public struct OutputDuplicationPointerPosition {
+	/// <summary>
+	/// The position of the hardware cursor relative to the top-left of the adapter output.
+	/// </summary>
+	public Point Position ;
+
+	/// <summary>
+	/// Specifies whether the hardware cursor is visible. <b>TRUE</b> if visible; otherwise, <b>FALSE</b>.
+	/// If the hardware cursor is not visible, the calling application does not display the cursor in the client.
+	/// </summary>
+	public bool Visible {
+		get => _visible != 0 ;
+		set => _visible = value ? 1 : 0 ;
+	}
+	internal BOOL _visible ;
+
+	public OutputDuplicationPointerPosition( in DXGI_OUTDUPL_POINTER_POSITION pos ) {
+		this.Position = pos.Position ;
+		this._visible = pos.Visible ;
+	}
+
+	public static implicit operator OutputDuplicationPointerPosition( in DXGI_OUTDUPL_POINTER_POSITION pos ) => new( pos ) ;
+	public static implicit operator DXGI_OUTDUPL_POINTER_POSITION( in OutputDuplicationPointerPosition pos ) => new( ) {
+		Position = pos.Position,
+		Visible  = pos.Visible
+	} ;
+} ;
+
+
+[StructLayout(LayoutKind.Sequential)]
+public struct OutputDuplicationFrameInfo {
+	/// <summary>
+	/// <para>The time stamp of the last update of the desktop image.  The operating system calls the <a href="https://docs.microsoft.com/windows/desktop/api/profileapi/nf-profileapi-queryperformancecounter">QueryPerformanceCounter</a> function to obtain the value. A zero value indicates that the desktop image was not updated since an application last called the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-acquirenextframe">IDXGIOutputDuplication::AcquireNextFrame</a> method to acquire the next frame of the desktop image.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/ns-dxgi1_2-dxgi_outdupl_frame_info#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public long LastPresentTime ;
+
+	/// <summary>
+	/// <para>The time stamp of the last update to the mouse.  The operating system calls the <a href="https://docs.microsoft.com/windows/desktop/api/profileapi/nf-profileapi-queryperformancecounter">QueryPerformanceCounter</a> function to obtain the value. A zero value indicates that the position or shape of the mouse was not updated since an application last called the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-acquirenextframe">IDXGIOutputDuplication::AcquireNextFrame</a> method to acquire the next frame of the desktop image.  The mouse position is always supplied for a mouse update. A new pointer shape is indicated by a non-zero value in the <b>PointerShapeBufferSize</b> member.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/ns-dxgi1_2-dxgi_outdupl_frame_info#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public long LastMouseUpdateTime ;
+
+	/// <summary>
+	/// The number of frames that the operating system accumulated in the desktop image surface since
+	/// the calling application processed the last desktop image.  For more information about this
+	/// number, see Remarks.
+	/// </summary>
+	public uint AccumulatedFrames ;
+
+	/// <summary>
+	/// Specifies whether the operating system accumulated updates by coalescing dirty regions.
+	/// Therefore, the dirty regions might contain unmodified pixels. <b>TRUE</b> if dirty regions
+	/// were accumulated; otherwise, <b>FALSE</b>.
+	/// </summary>
+	public bool RectsCoalesced { get => _rectsCoalesced != 0 ; set => _rectsCoalesced = value ? 1 : 0 ; }
+	internal BOOL _rectsCoalesced ;
+
+	/// <summary>
+	/// Specifies whether the desktop image might contain protected content that was already
+	/// blacked out in the desktop image.  <b>TRUE</b> if protected content was already blacked;
+	/// otherwise, <b>FALSE</b>. The application can use this information to notify the remote
+	/// user that some of the desktop content might be protected and therefore not visible.
+	/// </summary>
+	public bool ProtectedContentMaskedOut { get => _protectedContentMaskedOut != 0 ; set => _protectedContentMaskedOut = value ? 1 : 0 ; }
+	internal BOOL _protectedContentMaskedOut ;
+
+	/// <summary>
+	/// A <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_outdupl_pointer_position">
+	/// DXGI_OUTDUPL_POINTER_POSITION
+	/// </a>
+	/// structure that describes the most recent mouse position if the <b>LastMouseUpdateTime</b> member is a non-zero value;
+	/// otherwise, this value is ignored. This value provides the coordinates of the location where the top-left-hand corner
+	/// of the pointer shape is drawn; this value is not the desktop position of the hot spot.
+	/// </summary>
+	public OutputDuplicationPointerPosition PointerPosition ;
+
+	/// <summary>
+	/// Size in bytes of the buffers to store all the desktop update metadata for this frame.
+	/// For more information about this size, see Remarks.
+	/// </summary>
+	public uint TotalMetadataBufferSize ;
+
+	/// <summary>
+	/// Size in bytes of the buffer to hold the new pixel data for the mouse shape.
+	/// For more information about this size, see Remarks.
+	/// </summary>
+	public uint PointerShapeBufferSize ;
+	
+	public OutputDuplicationFrameInfo( in DXGI_OUTDUPL_FRAME_INFO info ) {
+		this.LastPresentTime = info.LastPresentTime ;
+		this.LastMouseUpdateTime = info.LastMouseUpdateTime ;
+		this.AccumulatedFrames = info.AccumulatedFrames ;
+		this._rectsCoalesced = info.RectsCoalesced ;
+		this._protectedContentMaskedOut = info.ProtectedContentMaskedOut ;
+		this.PointerPosition = info.PointerPosition ;
+		this.TotalMetadataBufferSize = info.TotalMetadataBufferSize ;
+		this.PointerShapeBufferSize = info.PointerShapeBufferSize ;
+	}
+	
+	public static implicit operator OutputDuplicationFrameInfo( in DXGI_OUTDUPL_FRAME_INFO info ) => new( info ) ;
+	public static implicit operator DXGI_OUTDUPL_FRAME_INFO( in OutputDuplicationFrameInfo info ) => new( ) {
+		LastPresentTime = info.LastPresentTime,
+		LastMouseUpdateTime = info.LastMouseUpdateTime,
+		AccumulatedFrames = info.AccumulatedFrames,
+		RectsCoalesced = info.RectsCoalesced,
+		ProtectedContentMaskedOut = info.ProtectedContentMaskedOut,
+		PointerPosition = info.PointerPosition,
+		TotalMetadataBufferSize = info.TotalMetadataBufferSize,
+		PointerShapeBufferSize = info.PointerShapeBufferSize
+	} ;
+} ;
+
+
+[StructLayout(LayoutKind.Sequential)]
+public struct OutputDuplicationMoveRect {
+	/// <summary>The starting position of a rectangle.</summary>
+	public Point SourcePoint ;
+
+	/// <summary>The target region to which to move a rectangle.</summary>
+	public Rect DestinationRect ;
+	
+	public OutputDuplicationMoveRect( Point srcPoint, Rect dstRect ) {
+		this.SourcePoint = srcPoint ;
+		this.DestinationRect = dstRect ;
+	}
+	public OutputDuplicationMoveRect( in DXGI_OUTDUPL_MOVE_RECT rect ) {
+		this.SourcePoint = rect.SourcePoint ;
+		this.DestinationRect = rect.DestinationRect ;
+	}
+	
+	public static implicit operator OutputDuplicationMoveRect( in DXGI_OUTDUPL_MOVE_RECT rect ) => new( rect ) ;
+	public static implicit operator DXGI_OUTDUPL_MOVE_RECT( in OutputDuplicationMoveRect rect ) => new( ) {
+		SourcePoint = rect.SourcePoint,
+		DestinationRect = rect.DestinationRect
+	} ;
+} ;
+
+
+[StructLayout(LayoutKind.Sequential)]
+public struct OutputDuplicationPointerShapeInfo {
+	/// <summary>
+	/// A <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ne-dxgi1_2-dxgi_outdupl_pointer_shape_type">
+	/// DXGI_OUTDUPL_POINTER_SHAPE_TYPE</a>-typed value that specifies the type of cursor shape.
+	/// </summary>
+	public uint Type ;
+
+	/// <summary>The width in pixels of the mouse cursor.</summary>
+	public uint Width ;
+
+	/// <summary>The height in scan lines of the mouse cursor.</summary>
+	public uint Height ;
+
+	/// <summary>The width in bytes of the mouse cursor.</summary>
+	public uint Pitch ;
+
+	/// <summary>
+	/// The position of the cursor's hot spot relative to its upper-left pixel.
+	/// An application does not use the hot spot when it determines where to
+	/// draw the cursor shape.
+	/// </summary>
+	public Point HotSpot ;
+	
+	public OutputDuplicationPointerShapeInfo( uint type, uint width, uint height, uint pitch, Point hotSpot ) {
+		this.Type = type ;
+		this.Width = width ;
+		this.Height = height ;
+		this.Pitch = pitch ;
+		this.HotSpot = hotSpot ;
+	}
+	internal OutputDuplicationPointerShapeInfo( in DXGI_OUTDUPL_POINTER_SHAPE_INFO info ) {
+		this.Type = info.Type ;
+		this.Width = info.Width ;
+		this.Height = info.Height ;
+		this.Pitch = info.Pitch ;
+		this.HotSpot = info.HotSpot ;
+	}
+	
+	public static implicit operator OutputDuplicationPointerShapeInfo( in DXGI_OUTDUPL_POINTER_SHAPE_INFO info ) => new( info ) ;
+	public static implicit operator DXGI_OUTDUPL_POINTER_SHAPE_INFO( in OutputDuplicationPointerShapeInfo info ) => new( ) {
+		Type = info.Type,
+		Width = info.Width,
+		Height = info.Height,
+		Pitch = info.Pitch,
+		HotSpot = info.HotSpot
+	} ;
+}
+
+
+// ====================================================

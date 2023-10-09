@@ -11,86 +11,13 @@ using DXSharp.Windows.COM ;
 
 namespace DXSharp.DXGI ;
 
-public interface ISwapChain1: ISwapChain,
-							  DXGIWrapper< IDXGISwapChain1 > {
-	
-	void GetDesc1( out SwapChainDescription1 pDesc ) ;
-	void GetFullscreenDesc( out SwapChainFullscreenDescription pDesc ) ;
-	
-	void GetHwnd( out HWND pHwnd ) ;
-	void GetCoreWindow( Guid riid, out IUnknown ppUnk ) ;
-	
-	void Present1( uint syncInterval, PresentFlags flags,
-				   in PresentParameters pPresentParameters ) ;
-	
-	bool IsTemporaryMonoSupported( ) ;
-	
-	void GetRestrictToOutput( out IOutput ppRestrictToOutput ) ;
-	
-	void SetBackgroundColor( in RGBA pColor ) ;
-	void GetBackgroundColor( out RGBA pColor ) ;
-	
-	void SetRotation( ModeRotation rotation ) ;
-	void GetRotation( out ModeRotation pRotation ) ;
-	
-	void SetSourceSize( uint width, uint height ) ;
-	void GetSourceSize( out uint pWidth, out uint pHeight ) ;
-	
-	void SetMaximumFrameLatency( uint maxLatency ) ;
-	void GetMaximumFrameLatency( out uint pMaxLatency ) ;
-	
-	void GetFrameLatencyWaitableObject( out HANDLE pHandle ) ;
-	
-	void SetMatrixTransform( in Matrix3x2 pMatrix ) ;
-	void GetMatrixTransform( out Matrix3x2 pMatrix ) ;
-	
-	uint GetCurrentBackBufferIndex( ) ;
-	
-	void CheckColorSpaceSupport( ColorSpaceType colorSpace,
-								 out SwapChain.ColorSpaceSupportFlags pColorSpaceSupport ) ;
-	
-	void SetColorSpace1( ColorSpaceType colorSpace ) ;
-	
-	void ResizeBuffers1( uint bufferCount, uint width, uint height,
-						 Format newFormat, SwapChainFlags swapChainFlags,
-						 in uint[] pCreationNodeMask,
-						 in IUnknown[] ppPresentQueue ) ;
-	
-} ;
-
-public interface ISwapChain: IObject,
-							 DXGIWrapper< IDXGISwapChain > {
-	 
-	void Present( uint syncInterval, PresentFlags flags ) ;
-	
-	void GetBuffer< TBuffer >( uint buffer, out TBuffer? pSurface )
-		where TBuffer:  class, ISurface, IUnknownWrapper< TBuffer, IDXGISurface >, new( ) ;
-	
-	void SetFullscreenState< TOutput >( bool fullscreen, in TOutput? pTarget )
-		where TOutput: class, IOutput ;
-	
-	void GetFullscreenState< TOutput >( out bool pFullscreen, out TOutput? ppTarget ) 
-														where TOutput: class, IOutput ;
-	
-	void GetDesc( out SwapChainDescription pDesc ) ;
-		
-	void ResizeBuffers( uint bufferCount, uint width, uint height,
-						Format newFormat, SwapChainFlags swapChainFlags ) ;
-	
-	void ResizeTarget( in ModeDescription newTargetParameters ) ;
-	
-	TOutput? GetContainingOutput< TOutput >( ) where TOutput: class, IOutput ;
-	void GetFrameStatistics( out FrameStatistics pStats ) ;
-	uint GetLastPresentCount( ) ;
-} ;
-
-
 public class SwapChain: DeviceSubObject, ISwapChain {
 	public enum ColorSpaceSupportFlags: uint { Present = 0x1, OverlayPresent = 0x2, } ;
 	
 	public new IDXGISwapChain? COMObject { get ; init ; }
 	public new ComPtr< IDXGISwapChain >? ComPointer { get ; init ; }
 	
+	internal SwapChain( ) { }
 	public SwapChain( nint comObject ): base( comObject ) {
 		/*ComPointer = new ComPtr< IDXGISwapChain >( comObject ) ;
 		COMObject = ComPointer.Interface ;
@@ -183,4 +110,138 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 		return count ;
 	}
 	
+}
+
+public class SwapChain1: SwapChain, ISwapChain1 {
+	internal SwapChain1( ) { }
+	public SwapChain1( nint comObject ): base( comObject ) { }
+	public SwapChain1( in IDXGISwapChain1? comObject ): base( comObject! ) { }
+	public SwapChain1( ComPtr< IDXGISwapChain1 > otherPtr ): 
+		this(otherPtr.InterfaceVPtr) { }
+
+	public new IDXGISwapChain1? COMObject => ComPointer?.Interface ;
+	public new ComPtr< IDXGISwapChain1 > ComPointer { get ; protected set ; }
+
+	public SwapChainDescription1 GetDesc1( ) {
+		GetDesc1( out var desc ) ;
+		return desc ;
+	}
+	public void GetDesc1( out SwapChainDescription1 pDesc ) {
+		_throwIfDestroyed( ) ;
+		unsafe {
+			DXGI_SWAP_CHAIN_DESC1 result = default ;
+			COMObject!.GetDesc1( &result ) ;
+			pDesc = result ;
+		}
+	}
+	
+	public void GetFullscreenDesc( out SwapChainFullscreenDescription pDesc ) {
+		_throwIfDestroyed( ) ;
+		unsafe {
+			DXGI_SWAP_CHAIN_FULLSCREEN_DESC result = default ;
+			COMObject!.GetFullscreenDesc( &result ) ;
+			pDesc = new( result ) ;
+		}
+	}
+
+	public void GetHwnd( out HWND pHwnd ) {
+		_throwIfDestroyed( ) ;
+		unsafe {
+			HWND result = default ;
+			COMObject!.GetHwnd( &result ) ;
+			pHwnd = result ;
+		}
+	}
+
+	public void GetCoreWindow( Guid riid, out IUnknown? ppUnk ) {
+		_throwIfDestroyed( ) ;
+		unsafe {
+			COMObject!.GetCoreWindow( &riid, out var unk ) ;
+			ppUnk = unk as IUnknown ;
+		}
+	}
+	public void GetCoreWindowAs< T >( out T? ppUnk ) where T: IUnknown {
+		GetCoreWindow( typeof(T).GUID, out var unk ) ;
+		ppUnk = (T)unk! ;
+	}
+	
+	public void Present1( uint syncInterval, PresentFlags flags, in PresentParameters pPresentParameters ) {
+		_throwIfDestroyed( ) ;
+		unsafe {
+			DXGI_PRESENT_PARAMETERS desc = pPresentParameters ;
+			COMObject!.Present1( syncInterval, (uint)flags, &desc ) ;
+		}
+	}
+
+	public bool IsTemporaryMonoSupported( ) => COMObject!.IsTemporaryMonoSupported( ) ;
+	
+	public void GetRestrictToOutput( out IOutput ppRestrictToOutput ) {
+		_throwIfDestroyed( ) ;
+		unsafe {
+			COMObject!.GetRestrictToOutput( out IDXGIOutput? output ) ;
+			ppRestrictToOutput = (IOutput)new Output( output ) ;
+		}
+		GetRestrictToOutput( out Output1 o ) ;
+	}
+
+	public void SetBackgroundColor( in RGBA pColor ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void GetBackgroundColor( out RGBA pColor ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void SetRotation( ModeRotation rotation ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void GetRotation( out ModeRotation pRotation ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void SetSourceSize( uint width, uint height ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void GetSourceSize( out uint pWidth, out uint pHeight ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void SetMaximumFrameLatency( uint maxLatency ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void GetMaximumFrameLatency( out uint pMaxLatency ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void GetFrameLatencyWaitableObject( out HANDLE pHandle ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void SetMatrixTransform( in Matrix3x2 pMatrix ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void GetMatrixTransform( out Matrix3x2 pMatrix ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public uint GetCurrentBackBufferIndex() {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void CheckColorSpaceSupport( ColorSpaceType colorSpace, out ColorSpaceSupportFlags pColorSpaceSupport ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void SetColorSpace1( ColorSpaceType colorSpace ) {
+		_throwIfDestroyed( ) ;
+	}
+
+	public void ResizeBuffers1( uint      bufferCount,       uint          width, uint height, Format newFormat, SwapChainFlags swapChainFlags,
+								in uint[] pCreationNodeMask, in IUnknown[] ppPresentQueue ) {
+		_throwIfDestroyed( ) ;
+	}
 }

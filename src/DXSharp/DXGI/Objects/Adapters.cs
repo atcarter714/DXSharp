@@ -21,6 +21,7 @@ public class Adapter: Object,
 					  IAdapter, 
 					  DXGIWrapper< IDXGIAdapter > {
 	public IDXGIAdapter? COMObject { get ; protected set ; }
+	public new ComPtr< IDXGIAdapter >? ComPointer { get ; protected set ; }
 	
 	//! Constructors:
 	internal Adapter( nint nativePtr ): base(nativePtr) { }
@@ -77,4 +78,5 @@ public class Adapter: Object,
 		pUMDVersion = 0 ;
 		 
 	}
+
 } ;

@@ -42,36 +42,36 @@ public class DXWinformApp: IDXWinformApp {
 
 		unsafe {
 			_enableDebugLayer( ) ;
-
+			var factory = DXFunctions.CreateFactory< Factory >( ) ;
 			//Factory factory = _createFactory( ) ;
 			//factory.CreateSwapChain( null, new(), out var swapChain ) ;
 		}
 	}
 
 
-	public void Shutdown( ) { }
+	public virtual void Shutdown( ) { }
 
-	public void Load( ) { }
-	public void Unload( ) { }
+	public virtual void Load( ) { }
+	public virtual void Unload( ) { }
 	
-	public void Tick( float delta ) { }
-	public void Draw( ) { }
+	public virtual void Tick( float delta ) { }
+	public virtual void Draw( ) { }
 
 	
 	// --------------------------------------
 	// Static Methods ::
 	// --------------------------------------
 	
-	static unsafe ComPtr< IUnknown >? _enableDebugLayer( ) {
-		ComPtr< IUnknown >? debugController = null ;
+	static unsafe ComPtr< ID3D12Debug >? _enableDebugLayer( ) {
+		ComPtr< ID3D12Debug >? debugController = null ;
 		try {
-			var dbgGuid = typeof( ID3D12Debug ).GUID ;
-			var hrDbg   = D3D12GetDebugInterface( &dbgGuid, out var _debug ) ;
+			var dbgGuid = typeof(ID3D12Debug).GUID ;
+			var hrDbg = D3D12GetDebugInterface( &dbgGuid, out var _debug ) ;
 			if ( hrDbg.Failed || _debug is null )
 				throw new DirectXComError( $"Failed to create the {nameof( ID3D12Debug )} layer!" ) ;
 		
-			debugController = new( (IUnknown)_debug ) ;
-			( (ID3D12Debug)debugController.Interface )
+			debugController = new( (ID3D12Debug)_debug ) ;
+			( (ID3D12Debug)debugController.Interface! )
 				.EnableDebugLayer( ) ;
 		}
 		catch ( COMException ex ) { return null ; }

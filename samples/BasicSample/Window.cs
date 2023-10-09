@@ -1,6 +1,9 @@
-﻿namespace BasicSample ;
+﻿using DXSharp.Windows ;
 
-public class Window
+namespace BasicSample ;
+
+
+public class Window: RenderForm
 {
 	
 }
