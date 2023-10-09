@@ -24,7 +24,7 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: 'build'
-    projects: '*\DXSharp.sln'
+    projects: '$(solution)'
     
 - task: VSTest@2
   inputs:
