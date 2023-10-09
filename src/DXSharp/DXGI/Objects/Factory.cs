@@ -45,6 +45,7 @@ namespace DXSharp.DXGI;
 
 
 public class Factory: Object, IFactory< IDXGIFactory > {
+	internal Factory( ) { }
 	internal Factory( nint address ): base( address ) { }
 	internal Factory( IDXGIFactory factory ): base( factory ) { }
 	
@@ -118,21 +119,12 @@ public class Factory: Object, IFactory< IDXGIFactory > {
 		_ = _dxgiFactoryFetch ?? throw new NullReferenceException( ) ;
 		_dxgiFactoryFetch.MakeWindowAssociation( WindowHandle, (uint)Flags ) ;
 	}
-	
-	
-	public static TFactory Create< TFactory >( ) where TFactory: Factory,
-											IFactory< IDXGIFactory >, new( ) {
-		object? ppFactory = null ;
-		HResult createResult = default ;
-		var guid = TFactory.InterfaceGUID ;
-		
-		unsafe { createResult = CreateDXGIFactory( &guid, out ppFactory ) ; }
-		if ( createResult.Failed || ppFactory is null )
-			throw new DirectXComError( "Failed to create DXGI Factory!" ) ;
-		
-		var factory = new TFactory( ) ;
-		factory.SetComPointer( new( (ppFactory as IDXGIFactory)! ) ) ;
-		return factory ;
+
+
+
+	internal static TFactory New< TFactory >()
+		where TFactory: class, IFactory< IDXGIFactory >, new( ) {
+		return null ;
 	}
 	
 } ;
