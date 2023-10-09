@@ -5,10 +5,9 @@ using DXSharp.Windows.COM;
 
 #endregion
 
+/*
 namespace DXGI ;
-
-
-/*public interface IObject : IUnknown<IObject>
+public interface IObject : IUnknown<IObject>
 {
 	void SetPrivateData(ref Guid name, uint dataSize, IntPtr pData);
 	void SetPrivateDataInterface(ref Guid name, IUnknown pUnknown);
@@ -23,7 +22,7 @@ namespace DXGI ;
 	void GetWindowAssociation(out IntPtr pWindowHandle);
 	void CreateSwapChain(IUnknown pDevice, ref SwapChainDescription pDescription, out ISwapChain ppSwapChain);
 	void CreateSoftwareAdapter(IntPtr module, out IAdapter ppAdapter);
-}*/
+}
 
 internal interface IAdapter: IObject {
 	void EnumOutputs( uint output, out IOutput ppOutput ) ;
@@ -34,3 +33,4 @@ internal interface IAdapter: IObject {
 
 
 
+*/

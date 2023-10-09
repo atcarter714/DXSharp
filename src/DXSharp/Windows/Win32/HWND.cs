@@ -15,8 +15,8 @@ using winmdroot = global::Windows.Win32;
 
 namespace DXSharp.Windows.Win32 {
 	[DebuggerDisplay( "{Value}" )]
-	public readonly partial struct HWnd {
-		public static readonly HWnd Null = default ;
+	public readonly struct HWnd {
+		public static readonly HWnd Null = new(0x00000000) ;
 		
 		public readonly nint Value ;
 		public HWnd( nint value ) => Value = value ;

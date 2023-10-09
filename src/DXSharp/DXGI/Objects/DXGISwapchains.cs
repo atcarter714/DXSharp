@@ -12,7 +12,7 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.DXGI ;
 
 public interface ISwapChain1: ISwapChain,
-							  IDXGIObjWrapper< IDXGISwapChain1 > {
+							  DXGIWrapper< IDXGISwapChain1 > {
 	
 	void GetDesc1( out SwapChainDescription1 pDesc ) ;
 	void GetFullscreenDesc( out SwapChainFullscreenDescription pDesc ) ;
@@ -59,7 +59,7 @@ public interface ISwapChain1: ISwapChain,
 } ;
 
 public interface ISwapChain: IObject,
-							 IDXGIObjWrapper< IDXGISwapChain > {
+							 DXGIWrapper< IDXGISwapChain > {
 	 
 	void Present( uint syncInterval, PresentFlags flags ) ;
 	

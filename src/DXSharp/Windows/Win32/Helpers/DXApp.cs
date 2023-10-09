@@ -1,113 +1,119 @@
-﻿using System;
-using System.IO;
-using System.Numerics;
-using System.Runtime.InteropServices;
-using Windows.Win32;
-using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Direct3D;
-using Windows.Win32.Graphics.Dxgi;
-using DXGI;
-using static Windows.Win32.PInvoke;
+﻿#region Using Directives
+using Windows.Win32 ;
+using Windows.Win32.Graphics.Dxgi ;
+using Windows.Win32.Graphics.Direct3D ;
+using DXSharp.Windows.Win32.XTensions ;
 
-using DXSharp.DXGI;
-using static DXSharp.DXGI.DXGIFunctions;
+using static Windows.Win32.PInvoke ;
+#endregion
+namespace DXSharp.Windows.Win32.Helpers ;
 
-namespace DXSharp.Windows.Win32.Helpers;
 
-public class DXApp: IDisposable
-{
-    readonly uint _width;
-    readonly uint _height;
-    string _title;
-    readonly string _assetsPath;
-    readonly float _aspectRatio;
+/// <summary>Helper class for creating, running and managing a DirectX12 application.</summary>
+public abstract class DXApp: IDisposable {
+    static D3D_FEATURE_LEVEL _d3dFeatures =
+        D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_12_0 ;
+    
+    string _title ;
     bool _useWarpDevice ;
+    readonly string _assetsPath ;
+    readonly float _aspectRatio ;
+    readonly uint _width, _height ;
 
-    public string AssetsPath => _assetsPath ;
     public string Title => _title ;
+    public int Width { get; protected set; }
+    public int Height { get; protected set; }
+    public string AssetsPath => _assetsPath ;
     public Size Size => new( (int)_width, (int)_height ) ;
-    public int Width { get; set; }
-    public int Height { get; set; }
+    
 
-    public DXApp(uint width, uint height, string name)
-    {
-        _width = width;
-        _height = height;
-        _title = name;
-        _assetsPath = Path.Combine(Directory.GetCurrentDirectory(), "Assets");
-        _aspectRatio = width / (float)height;
+    public DXApp( uint width, uint height, string name ) {
+        _title = name ;
+        _width = width ;
+        _height = height ;
+        _aspectRatio = width / (float)height ;
+        _assetsPath = Path.Combine( Directory.GetCurrentDirectory(), "Assets" ) ;
     }
-
-    public string GetAssetFullPath(string assetName)
-    {
-        return Path.Combine(_assetsPath, assetName);
+    ~DXApp( ) => this.Dispose( false ) ;
+    
+    
+    // --------------------------------------
+    // Instance Methods ::
+    // --------------------------------------
+    
+    void ParseCommandLineArgs( in string[] args ) {
+        foreach ( var arg in args ) {
+            if ( arg.Equals( "-warp", StringComparison.OrdinalIgnoreCase )
+                 || arg.Equals( "/warp", StringComparison.OrdinalIgnoreCase ) ) {
+                _useWarpDevice =  true ;
+                _title         += " (WARP)" ;
+            }
+        }
     }
+    public void SetCustomWindowText( in string text ) {
+        var windowText = $"{_title}: {text}";
+        SetWindowText( Win32Application._HWnd, windowText ) ;
+    }
+    
+    public string GetAssetFullPath( string assetName ) => 
+                    Path.Combine( _assetsPath, assetName ) ;
 
-    public static void GetHardwareAdapter< T >( IDXGIFactory2? dxgiFactory,
+    
+    // --------------------------------------
+    // Static Methods ::
+    public static void GetHardwareAdapter( IDXGIFactory2? dxgiFactory,
                                                 out IDXGIAdapter1? dxgiAdapter,
                                                 bool requestHighPerformanceAdapter ) {
+        ArgumentNullException.ThrowIfNull( dxgiFactory, nameof(dxgiFactory) ) ;
         dxgiAdapter = null ;
         var adapterIndex = 0U ;
-        while ( dxgiFactory?.EnumAdapters1( adapterIndex, out var adapter ).Succeeded ?? false ) {
+        while ( dxgiFactory.EnumAdapters1( adapterIndex, out var adapter ).Succeeded ) {
             if ( IsHardwareAdapterSupported(adapter) ) {
                 dxgiAdapter = adapter ;
                 break ;
             }
-            adapterIndex++ ;
+            ++adapterIndex ;
         }
     }
-
+    
     static bool IsHardwareAdapterSupported( IDXGIAdapter1 adapter ) {
         adapter.GetDesc1( out var desc ) ;
-
-        if ( (desc.Flags & (uint)DXGI_ADAPTER_FLAG3.DXGI_ADAPTER_FLAG3_SOFTWARE) != 0 ) {
+        
+        if ( (desc.Flags & 
+              (uint)DXGI_ADAPTER_FLAG3.DXGI_ADAPTER_FLAG3_SOFTWARE) is not 0 ) {
             // Don't select the Basic Render Driver adapter.
             // If you want a software adapter, pass in "/warp" on the command line.
             return false ;
         }
 
-        // Check to see whether the adapter supports Direct3D 12, but don't create the
-        // actual device yet.
-        return PInvoke.D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_11_0, Guid.Empty, out _) == 0;
+        //! Check if adapter supports D3D12b (but don't create it yet) ...
+        return D3D12CreateDevice( adapter, _d3dFeatures, 
+                                  Guid.Empty, out _ )
+                                        .Succeeded ;
     }
-
-    public void SetCustomWindowText(string text)
-    {
-        var windowText = $"{_title}: {text}";
-        PInvoke.SetWindowText(Win32Application.HWnd, windowText);
+    // --------------------------------------
+    
+    
+    protected void Dispose( bool disposing ) {
+        //! release native resources ::
+        
+        if ( disposing ) {
+            //! managed state cleanup ::
+        }
+        GC.SuppressFinalize( this ) ;
     }
+    public void Dispose( ) => this.Dispose( true ) ;
 
-    public void ParseCommandLineArgs( string[] args )
-    {
-        foreach (var arg in args)
-        {
-            if (arg.Equals("-warp", StringComparison.OrdinalIgnoreCase) || arg.Equals("/warp", StringComparison.OrdinalIgnoreCase))
-            {
-                _useWarpDevice = true;
-                _title += " (WARP)";
-            }
+    public virtual void OnKeyDown( byte wParam ) {
+        switch ( wParam ) {
+            case (byte)Keys.Escape:
+                CloseWindow( Win32Application._HWnd ) ;
+                Application.Exit( ) ;
+                break ;
         }
     }
+    public virtual void OnKeyUp( byte wParam ) { }
 
-    public void Dispose()
-    {
-        // Add any necessary cleanup code here.
-    }
-
-    public void OnKeyDown( byte wParam ) {
-
-    }
-    public void OnKeyUp( byte wParam ) {
-
-    }
-
-    public void OnUpdate()
-    {
-        throw new NotImplementedException();
-    }
-
-    public void OnRender()
-    {
-        throw new NotImplementedException();
-    }
-}
+    public abstract void OnUpdate() ;
+    public abstract void OnRender() ;
+} ;

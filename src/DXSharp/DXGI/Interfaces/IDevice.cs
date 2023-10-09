@@ -7,7 +7,7 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.DXGI ;
 
 public interface IDevice: IObject,
-						  IDXGIObjWrapper< IDXGIDevice > {
+						  DXGIWrapper< IDXGIDevice > {
 						  //IUnknownWrapper< IDevice, IDXGIDevice > {
 	
 	T GetAdapter< T >(  ) where T: class, IAdapter ;

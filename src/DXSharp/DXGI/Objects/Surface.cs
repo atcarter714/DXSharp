@@ -53,7 +53,7 @@ public struct MappedRect {
 //[InterfaceType( ComInterfaceType.InterfaceIsIUnknown )]
 
 public interface ISurface:  IDeviceSubObject,
-							IDXGIObjWrapper< IDXGISurface > {
+							DXGIWrapper< IDXGISurface > {
 	void GetDesc( out SurfaceDescription pDesc ) ;
 	void Map( ref MappedRect pLockedRect, uint MapFlags ) ;
 	void Unmap( ) ;
@@ -64,7 +64,7 @@ public interface ISurface:  IDeviceSubObject,
 public class Surface: DeviceSubObject,
 					  ISurface,
 					  IDeviceSubObject,
-					  IDXGIObjWrapper< IDXGISurface > {
+					  DXGIWrapper< IDXGISurface > {
 	IDXGISurface? _surface ;
 	internal IDXGISurface? _dxgiSurface ;
 	public new IDXGISurface? COMObject { get ; init ; }

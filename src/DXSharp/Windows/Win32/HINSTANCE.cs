@@ -21,8 +21,8 @@ using winmdroot = global::Windows.Win32;
 #endregion
 
 
-namespace DXSharp.Windows.Win32
-{
+namespace DXSharp.Windows.Win32 {
+	[DebuggerDisplay( "{Value}" )]
 	public readonly struct HInstance: IEquatable< HInstance > {
 		readonly HINSTANCE Value ;
 		

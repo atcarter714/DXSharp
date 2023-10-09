@@ -58,10 +58,9 @@ public readonly partial struct Win32Handle {
 	public static implicit operator HANDLE( Win32Handle           handle ) => (HANDLE)handle.Value ;
 	public static implicit operator Win32Handle( HANDLE           value )  => new( value ) ;
 	
-	public static implicit operator Win32Handle( ComPtr           value )  => new( value.BaseAddress ) ;
-	public static implicit operator ComPtr( Win32Handle           handle ) => new( handle.Value ) ;
+	public static implicit operator Win32Handle( ComPtr value )  => new( value.BaseAddress ) ;
+	public static implicit operator ComPtr< IUnknown >( Win32Handle handle ) => new( handle.Value ) ;
 	public static implicit operator Win32Handle( ComPtr<IUnknown> value )  => new( value.BaseAddress ) ;
-	public static implicit operator ComPtr<IUnknown>( Win32Handle handle ) => new( handle.Value ) ;
 	
 	//public static implicit operator HICONSM( Win32Handle handle ) => (HICONSM)handle.Value ;
 	//public static implicit operator Win32Handle( HICONSM value ) => new( value ) ;

@@ -1,15 +1,15 @@
-﻿using System.Runtime.InteropServices ;
+﻿#region Using Directives
+using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Dxgi.Common ;
-using DXGI ;
 using DXSharp.Windows.COM ;
-
+#endregion
 namespace DXSharp.DXGI ;
 
-//public interface IOuput: IUnknown< IOuput > { } ;
 
-public class Output: Object, IOutput, 
-					 IDXGIObjWrapper<IDXGIOutput> {
+/// <summary>Proxy contract for the native <see cref="IDXGIOutput"/> COM interface.</summary>
+public class Output: Object, IOutput,
+					 DXGIWrapper< IDXGIOutput > {
 	#region Internal Constructors
 	internal Output( nint ptr ): base( ptr ) =>
 		this.COMObject ??= COMUtility.GetDXGIObject< IDXGIOutput >( ptr )

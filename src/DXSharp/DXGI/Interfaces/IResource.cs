@@ -6,7 +6,7 @@ using DXSharp.Windows.Win32 ;
 namespace DXSharp.DXGI ;
 
 public interface IResource: IDeviceSubObject,
-							IDXGIObjWrapper< IDXGIResource > {
+							DXGIWrapper< IDXGIResource > {
 	// IDXGIResource methods
 	void GetEvictionPriority( [Out] out uint pEvictionPriority ) ;
 	void SetEvictionPriority( uint EvictionPriority ) ;

@@ -119,7 +119,7 @@ public static class COMUtility {
 		if( ptr is NULL_PTR ) return false ;
 		return true ;
 	}
-	[MethodImpl(_MAXOPT_)]
+	/*[MethodImpl(_MAXOPT_)]
 	public static bool TryGetComPtr( object? obj, out ComPtr? comPtr ) {
 		if( TryGetAddress(obj, out nint ptr) ) {
 			comPtr = new( ptr ) ;
@@ -127,7 +127,7 @@ public static class COMUtility {
 		}
 		comPtr = null ;
 		return false ;
-	}
+	}*/
 	
 	
 	[MethodImpl(_MAXOPT_)]

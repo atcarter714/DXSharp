@@ -32,7 +32,7 @@ using static DXSharp.Windows.COM.COMUtility ;
 namespace DXSharp.Windows.COM ;
 
 
-public class ComPtr: IDisposable {
+public abstract class ComPtr: IDisposable {
 	#region Const & Readonly Fields
 	/// <summary>Value of a "null" (zero) pointer/address.</summary>
 	public const int NULL_PTR = 0x0000000000000000 ;
