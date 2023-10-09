@@ -61,31 +61,23 @@ public interface ISurface:  IDeviceSubObject,
 
 
 //! Concrete Implementation of an IDXGISurface wrapper/proxy ::
-public class Surface: DeviceSubObject,
-					  ISurface,
-					  IDeviceSubObject,
-					  DXGIWrapper< IDXGISurface > {
-	IDXGISurface? _surface ;
-	internal IDXGISurface? _dxgiSurface ;
-	public new IDXGISurface? COMObject { get ; init ; }
-	public new ComPtr< IDXGISurface >? ComPtr { get ; init ; }
+public class Surface: DeviceSubObject, ISurface {
+	public new ComPtr< IDXGISurface >? ComPointer { get ; protected set ; }
+	public new IDXGISurface? COMObject => ComPointer?.Interface as IDXGISurface ;
 
-	internal Surface( ) => this.ComPointer = new( ) ;
-	public Surface( nint ptr ): base( ptr ) {
+	internal Surface( ) { }
+	public Surface( nint ptr ): base(ptr) {
 		if ( !ptr.IsValid() )
 			throw new NullReferenceException( $"{nameof( Surface )} :: " +
 											  $"The internal COM interface is destroyed/null." ) ;
 		
-		var dxgiObj = COMUtility.GetDXGIObject< IDXGISurface >( ptr ) ;
+		/*var dxgiObj = COMUtility.GetDXGIObject< IDXGISurface >( ptr ) ;
 		this.COMObject = dxgiObj ??
 			 throw new COMException( $"{nameof( Surface )}.ctor( {nameof( ptr )}: 0x{ptr:X} ): " + 
-									 $"Unable to initialize COM object reference from given address!" ) ;
+									 $"Unable to initialize COM object reference from given address!" ) ;*/
 	}
-
-	public Surface( in IDXGISurface dxgiObj ):
-		base( COMUtility.GetInterfaceAddress( dxgiObj ) ) =>
-			this.COMObject = dxgiObj ?? throw new ArgumentNullException( nameof( dxgiObj ) ) ;
-
+	public Surface( in IDXGISurface dxgiObj ): base( dxgiObj ) { }
+	
 	
 	public void GetDesc( out SurfaceDescription pDesc ) { pDesc = default ; }
 	public void Map( ref MappedRect pLockedRect, uint MapFlags ) { }

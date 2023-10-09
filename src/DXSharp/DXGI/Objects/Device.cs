@@ -22,13 +22,8 @@ namespace DXSharp.DXGI ;
 //! Concrete Base Implementation:
 public class DeviceSubObject: Object,
 							  IDeviceSubObject {
-	internal IDXGIDeviceSubObject? COMObject { get ; init ; }
-	public new ComPtr< IDXGIDeviceSubObject >? ComPointer { get ; init ; }
-	void _throwIfNull( ) {
-		if ( this.COMObject is null || this.ComPointer?.Interface is null ) 
-			throw new NullReferenceException( $"{nameof(DeviceSubObject)} :: " + 
-										$"The internal COM interface is destroyed/null." ) ;
-	}
+	internal IDXGIDeviceSubObject? COMObject => ComPointer?.Interface ;
+	public new ComPtr< IDXGIDeviceSubObject >? ComPointer { get ; protected set ; }
 	
 	internal DeviceSubObject( ) => this.ComPointer = new( ) ;
 	

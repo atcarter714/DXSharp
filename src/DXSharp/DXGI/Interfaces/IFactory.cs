@@ -5,7 +5,6 @@ using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
 #endregion
-
 namespace DXSharp.DXGI ;
 
 
@@ -14,9 +13,11 @@ namespace DXSharp.DXGI ;
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>. 
 /// The interface implements methods for generating DXGI objects (which also handle full screen transitions).
 /// </summary>
-public interface IFactory< out TFactory >: IObject, 
+public interface IFactory< TFactory >: IObject, 
 										   DXGIWrapper< TFactory >
-														where TFactory: IDXGIFactory {
+														where TFactory: IDXGIFactory
+{
+	internal static abstract IFactory< TFactory > Create( ) ;
 	
 	/// <summary>Enumerates the adapters (video cards).</summary>
 	/// <param name="index">
@@ -61,7 +62,7 @@ public interface IFactory< out TFactory >: IObject,
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-getwindowassociation">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void GetWindowAssociation( in HWnd pWindowHandle ) ;
+	void GetWindowAssociation( out HWnd pWindowHandle ) ;
 
 	/// <summary>Creates a swap chain.</summary>
 	/// <param name="pDevice">
@@ -83,9 +84,9 @@ public interface IFactory< out TFactory >: IObject,
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	HResult CreateSwapChain< TDevice, TSwapChain >( in  TDevice              pDevice,
+	HResult CreateSwapChain< TDevice, TSwapChain >( in  TDevice pDevice,
 													in  SwapChainDescription desc,
-													out TSwapChain?          ppSwapChain )
+													out TSwapChain? ppSwapChain )
 		where TDevice: class, IUnknownWrapper< TDevice, IUnknown >
 		where TSwapChain: SwapChain, ISwapChain, new() ;
 
@@ -109,9 +110,9 @@ public interface IFactory< out TFactory >: IObject,
 		where TAdapter: class, IAdapter, new( ) ;
 } ;
 
+// -------------------------------------------------------------------------------------
 
-public interface IFactory1: IFactory< IDXGIFactory1 >
-{
+public interface IFactory1: IFactory< IDXGIFactory1 > {
 	/// <summary>Enumerates both adapters (video cards) with or without outputs.</summary>
 	/// <param name="index">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The index of the adapter to enumerate.</para>
@@ -129,4 +130,4 @@ public interface IFactory1: IFactory< IDXGIFactory1 >
 	/// </remarks>
 	HResult EnumAdapters1< TAdapter >( uint index, out TAdapter? ppAdapter )
 											where TAdapter: class, IAdapter1, new() ;
-}
+} ;

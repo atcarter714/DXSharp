@@ -14,12 +14,14 @@ namespace DXSharp.Windows.COM ;
 // -----------------------------------------------------------------
 
 //! Imports the native COM IUnknown interface:
-[InterfaceType( ComInterfaceType.InterfaceIsIUnknown )]
-[ComImport, Guid( "00000000-0000-0000-C000-000000000046" )]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+[ComImport, Guid("00000000-0000-0000-C000-000000000046"),]
 public interface IUnknown {
 	[PreserveSig] uint AddRef( ) ;
 	[PreserveSig] uint Release( ) ;
 	[PreserveSig] int QueryInterface( ref Guid riid, out nint ppvObject ) ;
+	
+	//internal static virtual Guid InterfaceGUID => typeof(IUnknown).GUID ;
 } ;
 
 
