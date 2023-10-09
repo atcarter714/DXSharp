@@ -1,12 +1,14 @@
 ﻿#region Using Directives
 using System ;
 using System.Runtime.InteropServices ;
+
 using Windows.Win32.Graphics.Dxgi ;
-using ABI.Windows.UI.WebUI ;
+using winMD = global::Windows.Win32.Foundation ;
+using static Windows.Win32.PInvoke ;
+
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
-using winMD = global::Windows.Win32.Foundation ;
 #endregion
 
 namespace DXSharp.DXGI;
@@ -43,8 +45,8 @@ namespace DXSharp.DXGI;
 
 
 public class Factory: Object, IFactory< IDXGIFactory > {
-	Factory( nint address ): base( address ) { }
-	Factory( IDXGIFactory factory ): base( factory ) { }
+	internal Factory( nint address ): base( address ) { }
+	internal Factory( IDXGIFactory factory ): base( factory ) { }
 	
 	protected IDXGIFactory? _dxgiFactory ;
 	protected IDXGIFactory? _dxgiFactoryFetch => _dxgiFactory ??=
@@ -115,6 +117,22 @@ public class Factory: Object, IFactory< IDXGIFactory > {
 	public void MakeWindowAssociation( HWnd WindowHandle, WindowAssociation Flags ) {
 		_ = _dxgiFactoryFetch ?? throw new NullReferenceException( ) ;
 		_dxgiFactoryFetch.MakeWindowAssociation( WindowHandle, (uint)Flags ) ;
+	}
+	
+	
+	public static TFactory Create< TFactory >( ) where TFactory: Factory,
+											IFactory< IDXGIFactory >, new( ) {
+		object? ppFactory = null ;
+		HResult createResult = default ;
+		var guid = TFactory.InterfaceGUID ;
+		
+		unsafe { createResult = CreateDXGIFactory( &guid, out ppFactory ) ; }
+		if ( createResult.Failed || ppFactory is null )
+			throw new DirectXComError( "Failed to create DXGI Factory!" ) ;
+		
+		var factory = new TFactory( ) ;
+		factory.SetComPointer( new( (ppFactory as IDXGIFactory)! ) ) ;
+		return factory ;
 	}
 	
 } ;

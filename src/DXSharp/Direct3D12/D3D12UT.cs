@@ -43,7 +43,7 @@ internal static class D3D12UT {
 		catch ( COMException comErr ) {
 #if DEBUG || DEV_BUILD || DEBUG_COM
 			throw new
-				COMErrorException( $"{nameof(D3D12UT)} (internal) :: {msg}", comErr ) ;
+				DirectXComError( $"{nameof(D3D12UT)} (internal) :: {msg}", comErr ) ;
 #endif
 		}
 		catch ( Exception err ) {

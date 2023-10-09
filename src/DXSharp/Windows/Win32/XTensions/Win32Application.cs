@@ -10,14 +10,24 @@ using static Windows.Win32.PInvoke ; //! <-- CsWin32
 namespace DXSharp.Windows.Win32.XTensions ;
 
 public class Win32Application {
-	static DXApp? _sample = null ;
-	public static HWND _HWnd => _hWnd ;
 	static HWND _hWnd ;
+	static HInstance _hInstance ;
+	public static HWND _HWnd => _hWnd ;
+	static DXApp? _sample = null ;
 	
-	public static unsafe int Run( DXApp? sample, HMODULE hInstance, int nCmdShow ) {
+	public static unsafe int Run( DXApp? sample, HMODULE hInstance,
+								  ShowWindowCommands nCmdShow = ShowWindowCommands.SW_SHOWDEFAULT ) {
+		ArgumentNullException.ThrowIfNull( sample, nameof(sample) ) ;
+		
+		_hInstance = hInstance ;
+		_sample = sample ;
+		
 		// Create GCHandle for the program:
-		GCHandle sampleHandle = GCHandle.Alloc( sample ) ;
-		InstHandle instHandle = new(hInstance, false) ;
+		GCHandle   sampleHandle = GCHandle.Alloc( sample, GCHandleType.Pinned ) ;
+		InstHandle instHandle   = new(hInstance, false) ;
+
+		var iconPath = @".\file\img\DXSharp_ICON_256.ico".ToPWSTR( ) ;
+		LoadIcon( hInstance, iconPath ) ;
 		
 		// Define window class:
 		WNDCLASS_STYLES ClassStyles = new( ) { } ;
@@ -41,30 +51,29 @@ public class Win32Application {
 		// Create window
 		_hWnd = PInvoke.CreateWindowEx(
 			0,
-			windowClass.lpszClassName.ToString(),
+			windowClass.lpszClassName.ToString( ),
 			sample.Title,
 			(WINDOW_STYLE)WindowStyles.WS_OVERLAPPEDWINDOW,
 			(int)WindowPositions.CW_USEDEFAULT,
 			(int)WindowPositions.CW_USEDEFAULT,
-			sample.Width,
-			sample.Height,
+			sample.Width, sample.Height,
 			HWND.Null,
 			default,
 			instHandle,
-			(void*)sampleHandle.AddrOfPinnedObject()
+			(void *)sampleHandle.AddrOfPinnedObject( )
 		);
 
-		if( _hWnd == IntPtr.Zero ) {
+		if( _hWnd.IsNull ) {
 			// Handle error: Window creation failed
 			// Use Marshal.GetLastWin32Error() to get the error code
+			
 		}
 
 		//... rest of your code
 
 		// Don't forget to free the handle at the end of your method
-		sampleHandle.Free();
-
-		return 0;//(int)msg.wParam;
+		sampleHandle.Free( ) ;
+		return 0x00000000 ;    //(int)msg.wParam;
 	}
 	
 	static LRESULT WindowProc( HWND hWnd, uint message, WPARAM wParam, LPARAM lParam ) {
@@ -109,4 +118,10 @@ public class Win32Application {
 		// Handle any messages the switch statement didn't ...
 		return DefWindowProc( hWnd, message, wParam, lParam ) ;
 	}
+	
+	
+	/*[DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+	static extern IntPtr GetModuleHandle(string lpModuleName);
+	*/
+
 } ;

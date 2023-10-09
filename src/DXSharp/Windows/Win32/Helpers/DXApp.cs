@@ -41,7 +41,7 @@ public abstract class DXApp: IDisposable {
     // Instance Methods ::
     // --------------------------------------
     
-    void ParseCommandLineArgs( in string[] args ) {
+    protected virtual void ParseCommandLineArgs( in string[ ] args ) {
         foreach ( var arg in args ) {
             if ( arg.Equals( "-warp", StringComparison.OrdinalIgnoreCase )
                  || arg.Equals( "/warp", StringComparison.OrdinalIgnoreCase ) ) {
@@ -50,6 +50,7 @@ public abstract class DXApp: IDisposable {
             }
         }
     }
+    
     public void SetCustomWindowText( in string text ) {
         var windowText = $"{_title}: {text}";
         SetWindowText( Win32Application._HWnd, windowText ) ;
@@ -113,7 +114,6 @@ public abstract class DXApp: IDisposable {
         }
     }
     public virtual void OnKeyUp( byte wParam ) { }
-
-    public abstract void OnUpdate() ;
-    public abstract void OnRender() ;
+    public abstract void OnUpdate( ) ;
+    public abstract void OnRender( ) ;
 } ;

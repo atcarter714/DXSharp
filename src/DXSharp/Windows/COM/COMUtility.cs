@@ -20,7 +20,7 @@ public static class COMUtility {
 	
 	//! TODO: Decide which of these versions (Exists vs IsDestroyed) to keep ...
 	[MethodImpl(_MAXOPT_)] public static bool Exists( nint pUnknown ) =>
-					pUnknown.IsValid( ) && GetCOM_RCW( pUnknown ) is not null ;
+					GetCOM_RCW( pUnknown ) is not null ;
 	
 	[MethodImpl(_MAXOPT_)] public static bool IsDestroyed( nint pUnknown ) {
 		try {
@@ -62,7 +62,7 @@ public static class COMUtility {
 	
 	[MethodImpl(_MAXOPT_)]
 	public static object? GetCOM_RCW( nint pUnknown ) =>
-		pUnknown.IsValid( ) ? null : Marshal.GetObjectForIUnknown( pUnknown ) ;
+		!pUnknown.IsValid( ) ? null : Marshal.GetObjectForIUnknown( pUnknown ) ;
 	
 	
 	[MethodImpl(_MAXOPT_)]
@@ -119,16 +119,6 @@ public static class COMUtility {
 		if( ptr is NULL_PTR ) return false ;
 		return true ;
 	}
-	/*[MethodImpl(_MAXOPT_)]
-	public static bool TryGetComPtr( object? obj, out ComPtr? comPtr ) {
-		if( TryGetAddress(obj, out nint ptr) ) {
-			comPtr = new( ptr ) ;
-			return true ;
-		}
-		comPtr = null ;
-		return false ;
-	}*/
-	
 	
 	[MethodImpl(_MAXOPT_)]
 	public static ComPtr< T > GetComPtrIUnknown< T >( [NotNull] in T iObj )
