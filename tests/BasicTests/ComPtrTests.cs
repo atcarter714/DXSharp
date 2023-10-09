@@ -18,7 +18,7 @@ namespace BasicTests;
 internal class ComPtrTests
 {
 	static HResult hr;
-	static IntPtr address;
+	static nint address;
 	
 	static DXGIFactory? factory7;
 #pragma warning disable NUnit1032 // An IDisposable field/property should be Disposed in a TearDown method
@@ -59,9 +59,9 @@ internal class ComPtrTests
 		// Create a ComPtr object with COMUtility using the factory7 object:
 		var ptr = COMUtility.GetIUnknownForObject( factory7 ) ;
 		factory7Ptr = create_ComPtr< DXGIFactory >( ptr ) ;
-		Assert.IsNotNull( factory7Ptr );
-		Assert.IsFalse( factory7Ptr.Disposed );
-		Assert.IsNotNull( factory7Ptr.Interface );
+		Assert.IsNotNull( factory7Ptr ) ;
+		Assert.IsFalse( factory7Ptr.Disposed ) ;
+		Assert.IsNotNull( factory7Ptr.Interface ) ;
 		//Assert.That( factory7Ptr.Interface, Is.EqualTo( typeof( DXGIFactory ).GUID ) );
 
 		// Save & verify the COM interface address:

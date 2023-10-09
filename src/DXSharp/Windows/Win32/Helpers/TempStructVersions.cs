@@ -6,7 +6,8 @@ namespace DXSharp.Windows.Win32 ;
 
 
 [DebuggerDisplay("{Value}")]
-public struct HMonitor: IEquatable< HMonitor > {
+public struct HMonitor: IEquatable< HMonitor >,
+						IEquatable< HMONITOR > {
 	public readonly nint Value ;
 	public HMonitor( nint value ) => Value = value ;
 	public HMonitor( in Win32Handle handle ) => Value = handle.Value ;
@@ -14,8 +15,9 @@ public struct HMonitor: IEquatable< HMonitor > {
 	
 	public override int GetHashCode( ) => Value.GetHashCode( ) ;
 	public bool Equals( HMonitor other ) => Value == other.Value ;
-	public override bool Equals( object? obj ) => obj is HMonitor other && Equals( other ) ;
-
+	public bool Equals( HMONITOR other ) => Value == other.Value ;
+	public override bool Equals( object?  obj ) =>
+			obj is HMonitor other && Equals( other ) ;
 	
 	public static implicit operator nint( HMonitor hMonitor ) => hMonitor.Value ;
 	public static implicit operator HMONITOR( HMonitor hMonitor ) => new( hMonitor.Value ) ;
@@ -32,7 +34,7 @@ public struct HMonitor: IEquatable< HMonitor > {
 
 [DebuggerDisplay("{Value}")]
 public readonly struct HModule: IEquatable< HModule >,
-					   IEquatable< HMODULE > {
+								IEquatable< HMODULE > {
 	public readonly nint Value ;
 	public HModule( nint value ) => Value = value ;
 	
