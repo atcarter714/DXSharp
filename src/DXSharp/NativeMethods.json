@@ -6,7 +6,8 @@
   "comInterop": {
     "preserveSigMethods": [
       "EnumAdapters",
-      "EnumAdapters1"
+      "EnumAdapters1",
+      "GetFrameDirtyRects"
     ]
   }
 }

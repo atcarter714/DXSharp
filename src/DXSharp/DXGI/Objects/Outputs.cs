@@ -1,5 +1,4 @@
 ﻿#region Using Directives
-
 using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Dxgi ;
@@ -10,7 +9,10 @@ namespace DXSharp.DXGI ;
 
 
 /// <summary>Proxy contract for the native <see cref="IDXGIOutput"/> COM interface.</summary>
-public class Output: Object, IOutput {
+public class Output: Object, IOutput, IObjectConstruction {
+	internal static ConstructWrapper< IObject, IDXGIObject >? 
+		ConstructFunction => (o) => new Output( o ) ;
+
 	public IDXGIOutput? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutput >? ComPointer { get ; protected set ; }
 	
@@ -161,13 +163,17 @@ public class Output: Object, IOutput {
 			pStats = *( (FrameStatistics *)pResult ) ;
 		}
 	}
-	
 } ;
 
+
+
 public class Output1: Output, IOutput1 {
+	internal new static ConstructWrapper< IObject, IDXGIObject >?
+		ConstructFunction => (o) => new Output1( o ) ;
+	
 	public new IDXGIOutput1? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutput1 >? ComPointer { get ; protected set ; }
-	
+
 	
 	internal Output1( ) { }
 	internal Output1( nint ptr ): base( ptr ) { }
@@ -224,7 +230,7 @@ public class Output1: Output, IOutput1 {
 		}
 	}
 
-	public void DuplicateOutput( IDevice pDevice, out OutputDuplication? ppOutputDuplication ) {
+	public void DuplicateOutput( IDevice pDevice, out IOutputDuplication? ppOutputDuplication ) {
 		_throwIfDestroyed( ) ;
 		ppOutputDuplication = null ;
 		unsafe {
@@ -233,4 +239,4 @@ public class Output1: Output, IOutput1 {
 			ppOutputDuplication = new OutputDuplication( dup ) ;
 		}
 	}
-}
+} ;

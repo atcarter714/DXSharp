@@ -13,10 +13,8 @@ namespace DXSharp.DXGI ;
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>. 
 /// The interface implements methods for generating DXGI objects (which also handle full screen transitions).
 /// </summary>
-public interface IFactory< TFactory >: IObject, 
-										   DXGIWrapper< TFactory >
-														where TFactory: IDXGIFactory
-{
+public interface IFactory< TFactory >: IObject, DXGIWrapper< TFactory >
+														where TFactory: IDXGIFactory {
 	internal static abstract IFactory< TFactory > Create( ) ;
 	
 	/// <summary>Enumerates the adapters (video cards).</summary>
@@ -35,7 +33,7 @@ public interface IFactory< TFactory >: IObject,
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	HResult EnumAdapters< TAdapter >( uint index, out TAdapter? ppAdapter )
-											where TAdapter: class, IAdapter, new() ;
+		where TAdapter: class, IAdapter ;
 
 	/// <summary>Allows DXGI to monitor an application's message queue for the alt-enter key sequence (which causes the application to switch from windowed to full screen or vice versa).</summary>
 	/// <param name="WindowHandle">
@@ -49,7 +47,7 @@ public interface IFactory< TFactory >: IObject,
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-makewindowassociation">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void MakeWindowAssociation( in HWnd WindowHandle, WindowAssociation Flags );
+	void MakeWindowAssociation( in HWnd WindowHandle, WindowAssociation Flags ) ;
 
 	/// <summary>Get the window through which the user controls the transition to and from full screen.</summary>
 	/// <param name="pWindowHandle">
@@ -88,7 +86,7 @@ public interface IFactory< TFactory >: IObject,
 													in  SwapChainDescription desc,
 													out TSwapChain? ppSwapChain )
 		where TDevice: class, IUnknownWrapper< TDevice, IUnknown >
-		where TSwapChain: SwapChain, ISwapChain, new() ;
+		where TSwapChain: class, ISwapChain ;
 
 	
 	/// <summary>Create an adapter interface that represents a software adapter.</summary>
@@ -107,7 +105,7 @@ public interface IFactory< TFactory >: IObject,
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createsoftwareadapter">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	void CreateSoftwareAdapter< TAdapter >( HInstance Module, out TAdapter? ppAdapter ) 
-		where TAdapter: class, IAdapter, new( ) ;
+		where TAdapter: class, IAdapter ;
 } ;
 
 // -------------------------------------------------------------------------------------
@@ -129,5 +127,5 @@ public interface IFactory1: IFactory< IDXGIFactory1 > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory1-enumadapters1">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	HResult EnumAdapters1< TAdapter >( uint index, out TAdapter? ppAdapter )
-											where TAdapter: class, IAdapter1, new() ;
+											where TAdapter: class, IAdapter1 ;
 } ;

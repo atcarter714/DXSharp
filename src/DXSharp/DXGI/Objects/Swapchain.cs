@@ -1,5 +1,4 @@
 ﻿#region Using Directives
-
 using System.Numerics ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
@@ -8,32 +7,29 @@ using Windows.Win32.Graphics.Dxgi.Common ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 #endregion
-
 namespace DXSharp.DXGI ;
 
+
 public class SwapChain: DeviceSubObject, ISwapChain {
+	public static ISwapChain Instantiate( IntPtr address ) {
+		if( address == IntPtr.Zero ) return null ;
+		return new SwapChain( address ) ;
+	}
+	
 	public enum ColorSpaceSupportFlags: uint { Present = 0x1, OverlayPresent = 0x2, } ;
 	
 	public new IDXGISwapChain? COMObject { get ; init ; }
 	public new ComPtr< IDXGISwapChain >? ComPointer { get ; init ; }
 	
 	internal SwapChain( ) { }
-	public SwapChain( nint comObject ): base( comObject ) {
-		/*ComPointer = new ComPtr< IDXGISwapChain >( comObject ) ;
-		COMObject = ComPointer.Interface ;
-		PresentFlags f ;*/
-	}
-	public SwapChain( in IDXGISwapChain? comObject ): base( comObject! ) {
-		ArgumentNullException.ThrowIfNull( comObject, nameof(comObject) ) ;
-		this.COMObject  = comObject ;
-		this.ComPointer = new( comObject ) ;
-	}
+	public SwapChain( nint comObject ): base(comObject) { }
+	public SwapChain( in IDXGISwapChain? comObject ): base(comObject!) { }
 	public SwapChain( ComPtr< IDXGISwapChain > otherPtr ) {
 		this.ComPointer = otherPtr ;
 		this.COMObject  = otherPtr.Interface ;
 		uint r = this.AddRef( ) ;
 	}
-	
+
 	public void Present( uint syncInterval, PresentFlags flags ) => 
 						COMObject!.Present( syncInterval, (uint)flags ) ;
 
@@ -55,7 +51,7 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 	public void SetFullscreenState< TOutput >( bool fullscreen, in TOutput? pTarget )
 														where TOutput: class, IOutput {
 		ArgumentNullException.ThrowIfNull( pTarget, nameof(pTarget) ) ;
-		COMObject!.SetFullscreenState( fullscreen, (IDXGIOutput)pTarget.ComObject! ) ;
+		COMObject!.SetFullscreenState( fullscreen, pTarget.COMObject ) ;
 	}
 	
 	public void GetFullscreenState< TOutput >( out bool pFullscreen, out TOutput? ppTarget ) 
@@ -110,9 +106,16 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 		return count ;
 	}
 	
-}
+} ;
+
+
 
 public class SwapChain1: SwapChain, ISwapChain1 {
+	public static ISwapChain Instantiate( IntPtr address ) {
+		if( address == IntPtr.Zero ) return null ;
+		return new SwapChain1( address ) ;
+	}
+	
 	internal SwapChain1( ) { }
 	public SwapChain1( nint comObject ): base( comObject ) { }
 	public SwapChain1( in IDXGISwapChain1? comObject ): base( comObject! ) { }
@@ -178,70 +181,59 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	public void GetRestrictToOutput( out IOutput ppRestrictToOutput ) {
 		_throwIfDestroyed( ) ;
 		unsafe {
-			COMObject!.GetRestrictToOutput( out IDXGIOutput? output ) ;
-			ppRestrictToOutput = (IOutput)new Output( output ) ;
+			COMObject!.GetRestrictToOutput( out var output ) ;
+			ppRestrictToOutput = new Output( output ) ;
 		}
-		GetRestrictToOutput( out Output1 o ) ;
 	}
 
 	public void SetBackgroundColor( in RGBA pColor ) {
 		_throwIfDestroyed( ) ;
+		unsafe {
+			fixed( RGBA* p = &pColor ) {
+				COMObject!.SetBackgroundColor( (DXGI_RGBA *)p ) ;
+			}
+		}
 	}
 
 	public void GetBackgroundColor( out RGBA pColor ) {
 		_throwIfDestroyed( ) ;
+		pColor = default ;
+		unsafe {
+			DXGI_RGBA result = default ;
+			COMObject!.GetBackgroundColor( &result ) ;
+			pColor = result ;
+		}
 	}
 
 	public void SetRotation( ModeRotation rotation ) {
 		_throwIfDestroyed( ) ;
+		COMObject!.SetRotation( (DXGI_MODE_ROTATION)rotation ) ;
 	}
 
 	public void GetRotation( out ModeRotation pRotation ) {
 		_throwIfDestroyed( ) ;
+		unsafe {
+			DXGI_MODE_ROTATION result = default ;
+			COMObject!.GetRotation( &result ) ;
+			pRotation = (ModeRotation)result ;
+		}
 	}
+	
+} ;
 
-	public void SetSourceSize( uint width, uint height ) {
-		_throwIfDestroyed( ) ;
-	}
 
-	public void GetSourceSize( out uint pWidth, out uint pHeight ) {
-		_throwIfDestroyed( ) ;
-	}
 
-	public void SetMaximumFrameLatency( uint maxLatency ) {
-		_throwIfDestroyed( ) ;
-	}
-
-	public void GetMaximumFrameLatency( out uint pMaxLatency ) {
-		_throwIfDestroyed( ) ;
-	}
-
-	public void GetFrameLatencyWaitableObject( out HANDLE pHandle ) {
-		_throwIfDestroyed( ) ;
-	}
-
-	public void SetMatrixTransform( in Matrix3x2 pMatrix ) {
-		_throwIfDestroyed( ) ;
-	}
-
-	public void GetMatrixTransform( out Matrix3x2 pMatrix ) {
-		_throwIfDestroyed( ) ;
-	}
-
-	public uint GetCurrentBackBufferIndex() {
-		_throwIfDestroyed( ) ;
-	}
-
-	public void CheckColorSpaceSupport( ColorSpaceType colorSpace, out ColorSpaceSupportFlags pColorSpaceSupport ) {
-		_throwIfDestroyed( ) ;
-	}
-
-	public void SetColorSpace1( ColorSpaceType colorSpace ) {
-		_throwIfDestroyed( ) ;
-	}
-
-	public void ResizeBuffers1( uint      bufferCount,       uint          width, uint height, Format newFormat, SwapChainFlags swapChainFlags,
-								in uint[] pCreationNodeMask, in IUnknown[] ppPresentQueue ) {
-		_throwIfDestroyed( ) ;
-	}
-}
+//! TODO: Find out what the deal with these is. Where the hell did these come from? lol
+/*public void SetSourceSize( uint width, uint height ) { }
+public void GetSourceSize( out uint pWidth, out uint pHeight ) { }
+public void SetMaximumFrameLatency( uint maxLatency ) { }
+public void GetMaximumFrameLatency( out uint pMaxLatency ) { }
+public void GetFrameLatencyWaitableObject( out HANDLE pHandle ) { }
+public void SetMatrixTransform( in Matrix3x2 pMatrix ) { }
+public void GetMatrixTransform( out Matrix3x2 pMatrix ) { }
+public uint GetCurrentBackBufferIndex() { }
+public void CheckColorSpaceSupport( ColorSpaceType colorSpace, out ColorSpaceSupportFlags pColorSpaceSupport ) { }
+public void SetColorSpace1( ColorSpaceType colorSpace ) { }
+public void ResizeBuffers1( uint bufferCount, uint width, uint height, Format newFormat, SwapChainFlags swapChainFlags,
+							in uint[] pCreationNodeMask, in IUnknown[] ppPresentQueue ) { }
+							*/

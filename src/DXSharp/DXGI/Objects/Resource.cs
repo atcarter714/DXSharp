@@ -1,9 +1,12 @@
-﻿using Windows.Win32.Graphics.Dxgi ;
+﻿#region Using Directives
+using Windows.Win32.Foundation ;
+using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
-
+#endregion
 namespace DXSharp.DXGI ;
+
 
 public class Resource: DeviceSubObject, IResource {
 	public new IDXGIResource? COMObject => ComPointer?.Interface ;
@@ -15,20 +18,33 @@ public class Resource: DeviceSubObject, IResource {
 					 : new NullReferenceException( $"{nameof(Resource)} :: " +
 									$"internal {nameof(IDXGIResource)} null reference." ) ) ;
 	
-	public void GetEvictionPriority( out uint pEvictionPriority ) {
-		_throwIfDestroyed( ) ;
-		
+	internal Resource( ) { }
+	public Resource( nint pointer ): base( pointer ) { }
+	public Resource( IDXGIResource dxgiObj ): base( dxgiObj ) { }
+	
+	
+	public void GetEvictionPriority( out uint pEvictionPriority ) => 
+		_dxgiInterface.GetEvictionPriority( out pEvictionPriority ) ;
+
+	public void SetEvictionPriority( uint EvictionPriority ) =>
+		_dxgiInterface.SetEvictionPriority( EvictionPriority ) ;
+
+	public void GetUsage( out Usage pUsage ) {
+		unsafe {
+			pUsage = default ;
+			DXGI_USAGE usage = default ;
+			_dxgiInterface.GetUsage( &usage ) ;
+			pUsage = (Usage) usage ;
+		}
 	}
 
-	public void SetEvictionPriority( uint EvictionPriority ) {
-		_throwIfDestroyed( ) ;
+	public void GetSharedHandle( out Win32Handle pSharedHandle ) {
+		pSharedHandle = default ;
+		unsafe {
+			HANDLE handle = default ;
+			_dxgiInterface.GetSharedHandle( &handle ) ;
+			pSharedHandle = new( handle ) ;
+		}
 	}
-
-	public HResult GetUsage( out Usage pUsage ) {
-		_throwIfDestroyed( ) ;
-	}
-
-	public HResult GetSharedHandle( out Win32Handle pSharedHandle ) {
-		_throwIfDestroyed( ) ;
-	}
-}
+	
+} ;

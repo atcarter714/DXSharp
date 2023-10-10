@@ -1,11 +1,16 @@
-﻿#region Using Directives
+﻿/* NOTE: NOT COMPILED!
+ * This file is not compiled and was only here to experiment with the structure of the
+ * wrapper and COM interface types. It is not used in the project and will be removed.
+ */
+
+
+#region Using Directives
 using DXSharp.Windows.COM;
 
 using System.Runtime.InteropServices;
 
 using Windows.Win32.Graphics.Dxgi;
 #endregion
-
 namespace DXSharp.DXGI ;
 
 
