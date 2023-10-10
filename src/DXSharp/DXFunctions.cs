@@ -2,6 +2,7 @@
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using Windows.Win32.Graphics.Dxgi ;
+using DXSharp.Windows.COM ;
 using static Windows.Win32.PInvoke ;
 #endregion
 namespace DXSharp ;
@@ -9,7 +10,7 @@ namespace DXSharp ;
 
 public static class DXFunctions {
 	
-	internal static TFactory? CreateFactory< TFactory >( )
+	/*internal static TFactory? CreateFactory< TFactory >( )
 		where TFactory: class, IFactory< IDXGIFactory >
 	{
 		if( typeof(TFactory) == typeof(Factory) ) {
@@ -25,8 +26,9 @@ public static class DXFunctions {
 		
 		else throw new ArgumentException( $"{nameof(TFactory)} is not supported!" ) ;
 	}
+	*/
 	
-	internal static TFactory CreateFactory0< TFactory >( ) 
+	/*internal static TFactory CreateFactory0< TFactory >( ) 
 		where TFactory: class, IFactory< IDXGIFactory >, new() {
 		object? ppFactory    = null ;
 		HResult createResult = default ;
@@ -39,7 +41,7 @@ public static class DXFunctions {
 		var factory = new TFactory( ) ;
 		factory.SetComPointer( new( (ppFactory as IDXGIFactory)! ) ) ;
 		return factory ;
-	}
+	}*/
 	
 }
 

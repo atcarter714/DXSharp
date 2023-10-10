@@ -17,15 +17,15 @@ namespace DXSharp.DXGI ;
 /// Go to <a href="https://learn.microsoft.com">Microsoft Learn</a> to learn more about
 /// the native <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> interface.
 /// </remarks>
-public class Adapter: Object,
-					  IAdapter, 
-					  DXGIWrapper< IDXGIAdapter > {
-	public IDXGIAdapter? COMObject { get ; protected set ; }
+public class Adapter: Object, IAdapter, IConstructable< Adapter >, 
+					  IConstructable< Adapter, IDXGIAdapter > {
+	public IDXGIAdapter? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIAdapter >? ComPointer { get ; protected set ; }
 	
 	//! Constructors:
-	internal Adapter( nint nativePtr ): base(nativePtr) { }
-	internal Adapter( IDXGIAdapter dxObject ): base(dxObject) { }
+	internal Adapter( ) { }
+	public Adapter( nint nativePtr ): base(nativePtr) { }
+	public Adapter( IDXGIAdapter dxObject ): base(dxObject) { }
 	
 	//! IAdapter (base) Interface:
 	public void GetDesc( out AdapterDescription pDesc ) {
@@ -64,7 +64,7 @@ public class Adapter: Object,
 			if ( hr.Failed ) { ppOutput = default ; return hr ; }
 			
 			( ppOutput = new() )
-				.SetComPointer( new(pOutput) ) ;
+				.SetComPointer( new ComPtr< IDXGIOutput >(pOutput) ) ;
 			//! Previously: (TOutput)( (IOutput)new Output( pOutput ) ) ;
 		}
 		return hr ;
@@ -76,7 +76,39 @@ public class Adapter: Object,
 	
 	public void CheckInterfaceSupport( in Guid InterfaceName, out long pUMDVersion ) {
 		pUMDVersion = 0 ;
-		 
+		unsafe {
+			Guid name = InterfaceName ;
+			COMObject!.CheckInterfaceSupport( &name, out pUMDVersion ) ;
+		}
 	}
 
+	
+	internal static ConstructWrapper< IObject, IDXGIObject >? 
+		ConstructFunction => (a) => _getNew( (IDXGIAdapter)a ) ;
+	static Adapter _getNew( IDXGIAdapter unknown ) => new ( unknown ) ;
+	public static Adapter ConstructEmpty( ) => new( ) ;
+	public static Adapter ConstructWith( IDXGIAdapter arg1 ) {
+		Adapter adapter = _getNew( arg1 ) ;
+		adapter.ComPointer = new ComPtr< IDXGIAdapter >(arg1) ;
+		return adapter ;
+	}
+} ;
+
+public class Adapter1: Adapter, IAdapter1 {
+	public new IDXGIAdapter1? COMObject => ComPointer?.Interface ;
+	public new ComPtr< IDXGIAdapter1 >? ComPointer { get ; protected set ; }
+	
+	internal Adapter1( ) { }
+	public Adapter1( nint nativePtr ): base(nativePtr) { }
+	public Adapter1( IDXGIAdapter1 dxObject ): base(dxObject) { }
+	
+	public void GetDesc1( out AdapterDescription1 pDesc ) { 
+		_throwIfDestroyed( ) ;
+		unsafe {
+			DXGI_ADAPTER_DESC1 desc = default ;
+			COMObject!.GetDesc1( &desc ) ;
+			pDesc = desc ;
+		}
+	}
+	
 } ;

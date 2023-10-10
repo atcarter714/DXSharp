@@ -1,16 +1,17 @@
-﻿using System.Runtime.InteropServices ;
+﻿#region Using Directives
+using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows ;
 using DXSharp.Windows.Win32 ;
-
+#endregion
 namespace DXSharp.DXGI ;
+
 
 public interface IResource: IDeviceSubObject,
 							DXGIWrapper< IDXGIResource > {
-	// IDXGIResource methods
 	void GetEvictionPriority( [Out] out uint pEvictionPriority ) ;
 	void SetEvictionPriority( uint EvictionPriority ) ;
 	
-	HResult GetUsage( [Out] out Usage pUsage ) ;
-	HResult GetSharedHandle( [Out] out Win32Handle pSharedHandle ) ;
+	void GetUsage( [Out] out Usage pUsage ) ;
+	void GetSharedHandle( [Out] out Win32Handle pSharedHandle ) ;
 };

@@ -43,6 +43,9 @@ public interface IOutput: IObject, DXGIWrapper<IDXGIOutput> {
 
 
 public interface IOutput1: IOutput, DXGIWrapper< IDXGIOutput1 > {
+	/*static ConstructWrapper< IObject, IDXGIObject >? 
+		IObjectConstruction.ConstructFunction => (o) => new Output( o ) ;*/
+
 	void GetDisplayModeList1( Format enumFormat,
 							  uint flags,
 							  out uint pNumModes,

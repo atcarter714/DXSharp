@@ -15,7 +15,8 @@ namespace DXSharp.DXGI ;
 // -----------------------------------------------
 
 public interface ISwapChain: DXGIWrapper< IDXGISwapChain > {
-	 
+	internal static abstract ISwapChain Instantiate(nint address) ;
+	
 	void Present( uint syncInterval, PresentFlags flags ) ;
 	
 	void GetBuffer< TBuffer >( uint buffer, out TBuffer? pSurface )
@@ -43,11 +44,10 @@ public interface ISwapChain: DXGIWrapper< IDXGISwapChain > {
 // Version: IDXGISwapChain1
 // -----------------------------------------------
 
-public interface ISwapChain1: ISwapChain
-							  //DXGIWrapper< IDXGISwapChain1 > 
-{
+public interface ISwapChain1: ISwapChain,
+							  DXGIWrapper< IDXGISwapChain1 > {
 	new IDXGISwapChain1? COMObject { get ; }
-	new ComPtr<IDXGISwapChain1> ComPointer { get ; }
+	new ComPtr< IDXGISwapChain1 > ComPointer { get ; }
 	
 	void GetDesc1( out SwapChainDescription1 pDesc ) ;
 	void GetFullscreenDesc( out SwapChainFullscreenDescription pDesc ) ;
@@ -65,31 +65,8 @@ public interface ISwapChain1: ISwapChain
 	void SetBackgroundColor( in  RGBA pColor ) ;
 	void GetBackgroundColor( out RGBA pColor ) ;
 	
-	void SetRotation( ModeRotation     rotation ) ;
+	void SetRotation( ModeRotation rotation ) ;
 	void GetRotation( out ModeRotation pRotation ) ;
-	
-	void SetSourceSize( uint width,  uint height ) ;
-	void GetSourceSize( out uint pWidth, out uint pHeight ) ;
-	
-	void SetMaximumFrameLatency( uint maxLatency ) ;
-	void GetMaximumFrameLatency( out uint pMaxLatency ) ;
-	
-	void GetFrameLatencyWaitableObject( out HANDLE pHandle ) ;
-	
-	void SetMatrixTransform( in  Matrix3x2 pMatrix ) ;
-	void GetMatrixTransform( out Matrix3x2 pMatrix ) ;
-	
-	uint GetCurrentBackBufferIndex( ) ;
-	
-	void CheckColorSpaceSupport( ColorSpaceType colorSpace,
-								 out SwapChain.ColorSpaceSupportFlags pColorSpaceSupport ) ;
-	
-	void SetColorSpace1( ColorSpaceType colorSpace ) ;
-	
-	void ResizeBuffers1( uint bufferCount, uint width, uint height,
-						 Format newFormat, SwapChainFlags swapChainFlags,
-						 in uint[ ] pCreationNodeMask,
-						 in IUnknown[ ] ppPresentQueue ) ;
 } ;
 
 // -----------------------------------------------
@@ -97,3 +74,24 @@ public interface ISwapChain1: ISwapChain
 // -----------------------------------------------
 
 // ...
+
+
+
+	
+/*
+void SetSourceSize( uint width,  uint height ) ;
+void GetSourceSize( out uint pWidth, out uint pHeight ) ;
+void SetMaximumFrameLatency( uint maxLatency ) ;
+void GetMaximumFrameLatency( out uint pMaxLatency ) ;
+void GetFrameLatencyWaitableObject( out HANDLE pHandle ) ;
+void SetMatrixTransform( in  Matrix3x2 pMatrix ) ;
+void GetMatrixTransform( out Matrix3x2 pMatrix ) ;
+uint GetCurrentBackBufferIndex( ) ;
+void CheckColorSpaceSupport( ColorSpaceType colorSpace,
+							 out SwapChain.ColorSpaceSupportFlags pColorSpaceSupport ) ;
+void SetColorSpace1( ColorSpaceType colorSpace ) ;
+void ResizeBuffers1( uint bufferCount, uint width, uint height,
+					 Format newFormat, SwapChainFlags swapChainFlags,
+					 in uint[ ] pCreationNodeMask,
+					 in IUnknown[ ] ppPresentQueue ) ;
+					 */

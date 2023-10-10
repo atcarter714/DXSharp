@@ -3,6 +3,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Windows.Win32.Graphics.Dxgi ;
+using DXSharp.DXGI ;
 using static DXSharp.Windows.HResult ;
 #endregion
 
@@ -71,6 +72,7 @@ public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 public interface IUnknownWrapper< TSelf, TInterface >: IUnknownWrapper< TInterface > 
 									where TSelf: IUnknownWrapper<TSelf, TInterface>
 									where TInterface: IUnknown {
+	
 	Type WrapperType => typeof( TSelf ) ;
 	
 	HResult QueryInterface< T >( out T pInterface ) where T: IUnknown => 

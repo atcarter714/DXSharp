@@ -5,81 +5,16 @@ using Windows.Win32.Graphics.Dxgi ;
 
 using DXSharp.Windows.COM ;
 #endregion
-
 namespace DXSharp.DXGI ;
 
 
-/*public interface IDeviceSubObject< T_DXGI >: IDeviceSubObject
-	where T_DXGI: IDXGIDeviceSubObject {
-	T_DXGI? COMObject { get ; }
-} ;*/
-/*public interface IDeviceSubObject< T_DXGI >: IDeviceSubObject,
-											 IDXGIObjWrapper< T_DXGI >
-												where T_DXGI:   //IUnknown, 
-																IDXGIObject, 
-																IDXGIDeviceSubObject { } ;*/
+public class Device: Object, IDevice {
+	public IDXGIDevice? COMObject => ComPointer?.Interface ;
+	public new ComPtr< IDXGIDevice >? ComPointer { get ; protected set ; }
 
-//! Concrete Base Implementation:
-public class DeviceSubObject: Object,
-							  IDeviceSubObject {
-	internal IDXGIDeviceSubObject? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGIDeviceSubObject >? ComPointer { get ; protected set ; }
-	
-	internal DeviceSubObject( ) => this.ComPointer = new( ) ;
-	
-	public DeviceSubObject( nint ptr ): base( ptr ) {
-		if( !ptr.IsValid() ) throw new NullReferenceException( $"{nameof(DeviceSubObject)} :: " +
-															   $"The internal COM interface is destroyed/null." ) ;
-		
-		var dxgiObj = COMUtility.GetDXGIObject< IDXGIDeviceSubObject >( ptr ) ;
-		if ( dxgiObj is null ) throw new
-			COMException( $"{nameof(DeviceSubObject)}.ctor( {nameof(ptr)}: 0x{ptr:X} ): " +
-				$"Unable to initialize COM object reference from given address!" ) ;
-		
-		this.COMObject = dxgiObj ;
-		//! TODO: Calling :base(ptr) constructor is assigning this, but for IDXGIObject ... needs investigation/testing
-		this.ComPointer = new( dxgiObj ) ;
-	}
-	public DeviceSubObject( in IDXGIDeviceSubObject dxgiObj ): base( dxgiObj ) {
-		this.COMObject = dxgiObj ?? throw new ArgumentNullException( nameof(dxgiObj) ) ;
-		this.ComPointer = new( dxgiObj ) ;
-	}
-
-	
-	public T GetDevice< T >( ) where T: Device {
-		_throwIfNull( ) ;
-
-		unsafe {
-			var riid = typeof( T ).GUID ;
-			this.COMObject!.GetDevice( &riid, out var ppDevice ) ;
-			return (T)( new Device( ( ppDevice as IDXGIDevice )! ) ) ;
-		}
-	}
-} ;
-
-
-
-public class Device: Object,
-					 IDevice {
-	public IDXGIDevice? COMObject { get ; init ; }
-	public new ComPtr< IDXGIDevice >? ComPointer { get ; init ; }
-
-	public Device( nint ptr ): base( ptr ) {
-		if ( !ptr.IsValid( ) )
-			throw new NullReferenceException( $"{nameof( Device )} :: " +
-											  $"The internal COM interface is destroyed/null." ) ;
-
-		var dxgiObj = COMUtility.GetDXGIObject< IDXGIDevice >( ptr ) ;
-		if ( dxgiObj is null )
-			throw new
-				COMException( $"{nameof( Device )}.ctor( {nameof( ptr )}: 0x{ptr:X} ): " +
-							  $"Unable to initialize COM object reference from given address!" ) ;
-
-		this.COMObject = dxgiObj ;
-	}
-	public Device( in IDXGIDevice dxgiObj ): base( dxgiObj ) {
-		this.COMObject = dxgiObj ?? throw new ArgumentNullException( nameof(dxgiObj) ) ;
-	}
+	internal Device( ) { }
+	public Device( nint ptr ): base( ptr ) { }
+	public Device( in IDXGIDevice dxgiObj ): base( dxgiObj ) { }
 
 	
 	public T GetAdapter<T>( ) where T: class, IAdapter {

@@ -65,4 +65,7 @@ public struct NativeStr128 {
 			}
 		}
 	}
+	
+	public static implicit operator __char_128( NativeStr128 str ) => str.pStr ;
+	public static implicit operator NativeStr128( __char_128 str ) => new( str ) ;
 }

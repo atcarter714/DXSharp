@@ -44,9 +44,9 @@ public interface IOutputDuplication: IObject, DXGIWrapper< IDXGIOutputDuplicatio
 			/// <para>When <b>AcquireNextFrame</b> returns successfully, the calling application can access the desktop image that <b>AcquireNextFrame</b> returns in the variable at <i>ppDesktopResource</i>. If the caller specifies a zero time-out interval in the <i>TimeoutInMilliseconds</i> parameter, <b>AcquireNextFrame</b> verifies whether there is a new desktop image available, returns immediately, and indicates its outcome with the return value.  If the caller specifies an <b>INFINITE</b> time-out interval in the <i>TimeoutInMilliseconds</i> parameter, the time-out interval never elapses. <div class="alert"><b>Note</b>  You cannot cancel the wait that you specified in the <i>TimeoutInMilliseconds</i> parameter. Therefore, if you must periodically check for other conditions (for example, a terminate signal), you should specify a non-<b>INFINITE</b> time-out interval. After the time-out interval elapses, you can check for these other conditions and then call <b>AcquireNextFrame</b> again to wait for the next frame.</div> <div> </div> <b>AcquireNextFrame</b> acquires a new desktop frame when the operating system either updates the desktop bitmap image or changes the shape or position of a hardware pointer.  The new frame that <b>AcquireNextFrame</b> acquires might have only the desktop image updated, only the pointer shape or position updated, or both.</para>
 			/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-acquirenextframe#">Read more on docs.microsoft.com</see>.</para>
 			/// </remarks>
-			void AcquireNextFrame( uint TimeoutInMilliseconds, 
-										  out OutputDuplicationFrameInfo pFrameInfo, 
-										  out IResource ppDesktopResource ) ;
+			void AcquireNextFrame( uint TimeoutInMilliseconds,
+								   out OutputDuplicationFrameInfo pFrameInfo,
+								   out IResource? ppDesktopResource ) ;
 
 			/// <summary>Gets information about dirty rectangles for the current desktop frame.</summary>
 			/// <param name="DirtyRectsBufferSize">
