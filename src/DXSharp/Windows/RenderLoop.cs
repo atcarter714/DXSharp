@@ -29,6 +29,7 @@
 // THE SOFTWARE.
 // --------------------------------------------------------------------------------
 
+
 #region Using Directives
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -38,7 +39,6 @@ using Windows.Win32.UI.WindowsAndMessaging;
 using DXSharp.Windows.Win32 ;
 using static Windows.Win32.PInvoke ;
 #endregion
-
 namespace DXSharp.Windows ;
 
 
@@ -79,11 +79,9 @@ public class RenderLoop: IDisposable {
 	/// <summary>Delegate for the rendering loop.</summary>
 	public delegate void RenderCallback( ) ;
 	
-	IntPtr controlHandle;
-	Control? control;
-	bool isControlAlive;
-	bool switchControl;
-
+	Control? control ;
+	IntPtr controlHandle ;
+	bool isControlAlive, switchControl ;
 	
 	/// <summary>Initializes a new instance of the <see cref="RenderLoop"/> class.</summary>
 	public RenderLoop( ) { }
@@ -113,8 +111,8 @@ public class RenderLoop: IDisposable {
 				throw new InvalidOperationException( $"{nameof(RenderLoop)} :: " +
 															$"Control is already disposed" );
 
-			control = value;
-			switchControl = true;
+			control = value ;
+			switchControl = true ;
 		}
 	}
 	
@@ -153,22 +151,23 @@ public class RenderLoop: IDisposable {
 			}
 			
 			else {
-				nint localHandle = controlHandle;
-				if( localHandle != IntPtr.Zero ) {
+				nint localHandle = controlHandle ;
+				if( localHandle != 0x00000000 ) {
 					// Previous code not compatible with Application.AddMessageFilter but faster then DoEvents
-					MSG msg ;
-					while( PeekMessage( out msg, HWND.Null, 0,
-												0, 0 ) == 0x0000 ) {
+					while( PeekMessage( out MSG msg, HWND.Null, 0, 0, 0 ) ) {
+
+						// Get the windows message:
+						BOOL getMsgResult = GetMessage( out msg, HWND.Null, 0, 0 ) ;
 						
-						if( GetMessage( out msg, HWnd.Null, 0, 0 ) == -1 ) {
+						//! Error Check:
+						if( getMsgResult == -1 ) {
 							throw new InvalidOperationException( string.Format( CultureInfo.InvariantCulture,
 								"An error happened in rendering loop while processing windows messages. Error: {0}",
 									Marshal.GetLastWin32Error() ) ) ;
 						}
 
-						// NCDESTROY event?
-						if( msg.message is 130 ) isControlAlive = false;
-
+						//! NCDESTROY:
+						if( msg.message is 130 ) isControlAlive = false ;
 						Message message = new( ) {
 							HWnd = msg.hwnd,
 							LParam = msg.lParam,
@@ -177,15 +176,15 @@ public class RenderLoop: IDisposable {
 						} ;
 						
 						if( !Application.FilterMessage( ref message ) ) {
-							_ = TranslateMessage( msg );
-							_ = DispatchMessage( msg );
+							_ = TranslateMessage( msg ) ;
+							_ = DispatchMessage( msg ) ;
 						}
 					}
 				}
 			}
 		}
 
-		return isControlAlive || switchControl;
+		return isControlAlive || switchControl ;
 	}
 
 	/// <summary>
@@ -215,11 +214,14 @@ public class RenderLoop: IDisposable {
 	public static void Run( Control? form,
 							RenderCallback? renderCallback,
 							bool useApplicationDoEvents = false ) {
-		if ( form is null ) throw new ArgumentNullException( nameof(form) ) ;
-		if( renderCallback is null ) throw new ArgumentNullException( nameof(renderCallback) ) ;
-		
+		ArgumentNullException.ThrowIfNull( form, nameof(form) ) ;
+		ArgumentNullException.ThrowIfNull( renderCallback, nameof(renderCallback) ) ;
 		form.Show( ) ;
-		using RenderLoop renderLoop = new(form) { UseApplicationDoEvents = useApplicationDoEvents };
+		
+		using RenderLoop renderLoop = new( form ) {
+			UseApplicationDoEvents = useApplicationDoEvents,
+			
+		};
 		while( renderLoop.NextFrame( ) )
 			renderCallback( ) ;
 	}

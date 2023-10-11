@@ -8,6 +8,29 @@ namespace DXSharp.DXGI ;
 
 /// <summary>Wrapper interface for the native IDXGIObject COM interface</summary>
 public abstract class Object: IObject {
+
+	public static IObject ConstructInstance< TObject, TInterface >( TInterface pComObj )
+		where TObject: class, IObject, IUnknownWrapper< TInterface > where TInterface: IDXGIObject {
+		return TObject.ConstructInstance< TObject, TInterface >( pComObj ) ;
+	}
+	/*public static TObject ConstructInstance< TObject, I >( nint ptr )
+		where TObject: class, IObject, IUnknownWrapper< IDXGIObject > 
+	{
+		return (TObject)Object.ConstructInstance< Object, I >( ptr ) ;
+	}*/
+	
+	internal static T2 ConvertWrapper< T1, I1, T2, I2 >( T1 wrapper ) 
+		where T1: class, IUnknownWrapper< I1 >
+		where I1: class, IDXGIObject
+		where T2: class, IObject, IUnknownWrapper< I2 >
+		where I2: class, IDXGIObject
+	{
+		ArgumentNullException.ThrowIfNull( wrapper, nameof(wrapper) ) ;
+		return
+			(T2)T2.ConstructInstance< T2, I2 >
+				( (I2)( (IDXGIObject)( wrapper.ComPointer?.Interface )! ) ) ;
+	}
+	
 	internal Object( ) => 
 		this.ComPointer = new( ) ;
 	internal Object( IDXGIObject dxgiObject ) {
@@ -31,8 +54,8 @@ public abstract class Object: IObject {
 	}
 	~Object( ) => Dispose( false ) ;
 	
+	public nint BasePointer => this.ComPointer?.BaseAddress ?? 0x00 ;
 	public int RefCount { get ; protected set ; }
-	public nint BasePointer { get ; internal init ; }
 	public ComPtr< IDXGIObject >? ComPointer { get ; init ; }
 	IDXGIObject? _interface => ComPointer?.Interface ;
 	
@@ -105,13 +128,6 @@ public abstract class Object: IObject {
 			// TODO: free unmanaged resources (unmanaged objects) and override finalizer
 			// TODO: set large fields to null
 			if( _interface is not null ) {
-
-				/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-				Before:
-								int refCount = Marshal.ReleaseComObject( m_dxgiObject );
-				After:
-								_ = Marshal.ReleaseComObject( m_dxgiObject );
-				*/
 				_ = Marshal.ReleaseComObject( _interface );
 			}
 
@@ -131,4 +147,9 @@ public abstract class Object: IObject {
 		return ValueTask.CompletedTask ;
 	}
 #endregion
+
+	/*static override ConstructWrapper< IUnknownWrapper< IDXGIObject >, IDXGIObject >? 
+		ConstructFunction { get ; }
+	internal static ConstructWrapper< IUnknownWrapper< IDXGIObject >, IDXGIObject >?
+		ConstructFunction { get ; }*/
 } ;

@@ -11,9 +11,17 @@ public class OutputDuplication: Object, IOutputDuplication {
 	public IDXGIOutputDuplication? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutputDuplication >? ComPointer { get ; protected set ; }
 	
-	public OutputDuplication( nint pointer ): base( pointer ) { }
-	public OutputDuplication( IDXGIOutputDuplication dxgiObj ): base( dxgiObj ) { }
-	public OutputDuplication( ComPtr< IDXGIOutputDuplication >? comPtr ): base( comPtr!.InterfaceVPtr ) { }
+	public OutputDuplication( nint ptr ): base( ptr ) { 
+		ComPointer = new( ptr ) ;
+	}
+	public OutputDuplication( IDXGIOutputDuplication dxgiObj ): base( dxgiObj ) {
+		ComPointer = new( dxgiObj ) ;
+	}
+
+	public OutputDuplication( ComPtr< IDXGIOutputDuplication >? comPtr ): base( comPtr!.InterfaceVPtr ) {
+		ArgumentNullException.ThrowIfNull( comPtr, nameof(comPtr) ) ;
+		ComPointer = comPtr ;
+	}
 	
 	IDXGIOutputDuplication _dxgiInterface => COMObject ??
 		throw ( ComPointer is not null && ComPointer.Disposed

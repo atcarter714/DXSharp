@@ -3,7 +3,6 @@
 namespace BasicSample ;
 
 
-public class Window: RenderForm
-{
+public class Window: RenderForm {
 	
 }

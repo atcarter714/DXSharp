@@ -31,21 +31,26 @@ namespace DXSharp.DXGI;
 
 
 
-public class Factory: Object, IFactory< IDXGIFactory > {
-	public static IFactory< IDXGIFactory > Create( ) {
+public class Factory: Object, IFactory {
+	// -----------------------------------------------------------------------------------
+	public static IFactory Create< TFactory >( ) where TFactory: class, IFactory {
 		var dxgiFactory = DXGIFunctions.CreateDXGIFactory< IDXGIFactory >( ) 
 			?? throw new DirectXComError( "Failed to create DXGI Factory!" ) ;
-		return new Factory( dxgiFactory ) ;
+		return (new Factory( dxgiFactory )) ;
 	}
+	// -----------------------------------------------------------------------------------
 	
 	public IDXGIFactory? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIFactory >? ComPointer { get ; protected set ; }
 	
 	
 	internal Factory( ) { }
-	internal Factory( nint address ): base( address ) { }
-	internal Factory( IDXGIFactory factory ): base( factory ) { }
-	internal Factory( object obj ): base(COMUtility.GetIUnknownForObject(obj)) { }
+	internal Factory( nint address ): base( address ) => 
+		ComPointer = new( address ) ;
+	internal Factory( IDXGIFactory factory ): base( factory ) => 
+		ComPointer = new( factory ) ;
+	internal Factory( object obj ): 
+		base( COMUtility.GetIUnknownForObject(obj) ) { }
 
 	
 	public HResult CreateSwapChain< TDevice, TSwapChain >( in TDevice pDevice,
@@ -59,13 +64,12 @@ public class Factory: Object, IFactory< IDXGIFactory > {
 		unsafe {
 			var descCopy = desc ;
 			var _hr = COMObject!.CreateSwapChain( pDevice.ComObject,
-												(DXGI_SWAP_CHAIN_DESC*)&descCopy, 
+												(DXGI_SWAP_CHAIN_DESC *)&descCopy, 
 													out IDXGISwapChain? pSwapChain ) ;
 			
 			if( pSwapChain is null || _hr.Failed ) return _hr ;
 			var ptr = COMUtility.GetInterfaceAddress( pSwapChain ) ;
 			ppSwapChain = (TSwapChain)(TSwapChain.Instantiate(ptr)) ;
-			//ppSwapChain.SetComPointer( new ComPtr<IDXGISwapChain>(pSwapChain) ) ;
 		}
 		return HResult.S_OK ;
 	}
@@ -75,11 +79,12 @@ public class Factory: Object, IFactory< IDXGIFactory > {
 		_ = COMObject ?? throw new NullReferenceException( ) ;
 		ppAdapter = default ;
 		unsafe {
-			COMObject.CreateSoftwareAdapter( Module, out IDXGIAdapter? pAdapter ) ; 
-			var adapter = TAdapter.ConstructFunction?.Invoke( pAdapter ) as TAdapter 
-				?? throw new NullReferenceException( ) ;
+			COMObject.CreateSoftwareAdapter( Module, out IDXGIAdapter? pAdapter ) ;
 			
-			adapter.SetComPointer( new ComPtr< IDXGIAdapter >(pAdapter) ) ;
+			var adapter = TAdapter.ConstructInstance< TAdapter, IDXGIAdapter >( pAdapter ) 
+							  as TAdapter ?? throw new NullReferenceException( ) ;
+			//adapter.SetComPointer( new ComPtr< IDXGIAdapter >(pAdapter) ) ;
+			
 			ppAdapter = adapter ;
 		}
 	}
@@ -116,23 +121,24 @@ public class Factory: Object, IFactory< IDXGIFactory > {
 		
 		unsafe {
 			COMObject.EnumAdapters( index, out IDXGIAdapter? pAdapter ) ;
-			var adapter = (TAdapter)( TAdapter.ConstructFunction(pAdapter) ) ;
+			
+			var adapter = (TAdapter)( TAdapter.ConstructInstance<Adapter, IDXGIAdapter>(pAdapter) ) ;
 			
 			ppAdapter = adapter ;
 		}
 		
-		EnumAdapters< Adapter >( 0, out var aa ) ;
 		return HResult.S_OK ;
-		//adapter.SetComPointer( new ComPtr< IDXGIAdapter >(pAdapter) ) ;
 	}
 } ;
 
 public class Factory1: Factory, IFactory1 {
-	public new static IFactory< IDXGIFactory1 > Create( ) {
+	// -------------------------------------------------------------------------------------
+	public new static IFactory Create< TFactory >( ) where TFactory: class, IFactory {
 		var dxgiFactory = DXGIFunctions.CreateDXGIFactory1< IDXGIFactory1 >( ) 
 			?? throw new DirectXComError( "Failed to create DXGI Factory!" ) ;
 		return new Factory1( dxgiFactory ) ;
 	}
+	// -------------------------------------------------------------------------------------
 	
 	public new IDXGIFactory1? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIFactory1 >? ComPointer { get ; protected set ; }
@@ -141,32 +147,31 @@ public class Factory1: Factory, IFactory1 {
 	public Factory1( nint ptr ): base(ptr) { }
 	public Factory1( IDXGIFactory1 dxgiObj ): base(dxgiObj) { }
 	
-	public new HResult EnumAdapters< TAdapter >( uint index, out TAdapter? ppAdapter ) 
+	/*public new HResult EnumAdapters< TAdapter >( uint index, out TAdapter? ppAdapter ) 
 		where TAdapter: class, IAdapter {
 		if( COMObject is null ) throw new NullReferenceException( ) ;
 		ppAdapter = default ;
 		
 		COMObject.EnumAdapters1( index, out IDXGIAdapter1? pAdapter ) ; 
 		var comptr = new ComPtr< IDXGIAdapter >( pAdapter ) ;
-		ppAdapter = ((TAdapter)TAdapter.ConstructFunction?.Invoke(pAdapter)!)
+		ppAdapter = ((TAdapter)TAdapter.ConstructInstance<TAdapter, IDXGIAdapter>(pAdapter)!)
 										?? throw new NullReferenceException( ) ;
 		ppAdapter.SetComPointer( comptr ) ;
 		
 		return HResult.S_OK ;
-	}
+	}*/
 	
 	public HResult EnumAdapters1< TAdapter >( uint index, out TAdapter? ppAdapter )
 												where TAdapter: class, IAdapter1 {
 		if( COMObject is null ) throw new NullReferenceException( ) ;
 		ppAdapter = default ;
 		
-		COMObject.EnumAdapters1( index, out IDXGIAdapter1? pAdapter ) ; 
-		var comptr = new ComPtr< IDXGIAdapter1 >( pAdapter ) ;
+		var _hr = COMObject.EnumAdapters1( index, out IDXGIAdapter1? pAdapter ) ; 
 		
-		ppAdapter = (TAdapter)( (TAdapter.ConstructFunction?.Invoke(pAdapter) )
-										?? throw new NullReferenceException() ) ;
-		ppAdapter.SetComPointer( comptr ) ;
+		ppAdapter = ( (TAdapter.ConstructInstance< TAdapter, IDXGIAdapter1 >(pAdapter) )
+										as TAdapter ?? throw new NullReferenceException() ) ;
 		
+		//ppAdapter.SetComPointer( comptr ) ;
 		return HResult.S_OK ;
 	}
 } ;

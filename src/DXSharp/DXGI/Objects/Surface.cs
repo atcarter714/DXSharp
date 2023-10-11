@@ -70,13 +70,14 @@ public class Surface: DeviceSubObject, ISurface {
 		if ( !ptr.IsValid() )
 			throw new NullReferenceException( $"{nameof( Surface )} :: " +
 											  $"The internal COM interface is destroyed/null." ) ;
-		
-		/*var dxgiObj = COMUtility.GetDXGIObject< IDXGISurface >( ptr ) ;
-		this.COMObject = dxgiObj ??
-			 throw new COMException( $"{nameof( Surface )}.ctor( {nameof( ptr )}: 0x{ptr:X} ): " + 
-									 $"Unable to initialize COM object reference from given address!" ) ;*/
+		ComPointer = new( ptr ) ;
 	}
-	public Surface( in IDXGISurface dxgiObj ): base( dxgiObj ) { }
+	public Surface( in IDXGISurface dxgiObj ): base( dxgiObj ) {
+		if ( dxgiObj is null )
+			throw new NullReferenceException( $"{nameof( Surface )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		ComPointer = new( dxgiObj ) ;
+	}
 	
 	
 	public void GetDesc( out SurfaceDescription pDesc ) { pDesc = default ; }

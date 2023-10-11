@@ -20,6 +20,7 @@ public interface ITimeSnapshot {
 } ;
 public interface ITimeProvider: ITimeSnapshot {
 	int UpdateDelay { get ; set ; }
+	float ActualDeltaTime { get ; }
 	Action< float >? OnTickAction { get ; set ; }
 	
 	void Start( ) ;
@@ -52,7 +53,6 @@ public class Time: ITimeProvider {
 	float[ ] _frameTimes = new float[ _AVG_FRAMES ] ;
 	TimeSpan _deltaTime, _lastFrame, _averageFrameTimeCache ;
 	
-	
 	public TimeSpan DeltaTime {
 		get { lock(_lock) return _deltaTime ; }
 		protected set { lock(_lock) _deltaTime = value ; }
@@ -64,7 +64,6 @@ public class Time: ITimeProvider {
 	}
 	public TimeSpan TotalTime => DateTime.Now - _startTime ;
 	public TimeSpan AverageFrameTime => _getAverageFrameTime( ) ;
-
 	TimeSpan _getAverageFrameTime( ) {
 		//! TODO: Implement this with SIMD intrinsics
 		//  This "unsafe" version is better than Linq or regular array indexing
@@ -102,33 +101,49 @@ public class Time: ITimeProvider {
 															  ( _frameTimestamp = Stopwatch.GetTimestamp() ) )
 																			.TotalSeconds;
 	
+	public CancellationTokenSource TaskCancellationSource => _tokenSource ;
+
+
+	public Time( ) => _tokenSource = new( ) ;
+	public Time( CancellationTokenSource cancelSrc ) => this._tokenSource = cancelSrc ;
 	
+	protected virtual void onAwake( ) {
+		_tokenSource ??= new( ) ;
+		_stopwatch ??= new( ) ;
+	}
+	
+	
+
 	public void RunAsync( ) {
 		Task.Run(( ) => {
-			 while ( !_tokenSource.IsCancellationRequested ) {
+			Start( ) ;
+			while ( !_tokenSource.IsCancellationRequested ) {
 				 Update( ) ;
 				 
 				 // Optional: Slight delay to avoid tight-looping
 				 if( UpdateDelay > 0 ) Task.Delay( UpdateDelay )
-											.Wait( ) ;
-			 }}, _tokenSource.Token ) ;
+												.Wait( ) ;
+			}
+			Stop( ) ;
+		}, _tokenSource.Token ) ;
 	}
 	
 	public void Start( ) {
+		onAwake( ) ;
+		
 		if ( _stopwatch.IsRunning ) return ;
-		_tokenSource = new( ) ;
-		_stopwatch.Start( ) ;
 		_startTime = DateTime.Now ;
+		_stopwatch.Start( ) ;
 	}
 	
 	public void Stop( ) {
-		_tokenSource.Cancel( ) ;
-		_stopwatch.Stop( ) ;
+		_tokenSource?.Cancel( ) ;
+		_stopwatch?.Stop( ) ;
 	}
 
 	public void Reset( ) {
-		_stopwatch.Reset( ) ;
-		_tokenSource.Cancel( ) ;
+		_stopwatch?.Reset( ) ;
+		_tokenSource?.Cancel( ) ;
 		
 		_currentFrame = 0 ;
 		_startTime = DateTime.MinValue ;
@@ -166,7 +181,6 @@ public class Time: ITimeProvider {
 		AverageFrameTime = _getAverageFrameTime( ),
 	} ;
 	
-	//public void OnTick( ) { }
 } ;
 
 // ------------------------------------------------------------

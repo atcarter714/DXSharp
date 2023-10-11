@@ -4,16 +4,13 @@ using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
-using Object = DXSharp.DXGI.Object ;
-#endregion
 
+using static DXSharp.InteropUtils ;
+#endregion
 namespace DXSharp.Windows.COM ;
 
 
 public static class COMUtility {
-	/// <summary>Value of a "null" (zero) pointer/address.</summary>
-	public const int NULL_PTR = 0x0000000000000000 ;
-	internal const short _MAXOPT_ = (0x100|0x200) ;
 	
 	static HResult _lastHResult = HResult.S_OK ;
 	internal static HResult LastHResult => _lastHResult ;
@@ -33,7 +30,6 @@ public static class COMUtility {
 		catch ( COMException comError ) { return true ; }
 		catch ( AccessViolationException e ) { return true ; }
 	}
-	
 	
 	[MethodImpl(_MAXOPT_)] public static nint GetIUnknownForObject( [MaybeNull] in object? obj ) {
 		if( obj is null ) return NULL_PTR ;
@@ -63,19 +59,27 @@ public static class COMUtility {
 	[MethodImpl(_MAXOPT_)]
 	public static object? GetCOM_RCW( nint pUnknown ) =>
 		!pUnknown.IsValid( ) ? null : Marshal.GetObjectForIUnknown( pUnknown ) ;
-	
-	
-	[MethodImpl(_MAXOPT_)]
+
+
+	[MethodImpl( _MAXOPT_ )]
 	public static T? GetCOMObject< T >( nint pUnknown )
-									where T: IUnknown => (T)GetCOM_RCW( pUnknown )! ;
-	
-	[MethodImpl(_MAXOPT_)]
+										where T: IUnknown {
+		var guid = __uuidof<T>( ) ;
+		var hr = Marshal.QueryInterface( pUnknown, ref guid,
+									out nint ptrToInterface ) ;
+		_lastHResult = new( hr ) ;
+		var _interface = (T)Marshal
+			.GetTypedObjectForIUnknown( ptrToInterface, typeof(T) ) ;
+		return _interface ;
+	} //(T)GetCOM_RCW( pUnknown )! ;
+
+	/*[MethodImpl( _MAXOPT_ )]
 	public static void GetCOMObject< T >( nint pUnknown, out T? ppObject ) where T: IUnknown =>
-												ppObject = (T)GetCOM_RCW( pUnknown )! ;
+		ppObject = GetCOMObject< T >( pUnknown ) ; //(T)GetCOM_RCW( pUnknown )! ;
 	
 	[MethodImpl(_MAXOPT_)]
 	public static T? GetCOMObject< T >( [NotNull] in ComPtr< T > pUnknown ) where T: IUnknown =>
-															(T)GetCOM_RCW( pUnknown.BaseAddress )! ;
+															(T)GetCOM_RCW( pUnknown.BaseAddress )! ;*/
 	
 	
 	[MethodImpl(_MAXOPT_)]
@@ -112,7 +116,7 @@ public static class COMUtility {
 	}
 	
 	[MethodImpl(_MAXOPT_)]
-	public static bool TryGetAddress( object? obj, out nint ptr ) {
+	public static bool TryGetBaseAddress( object? obj, out nint ptr ) {
 		ptr = NULL_PTR ;
 		if( obj is null ) return false ;
 		ptr = Marshal.GetIUnknownForObject( obj ) ;
@@ -133,10 +137,8 @@ public static class COMUtility {
 	[MethodImpl(_MAXOPT_)]
 	public static bool IsCOMObject( in object obj ) => Marshal.IsComObject( obj ) ;
 	[MethodImpl(_MAXOPT_)]
-	public static bool IsCOMObject< T >( in T? obj ) {
-		if( obj is null ) return false ;
-		return IsCOMObject( obj ) ;
-	}
+	public static bool IsCOMObject< T >( in T? obj ) => 
+		obj is not null && Marshal.IsComObject( obj ) ;
 	[MethodImpl(_MAXOPT_)]
 	public static bool IsCOMObjectOfType< T >( nint ptr ) => 
 		ptr.IsValid() && GetCOM_RCW( ptr ) is T ;
@@ -153,6 +155,9 @@ public static class COMUtility {
 	#region Interface Queries
 		
 	//! TODO: Marshal.GetComInterfaceForObject( pInterface, wrapper.ComType ) may simplify this ...
+	[MethodImpl( MethodImplOptions.AggressiveOptimization )]
+	public static nint GetInterfaceVPointer< T, I >( [NotNull] T comObj ) =>
+		Marshal.GetComInterfaceForObject< T, I >( comObj ?? throw new ArgumentNullException(nameof(comObj)) ) ;
 
 	[MethodImpl(MethodImplOptions.AggressiveOptimization)]
 	public static HResult QueryInterface< TInterface >( nint pUnknown,
@@ -196,12 +201,10 @@ public static class COMUtility {
 	
 	
 	
-	[MethodImpl(_MAXOPT_)]
-	public static T? GetDXGIObject< T >( nint pUnknown )
+	[MethodImpl(_MAXOPT_)] public static T? GetDXGIObject< T >( nint pUnknown )
 		where T: class, IDXGIObject => GetCOM_RCW( pUnknown ) as T ;
 	
-	[MethodImpl(_MAXOPT_)]
-	public static T? GetD3D12Object< T >( nint pUnknown )
+	[MethodImpl(_MAXOPT_)] public static T? GetD3D12Object< T >( nint pUnknown )
 		where T: class, ID3D12Object => GetCOM_RCW( pUnknown ) as T ;
 		
 	// ------------------------------------------------------------------------------

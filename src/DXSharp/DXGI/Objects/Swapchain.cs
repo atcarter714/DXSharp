@@ -40,8 +40,11 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 		pSurface = null ;
 		unsafe {
 			Guid guid = _getBufferIID< TBuffer >( ) ;
+			
 			COMObject!.GetBuffer( buffer, &guid, out var comObj ) ;
-			pSurface = (TBuffer.CreateInstanceOf< TBuffer, IDXGISurface >( (IDXGISurface)comObj )) ;
+			
+			pSurface = TBuffer.ConstructInstance<TBuffer, IDXGISurface>( (IDXGISurface)comObj )
+							as TBuffer ;
 		}
 	}
 	
@@ -117,10 +120,14 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	}
 	
 	internal SwapChain1( ) { }
-	public SwapChain1( nint comObject ): base( comObject ) { }
-	public SwapChain1( in IDXGISwapChain1? comObject ): base( comObject! ) { }
+	public SwapChain1( nint ptr ): base( ptr ) { 
+		ComPointer = new( ptr ) ;
+	}
+	public SwapChain1( in IDXGISwapChain1? comObject ): base( comObject! ) {
+		ComPointer = new( comObject! ) ;
+	}
 	public SwapChain1( ComPtr< IDXGISwapChain1 > otherPtr ): 
-		this(otherPtr.InterfaceVPtr) { }
+		this(otherPtr.InterfaceVPtr) => ComPointer = otherPtr ;
 
 	public new IDXGISwapChain1? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGISwapChain1 > ComPointer { get ; protected set ; }

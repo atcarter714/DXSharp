@@ -17,15 +17,39 @@ namespace DXSharp.DXGI ;
 /// Go to <a href="https://learn.microsoft.com">Microsoft Learn</a> to learn more about
 /// the native <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> interface.
 /// </remarks>
-public class Adapter: Object, IAdapter, IConstructable< Adapter >, 
-					  IConstructable< Adapter, IDXGIAdapter > {
+public class Adapter: Object, IAdapter
+					  /*, IConstructable< Adapter >, 
+					  IConstructable< Adapter, IDXGIAdapter > */
+{
+	// -------------------------------------------------------------------------------------
+	
+	public new static IObject ConstructInstance< TObject, TInterface >( TInterface pComObj ) 
+		where TObject: class, IObject, IUnknownWrapper< TInterface > 
+		where TInterface: IDXGIObject {
+		var adapter = new Adapter( pComObj ) ;
+		return ( adapter ) ;
+	}
+
+	// -------------------------------------------------------------------------------------
+	
 	public IDXGIAdapter? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIAdapter >? ComPointer { get ; protected set ; }
 	
 	//! Constructors:
 	internal Adapter( ) { }
-	public Adapter( nint nativePtr ): base(nativePtr) { }
-	public Adapter( IDXGIAdapter dxObject ): base(dxObject) { }
+	public Adapter( nint address ): base(address) {
+		ComPointer = new( address ) ;
+	}
+	public Adapter( IDXGIObject dxObject ): this( (IDXGIAdapter)dxObject ) {
+		ComPointer = new( (IDXGIAdapter)dxObject ) ;
+	}
+	public Adapter( IDXGIAdapter dxObject ): base( dxObject ) {
+		ComPointer = new( dxObject ) ;
+	}
+	public Adapter( ComPtr< IDXGIAdapter > comPtr ) {
+		ComPointer = comPtr ;
+		ComPointer.Interface!.AddRef( ) ;
+	}
 	
 	//! IAdapter (base) Interface:
 	public void GetDesc( out AdapterDescription pDesc ) {
@@ -83,7 +107,7 @@ public class Adapter: Object, IAdapter, IConstructable< Adapter >,
 	}
 
 	
-	internal static ConstructWrapper< IObject, IDXGIObject >? 
+	/*internal static ConstructWrapper< IObject, IDXGIObject >? 
 		ConstructFunction => (a) => _getNew( (IDXGIAdapter)a ) ;
 	static Adapter _getNew( IDXGIAdapter unknown ) => new ( unknown ) ;
 	public static Adapter ConstructEmpty( ) => new( ) ;
@@ -91,7 +115,7 @@ public class Adapter: Object, IAdapter, IConstructable< Adapter >,
 		Adapter adapter = _getNew( arg1 ) ;
 		adapter.ComPointer = new ComPtr< IDXGIAdapter >(arg1) ;
 		return adapter ;
-	}
+	}*/
 } ;
 
 public class Adapter1: Adapter, IAdapter1 {
@@ -99,7 +123,7 @@ public class Adapter1: Adapter, IAdapter1 {
 	public new ComPtr< IDXGIAdapter1 >? ComPointer { get ; protected set ; }
 	
 	internal Adapter1( ) { }
-	public Adapter1( nint nativePtr ): base(nativePtr) { }
+	public Adapter1( nint address ): base(address) { }
 	public Adapter1( IDXGIAdapter1 dxObject ): base(dxObject) { }
 	
 	public void GetDesc1( out AdapterDescription1 pDesc ) { 
