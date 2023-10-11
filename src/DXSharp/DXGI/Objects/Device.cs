@@ -13,8 +13,12 @@ public class Device: Object, IDevice {
 	public new ComPtr< IDXGIDevice >? ComPointer { get ; protected set ; }
 
 	internal Device( ) { }
-	public Device( nint ptr ): base( ptr ) { }
-	public Device( in IDXGIDevice dxgiObj ): base( dxgiObj ) { }
+	public Device( nint ptr ): base( ptr ) {
+		ComPointer = new( ptr ) ;
+	}
+	public Device( in IDXGIDevice dxgiObj ): base( dxgiObj ) {
+		ComPointer = new( dxgiObj ) ;
+	}
 
 	
 	public T GetAdapter<T>( ) where T: class, IAdapter {

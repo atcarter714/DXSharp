@@ -1,28 +1,16 @@
 ﻿#region Using Directives
-
 using System.Reflection ;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices ;
 
-using Windows.Win32.
-/* Unmerged change from project 'DXSharp (net7.0-windows10.0.22621.0)'
-Before:
+using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi.Common;
 
-using DXSharp.Windows;
-using DXSharp.Windows.COM;
-using Windows.Win32.Graphics.Dxgi;
-using WinRT;
-After:
-using Windows.Win32.Graphics.Dxgi;
-using Windows.Win32.Graphics.Dxgi.Common;
-
-using WinRT;
-*/
-Graphics.Dxgi.Common;
-
+using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
-#endregion
 
+using static DXSharp.DXSharpUtils ;
+#endregion
 namespace DXSharp.DXGI.XTensions ;
 
 
@@ -43,7 +31,90 @@ public static partial class DXGIXTensions {
 	/// <returns>True if alive, otherwise false</returns>
 	public static bool IsAlive( this IUnknownWrapper? comObj ) => comObj is { BasePointer: not 0 } ;
 	
-	
 	internal static DXGI_FORMAT AsDXGI_FORMAT( this Format format ) => (DXGI_FORMAT)format ;
 	internal static Format AsFormat( this DXGI_FORMAT format ) => (Format)format ;
+
+	// -----------------------------------------------------------------------------------------------
+	
+	[MethodImpl(_MAXOPT_)] public static bool Is( this HResult hr, in HResult other ) => hr.Value == other.Value ;
+	[MethodImpl(_MAXOPT_)] public static bool Is( this HResult hr, in HRESULT other ) => hr.Value == other.Value ;
+	
+	// -----------------------------------------------------------------------------------------------
+	
+	
+	public static IAdapter? FindBestAdapter< A >( this IFactory factory )
+													//where F: class, IFactory
+													where A: class, IAdapter {
+		ArgumentNullException.ThrowIfNull( factory, nameof(factory) ) ;
+		const int MAX = IFactory.MAX_ADAPTER_COUNT ;
+		
+		A? adapter = null ;
+		AdapterDescription desc = default ;
+		
+		for ( int i = 0; i < MAX; ++i ) {
+			var hr = factory.EnumAdapters< A >( 0, out var _adapter ) ;
+			if ( hr.Failed ) {
+				if ( hr.Is( HResult.DXGI_ERROR_NOT_FOUND ) ) break ;
+				throw new DirectXComError( hr, $"{nameof( DXGIXTensions )} :: " +
+											   $"Error enumerating adapters! " +
+											   $"HRESULT: 0x{hr.Value:X} ({hr.Value})" ) ;
+			}
+			
+			if ( _adapter is null ) continue ;
+			_adapter.GetDesc( out var _desc ) ;
+			
+			// Assign the "best" adapter by greatest amount of VRAM:
+			if ( adapter is null ) {
+				adapter = _adapter ;
+				desc	= _desc ;
+				continue ;
+			}
+			if ( _desc.DedicatedVideoMemory > desc.DedicatedVideoMemory ) {
+				adapter = _adapter ;
+				desc	= _desc ;
+			}
+		}
+		
+		return adapter ;
+	}
+	
+	/*
+	public static (IAdapter? adapter, AdapterDescription desc) GetAllAdapters< F, A >( this F factory )
+													where F: class, IFactory
+													where A: class, IAdapter {
+		ArgumentNullException.ThrowIfNull( factory, nameof(factory) ) ;
+		const int MAX = IFactory.MAX_ADAPTER_COUNT ;
+		
+		Adapter? adapter = null ;
+		AdapterDescription desc = default ;
+		//List< (Adapter Adapter, AdapterDescription Description) > allAdapters = new( ) ;
+
+		for ( int i = 0; i < MAX; ++i ) {
+			var hr = factory.EnumAdapters< Adapter >( 0, out var _adapter ) ;
+			if ( hr.Failed ) {
+				if ( hr.Is( HResult.DXGI_ERROR_NOT_FOUND ) ) break ;
+				throw new DirectXComError( hr, $"{nameof( DXGIXTensions )} :: " +
+											   $"Error enumerating adapters! " +
+											   $"HRESULT: 0x{hr.Value:X} ({hr.Value})" ) ;
+			}
+			
+			if ( _adapter is null ) continue ;
+			_adapter.GetDesc( out var _desc ) ;
+			//allAdapters.Add( (_adapter, _desc) ) ;
+			
+			if ( adapter is null ) {
+				adapter = _adapter ;
+				desc	= _desc ;
+				continue ;
+			}
+			
+			// Does the adapter have more available VRAM?
+			if ( _desc.DedicatedVideoMemory > desc.DedicatedVideoMemory ) {
+				adapter = _adapter ;
+				desc	= _desc ;
+			}
+		}
+		
+		return adapter ;
+	}*/
 } ;

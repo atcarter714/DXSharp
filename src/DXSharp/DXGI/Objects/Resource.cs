@@ -19,8 +19,12 @@ public class Resource: DeviceSubObject, IResource {
 									$"internal {nameof(IDXGIResource)} null reference." ) ) ;
 	
 	internal Resource( ) { }
-	public Resource( nint pointer ): base( pointer ) { }
-	public Resource( IDXGIResource dxgiObj ): base( dxgiObj ) { }
+	public Resource( nint ptr ): base( ptr ) {
+		ComPointer = new( ptr ) ;
+	}
+	public Resource( IDXGIResource dxgiObj ): base( dxgiObj ) {
+		ComPointer = new( dxgiObj ) ;
+	}
 	
 	
 	public void GetEvictionPriority( out uint pEvictionPriority ) => 

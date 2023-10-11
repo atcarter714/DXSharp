@@ -15,7 +15,7 @@ namespace DXSharp.DXGI ;
 // -----------------------------------------------
 
 public interface ISwapChain: DXGIWrapper< IDXGISwapChain > {
-	internal static abstract ISwapChain Instantiate(nint address) ;
+	internal static abstract ISwapChain Instantiate( nint address ) ;
 	
 	void Present( uint syncInterval, PresentFlags flags ) ;
 	

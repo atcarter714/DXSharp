@@ -12,18 +12,15 @@ using Type = ABI.System.Type ;
 #endregion
 namespace DXSharp.DXGI ;
 
-public interface IObjectConstruction {
+/*internal interface IObjectConstruction {
 	internal static abstract ConstructWrapper
-		< IObject, IDXGIObject >? 
+		< IUnknownWrapper<IDXGIObject>, IDXGIObject >? 
 							ConstructFunction { get ; }
-}
+}*/
 
 
 /// <summary>Wrapper interface for the native IDXGIObject COM interface</summary>
-public interface IObject: IUnknownWrapper< IObject, IDXGIObject >, IObjectConstruction {
-	static ConstructWrapper
-		< IObject, IDXGIObject >
-			IObjectConstruction.ConstructFunction => null ;
+public interface IObject: IUnknownWrapper< IDXGIObject >/*, IObjectConstruction*/ {
 
 	/// <summary>
 	/// Sets application-defined data to the object and associates that data with a GUID.
@@ -98,8 +95,19 @@ public interface IObject: IUnknownWrapper< IObject, IDXGIObject >, IObjectConstr
 
 	
 	// ----------------------------------------------------------------------------------------
+	internal static abstract IObject ConstructInstance< TObject, TInterface >( TInterface pComObj )
+		where TObject: class, IObject, IUnknownWrapper< TInterface > 
+		where TInterface: IDXGIObject ;
 	
-	public static virtual TObject CreateInstanceOf< TObject, TInterface >( TInterface pComObj )
+	internal static T Construct< T, I >( nint ptr )
+		where T: Object, IObject, IUnknownWrapper< I >
+		where I: IDXGIObject {
+		ComPtr< I > comPtr = new( ptr ) ;
+		return (T)T.ConstructInstance<T, I>( comPtr.Interface! ) ;
+	}
+	
+	
+	/*public static virtual TObject CreateInstanceOf< TObject, TInterface >( TInterface pComObj )
 										where TObject: class, IObject,
 										IUnknownWrapper< TObject, TInterface >, new()
 															where TInterface: IUnknown {
@@ -107,8 +115,12 @@ public interface IObject: IUnknownWrapper< IObject, IDXGIObject >, IObjectConstr
 		( (IUnknownWrapper<TInterface>)obj )
 							.ComPointer!.Set( pComObj ) ;
 		return obj ;
-	}
-	
+
+
+	internal static abstract IFactory Create< TFactory >( )
+								where TFactory: class, IFactory ;
+	}*/
+
 	// ========================================================================================
 } ;
 

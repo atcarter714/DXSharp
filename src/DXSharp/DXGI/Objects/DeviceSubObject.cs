@@ -11,8 +11,12 @@ public class DeviceSubObject: Object,
 	public new ComPtr< IDXGIDeviceSubObject >? ComPointer { get ; protected set ; }
 	
 	internal DeviceSubObject( ) { }
-	public DeviceSubObject( nint ptr ): base( ptr ) { }
-	public DeviceSubObject( in IDXGIDeviceSubObject dxgiObj ): base( dxgiObj ) { }
+	public DeviceSubObject( nint ptr ): base( ptr ) {
+		ComPointer = new( ptr ) ;
+	}
+	public DeviceSubObject( in IDXGIDeviceSubObject dxgiObj ): base( dxgiObj ) {
+		ComPointer = new( dxgiObj ) ;
+	}
 
 	
 	public T GetDevice< T >( ) where T: Device {

@@ -71,6 +71,7 @@ namespace DXSharp.Windows {
 		public bool Failed => this.Value < 0 ;
 
 		
+		
 		/// <inheritdoc cref="Marshal.ThrowExceptionForHR(int, IntPtr)" />
 		/// <param name="errorInfo">
 		/// A pointer to the IErrorInfo interface that provides more information about the

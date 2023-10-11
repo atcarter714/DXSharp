@@ -1,6 +1,9 @@
-﻿namespace DXSharp.D3D12 ;
+﻿using Windows.Win32.Graphics.Direct3D12 ;
+using DXSharp.Windows.COM ;
 
-public interface ID3D12Interfaces
-{
+namespace DXSharp.D3D12 ;
+
+
+public interface Device: IUnknownWrapper< ID3D12Device > {
 	
 }

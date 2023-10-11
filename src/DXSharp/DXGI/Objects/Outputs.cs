@@ -9,19 +9,23 @@ namespace DXSharp.DXGI ;
 
 
 /// <summary>Proxy contract for the native <see cref="IDXGIOutput"/> COM interface.</summary>
-public class Output: Object, IOutput, IObjectConstruction {
-	internal static ConstructWrapper< IObject, IDXGIObject >? 
-		ConstructFunction => (o) => new Output( o ) ;
+public class Output: Object, IOutput {
+	/*internal static ConstructWrapper< IObject, IDXGIObject >? 
+		ConstructFunction => (o) => new Output( o ) ;*/
 
 	public IDXGIOutput? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutput >? ComPointer { get ; protected set ; }
 	
 	#region Constructors
 	internal Output( ) { }
-	public Output( nint ptr ): base(ptr) { }
-	public Output( [NotNull] in IDXGIOutput dxgiObj ): base(dxgiObj) { }
+	public Output( nint ptr ): base(ptr) {
+		ComPointer = new( ptr ) ;
+	}
+	public Output( [NotNull] in IDXGIOutput dxgiObj ): base( dxgiObj ) {
+		ComPointer = new( dxgiObj ) ;
+	}
 	public Output( [NotNull] ComPtr<IDXGIOutput> otherPtr ): this(otherPtr.Interface!) { }
-	public Output( in object? comObj ): base( COMUtility.GetIUnknownForObject(comObj) ) { }
+	public Output( in object? comObj ): this( COMUtility.GetIUnknownForObject(comObj) ) { }
 	#endregion
 	
 
@@ -168,8 +172,8 @@ public class Output: Object, IOutput, IObjectConstruction {
 
 
 public class Output1: Output, IOutput1 {
-	internal new static ConstructWrapper< IObject, IDXGIObject >?
-		ConstructFunction => (o) => new Output1( o ) ;
+	/*internal new static ConstructWrapper< IObject, IDXGIObject >?
+		ConstructFunction => (o) => new Output1( o ) ;*/
 	
 	public new IDXGIOutput1? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutput1 >? ComPointer { get ; protected set ; }

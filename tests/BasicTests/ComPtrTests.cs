@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
-
+using DXSharp ;
 using DXGIFactory = Windows.Win32.Graphics.Dxgi.IDXGIFactory7 ;
 #endregion
 
@@ -137,7 +137,7 @@ internal class ComPtrTests
 
 		// Assert that the ComPtr has a valid internal pointer:
 		Assert.That( comPtr.BaseAddress,
-					 Is.Not.EqualTo(COMUtility.NULL_PTR) ) ;
+					 Is.Not.EqualTo(InteropUtils.NULL_PTR) ) ;
 
 		// Assert that the ComPtr interface reference is valid:
 		Assert.NotNull( comPtr.Interface );

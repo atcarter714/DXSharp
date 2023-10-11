@@ -13,9 +13,12 @@ namespace DXSharp.DXGI ;
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>. 
 /// The interface implements methods for generating DXGI objects (which also handle full screen transitions).
 /// </summary>
-public interface IFactory< TFactory >: IObject, DXGIWrapper< TFactory >
-														where TFactory: IDXGIFactory {
-	internal static abstract IFactory< TFactory > Create( ) ;
+public interface IFactory: IObject, 
+						   DXGIWrapper< IDXGIFactory > {
+	public const int MAX_ADAPTER_COUNT = 0x0F ;
+	
+	internal static abstract IFactory Create< TFactory >( )
+								where TFactory: class, IFactory ;
 	
 	/// <summary>Enumerates the adapters (video cards).</summary>
 	/// <param name="index">
@@ -110,7 +113,8 @@ public interface IFactory< TFactory >: IObject, DXGIWrapper< TFactory >
 
 // -------------------------------------------------------------------------------------
 
-public interface IFactory1: IFactory< IDXGIFactory1 > {
+public interface IFactory1: IFactory, 
+							DXGIWrapper< IDXGIFactory1 > {
 	/// <summary>Enumerates both adapters (video cards) with or without outputs.</summary>
 	/// <param name="index">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The index of the adapter to enumerate.</para>

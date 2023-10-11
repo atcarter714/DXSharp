@@ -21,6 +21,7 @@ namespace DXSharp.DXGI ;
 /// </remarks>
 public interface IAdapter: IObject,
 						   DXGIWrapper< IDXGIAdapter > {
+
 	/// <summary>Enumerate adapter (video card) outputs.</summary>
 	/// <param name="Output">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The index of the output.</para>

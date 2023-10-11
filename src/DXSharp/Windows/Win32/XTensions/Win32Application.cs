@@ -23,8 +23,11 @@ public class Win32Application {
 		_sample = sample ;
 		
 		// Create GCHandle for the program:
-		GCHandle   sampleHandle = GCHandle.Alloc( sample, GCHandleType.Pinned ) ;
+		GCHandle   sampleHandle = GCHandle.Alloc( sample, 
+												  //GCHandleType.Normal ) ;
+												  GCHandleType.WeakTrackResurrection ) ;
 		InstHandle instHandle   = new(hInstance, false) ;
+		var samplePtr = GCHandle.ToIntPtr( sampleHandle ) ;
 
 		var iconPath = @".\file\img\DXSharp_ICON_256.ico".ToPWSTR( ) ;
 		LoadIcon( hInstance, iconPath ) ;
@@ -60,20 +63,19 @@ public class Win32Application {
 			HWND.Null,
 			default,
 			instHandle,
-			(void *)sampleHandle.AddrOfPinnedObject( )
-		);
+			(void *)samplePtr //sampleHandle.AddrOfPinnedObject( )
+		) ;
 
 		if( _hWnd.IsNull ) {
 			// Handle error: Window creation failed
 			// Use Marshal.GetLastWin32Error() to get the error code
-			
 		}
 
-		//... rest of your code
+		//... rest of code
 
 		// Don't forget to free the handle at the end of your method
 		sampleHandle.Free( ) ;
-		return 0x00000000 ;    //(int)msg.wParam;
+		return 0x00000000 ;
 	}
 	
 	static LRESULT WindowProc( HWND hWnd, uint message, WPARAM wParam, LPARAM lParam ) {
@@ -88,40 +90,38 @@ public class Win32Application {
 
 		switch( message ) {
 			case (uint)WindowMessage.WM_CREATE: {
-				CreateStruct createStruct = Marshal.PtrToStructure<CreateStruct>(lParam);
+				CreateStruct createStruct = Marshal.PtrToStructure< CreateStruct >( lParam ) ;
 				PInvoke.SetWindowLong( hWnd,(WINDOW_LONG_PTR_INDEX) WindowLongParam.GWLP_USERDATA, 
 										  (int)GCHandle.ToIntPtr( GCHandle.Alloc( createStruct.lpCreateParams ) ) );
-				return (LRESULT)0;
+				return (LRESULT)0 ;
 			}
+			/*case (uint)WindowMessage.WM_CREATE:
+				CreateStruct createStruct = Marshal.PtrToStructure<CreateStruct>(lParam);
+				PInvoke.SetWindowLong(hWnd, (WINDOW_LONG_PTR_INDEX)WindowLongParam.GWLP_USERDATA, 
+									  (int)createStruct.lpCreateParams) ;
+				return (LRESULT)0 ;*/
 
 			case (uint)WindowMessage.WM_KEYDOWN:
 				_sample?.OnKeyDown( (byte)wParam.Value );
 				return (LRESULT)0;
-
-
 			case (uint)WindowMessage.WM_KEYUP:
 				_sample?.OnKeyUp( (byte)wParam.Value );
 				return (LRESULT)0;
 
 			case (uint)WindowMessage.WM_PAINT:
 				if( _sample != null ) {
-					_sample.OnUpdate();
-					_sample.OnRender();
+					_sample.OnUpdate( ) ;
+					_sample.OnRender( ) ;
 				}
-				return (LRESULT)0;
+				return (LRESULT)0 ;
 
 			case (uint)WindowMessage.WM_DESTROY:
-				PInvoke.PostQuitMessage( 0 );
-				return (LRESULT)0;
+				PInvoke.PostQuitMessage( 0 ) ;
+				return (LRESULT)0 ;
 		}
-
+		
 		// Handle any messages the switch statement didn't ...
 		return DefWindowProc( hWnd, message, wParam, lParam ) ;
 	}
 	
-	
-	/*[DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-	static extern IntPtr GetModuleHandle(string lpModuleName);
-	*/
-
 } ;

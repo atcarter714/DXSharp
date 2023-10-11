@@ -79,11 +79,11 @@ ComponentModel;
 
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using DXSharp.Applications ;
+
 #endregion
 
-
-
-namespace DXSharp.Windows;
+namespace DXSharp.Windows ;
 
 /// <summary>
 /// Default Rendering Form.
@@ -93,7 +93,7 @@ namespace DXSharp.Windows;
 /// This code was adapter from SharpDX project's SharpDX.Windows.RenderForm type.
 /// It is provided as a helper class, and for its familiarity and usefulness.
 /// </remarks>
-public class RenderForm: Form
+public class RenderForm: Form, IAppWindow
 {
 	#region Constant Values
 	const int WM_SIZE = 0x0005;
@@ -113,7 +113,7 @@ public class RenderForm: Form
 	const int WM_DISPLAYCHANGE = 0x007E;
 	const int MNC_CLOSE = 1;
 
-	const string DEFAULT_TITLE = "DXSharp";
+	const string DEFAULT_TITLE = AppSettings.DEFAULT_APP_NAME ;
 	#endregion
 
 	// Private Fields ------------------------------------------------------------------------
@@ -398,72 +398,71 @@ public class RenderForm: Form
 		return base.ProcessDialogKey( keyData );
 	}
 
+	
 	// Private Methods -----------------------------------------------------------------------
 
-	/// <summary>
-	/// Raises the Pause Rendering event.
-	/// </summary>
+	/// <summary>Raises the Pause Rendering event.</summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
 	void OnPauseRendering( EventArgs e ) => PauseRendering?.Invoke( this, e );
 
-	/// <summary>
-	/// Raises the Resume Rendering event.
-	/// </summary>
+	/// <summary>Raises the Resume Rendering event.</summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
 	void OnResumeRendering( EventArgs e ) => ResumeRendering?.Invoke( this, e );
 
-	/// <summary>
-	/// Raises the User resized event.
-	/// </summary>
+	/// <summary>Raises the User resized event.</summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
 	void OnUserResized( EventArgs e ) => UserResized?.Invoke( this, e );
 
-	/// <summary>
-	/// Raises the MonitorChanged event
-	/// </summary>
+	/// <summary>Raises the MonitorChanged event.</summary>
 	/// <param name="e">Event arguments</param>
 	void OnMonitorChanged( EventArgs e ) => MonitorChanged?.Invoke( this, e );
 
-	/// <summary>
-	/// Raises the On App Activated event.
-	/// </summary>
+	/// <summary>Raises the On App Activated event.</summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
 	void OnAppActivated( EventArgs e ) => AppActivated?.Invoke( this, e );
 
-	/// <summary>
-	/// Raises the App Deactivated event
-	/// </summary>
+	/// <summary>Raises the App Deactivated event.</summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
 	void OnAppDeactivated( EventArgs e ) => AppDeactivated?.Invoke( this, e );
 
-	/// <summary>
-	/// Raises the System Suspend event
-	/// </summary>
+	/// <summary>Raises the System Suspend event.</summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
 	void OnSystemSuspend( EventArgs e ) => SystemSuspend?.Invoke( this, e );
 
-	/// <summary>
-	/// Raises the System Resume event
-	/// </summary>
+	/// <summary>Raises the System Resume event.</summary>
 	/// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
 	void OnSystemResume( EventArgs e ) => SystemResume?.Invoke( this, e );
 
-	/// <summary>
-	/// Raises the <see cref="E:Screensaver"/> event.
-	/// </summary>
+	/// <summary>Raises the <see cref="E:Screensaver"/> event.</summary>
 	/// <param name="e">The <see cref="System.ComponentModel.CancelEventArgs"/> instance containing the event data.</param>
-	void OnScreensaver( CancelEventArgs e ) => Screensaver?.Invoke( this, e );
-
-	private void InitializeComponent() {
-		this.SuspendLayout();
-		// 
-		// RenderForm
-		// 
-		this.ClientSize = new System.Drawing.Size( 608, 392 );
-		this.Font = new System.Drawing.Font( "Cambria", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point );
-		this.Name = "RenderForm";
-		this.Text = "DXSharp";
-		this.ResumeLayout( false );
-
+	void OnScreensaver( CancelEventArgs e ) => Screensaver?.Invoke( this, e ) ;
+	
+	void InitializeComponent( ) {
+		this.SuspendLayout( ) ;
+		
+		//! --- RenderForm Settings ---
+		this.ClientSize = AppSettings.DEFAULT_WINDOW_SIZE ;
+		this.Font         = new( AppSettings.Style.DEFAULT_FONT_NAME,
+								 AppSettings.Style.DEFAULT_FONT_SIZE,
+								 FontStyle.Regular, GraphicsUnit.Point ) ;
+		this.Text = AppSettings.DEFAULT_APP_NAME ;
+		this.Name = nameof( RenderForm ) ;
+		this.ResumeLayout( false ) ;
+		// ----------------------------
 	}
+	
+
+	// IAppWindow Implementation --------------------------------------------
+	public string Title => this.Text ;
+	public bool IsVisible => base.Visible ;
+	public bool IsChild => Parent is not null ;
+	public bool IsMinimized => WindowState is FormWindowState.Minimized ;
+	public bool IsMaximized => WindowState is FormWindowState.Maximized ;
+	
+	public void Minimize( ) => WindowState = FormWindowState.Minimized ;
+	public void Maximize( ) => WindowState = FormWindowState.Maximized ;
+	public void SetTitle( in string newTitle ) => Text = newTitle ;
+	public void SetSize( in Size newSize ) => ClientSize = newSize ;
+	public void SetPosition( in Point newLocation ) => Location = newLocation ;
+	// ---------------------------------------------------------------------
 };
