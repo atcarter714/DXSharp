@@ -1,9 +1,13 @@
-﻿using System.Runtime.InteropServices ;
+﻿#region Using Directives
+using System.Runtime.InteropServices ;
 using Windows.Win32.Foundation ;
+using DXSharp ;
 using DXSharp.Windows.COM ;
-
+#endregion
 namespace Windows.Win32.Graphics.Direct3D12 ;
 
+
+/// <summary>Base COM interface for all Direct3D 12 objects.</summary>
 [ComImport, Guid("C4FEC28F-7966-4E95-9F94-F431CB56C3B8"),
  InterfaceType(ComInterfaceType.InterfaceIsIUnknown),]
 public interface ID3D12Object: IUnknown {

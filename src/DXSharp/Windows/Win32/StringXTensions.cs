@@ -34,6 +34,14 @@ public static class StringXTensions  {
 		return pStr ;
 	}
 	
-	public static NativeStr32  ToNativeStr32( this string str ) => new( str ) ;
-	public static NativeStr128 ToNativeStr128( this string str ) => new( str ) ;
+	/// <summary>
+	/// Converts a string to a PCWSTR.
+	/// <para>PCWSTR is a pointer to a constant null-terminated Unicode string.</para>
+	/// <para>PCWSTR is declared in WinNT.h as:</para>
+	/// <code>typedef CONST WCHAR *PCWSTR, *LPCWSTR;</code>
+	/// </summary>
+	public static PCWSTR ToPCWSTR( this string str ) => new( str ) ;
+
+	public static FixedStr32  ToFixedStr32( this string str ) => new( str ) ;
+	public static FixedStr128 ToFixedStr128( this string str ) => new( str ) ;
 } ;

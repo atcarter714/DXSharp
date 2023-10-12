@@ -8,7 +8,7 @@ using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp ;
 
-public interface IDirectXObject: IDisposable {
+/*public interface IDirectXObject: IDisposable {
 	public int RefCount { get ; }
 	public nint BasePointer { get ; }
 	public ComPtr< IUnknown >? ComPointer { get ; }
@@ -19,6 +19,7 @@ public interface IDirectXObject: IDisposable {
 							 ?? throw new NullReferenceException( ) ;
 	public uint Release( ) => ComPointer?.Interface?.Release( ) 
 							 ?? throw new NullReferenceException( ) ;
+	
 	protected int _GetRefCount( ) {
 		uint r = ComPointer?.Interface?.AddRef( ) ?? 0U ;
 		if( r > 0U ) ComPointer?.Interface?.Release( ) ;
@@ -28,4 +29,4 @@ public interface IDirectXObject: IDisposable {
 	
 	public static abstract IDirectXObject? ConstructInstance< T >( nint ptr )
 		where T: class, IDirectXObject ;
-}
+}*/
