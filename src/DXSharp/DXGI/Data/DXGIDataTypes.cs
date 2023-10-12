@@ -1,6 +1,9 @@
 ﻿#region Using Directives
+
+using System.Collections ;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices;
 
 using Windows.Win32.Foundation;
@@ -10,6 +13,7 @@ using DXSharp.Windows.Win32 ;
 using DXSharp.Windows.Win32.Helpers ;
 using winMD = Windows.Win32.Foundation ;
 
+using static DXSharp.InteropUtils ;
 using DXGI_MODE_DESC = Windows.Win32.Graphics.Dxgi.Common.DXGI_MODE_DESC;
 using DXGI_MODE_DESC1 = Windows.Win32.Graphics.Dxgi.DXGI_MODE_DESC1;
 using DXGI_SAMPLE_DESC = Windows.Win32.Graphics.Dxgi.Common.DXGI_SAMPLE_DESC;
@@ -1332,7 +1336,7 @@ public struct ModeDescription1 {
 [StructLayout( LayoutKind.Sequential )]
 public struct OutputDescription {
 	[MarshalAs(UnmanagedType.LPStr, SizeConst = 32)]
-	public NativeStr32 DeviceName ;
+	public FixedStr32 DeviceName ;
 	
 	public Rect        DesktopCoordinates ;
 	public bool        AttachedToDesktop ;
@@ -1344,7 +1348,7 @@ public struct OutputDescription {
 				*( (OutputDescription*)pThis ) = desc ; }
 	}
 	
-	public OutputDescription( in NativeStr32 deviceName, 
+	public OutputDescription( in FixedStr32 deviceName, 
 							  in Rect desktopCoordinates, 
 							  bool attachedToDesktop, 
 							  Rotation rotation, 
@@ -1356,7 +1360,7 @@ public struct OutputDescription {
 		this.Monitor = monitor ;
 	}
 	
-	public OutputDescription( in NativeStr32 deviceName, 
+	public OutputDescription( in FixedStr32 deviceName, 
 							  in Rect desktopCoordinates, 
 							  bool attachedToDesktop, 
 							  Rotation rotation, 
@@ -1425,7 +1429,7 @@ public enum Rotation {
 
 [StructLayout( LayoutKind.Sequential )]
 public struct AdapterDescription {
-	public NativeStr128 Description; // A string that contains the adapter description.
+	public FixedStr128 Description; // A string that contains the adapter description.
 	public uint VendorId; // The PCI ID of the hardware vendor.
 	public uint DeviceId; // The PCI ID of the hardware device.
 	public uint SubSysId; // The PCI ID of the sub system.
@@ -1903,7 +1907,7 @@ public struct AdapterDescription1 {
 	/// <para>Type: <b>WCHAR[128]</b> A string that contains the adapter description. On <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro">feature level</a> 9 graphics hardware, <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiadapter1-getdesc1">GetDesc1</a> returns “Software Adapter” for the description string.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi/ns-dxgi-dxgi_adapter_desc1#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public NativeStr128 Description ;
+	public FixedStr128 Description ;
 
 	/// <summary>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The PCI ID of the hardware vendor. On <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro">feature level</a> 9 graphics hardware, <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiadapter1-getdesc1">GetDesc1</a> returns zeros for the PCI ID of the hardware vendor.</para>
@@ -1992,9 +1996,10 @@ public struct AdapterDescription1 {
 	} ;
 } ;
 
-struct AdapterDescription2 {
+[ProxyFor(typeof(DXGI_ADAPTER_DESC2))]
+public struct AdapterDescription2 {
 	AdapterDescription1 Description1 ;
-	public NativeStr128 Description { 
+	public FixedStr128 Description { 
 		get => Description1.Description ;
 		set => Description1.Description = value ;
 	}

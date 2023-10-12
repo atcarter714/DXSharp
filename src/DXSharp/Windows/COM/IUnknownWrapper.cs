@@ -6,8 +6,8 @@ using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.DXGI ;
 using static DXSharp.Windows.HResult ;
 #endregion
-
 namespace DXSharp.Windows.COM ;
+
 
 // -----------------------------------------------------------------
 // DXSharp Wrapper Interfaces:
@@ -18,38 +18,40 @@ public interface IUnknownWrapper: IDisposable,
 								  IAsyncDisposable {
 	bool Disposed { get; }
 	internal int RefCount { get ; }
-	internal nint BasePointer { get; }
+	internal ComPtr? ComPtr { get; }
+	internal nint BasePointer => ComPtr?.BaseAddress ?? 0x0000 ;
 	
 	uint AddRef( ) => (uint)Marshal.AddRef( BasePointer ) ;
 	uint Release( ) => (uint)Marshal.Release( BasePointer ) ;
-	
 	HResult QueryInterface< T >( out nint ppvInterface ) where T: IUnknown =>
 		COMUtility.QueryInterface< T >( BasePointer, out ppvInterface ) ;
 } ;
 
 
-
 /// <summary>Contract for COM object wrapper.</summary>
+/// <typeparam name="TInterface">The native COM interface type.</typeparam>
 public interface IUnknownWrapper< TInterface >: IUnknownWrapper 
 												where TInterface: IUnknown {
 	public static virtual Guid InterfaceGUID => typeof(TInterface).GUID ;
 	
 	Type ComType => typeof(TInterface) ;
+	
+	/// <summary>ComPtr to the native <typeparam name="TInterface"/> COM interface.</summary>
 	ComPtr< TInterface >? ComPointer { get ; }
+	ComPtr IUnknownWrapper.ComPtr => ComPointer! ;
 	internal TInterface? ComObject => ComPointer!.Interface ;
 	internal nint Pointer => ComPointer?.BaseAddress ?? nint.Zero ;
 	
-	/// <summary>Indicates if the DXSharp object is fully initialized.</summary>
+	/// <summary>Indicates if this instance is fully initialized.</summary>
 	bool IsInitialized => (ComPointer is not null)
 							&& ComPointer.InterfaceVPtr.IsValid()
 								&& ComPointer.Interface is not null ;
 	
-	
-	internal void SetComPointer( ComPtr< TInterface >? comPtr ) =>
-									ComPointer?.Set( comPtr!.Interface! ) ;
-	
 	HResult QueryInterface< T >( out T pInterface ) where T: IUnknown => 
 		COMUtility.QueryInterface< T >( Pointer, out pInterface ) ;
+	
+	internal void SetComPointer( ComPtr< TInterface >? otherPtr ) =>
+									ComPointer?.Set( otherPtr!.Interface! ) ;
 } ;
 
 
@@ -57,6 +59,5 @@ public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 public interface IUnknownWrapper< TSelf, TInterface >: IUnknownWrapper< TInterface > 
 									where TSelf: IUnknownWrapper<TSelf, TInterface>
 									where TInterface: IUnknown {
-	static Type WrapperType => typeof(TSelf) ;
+	static Type WrapperType => typeof( TSelf ) ;
 } ;
-

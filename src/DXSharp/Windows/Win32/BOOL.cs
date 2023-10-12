@@ -14,8 +14,8 @@ using winmdroot = global::Windows.Win32;
 // WinMD Implementation:
 // (Windows.Win32.Foundation)
 namespace Windows.Win32.Foundation {
-	[DebuggerDisplay( "{Value}" )]
-	public readonly struct BOOL: IEquatable< BOOL > {
+	[DebuggerDisplay( "{Value} ({ToString( )})" )]
+	public readonly struct BOOL: IEquatable< BOOL >, IEquatable< bool > {
 		const short _MAXOPT_ = (0x100 | 0x200) ;
 		
 		/// <summary>The internal value of the Win32 BOOL</summary>
@@ -42,16 +42,19 @@ namespace Windows.Win32.Foundation {
 		/// <returns>True if equal, otherwise false</returns>
 		public bool Equals( BOOL other ) => this.Value == other.Value ;
 
+		public bool Equals( bool other ) =>
+			other ? this.Value is not 0 : this.Value is 0 ;
+
 		/// <summary>
 		/// Determines if the given object is equal to this value
 		/// </summary>
 		/// <param name="obj">object to compare to</param>
 		/// <returns>True if equal, otherwise false</returns>
-		public override bool Equals( object obj ) => obj is BOOL other && this.Equals( other ) ;
+		public override bool Equals( object? obj ) => obj is BOOL other && this.Equals( other ) ;
 		
 		/// <inheritdoc cref="bool.GetHashCode"/>
-		public override int GetHashCode( ) => this.Value.GetHashCode( ) ;
-		
+		public override int GetHashCode( ) => Value ;
+
 		/// <summary>Returns the string representation of this boolean (BOOL) value.</summary>
 		public override string ToString( ) => this.Value != 0 ? _TRUE_ : _FALSE_ ;
 		const string _TRUE_ = "TRUE", _FALSE_ = "FALSE" ;
