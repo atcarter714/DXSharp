@@ -9,7 +9,7 @@ namespace DXSharp.Direct3D12 ;
 // ----------------------------------------------------------
 
 [Wrapper( typeof( ID3D12Object ) )]
-public interface IObject: IDirectXCOMObject {
+public interface IObject: IDXCOMObject {
 	void SetName( string name ) ;
 } ;
 

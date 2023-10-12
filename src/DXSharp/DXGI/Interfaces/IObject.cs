@@ -7,8 +7,9 @@ namespace DXSharp.DXGI ;
 
 
 /// <summary>Wrapper interface for the native IDXGIObject COM interface</summary>
-public interface IObject: IDirectXCOMObject,
-						  IUnknownWrapper< IDXGIObject > {
+public interface IObject: IDXCOMObject,
+						  IUnknownWrapper< IDXGIObject > 
+{
 	
 	/// <summary>Gets the parent of the object.</summary>
 	/// <param name="ppParent">
@@ -38,3 +39,7 @@ public interface IObject: IDirectXCOMObject,
 	
 	// ========================================================================================
 } ;
+
+/*public interface IObject< TInterface >: IObject, 
+									  IUnknownWrapper< TInterface >
+													where TInterface: IDXGIObject { } ;*/

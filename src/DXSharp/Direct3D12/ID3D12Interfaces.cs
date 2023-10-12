@@ -2,9 +2,11 @@
 using System.Runtime.InteropServices ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
+using Windows.Win32.Security ;
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
+using DXSharp.Windows.Win32 ;
 using DXSharp.Windows.Win32.Helpers ;
 #endregion
 namespace DXSharp.Direct3D12 ;
@@ -14,7 +16,7 @@ namespace DXSharp.Direct3D12 ;
 public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	static Guid IUnknownWrapper< ID3D12Device >.InterfaceGUID => 
 		typeof(ID3D12DeviceChild).GUID ;
-
+	
 	
 	
 	/// <summary>Reports the number of physical adapters (nodes) that are associated with this device.</summary>
@@ -107,7 +109,7 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcomputepipelinestate">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void CreateComputePipelineState( in ComputePipelineStateDescription pDesc,
+	void CreateComputePipelineState( in ComputePipelineStateDescription pDesc,
 											in Guid riid, out IPipelineState ppPipelineState) ;
 
 	/// <summary>Creates a command list.</summary>
@@ -238,7 +240,7 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createconstantbufferview#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="DestDescriptor">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> Describes the CPU descriptor handle that represents the start of the heap that holds the constant-buffer view.</para>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> Describes the CPU descriptor handle that represents the start of the heap that holds the constant-buffer view.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createconstantbufferview#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>
@@ -257,7 +259,7 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createshaderresourceview#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="DestDescriptor">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> Describes the CPU descriptor handle that represents the shader-resource view. This handle can be created in a shader-visible or non-shader-visible descriptor heap.</para>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> Describes the CPU descriptor handle that represents the shader-resource view. This handle can be created in a shader-visible or non-shader-visible descriptor heap.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createshaderresourceview#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>
@@ -265,8 +267,8 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createshaderresourceview#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
 	void CreateShaderResourceView( IResource pResource,
-								   [Optional] D3D12_SHADER_RESOURCE_VIEW_DESC* pDesc, 
-								   D3D12_CPU_DESCRIPTOR_HANDLE DestDescriptor ) ;
+									[Optional] in ShaderResourceViewDescription pDesc, 
+										CPUDescriptorHandle DestDescriptor ) ;
 
 	/// <summary>Creates a view for unordered accessing.</summary>
 	/// <param name="pResource">
@@ -283,14 +285,16 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createunorderedaccessview#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="DestDescriptor">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> Describes the CPU descriptor handle that represents the start of the heap that holds the unordered-access view.</para>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> Describes the CPU descriptor handle that represents the start of the heap that holds the unordered-access view.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createunorderedaccessview#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createunorderedaccessview">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[PreserveSig()]
-	unsafe void CreateUnorderedAccessView(ID3D12Resource pResource, ID3D12Resource pCounterResource, [Optional] D3D12_UNORDERED_ACCESS_VIEW_DESC* pDesc, D3D12_CPU_DESCRIPTOR_HANDLE DestDescriptor);
+	void CreateUnorderedAccessView( IResource pResource,
+											IResource pCounterResource,
+												out UnorderedAccessViewDescription pDesc,
+													CPUDescriptorHandle DestDescriptor ) ;
 
 	/// <summary>Creates a render-target view for accessing resource data. (ID3D12Device.CreateRenderTargetView)</summary>
 	/// <param name="pResource">
@@ -303,14 +307,15 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrendertargetview#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="DestDescriptor">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> Describes the CPU descriptor handle that represents the destination where the newly-created render target view will reside.</para>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> Describes the CPU descriptor handle that represents the destination where the newly-created render target view will reside.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrendertargetview#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrendertargetview">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[PreserveSig()]
-	unsafe void CreateRenderTargetView(ID3D12Resource pResource, [Optional] D3D12_RENDER_TARGET_VIEW_DESC* pDesc, D3D12_CPU_DESCRIPTOR_HANDLE DestDescriptor);
+	void CreateRenderTargetView( IResource pResource, 
+									[Optional] in RenderTargetViewDesc pDesc, 
+										CPUDescriptorHandle DestDescriptor ) ;
 
 	/// <summary>Creates a depth-stencil view for accessing resource data.</summary>
 	/// <param name="pResource">
@@ -324,37 +329,39 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createdepthstencilview#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="DestDescriptor">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> Describes the CPU descriptor handle that represents the start of the heap that holds the depth-stencil view.</para>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> Describes the CPU descriptor handle that represents the start of the heap that holds the depth-stencil view.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createdepthstencilview#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createdepthstencilview">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[PreserveSig()]
-	unsafe void CreateDepthStencilView(ID3D12Resource pResource, [Optional] D3D12_DEPTH_STENCIL_VIEW_DESC* pDesc, D3D12_CPU_DESCRIPTOR_HANDLE DestDescriptor);
+	void CreateDepthStencilView( IResource pResource,
+									 [Optional] in DepthStencilViewDesc pDesc,
+											CPUDescriptorHandle DestDescriptor ) ;
 
+	
 	/// <summary>Create a sampler object that encapsulates sampling information for a texture.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_sampler_desc">D3D12_SAMPLER_DESC</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_sampler_desc">D3D12_SAMPLER_DESC</a> structure that describes the sampler.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createsampler#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="DestDescriptor">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> Describes the CPU descriptor handle that represents the start of the heap that holds the sampler.</para>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> Describes the CPU descriptor handle that represents the start of the heap that holds the sampler.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createsampler#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createsampler">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[PreserveSig()]
-	unsafe void CreateSampler(D3D12_SAMPLER_DESC* pDesc, D3D12_CPU_DESCRIPTOR_HANDLE DestDescriptor);
+	void CreateSampler( in SamplerDescription pDesc, CPUDescriptorHandle DestDescriptor );
 
+	
 	/// <summary>Copies descriptors from a source to a destination. (ID3D12Device.CopyDescriptors)</summary>
 	/// <param name="NumDestDescriptorRanges">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of destination descriptor ranges to copy to.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptors#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="pDestDescriptorRangeStarts">
-	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a>*</b> An array of <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> objects to copy to. All the destination and source descriptors must be in heaps of the same [D3D12_DESCRIPTOR_HEAP_TYPE](/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_heap_type).</para>
+	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a>*</b> An array of <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> objects to copy to. All the destination and source descriptors must be in heaps of the same [D3D12_DESCRIPTOR_HEAP_TYPE](/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_heap_type).</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptors#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="pDestDescriptorRangeSizes">
@@ -366,7 +373,7 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptors#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="pSrcDescriptorRangeStarts">
-	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a>*</b> An array of <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> objects to copy from. > [!IMPORTANT] > All elements in the *pSrcDescriptorRangeStarts* parameter must be in a non shader-visible descriptor heap. This is because shader-visible descriptor heaps may be created in **WRITE_COMBINE** memory or GPU local memory, which is prohibitively slow to read from. If your application manages descriptor heaps via copying the descriptors required for a given pass or frame from local "storage" descriptor heaps to the GPU-bound descriptor heap, use shader-opaque heaps for the storage heaps and copy into the GPU-visible heap as required.</para>
+	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a>*</b> An array of <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> objects to copy from. > [!IMPORTANT] > All elements in the *pSrcDescriptorRangeStarts* parameter must be in a non shader-visible descriptor heap. This is because shader-visible descriptor heaps may be created in **WRITE_COMBINE** memory or GPU local memory, which is prohibitively slow to read from. If your application manages descriptor heaps via copying the descriptors required for a given pass or frame from local "storage" descriptor heaps to the GPU-bound descriptor heap, use shader-opaque heaps for the storage heaps and copy into the GPU-visible heap as required.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptors#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="pSrcDescriptorRangeSizes">
@@ -378,8 +385,13 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptors#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>Where applicable, prefer [**ID3D12Device::CopyDescriptorsSimple**](/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptorssimple) to this method. It can have a better CPU cache miss rate due to the linear nature of the copy.</remarks>
-	[PreserveSig()]
-	unsafe void CopyDescriptors(uint NumDestDescriptorRanges, D3D12_CPU_DESCRIPTOR_HANDLE* pDestDescriptorRangeStarts, [MarshalAs(UnmanagedType.LPArray,SizeParamIndex = 0)] uint[] pDestDescriptorRangeSizes, uint NumSrcDescriptorRanges, D3D12_CPU_DESCRIPTOR_HANDLE* pSrcDescriptorRangeStarts, [MarshalAs(UnmanagedType.LPArray,SizeParamIndex = 3)] uint[] pSrcDescriptorRangeSizes, D3D12_DESCRIPTOR_HEAP_TYPE DescriptorHeapsType);
+	void CopyDescriptors( uint NumDestDescriptorRanges,
+						  out Span< CPUDescriptorHandle > pDestDescriptorRangeStarts,
+						  Span< uint > pDestDescriptorRangeSizes, uint NumSrcDescriptorRanges,
+						  in Span< CPUDescriptorHandle > pSrcDescriptorRangeStarts,
+						  in Span< uint > pSrcDescriptorRangeSizes,
+						  DescriptorHeapType DescriptorHeapsType ) ;
+	
 
 	/// <summary>Copies descriptors from a source to a destination. (ID3D12Device.CopyDescriptorsSimple)</summary>
 	/// <param name="NumDescriptors">
@@ -387,11 +399,11 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptorssimple#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="DestDescriptorRangeStart">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> A <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> that describes the destination descriptors to start to copy to. The destination and source descriptors must be in heaps of the same [D3D12_DESCRIPTOR_HEAP_TYPE](/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_heap_type).</para>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> A <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> that describes the destination descriptors to start to copy to. The destination and source descriptors must be in heaps of the same [D3D12_DESCRIPTOR_HEAP_TYPE](/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_heap_type).</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptorssimple#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="SrcDescriptorRangeStart">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> A <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">D3D12_CPU_DESCRIPTOR_HANDLE</a></b> that describes the source descriptors to start to copy from. > [!IMPORTANT] > The *SrcDescriptorRangeStart* parameter must be in a non shader-visible descriptor heap. This is because shader-visible descriptor heaps may be created in **WRITE_COMBINE** memory or GPU local memory, which is prohibitively slow to read from. If your application manages descriptor heaps via copying the descriptors required for a given pass or frame from local "storage" descriptor heaps to the GPU-bound descriptor heap, then use shader-opaque heaps for the storage heaps and copy into the GPU-visible heap as required.</para>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> A <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> that describes the source descriptors to start to copy from. > [!IMPORTANT] > The *SrcDescriptorRangeStart* parameter must be in a non shader-visible descriptor heap. This is because shader-visible descriptor heaps may be created in **WRITE_COMBINE** memory or GPU local memory, which is prohibitively slow to read from. If your application manages descriptor heaps via copying the descriptors required for a given pass or frame from local "storage" descriptor heaps to the GPU-bound descriptor heap, then use shader-opaque heaps for the storage heaps and copy into the GPU-visible heap as required.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptorssimple#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="DescriptorHeapsType">
@@ -399,9 +411,11 @@ public interface IDevice: IObject, IUnknownWrapper< ID3D12Device > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptorssimple#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>Where applicable, prefer this method to [**ID3D12Device::CopyDescriptors**](/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptors). It can have a better CPU cache miss rate due to the linear nature of the copy.</remarks>
-				[PreserveSig()]
-void CopyDescriptorsSimple(uint NumDescriptors, D3D12_CPU_DESCRIPTOR_HANDLE DestDescriptorRangeStart, D3D12_CPU_DESCRIPTOR_HANDLE SrcDescriptorRangeStart, D3D12_DESCRIPTOR_HEAP_TYPE DescriptorHeapsType);
-
+	void CopyDescriptorsSimple( uint NumDescriptors, 
+						   CPUDescriptorHandle DestDescriptorRangeStart, 
+						   CPUDescriptorHandle SrcDescriptorRangeStart, 
+						   DescriptorHeapType DescriptorHeapsType ) ;
+	
 	/// <summary>Gets the size and alignment of memory required for a collection of resources on this adapter.</summary>
 	/// <param name="visibleMask">
 	/// <para>Type: **[UINT](/windows/win32/WinProg/windows-data-types)** For single-GPU operation, set this to zero. If there are multiple GPU nodes, then set bits to identify the nodes (the device's physical adapters). Each bit in the mask corresponds to a single node. Also see [Multi-adapter systems](/windows/win32/direct3d12/multi-engine).</para>
@@ -412,19 +426,21 @@ void CopyDescriptorsSimple(uint NumDescriptors, D3D12_CPU_DESCRIPTOR_HANDLE Dest
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourceallocationinfo#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="pResourceDescs">
-	/// <para>Type: **const [D3D12_RESOURCE_DESC](./ns-d3d12-d3d12_resource_desc.md)\*** An array of **D3D12_RESOURCE_DESC** structures that described the resources to get info about.</para>
+	/// <para>Type: **const [ResourceDescription](./ns-d3d12-d3d12_resource_desc.md)\*** An array of <b>ResourceDescription</b> structures that described the resources to get info about.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourceallocationinfo#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <returns>
 	/// <para>Type: **[D3D12_RESOURCE_ALLOCATION_INFO](./ns-d3d12-d3d12_resource_allocation_info.md)** A [D3D12_RESOURCE_ALLOCATION_INFO](./ns-d3d12-d3d12_resource_allocation_info.md) structure that provides info about video memory allocated for the specified array of resources. If an error occurs, then **D3D12_RESOURCE_ALLOCATION_INFO::SizeInBytes** equals **UINT64_MAX**.</para>
 	/// </returns>
 	/// <remarks>
-	/// <para>When you're using [CreatePlacedResource](./nf-d3d12-id3d12device-createplacedresource.md), your application must use **GetResourceAllocationInfo** in order to understand the size and alignment characteristics of texture resources. The results of this method vary depending on the particular adapter, and must be treated as unique to this adapter and driver version. Your application can't use the output of **GetResourceAllocationInfo** to understand packed mip properties of textures. To understand packed mip properties of textures, your application must use [GetResourceTiling](./nf-d3d12-id3d12device-getresourcetiling.md). Texture resource sizes significantly differ from the information returned by **GetResourceTiling**, because some adapter architectures allocate extra memory for textures to reduce the effective bandwidth during common rendering scenarios. This even includes textures that have constraints on their texture layouts, or have standardized texture layouts. That extra memory can't be sparsely mapped nor remapped by an application using [CreateReservedResource](./nf-d3d12-id3d12device-createreservedresource.md) and [UpdateTileMappings](./nf-d3d12-id3d12commandqueue-updatetilemappings.md), so it isn't reported by **GetResourceTiling**. Your application can forgo using **GetResourceAllocationInfo** for buffer resources ([D3D12_RESOURCE_DIMENSION_BUFFER](./ne-d3d12-d3d12_resource_dimension.md)). Buffers have the same size on all adapters, which is merely the smallest multiple of 64KB that's greater or equal to [D3D12_RESOURCE_DESC::Width](./ns-d3d12-d3d12_resource_desc.md). When multiple resource descriptions are passed in, the C++ algorithm for calculating a structure size and alignment are used. For example, a three-element array with two tiny 64KB-aligned resources and a tiny 4MB-aligned resource, reports differing sizes based on the order of the array. If the 4MB aligned resource is in the middle, then the resulting **Size** is 12MB. Otherwise, the resulting **Size** is 8MB. The **Alignment** returned would always be 4MB, because it's the superset of all alignments in the resource array.</para>
+	/// <para>When you're using [CreatePlacedResource](./nf-d3d12-id3d12device-createplacedresource.md), your application must use **GetResourceAllocationInfo** in order to understand the size and alignment characteristics of texture resources. The results of this method vary depending on the particular adapter, and must be treated as unique to this adapter and driver version. Your application can't use the output of **GetResourceAllocationInfo** to understand packed mip properties of textures. To understand packed mip properties of textures, your application must use [GetResourceTiling](./nf-d3d12-id3d12device-getresourcetiling.md). Texture resource sizes significantly differ from the information returned by **GetResourceTiling**, because some adapter architectures allocate extra memory for textures to reduce the effective bandwidth during common rendering scenarios. This even includes textures that have constraints on their texture layouts, or have standardized texture layouts. That extra memory can't be sparsely mapped nor remapped by an application using [CreateReservedResource](./nf-d3d12-id3d12device-createreservedresource.md) and [UpdateTileMappings](./nf-d3d12-id3d12commandqueue-updatetilemappings.md), so it isn't reported by **GetResourceTiling**. Your application can forgo using **GetResourceAllocationInfo** for buffer resources ([D3D12_RESOURCE_DIMENSION_BUFFER](./ne-d3d12-d3d12_resource_dimension.md)). Buffers have the same size on all adapters, which is merely the smallest multiple of 64KB that's greater or equal to [ResourceDescription::Width](./ns-d3d12-d3d12_resource_desc.md). When multiple resource descriptions are passed in, the C++ algorithm for calculating a structure size and alignment are used. For example, a three-element array with two tiny 64KB-aligned resources and a tiny 4MB-aligned resource, reports differing sizes based on the order of the array. If the 4MB aligned resource is in the middle, then the resulting **Size** is 12MB. Otherwise, the resulting **Size** is 8MB. The **Alignment** returned would always be 4MB, because it's the superset of all alignments in the resource array.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourceallocationinfo#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[PreserveSig()]
-	unsafe D3D12_RESOURCE_ALLOCATION_INFO GetResourceAllocationInfo(uint visibleMask, uint numResourceDescs, D3D12_RESOURCE_DESC* pResourceDescs);
+	ResourceAllocationInfo GetResourceAllocationInfo( uint visibleMask,
+													  uint numResourceDescs,
+													  Span< ResourceDescription > pResourceDescs ) ;
 
+	
 	/// <summary>Divulges the equivalent custom heap properties that are used for non-custom heap types, based on the adapter's architectural properties.</summary>
 	/// <param name="nodeMask">
 	/// <para>Type: <b>UINT</b> For single-GPU operation, set this to zero. If there are multiple GPU nodes, set a bit to identify the node (the  device's physical adapter). Each bit in the mask corresponds to a single node. Only 1 bit must be set. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
@@ -443,9 +459,9 @@ void CopyDescriptorsSimple(uint NumDescriptors, D3D12_CPU_DESCRIPTOR_HANDLE Dest
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcustomheapproperties">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-				[PreserveSig()]
-D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE heapType);
-
+	HeapProperties GetCustomHeapProperties( uint nodeMask, HeapType heapType ) ;
+	
+	
 	/// <summary>Creates both a resource and an implicit heap, such that the heap is big enough to contain the entire resource, and the resource is mapped to the heap.</summary>
 	/// <param name="pHeapProperties">
 	/// <para>Type: **const [D3D12_HEAP_PROPERTIES](./ns-d3d12-d3d12_heap_properties.md)\*** A pointer to a **D3D12_HEAP_PROPERTIES** structure that provides properties for the resource's heap.</para>
@@ -456,15 +472,15 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommittedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="pDesc">
-	/// <para>Type: **const [D3D12_RESOURCE_DESC](./ns-d3d12-d3d12_resource_desc.md)\*** A pointer to a **D3D12_RESOURCE_DESC** structure that describes the resource.</para>
+	/// <para>Type: **const [ResourceDescription](./ns-d3d12-d3d12_resource_desc.md)\*** A pointer to a **ResourceDescription** structure that describes the resource.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommittedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="InitialResourceState">
-	/// <para>Type: **[D3D12_RESOURCE_STATES](./ne-d3d12-d3d12_resource_states.md)** The initial state of the resource, as a bitwise-OR'd combination of **D3D12_RESOURCE_STATES** enumeration constants. When you create a resource together with a [D3D12_HEAP_TYPE_UPLOAD](./ne-d3d12-d3d12_heap_type.md) heap, you must set *InitialResourceState* to [D3D12_RESOURCE_STATE_GENERIC_READ](./ne-d3d12-d3d12_resource_states.md). When you create a resource together with a [D3D12_HEAP_TYPE_READBACK](./ne-d3d12-d3d12_heap_type.md) heap, you must set *InitialResourceState* to [D3D12_RESOURCE_STATE_COPY_DEST](./ne-d3d12-d3d12_resource_states.md).</para>
+	/// <para>Type: **[ResourceStates](./ne-d3d12-d3d12_resource_states.md)** The initial state of the resource, as a bitwise-OR'd combination of **ResourceStates** enumeration constants. When you create a resource together with a [D3D12_HEAP_TYPE_UPLOAD](./ne-d3d12-d3d12_heap_type.md) heap, you must set *InitialResourceState* to [D3D12_RESOURCE_STATE_GENERIC_READ](./ne-d3d12-d3d12_resource_states.md). When you create a resource together with a [D3D12_HEAP_TYPE_READBACK](./ne-d3d12-d3d12_heap_type.md) heap, you must set *InitialResourceState* to [D3D12_RESOURCE_STATE_COPY_DEST](./ne-d3d12-d3d12_resource_states.md).</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommittedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="pOptimizedClearValue">
-	/// <para>Type: **const [D3D12_CLEAR_VALUE](./ns-d3d12-d3d12_clear_value.md)\*** Specifies a **D3D12_CLEAR_VALUE** structure that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the [D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET](./ne-d3d12-d3d12_resource_flags.md) or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, you should choose the value with which the clear operation will most commonly be called. You can call the clear operation with other values, but those operations won't be as efficient as when the value matches the one passed in to resource creation. When you use [D3D12_RESOURCE_DIMENSION_BUFFER](./ne-d3d12-d3d12_resource_dimension.md), you must set *pOptimizedClearValue* to `nullptr`.</para>
+	/// <para>Type: **const [ClearValue](./ns-d3d12-d3d12_clear_value.md)\*** Specifies a **ClearValue** structure that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the [D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET](./ne-d3d12-d3d12_resource_flags.md) or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, you should choose the value with which the clear operation will most commonly be called. You can call the clear operation with other values, but those operations won't be as efficient as when the value matches the one passed in to resource creation. When you use [D3D12_RESOURCE_DIMENSION_BUFFER](./ne-d3d12-d3d12_resource_dimension.md), you must set *pOptimizedClearValue* to `nullptr`.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommittedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="riidResource">
@@ -482,15 +498,20 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para>This method creates both a resource and a heap, such that the heap is big enough to contain the entire resource, and the resource is mapped to the heap. The created heap is known as an implicit heap, because the heap object can't be obtained by the application. Before releasing the final reference on the resource, your application must ensure that the GPU will no longer read nor write to this resource. The implicit heap is made resident for GPU access before the method returns control to your application. Also see [Residency](/windows/win32/direct3d12/residency). The resource GPU VA mapping can't be changed. See [ID3D12CommandQueue::UpdateTileMappings](./nf-d3d12-id3d12commandqueue-updatetilemappings.md) and [Volume tiled resources](/windows/win32/direct3d12/volume-tiled-resources). This method may be called by multiple threads concurrently.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommittedresource#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void CreateCommittedResource(D3D12_HEAP_PROPERTIES* pHeapProperties, D3D12_HEAP_FLAGS HeapFlags, D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialResourceState, [Optional] D3D12_CLEAR_VALUE* pOptimizedClearValue, Guid* riidResource, [MarshalAs(UnmanagedType.IUnknown)] out object ppvResource);
-
+	void CreateCommittedResource( in HeapProperties pHeapProperties,
+									  HeapFlags HeapFlags, in ResourceDescription pDesc,
+										  ResourceStates InitialResourceState,
+											  [Optional] in ClearValue pOptimizedClearValue,
+													in Guid riidResource, out IResource ppvResource ) ;
+	
+	
 	/// <summary>Creates a heap that can be used with placed resources and reserved resources.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: **const [D3D12_HEAP_DESC](./ns-d3d12-d3d12_heap_desc.md)\*** A pointer to a constant **D3D12_HEAP_DESC** structure that describes the heap.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createheap#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="riid">
-	/// <para>Type: **REFIID** A reference to the globally unique identifier (**GUID**) of the heap interface to return in *ppvHeap*. While *riidResource* is most commonly the **GUID** of [ID3D12Heap](./nn-d3d12-id3d12heap.md), it may be the **GUID** of any interface. If the resource object doesn't support the interface for this **GUID**, then creation fails with **E_NOINTERFACE**.</para>
+	/// <para>Type: **REFIID** A reference to the globally unique identifier (**GUID**) of the heap interface to return in *ppvHeap*. While *riidResource* is most commonly the **GUID** of [IHeap](./nn-d3d12-id3d12heap.md), it may be the **GUID** of any interface. If the resource object doesn't support the interface for this **GUID**, then creation fails with **E_NOINTERFACE**.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createheap#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="ppvHeap">
@@ -504,11 +525,12 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para>**CreateHeap** creates a heap that can be used with placed resources and reserved resources. Before releasing the final reference on the heap, your application must ensure that the GPU will no longer read or write to this heap. A placed resource object holds a reference on the heap it is created on; but a reserved resource doesn't hold a reference for each mapping made to a heap.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createheap#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void CreateHeap(D3D12_HEAP_DESC* pDesc, Guid* riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppvHeap);
-
+	void CreateHeap( in HeapDescription pDesc, in Guid riid, out IHeap ppvHeap ) ;
+	
+	
 	/// <summary>Creates a resource that is placed in a specific heap. Placed resources are the lightest weight resource objects available, and are the fastest to create and destroy.</summary>
 	/// <param name="pHeap">
-	/// <para>Type: [in] **<a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12heap">ID3D12Heap</a>*** A pointer to the **ID3D12Heap** interface that represents the heap in which the resource is placed.</para>
+	/// <para>Type: [in] **<a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12heap">IHeap</a>*** A pointer to the **IHeap** interface that represents the heap in which the resource is placed.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="HeapOffset">
@@ -516,15 +538,15 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="pDesc">
-	/// <para>Type: [in] **const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_desc">D3D12_RESOURCE_DESC</a>*** A pointer to a **D3D12_RESOURCE_DESC** structure that describes the resource.</para>
+	/// <para>Type: [in] **const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_desc">ResourceDescription</a>*** A pointer to a **ResourceDescription** structure that describes the resource.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="InitialState">
-	/// <para>Type: **<a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATES</a>** The initial state of the resource, as a bitwise-OR'd combination of **D3D12_RESOURCE_STATES** enumeration constants. When a resource is created together with a **D3D12_HEAP_TYPE_UPLOAD** heap, *InitialState* must be **D3D12_RESOURCE_STATE_GENERIC_READ**. When a resource is created together with a **D3D12_HEAP_TYPE_READBACK** heap, *InitialState* must be **D3D12_RESOURCE_STATE_COPY_DEST**.</para>
+	/// <para>Type: **<a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states">ResourceStates</a>** The initial state of the resource, as a bitwise-OR'd combination of **ResourceStates** enumeration constants. When a resource is created together with a **D3D12_HEAP_TYPE_UPLOAD** heap, *InitialState* must be **D3D12_RESOURCE_STATE_GENERIC_READ**. When a resource is created together with a **D3D12_HEAP_TYPE_READBACK** heap, *InitialState* must be **D3D12_RESOURCE_STATE_COPY_DEST**.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="pOptimizedClearValue">
-	/// <para>Type: [in, optional] **const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_clear_value">D3D12_CLEAR_VALUE</a>*** Specifies a **D3D12_CLEAR_VALUE** that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the **D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET** or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, your application should choose the value that the clear operation will most commonly be called with. Clear operations can be called with other values, but those operations will not be as efficient as when the value matches the one passed into resource creation. *pOptimizedClearValue* must be NULL when used with **D3D12_RESOURCE_DIMENSION_BUFFER**.</para>
+	/// <para>Type: [in, optional] **const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_clear_value">ClearValue</a>*** Specifies a **ClearValue** that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the **D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET** or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, your application should choose the value that the clear operation will most commonly be called with. Clear operations can be called with other values, but those operations will not be as efficient as when the value matches the one passed into resource creation. *pOptimizedClearValue* must be NULL when used with **D3D12_RESOURCE_DIMENSION_BUFFER**.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="riid">
@@ -542,19 +564,23 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para>**CreatePlacedResource** is similar to fully mapping a reserved resource to an offset within a heap; but the virtual address space associated with a heap may be reused as well. Placed resources are lighter weight to create and destroy than committed resources are. This is because no heap is created nor destroyed during those operations. In addition, placed resources enable an even lighter weight technique to reuse memory than resource creation and destruction&mdash;that is, reuse through aliasing, and aliasing barriers. Multiple placed resources may simultaneously overlap each other on the same heap, but only a single overlapping resource can be used at a time. There are two placed resource usage semantics&mdash;a simple model, and an advanced model. We recommend that you choose the simple model (it maximizes graphics tool support across the diverse ecosystem of GPUs), unless and until you find that you need the advanced model for your app.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void CreatePlacedResource(ID3D12Heap pHeap, ulong HeapOffset, D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialState, [Optional] D3D12_CLEAR_VALUE* pOptimizedClearValue, Guid* riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppvResource);
-
+	void CreatePlacedResource( IHeap pHeap, ulong HeapOffset, 
+							   in ResourceDescription pDesc,
+							   ResourceStates InitialState,
+							   [Optional] in ClearValue pOptimizedClearValue,
+							   in Guid riid, out IResource ppvResource ) ;
+	
 	/// <summary>Creates a resource that is reserved, and not yet mapped to any pages in a heap.</summary>
 	/// <param name="pDesc">
-	/// <para>Type: **const [D3D12_RESOURCE_DESC](./ns-d3d12-d3d12_resource_desc.md)\*** A pointer to a **D3D12_RESOURCE_DESC** structure that describes the resource.</para>
+	/// <para>Type: **const [ResourceDescription](./ns-d3d12-d3d12_resource_desc.md)\*** A pointer to a **ResourceDescription** structure that describes the resource.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createreservedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="InitialState">
-	/// <para>Type: **[D3D12_RESOURCE_STATES](./ne-d3d12-d3d12_resource_states.md)** The initial state of the resource, as a bitwise-OR'd combination of **D3D12_RESOURCE_STATES** enumeration constants.</para>
+	/// <para>Type: **[ResourceStates](./ne-d3d12-d3d12_resource_states.md)** The initial state of the resource, as a bitwise-OR'd combination of **ResourceStates** enumeration constants.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createreservedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="pOptimizedClearValue">
-	/// <para>Type: **const [D3D12_CLEAR_VALUE](./ns-d3d12-d3d12_clear_value.md)\*** Specifies a **D3D12_CLEAR_VALUE** structure that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the [D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET](./ne-d3d12-d3d12_resource_flags.md) or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, you should choose the value with which the clear operation will most commonly be called. You can call the clear operation with other values, but those operations won't be as efficient as when the value matches the one passed in to resource creation. When you use [D3D12_RESOURCE_DIMENSION_BUFFER](./ne-d3d12-d3d12_resource_dimension.md), you must set *pOptimizedClearValue* to `nullptr`.</para>
+	/// <para>Type: **const [ClearValue](./ns-d3d12-d3d12_clear_value.md)\*** Specifies a **ClearValue** structure that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the [D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET](./ne-d3d12-d3d12_resource_flags.md) or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, you should choose the value with which the clear operation will most commonly be called. You can call the clear operation with other values, but those operations won't be as efficient as when the value matches the one passed in to resource creation. When you use [D3D12_RESOURCE_DIMENSION_BUFFER](./ne-d3d12-d3d12_resource_dimension.md), you must set *pOptimizedClearValue* to `nullptr`.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createreservedresource#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="riid">
@@ -572,7 +598,11 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para>**CreateReservedResource** is equivalent to [D3D11_RESOURCE_MISC_TILED](../d3d11/ne-d3d11-d3d11_resource_misc_flag.md) in Direct3D 11. It creates a resource with virtual memory only, no backing store. You need to map the resource to physical memory (that is, to a heap) using <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-copytilemappings">CopyTileMappings</a> and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-updatetilemappings">UpdateTileMappings</a>. These resource types can only be created when the adapter supports tiled resource tier 1 or greater. The tiled resource tier defines the behavior of accessing a resource that is not mapped to a heap.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createreservedresource#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void CreateReservedResource(D3D12_RESOURCE_DESC* pDesc, D3D12_RESOURCE_STATES InitialState, [Optional] D3D12_CLEAR_VALUE* pOptimizedClearValue, Guid* riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppvResource);
+	void CreateReservedResource( in ResourceDescription pDesc, 
+								 ResourceStates InitialState, 
+								 [Optional] in ClearValue pOptimizedClearValue, 
+								 in Guid riid, out IResource ppvResource ) ;
+	
 
 	/// <summary>Creates a shared handle to a heap, resource, or fence object.</summary>
 	/// <param name="pObject">
@@ -611,8 +641,11 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para>Both heaps and committed resources can be shared. Sharing a committed resource shares the implicit heap along with the committed resource description, such that a compatible resource description can be mapped to the heap from another device. For Direct3D 11 and Direct3D 12 interop scenarios, a shared fence is opened in DirectX 11 with the <a href="https://docs.microsoft.com/windows/win32/api/d3d11_4/nf-d3d11_4-id3d11device5-opensharedfence">ID3D11Device5::OpenSharedFence</a> method, and a shared resource is opened with the <a href="https://docs.microsoft.com/windows/win32/api/d3d11_1/nf-d3d11_1-id3d11device1-opensharedresource1">ID3D11Device::OpenSharedResource1</a> method. For Direct3D 12, a shared handle is opened with the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-opensharedhandle">ID3D12Device::OpenSharedHandle</a> or the ID3D12Device::OpenSharedHandleByName method.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createsharedhandle#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void CreateSharedHandle(ID3D12DeviceChild pObject, [Optional] winmdroot.Security.SECURITY_ATTRIBUTES* pAttributes, uint Access, winmdroot.Foundation.PCWSTR Name, winmdroot.Foundation.HANDLE* pHandle);
-
+	void CreateSharedHandle( IDeviceChild pObject,
+							 [Optional] in SecurityAttributes pAttributes, 
+								uint Access, PCWSTR Name, out Win32Handle pHandle ) ;
+	
+	
 	/// <summary>Opens a handle for shared resources, shared heaps, and shared fences, by using HANDLE and REFIID.</summary>
 	/// <param name="NTHandle">
 	/// <para>Type: <b>HANDLE</b> The handle that was output by the call to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createsharedhandle">ID3D12Device::CreateSharedHandle</a>.</para>
@@ -636,7 +669,7 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-opensharedhandle">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void OpenSharedHandle(winmdroot.Foundation.HANDLE NTHandle, Guid* riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppvObj);
+	void OpenSharedHandle( Win32Handle NTHandle, in Guid riid, out object ppvObj ) ;
 
 	/// <summary>Opens a handle for shared resources, shared heaps, and shared fences, by using Name and Access.</summary>
 	/// <param name="Name">
@@ -657,8 +690,8 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-opensharedhandlebyname">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void OpenSharedHandleByName(winmdroot.Foundation.PCWSTR Name, uint Access, winmdroot.Foundation.HANDLE* pNTHandle);
-
+	void OpenSharedHandleByName( PCWSTR Name, uint Access, ref HANDLE pNTHandle ) ;
+	
 	/// <summary>Makes objects resident for the device.</summary>
 	/// <param name="NumObjects">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of objects  in the <i>ppObjects</i> array to make resident for the device.</para>
@@ -679,8 +712,8 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para><b>MakeResident</b> is ref-counted, such that <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-evict">Evict</a> must be called the same amount of times as <b>MakeResident</b> before <b>Evict</b> takes effect. Objects that support residency are made resident during creation, so a single <b>Evict</b> call will actually evict the object. Applications must use fences to ensure the GPU doesn't use non-resident objects. <b>MakeResident</b> must return before the GPU executes a command list that references the object. <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-evict">Evict</a> must be called after the GPU finishes executing a command list that references the object. Evicted objects still consume the same GPU virtual address and same amount of GPU virtual address space. Therefore, resource descriptors and other GPU virtual address references are not invalidated after <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-evict">Evict</a>.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-makeresident#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void MakeResident(uint NumObjects, [MarshalAs(UnmanagedType.LPArray,SizeParamIndex = 0)] ID3D12Pageable[] ppObjects);
-
+	void MakeResident< P >( uint NumObjects, Span< P > ppObjects ) where P : IPageable ;
+	
 	/// <summary>Enables the page-out of data, which precludes GPU access of that data.</summary>
 	/// <param name="NumObjects">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of objects in the <i>ppObjects</i> array to evict from the device.</para>
@@ -699,8 +732,8 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para>Refer to the remarks for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-makeresident">MakeResident</a>.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-evict#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void Evict(uint NumObjects, [MarshalAs(UnmanagedType.LPArray,SizeParamIndex = 0)] ID3D12Pageable[] ppObjects);
-
+	void Evict< P >( uint NumObjects, Span< P > ppObjects ) where P : IPageable ;
+	
 	/// <summary>Creates a fence object. (ID3D12Device.CreateFence)</summary>
 	/// <param name="InitialValue">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT64</a></b> The initial value for the fence.</para>
@@ -724,7 +757,8 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createfence">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void CreateFence(ulong InitialValue, D3D12_FENCE_FLAGS Flags, Guid* riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppFence);
+	void CreateFence( ulong InitialValue, FenceFlags Flags, 
+							in Guid riid, out IFence ppFence ) ;
 
 	/// <summary>Gets the reason that the device was removed.</summary>
 	/// <returns>
@@ -733,11 +767,11 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getdeviceremovedreason">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void GetDeviceRemovedReason();
+	void GetDeviceRemovedReason( ) ;
 
 	/// <summary>Gets a resource layout that can be copied. Helps the app fill-in D3D12_PLACED_SUBRESOURCE_FOOTPRINT and D3D12_SUBRESOURCE_FOOTPRINT when suballocating space in upload heaps.</summary>
 	/// <param name="pResourceDesc">
-	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">D3D12_RESOURCE_DESC</a>*</b> A description of the resource, as a pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">D3D12_RESOURCE_DESC</a> structure.</para>
+	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">ResourceDescription</a>*</b> A description of the resource, as a pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">ResourceDescription</a> structure.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcopyablefootprints#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <param name="FirstSubresource">
@@ -770,12 +804,17 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcopyablefootprints#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>
-	/// <para>This routine assists the application in filling out <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint">D3D12_PLACED_SUBRESOURCE_FOOTPRINT</a> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_subresource_footprint">D3D12_SUBRESOURCE_FOOTPRINT</a> structures, when suballocating space in upload heaps. The resulting structures are GPU adapter-agnostic, meaning that the values will not vary from one GPU adapter to the next. <b>GetCopyableFootprints</b> uses specified details about resource formats, texture layouts, and alignment requirements (from the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">D3D12_RESOURCE_DESC</a> structure)  to fill out the subresource structures. Applications have access to all these details, so this method, or a variation of it, could be  written as part of the app.</para>
+	/// <para>This routine assists the application in filling out <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint">D3D12_PLACED_SUBRESOURCE_FOOTPRINT</a> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_subresource_footprint">D3D12_SUBRESOURCE_FOOTPRINT</a> structures, when suballocating space in upload heaps. The resulting structures are GPU adapter-agnostic, meaning that the values will not vary from one GPU adapter to the next. <b>GetCopyableFootprints</b> uses specified details about resource formats, texture layouts, and alignment requirements (from the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">ResourceDescription</a> structure)  to fill out the subresource structures. Applications have access to all these details, so this method, or a variation of it, could be  written as part of the app.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcopyablefootprints#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[PreserveSig()]
-	unsafe void GetCopyableFootprints(D3D12_RESOURCE_DESC* pResourceDesc, uint FirstSubresource, uint NumSubresources, ulong BaseOffset, [Optional] D3D12_PLACED_SUBRESOURCE_FOOTPRINT* pLayouts, [Out] [MarshalAs(UnmanagedType.LPArray,SizeParamIndex = 2)] uint[] pNumRows, [Out] [MarshalAs(UnmanagedType.LPArray,SizeParamIndex = 2)] ulong[] pRowSizeInBytes, out ulong pTotalBytes);
-
+	void GetCopyableFootprints( in ResourceDescription pResourceDesc, uint FirstSubresource, 
+								uint NumSubresources, ulong BaseOffset,
+								[Optional] in PlacedSubresourceFootprint? pLayouts,
+												[Out] Span< uint > pNumRows, 
+													[Out] Span< ulong > pRowSizeInBytes, 
+														out ulong pTotalBytes ) ;
+	
+	
 	/// <summary>Creates a query heap. A query heap contains an array of queries.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_query_heap_desc">D3D12_QUERY_HEAP_DESC</a>*</b> Specifies the query heap in a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_query_heap_desc">D3D12_QUERY_HEAP_DESC</a> structure.</para>
@@ -793,8 +832,8 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
 	/// </returns>
 	/// <remarks>Refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/queries">Queries</a> for more information.</remarks>
-	unsafe void CreateQueryHeap(D3D12_QUERY_HEAP_DESC* pDesc, Guid* riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppvHeap);
-
+	void CreateQueryHeap( in QueryHeapDescription pDesc, in Guid riid, out IHeap ppvHeap ) ;
+	
 	/// <summary>A development-time aid for certain types of profiling and experimental prototyping.</summary>
 	/// <param name="Enable">
 	/// <para>Type: <b>BOOL</b> Specifies a BOOL that turns the stable power state on or off.</para>
@@ -807,7 +846,7 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para>This method is only useful during the development of applications. It enables developers to profile GPU usage of multiple algorithms without experiencing artifacts from <a href="https://en.wikipedia.org/wiki/Dynamic_frequency_scaling">dynamic frequency scaling</a>. Do not call this method in normal execution for a shipped application. This method only works while the machine is in <a href="https://docs.microsoft.com/windows/uwp/get-started/enable-your-device-for-development">developer mode</a>. If developer mode is not enabled, then device removal will occur. Instead, call this method in response to an off-by-default, developer-facing switch. Calling it in response to command line parameters, config files, registry keys, and developer console commands are reasonable usage scenarios. A stable power state typically fixes GPU clock rates at a slower setting that is significantly lower than that experienced by users under normal application load. This reduction in clock rate affects the entire system. Slow clock rates are required to ensure processors don’t exhaust power, current, and thermal limits. Normal usage scenarios commonly leverage a processors ability to dynamically over-clock. Any conclusions made by comparing two designs under a stable power state should be double-checked with supporting results from real usage scenarios.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-setstablepowerstate#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void SetStablePowerState(winmdroot.Foundation.BOOL Enable);
+	void SetStablePowerState( bool Enable ) ;
 
 	/// <summary>This method creates a command signature.</summary>
 	/// <param name="pDesc">
@@ -833,8 +872,11 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommandsignature">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void CreateCommandSignature(D3D12_COMMAND_SIGNATURE_DESC* pDesc, ID3D12RootSignature pRootSignature, Guid* riid, [MarshalAs(UnmanagedType.IUnknown)] out object ppvCommandSignature);
+	void CreateCommandSignature( in CommandSignatureDescription pDesc,
+								 IRootSignature pRootSignature, in Guid riid,
+									out ICommandSignature ppvCommandSignature ) ;
 
+	
 	/// <summary>Gets info about how a tiled resource is broken into tiles. (ID3D12Device.GetResourceTiling)</summary>
 	/// <param name="pTiledResource">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12resource">ID3D12Resource</a>*</b> Specifies a tiled <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12resource">ID3D12Resource</a>  to get info about.</para>
@@ -869,8 +911,12 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para>For more information on tiled resources, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/volume-tiled-resources">Volume Tiled Resources</a>.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourcetiling#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[PreserveSig()]
-	unsafe void GetResourceTiling(ID3D12Resource pTiledResource, out uint pNumTilesForEntireResource, [Optional] D3D12_PACKED_MIP_INFO* pPackedMipDesc, [Optional] D3D12_TILE_SHAPE* pStandardTileShapeForNonPackedMips, ref uint pNumSubresourceTilings, uint FirstSubresourceTilingToGet, D3D12_SUBRESOURCE_TILING* pSubresourceTilingsForNonPackedMips);
+	void GetResourceTiling( ID3D12Resource pTiledResource,
+							out uint pNumTilesForEntireResource,
+							out D3D12_PACKED_MIP_INFO pPackedMipDesc,
+							out TileShape pStandardTileShapeForNonPackedMips,
+							ref uint pNumSubresourceTilings, uint FirstSubresourceTilingToGet,
+							out SubresourceTiling pSubresourceTilingsForNonPackedMips ) ;
 
 	/// <summary>Gets a locally unique identifier for the current device (adapter).</summary>
 	/// <returns>
@@ -881,7 +927,7 @@ D3D12_HEAP_PROPERTIES GetCustomHeapProperties(uint nodeMask, D3D12_HEAP_TYPE hea
 	/// <para>A locally unique identifier (LUID) is a 64-bit value that is guaranteed to be unique only on the system on which it was generated. The uniqueness of a locally unique identifier (LUID) is guaranteed only until the system is restarted.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getadapterluid#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	LUID GetAdapterLuid();
+	Luid GetAdapterLuid( ) ;
 } ;
 
 // ========================================================================================

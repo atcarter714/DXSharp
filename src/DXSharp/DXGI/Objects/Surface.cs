@@ -62,6 +62,7 @@ public interface ISurface:  IDeviceSubObject,
 
 //! Concrete Implementation of an IDXGISurface wrapper/proxy ::
 public class Surface: DeviceSubObject, ISurface {
+	public ComPtr? ComPtrBase => ComPointer ;
 	public new ComPtr< IDXGISurface >? ComPointer { get ; protected set ; }
 	public new IDXGISurface? COMObject => ComPointer?.Interface as IDXGISurface ;
 

@@ -75,6 +75,10 @@ public interface IAdapter: IObject,
 } ;
 
 
+/*public interface IAdapter< TInterface >: IAdapter, 
+									   DXGIWrapper< TInterface >
+												where TInterface: IDXGIAdapter { }*/
+
 // ------------------------------------------------------------------------------
 // Version :: IDXGIAdapter1
 // ------------------------------------------------------------------------------

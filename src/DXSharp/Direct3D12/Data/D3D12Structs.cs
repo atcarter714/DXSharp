@@ -1,5 +1,6 @@
 ﻿#region Using Directives
 using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi.Common ;
@@ -211,35 +212,35 @@ public struct Range {
  ProxyFor( typeof( D3D12_RESOURCE_DESC ) )]
 public struct ResourceDescription {
 	/// <summary>One member of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_dimension">D3D12_RESOURCE_DIMENSION</a>, specifying the dimensions of the resource (for example, D3D12_RESOURCE_DIMENSION_TEXTURE1D), or whether it is a buffer ((D3D12_RESOURCE_DIMENSION_BUFFER).</summary>
-	public D3D12_RESOURCE_DIMENSION Dimension;
+	public ResourceDimension Dimension ;
 
 	/// <summary>Specifies the alignment.</summary>
-	public ulong Alignment;
+	public ulong Alignment ;
 
 	/// <summary>Specifies the width of the resource.</summary>
-	public ulong Width;
+	public ulong Width ;
 
 	/// <summary>Specifies the height of the resource.</summary>
-	public uint Height;
+	public uint Height ;
 
 	/// <summary>Specifies the depth of the resource, if it is 3D, or the array size if it is an array of 1D or 2D resources.</summary>
-	public ushort DepthOrArraySize;
+	public ushort DepthOrArraySize ;
 
 	/// <summary>Specifies the number of MIP levels.</summary>
-	public ushort MipLevels;
+	public ushort MipLevels ;
 
 	/// <summary>Specifies one member of  <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>.</summary>
-	public Format Format;
+	public Format Format ;
 
 	/// <summary>Specifies a <a href="https://docs.microsoft.com/windows/desktop/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc">DXGI_SAMPLE_DESC</a> structure.</summary>
 	public SampleDescription SampleDesc ;
 
 	/// <summary>Specifies one member of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_layout">D3D12_TEXTURE_LAYOUT</a>.</summary>
-	public D3D12_TEXTURE_LAYOUT Layout;
+	public TextureLayout Layout ;
 
 	/// <summary>Bitwise-OR'd flags, as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_flags">D3D12_RESOURCE_FLAGS</a> enumeration constants.</summary>
-	public D3D12_RESOURCE_FLAGS Flags;
-}
+	public ResourceFlags Flags ;
+} ;
 
 
 [StructLayout( LayoutKind.Sequential ),
@@ -422,75 +423,152 @@ public struct GPUDescriptorHandle {
 // =======================================================
 
 
+[StructLayout(LayoutKind.Sequential),
+	ProxyFor(typeof(D3D12_SAMPLER_DESC))]
+public struct SamplerDescription {
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">D3D12_FILTER</a>-typed value that specifies the filtering method to use when sampling a texture.</summary>
+	public Filter Filter;
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">D3D12_TEXTURE_ADDRESS_MODE</a>-typed value that specifies the method to use for resolving a u texture coordinate that is outside the 0 to 1 range.</summary>
+	public TextureAddressMode AddressU;
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">D3D12_TEXTURE_ADDRESS_MODE</a>-typed value that specifies the method to use for resolving a v texture coordinate that is outside the 0 to 1 range.</summary>
+	public TextureAddressMode AddressV;
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">D3D12_TEXTURE_ADDRESS_MODE</a>-typed value that specifies the method to use for resolving a w texture coordinate that is outside the 0 to 1 range.</summary>
+	public TextureAddressMode AddressW;
 
-[StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_CONSTANT_BUFFER_VIEW_DESC ) )]
-public struct ConstBufferViewDescription {
-	/// <summary>
-	/// <para>The D3D12_GPU_VIRTUAL_ADDRESS of the constant buffer. D3D12_GPU_VIRTUAL_ADDRESS is a typedef'd alias of UINT64.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_constant_buffer_view_desc#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public ulong BufferLocation ;
-	
-	/// <summary>The size in bytes of the constant buffer.</summary>
-	public uint SizeInBytes ;
-	
-	public ConstBufferViewDescription( ulong bufferLocation, uint sizeInBytes ) {
-		BufferLocation = bufferLocation ;
-		SizeInBytes    = sizeInBytes ;
-	}
-	public ConstBufferViewDescription(in D3D12_CONSTANT_BUFFER_VIEW_DESC desc) {
-		BufferLocation = desc.BufferLocation ;
-		SizeInBytes    = desc.SizeInBytes ;
-	}
+	/// <summary>Offset from the calculated mipmap level. For example, if the runtime calculates that a texture should be sampled at mipmap level 3 and <b>MipLODBias</b> is 2, the texture will be sampled at mipmap level 5.</summary>
+	public float MipLODBias;
+	/// <summary>Clamping value used if <b>D3D12_FILTER_ANISOTROPIC</b> or <b>D3D12_FILTER_COMPARISON_ANISOTROPIC</b> is specified in <b>Filter</b>. Valid values are between 1 and 16.</summary>
+	public uint MaxAnisotropy;
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_comparison_func">D3D12_COMPARISON_FUNC</a>-typed value that specifies a function that compares sampled data against existing sampled data.</summary>
+	public ComparisonFunction ComparisonFunc;
+
+	//! TODO: Vector4/float4 SIMD vector implementation (currently only have double-precision)
+	/// <summary>RGBA border color to use if <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">D3D12_TEXTURE_ADDRESS_MODE_BORDER</a> is specified for <b>AddressU</b>, <b>AddressV</b>, or <b>AddressW</b>. Range must be between 0.0 and 1.0 inclusive.</summary>
+	public __float_4 BorderColor;
+
+	/// <summary>Lower end of the mipmap range to clamp access to, where 0 is the largest and most detailed mipmap level and any level higher than that is less detailed.</summary>
+	public float MinLOD;
+
+	/// <summary>Upper end of the mipmap range to clamp access to, where 0 is the largest and most detailed mipmap level and any level higher than that is less detailed. This value must be greater than or equal to <b>MinLOD</b>. To have no upper limit on LOD, set this member to a large value.</summary>
+	public float MaxLOD;
 } ;
 
 
-public struct ShaderResourceViewDescription {
-	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>-typed value that specifies the viewing format. See remarks.</summary>
+[StructLayout(LayoutKind.Sequential),
+ ProxyFor(typeof(D3D12_RESOURCE_ALLOCATION_INFO))]
+public struct ResourceAllocationInfo {
+	/// <summary>
+	/// <para>Type: **[UINT64](/windows/win32/WinProg/windows-data-types)** The size, in bytes, of the resource.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public ulong SizeInBytes;
+
+	/// <summary>
+	/// <para>Type: **[UINT64](/windows/win32/WinProg/windows-data-types)** The alignment value for the resource; one of 4KB (4096), 64KB (65536), or 4MB (4194304) alignment.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public ulong Alignment;
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_CLEAR_VALUE ) )]
+public struct ClearValue {
+	/// <summary>
+	/// <para>Specifies one member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a> enum. The format of the commonly cleared color follows the same validation rules as a view/ descriptor creation. In general, the format of the clear color can be any format in the same typeless group that the resource format belongs to. This <i>Format</i> must match the format of the view used during the clear operation. It indicates whether the <i>Color</i> or the <i>DepthStencil</i> member is valid and how to convert the values for usage with the resource.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_clear_value#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
 	public Format Format ;
 
-	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_srv_dimension">D3D12_SRV_DIMENSION</a>-typed value that specifies the resource type of the view. This type is the same as the resource type of the underlying resource. This member also determines which _SRV to use in the union below.</summary>
-	public D3D12_SRV_DIMENSION ViewDimension;
+	public _anon_clrval_union ReadAs ;
+	[StructLayout( LayoutKind.Explicit )]
+	public partial struct _anon_clrval_union {
+		[FieldOffset( 0 )] public __float_4 Color ;
+		[FieldOffset( 0 )] public DepthStencilValue DepthStencil ;
+	} ;
+} ;
 
-	/// <summary>A value, constructed using the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_shader_component_mapping">D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING</a> macro. The **D3D12_SHADER_COMPONENT_MAPPING** enumeration specifies what values from memory should be returned when the texture is accessed in a shader via this shader resource view (SRV). For example, it can route component 1 (green) from memory, or the constant `0`, into component 2 (`.b`) of the value given to the shader.</summary>
-	public uint Shader4ComponentMapping;
 
-	public _anon_union_A Anonymous;
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_DEPTH_STENCIL_VALUE ) )]
+public struct DepthStencilValue {
+	/// <summary>Specifies the depth value.</summary>
+	public float Depth;
+	/// <summary>Specifies the stencil value.</summary>
+	public byte Stencil;
+} ;
 
-	[StructLayout(LayoutKind.Explicit)]
-	public partial struct _anon_union_A {
-		[FieldOffset(0)]
-		public D3D12_BUFFER_SRV Buffer;
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_PLACED_SUBRESOURCE_FOOTPRINT ) )]
+public struct PlacedSubresourceFootprint {
+	/// <summary>
+	/// <para>The offset of the subresource within the parent resource, in bytes. The offset between the start of the parent resource and this subresource.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public ulong Offset;
 
-		[FieldOffset(0)]
-		public D3D12_TEX1D_SRV Texture1D;
+	/// <summary>
+	/// <para>The format, width, height, depth, and row-pitch of the subresource, as a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_subresource_footprint">D3D12_SUBRESOURCE_FOOTPRINT</a> structure.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public D3D12_SUBRESOURCE_FOOTPRINT Footprint;
+} ;
 
-		[FieldOffset(0)]
-		public D3D12_TEX1D_ARRAY_SRV Texture1DArray;
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_SUBRESOURCE_FOOTPRINT ) )]
+public struct SubresourceFootprint {
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>-typed value that  specifies the viewing format.</summary>
+	public Format Format ;
+	/// <summary>The width of the subresource.</summary>
+	public uint Width ;
+	/// <summary>The height of the subresource.</summary>
+	public uint Height ;
+	/// <summary>The depth of the subresource.</summary>
+	public uint Depth ;
 
-		[FieldOffset(0)]
-		public D3D12_TEX2D_SRV Texture2D;
+	/// <summary>
+	/// <para>The row pitch, or width, or physical size, in bytes, of the subresource data. This must be a multiple of D3D12_TEXTURE_DATA_PITCH_ALIGNMENT (256), and must be greater than or equal to the size of the data within a row.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_subresource_footprint#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public uint RowPitch ;
+} ;
 
-		[FieldOffset(0)]
-		public D3D12_TEX2D_ARRAY_SRV Texture2DArray;
 
-		[FieldOffset(0)]
-		public D3D12_TEX2DMS_SRV Texture2DMS;
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_QUERY_HEAP_DESC ) )]
+public struct QueryHeapDescription {
+	/// <summary>Specifies one member of <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_heap_type">D3D12_QUERY_HEAP_TYPE</a>.</summary>
+	public QueryHeapType Type ;
 
-		[FieldOffset(0)]
-		public D3D12_TEX2DMS_ARRAY_SRV Texture2DMSArray;
+	/// <summary>Specifies the number of queries the heap should contain.</summary>
+	public uint Count ;
 
-		[FieldOffset(0)]
-		public D3D12_TEX3D_SRV Texture3D;
+	/// <summary>
+	/// <para>For single GPU operation, set this to zero. If there are multiple GPU nodes, set a bit to identify the node (the  device's physical adapter) to which the query heap applies. Each bit in the mask corresponds to a single node. Only 1 bit must be set. Refer to <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_query_heap_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public uint NodeMask ;
+} ;
 
-		[FieldOffset(0)]
-		public D3D12_TEXCUBE_SRV TextureCube;
 
-		[FieldOffset(0)]
-		public D3D12_TEXCUBE_ARRAY_SRV TextureCubeArray;
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_COMMAND_SIGNATURE_DESC ) )]
+public struct CommandSignatureDescription {
+	/// <summary>Specifies the size of each command in the drawing buffer, in bytes.</summary>
+	public uint ByteStride ;
+	/// <summary>Specifies the number of arguments in the command signature.</summary>
+	public uint NumArgumentDescs ;
+	
+	/// <summary>
+	/// <para>An array of <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_indirect_argument_desc">D3D12_INDIRECT_ARGUMENT_DESC</a> structures, containing details of the arguments, including whether the argument is a vertex buffer, constant, constant buffer view, shader resource view, or unordered access view.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_command_signature_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public unsafe D3D12_INDIRECT_ARGUMENT_DESC* pArgumentDescs ;
 
-		[FieldOffset(0)]
-		public D3D12_RAYTRACING_ACCELERATION_STRUCTURE_SRV RaytracingAccelerationStructure;
-	}
-}
+	/// <summary>
+	/// <para>For single GPU operation, set this to zero. If there are multiple GPU nodes, set bits to identify the nodes (the  device's physical adapters) for which the command signature is to apply. Each bit in the mask corresponds to a single node. Refer to <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_command_signature_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public uint NodeMask ;
+} ;
+

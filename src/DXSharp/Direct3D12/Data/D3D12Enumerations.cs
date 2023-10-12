@@ -63,7 +63,7 @@ public enum HeapFlags {
 	SHARED_CROSS_ADAPTER = 0x00000020,
 	/// <summary>The heap is not allowed to store Render Target (RT) and/or Depth-Stencil (DS) textures.</summary>
 	DENY_RT_DS_TEXTURES = 0x00000040,
-	/// <summary>The heap is not allowed to contain resources with D3D12_RESOURCE_DIMENSION_TEXTURE1D, D3D12_RESOURCE_DIMENSION_TEXTURE2D, or D3D12_RESOURCE_DIMENSION_TEXTURE3D  unless either D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET or D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL are present. Refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_dimension">D3D12_RESOURCE_DIMENSION</a> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_flags">D3D12_RESOURCE_FLAGS</a>.</summary>
+	/// <summary>The heap is not allowed to contain resources with TEXTURE1D, TEXTURE2D, or TEXTURE3D  unless either D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET or D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL are present. Refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_dimension">D3D12_RESOURCE_DIMENSION</a> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_flags">D3D12_RESOURCE_FLAGS</a>.</summary>
 	DENY_NON_RT_DS_TEXTURES = 0x00000080,
 	/// <summary>Unsupported. Do not use.</summary>
 	HARDWARE_PROTECTED = 0x00000100,
@@ -224,3 +224,388 @@ public enum SRVDimension {
 	/// <summary>The resource is a raytracing acceleration structure.</summary>
 	RAYTRACING_ACCELERATION_STRUCTURE = 11,
 } ;
+
+
+[Flags, Equivalent( typeof( D3D12_BUFFER_SRV_FLAGS ) )]
+public enum BufferSRVFlags {
+	/// <summary>Indicates a default view.</summary>
+	NONE = 0x00000000,
+	/// <summary>View the buffer as raw. For more info about raw viewing of buffers, see <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-resources-intro">Raw Views of Buffers</a>.</summary>
+	RAW = 0x00000001,
+} ;
+
+[Equivalent( typeof( D3D12_RTV_DIMENSION ) )]
+public enum RTVDimension {
+	/// <summary>Do not use this value, as it will cause <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-createrendertargetview">ID3D12Device::CreateRenderTargetView</a> to fail.</summary>
+	UNKNOWN = 0,
+	/// <summary>The resource will be accessed as a buffer.</summary>
+	BUFFER = 1,
+	/// <summary>The resource will be accessed as a 1D texture.</summary>
+	TEXTURE1D = 2,
+	/// <summary>The resource will be accessed as an array of 1D textures.</summary>
+	TEXTURE1DARRAY = 3,
+	/// <summary>The resource will be accessed as a 2D texture.</summary>
+	TEXTURE2D = 4,
+	/// <summary>The resource will be accessed as an array of 2D textures.</summary>
+	TEXTURE2DARRAY = 5,
+	/// <summary>The resource will be accessed as a 2D texture with multisampling.</summary>
+	TEXTURE2DMS = 6,
+	/// <summary>The resource will be accessed as an array of 2D textures with multisampling.</summary>
+	TEXTURE2DMSARRAY = 7,
+	/// <summary>The resource will be accessed as a 3D texture.</summary>
+	TEXTURE3D = 8,
+} ;
+
+[Equivalent( typeof(D3D12_DSV_DIMENSION) )]
+public enum DSVDimension {
+	/// <summary><b>UNKNOWN</b> is not a valid value for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_depth_stencil_view_desc">D3D12_DEPTH_STENCIL_VIEW_DESC</a> and is not used.</summary>
+	UNKNOWN = 0,
+	/// <summary>The resource will be accessed as a 1D texture.</summary>
+	TEXTURE1D = 1,
+	/// <summary>The resource will be accessed as an array of 1D textures.</summary>
+	TEXTURE1DARRAY = 2,
+	/// <summary>The resource will be accessed as a 2D texture.</summary>
+	TEXTURE2D = 3,
+	/// <summary>The resource will be accessed as an array of 2D textures.</summary>
+	TEXTURE2DARRAY = 4,
+	/// <summary>The resource will be accessed as a 2D texture with multi sampling.</summary>
+	TEXTURE2DMS = 5,
+	/// <summary>The resource will be accessed as an array of 2D textures with multi sampling.</summary>
+	TEXTURE2DMSARRAY = 6,
+} ;
+
+[Flags, Equivalent( typeof( D3D12_DSV_FLAGS ) )]
+public enum DSVFlags {
+	/// <summary>Indicates a default view.</summary>
+	D3D12_DSV_FLAG_NONE = 0x00000000,
+	/// <summary>Indicates that depth values are read only.</summary>
+	D3D12_DSV_FLAG_READ_ONLY_DEPTH = 0x00000001,
+	/// <summary>Indicates that stencil values are read only.</summary>
+	D3D12_DSV_FLAG_READ_ONLY_STENCIL = 0x00000002,
+} ;
+
+[Equivalent( typeof( D3D12_FILTER ) )]
+public enum Filter {
+	/// <summary>Use point sampling for minification, magnification, and mip-level sampling.</summary>
+	MIN_MAG_MIP_POINT = 0,
+	/// <summary>Use point sampling for minification and magnification; use linear interpolation for mip-level sampling.</summary>
+	MIN_MAG_POINT_MIP_LINEAR = 1,
+	/// <summary>Use point sampling for minification; use linear interpolation for magnification; use point sampling for mip-level sampling.</summary>
+	MIN_POINT_MAG_LINEAR_MIP_POINT = 4,
+	/// <summary>Use point sampling for minification; use linear interpolation for magnification and mip-level sampling.</summary>
+	MIN_POINT_MAG_MIP_LINEAR = 5,
+	/// <summary>Use linear interpolation for minification; use point sampling for magnification and mip-level sampling.</summary>
+	MIN_LINEAR_MAG_MIP_POINT = 16,
+	/// <summary>Use linear interpolation for minification; use point sampling for magnification; use linear interpolation for mip-level sampling.</summary>
+	MIN_LINEAR_MAG_POINT_MIP_LINEAR = 17,
+	/// <summary>Use linear interpolation for minification and magnification; use point sampling for mip-level sampling.</summary>
+	MIN_MAG_LINEAR_MIP_POINT = 20,
+	/// <summary>Use linear interpolation for minification, magnification, and mip-level sampling.</summary>
+	MIN_MAG_MIP_LINEAR = 21,
+	MIN_MAG_ANISOTROPIC_MIP_POINT = 84,
+	/// <summary>Use anisotropic interpolation for minification, magnification, and mip-level sampling.</summary>
+	ANISOTROPIC = 85,
+	/// <summary>Use point sampling for minification, magnification, and mip-level sampling. Compare the result to the comparison value.</summary>
+	COMPARISON_MIN_MAG_MIP_POINT = 128,
+	/// <summary>Use point sampling for minification and magnification; use linear interpolation for mip-level sampling. Compare the result to the comparison value.</summary>
+	COMPARISON_MIN_MAG_POINT_MIP_LINEAR = 129,
+	/// <summary>Use point sampling for minification; use linear interpolation for magnification; use point sampling for mip-level sampling. Compare the result to the comparison value.</summary>
+	COMPARISON_MIN_POINT_MAG_LINEAR_MIP_POINT = 132,
+	/// <summary>Use point sampling for minification; use linear interpolation for magnification and mip-level sampling. Compare the result to the comparison value.</summary>
+	COMPARISON_MIN_POINT_MAG_MIP_LINEAR = 133,
+	/// <summary>Use linear interpolation for minification; use point sampling for magnification and mip-level sampling. Compare the result to the comparison value.</summary>
+	COMPARISON_MIN_LINEAR_MAG_MIP_POINT = 144,
+	/// <summary>Use linear interpolation for minification; use point sampling for magnification; use linear interpolation for mip-level sampling. Compare the result to the comparison value.</summary>
+	COMPARISON_MIN_LINEAR_MAG_POINT_MIP_LINEAR = 145,
+	/// <summary>Use linear interpolation for minification and magnification; use point sampling for mip-level sampling. Compare the result to the comparison value.</summary>
+	COMPARISON_MIN_MAG_LINEAR_MIP_POINT = 148,
+	/// <summary>Use linear interpolation for minification, magnification, and mip-level sampling. Compare the result to the comparison value.</summary>
+	COMPARISON_MIN_MAG_MIP_LINEAR = 149,
+	COMPARISON_MIN_MAG_ANISOTROPIC_MIP_POINT = 212,
+	/// <summary>Use anisotropic interpolation for minification, magnification, and mip-level sampling. Compare the result to the comparison value.</summary>
+	COMPARISON_ANISOTROPIC = 213,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_MAG_MIP_POINT</a> and instead of filtering them return the minimum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the minimum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MINIMUM_MIN_MAG_MIP_POINT = 256,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_MAG_POINT_MIP_LINEAR</a> and instead of filtering them return the minimum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the minimum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MINIMUM_MIN_MAG_POINT_MIP_LINEAR = 257,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_POINT_MAG_LINEAR_MIP_POINT</a> and instead of filtering them return the minimum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the minimum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MINIMUM_MIN_POINT_MAG_LINEAR_MIP_POINT = 260,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_POINT_MAG_MIP_LINEAR</a> and instead of filtering them return the minimum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the minimum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MINIMUM_MIN_POINT_MAG_MIP_LINEAR = 261,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_LINEAR_MAG_MIP_POINT</a> and instead of filtering them return the minimum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the minimum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MINIMUM_MIN_LINEAR_MAG_MIP_POINT = 272,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_LINEAR_MAG_POINT_MIP_LINEAR</a> and instead of filtering them return the minimum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the minimum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MINIMUM_MIN_LINEAR_MAG_POINT_MIP_LINEAR = 273,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_MAG_LINEAR_MIP_POINT</a> and instead of filtering them return the minimum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the minimum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MINIMUM_MIN_MAG_LINEAR_MIP_POINT = 276,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_MAG_MIP_LINEAR</a> and instead of filtering them return the minimum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the minimum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MINIMUM_MIN_MAG_MIP_LINEAR = 277,
+	MINIMUM_MIN_MAG_ANISOTROPIC_MIP_POINT = 340,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">ANISOTROPIC</a> and instead of filtering them return the minimum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the minimum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MINIMUM_ANISOTROPIC = 341,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_MAG_MIP_POINT</a> and instead of filtering them return the maximum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the maximum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MAXIMUM_MIN_MAG_MIP_POINT = 384,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_MAG_POINT_MIP_LINEAR</a> and instead of filtering them return the maximum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the maximum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MAXIMUM_MIN_MAG_POINT_MIP_LINEAR = 385,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_POINT_MAG_LINEAR_MIP_POINT</a> and instead of filtering them return the maximum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the maximum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MAXIMUM_MIN_POINT_MAG_LINEAR_MIP_POINT = 388,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_POINT_MAG_MIP_LINEAR</a> and instead of filtering them return the maximum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the maximum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MAXIMUM_MIN_POINT_MAG_MIP_LINEAR = 389,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_LINEAR_MAG_MIP_POINT</a> and instead of filtering them return the maximum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the maximum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MAXIMUM_MIN_LINEAR_MAG_MIP_POINT = 400,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_LINEAR_MAG_POINT_MIP_LINEAR</a> and instead of filtering them return the maximum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the maximum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MAXIMUM_MIN_LINEAR_MAG_POINT_MIP_LINEAR = 401,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_MAG_LINEAR_MIP_POINT</a> and instead of filtering them return the maximum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the maximum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MAXIMUM_MIN_MAG_LINEAR_MIP_POINT = 404,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">MIN_MAG_MIP_LINEAR</a> and instead of filtering them return the maximum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the maximum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MAXIMUM_MIN_MAG_MIP_LINEAR = 405,
+	MAXIMUM_MIN_MAG_ANISOTROPIC_MIP_POINT = 468,
+	/// <summary>Fetch the same set of texels as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">ANISOTROPIC</a> and instead of filtering them return the maximum of the texels.  Texels that are weighted 0 during filtering aren't counted towards the maximum.  You can query support for this filter type from the <b>MinMaxFiltering</b> member in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/ns-d3d11-d3d11_feature_data_d3d11_options1">D3D11_FEATURE_DATA_D3D11_OPTIONS1</a> structure.</summary>
+	MAXIMUM_ANISOTROPIC = 469,
+} ;
+
+[Equivalent( typeof( D3D12_TEXTURE_ADDRESS_MODE ) )]
+public enum TextureAddressMode {
+	/// <summary>
+	/// <para>Tile the texture at every (u,v) integer junction. For example, for u values between 0 and 3, the texture is repeated three times.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_address_mode#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	WRAP = 1,
+	/// <summary>
+	/// <para>Flip the texture at every (u,v) integer junction. For u values between 0 and 1, for example, the texture is addressed normally; between 1 and 2, the texture is flipped (mirrored); between 2 and 3, the texture is normal again; and so on.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_address_mode#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	MIRROR = 2,
+	/// <summary>Texture coordinates outside the range [0.0, 1.0] are set to the texture color at 0.0 or 1.0, respectively.</summary>
+	CLAMP = 3,
+	/// <summary>Texture coordinates outside the range [0.0, 1.0] are set to the border color specified in <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_sampler_desc">D3D12_SAMPLER_DESC</a> or HLSL code.</summary>
+	BORDER = 4,
+	/// <summary>
+	/// <para>Similar to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">MIRROR</a> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">CLAMP</a>. Takes the absolute value of the texture coordinate (thus, mirroring around 0), and then clamps to the maximum value.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_address_mode#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	MIRROR_ONCE = 5,
+} ;
+
+[Equivalent( typeof( D3D12_COMPARISON_FUNC ) )]
+public enum ComparisonFunction {
+	NONE = 0,
+	/// <summary>Never pass the comparison.</summary>
+	NEVER = 1,
+	/// <summary>If the source data is less than the destination data, the comparison passes.</summary>
+	LESS = 2,
+	/// <summary>If the source data is equal to the destination data, the comparison passes.</summary>
+	EQUAL = 3,
+	/// <summary>If the source data is less than or equal to the destination data, the comparison passes.</summary>
+	LESS_EQUAL = 4,
+	/// <summary>If the source data is greater than the destination data, the comparison passes.</summary>
+	GREATER = 5,
+	/// <summary>If the source data is not equal to the destination data, the comparison passes.</summary>
+	NOT_EQUAL = 6,
+	/// <summary>If the source data is greater than or equal to the destination data, the comparison passes.</summary>
+	GREATER_EQUAL = 7,
+	/// <summary>Always pass the comparison.</summary>
+	ALWAYS = 8,
+} ;
+
+[Equivalent( typeof( D3D12_RESOURCE_DIMENSION ) )]
+public enum ResourceDimension {
+	/// <summary>Resource is of unknown type.</summary>
+	UNKNOWN = 0,
+	/// <summary>Resource is a buffer.</summary>
+	BUFFER = 1,
+	/// <summary>Resource is a 1D texture.</summary>
+	TEXTURE1D = 2,
+	/// <summary>Resource is a 2D texture.</summary>
+	TEXTURE2D = 3,
+	/// <summary>Resource is a 3D texture.</summary>
+	TEXTURE3D = 4,
+} ;
+
+[Equivalent( typeof( D3D12_TEXTURE_LAYOUT ) )]
+public enum TextureLayout {
+	/// <summary>
+	/// <para>Indicates that the layout is unknown, and is likely adapter-dependent. During creation, the driver chooses the most efficient layout based on other resource properties, especially resource size and flags. Prefer this choice unless certain functionality is required from another texture layout. Zero-copy texture upload optimizations exist for UMA architectures; see <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-writetosubresource">ID3D12Resource::WriteToSubresource</a>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	UNKNOWN = 0,
+	/// <summary>
+	/// <para>Indicates that data for the texture is stored in row-major order (sometimes called "pitch-linear order"). This texture layout locates consecutive texels of a row contiguously in memory, before the texels of the next row. Similarly, consecutive texels of a particular depth or array slice are contiguous in memory before the texels of the next depth or array slice. Padding may exist between rows and between depth or array slices to align collections of data. A stride is the distance in memory between rows, depth, or array slices; and it includes any padding. This texture layout enables sharing of the texture data between multiple adapters, when other layouts aren't available. Many restrictions apply, because this layout is generally not efficient for extensive usage: </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	ROW_MAJOR = 1,
+	/// <summary>
+	/// <para>Indicates that the layout within 64KB tiles and tail mip packing is up to the driver. No standard swizzle pattern. This texture layout is arranged into contiguous 64KB regions, also known as tiles, containing near equilateral amount of consecutive number of texels along each dimension. Tiles are arranged in row-major order. While there is no padding between tiles, there are typically unused texels within the last tile in each dimension. The layout of texels within the tile is undefined. Each subresource immediately follows where the previous subresource end, and the subresource order follows the same sequence as subresource ordinals. However, tail mip packing is adapter-specific. For more details, see tiled resource tier and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourcetiling">ID3D12Device::GetResourceTiling</a>. This texture layout enables partially resident or sparse texture scenarios when used together with virtual memory page mapping functionality. This texture layout must be used together with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createreservedresource">ID3D12Device::CreateReservedResource</a> to enable the usage of <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-updatetilemappings">ID3D12CommandQueue::UpdateTileMappings</a>. Some restrictions apply to textures with this layout: </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	_64KB_UNDEFINED_SWIZZLE = 2,
+	/// <summary>
+	/// <para>Indicates that a default texture uses the standardized swizzle pattern. This texture layout is arranged the same way that 64KB_UNDEFINED_SWIZZLE is, except that the layout of texels within the tile is defined. Tail mip packing is adapter-specific. This texture layout enables optimizations when marshaling data between multiple adapters or between the CPU and GPU. The amount of copying can be reduced when multiple components understand the texture memory layout. This layout is generally more efficient for extensive usage than row-major layout, due to the rotationally invariant locality of neighboring texels. This layout can typically only be used with adapters that support standard swizzle, but exceptions exist for cross-adapter shared heaps. The restrictions for this layout are that the following aren't supported: </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	_64KB_STANDARD_SWIZZLE = 3,
+} ;
+
+[Equivalent( typeof( D3D12_HEAP_TYPE ) )]
+public enum HeapType {
+	/// <summary>Specifies the default heap. This heap type experiences the most bandwidth for the GPU, but cannot provide CPU access. The GPU can read and write to the memory from this pool, and resource transition barriers may be changed. The majority of heaps and resources are expected to be located here, and are typically populated through resources in upload heaps.</summary>
+	DEFAULT = 1,
+	/// <summary>
+	/// <para>Specifies a heap used for uploading. This heap type has CPU access optimized for uploading to the GPU, but does not experience the maximum amount of bandwidth for the GPU. This heap type is best for CPU-write-once, GPU-read-once data; but GPU-read-once is stricter than necessary. GPU-read-once-or-from-cache is an acceptable use-case for the data; but such usages are hard to judge due to differing GPU cache designs and sizes. If in doubt, stick to the GPU-read-once definition or profile the difference on many GPUs between copying the data to a _DEFAULT heap vs. reading the data from an _UPLOAD heap. Resources in this heap must be created with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATE</a>_GENERIC_READ and cannot be changed away from this. The CPU address for such heaps is commonly not efficient for CPU reads. The following are typical usages for _UPLOAD heaps: </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	UPLOAD = 2,
+	/// <summary>
+	/// <para>Specifies a heap used for reading back. This heap type has CPU access optimized for reading data back from the GPU, but does not experience the maximum amount of bandwidth for the GPU. This heap type is best for GPU-write-once, CPU-readable data. The CPU cache behavior is write-back, which is conducive for multiple sub-cache-line CPU reads. Resources in this heap must be created with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATE</a>_COPY_DEST, and cannot be changed away from this.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	READBACK = 3,
+	/// <summary>
+	/// <para>Specifies a custom heap. The application may specify the memory pool and CPU cache properties directly, which can be useful for UMA optimizations, multi-engine, multi-adapter, or other special cases. To do so, the application is expected to understand the adapter architecture to make the right choice. For more details, see <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_feature">D3D12_FEATURE</a>_ARCHITECTURE, <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture">D3D12_FEATURE_DATA_ARCHITECTURE</a>, and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcustomheapproperties">GetCustomHeapProperties</a>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	CUSTOM = 4,
+	GPU_UPLOAD = 5,
+} ;
+
+[Flags, Equivalent( typeof( D3D12_RESOURCE_STATES ) )]
+public enum ResourceStates {
+	/// <summary>
+	/// <para>Your application should transition to this state only for accessing a resource across different graphics engine types. Specifically, a resource must be in the COMMON state before being used on a COPY queue (when previously used on DIRECT/COMPUTE), and before being used on DIRECT/COMPUTE (when previously used on COPY). This restriction doesn't exist when accessing data between DIRECT and COMPUTE queues. The COMMON state can be used for all usages on a Copy queue using the implicit state transitions. For more info, in <a href="https://docs.microsoft.com/windows/win32/direct3d12/user-mode-heap-synchronization">Multi-engine synchronization</a>, find "common". Additionally, textures must be in the COMMON state for CPU access to be legal, assuming the texture was created in a CPU-visible heap in the first place.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	COMMON = 0x00000000,
+	/// <summary>A subresource must be in this state when it is accessed by the GPU as a vertex buffer or constant buffer. This is a read-only state.</summary>
+	VERTEX_AND_CONSTANT_BUFFER = 0x00000001,
+	/// <summary>A subresource must be in this state when it is accessed by the 3D pipeline as an index buffer. This is a read-only state.</summary>
+	INDEX_BUFFER = 0x00000002,
+	/// <summary>
+	/// <para>The resource is used as a render target. A subresource must be in this state when it is rendered to, or when it is cleared with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview">ID3D12GraphicsCommandList::ClearRenderTargetView</a>. This is a write-only state. To read from a render target as a shader resource, the resource must be in either **NON_PIXEL_SHADER_RESOURCE** or **PIXEL_SHADER_RESOURCE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	RENDER_TARGET = 0x00000004,
+	/// <summary>The resource is used for unordered access. A subresource must be in this state when it is accessed by the GPU via an unordered access view. A subresource must also be in this state when it is cleared with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearunorderedaccessviewuint">ID3D12GraphicsCommandList::ClearUnorderedAccessViewInt</a> or <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearunorderedaccessviewfloat">ID3D12GraphicsCommandList::ClearUnorderedAccessViewFloat</a>. This is a read/write state.</summary>
+	UNORDERED_ACCESS = 0x00000008,
+	/// <summary>**DEPTH_WRITE** is a state that is mutually exclusive with other states. You should use it for <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-cleardepthstencilview">ID3D12GraphicsCommandList::ClearDepthStencilView</a> when the flags (see <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_clear_flags">D3D12_CLEAR_FLAGS</a>) indicate a given subresource should be cleared (otherwise the subresource state doesn't matter), or when using it in a writable depth stencil view (see <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_dsv_flags">D3D12_DSV_FLAGS</a>) when the PSO has depth write enabled (see <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc">D3D12_DEPTH_STENCIL_DESC</a>).</summary>
+	DEPTH_WRITE = 0x00000010,
+	/// <summary>DEPTH_READ is a state that can be combined with other states. It should be used when the subresource is in a read-only depth stencil view, or when depth write of <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc">D3D12_DEPTH_STENCIL_DESC</a> is disabled. It can be combined with other read states (for example, **PIXEL_SHADER_RESOURCE**), such that the resource can be used for the depth or stencil test, and accessed by a shader within the same draw call. Using it when depth will be written by a draw call or clear command is invalid.</summary>
+	DEPTH_READ = 0x00000020,
+	/// <summary>The resource is used with a shader other than the pixel shader. A subresource must be in this state before being read by any stage (except for the pixel shader stage) via a shader resource view. You can still use the resource in a pixel shader with this flag as long as it also has the flag **PIXEL_SHADER_RESOURCE** set. This is a read-only state.</summary>
+	NON_PIXEL_SHADER_RESOURCE = 0x00000040,
+	/// <summary>The resource is used with a pixel shader. A subresource must be in this state before being read by the pixel shader via a shader resource view. This is a read-only state.</summary>
+	PIXEL_SHADER_RESOURCE = 0x00000080,
+	/// <summary>The resource is used with stream output. A subresource must be in this state when it is accessed by the 3D pipeline as a stream-out target. This is a write-only state.</summary>
+	STREAM_OUT = 0x00000100,
+	/// <summary>
+	/// <para>The resource is used as an indirect argument. Subresources must be in this state when they are used as the argument buffer passed to the indirect drawing method <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-executeindirect">ID3D12GraphicsCommandList::ExecuteIndirect</a>. This is a read-only state.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	INDIRECT_ARGUMENT = 0x00000200,
+	/// <summary>
+	/// <para>The resource is used as the destination in a copy operation. Subresources must be in this state when they are used as the destination of copy operation, or a blt operation. This is a write-only state.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	COPY_DEST = 0x00000400,
+	/// <summary>
+	/// <para>The resource is used as the source in a copy operation. Subresources must be in this state when they are used as the source of copy operation, or a blt operation. This is a read-only state.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	COPY_SOURCE = 0x00000800,
+	/// <summary>The resource is used as the destination in a resolve operation.</summary>
+	RESOLVE_DEST = 0x00001000,
+	/// <summary>The resource is used as the source in a resolve operation.</summary>
+	RESOLVE_SOURCE = 0x00002000,
+	/// <summary>
+	/// <para>When a buffer is created with this as its initial state, it indicates that the resource is a raytracing acceleration structure, for use in <a href="nf-d3d12-id3d12graphicscommandlist4-buildraytracingaccelerationstructure.md">ID3D12GraphicsCommandList4::BuildRaytracingAccelerationStructure</a>, <a href="nf-d3d12-id3d12graphicscommandlist4-copyraytracingaccelerationstructure.md">ID3D12GraphicsCommandList4::CopyRaytracingAccelerationStructure</a>, or <a href="nf-d3d12-id3d12device-createshaderresourceview.md">ID3D12Device::CreateShaderResourceView</a> for the <a href="ne-d3d12-d3d12_srv_dimension.md">D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE</a> dimension. > [!NOTE] > A resource to be used for the **RAYTRACING_ACCELERATION_STRUCTURE** state must be created in that state, and then never transitioned out of it. Nor may a resource that was created not in that state be transitioned into it. For more info, see [Acceleration structure memory restrictions](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#acceleration-structure-memory-restrictions) in the DirectX raytracing (DXR) functional specification on GitHub.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	RAYTRACING_ACCELERATION_STRUCTURE = 0x00400000,
+	/// <summary>Starting with Windows 10, version 1903 (10.0; Build 18362), indicates that the resource is a screen-space shading-rate image for variable-rate shading (VRS). For more info, see <a href="https://docs.microsoft.com/windows/win32/direct3d12/vrs">Variable-rate shading (VRS)</a>.</summary>
+	SHADING_RATE_SOURCE = 0x01000000,
+	/// <summary>GENERIC_READ is a logically OR'd combination of other read-state bits. This is the required starting state for an upload heap. Your application should generally avoid transitioning to GENERIC_READ when possible, since that can result in premature cache flushes, or resource layout changes (for example, compress/decompress), causing unnecessary pipeline stalls. You should instead transition resources only to the actually-used states.</summary>
+	GENERIC_READ = 0x00000AC3,
+	/// <summary>Equivalent to `NON_PIXEL_SHADER_RESOURCE | PIXEL_SHADER_RESOURCE`.</summary>
+	ALL_SHADER_RESOURCE = 0x000000C0,
+	/// <summary>Synonymous with COMMON.</summary>
+	PRESENT = 0x00000000,
+	/// <summary>The resource is used for <a href="https://docs.microsoft.com/windows/win32/direct3d12/predication">Predication</a>.</summary>
+	PREDICATION = 0x00000200,
+	/// <summary>The resource is used as a source in a decode operation. Examples include reading the compressed bitstream and reading from decode references,</summary>
+	VIDEO_DECODE_READ = 0x00010000,
+	/// <summary>The resource is used as a destination in the decode operation. This state is used for decode output and histograms.</summary>
+	VIDEO_DECODE_WRITE = 0x00020000,
+	/// <summary>The resource is used to read video data during video processing; that is, the resource is used as the source in a processing operation such as video encoding (compression).</summary>
+	VIDEO_PROCESS_READ = 0x00040000,
+	/// <summary>The resource is used to write video data during video processing; that is, the resource is used as the destination in a processing operation such as video encoding (compression).</summary>
+	VIDEO_PROCESS_WRITE = 0x00080000,
+	/// <summary>The resource is used as the source in an encode operation. This state is used for the input and reference of motion estimation.</summary>
+	VIDEO_ENCODE_READ = 0x00200000,
+	/// <summary>This resource is used as the destination in an encode operation. This state is used for the destination texture of a resolve motion vector heap operation.</summary>
+	VIDEO_ENCODE_WRITE = 0x00800000,
+} ;
+
+[Equivalent( typeof( D3D12_RESOURCE_BARRIER_TYPE ) )]
+public enum ResourceBarrierType {
+	/// <summary>A transition barrier that indicates a transition of a set of subresources between different usages. The caller must specify the before and after usages of the subresources.</summary>
+	TRANSITION = 0,
+	/// <summary>An aliasing barrier that indicates a transition between usages of 2 different resources that have mappings into the same tile pool. The caller can specify both the before and the after resource. Note that one or both resources can be <b>NULL</b>, which indicates that any tiled resource could cause aliasing.</summary>
+	ALIASING = 1,
+	/// <summary>An unordered access view (UAV) barrier that indicates all UAV accesses (reads or writes) to a particular resource must complete before any future UAV accesses (read or write) can begin.</summary>
+	UAV = 2,
+} ;
+
+[Equivalent( typeof( D3D12_RESOURCE_BARRIER_FLAGS ) )]
+public enum ResourceBarrierFlags {
+	/// <summary>No flags.</summary>
+	NONE = 0x00000000,
+	/// <summary>This starts a barrier transition in a new state, putting a resource in a temporary no-access condition.</summary>
+	BEGIN_ONLY = 0x00000001,
+	/// <summary>This barrier completes a transition, setting a new state and restoring active access to a resource.</summary>
+	END_ONLY = 0x00000002,
+} ;
+
+[Flags, Equivalent( typeof( D3D12_FENCE_FLAGS ) )]
+public enum FenceFlags {
+	/// <summary>No options are specified.</summary>
+	NONE = 0x00000000,
+	/// <summary>The fence is shared.</summary>
+	SHARED = 0x00000001,
+	/// <summary>The fence is shared with another GPU adapter.</summary>
+	SHARED_CROSS_ADAPTER = 0x00000002,
+	/// <summary>The fence is of the non-monitored type. Non-monitored fences should only be used when the adapter doesn't support monitored fences, or when a fence is shared with an adapter that doesn't support monitored fences.</summary>
+	NON_MONITORED = 0x00000004,
+} ;
+
+
+[Equivalent( typeof( D3D12_QUERY_HEAP_TYPE ) )]
+public enum QueryHeapType {
+	/// <summary>This returns a binary 0/1 result:  0 indicates that no samples passed depth and stencil testing, 1 indicates that at least one sample passed depth and stencil testing.  This enables occlusion queries to not interfere with any GPU performance optimization associated with depth/stencil testing.</summary>
+	OCCLUSION = 0,
+
+	/// <summary>Indicates that the heap is for high-performance timing data.</summary>
+	TIMESTAMP = 1,
+
+	/// <summary>Indicates the heap is to contain pipeline data. Refer to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_query_data_pipeline_statistics">D3D12_QUERY_DATA_PIPELINE_STATISTICS</a>.</summary>
+	PIPELINE_STATISTICS = 2,
+
+	/// <summary>Indicates the heap is to contain stream output data. Refer to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_query_data_so_statistics">D3D12_QUERY_DATA_SO_STATISTICS</a>.</summary>
+	SO_STATISTICS = 3,
+
+	/// <summary>
+	/// <para>Indicates the heap is to contain video decode statistics data. Refer to [D3D12_QUERY_DATA_VIDEO_DECODE_STATISTICS](../d3d12video/ns-d3d12video-d3d12_query_data_video_decode_statistics.md). Video decode statistics can only be queried from video decode command lists (<a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_command_list_type">D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE</a>). See <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_type">D3D12_QUERY_TYPE_DECODE_STATISTICS</a> for more details.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_heap_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	VIDEO_DECODE_STATISTICS = 4,
+
+	/// <summary>
+	/// <para>Indicates the heap is to contain timestamp queries emitted exclusively by copy command lists. Copy queue timestamps can only be queried from a copy command list, and a copy command list can not emit to a regular timestamp query Heap. Support for this query heap type is not universal. You must use <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-checkfeaturesupport">CheckFeatureSupport</a> with [D3D12_FEATURE_D3D12_OPTIONS3](./ne-d3d12-d3d12_feature.md) to determine whether the adapter supports copy queue timestamp queries.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_heap_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	COPY_QUEUE_TIMESTAMP = 5,
+	PIPELINE_STATISTICS1 = 7,
+} ;
+

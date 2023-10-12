@@ -17,10 +17,7 @@ namespace DXSharp.DXGI ;
 /// Go to <a href="https://learn.microsoft.com">Microsoft Learn</a> to learn more about
 /// the native <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> interface.
 /// </remarks>
-public class Adapter: Object, IAdapter
-					  /*, IConstructable< Adapter >, 
-					  IConstructable< Adapter, IDXGIAdapter > */
-{
+public class Adapter: Object, IAdapter {
 	// -------------------------------------------------------------------------------------
 	
 	public new static IObject ConstructInstance< TObject, TInterface >( TInterface pComObj ) 
@@ -34,6 +31,7 @@ public class Adapter: Object, IAdapter
 	
 	public IDXGIAdapter? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIAdapter >? ComPointer { get ; protected set ; }
+	public ComPtr? ComPtrBase => ComPointer ;
 	
 	//! Constructors:
 	internal Adapter( ) { }
@@ -106,16 +104,9 @@ public class Adapter: Object, IAdapter
 		}
 	}
 
-	
-	/*internal static ConstructWrapper< IObject, IDXGIObject >? 
-		ConstructFunction => (a) => _getNew( (IDXGIAdapter)a ) ;
-	static Adapter _getNew( IDXGIAdapter unknown ) => new ( unknown ) ;
-	public static Adapter ConstructEmpty( ) => new( ) ;
-	public static Adapter ConstructWith( IDXGIAdapter arg1 ) {
-		Adapter adapter = _getNew( arg1 ) ;
-		adapter.ComPointer = new ComPtr< IDXGIAdapter >(arg1) ;
-		return adapter ;
-	}*/
+	public static TInterface Instantiate< TInterface >() where TInterface: class, IDXCOMObject {
+		return ( new Adapter( ) as TInterface ) ;
+	}
 } ;
 
 public class Adapter1: Adapter, IAdapter1 {

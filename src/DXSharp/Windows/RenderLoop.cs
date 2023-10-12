@@ -46,7 +46,7 @@ namespace DXSharp.Windows ;
 /// RenderLoop provides a rendering loop infrastructure. See remarks for usage. 
 /// </summary>
 /// <remarks>
-/// Use static <see cref="Run(System.Windows.Forms.Control,RenderCallback)"/>  
+/// Use static <see cref="Run(System.Windows.Forms.ApplicationContext,DXSharp.Windows.RenderLoop.RenderCallback)"/>  
 /// method to directly use a renderloop with a render callback or use your own loop:
 /// <code>
 /// control.Show();
