@@ -14,8 +14,7 @@ internal static class D3D12UT {
 		const string msg = "Failed to get the vendor ID from the device!" ;
 		
 		ArgumentNullException.ThrowIfNull( pDevice, nameof(pDevice) ) ;
-		try
-		{
+		try {
 			// Get the adapter LUID:
 			var luid = pDevice.GetAdapterLuid( ) ;
 

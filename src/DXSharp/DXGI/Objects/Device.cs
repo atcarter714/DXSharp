@@ -9,6 +9,7 @@ namespace DXSharp.DXGI ;
 
 
 public class Device: Object, IDevice {
+	public ComPtr? ComPtrBase => ComPointer ;
 	public IDXGIDevice? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIDevice >? ComPointer { get ; protected set ; }
 

@@ -18,6 +18,7 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 	
 	public enum ColorSpaceSupportFlags: uint { Present = 0x1, OverlayPresent = 0x2, } ;
 	
+	public ComPtr? ComPtrBase => ComPointer ;
 	public new IDXGISwapChain? COMObject { get ; init ; }
 	public new ComPtr< IDXGISwapChain >? ComPointer { get ; init ; }
 	

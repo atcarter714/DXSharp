@@ -13,6 +13,7 @@ public class Output: Object, IOutput {
 	/*internal static ConstructWrapper< IObject, IDXGIObject >? 
 		ConstructFunction => (o) => new Output( o ) ;*/
 
+	public ComPtr? ComPtrBase => ComPointer ;
 	public IDXGIOutput? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutput >? ComPointer { get ; protected set ; }
 	

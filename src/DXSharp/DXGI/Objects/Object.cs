@@ -54,6 +54,7 @@ public abstract class Object: IObject {
 	}
 	~Object( ) => Dispose( false ) ;
 	
+	public ComPtr? ComPtrBase => ComPointer ;
 	public nint BasePointer => this.ComPointer?.BaseAddress ?? 0x00 ;
 	public int RefCount { get ; protected set ; }
 	public ComPtr< IDXGIObject >? ComPointer { get ; init ; }
@@ -80,6 +81,11 @@ public abstract class Object: IObject {
 		ppParent = (T)ppParent ;
 	}
 
+	
+	public static TInterface Instantiate< TInterface >( )
+		where TInterface: class, IDXCOMObject => TInterface.Instantiate< TInterface >( ) ;
+
+	
 	public void GetPrivateData< TData >( out uint pDataSize, nint pData ) where TData: unmanaged {
 		_throwIfDestroyed( ) ;
 		

@@ -18,8 +18,8 @@ public interface IUnknownWrapper: IDisposable,
 								  IAsyncDisposable {
 	bool Disposed { get; }
 	internal int RefCount { get ; }
-	internal ComPtr? ComPtr { get; }
-	internal nint BasePointer => ComPtr?.BaseAddress ?? 0x0000 ;
+	internal ComPtr? ComPtrBase { get; }
+	internal nint BasePointer => ComPtrBase?.BaseAddress ?? 0x0000 ;
 	
 	uint AddRef( ) => (uint)Marshal.AddRef( BasePointer ) ;
 	uint Release( ) => (uint)Marshal.Release( BasePointer ) ;
@@ -30,7 +30,7 @@ public interface IUnknownWrapper: IDisposable,
 
 /// <summary>Contract for COM object wrapper.</summary>
 /// <typeparam name="TInterface">The native COM interface type.</typeparam>
-public interface IUnknownWrapper< TInterface >: IUnknownWrapper 
+public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 												where TInterface: IUnknown {
 	public static virtual Guid InterfaceGUID => typeof(TInterface).GUID ;
 	
@@ -38,13 +38,13 @@ public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 	
 	/// <summary>ComPtr to the native <typeparam name="TInterface"/> COM interface.</summary>
 	ComPtr< TInterface >? ComPointer { get ; }
-	ComPtr IUnknownWrapper.ComPtr => ComPointer! ;
+	ComPtr IUnknownWrapper.ComPtrBase => ComPointer! ;
 	internal TInterface? ComObject => ComPointer!.Interface ;
 	internal nint Pointer => ComPointer?.BaseAddress ?? nint.Zero ;
 	
 	/// <summary>Indicates if this instance is fully initialized.</summary>
-	bool IsInitialized => (ComPointer is not null)
-							&& ComPointer.InterfaceVPtr.IsValid()
+	bool IsInitialized => ( ComPointer is not null )
+							&& ComPointer.InterfaceVPtr.IsValid( )
 								&& ComPointer.Interface is not null ;
 	
 	HResult QueryInterface< T >( out T pInterface ) where T: IUnknown => 

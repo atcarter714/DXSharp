@@ -74,8 +74,9 @@ public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue >
 	/// <para>Calling **ExecuteCommandLists** twice in succession (from the same thread, or different threads) guarantees that the first workload (A) finishes before the second workload (B). Calling **ExecuteCommandLists** with *two* command lists allows the driver to merge the two command lists such that the second command list (D) may begin executing work before all work from the first (C) has finished. Specifically, your application is allowed to insert a fence signal or wait between A and B, and the driver has no visibility into this, so the driver must ensure that everything in A is complete before the fence operation. There is no such opportunity in a single call to the API, so the driver is able to optimize that scenario. The driver is free to patch the submitted command lists. It is the calling application’s responsibility to ensure that the graphics processing unit (GPU) is not currently reading the any of the submitted command lists from a previous execution. Applications are encouraged to batch together command list executions to reduce fixed costs associated with submitted commands to the GPU.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-executecommandlists#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void ExecuteCommandLists( uint NumCommandLists, Span< ICommandList > ppCommandLists ) ;
-
+	void ExecuteCommandLists< C >( uint NumCommandLists, Span< C > ppCommandLists )
+														where C: ICommandList ;
+	
 	/// <summary>Not intended to be called directly.  Use the PIX event runtime to insert events into a command queue. (ID3D12CommandQueue.SetMarker)</summary>
 	/// <param name="Metadata">
 	/// <para>Type: <b>UINT</b> Internal.</para>
