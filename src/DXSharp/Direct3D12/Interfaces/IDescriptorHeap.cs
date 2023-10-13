@@ -17,9 +17,12 @@ namespace DXSharp.Direct3D12 ;
 /// </a>.
 /// </remarks>
 [Wrapper(typeof(ID3D12DescriptorHeap))]
-public interface IDescriptorHeap: IPageable< ID3D12DescriptorHeap > {
-	new ID3D12DescriptorHeap? ComObject => ComPointer?.Interface as ID3D12DescriptorHeap ;
-
+public interface IDescriptorHeap: IPageable,
+								  IComObjectRef< ID3D12DescriptorHeap >, 
+								  IUnknownWrapper< ID3D12DescriptorHeap > {
+	new ID3D12DescriptorHeap? COMObject => ComPointer?.Interface ;
+	new ComPtr< ID3D12DescriptorHeap > ComPointer { get ; }
+	
 	/// <summary>Gets the descriptor heap description.</summary>
 	/// <returns>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_descriptor_heap_desc">DescriptorHeapDescription</a></b> The description of the descriptor heap, as a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_descriptor_heap_desc">DescriptorHeapDescription</a> structure.</para>
@@ -27,7 +30,7 @@ public interface IDescriptorHeap: IPageable< ID3D12DescriptorHeap > {
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12descriptorheap-getdesc">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	DescriptorHeapDescription GetDesc( ) => ComObject!.GetDesc( ) ;
+	DescriptorHeapDescription GetDesc( ) => COMObject!.GetDesc( ) ;
 
 	/// <summary>Gets the CPU descriptor handle that represents the start of the heap.</summary>
 	/// <returns>
@@ -37,7 +40,7 @@ public interface IDescriptorHeap: IPageable< ID3D12DescriptorHeap > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12descriptorheap-getcpudescriptorhandleforheapstart">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	CPUDescriptorHandle GetCPUDescriptorHandleForHeapStart( ) => new( )
-		{ ptr = ComObject!.GetCPUDescriptorHandleForHeapStart( ).ptr } ;
+		{ ptr = COMObject!.GetCPUDescriptorHandleForHeapStart( ).ptr } ;
 	
 	/// <summary>Gets the GPU descriptor handle that represents the start of the heap.</summary>
 	/// <returns>
@@ -47,5 +50,5 @@ public interface IDescriptorHeap: IPageable< ID3D12DescriptorHeap > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12descriptorheap-getgpudescriptorhandleforheapstart">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	GPUDescriptorHandle GetGPUDescriptorHandleForHeapStart( ) => new ( )
-		{ ptr = ComObject!.GetGPUDescriptorHandleForHeapStart( ).ptr } ;
+		{ ptr = COMObject!.GetGPUDescriptorHandleForHeapStart( ).ptr } ;
 } ;

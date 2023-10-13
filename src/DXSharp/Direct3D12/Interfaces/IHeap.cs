@@ -5,8 +5,17 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.Direct3D12 ;
 
 
-[Wrapper( typeof( ID3D12Heap ) )]
-public interface IHeap: IPageable {
+[Wrapper( typeof(ID3D12Heap) )]
+public interface IHeap: IPageable,
+						IComObjectRef< ID3D12Heap >,
+						IUnknownWrapper< ID3D12Heap > {
+	
+	new Type ComType => typeof( ID3D12Heap ) ;
+	new Guid InterfaceGUID => typeof( ID3D12Heap ).GUID ;
+	new ID3D12Heap? COMObject => ComPointer?.Interface ;
+	new ID3D12Heap? ComObject => ComPointer?.Interface ;
+	new ComPtr< ID3D12Heap >? ComPointer { get ; }
+	
 	/// <summary>Gets the properties of a heap.</summary>
 	/// <returns>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues">HRESULT</a></b></para>
@@ -26,12 +35,11 @@ public interface IHeap: IPageable {
 	/// </remarks>
 	/// <seealso href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12heap-getdesc">ID3D12Heap::GetDesc method</seealso>
 	/// <seealso href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_desc">D3D12_HEAP_DESC structure</seealso>
-	void GetDesc( out HeapDescription pDesc ) ;
+	HeapDescription GetDesc( ) => COMObject!.GetDesc( ) ;
 } ;
 
 
-[Wrapper( typeof( ID3D12Heap ) )]
-public interface IHeap< ID3D12 >: IHeap,
-								  IPageable< ID3D12 >
-	where ID3D12: ID3D12Heap, ID3D12Pageable, ID3D12DeviceChild, IUnknown { } ;
+/*[Wrapper( typeof( ID3D12Heap ) )]
+public interface IHeap< ID3D12 >: IHeap
+	where ID3D12: ID3D12Heap, ID3D12Pageable, ID3D12DeviceChild, IUnknown { } ;*/
 

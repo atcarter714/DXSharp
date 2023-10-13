@@ -46,8 +46,8 @@ public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 							&& ComPointer.InterfaceVPtr.IsValid( )
 								&& ComPointer.Interface is not null ;
 	
-	HResult QueryInterface< T >( out T pInterface ) where T: IUnknown => 
-		COMUtility.QueryInterface< T >( Pointer, out pInterface ) ;
+	public static HResult QueryInterface< T >( in IUnknownWrapper<T> wrapper, out T pInterface ) where T: IUnknown => 
+		COMUtility.QueryInterface< T >( wrapper.Pointer, out pInterface ) ;
 	
 	internal void SetComPointer( ComPtr< TInterface >? otherPtr ) =>
 									ComPointer?.Set( otherPtr!.Interface! ) ;
@@ -57,6 +57,4 @@ public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 /// <summary>Contract for .NET objects wrapping native COM types.</summary>
 public interface IUnknownWrapper< TSelf, TInterface >: IUnknownWrapper< TInterface > 
 									where TSelf: IUnknownWrapper< TSelf, TInterface >
-									where TInterface: IUnknown {
-	internal static Type WrapperType => typeof( TSelf ) ;
-} ;
+									where TInterface: IUnknown { } ;

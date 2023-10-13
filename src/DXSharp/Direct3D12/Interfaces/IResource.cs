@@ -1,11 +1,17 @@
 ﻿using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
+using DXSharp.Windows.COM ;
 
 namespace DXSharp.Direct3D12 ;
 
 
 [Wrapper(typeof(ID3D12Resource))]
-public interface IResource: IPageable< ID3D12Resource > {
+public interface IResource: IPageable,
+							IComObjectRef< ID3D12Resource >,
+							IUnknownWrapper< ID3D12Resource > {
+	new ID3D12Resource? COMObject { get ; }
+	new ComPtr< ID3D12Resource > ComPointer { get ; }
+	
 	/// <summary>Gets a CPU pointer to the specified subresource in the resource, but may not disclose the pointer value to applications. Map also invalidates the CPU cache, when necessary, so that CPU reads to this address reflect any modifications made by the GPU.</summary>
 	/// <param name="Subresource">
 	/// <para>Type: <b>UINT</b> Specifies the index number of the subresource.</para>
@@ -30,7 +36,14 @@ public interface IResource: IPageable< ID3D12Resource > {
 	/// <para>This doc was truncated.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-map#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void Map( uint Subresource, [Optional] in Range pReadRange, out nint ppData ) ;
+	void Map( uint Subresource, [Optional] in Range pReadRange, out nint ppData ) {
+		unsafe { fixed( Range* pReadRangePtr = &pReadRange ) {
+				void* pData = default ;
+				COMObject!.Map( Subresource, (D3D12_RANGE*)pReadRangePtr, &pData ) ;
+				ppData = (nint)pData! ;
+			}
+		}
+	}
 	
 	/// <summary>Invalidates the CPU pointer to the specified subresource in the resource.</summary>
 	/// <param name="Subresource">
@@ -42,7 +55,11 @@ public interface IResource: IPageable< ID3D12Resource > {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-unmap#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>Refer to the extensive Remarks and Examples for the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12resource-map">Map</a> method.</remarks>
-	void Unmap( uint Subresource, [Optional] in Range pWrittenRange ) ;
+	void Unmap( uint Subresource, [Optional] in Range pWrittenRange ) {
+		unsafe { fixed( Range* pWrittenRangePtr = &pWrittenRange )
+				COMObject!.Unmap( Subresource, (D3D12_RANGE *)pWrittenRangePtr ) ;
+		}
+	}
 	
 	/// <summary>Gets the resource description.</summary>
 	/// <returns>
@@ -52,7 +69,7 @@ public interface IResource: IPageable< ID3D12Resource > {
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/direct3d12/id3d12resource-getdesc">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	ResourceDescription GetDesc( ) ;
+	ResourceDescription GetDesc( ) => COMObject!.GetDesc( ) ;
 
 	/// <summary>This method returns the GPU virtual address of a buffer resource.</summary>
 	/// <returns>
@@ -62,7 +79,7 @@ public interface IResource: IPageable< ID3D12Resource > {
 	/// <para>This method is only useful for buffer resources, it will return zero for all texture resources. For more information on the use of GPU virtual addresses, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/indirect-drawing">Indirect Drawing</a>.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-getgpuvirtualaddress#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	ulong GetGPUVirtualAddress( ) ;
+	ulong GetGPUVirtualAddress( ) => COMObject!.GetGPUVirtualAddress( ) ;
 	
 	/// <summary>Uses the CPU to copy data into a subresource, enabling the CPU to modify the contents of most textures with undefined layouts.</summary>
 	/// <param name="DstSubresource">
@@ -95,7 +112,12 @@ public interface IResource: IPageable< ID3D12Resource > {
 	/// <para><b>WriteToSubresource</b> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12resource-readfromsubresource">ReadFromSubresource</a> enable near zero-copy optimizations for UMA adapters, but can prohibitively impair the efficiency of discrete/ NUMA adapters as the texture data cannot reside in local video memory. Typical applications should stick to discrete-friendly upload techniques, unless they recognize the adapter architecture is UMA. For more details on uploading, refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copytextureregion">CopyTextureRegion</a>, and for more details on UMA, refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_architecture">D3D12_FEATURE_DATA_ARCHITECTURE</a>. On UMA systems, this routine can be used to minimize the cost of memory copying through the loop optimization known as <a href="https://en.wikipedia.org/wiki/Loop_tiling">loop tiling</a>. By breaking up the upload into chucks that comfortably fit in the CPU cache, the effective bandwidth between the CPU and main memory more closely achieves theoretical maximums.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-writetosubresource#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void WriteToSubresource( uint DstSubresource, out Box pDstBox, nint pSrcData, uint SrcRowPitch, uint SrcDepthPitch ) ;
+	void WriteToSubresource( uint DstSubresource, out Box pDstBox, nint pSrcData, uint SrcRowPitch, uint SrcDepthPitch ) {
+		unsafe { fixed( Box* pDstBoxPtr = &pDstBox )
+				COMObject!.WriteToSubresource( DstSubresource, (D3D12_BOX *)pDstBoxPtr,
+											   (void *)pSrcData, SrcRowPitch, SrcDepthPitch ) ;
+		}
+	}
 
 	/// <summary>Uses the CPU to copy data from a subresource, enabling the CPU to read the contents of most textures with undefined layouts.</summary>
 	/// <param name="pDstData">
@@ -123,7 +145,12 @@ public interface IResource: IPageable< ID3D12Resource > {
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
 	/// </returns>
 	/// <remarks>See the Remarks section for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12resource-writetosubresource">WriteToSubresource</a>.</remarks>
-	void ReadFromSubresource( nint pDstData, uint DstRowPitch, uint DstDepthPitch, uint SrcSubresource, in Box? pSrcBox = null ) ;
+	void ReadFromSubresource( nint pDstData, uint DstRowPitch, uint DstDepthPitch, uint SrcSubresource, in Box? pSrcBox = null ) {
+		unsafe { fixed( Box* pSrcBoxPtr = &pSrcBox )
+				COMObject!.ReadFromSubresource( (void *)pDstData, DstRowPitch, DstDepthPitch,
+											   SrcSubresource, (D3D12_BOX *)pSrcBoxPtr ) ;
+		}
+	}
 
 	/// <summary>Retrieves the properties of the resource heap, for placed and committed resources.</summary>
 	/// <param name="pHeapProperties">
@@ -142,6 +169,14 @@ public interface IResource: IPageable< ID3D12Resource > {
 	/// <para>For more information, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/memory-management">Memory Management in Direct3D 12</a>.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-getheapproperties#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void GetHeapProperties( out HeapProperties pHeapProperties, out HeapFlags pHeapFlags ) ;
+	void GetHeapProperties( out HeapProperties pHeapProperties, out HeapFlags pHeapFlags ) {
+		unsafe {
+			D3D12_HEAP_FLAGS _flags = 0 ;
+			D3D12_HEAP_PROPERTIES _props = default ;
+			COMObject!.GetHeapProperties( &_props, &_flags ) ;
+			pHeapFlags = (HeapFlags)_flags ;
+			pHeapProperties = _props ;
+		}
+	}
 
 } ;

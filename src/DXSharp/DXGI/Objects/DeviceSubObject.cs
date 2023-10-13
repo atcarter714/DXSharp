@@ -7,6 +7,7 @@ namespace DXSharp.DXGI ;
 //! Concrete Base Implementation:
 public class DeviceSubObject: Object,
 							  IDeviceSubObject {
+	public override ComPtr? ComPtrBase => ComPointer ;
 	internal IDXGIDeviceSubObject? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIDeviceSubObject >? ComPointer { get ; protected set ; }
 	

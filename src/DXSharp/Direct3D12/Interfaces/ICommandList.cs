@@ -2,6 +2,6 @@
 
 namespace DXSharp.Direct3D12 ;
 
-public interface ICommandList: IDeviceChild<ID3D12CommandList> {
+public interface ICommandList: IDeviceChild {
 	CommandListType GetType( ) ;
 } ;
