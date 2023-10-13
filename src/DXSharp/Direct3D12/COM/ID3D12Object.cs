@@ -1,7 +1,10 @@
 ﻿#region Using Directives
+
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.InteropServices ;
 using Windows.Win32.Foundation ;
 using DXSharp ;
+using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 #endregion
 namespace Windows.Win32.Graphics.Direct3D12 ;
@@ -11,6 +14,7 @@ namespace Windows.Win32.Graphics.Direct3D12 ;
 [ComImport, Guid("C4FEC28F-7966-4E95-9F94-F431CB56C3B8"),
  InterfaceType(ComInterfaceType.InterfaceIsIUnknown),]
 public interface ID3D12Object: IUnknown {
+	
 	/// <summary>Gets application-defined data from a device object.</summary>
 	/// <param name="guid">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> The <b>GUID</b> that is associated with the data.</para>
@@ -28,8 +32,11 @@ public interface ID3D12Object: IUnknown {
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
 	/// </returns>
 	/// <remarks>If the data returned is a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/unknwn/nn-unknwn-iunknown">IUnknown</a>, or one of its derivative classes, which was previously set by SetPrivateDataInterface, that interface will have its reference count incremented before the private data is returned.</remarks>
-	unsafe void GetPrivateData( Guid* guid, ref uint pDataSize, [Optional] void* pData ) ;
-
+	[return: MarshalAs(UnmanagedType.I4)]
+	[PreserveSig] unsafe HResult GetPrivateData( Guid* guid, ref uint pDataSize,
+												 [Optional, MaybeNull] void* pData ) ;
+	
+	
 	/// <summary>Sets application-defined data to a device object and associates that data with an application-defined GUID.</summary>
 	/// <param name="guid">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> The <b>GUID</b> to associate with the data.</para>
@@ -50,8 +57,11 @@ public interface ID3D12Object: IUnknown {
 	/// <para>Rather than using the Direct3D 11 debug object naming scheme of calling <b>ID3D12Object::SetPrivateData</b> using <b>WKPDID_D3DDebugObjectName</b> with an ASCII name, call <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12object-setname">ID3D12Object::SetName</a> with a UNICODE name.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setprivatedata#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void SetPrivateData( Guid* guid, uint DataSize, [Optional] void* pData ) ;
+	[return: MarshalAs(UnmanagedType.I4)]
+	[PreserveSig] unsafe HResult SetPrivateData( Guid* guid, uint DataSize,
+												 [Optional, MaybeNull] void* pData ) ;
 
+	
 	/// <summary>Associates an IUnknown-derived interface with the device object and associates that interface with an application-defined GUID.</summary>
 	/// <param name="guid">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/openspecs/windows_protocols/ms-oaut/6e7d7108-c213-40bc-8294-ac13fe68fd50">REFGUID</a></b> The <b>GUID</b> to associate with the interface.</para>
@@ -67,8 +77,12 @@ public interface ID3D12Object: IUnknown {
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setprivatedatainterface">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	unsafe void SetPrivateDataInterface( Guid* guid, [MarshalAs(0x19)] object pData) ;
-
+	[return: MarshalAs(UnmanagedType.I4)]
+	[PreserveSig] unsafe HResult SetPrivateDataInterface< T >( Guid* guid,
+															   [MarshalAs(0x19)] T? pData )
+																						 where T: IUnknown ;
+	
+	
 	/// <summary>Associates a name with the device object. This name is for use in debug diagnostics and tools.</summary>
 	/// <param name="Name">
 	/// <para>Type: <b>LPCWSTR</b> A <b>NULL</b>-terminated <b>UNICODE</b> string that contains the name to associate with the device object.</para>
@@ -81,5 +95,6 @@ public interface ID3D12Object: IUnknown {
 	/// <para>This method takes UNICODE names. Note that this is simply a convenience wrapper around [ID3D12Object::SetPrivateData](nf-d3d12-id3d12object-setprivatedata.md) with **WKPDID_D3DDebugObjectNameW**. Therefore names which are set with `SetName` can be retrieved with [ID3D12Object::GetPrivateData](nf-d3d12-id3d12object-getprivatedata.md) with the same GUID. Additionally, D3D12 supports narrow strings for names, using the **WKPDID_D3DDebugObjectName** GUID directly instead.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setname#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void SetName( PCWSTR Name ) ;
+	[return: MarshalAs(UnmanagedType.I4)]
+	[PreserveSig] void SetName( PCWSTR Name ) ;
 } ;

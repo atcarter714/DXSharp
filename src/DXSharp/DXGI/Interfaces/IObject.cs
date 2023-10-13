@@ -1,5 +1,6 @@
 ﻿#region Using Directives
 #pragma warning disable CS1591
+using System.Runtime.InteropServices ;
 using DXSharp.Windows.COM ;
 using Windows.Win32.Graphics.Dxgi ;
 #endregion
@@ -8,8 +9,7 @@ namespace DXSharp.DXGI ;
 
 /// <summary>Wrapper interface for the native IDXGIObject COM interface</summary>
 public interface IObject: IDXCOMObject,
-						  IUnknownWrapper< IDXGIObject > 
-{
+						  IUnknownWrapper< IDXGIObject > {
 	
 	/// <summary>Gets the parent of the object.</summary>
 	/// <param name="ppParent">
@@ -22,7 +22,20 @@ public interface IObject: IDXCOMObject,
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void GetParent< T >( out T ppParent ) where T: IUnknownWrapper ;
+	void GetParent< T >( out T ppParent ) where T: IUnknownWrapper {
+		unsafe {
+			var riid = typeof(T).GUID ;
+			ComObject!.GetParent( &riid, out var _parent ) ;
+			ppParent = (T)_parent ;
+		}
+	}
+	
+	void GetPrivateData< TData >( ref uint pDataSize, nint pData = 0x0000 ) where TData: unmanaged {
+		unsafe {
+			var guid = typeof(TData).GUID ;
+			var hr = ComObject!.GetPrivateData( &guid, ref pDataSize, (void*)pData ) ;
+		}
+	}
 	
 	// ----------------------------------------------------------------------------------------
 	
@@ -39,7 +52,3 @@ public interface IObject: IDXCOMObject,
 	
 	// ========================================================================================
 } ;
-
-/*public interface IObject< TInterface >: IObject, 
-									  IUnknownWrapper< TInterface >
-													where TInterface: IDXGIObject { } ;*/

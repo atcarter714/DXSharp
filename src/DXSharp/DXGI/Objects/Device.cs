@@ -9,7 +9,7 @@ namespace DXSharp.DXGI ;
 
 
 public class Device: Object, IDevice {
-	public ComPtr? ComPtrBase => ComPointer ;
+	//public ComPtr? ComPtrBase => ComPointer ;
 	public IDXGIDevice? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIDevice >? ComPointer { get ; protected set ; }
 
@@ -103,7 +103,7 @@ public class Device: Object, IDevice {
 	//! warning -----------------------------------
 	#warning Potentially unnecessary overrides/duplication of base methods
 	//! TODO: Figure out if we actually need to override/hide the base versions
-	public new void GetParent< T >( out T ppParent ) where T: IUnknownWrapper {
+	public void GetParent< T >( out T ppParent ) where T: IUnknownWrapper {
 		_throwIfDestroyed( ) ;
 		_throwIfNull( ) ;
 		ppParent = default! ;
@@ -116,7 +116,7 @@ public class Device: Object, IDevice {
 		}
 	}
 
-	public new void GetPrivateData< TData >( out uint pDataSize, nint pData ) where TData: unmanaged {
+	/*public void GetPrivateData< TData >( out uint pDataSize, nint pData ) where TData: unmanaged {
 		_throwIfDestroyed( ) ;
 		_throwIfNull( ) ;
 
@@ -127,7 +127,7 @@ public class Device: Object, IDevice {
 		pDataSize = dataSize ;
 	}
 
-	public new void SetPrivateData< T >( uint DataSize, nint pData ) {
+	public void SetPrivateData< T >( uint DataSize, nint pData ) {
 		_throwIfDestroyed( ) ;
 		_throwIfNull( ) ;
 
@@ -138,7 +138,7 @@ public class Device: Object, IDevice {
 		}
 	}
 
-	public new void SetPrivateDataInterface< T >( in T pUnknown ) where T: IUnknownWrapper< IUnknown > {
+	public void SetPrivateDataInterface< T >( in T pUnknown ) where T: IUnknownWrapper< IUnknown > {
 		_throwIfDestroyed( ) ;
 		_throwIfNull( ) ;
 		
@@ -146,7 +146,7 @@ public class Device: Object, IDevice {
 		unsafe {
 			this.COMObject!.SetPrivateDataInterface( &name, pUnknown ) ;
 		}
-	}
+	}*/
 	//! warning -----------------------------------
 	
 	

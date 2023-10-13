@@ -30,8 +30,10 @@ public readonly unsafe partial struct PCWSTR: IEquatable< PCWSTR >,
 #if USE_STRING_MEM_POOL
 		var mem = Pool.Rent( len + 1 ) ;
 		mem.Memory.Span[ len ] = '\0' ;
+		
 		var strSpan = value.AsSpan( ) ;
 		strSpan.CopyTo( mem.Memory.Span ) ;
+		
 		Value = (char *)mem.Memory.Pin( ).Pointer ;
 		_PCWSTRAllocations.Add( (nint)Value, mem ) ;
 #else
@@ -88,7 +90,7 @@ public readonly unsafe partial struct PCWSTR: IEquatable< PCWSTR >,
 
 	static readonly Dictionary< PCWSTR, int > _PCWSTR_Sizes = new( ) ;
 
-	public static unsafe bool CompareChars( char* left, char* right, int len ) {
+	public static bool CompareChars( char* left, char* right, int len ) {
 		const int MAX_LEN = 2048 ;
 		for( int i = 0 ; i < len && i < MAX_LEN ; ++i ) {
 			if ( left[ i ] != right[ i ] ) return false ;
@@ -97,6 +99,7 @@ public readonly unsafe partial struct PCWSTR: IEquatable< PCWSTR >,
 		return true ;
 	}
 
+	
 #if USE_STRING_MEM_POOL
 	static readonly MemoryPool< char > Pool = MemoryPool< char >.Shared ;
 	static readonly Dictionary< nint, IMemoryOwner<char> > _PCWSTRAllocations = new( ) ;
@@ -117,6 +120,116 @@ public readonly unsafe partial struct PCWSTR: IEquatable< PCWSTR >,
 		finally { 
 			_PCWSTR_Sizes?.Clear( ) ;
 			_PCWSTRAllocations?.Clear( ) ;
+		}
+		return true ;
+	}
+#endif
+} ;
+
+
+
+/// <summary>A pointer to a null-terminated, constant, ANSI character string.</summary>
+[DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
+public readonly unsafe partial struct PCSTR: IEquatable<PCSTR>, 
+											 IDisposable {
+	public PCSTR( string? value ) {
+#if DEBUG || DEV_BUILD
+		if ( string.IsNullOrEmpty(value) ) {
+			Value = null ;
+			return ;
+		}
+#endif
+		int len = value.Length ;
+#if USE_STRING_MEM_POOL
+		var mem = Pool.Rent( len + 1 ) ;
+		
+		mem.Memory.Span[ len ] = 0x00 ;
+		int c = Encoding.ASCII.GetBytes( value, mem.Memory.Span ) ;
+		
+		Value = (byte *)mem.Memory.Pin( ).Pointer ;
+		_PCSTRAllocations.Add( (nint)Value, mem ) ;
+#else
+		this.Value = (char *)Marshal.StringToHGlobalUni( value ) ;
+		_PCSTRAllocations.Add( (nint)Value ) ;
+#endif
+		_PCSTR_Sizes.Add( this, c ) ;
+	}
+
+	public void Dispose( ) {
+#if USE_STRING_MEM_POOL
+		if( Value is not null ) {
+			if( !_PCSTRAllocations.ContainsKey( (nint)Value ) ) return ;
+			var mem = _PCSTRAllocations[ (nint)Value ] ;
+			mem.Dispose( ) ;
+			_PCSTRAllocations.Remove( (nint)Value ) ;
+		}
+#else
+ 		if( Value is not null ) {
+			if( !_PCSTRAllocations.Contains((nint)Value) ) return ;
+			Marshal.FreeHGlobal( (nint)Value ) ;
+			_PCSTRAllocations.Remove( (nint)Value ) ;
+		}
+#endif
+	}
+
+	
+	public static PCSTR Create( in string? value ) => new( value ) ;
+	
+	public static bool operator ==( in PCSTR left, in PCSTR right ) => left.Equals( right ) ;
+	public static bool operator !=( in PCSTR left, in PCSTR right ) => !left.Equals( right ) ;
+	
+	public static bool operator !=( in PCSTR left, in string? right ) => !( left == right ) ;
+	public static bool operator ==( in PCSTR left, in string? right ) {
+		if( right is null ) return left.Value is null ;
+		if( left.Value is null ) return false ;
+		
+		if( _PCSTR_Sizes.TryGetValue( left, out int len ) ) {
+			if( len != right.Length ) return false ;
+			fixed( byte* ptr = Encoding.ASCII.GetBytes(right) )
+				return CompareChars( left.Value, ptr, len ) ;
+		}
+		
+		len = left.Length ;
+		_PCSTR_Sizes.Add( left, len ) ;
+		if ( len != right.Length ) return false ;
+		fixed( byte* ptr = Encoding.ASCII.GetBytes(right) )
+			return CompareChars( left.Value, ptr, len ) ;
+	}
+	
+	public static implicit operator PCSTR( in string? value ) => new( value ) ;
+	public static implicit operator string?( in PCSTR value ) => value.ToString( ) ;
+
+	static readonly Dictionary< PCSTR, int > _PCSTR_Sizes = new( ) ;
+
+	public static bool CompareChars( byte* left, byte* right, int len ) {
+		const int MAX_LEN = 2048 ;
+		for( int i = 0 ; i < len && i < MAX_LEN ; ++i ) {
+			if ( left[ i ] != right[ i ] ) return false ;
+			if( left[ i ] is 0x00 ) return true ;
+		}
+		return true ;
+	}
+	
+#if USE_STRING_MEM_POOL
+	static readonly MemoryPool< byte > Pool = MemoryPool< byte >.Shared ;
+	static readonly Dictionary< nint, IMemoryOwner<byte> > _PCSTRAllocations = new( ) ;
+	public static bool CleanupStringAllocations( ) {
+		Pool?.Dispose( ) ;
+		_PCSTR_Sizes?.Clear( ) ;
+		_PCSTRAllocations?.Clear( ) ;
+		return true ;
+	}
+#else
+	static readonly HashSet< nint > _PCSTRAllocations = new( ) ;
+	public static bool CleanupStringAllocations( ) {
+		if( _PCSTRAllocations.Count is 0 ) return false ;
+		try { foreach( var ptr in _PCSTRAllocations )
+			if( ptr is not 0x0000 )
+				Marshal.FreeHGlobal( ptr ) ;
+		}
+		finally { 
+			_PCSTR_Sizes?.Clear( ) ;
+			_PCSTRAllocations?.Clear( ) ;
 		}
 		return true ;
 	}

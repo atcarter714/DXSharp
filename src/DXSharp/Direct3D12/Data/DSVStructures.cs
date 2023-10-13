@@ -1,14 +1,59 @@
 ﻿#region Using Directives
 using System.Runtime.InteropServices ;
+using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp ;
 using DXSharp.DXGI ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_DEPTH_STENCIL_DESC ) )]
+public struct DepthStencilDesc {
+	/// <summary>Specifies whether to enable depth testing. Set this member to <b>TRUE</b> to enable depth testing.</summary>
+	public BOOL DepthEnable ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_depth_write_mask">D3D12_DEPTH_WRITE_MASK</a>-typed value that identifies a portion of the depth-stencil buffer that can be modified by depth data.</summary>
+	public DepthWriteMask DepthWriteMask ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_comparison_func">D3D12_COMPARISON_FUNC</a>-typed value that identifies a function that compares depth data against existing depth data.</summary>
+	public ComparisonFunction DepthFunc ;
+
+	/// <summary>Specifies whether to enable stencil testing. Set this member to <b>TRUE</b> to enable stencil testing.</summary>
+	public BOOL StencilEnable ;
+
+	/// <summary>Identify a portion of the depth-stencil buffer for reading stencil data.</summary>
+	public byte StencilReadMask ;
+
+	/// <summary>Identify a portion of the depth-stencil buffer for writing stencil data.</summary>
+	public byte StencilWriteMask ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_depth_stencilop_desc">D3D12_DEPTH_STENCILOP_DESC</a> structure that describes how to use the results of the depth test and the stencil test for pixels whose surface normal is facing towards the camera.</summary>
+	public DepthStencilOpDesc FrontFace ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_depth_stencilop_desc">D3D12_DEPTH_STENCILOP_DESC</a> structure that describes how to use the results of the depth test and the stencil test for pixels whose surface normal is facing away from the camera.</summary>
+	public DepthStencilOpDesc BackFace ;
+} ;
 
 [StructLayout(LayoutKind.Sequential),
-	ProxyFor( typeof( D3D12_DEPTH_STENCIL_VIEW_DESC ) )]
+	ProxyFor( typeof( D3D12_DEPTH_STENCILOP_DESC ) )]
+public struct DepthStencilOpDesc {
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_stencil_op">D3D12_STENCIL_OP</a>-typed value that identifies the stencil operation to perform when stencil testing fails.</summary>
+	public D3D12_STENCIL_OP StencilFailOp ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_stencil_op">D3D12_STENCIL_OP</a>-typed value that identifies the stencil operation to perform when stencil testing passes and depth testing fails.</summary>
+	public D3D12_STENCIL_OP StencilDepthFailOp ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_stencil_op">D3D12_STENCIL_OP</a>-typed value that identifies the stencil operation to perform when stencil testing and depth testing both pass.</summary>
+	public D3D12_STENCIL_OP StencilPassOp ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_comparison_func">D3D12_COMPARISON_FUNC</a>-typed value that identifies the function that compares stencil data against existing stencil data.</summary>
+	public D3D12_COMPARISON_FUNC StencilFunc ;
+} ;
+	
+
+[StructLayout(LayoutKind.Sequential),
+ ProxyFor( typeof( D3D12_DEPTH_STENCIL_VIEW_DESC ) )]
 public struct DepthStencilViewDesc {
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>-typed value that specifies the viewing format.  For allowable formats, see Remarks.</summary>
 	public Format Format ;
