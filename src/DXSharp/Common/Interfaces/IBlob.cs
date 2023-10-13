@@ -2,9 +2,11 @@
 using Windows.Win32.Graphics.Direct3D ;
 using DXSharp.Windows.COM ;
 
+
 namespace DXSharp {
 	[Wrapper( typeof( ID3DBlob ) )]
-	public interface IBlob: IUnknownWrapper< ID3DBlob > {
+	public interface IBlob: IComObjectRef< ID3DBlob >, 
+							IUnknownWrapper< ID3DBlob > {
 		/// <summary>Retrieves a pointer to the blob's data.</summary>
 		/// <returns>The address of the blob data.</returns>
 		unsafe nint GetBufferPointer( ) => ( nint )ComObject!.GetBufferPointer( ) ;

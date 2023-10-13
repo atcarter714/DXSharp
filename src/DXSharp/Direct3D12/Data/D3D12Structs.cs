@@ -86,17 +86,24 @@ public struct TileRegionSize {
 	public ushort Depth ;
 }
 
-[StructLayout(LayoutKind.Sequential),
- ProxyFor(typeof(D3D12_HEAP_DESC))]
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_HEAP_DESC ) )]
 public struct HeapDescription {
 	/// <summary>
-	/// <para>The size, in bytes, of the heap. To avoid wasting memory, applications should pass <i>SizeInBytes</i> values which are multiples of the effective <i>Alignment</i>; but non-aligned <i>SizeInBytes</i> is also supported, for convenience. To find out how large a heap must be to support textures with undefined layouts and adapter-specific sizes, call <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-getresourceallocationinfo">ID3D12Device::GetResourceAllocationInfo</a>.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para>The size, in bytes, of the heap. To avoid wasting memory, applications should pass <i>SizeInBytes</i> values
+	/// which are multiples of the effective <i>Alignment</i>; but non-aligned <i>SizeInBytes</i> is also supported, for convenience.
+	/// To find out how large a heap must be to support textures with undefined layouts and adapter-specific sizes, call
+	/// <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-getresourceallocationinfo">
+	/// ID3D12Device::GetResourceAllocationInfo
+	/// </a>.</para>
+	/// <para>
+	/// <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public ulong SizeInBytes ;
 
-	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_heap_properties">D3D12_HEAP_PROPERTIES</a> structure that describes the heap properties.</summary>
-	public HeapProperties Properties;
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_heap_properties">D3D12_HEAP_PROPERTIES</a>
+	/// structure that describes the heap properties.</summary>
+	public HeapProperties Properties ;
 
 	/// <summary>
 	/// <para>The alignment value for the heap.  Valid values:</para>
@@ -111,19 +118,34 @@ public struct HeapDescription {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_desc#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
 	public D3D12_HEAP_FLAGS Flags ;
-}
+	
+	public static implicit operator HeapDescription( in D3D12_HEAP_DESC desc ) => new HeapDescription {
+		SizeInBytes = desc.SizeInBytes,
+		Properties  = desc.Properties,
+		Alignment   = desc.Alignment,
+		Flags       = desc.Flags
+	} ;
+	public static implicit operator D3D12_HEAP_DESC( in HeapDescription desc ) => new D3D12_HEAP_DESC {
+		SizeInBytes = desc.SizeInBytes,
+		Properties  = desc.Properties,
+		Alignment   = desc.Alignment,
+		Flags       = desc.Flags
+	} ;
+} ;
 
-[StructLayout(LayoutKind.Sequential),
- ProxyFor(typeof(D3D12_HEAP_PROPERTIES))]
+
+
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_HEAP_PROPERTIES ) )]
 public struct HeapProperties {
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type">D3D12_HEAP_TYPE</a>-typed value that specifies the type of heap.</summary>
-	public D3D12_HEAP_TYPE Type ;
+	public HeapType Type ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_cpu_page_property">D3D12_CPU_PAGE_PROPERTY</a>-typed value that specifies the CPU-page properties for the heap.</summary>
-	public D3D12_CPU_PAGE_PROPERTY CPUPageProperty ;
+	public CPUPageProperty CPUPageProperty ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_memory_pool">D3D12_MEMORY_POOL</a>-typed value that specifies the memory pool for the heap.</summary>
-	public D3D12_MEMORY_POOL MemoryPoolPreference ;
+	public MemoryPool MemoryPoolPreference ;
 
 	/// <summary>
 	/// <para>For multi-adapter operation, this indicates the node where the resource should be created. Exactly one bit of this UINT must be set. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>. Passing zero is equivalent to passing one, in order to simplify the usage of single-GPU adapters.</para>
@@ -136,7 +158,23 @@ public struct HeapProperties {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_properties#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
 	public uint VisibleNodeMask ;
-}
+	
+	public static implicit operator HeapProperties( in D3D12_HEAP_PROPERTIES props ) => new HeapProperties {
+			Type                 = (HeapType)props.Type,
+			CPUPageProperty      = (CPUPageProperty)props.CPUPageProperty,
+			MemoryPoolPreference = (MemoryPool)props.MemoryPoolPreference,
+			CreationNodeMask     = props.CreationNodeMask,
+			VisibleNodeMask      = props.VisibleNodeMask
+	} ;
+	public static implicit operator D3D12_HEAP_PROPERTIES( in HeapProperties props ) => new D3D12_HEAP_PROPERTIES {
+			Type                 = (D3D12_HEAP_TYPE)props.Type,
+			CPUPageProperty      = (D3D12_CPU_PAGE_PROPERTY)props.CPUPageProperty,
+			MemoryPoolPreference = (D3D12_MEMORY_POOL)props.MemoryPoolPreference,
+			CreationNodeMask     = props.CreationNodeMask,
+			VisibleNodeMask      = props.VisibleNodeMask
+	} ;
+} ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_TILE_SHAPE ) )]
@@ -178,7 +216,9 @@ public struct PackedMipInfo {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_packed_mip_info#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
 	public uint StartTileIndexInOverallResource;
+	
 } ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_SUBRESOURCE_TILING ) )]
@@ -194,7 +234,24 @@ public struct SubresourceTiling {
 
 	/// <summary>The index of the tile in the overall tiled subresource to start with.</summary>
 	public uint StartTileIndexInOverallResource;
+	
+	
+	public SubresourceTiling( in D3D12_SUBRESOURCE_TILING tiling ) {
+		WidthInTiles               = tiling.WidthInTiles;
+		HeightInTiles              = tiling.HeightInTiles;
+		DepthInTiles               = tiling.DepthInTiles;
+		StartTileIndexInOverallResource = tiling.StartTileIndexInOverallResource;
+	}
+	
+	public static implicit operator SubresourceTiling( in D3D12_SUBRESOURCE_TILING tiling ) => new SubresourceTiling( tiling ) ;
+	public static implicit operator D3D12_SUBRESOURCE_TILING( in SubresourceTiling tiling ) => new D3D12_SUBRESOURCE_TILING {
+		WidthInTiles               = tiling.WidthInTiles,
+		HeightInTiles              = tiling.HeightInTiles,
+		DepthInTiles               = tiling.DepthInTiles,
+		StartTileIndexInOverallResource = tiling.StartTileIndexInOverallResource
+	} ;
 } ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_RANGE ) )]
@@ -243,6 +300,35 @@ public struct ResourceDescription {
 
 	/// <summary>Bitwise-OR'd flags, as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_flags">D3D12_RESOURCE_FLAGS</a> enumeration constants.</summary>
 	public ResourceFlags Flags ;
+
+	public ResourceDescription( in D3D12_RESOURCE_DESC desc ) {
+		
+	}
+	
+	public static implicit operator ResourceDescription( in D3D12_RESOURCE_DESC desc ) => new ResourceDescription {
+			Dimension       = (ResourceDimension)desc.Dimension,
+			Alignment       = desc.Alignment,
+			Width           = desc.Width,
+			Height          = desc.Height,
+			DepthOrArraySize= desc.DepthOrArraySize,
+			MipLevels       = desc.MipLevels,
+			Format          = (Format)desc.Format,
+			SampleDesc      = (SampleDescription)desc.SampleDesc,
+			Layout          = (TextureLayout)desc.Layout,
+			Flags           = (ResourceFlags)desc.Flags
+	} ;
+	public static implicit operator D3D12_RESOURCE_DESC( in ResourceDescription desc ) => new D3D12_RESOURCE_DESC {
+			Dimension       = (D3D12_RESOURCE_DIMENSION)desc.Dimension,
+			Alignment       = desc.Alignment,
+			Width           = desc.Width,
+			Height          = desc.Height,
+			DepthOrArraySize= desc.DepthOrArraySize,
+			MipLevels       = desc.MipLevels,
+			Format          = (DXGI_FORMAT)desc.Format,
+			SampleDesc      = (DXGI_SAMPLE_DESC)desc.SampleDesc,
+			Layout          = (D3D12_TEXTURE_LAYOUT)desc.Layout,
+			Flags           = (D3D12_RESOURCE_FLAGS)desc.Flags
+	} ;
 } ;
 
 
@@ -949,3 +1035,94 @@ public struct CommandSignatureDescription {
 	public uint NodeMask ;
 } ;
 
+
+/// <summary>
+/// Used with the <see cref="CommandSignatureDescription"/> structure
+/// (<a href="https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_indirect_argument_desc">D3D12_COMMAND_SIGNATURE_DESC</a>).
+/// </summary>
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_INDIRECT_ARGUMENT_DESC ) )]
+public struct IndirectArgumentDescription {
+	/// <summary>A single <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_indirect_argument_type">D3D12_INDIRECT_ARGUMENT_TYPE</a> enumeration constant.</summary>
+	public IndirectArgumentType Type ;
+
+	public _anon_argdesc_union Anonymous ;
+	[StructLayout( LayoutKind.Explicit )]
+	public partial struct _anon_argdesc_union {
+		[FieldOffset( 0 )] public _vertexBufferUnion_ VertexBuffer ;
+		[FieldOffset( 0 )] public _constantDataUnion_ Constant ;
+		[FieldOffset( 0 )] public _constantBufferViewUnion_ ConstantBufferView ;
+		[FieldOffset( 0 )] public _shaderResourceViewUnion_ ShaderResourceView ;
+		[FieldOffset( 0 )] public _unorderedAccessViewUnion_ UnorderedAccessView ;
+		
+		public partial struct _vertexBufferUnion_ { public uint Slot ; } ;
+		public partial struct _constantDataUnion_ { public uint RootParameterIndex, DestOffsetIn32BitValues, Num32BitValuesToSet ; } ;
+		public partial struct _constantBufferViewUnion_ { public uint RootParameterIndex ; } ;
+		public partial struct _shaderResourceViewUnion_ { public uint RootParameterIndex ; } ;
+		public partial struct _unorderedAccessViewUnion_ { public uint RootParameterIndex ; } ;
+	} ;
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_STREAM_OUTPUT_DESC ) )]
+public struct StreamOutputDescription {
+	/// <summary>
+	/// An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_so_declaration_entry">D3D12_SO_DECLARATION_ENTRY</a>
+	/// structures. Can't be <b>NULL</b> if <b>NumEntries</b> &gt; 0.
+	/// </summary>
+	public unsafe SODeclarationEntry* pSODeclaration ;
+	public unsafe Span< SODeclarationEntry > SODeclarations => new( pSODeclaration, ( int )NumEntries ) ;
+	
+	/// <summary>The number of entries in the stream output declaration array that the <b>pSODeclaration</b> member points to.</summary>
+	public uint NumEntries ;
+
+	/// <summary>An array of buffer strides; each stride is the size of an element for that buffer.</summary>
+	public unsafe uint* pBufferStrides ;
+
+	/// <summary>The number of strides (or buffers) that the <b>pBufferStrides</b> member points to.</summary>
+	public uint NumStrides ;
+
+	/// <summary>The index number of the stream to be sent to the rasterizer stage.</summary>
+	public uint RasterizedStream ;
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_STREAM_OUTPUT_BUFFER_VIEW ) )]
+public struct StreamOutputBufferView {
+	/// <summary>
+	/// <para>A D3D12_GPU_VIRTUAL_ADDRESS (a UINT64) that points to the stream output buffer.
+	/// If <b>SizeInBytes</b> is 0, this member isn't used and can be any value.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_stream_output_buffer_view#members">
+	/// Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public ulong BufferLocation ;
+
+	/// <summary>The size of the stream output buffer in bytes.</summary>
+	public ulong SizeInBytes ;
+
+	/// <summary>
+	/// <para>The location of the value of how much data has been filled into the buffer, as a D3D12_GPU_VIRTUAL_ADDRESS (a UINT64). This member can't be NULL; a filled size location must be supplied (which the hardware will increment as data is output). If <b>SizeInBytes</b> is 0, this member isn't used and can be any value.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_stream_output_buffer_view#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public ulong BufferFilledSizeLocation ;
+	
+	public StreamOutputBufferView( ulong bufferLocation, ulong sizeInBytes, ulong bufferFilledSizeLocation ) {
+		BufferLocation = bufferLocation ;
+		SizeInBytes = sizeInBytes ;
+		BufferFilledSizeLocation = bufferFilledSizeLocation ;
+	}
+	public StreamOutputBufferView( in D3D12_STREAM_OUTPUT_BUFFER_VIEW view ) {
+		BufferLocation = view.BufferLocation ;
+		SizeInBytes = view.SizeInBytes ;
+		BufferFilledSizeLocation = view.BufferFilledSizeLocation ;
+	}
+	
+	public static implicit operator D3D12_STREAM_OUTPUT_BUFFER_VIEW( in StreamOutputBufferView view ) => new D3D12_STREAM_OUTPUT_BUFFER_VIEW {
+			BufferLocation = view.BufferLocation,
+			SizeInBytes = view.SizeInBytes,
+			BufferFilledSizeLocation = view.BufferFilledSizeLocation
+	} ;
+	public static implicit operator StreamOutputBufferView( in D3D12_STREAM_OUTPUT_BUFFER_VIEW view ) => new( view ) ;
+} ;

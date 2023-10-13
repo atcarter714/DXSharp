@@ -29,9 +29,9 @@ public class Adapter: Object, IAdapter {
 
 	// -------------------------------------------------------------------------------------
 	
+	public override ComPtr? ComPtrBase => ComPointer ;
 	public IDXGIAdapter? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIAdapter >? ComPointer { get ; protected set ; }
-	public ComPtr? ComPtrBase => ComPointer ;
 	
 	//! Constructors:
 	internal Adapter( ) { }
@@ -104,10 +104,12 @@ public class Adapter: Object, IAdapter {
 		}
 	}
 
-	public static TInterface Instantiate< TInterface >() where TInterface: class, IDXCOMObject {
+	public static TInterface Instantiate< TInterface >( ) where TInterface: class, IDXCOMObject {
 		return ( new Adapter( ) as TInterface ) ;
 	}
 } ;
+
+
 
 public class Adapter1: Adapter, IAdapter1 {
 	public new IDXGIAdapter1? COMObject => ComPointer?.Interface ;

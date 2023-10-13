@@ -40,7 +40,7 @@ public class Factory: Object, IFactory {
 	}
 	// -----------------------------------------------------------------------------------
 	
-	public ComPtr? ComPtrBase => ComPointer ;
+	public override ComPtr? ComPtrBase => ComPointer ;
 	public IDXGIFactory? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIFactory >? ComPointer { get ; protected set ; }
 	

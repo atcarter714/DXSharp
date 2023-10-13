@@ -816,5 +816,91 @@ public enum InputClassification {
 	PerInstanceData = 1,
 } ;
 
-//[Equivalent( typeof( D3D12_ ) )]
-//public enum ___
+[Equivalent( typeof(D3D12_CPU_PAGE_PROPERTY) )]
+public enum CPUPageProperty {
+	/// <summary>The CPU-page property is unknown.</summary>
+	UNKNOWN = 0,
+	/// <summary>The CPU cannot access the heap, therefore no page properties are available.</summary>
+	NOT_AVAILABLE = 1,
+	/// <summary>The CPU-page property is write-combined.</summary>
+	WRITE_COMBINE = 2,
+	/// <summary>The CPU-page property is write-back.</summary>
+	WRITE_BACK = 3,
+} ;
+
+[Equivalent( typeof(D3D12_MEMORY_POOL) )]
+public enum MemoryPool {
+	/// <summary>The memory pool is unknown.</summary>
+	UNKNOWN = 0,
+	/// <summary>
+	/// <para>The memory pool is L0. L0 is the physical system memory pool. When the adapter is discrete/NUMA, this pool has greater bandwidth for the CPU and less bandwidth for the GPU. When the adapter is UMA, this pool is the only one which is valid.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_memory_pool#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	L0 = 1,
+	/// <summary>
+	/// <para>The memory pool is L1. L1 is typically known as the physical video memory pool. L1 is only available when the adapter is discrete/NUMA, and has greater bandwidth for the GPU and cannot even be accessed by the CPU. When the adapter is UMA, this pool is not available.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_memory_pool#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	L1 = 2,
+} ;
+
+[Equivalent( typeof(D3D12_INDIRECT_ARGUMENT_TYPE) )]
+public enum IndirectArgumentType {
+	/// <summary>Indicates the type is a Draw call.</summary>
+	DRAW = 0,
+	/// <summary>Indicates the type is a DrawIndexed call.</summary>
+	DRAW_INDEXED = 1,
+	/// <summary>Indicates the type is a Dispatch call.</summary>
+	DISPATCH = 2,
+	/// <summary>Indicates the type is a vertex buffer view.</summary>
+	VERTEX_BUFFER_VIEW = 3,
+	/// <summary>Indicates the type is an index buffer view.</summary>
+	INDEX_BUFFER_VIEW = 4,
+	/// <summary>Indicates the type is a constant.</summary>
+	CONSTANT = 5,
+	/// <summary>Indicates the type is a constant buffer view (CBV).</summary>
+	CONSTANT_BUFFER_VIEW = 6,
+	/// <summary>Indicates the type is a shader resource view (SRV).</summary>
+	SHADER_RESOURCE_VIEW = 7,
+	/// <summary>Indicates the type is an unordered access view (UAV).</summary>
+	UNORDERED_ACCESS_VIEW = 8,
+	DISPATCH_RAYS = 9,
+	DISPATCH_MESH = 10,
+} ;
+
+
+//!!! ------------------------------------------------------------------------------------------------ !!!//
+
+#warning This type doesn't seem to get created by CsWin32
+/// <summary>Identifies the tier level at which tiled resources are supported.</summary>
+/// <remarks>For more information, see:
+/// <a href="https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_tiled_resources_tier">
+/// <b>D3D12_TILED_RESOURCES_TIER</b> enumeration (<i>d3d12.h</i>)</a>.</remarks>
+[ProxyFor(typeof(D3D12_INDIRECT_ARGUMENT_TYPE))]
+public enum TiledResourcesTier { NotSupported = 0, Tier1 = 1, Tier2 = 2, Tier3 = 3, Tier4 = 4 } ;
+
+//!!! ------------------------------------------------------------------------------------------------ !!!//
+
+[Equivalent( typeof( D3D12_TILE_COPY_FLAGS ) )]
+public enum TileCopyFlags {
+	/// <summary>No tile-copy flags are specified.</summary>
+	None = 0x00000000,
+
+	/// <summary>
+	/// <para>Indicates that the GPU isn't currently referencing any of the portions of destination memory being written.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_tile_copy_flags#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	NoHazard = 0x00000001,
+
+	/// <summary>
+	/// <para>Indicates that the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copytiles">ID3D12GraphicsCommandList::CopyTiles</a> operation involves copying a linear buffer to a swizzled tiled resource. This means to copy tile data from the specified buffer location, reading tiles sequentially, to the specified tile region (in x,y,z order if the region is a box), swizzling to optimal hardware memory layout as needed. In this <b>ID3D12GraphicsCommandList::CopyTiles</b> call, you specify the source data with the  <i>pBuffer</i> parameter and the destination with the <i>pTiledResource</i> parameter.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_tile_copy_flags#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	LinearBufferToSwizzledTiledResource = 0x00000002,
+
+	/// <summary>
+	/// <para>Indicates that the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copytiles">ID3D12GraphicsCommandList::CopyTiles</a> operation involves copying a swizzled tiled resource to a linear buffer. This means to copy tile data from the tile region, reading tiles sequentially (in x,y,z order if the region is a box), to the specified buffer location, deswizzling to linear memory layout as needed. In this <b>ID3D12GraphicsCommandList::CopyTiles</b> call, you specify the source data with the <i>pTiledResource</i> parameter and the destination with the  <i>pBuffer</i> parameter.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_tile_copy_flags#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	SwizzledTiledResourceToLinearBuffer = 0x00000004,
+} ;

@@ -26,6 +26,8 @@
 using System.Runtime.InteropServices ;
 using System.Diagnostics.CodeAnalysis ;
 using Windows.Win32.Foundation ;
+using Windows.Win32.Graphics.Direct3D12 ;
+using Windows.Win32.Graphics.Dxgi ;
 using static DXSharp.Windows.COM.COMUtility ;
 #endregion
 namespace DXSharp.Windows.COM ;
@@ -121,7 +123,7 @@ public abstract class ComPtr: IDisposable {
 			|| ( obj is nint address && address == BaseAddress ) ;
 	
 	//! IDisposable:
-	public bool Disposed => !BaseAddress.IsValid() ;
+	public bool Disposed => !BaseAddress.IsValid( ) ;
 	~ComPtr( ) => Dispose( ) ;
 	public virtual void Dispose( ) {
 		if( BaseAddress.IsValid() ) Release( ref _baseAddr ) ;
@@ -174,9 +176,11 @@ public abstract class ComPtr: IDisposable {
 public sealed class ComPtr< T >: ComPtr 
 								 where T: IUnknown {
 	nint _interfaceVPtr ;
+	
+	public Type InterfaceType => typeof(T) ;
+	public T? Interface { get ; private set ; }
 	public nint InterfaceVPtr => _interfaceVPtr ;
 	
-	public T? Interface { get ; private set ; }
 	
 	internal ComPtr( ) { }
 	public ComPtr( [NotNull] in T comInterface ): 
@@ -190,15 +194,6 @@ public sealed class ComPtr< T >: ComPtr
 	}
 	
 	public ComPtr( nint address ): base(address) {
-		/*var _hr = QueryInterface( address, out T _interface ) ;
-		if( _hr.Failed ) throw new ArgumentException( nameof(address),
-							$"{nameof(ComPtr)}<{typeof(T).FullName}> -> c'tor( {nameof(IntPtr)} ) :: " +
-							$"The pointer is not a valid COM object implementing {typeof(T).FullName} interface!" ) ;
-		
-		_hr = QueryInterface< T >( address, out nint ptrToInterface ) ;
-		if( _hr.Failed ) throw new COMException($"{nameof(ComPtr<T>)} -> c'tor( {nameof(IntPtr)} ) :: " +
-												$"Failed to get the interface pointer!", _hr.Value ) ;*/
-		
 		if( !address.IsValid() )
 			throw new ArgumentNullException( nameof(address),
 				$"{nameof(ComPtr)}<{typeof(T).FullName}> -> c'tor( {nameof(IntPtr)} ) :: " +
@@ -219,7 +214,6 @@ public sealed class ComPtr< T >: ComPtr
 		_marshalRefCount = Interface?.AddRef( ) ?? 0 ;
 		return ++_refCount ;
 	}
-
 	internal T? GetReference( ) {
 		GetReference( out _ ) ;
 		return Interface! ;
@@ -291,10 +285,78 @@ public sealed class ComPtr< T >: ComPtr
 		}
 	}
 	
+	
 	public ComPtr< T > Clone( ) {
-		T? obj = GetReference( ) ?? throw new NullReferenceException() ;
+		T? obj = GetReference( ) ?? throw new NullReferenceException( ) ;
 		ComPtr< T > newComPtr = new( obj ) ;
 		return newComPtr ;
 	}
 	
+	public ComPtr< TOut > Cast< TOut >( ) where TOut: IUnknown {
+		if( !InterfaceType.IsAssignableTo( typeof(TOut) )) throw new InvalidCastException( ) ;
+		
+		var _result = QueryInterface< TOut >( BaseAddress, out nint pInterface ) ;
+		if( _result.Failed ) throw new COMException( $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " +
+													  $"{nameof(Cast)}<{typeof(TOut).FullName}> :: " +
+													  $"Failed to cast the COM object to {typeof(TOut).FullName}!" ) ;
+		
+		ComPtr< TOut > newComPtr = new( _result ) ;
+		newComPtr.IncrementReferences( ) ;
+		return newComPtr ;
+	}
+
+	
+	
+	public static explicit operator ComPtr< IUnknown >?( ComPtr< T >? other ) {
+		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
+		return new( other.BaseAddress ) ;
+	}
+
+	public static explicit operator ComPtr< T >?( ComPtr< IUnknown >? other ) {
+		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
+		if( other.Interface is T _interface ) return new( other.BaseAddress ) ;
+		
+		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
+										$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
+	}
+
+	public static explicit operator ComPtr< IDXGIObject >( ComPtr< T >? other ) {
+		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
+		
+		if( other.InterfaceType.IsAssignableTo(typeof(IDXGIObject)) 
+			&& other.Interface is IDXGIObject dxgiObj ) return new( dxgiObj ) ;
+		
+		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
+										$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(ID3D12Object)}!" ) ;
+	}
+
+	public static explicit operator ComPtr< T >( ComPtr< IDXGIObject >? other ) {
+		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
+		
+		if( typeof(T).IsAssignableFrom(typeof(IDXGIObject))
+			&& other.Interface is T _interface ) return new( other.BaseAddress ) ;
+
+		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
+										$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
+	}
+
+	public static explicit operator ComPtr< ID3D12Object >( ComPtr< T >? other ) {
+		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
+		
+		if( other.InterfaceType.IsAssignableTo(typeof(ID3D12Object)) 
+			&& other.Interface is ID3D12Object d3dObj ) return new( d3dObj ) ;
+		
+		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
+										$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(ID3D12Object)}!" ) ;
+	}
+
+	public static explicit operator ComPtr< T >( ComPtr< ID3D12Object >? other ) {
+		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
+		
+		if( typeof(T).IsAssignableFrom(typeof(ID3D12Object))
+			&& other.Interface is T _interface ) return new( other.BaseAddress ) ;
+
+		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
+										$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
+	}
 } ;

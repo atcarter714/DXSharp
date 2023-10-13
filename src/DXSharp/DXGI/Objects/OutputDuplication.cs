@@ -8,7 +8,7 @@ namespace DXSharp.DXGI ;
 
 
 public class OutputDuplication: Object, IOutputDuplication {
-	public ComPtr? ComPtrBase => ComPointer ;
+	public override ComPtr? ComPtrBase => ComPointer ;
 	public IDXGIOutputDuplication? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutputDuplication >? ComPointer { get ; protected set ; }
 	

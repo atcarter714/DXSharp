@@ -12,14 +12,22 @@ using static DXSharp.InteropUtils ;
 namespace DXSharp ;
 
 
+public interface IComObjectRef { nint PointerToIUnknown { get; } } ;
+public interface IComObjectRef< T >: IComObjectRef
+	where T: IUnknown { T? COMObject { get; } } ;
+
+public interface IInstantiable {
+	static abstract IDXCOMObject Instantiate( ) ;
+} ;
+public interface IInstantiable< T >: IInstantiable
+	where T: class, IInstantiable< T > {
+	new static abstract T Instantiate( ) ;
+} ;
+
+
+//! TODO: Remove all the exhaustive safety checks after testing and merge into single execution path. (i.e, no branching)
 /// <summary>Contract for the common COM interface shared by objects in DirectX.</summary>
 public interface IDXCOMObject: IUnknownWrapper {
-	internal static abstract IDXCOMObject Instantiate( ) ;
-	internal static abstract TInterface Instantiate< TInterface >( )
-								where TInterface: class, IDXCOMObject ;
-	
-	//! TODO: Remove all the exhaustive safety checks after testing and merge into single execution path. (i.e, no branching)
-
 	
 	/// <summary>Get a pointer to the object's data.</summary>
 	/// <param name="name">User-defined name or GUID to associate with the data.</param>
@@ -122,8 +130,6 @@ public interface IDXCOMObject: IUnknownWrapper {
 			return _dataSize ;
 		}
 	}
-
-	
 	
 	/// <summary><para>
 	/// Set data to an object's private data storage and associate it with a custom user-defined GUID
@@ -174,8 +180,6 @@ public interface IDXCOMObject: IUnknownWrapper {
 #endif
 		hr.SetAsLastErrorForThread( ) ;
 	}
-
-	
 	
 	/// <summary>Set an interface in the object's private data.</summary>
 	/// <param name="name">User-defined name or GUID to associate with the data.</param>
@@ -242,5 +246,4 @@ public interface IDXCOMObject: IUnknownWrapper {
 
 
 
-public interface IDXWrapper< T >: IDXCOMObject,
-								  IUnknownWrapper< T > where T: IUnknown { } ;
+public interface IDXWrapper< T >: IDXCOMObject, IUnknownWrapper< T > where T: IUnknown { } ;

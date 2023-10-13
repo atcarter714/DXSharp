@@ -13,8 +13,8 @@ public abstract class Object: DXComObject, IObject {
 	protected Object( ) => this.ComPointer = new( ) ;
 	protected Object( IDXGIObject dxgiObject ) {
 		ArgumentNullException.ThrowIfNull( dxgiObject, nameof(dxgiObject) ) ;
-		this.ComPointer = new( COMUtility.GetAddressIUnknown(dxgiObject) ) ;
-		if ( this.ComPointer.Interface is null ) throw new
+		this.ComPointer = new( dxgiObject ) ;
+		if ( this.ComPointer is not { Disposed: false } ) throw new
 			COMException( $"DXGI.Object.Create( {dxgiObject} ): " +
 				$"Unable to initialize COM object reference from the given address!" ) ;
 	}
@@ -30,11 +30,17 @@ public abstract class Object: DXComObject, IObject {
 			COMException( $"DXGI.Object.Create( {iUnknownPtr} ): " +
 				$"Unable to initialize COM object reference from the given address!" ) ;
 	}
-	
-	//~Object( ) => Dispose( false ) ;
-	//public ComPtr? ComPtrBase => ComPointer ;
-	//public int RefCount { get ; protected set ; }
-	//public nint BasePointer => this.ComPointer?.BaseAddress ?? 0x00 ;
+	protected Object( object obj ) {
+		ArgumentNullException
+			.ThrowIfNull( string.Format(LibResources.CantBeNull, 
+										nameof(obj)), nameof(obj) ) ;
+		var dxgiObj = COMUtility.GetIUnknownForObject( obj ) ;
+		this.ComPointer = new( dxgiObj! ) ;
+		
+		if ( this.ComPointer is not { Disposed: false } ) throw new
+			COMException( $"DXGI.Object.Create( {obj} ): " +
+				$"Unable to initialize COM object reference from the given address!" ) ;
+	}
 	
 	public ComPtr< IDXGIObject >? ComPointer { get ; init ; }
 	IDXGIObject? _interface => ComPointer?.Interface ;
