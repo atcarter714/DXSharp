@@ -1,5 +1,5 @@
 ﻿using Windows.Win32.Graphics.Direct3D12 ;
-
+using DXSharp.Windows.COM ;
 namespace DXSharp.Direct3D12 ;
 
 
@@ -18,6 +18,7 @@ namespace DXSharp.Direct3D12 ;
 /// </remarks>
 [Wrapper(typeof(ID3D12DescriptorHeap))]
 public interface IDescriptorHeap: IPageable< ID3D12DescriptorHeap > {
+	new ID3D12DescriptorHeap? ComObject => ComPointer?.Interface as ID3D12DescriptorHeap ;
 
 	/// <summary>Gets the descriptor heap description.</summary>
 	/// <returns>

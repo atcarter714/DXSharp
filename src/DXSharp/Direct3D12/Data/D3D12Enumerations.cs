@@ -609,3 +609,212 @@ public enum QueryHeapType {
 	PIPELINE_STATISTICS1 = 7,
 } ;
 
+[Equivalent( typeof(D3D12_PRIMITIVE_TOPOLOGY_TYPE) )]
+public enum PrimitiveTopology {
+	/// <summary>The shader has not been initialized with an input primitive type.</summary>
+	UNDEFINED = 0,
+	/// <summary>Interpret the input primitive as a point.</summary>
+	POINT = 1,
+	/// <summary>Interpret the input primitive as a line.</summary>
+	LINE = 2,
+	/// <summary>Interpret the input primitive as a triangle.</summary>
+	TRIANGLE = 3,
+	/// <summary>Interpret the input primitive as a control point patch.</summary>
+	PATCH = 4,
+} ;
+
+[Equivalent( typeof( D3D12_INDEX_BUFFER_STRIP_CUT_VALUE ) )]
+public enum IndexBufferStripCutValue {
+	/// <summary>Indicates that there is no cut value.</summary>
+	DISABLED = 0,
+	/// <summary>Indicates that 0xFFFF should be used as the cut value.</summary>
+	_0xFFFF = 1,
+	/// <summary>Indicates that 0xFFFFFFFF should be used as the cut value.</summary>
+	_0xFFFFFFFF = 2,
+} ;
+
+[Equivalent( typeof( D3D12_DEPTH_WRITE_MASK ) )]
+public enum DepthWriteMask {
+	/// <summary>Turn off writes to the depth-stencil buffer.</summary>
+	ZERO = 0,
+	/// <summary>Turn on writes to the depth-stencil buffer.</summary>
+	ALL = 1,
+} ;
+
+[Equivalent( typeof( D3D12_STENCIL_OP ) )]
+public enum StencilOperation {
+	/// <summary>Keep the existing stencil data.</summary>
+	KEEP = 1,
+	/// <summary>Set the stencil data to 0.</summary>
+	ZERO = 2,
+	/// <summary>Set the stencil data to the reference value set by calling <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetstencilref">ID3D12GraphicsCommandList::OMSetStencilRef</a>.</summary>
+	REPLACE = 3,
+	/// <summary>Increment the stencil value by 1, and clamp the result.</summary>
+	INCR_SAT = 4,
+	/// <summary>Decrement the stencil value by 1, and clamp the result.</summary>
+	SAT = 5,
+	/// <summary>Invert the stencil data.</summary>
+	INVERT = 6,
+	/// <summary>Increment the stencil value by 1, and wrap the result if necessary.</summary>
+	INCR = 7,
+	/// <summary>Decrement the stencil value by 1, and wrap the result if necessary.</summary>
+	DECR = 8,
+} ;
+
+[Equivalent( typeof( D3D12_BLEND ) )]
+public enum Blend {
+	/// <summary>The blend factor is (0, 0, 0, 0). No pre-blend operation.</summary>
+	ZERO = 1,
+
+	/// <summary>The blend factor is (1, 1, 1, 1). No pre-blend operation.</summary>
+	ONE = 2,
+
+	/// <summary>The blend factor is (Rₛ, Gₛ, Bₛ, Aₛ), that is color data (RGB) from a pixel shader. No pre-blend operation.</summary>
+	SRC_COLOR = 3,
+
+	/// <summary>The blend factor is (1 - Rₛ, 1 - Gₛ, 1 - Bₛ, 1 - Aₛ), that is color data (RGB) from a pixel shader. The pre-blend operation inverts the data, generating 1 - RGB.</summary>
+	INV_SRC_COLOR = 4,
+
+	/// <summary>The blend factor is (Aₛ, Aₛ, Aₛ, Aₛ), that is alpha data (A) from a pixel shader. No pre-blend operation.</summary>
+	SRC_ALPHA = 5,
+
+	/// <summary>The blend factor is ( 1 - Aₛ, 1 - Aₛ, 1 - Aₛ, 1 - Aₛ), that is alpha data (A) from a pixel shader. The pre-blend operation inverts the data, generating 1 - A.</summary>
+	INV_SRC_ALPHA = 6,
+
+	/// <summary>The blend factor is (A<sub>d</sub> A<sub>d</sub> A<sub>d</sub> A<sub>d</sub>), that is alpha data from a render target. No pre-blend operation.</summary>
+	DEST_ALPHA = 7,
+
+	/// <summary>The blend factor is (1 - A<sub>d</sub> 1 - A<sub>d</sub> 1 - A<sub>d</sub> 1 - A<sub>d</sub>), that is alpha data from a render target. The pre-blend operation inverts the data, generating 1 - A.</summary>
+	INV_DEST_ALPHA = 8,
+
+	/// <summary>The blend factor is (R<sub>d</sub>, G<sub>d</sub>, B<sub>d</sub>, A<sub>d</sub>), that is color data from a render target. No pre-blend operation.</summary>
+	DEST_COLOR = 9,
+
+	/// <summary>The blend factor is (1 - R<sub>d</sub>, 1 - G<sub>d</sub>, 1 - B<sub>d</sub>, 1 - A<sub>d</sub>), that is color data from a render target. The pre-blend operation inverts the data, generating 1 - RGB.</summary>
+	INV_DEST_COLOR = 10,
+
+	/// <summary>
+	/// <para>The blend factor is (f, f, f, 1); where f = min(Aₛ, 1 - A<sub>d</sub>). The pre-blend operation clamps the data to 1 or less.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_blend#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	SRC_ALPHA_SAT = 11,
+
+	/// <summary>The blend factor is the blend factor set with <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetblendfactor">ID3D12GraphicsCommandList::OMSetBlendFactor</a>. No pre-blend operation.</summary>
+	BLEND_FACTOR = 14,
+
+	/// <summary>The blend factor is the blend factor set with <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetblendfactor">ID3D12GraphicsCommandList::OMSetBlendFactor</a>. The pre-blend operation inverts the blend factor, generating 1 - blend_factor.</summary>
+	INV_BLEND_FACTOR = 15,
+
+	/// <summary>The blend factor is data sources both as color data output by a pixel shader. There is no pre-blend operation. This blend factor supports dual-source color blending.</summary>
+	SRC1_COLOR = 16,
+
+	/// <summary>The blend factor is data sources both as color data output by a pixel shader. The pre-blend operation inverts the data, generating 1 - RGB. This blend factor supports dual-source color blending.</summary>
+	INV_SRC1_COLOR = 17,
+
+	/// <summary>The blend factor is data sources as alpha data output by a pixel shader. There is no pre-blend operation. This blend factor supports dual-source color blending.</summary>
+	SRC1_ALPHA = 18,
+
+	/// <summary>The blend factor is data sources as alpha data output by a pixel shader. The pre-blend operation inverts the data, generating 1 - A. This blend factor supports dual-source color blending.</summary>
+	INV_SRC1_ALPHA = 19,
+
+	/// <summary>
+	/// <para>The blend factor is (A, A, A, A), where the constant, A, is taken from the blend factor set with [OMSetBlendFactor](/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetblendfactor). To successfully use this constant on a target machine, the [D3D12_FEATURE_DATA_D3D12_OPTIONS13](ns-d3d12-d3d12_feature_data_d3d12_options13.md) returned from [capability querying](/windows/win32/direct3d12/capability-querying) must have its *AlphaBlendFactorSupported* set to `TRUE`.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_blend#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	ALPHA_FACTOR = 20,
+
+	/// <summary>
+	/// <para>The blend factor is (1 – A, 1 – A, 1 – A, 1 – A), where the constant, A, is taken from the blend factor set with [OMSetBlendFactor](/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetblendfactor). To successfully use this constant on a target machine, the [D3D12_FEATURE_DATA_D3D12_OPTIONS13](ns-d3d12-d3d12_feature_data_d3d12_options13.md) returned from [capability querying](/windows/win32/direct3d12/capability-querying) must have its *AlphaBlendFactorSupported* set to `TRUE`.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_blend#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	INV_ALPHA_FACTOR = 21,
+} ;
+ 
+[Equivalent( typeof( D3D12_BLEND_OP ) )]
+public enum BlendOperation {
+	/// <summary>Add source 1 and source 2.</summary>
+	ADD = 1,
+	/// <summary>Subtract source 1 from source 2.</summary>
+	SUBTRACT = 2,
+	/// <summary>Subtract source 2 from source 1.</summary>
+	REV_SUBTRACT = 3,
+	/// <summary>Find the minimum of source 1 and source 2.</summary>
+	MIN = 4,
+	/// <summary>Find the maximum of source 1 and source 2.</summary>
+	MAX = 5,
+} ;
+
+[Equivalent( typeof( D3D12_LOGIC_OP ) )]
+public enum LogicOperation {
+	/// <summary>Set the logical operation to CLEAR.</summary>
+	CLEAR = 0,
+	/// <summary>Set the logical operation to SET.</summary>
+	SET = 1,
+	/// <summary>Set the logical operation to COPY.</summary>
+	COPY = 2,
+	/// <summary>Set the logical operation to COPY_INVERTED.</summary>
+	COPY_INVERTED = 3,
+	/// <summary>Set the logical operation to NOOP.</summary>
+	NOOP = 4,
+	/// <summary>Set the logical operation to INVERT.</summary>
+	INVERT = 5,
+	/// <summary>Set the logical operation to AND.</summary>
+	AND = 6,
+	/// <summary>Set the logical operation to NAND.</summary>
+	NAND = 7,
+	/// <summary>Set the logical operation to OR.</summary>
+	OR = 8,
+	/// <summary>Set the logical operation to NOR.</summary>
+	NOR = 9,
+	/// <summary>Set the logical operation to XOR.</summary>
+	XOR = 10,
+	/// <summary>Set the logical operation to EQUIV.</summary>
+	EQUIV = 11,
+	/// <summary>Set the logical operation to AND_REVERSE.</summary>
+	AND_REVERSE = 12,
+	/// <summary>Set the logical operation to AND_INVERTED.</summary>
+	AND_INVERTED = 13,
+	/// <summary>Set the logical operation to OR_REVERSE.</summary>
+	OR_REVERSE = 14,
+	/// <summary>Set the logical operation to OR_INVERTED.</summary>
+	OR_INVERTED = 15,
+} ;
+
+[Equivalent( typeof( D3D12_FILL_MODE ) )]
+public enum FillMode {
+	/// <summary>Draw lines connecting the vertices. Adjacent vertices are not drawn.</summary>
+	WIREFRAME = 2,
+	/// <summary>Fill the triangles formed by the vertices. Adjacent vertices are not drawn.</summary>
+	SOLID = 3,
+} ;
+
+[Equivalent( typeof( D3D12_CULL_MODE ) )]
+public enum CullMode {
+	/// <summary>Always draw all triangles.</summary>
+	NONE = 1,
+	/// <summary>Do not draw triangles that are front-facing.</summary>
+	FRONT = 2,
+	/// <summary>Do not draw triangles that are back-facing.</summary>
+	BACK = 3,
+} ;
+
+[Equivalent( typeof( D3D12_CONSERVATIVE_RASTERIZATION_MODE ) )]
+public enum ConservativeRasterizationMode {
+	/// <summary>Conservative rasterization is off.</summary>
+	OFF = 0,
+	/// <summary>Conservative rasterization is on.</summary>
+	ON = 1,
+} ;
+
+
+[Equivalent( typeof( D3D12_INPUT_CLASSIFICATION ) )]
+public enum InputClassification {
+	/// <summary>Input data is per-vertex data.</summary>
+	PerVertexData = 0,
+
+	/// <summary>Input data is per-instance data.</summary>
+	PerInstanceData = 1,
+} ;
+
+//[Equivalent( typeof( D3D12_ ) )]
+//public enum ___

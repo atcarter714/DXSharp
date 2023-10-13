@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Diagnostics.CodeAnalysis ;
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
@@ -243,56 +246,331 @@ public struct ResourceDescription {
 } ;
 
 
+/// <summary>Describes the rasterizer state.</summary>
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_RASTERIZER_DESC ) )]
+public struct RasterizerDescription {
+	/// <summary>
+	/// A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_fill_mode">D3D12_FILL_MODE</a>-typed
+	/// value that specifies the fill mode to use when rendering.
+	/// </summary>
+	public FillMode FillMode ;
+
+	/// <summary>
+	/// A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_cull_mode">D3D12_CULL_MODE</a>-typed value
+	/// that specifies that triangles facing the specified direction are not drawn.
+	/// </summary>
+	public CullMode CullMode ;
+
+	/// <summary>
+	/// Determines if a triangle is front- or back-facing. If this member is <b>TRUE</b>, a triangle will be considered
+	/// front-facing if its vertices are counter-clockwise on the render target and considered back-facing if they are clockwise.
+	/// If this parameter is <b>FALSE</b>, the opposite is true.
+	/// </summary>
+	public BOOL FrontCounterClockwise ;
+
+	/// <summary>
+	/// Depth value added to a given pixel. For info about depth bias, see
+	/// <a href="https://docs.microsoft.com/windows/desktop/direct3d11/d3d10-graphics-programming-guide-output-merger-stage-depth-bias">Depth Bias</a>.
+	/// </summary>
+	public int DepthBias ;
+
+	/// <summary>
+	/// Maximum depth bias of a pixel. For info about depth bias, see
+	/// <a href="https://docs.microsoft.com/windows/desktop/direct3d11/d3d10-graphics-programming-guide-output-merger-stage-depth-bias">
+	/// Depth Bias
+	/// </a>.
+	/// </summary>
+	public float DepthBiasClamp ;
+
+	/// <summary>
+	/// Scalar on a given pixel's slope. For info about depth bias, see
+	/// <a href="https://docs.microsoft.com/windows/desktop/direct3d11/d3d10-graphics-programming-guide-output-merger-stage-depth-bias">
+	/// Depth Bias
+	/// </a>.
+	/// </summary>
+	public float SlopeScaledDepthBias ;
+
+	/// <summary>
+	/// <para>Specifies whether to enable clipping based on distance.</para>
+	/// <para>The hardware always performs x and y clipping of rasterized coordinates. When <b>DepthClipEnable</b> is set to the default–<b>TRUE</b>,
+	/// the hardware also clips the z value (that is, the hardware performs the last step of the following algorithm).</para>
+	/// <para/><para/>
+	/// <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc#members">
+	/// Read more on docs.microsoft.com
+	/// </a>.
+	/// </summary>
+	public BOOL DepthClipEnable ;
+
+	/// <summary>
+	/// Specifies whether to use the quadrilateral or alpha line anti-aliasing algorithm on multisample antialiasing (MSAA) render targets.
+	/// Set to <b>TRUE</b> to use the quadrilateral line anti-aliasing algorithm and to <b>FALSE</b> to use the alpha line anti-aliasing
+	/// algorithm. For more info about this member, see Remarks.
+	/// </summary>
+	public BOOL MultisampleEnable ;
+
+	/// <summary>
+	/// Specifies whether to enable line antialiasing; only applies if doing line drawing and <b>MultisampleEnable</b> is <b>FALSE</b>.
+	/// For more info about this member, see Remarks.
+	/// </summary>
+	public BOOL AntialiasedLineEnable ;
+
+	/// <summary>
+	/// <para>
+	/// Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b>
+	/// The sample count that is forced while UAV rendering or rasterizing. Valid values are 0, 1, 4, 8, and optionally 16.
+	/// 0 indicates that the sample count is not forced.
+	/// <b>Note</b>  If you want to render with <b>ForcedSampleCount</b> set to 1 or greater, you must follow these guidelines: </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public uint ForcedSampleCount ;
+
+	/// <summary>
+	/// A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_conservative_rasterization_mode">
+	/// D3D12_CONSERVATIVE_RASTERIZATION_MODE</a>-typed value that identifies whether conservative rasterization is on or off.
+	/// </summary>
+	public ConservativeRasterizationMode ConservativeRaster ;
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_INPUT_ELEMENT_DESC ) )]
+public struct InputElementDescription {
+	/// <summary>The HLSL semantic associated with this element in a shader input-signature. See <a href="https://docs.microsoft.com/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics">HLSL Semantics</a> for more info.</summary>
+	public PCSTR SemanticName ;
+
+	/// <summary>
+	/// <para>The semantic index for the element. A semantic index modifies a semantic, with an integer index number. A semantic index is only needed in a case where there is more than one element with the same semantic. For example, a 4x4 matrix would have four components each with the semantic name <b>matrix</b>, however each of the four component would have different semantic indices (0, 1, 2, and 3).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public uint SemanticIndex ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>-typed value that specifies the format of the element data.</summary>
+	public Format Format ;
+
+	/// <summary>An integer value that identifies the input-assembler. For more info, see <a href="https://docs.microsoft.com/windows/desktop/direct3d11/d3d10-graphics-programming-guide-input-assembler-stage-getting-started">Input Slots</a>. Valid values are between 0 and 15.</summary>
+	public uint InputSlot ;
+
+	/// <summary>
+	/// <para>Optional. Offset, in bytes, to this element from the start of the vertex. Use D3D12_APPEND_ALIGNED_ELEMENT (0xffffffff) for convenience to define the current element directly after the previous one, including any packing if necessary.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public uint AlignedByteOffset ;
+
+	/// <summary>A value that identifies the input data class for a single input slot.</summary>
+	public InputClassification InputSlotClass ;
+
+	/// <summary>
+	/// <para>The number of instances to draw using the same per-instance data before advancing in the buffer by one element. This value must be 0 for an element that contains per-vertex data (the slot class is set to the D3D12_INPUT_PER_VERTEX_DATA member of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_input_classification">D3D12_INPUT_CLASSIFICATION</a>).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public uint InstanceDataStepRate ;
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_INPUT_LAYOUT_DESC ) )]
+public struct InputLayoutDescription {
+	/// <summary>
+	/// An array of <see cref="InputLayoutDescription"/> structures that describe the input data for the input-assembler stage.
+	/// </summary>
+	/// <remarks>
+	/// For more information about the native DirectX structure, see: 
+	/// <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_input_element_desc">D3D12_INPUT_ELEMENT_DESC</a>
+	/// </remarks>
+	public nint pInputElementDescs ;
+	
+	/// <summary>The number of input-data types in the array of input elements that the <b>pInputElementDescs</b> member points to.</summary>
+	public uint NumElements ;
+	
+	
+	/// <summary>
+	/// Gets or sets the array of <see cref="InputLayoutDescription"/> structures that describe the input data for the input-assembler stage.
+	/// </summary>
+	/// <remarks>
+	/// <b>WARNING: Use with caution!</b><para/>
+	/// Using the `set` accessor will allocate unmanaged memory for the array of <see cref="InputLayoutDescription"/> structures.
+	/// The value of the <see cref="NumElements"/> property will be set to the length of the array, and the value of the
+	/// <see cref="pInputElementDescs"/> property will be set to the address of the first element in the array in umanaged memory.
+	/// This is not automatically garbage-collected for you like a managed array! It is your responsibility to free the memory block
+	/// pointed to by <see cref="pInputElementDescs"/> when you are done with it. You can do this by calling <see cref="Marshal.FreeHGlobal(IntPtr)"/>
+	/// or other memory management functions. If you create <b>InputLayoutDescription</b> structures in a loop and forget to free the memory,
+	/// when the structure goes out of scope you will no longer know the allocation address, thus the memory will be leaked! Use wisely and
+	/// don't forget to do your chores and clean up! This exists for convenience, but can turn out bad if misused!
+	/// </remarks>
+	internal InputLayoutDescription[ ]? InputLayoutDescriptions {
+		get { unsafe {
+				if ( pInputElementDescs is 0x0000 || NumElements is 0 ) return Array.Empty< InputLayoutDescription >( ) ;
+				Span< InputLayoutDescription > descSpan = new( (InputLayoutDescription*)pInputElementDescs, (int)NumElements ) ;
+				return descSpan.ToArray( ) ;
+			}
+		}
+		set {
+			unsafe {
+				if( value is not { Length: > 0 } ) {
+					pInputElementDescs = 0 ;
+					NumElements = 0 ;
+					return ;
+				}
+				fixed ( InputLayoutDescription* pValue = value ) {
+					NumElements = (uint)value.Length ;
+					
+					Span< InputLayoutDescription > descSpan = new( pValue, value.Length ) ;
+					nint address = Marshal.AllocHGlobal( sizeof(InputLayoutDescription) * value.Length ) ;
+					descSpan.CopyTo( new( (InputLayoutDescription *)address, value.Length ) ) ;
+					pInputElementDescs = address ;
+				}
+			}
+		}
+	}
+	
+	public InputLayoutDescription( nint pInputElementDescs, uint numElements ) {
+		this.pInputElementDescs = pInputElementDescs ;
+		this.NumElements = numElements ;
+	}
+	/// <summary>Creates an input LayoutDescription with backing unmanaged memory for the array of <see cref="InputLayoutDescription"/> structures.</summary>
+	/// <remarks>
+	/// <b>WARNING:</b> <para/>
+	/// This allocates unmanaged memory which is not garbage-collected for you!
+	/// See the warning of the <see cref="InputLayoutDescriptions"/> property for more information.
+	/// Release the memory pointed to by <see cref="pInputElementDescs"/> when you are done with it
+	/// by calling <see cref="Marshal.FreeHGlobal(IntPtr)"/> or other memory management functions.<para/>
+	/// These things are marked `internal` to prevent them from wrecking people's day.
+	/// </remarks>
+	/// <param name="inputLayoutDescriptions">Managed array of InputLayoutDescription structures to allocate into unmanaged memory.</param>
+	internal InputLayoutDescription( InputLayoutDescription[ ] inputLayoutDescriptions ) {
+		this.InputLayoutDescriptions = inputLayoutDescriptions ;
+		this.NumElements = (uint)inputLayoutDescriptions.Length ;
+	}
+	
+	public InputLayoutDescription( in D3D12_INPUT_LAYOUT_DESC desc ) {
+		unsafe { this.pInputElementDescs = (nint)desc.pInputElementDescs ; }
+		this.NumElements = desc.NumElements ;
+	}
+	
+	public static implicit operator D3D12_INPUT_LAYOUT_DESC( in InputLayoutDescription desc ) {
+		unsafe { return new D3D12_INPUT_LAYOUT_DESC {
+				pInputElementDescs = (D3D12_INPUT_ELEMENT_DESC*)desc.pInputElementDescs,
+				NumElements = desc.NumElements
+			} ;
+		}
+	}
+	public static implicit operator InputLayoutDescription( in D3D12_INPUT_LAYOUT_DESC desc ) {
+		unsafe { return new InputLayoutDescription {
+				pInputElementDescs = (nint)desc.pInputElementDescs,
+				NumElements = desc.NumElements
+			} ;
+		}
+	}
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_SO_DECLARATION_ENTRY ) )]
+public struct SODeclarationEntry {
+	/// <summary>Zero-based, stream number.</summary>
+	public uint Stream ;
+
+	/// <summary>
+	/// <para>Type of output element; possible values include: <b>"POSITION"</b>, <b>"NORMAL"</b>, or <b>"TEXCOORD0"</b>. Note that if <b>SemanticName</b> is <b>NULL</b> then <b>ComponentCount</b> can be greater than 4 and the described entry will be a gap in the stream out where no data will be written.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public PCSTR SemanticName ;
+
+	/// <summary>Output element's zero-based index. Use, for example, if you have more than one texture coordinate stored in each vertex.</summary>
+	public uint SemanticIndex ;
+
+	/// <summary>
+	/// <para>The component of the entry to begin writing out to. Valid values are 0 to 3. For example, if you only wish to output to the y and z components of a position, <b>StartComponent</b> is 1 and <b>ComponentCount</b> is 2.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public byte StartComponent ;
+
+	/// <summary>
+	/// <para>The number of components of the entry to write out to. Valid values are 1 to 4. For example, if you only wish to output to the y and z components of a position, <b>StartComponent</b> is 1 and <b>ComponentCount</b> is 2.  Note that if <b>SemanticName</b> is <b>NULL</b> then <b>ComponentCount</b> can be greater than 4 and the described entry will be a gap in the stream out where no data will be written.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public byte ComponentCount ;
+
+	/// <summary>
+	/// <para>The associated stream output buffer that is bound to the pipeline. The valid range for <b>OutputSlot</b> is 0 to 3.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public byte OutputSlot ;
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_STREAM_OUTPUT_DESC ) )]
+public struct StreamOuputDescription {
+	/// <summary>An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_so_declaration_entry">D3D12_SO_DECLARATION_ENTRY</a> structures. Can't be <b>NULL</b> if <b>NumEntries</b> &gt; 0.</summary>
+	public unsafe SODeclarationEntry* pSODeclaration ;
+
+	/// <summary>The number of entries in the stream output declaration array that the <b>pSODeclaration</b> member points to.</summary>
+	public uint NumEntries ;
+
+	/// <summary>An array of buffer strides; each stride is the size of an element for that buffer.</summary>
+	public unsafe uint* pBufferStrides ;
+
+	/// <summary>The number of strides (or buffers) that the <b>pBufferStrides</b> member points to.</summary>
+	public uint NumStrides ;
+
+	/// <summary>The index number of the stream to be sent to the rasterizer stage.</summary>
+	public uint RasterizedStream ;
+} ;
+
+
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_GRAPHICS_PIPELINE_STATE_DESC ) )]
 public struct GraphicsPipelineStateDescription {
 	/// <summary>A pointer to the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12rootsignature">ID3D12RootSignature</a> object.</summary>
-	public ID3D12RootSignature pRootSignature;
+	public ID3D12RootSignature pRootSignature ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode">D3D12_SHADER_BYTECODE</a> structure that describes the vertex shader.</summary>
-	public D3D12_SHADER_BYTECODE VS;
+	public ShaderBytecode VS;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode">D3D12_SHADER_BYTECODE</a> structure that describes the pixel shader.</summary>
-	public D3D12_SHADER_BYTECODE PS;
+	public ShaderBytecode PS;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode">D3D12_SHADER_BYTECODE</a> structure that describes the domain shader.</summary>
-	public D3D12_SHADER_BYTECODE DS;
+	public ShaderBytecode DS;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode">D3D12_SHADER_BYTECODE</a> structure that describes the hull shader.</summary>
-	public D3D12_SHADER_BYTECODE HS;
+	public ShaderBytecode HS;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode">D3D12_SHADER_BYTECODE</a> structure that describes the geometry shader.</summary>
-	public D3D12_SHADER_BYTECODE GS;
+	public ShaderBytecode GS;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_stream_output_desc">D3D12_STREAM_OUTPUT_DESC</a> structure that describes a streaming output buffer.</summary>
-	public D3D12_STREAM_OUTPUT_DESC StreamOutput;
+	public StreamOuputDescription StreamOutput;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_blend_desc">D3D12_BLEND_DESC</a> structure that describes the blend state.</summary>
-	public D3D12_BLEND_DESC BlendState;
+	public BlendDescription BlendState;
 
 	/// <summary>The sample mask for the blend state.</summary>
 	public uint SampleMask;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc">D3D12_RASTERIZER_DESC</a> structure that describes the rasterizer state.</summary>
-	public D3D12_RASTERIZER_DESC RasterizerState;
+	public RasterizerDescription RasterizerState;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc">D3D12_DEPTH_STENCIL_DESC</a> structure that describes the depth-stencil state.</summary>
-	public D3D12_DEPTH_STENCIL_DESC DepthStencilState;
-
+	public DepthStencilDesc DepthStencilState;
+	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_layout_desc">D3D12_INPUT_LAYOUT_DESC</a> structure that describes the input-buffer data for the input-assembler stage.</summary>
-	public D3D12_INPUT_LAYOUT_DESC InputLayout;
+	public InputLayoutDescription InputLayout;
 
 	/// <summary>Specifies the properties of the index buffer in a  <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_index_buffer_strip_cut_value">D3D12_INDEX_BUFFER_STRIP_CUT_VALUE</a> structure.</summary>
-	public D3D12_INDEX_BUFFER_STRIP_CUT_VALUE IBStripCutValue;
+	public IndexBufferStripCutValue IBStripCutValue;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_primitive_topology_type">D3D12_PRIMITIVE_TOPOLOGY_TYPE</a>-typed value for the type of primitive, and ordering of the primitive data.</summary>
-	public D3D12_PRIMITIVE_TOPOLOGY_TYPE PrimitiveTopologyType;
+	public PrimitiveTopology PrimitiveTopologyType;
 
 	/// <summary>The number of render target formats in the  <b>RTVFormats</b> member.</summary>
 	public uint NumRenderTargets;
 
 	/// <summary>An array of <a href="https://docs.microsoft.com/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>-typed values for the render target formats.</summary>
-	public __DXGI_FORMAT_8 RTVFormats;
+	public Format8 RTVFormats;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>-typed value for the depth-stencil format.</summary>
 	public Format DSVFormat ;
@@ -312,6 +590,7 @@ public struct GraphicsPipelineStateDescription {
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_flags">D3D12_PIPELINE_STATE_FLAGS</a> enumeration constant such as for "tool debug".</summary>
 	public PipelineStateFlags Flags;
 } ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_COMPUTE_PIPELINE_STATE_DESC ) )]
@@ -335,6 +614,7 @@ public struct ComputePipelineStateDescription {
 	public PipelineStateFlags Flags ;
 } ;
 
+
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_CACHED_PIPELINE_STATE ) )]
 public struct CachedPipelineState {
@@ -344,6 +624,7 @@ public struct CachedPipelineState {
 	/// <summary>Specifies the size of the cache in bytes.</summary>
 	public ulong CachedBlobSizeInBytes ;
 } ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_SHADER_BYTECODE ) )]
@@ -497,6 +778,102 @@ public struct DepthStencilValue {
 	/// <summary>Specifies the stencil value.</summary>
 	public byte Stencil;
 } ;
+
+public struct BlendDescription {
+	/// <summary>Specifies whether to use alpha-to-coverage as a multisampling technique when setting a pixel to a render target. For more info about using alpha-to-coverage, see <a href="https://docs.microsoft.com/windows/desktop/direct3d11/d3d10-graphics-programming-guide-blend-state">Alpha-To-Coverage</a>.</summary>
+	public BOOL AlphaToCoverageEnable ;
+
+	/// <summary>
+	/// <para>Specifies whether to enable independent blending in simultaneous render targets. Set to <b>TRUE</b> to enable independent blending. If set to <b>FALSE</b>, only the <b>RenderTarget</b>[0] members are used; <b>RenderTarget</b>[1..7] are ignored. See the **Remarks** section for restrictions.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_blend_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public BOOL IndependentBlendEnable ;
+
+	/// <summary>An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc">D3D12_RENDER_TARGET_BLEND_DESC</a> structures that describe the blend states for render targets; these correspond to the eight render targets that can be bound to the <a href="https://docs.microsoft.com/windows/desktop/direct3d11/d3d10-graphics-programming-guide-output-merger-stage">output-merger stage</a> at one time.</summary>
+	public RTBlendDescription8 RenderTarget ;
+} ;
+
+
+
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( D3D12_RENDER_TARGET_BLEND_DESC ) )]
+public struct RTBlendDescription {
+	/// <summary>
+	/// <para>Specifies whether to enable (or disable) blending. Set to <b>TRUE</b> to enable blending. > [!NOTE] > It's not valid for *LogicOpEnable* and *BlendEnable* to both be **TRUE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public BOOL BlendEnable ;
+
+	/// <summary>
+	/// <para>Specifies whether to enable (or disable) a logical operation. Set to <b>TRUE</b> to enable a logical operation. > [!NOTE] > It's not valid for *LogicOpEnable* and *BlendEnable* to both be **TRUE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public BOOL LogicOpEnable ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_blend">D3D12_BLEND</a>-typed value that specifies the operation to perform on the RGB value that the pixel shader outputs. The <b>BlendOp</b> member defines how to combine the <b>SrcBlend</b> and <b>DestBlend</b> operations.</summary>
+	public Blend SrcBlend ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_blend">D3D12_BLEND</a>-typed value that specifies the operation to perform on the current RGB value in the render target. The <b>BlendOp</b> member defines how to combine the <b>SrcBlend</b> and <b>DestBlend</b> operations.</summary>
+	public Blend DestBlend ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_blend_op">D3D12_BLEND_OP</a>-typed value that defines how to combine the <b>SrcBlend</b> and <b>DestBlend</b> operations.</summary>
+	public BlendOperation BlendOp ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_blend">D3D12_BLEND</a>-typed value that specifies the operation to perform on the alpha value that the pixel shader outputs. Blend options that end in _COLOR are not allowed. The <b>BlendOpAlpha</b> member defines how to combine the <b>SrcBlendAlpha</b> and <b>DestBlendAlpha</b> operations.</summary>
+	public Blend SrcBlendAlpha ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_blend">D3D12_BLEND</a>-typed value that specifies the operation to perform on the current alpha value in the render target. Blend options that end in _COLOR are not allowed. The <b>BlendOpAlpha</b> member defines how to combine the <b>SrcBlendAlpha</b> and <b>DestBlendAlpha</b> operations.</summary>
+	public Blend DestBlendAlpha ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_blend_op">D3D12_BLEND_OP</a>-typed value that defines how to combine the <b>SrcBlendAlpha</b> and <b>DestBlendAlpha</b> operations.</summary>
+	public Blend BlendOpAlpha ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_logic_op">D3D12_LOGIC_OP</a>-typed value that specifies the logical operation to configure for the render target.</summary>
+	public LogicOperation LogicOp ;
+
+	/// <summary>A combination of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_color_write_enable">D3D12_COLOR_WRITE_ENABLE</a>-typed values that are combined by using a bitwise OR operation. The resulting value specifies a write mask.</summary>
+	public byte RenderTargetWriteMask ;
+} ;
+
+[StructLayout( LayoutKind.Sequential ),
+ ProxyFor( typeof( __D3D12_RENDER_TARGET_BLEND_DESC_8 ) )]
+public struct RTBlendDescription8 {
+	const int SpanLength = 8 ;
+	
+	/// <summary>The length of the inline array.</summary>
+	public readonly int Length => SpanLength ;
+
+	public RTBlendDescription _0, _1, _2, _3, _4, _5, _6, _7 ;
+
+	/// <summary>
+	/// Gets this inline array as a span.
+	/// </summary>
+	/// <remarks>
+	/// ⚠ Important ⚠: When this struct is on the stack, do not let the returned span outlive the stack frame that defines it.
+	/// </remarks>
+	[UnscopedRef]
+	public Span< RTBlendDescription > AsSpan() =>
+		MemoryMarshal.CreateSpan( ref _0, SpanLength ) ;
+
+	/// <summary>
+	/// Gets this inline array as a span.
+	/// </summary>
+	/// <remarks>
+	/// ⚠ Important ⚠: When this struct is on the stack, do not let the returned span outlive the stack frame that defines it.
+	/// </remarks>
+	[UnscopedRef]
+	public readonly ReadOnlySpan< RTBlendDescription > AsReadOnlySpan() =>
+		MemoryMarshal.CreateReadOnlySpan( ref Unsafe.AsRef( _0 ), SpanLength ) ;
+
+	public static implicit operator RTBlendDescription8( ReadOnlySpan< RTBlendDescription > value ) {
+		Unsafe.SkipInit( out RTBlendDescription8 result ) ;
+		value.CopyTo( result.AsSpan( ) ) ;
+		int initLength = value.Length ;
+		result.AsSpan( ).Slice( initLength, SpanLength - initLength ).Clear( ) ;
+		return result ;
+	}
+} ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_PLACED_SUBRESOURCE_FOOTPRINT ) )]

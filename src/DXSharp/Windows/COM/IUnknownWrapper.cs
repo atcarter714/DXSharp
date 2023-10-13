@@ -33,8 +33,7 @@ public interface IUnknownWrapper: IDisposable,
 public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 												where TInterface: IUnknown {
 	public static virtual Guid InterfaceGUID => typeof(TInterface).GUID ;
-	
-	Type ComType => typeof(TInterface) ;
+	internal Type ComType => typeof(TInterface) ;
 	
 	/// <summary>ComPtr to the native <typeparam name="TInterface"/> COM interface.</summary>
 	ComPtr< TInterface >? ComPointer { get ; }
@@ -57,7 +56,7 @@ public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 
 /// <summary>Contract for .NET objects wrapping native COM types.</summary>
 public interface IUnknownWrapper< TSelf, TInterface >: IUnknownWrapper< TInterface > 
-									where TSelf: IUnknownWrapper<TSelf, TInterface>
+									where TSelf: IUnknownWrapper< TSelf, TInterface >
 									where TInterface: IUnknown {
-	static Type WrapperType => typeof( TSelf ) ;
+	internal static Type WrapperType => typeof( TSelf ) ;
 } ;

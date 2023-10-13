@@ -42,11 +42,14 @@ public abstract class ComPtr: IDisposable {
 	static readonly HashSet< nint > _allPtrs = new( ) ;
 	#endregion
 	
+	nint _baseAddr ;
+	protected object? _comObjectRef ;
 	internal uint RefCount => _refCount ;
 	protected uint _refCount, _marshalRefCount ;
 	
 	internal nint BaseAddress => _baseAddr ;
-	nint _baseAddr ;
+	internal object? InterfaceObjectRef =>
+		_comObjectRef ??= GetCOM_RCW( _baseAddr ) ;
 	
 	//! Constructors & Initializers:
 	void _setBasePointer( nint pUnknown ) {
@@ -54,9 +57,10 @@ public abstract class ComPtr: IDisposable {
 		TrackPointer( this._baseAddr ) ;
 		AddRef( this._baseAddr ) ;
 	}
+
 	
+	#region Constructors
 	internal ComPtr( ) { }
-	public unsafe ComPtr( void* ptr ): this( (nint)ptr ) { }
 	public ComPtr( nint ptr ) {
 #if (DEBUG || DEBUG_COM) || DEV_BUILD
 		if( !ptr.IsValid() ) throw new ArgumentNullException( nameof(ptr), 
@@ -74,30 +78,41 @@ public abstract class ComPtr: IDisposable {
 													  $"The pointer is not a valid COM object implementing {nameof(IUnknown)} interface!" ) ;
 #endif
 		
+		var pObject = GetCOM_RCW( ptr )
+#if DEBUG || DEBUG_COM || DEV_BUILD
+					  ?? throw new DirectXComError( $"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
+													$"Failed to get the COM object!" )
+#endif
+			;
+		
 		_setBasePointer( pUnknown ) ;
+		_comObjectRef = pObject ;
 	}
-	public ComPtr( int   addr ): this( (nint)addr ) { }
-	public ComPtr( uint  addr ): this( (nint)addr ) { }
-	public ComPtr( long  addr ): this( (nint)addr ) { }
+	public unsafe ComPtr( void* ptr ): this( (nint)ptr ) { }
+	public ComPtr( int addr ): this( (nint)addr ) { }
+	public ComPtr( uint addr ): this( (nint)addr ) { }
+	public ComPtr( long addr ): this( (nint)addr ) { }
 	public ComPtr( ulong addr ): this( (nint)addr ) { }
-	
 	public ComPtr( [NotNull] in IUnknown comInterface ): this( GetAddressIUnknown(comInterface) ) { }
 	public ComPtr( [NotNull] in IUnknownWrapper comInterface ): this( comInterface.BasePointer ) { }
 	public ComPtr( [NotNull] in IUnknownWrapper< IUnknown > comInterface ): this( comInterface.Pointer ) { }
 	public ComPtr( [MaybeNull] in object? comObj ) {
 		ArgumentNullException.ThrowIfNull( comObj, nameof(comObj) ) ;
 		if( !comObj.GetType( ).IsCOMObject ) throw new ArgumentException( nameof(comObj),
-							$"{nameof(ComPtr)} -> c'tor( {nameof(Object)} ) :: " +
-													$"The object is not a valid COM object!" ) ;
+																		  $"{nameof(ComPtr)} -> c'tor( {nameof(Object)} ) :: " +
+																		  $"The object is not a valid COM object!" ) ;
 		
 		nint pUnknown = GetIUnknownForObject( comObj ) ;
 		if ( !pUnknown.IsValid() ) throw new ArgumentException( nameof(comObj),
-							$"{nameof(ComPtr)} -> c'tor( {nameof(Object)} ) :: " +
-										$"The object is not a valid COM object implementing {nameof(IUnknown)}!" ) ;
+																$"{nameof(ComPtr)} -> c'tor( {nameof(Object)} ) :: " +
+																$"The object is not a valid COM object implementing {nameof(IUnknown)}!" ) ;
 
 		_setBasePointer( pUnknown ) ;
+		_comObjectRef = comObj ;
 	}
+	#endregion
 	
+		
 	//! System.Object overrides:
 	public override string ToString( ) => $"COM OBJECT[ Address: 0x{BaseAddress:X} ]" ;
 	public override int GetHashCode( ) => BaseAddress.GetHashCode( ) ;

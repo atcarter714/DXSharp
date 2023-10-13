@@ -38,18 +38,15 @@ public static class COMUtility {
 	}
 	
 	
-	[MethodImpl(_MAXOPT_)]
-	public static int AddRef( nint pUnknown ) {
+	[MethodImpl(_MAXOPT_)] public static int AddRef( nint pUnknown ) {
 		if( pUnknown is NULL_PTR ) return 0 ;
 		return Marshal.AddRef( pUnknown ) ;
 	}
-	[MethodImpl(_MAXOPT_)]
-	public static int Release( nint pUnknown ) {
+	[MethodImpl(_MAXOPT_)] public static int Release( nint pUnknown ) {
 		if( !pUnknown.IsValid() ) return NULL_PTR ;
 		return Marshal.Release( pUnknown ) ;
 	}
-	[MethodImpl(_MAXOPT_)]
-	public static int Release( ref nint pUnknown ) {
+	[MethodImpl(_MAXOPT_)] public static int Release( ref nint pUnknown ) {
 		int c = Release( pUnknown ) ; pUnknown = NULL_PTR ;
 		return c ;
 	}

@@ -3,7 +3,9 @@
 namespace DXSharp.Direct3D12 ;
 
 [Wrapper(typeof(ID3D12CommandAllocator))]
-public interface ICommandAllocator: IPageable<ID3D12CommandAllocator> {
+public interface ICommandAllocator: IPageable< ID3D12CommandAllocator > {
+	//new ID3D12CommandAllocator? ComObject => ComPointer?.Interface as ID3D12CommandAllocator ;
+	
 	/// <summary>Indicates to re-use the memory that is associated with the command allocator.</summary>
 	/// <returns>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns <b>E_FAIL</b> if there is an actively recording command list referencing the command allocator.  The debug layer will also issue an error in this case. See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> for other possible return values.</para>

@@ -1,6 +1,8 @@
 ﻿#region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using System.Collections.Concurrent ;
+using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp ;
@@ -8,6 +10,8 @@ namespace DXSharp ;
 
 /// <summary>Static class with simple helpers/utilities for interop and "translating" code.</summary>
 public static class InteropUtils {
+	internal static readonly ConcurrentDictionary< int, HResult > LastHResults = new( ) ;
+	
 	/// <summary>
 	/// Flags for <see cref="MethodImplAttribute"/> equal to
 	/// <see cref="MethodImplOptions.AggressiveOptimization"/> |
@@ -79,4 +83,24 @@ public static class InteropUtils {
 		fixed ( T* p = &data ) return p ;
 	}
 	
+	
+	internal static bool ClearAllErrors( ) {
+		int threadKeys = LastHResults.Keys.Count ;
+		LastHResults.Clear( ) ;
+		return ( 0 < threadKeys ) ;
+	}
+	
+	internal static bool SetLastErrorForThread( in HResult hr ) {
+		int threadKeys = LastHResults.Keys.Count ;
+		int threadID   = Environment.CurrentManagedThreadId ;
+		LastHResults.AddOrUpdate( threadID, hr, ( id, _hr ) => _hr ) ;
+		return (LastHResults.Keys.Count > threadKeys) ;
+	}
+	internal static bool SetAsLastErrorForThread( in this HResult hr ) => SetLastErrorForThread( in hr ) ;
+	
+	internal static HResult? GetLastHResult( ) {
+		int threadID = Environment.CurrentManagedThreadId ;
+		return LastHResults.TryGetValue( threadID, out var hr ) 
+				   ? hr : null ;
+	}
 } ;
