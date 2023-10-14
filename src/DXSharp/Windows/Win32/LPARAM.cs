@@ -39,8 +39,8 @@ namespace Windows.Win32.Foundation {
 		public static bool operator ==( LPARAM left, LPARAM right ) => left.Value == right.Value ;
 		public static bool operator !=( LPARAM left, LPARAM right ) => !( left == right ) ;
 
-		public bool Equals( LPARAM other ) => this.Value == other.Value ;
-		public override bool Equals( object obj ) => obj is LPARAM other && this.Equals( other ) ;
-		public override int GetHashCode() => this.Value.GetHashCode( ) ;
+		public          bool Equals( LPARAM  other ) => this.Value == other.Value ;
+		public override bool Equals( object? obj )   => obj is LPARAM other && this.Equals( other ) ;
+		public override int  GetHashCode()           => this.Value.GetHashCode( ) ;
 	} ;
 }

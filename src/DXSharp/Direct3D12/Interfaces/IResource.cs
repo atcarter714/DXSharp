@@ -9,8 +9,13 @@ namespace DXSharp.Direct3D12 ;
 public interface IResource: IPageable,
 							IComObjectRef< ID3D12Resource >,
 							IUnknownWrapper< ID3D12Resource > {
+
 	new ID3D12Resource? COMObject { get ; }
-	new ComPtr< ID3D12Resource > ComPointer { get ; }
+	new Type ComType => typeof( ID3D12Resource ) ;
+	new ComPtr< ID3D12Resource >? ComPointer { get ; }
+	new Guid InterfaceGUID => typeof( ID3D12Resource ).GUID ;
+	new ID3D12Resource? ComObject => ComPointer?.Interface ;
+	
 	
 	/// <summary>Gets a CPU pointer to the specified subresource in the resource, but may not disclose the pointer value to applications. Map also invalidates the CPU cache, when necessary, so that CPU reads to this address reflect any modifications made by the GPU.</summary>
 	/// <param name="Subresource">
@@ -81,6 +86,7 @@ public interface IResource: IPageable,
 	/// </remarks>
 	ulong GetGPUVirtualAddress( ) => COMObject!.GetGPUVirtualAddress( ) ;
 	
+	
 	/// <summary>Uses the CPU to copy data into a subresource, enabling the CPU to modify the contents of most textures with undefined layouts.</summary>
 	/// <param name="DstSubresource">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> Specifies the index of the subresource.</para>
@@ -112,13 +118,15 @@ public interface IResource: IPageable,
 	/// <para><b>WriteToSubresource</b> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12resource-readfromsubresource">ReadFromSubresource</a> enable near zero-copy optimizations for UMA adapters, but can prohibitively impair the efficiency of discrete/ NUMA adapters as the texture data cannot reside in local video memory. Typical applications should stick to discrete-friendly upload techniques, unless they recognize the adapter architecture is UMA. For more details on uploading, refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copytextureregion">CopyTextureRegion</a>, and for more details on UMA, refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_architecture">D3D12_FEATURE_DATA_ARCHITECTURE</a>. On UMA systems, this routine can be used to minimize the cost of memory copying through the loop optimization known as <a href="https://en.wikipedia.org/wiki/Loop_tiling">loop tiling</a>. By breaking up the upload into chucks that comfortably fit in the CPU cache, the effective bandwidth between the CPU and main memory more closely achieves theoretical maximums.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-writetosubresource#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void WriteToSubresource( uint DstSubresource, out Box pDstBox, nint pSrcData, uint SrcRowPitch, uint SrcDepthPitch ) {
+	void WriteToSubresource( uint DstSubresource, out Box pDstBox, 
+							 nint pSrcData, uint SrcRowPitch, uint SrcDepthPitch ) {
 		unsafe { fixed( Box* pDstBoxPtr = &pDstBox )
 				COMObject!.WriteToSubresource( DstSubresource, (D3D12_BOX *)pDstBoxPtr,
 											   (void *)pSrcData, SrcRowPitch, SrcDepthPitch ) ;
 		}
 	}
 
+	
 	/// <summary>Uses the CPU to copy data from a subresource, enabling the CPU to read the contents of most textures with undefined layouts.</summary>
 	/// <param name="pDstData">
 	/// <para>Type: <b>void*</b> A pointer to the destination data in memory.</para>
@@ -145,7 +153,9 @@ public interface IResource: IPageable,
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
 	/// </returns>
 	/// <remarks>See the Remarks section for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12resource-writetosubresource">WriteToSubresource</a>.</remarks>
-	void ReadFromSubresource( nint pDstData, uint DstRowPitch, uint DstDepthPitch, uint SrcSubresource, in Box? pSrcBox = null ) {
+	void ReadFromSubresource( nint pDstData, uint DstRowPitch,
+							  uint DstDepthPitch, uint SrcSubresource,
+							  in Box? pSrcBox = null ) {
 		Box _box = pSrcBox ?? default ;
 		unsafe {
 			Box* pSrcBoxPtr = &_box ;
@@ -181,4 +191,15 @@ public interface IResource: IPageable,
 		}
 	}
 
+	
+	// -----------------------------------------------------------------------------------------
+	// Static Members ::
+	// -----------------------------------------------------------------------------------------
+	
+	static Guid IUnknownWrapper< ID3D12Object >.InterfaceGUID => typeof(ID3D12Object).GUID ;
+	static Guid IUnknownWrapper< ID3D12Resource >.InterfaceGUID => typeof(ID3D12Resource).GUID ;
+	static Guid IUnknownWrapper< ID3D12Pageable >.InterfaceGUID => typeof(ID3D12Pageable).GUID ;
+	static Guid IUnknownWrapper< ID3D12DeviceChild >.InterfaceGUID => typeof(ID3D12DeviceChild).GUID ;
+
+	// =========================================================================================
 } ;

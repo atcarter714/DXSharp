@@ -36,19 +36,14 @@ public interface IObject: IDXCOMObject,
 	
 	Type IUnknownWrapper< ID3D12Object >.ComType => ComType ;
 	nint IUnknownWrapper< ID3D12Object >.Pointer => Pointer ;
+	ID3D12Object? IComObjectRef< ID3D12Object >.COMObject => COMObject ;
 	ID3D12Object? IUnknownWrapper< ID3D12Object >.ComObject => ComObject ;
 	bool IUnknownWrapper< ID3D12Object >.IsInitialized => IsInitialized ;
 	
 	static Guid IUnknownWrapper< ID3D12Object >.InterfaceGUID => 
 		typeof(ID3D12Object).GUID ;
 	
-	/*static HResult IUnknownWrapper< ID3D12Object >.QueryInterface<T>(
-		in IUnknownWrapper<T> wrapper, out T obj ) where T: IUnknown =>
-		COMUtility.QueryInterface( wrapper.BasePointer, out obj ) ;*/
-	
-	// ----------------------------------------------------------
-	// ----------------------------------------------------------
-	
+	// ============================================================
 } ;
 
 
@@ -118,34 +113,45 @@ public interface IPageable: IDeviceChild,
 	new ID3D12Pageable? COMObject { get ; }
 	new ComPtr< ID3D12Pageable >? ComPointer { get ; }
 	
-	/*bool IDeviceChild.IsInitialized => IsInitialized ;
-	bool IUnknownWrapper< ID3D12Pageable >.IsInitialized => IsInitialized ;*/
-	
-	/*Type IDeviceChild.ComType => ComType ;
-	Type IUnknownWrapper< ID3D12Pageable >.ComType => ComType ;*/
-	
-	/*nint IDeviceChild.Pointer => Pointer ;
-	nint IUnknownWrapper< ID3D12Pageable >.Pointer => Pointer ;
-	nint IUnknownWrapper< ID3D12DeviceChild >.Pointer => Pointer ;*/
-	
 	ID3D12DeviceChild? IDeviceChild.ComObject => COMObject ;
 	ID3D12DeviceChild? IDeviceChild.COMObject => COMObject ;
 	ID3D12Pageable? IUnknownWrapper< ID3D12Pageable >.ComObject => COMObject ;
 	ID3D12DeviceChild? IUnknownWrapper< ID3D12DeviceChild >.ComObject => COMObject ;
 	
+	
 	static Guid IUnknownWrapper< ID3D12Object >.InterfaceGUID => typeof(ID3D12Object).GUID ;
 	static Guid IUnknownWrapper< ID3D12Pageable >.InterfaceGUID => typeof(ID3D12Pageable).GUID ;
 	static Guid IUnknownWrapper< ID3D12DeviceChild >.InterfaceGUID => typeof(ID3D12DeviceChild).GUID ;
-
 	
-	/*static HResult IUnknownWrapper<ID3D12DeviceChild>
-		.QueryInterface<T>(in IUnknownWrapper<T> wrapper, out T obj) =>
-			COMUtility.QueryInterface( wrapper.BasePointer, out obj ) ;*/
 } ;
 
 
 // ----------------------------------------------------------
 
+
+	
+// ---------------------------------------------------------------------
+// IUnknownWrapper< ID3D12Pageable > Explicits/Disambiguations ::
+// ---------------------------------------------------------------------
+/*Type IUnknownWrapper<ID3D12Pageable>.ComType => ComType ;
+nint IUnknownWrapper<ID3D12Pageable>.Pointer => Pointer ;
+bool IUnknownWrapper<ID3D12Pageable>.IsInitialized => IsInitialized ;*/
+// =====================================================================
+
+	
+/*static HResult IUnknownWrapper<ID3D12DeviceChild>
+	.QueryInterface<T>(in IUnknownWrapper<T> wrapper, out T obj) =>
+		COMUtility.QueryInterface( wrapper.BasePointer, out obj ) ;*/
+
+/*bool IDeviceChild.IsInitialized => IsInitialized ;
+bool IUnknownWrapper< ID3D12Pageable >.IsInitialized => IsInitialized ;*/
+	
+/*Type IDeviceChild.ComType => ComType ;
+Type IUnknownWrapper< ID3D12Pageable >.ComType => ComType ;*/
+	
+/*nint IDeviceChild.Pointer => Pointer ;
+nint IUnknownWrapper< ID3D12Pageable >.Pointer => Pointer ;
+nint IUnknownWrapper< ID3D12DeviceChild >.Pointer => Pointer ;*/
 
 	
 /*bool IUnknownWrapper< ID3D12Object >.IsInitialized => IsInitialized ;

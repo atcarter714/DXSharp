@@ -49,7 +49,7 @@ namespace DXSharp.Windows {
 		/// </summary>
 		/// <param name="obj">Object to compare to</param>
 		/// <returns>True if equal, otherwise false</returns>
-		public override bool Equals( object obj ) => obj is HResult other && this.Equals( other ) ;
+		public override bool Equals( object? obj ) => obj is HResult other && this.Equals( other ) ;
 
 		/// <summary>
 		/// Gets the hash code of this HRESULT value

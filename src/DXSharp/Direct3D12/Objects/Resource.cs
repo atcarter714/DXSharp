@@ -33,48 +33,5 @@ public class Resource: Object, IResource,
 		.ComPointer => new( COMObject! ) ;
 
 	ComPtr< ID3D12Pageable >? IUnknownWrapper< ID3D12Pageable >.ComPointer => new( COMObject! ) ;
-}
-
-
-	/*public void Map( uint Subresource, in Range pReadRange, out nint ppData ) {
-		unsafe { fixed( Range* _pRange = &pReadRange ) {
-				void* _pData = default ;
-				COMObject.Map( Subresource, (D3D12_RANGE *)_pRange, &_pData ) ;
-				ppData = (nint)_pData! ;
-			}
-		}
-	}
-
-	public void Unmap( uint Subresource, in Range pWrittenRange ) {
-		unsafe { fixed ( Range* _pRange = &pWrittenRange ) {
-				void* _pData = default ;
-				COMObject.Unmap( Subresource, (D3D12_RANGE*)_pRange ) ;
-			}
-		}
-	}
-
-	public ResourceDescription GetDesc( ) => COMObject.GetDesc( ) ;
 	
-
-	public ulong GetGPUVirtualAddress() {
-		throw new NotImplementedException( ) ;
-	}
-
-	public void WriteToSubresource( uint DstSubresource, out Box pDstBox, IntPtr pSrcData, uint SrcRowPitch, uint SrcDepthPitch ) {
-		throw new NotImplementedException( ) ;
-	}
-
-	public void ReadFromSubresource( nint pDstData, uint DstRowPitch, uint DstDepthPitch, uint SrcSubresource,
-									 in Box? pSrcBox = null ) {
-		throw new NotImplementedException( ) ;
-	}
-
-	public void GetHeapProperties( out HeapProperties pHeapProperties, out HeapFlags pHeapFlags ) {
-		unsafe {
-			D3D12_HEAP_FLAGS _flags = 0 ;
-			D3D12_HEAP_PROPERTIES _props = default ;
-			COMObject.GetHeapProperties( &_props, &_flags ) ;
-			pHeapFlags = (HeapFlags)_flags ;
-			pHeapProperties = _props ;
-		}
-	}*/
+} ;

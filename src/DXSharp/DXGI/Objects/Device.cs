@@ -1,13 +1,11 @@
 ﻿#region Using Directives
-using System.Runtime.InteropServices ;
-using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 
 using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.DXGI ;
 
-
+/// <summary>Represents a DXGI Device object.</summary>
 public class Device: Object, IDevice {
 	public override ComPtr? ComPtrBase => ComPointer ;
 	public IDXGIDevice? COMObject => ComPointer?.Interface ;
@@ -101,9 +99,9 @@ public class Device: Object, IDevice {
 
 	
 	//! warning -----------------------------------
-	#warning Potentially unnecessary overrides/duplication of base methods
+	//#warning Potentially unnecessary overrides/duplication of base methods
 	//! TODO: Figure out if we actually need to override/hide the base versions
-	public void GetParent< T >( out T ppParent ) where T: IUnknownWrapper {
+	/*public void GetParent< T >( out T ppParent ) where T: IUnknownWrapper {
 		_throwIfDestroyed( ) ;
 		_throwIfNull( ) ;
 		ppParent = default! ;
@@ -114,7 +112,7 @@ public class Device: Object, IDevice {
 			this.COMObject?.GetParent( &riid, out parent ) ;
 			ppParent = (T)parent! ;
 		}
-	}
+	}*/
 
 	/*public void GetPrivateData< TData >( out uint pDataSize, nint pData ) where TData: unmanaged {
 		_throwIfDestroyed( ) ;

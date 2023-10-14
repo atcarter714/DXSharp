@@ -175,7 +175,7 @@ public static class COMUtility {
 		return hr ;
 	}
 	
-	[MethodImpl(MethodImplOptions.AggressiveOptimization)]
+	/*[MethodImpl(MethodImplOptions.AggressiveOptimization)]
 	public static HResult QueryInterface< TWrapper, TInterface >( this TWrapper wrapper,
 																	nint pUnknown, out TInterface comObj )
 																		where TWrapper:
@@ -192,7 +192,7 @@ public static class COMUtility {
 		
 		_lastHResult = hr ;
 		return hr ;
-	}
+	}*/
 
 	#endregion
 	

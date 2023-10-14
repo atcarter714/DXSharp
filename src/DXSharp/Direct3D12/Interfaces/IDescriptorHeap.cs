@@ -20,8 +20,12 @@ namespace DXSharp.Direct3D12 ;
 public interface IDescriptorHeap: IPageable,
 								  IComObjectRef< ID3D12DescriptorHeap >, 
 								  IUnknownWrapper< ID3D12DescriptorHeap > {
+	
+	new Type ComType => typeof( ID3D12DescriptorHeap ) ;
+	new ComPtr< ID3D12DescriptorHeap >? ComPointer { get ; }
+	new Guid InterfaceGUID => typeof( ID3D12DescriptorHeap ).GUID ;
 	new ID3D12DescriptorHeap? COMObject => ComPointer?.Interface ;
-	new ComPtr< ID3D12DescriptorHeap > ComPointer { get ; }
+	new ID3D12DescriptorHeap? ComObject => ComPointer?.Interface ;
 	
 	/// <summary>Gets the descriptor heap description.</summary>
 	/// <returns>

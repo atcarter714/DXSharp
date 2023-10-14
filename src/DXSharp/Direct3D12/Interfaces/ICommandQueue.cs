@@ -10,6 +10,15 @@ namespace DXSharp.Direct3D12 ;
 
 [Wrapper(typeof(ID3D12CommandQueue))]
 public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue > {
+	
+	new Type ComType => typeof( ID3D12CommandQueue ) ;
+	new Guid InterfaceGUID => typeof( ID3D12CommandQueue ).GUID ;
+	new ID3D12CommandQueue? COMObject => ComPointer?.Interface ;
+	new ID3D12CommandQueue? ComObject => ComPointer?.Interface ;
+	new ComPtr< ID3D12CommandQueue >? ComPointer { get ; }
+	
+	
+	
 	/// <summary>Copies mappings from a source reserved resource to a destination reserved resource.</summary>
 	/// <param name="pDstResource">A pointer to the destination reserved resource.</param>
 	/// <param name="pDstRegionStartCoordinate">

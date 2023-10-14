@@ -2,12 +2,9 @@
 dxgi.*
 d3d12.*
 d3d11.*
-dxguid.*
+//dxguid.*
 user32.*
 
-LPSTR
-LPWSTR
-LPWSTR*
 
 // DXGI COM Interfaces:
 IDXGIFactory7
@@ -16,13 +13,14 @@ IDXGIOutput6
 
 // DXGI Enumerations:
 DXGI_SWAP_CHAIN_FLAG
-DXGI_FEATURE_DATA_FORMAT_INFO
+//DXGI_FEATURE_DATA_FORMAT_INFO
 
 DXGI_FORMAT
 DXGI_SAMPLE_DESC
 
 // D3D12 Structures:
-D3D12_VIEWPORT					// NOTE: D3D12_RECT is just a typedef of RECT
+D3D12_VIEWPORT
+// NOTE: D3D12_RECT is just a typedef of RECT
 
 
 // D3D12 Interfaces:
@@ -74,7 +72,6 @@ ID3D12RootSignature
 ID3D12PipelineState
 ID3D12Fence
 
-ID3D12Device::GetDeviceRemovedReason
 
 // Win32 API Stuff:
 IUnknown
@@ -85,13 +82,14 @@ TranslateMessage
 DispatchMessage
 SetWindowText
 
-CreateWindowEx	// (for creating the window)
-DefWindowProc	// (for handling default window messages)
-PostQuitMessage // (for posting a quit message)
-ShowWindow		// (for displaying the window)
-UpdateWindow	// (for updating the window)
+CreateWindowEx
+DefWindowProc
+PostQuitMessage
+ShowWindow
+UpdateWindow
 
-WNDCLASSEX
+WNDCLASSEXA
+WNDCLASSEXW
 RegisterClassEx
 CreateWindowEx
 DefWindowProc
@@ -147,23 +145,21 @@ DXGI_ERROR_DEVICE_HUNG
 
 DXGI_GAMMA_CONTROL
 
+
 // ------------------------------------------
 // Additional Win32 Functions needed:
 // 5/14/23 - AtC
 // ------------------------------------------
-CommandLineToArgv
+LoadCursorA
+LoadCursorW
+CommandLineToArgvA
 CommandLineToArgvW
+GetCommandLineA
 GetCommandLineW
 
-GetWindowLongPtr
-SetWindowLongPtr
+EnumDisplayAdapters1
 
-WindowMessage
-LoadCursor = user32.dll
-
-// Additional Win32 Functions needed:
-CommandLineToArgvW = shell32.dll
-GetCommandLineW = kernel32.dll
-GetWindowLongPtrW = user32.dll
-EnumDisplayAdapters1 = user32.dll
-LoadCursorW = user32.dll
+GetWindowLongPtrW
+SetWindowLongPtrW
+RegisterWindowMessageA
+RegisterWindowMessageW
