@@ -78,9 +78,8 @@ public interface ID3D12Object: IUnknown {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setprivatedatainterface">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	[return: MarshalAs(UnmanagedType.I4)]
-	[PreserveSig] unsafe HResult SetPrivateDataInterface< T >( Guid* guid,
-															   [MarshalAs(0x19)] T? pData )
-																						 where T: IUnknown ;
+	[PreserveSig] unsafe HResult SetPrivateDataInterface( Guid* guid,
+															   [MarshalAs(0x19)] IUnknown? pData ) ;
 	
 	
 	/// <summary>Associates a name with the device object. This name is for use in debug diagnostics and tools.</summary>

@@ -61,9 +61,8 @@ public unsafe interface IDXGIObject: IUnknown {
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgiobject-setprivatedatainterface#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	[return: MarshalAs(UnmanagedType.I4)]
-	[PreserveSig] HResult SetPrivateDataInterface< T >( Guid* Name,
-													  [MarshalAs(0x19)] T? pUnknown ) 
-																						where T: IUnknown ;
+	[PreserveSig] HResult SetPrivateDataInterface( Guid* Name,
+													  [MarshalAs(0x19)] IUnknown? pUnknown ) ;
 	
 	
 	/// <summary>Get a pointer to the object's data.</summary>

@@ -91,6 +91,7 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 		_form = new RenderForm( Title ) ;
 		_form.ClientSize = DesiredSize ;
 		_form.Show( ) ;
+		_form.ForeColor = Color.Black ;
 		
 		// Configure parallelism and thread setup:
 		cancelTick = AppCancelTokenSource.Token ;

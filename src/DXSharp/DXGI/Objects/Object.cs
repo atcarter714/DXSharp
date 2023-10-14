@@ -43,7 +43,7 @@ public abstract class Object: DXComObject, IObject {
 	}
 	
 	public ComPtr< IDXGIObject >? ComPointer { get ; init ; }
-	IDXGIObject? _interface => ComPointer?.Interface ;
+	//IDXGIObject? _interface => ComPointer?.Interface ;
 	
 	public uint AddRef( ) => this.ComPointer?.Interface?.AddRef( ) ?? 0U ;
 	public uint Release( ) => this.ComPointer?.Interface?.Release( ) ?? 0U ;
