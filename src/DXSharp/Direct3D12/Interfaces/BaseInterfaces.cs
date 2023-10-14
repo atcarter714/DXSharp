@@ -34,17 +34,17 @@ public interface IObject: IDXCOMObject,
 	// Explicit Interface Implementations / Disambiguation ::
 	// ----------------------------------------------------------
 	
-	bool IUnknownWrapper< ID3D12Object >.IsInitialized => IsInitialized ;
 	Type IUnknownWrapper< ID3D12Object >.ComType => ComType ;
 	nint IUnknownWrapper< ID3D12Object >.Pointer => Pointer ;
 	ID3D12Object? IUnknownWrapper< ID3D12Object >.ComObject => ComObject ;
+	bool IUnknownWrapper< ID3D12Object >.IsInitialized => IsInitialized ;
 	
 	static Guid IUnknownWrapper< ID3D12Object >.InterfaceGUID => 
 		typeof(ID3D12Object).GUID ;
 	
-	static HResult IUnknownWrapper< ID3D12Object >.QueryInterface<T>(
-		in IUnknownWrapper<T> wrapper, out T obj ) =>
-		COMUtility.QueryInterface( wrapper.BasePointer, out obj ) ;
+	/*static HResult IUnknownWrapper< ID3D12Object >.QueryInterface<T>(
+		in IUnknownWrapper<T> wrapper, out T obj ) where T: IUnknown =>
+		COMUtility.QueryInterface( wrapper.BasePointer, out obj ) ;*/
 	
 	// ----------------------------------------------------------
 	// ----------------------------------------------------------
@@ -97,12 +97,14 @@ public interface IDeviceChild: IObject,
 	nint IUnknownWrapper< ID3D12DeviceChild >.Pointer => Pointer ;
 	ID3D12DeviceChild? IUnknownWrapper< ID3D12DeviceChild >.ComObject => ComObject ;
 	
+	ID3D12DeviceChild? IComObjectRef< ID3D12DeviceChild >.COMObject => COMObject ;
+	
 	static Guid IUnknownWrapper< ID3D12DeviceChild >.InterfaceGUID =>
 		typeof(ID3D12DeviceChild).GUID ;
 	
-	static HResult IUnknownWrapper< ID3D12DeviceChild >.QueryInterface<T>(
+	/*static HResult IUnknownWrapper< ID3D12DeviceChild >.QueryInterface<T>(
 		in IUnknownWrapper<T> wrapper, out T obj ) =>
-		COMUtility.QueryInterface( wrapper.BasePointer, out obj ) ;
+		COMUtility.QueryInterface( wrapper.BasePointer, out obj ) ;*/
 } ;
 
 
@@ -116,20 +118,29 @@ public interface IPageable: IDeviceChild,
 	new ID3D12Pageable? COMObject { get ; }
 	new ComPtr< ID3D12Pageable >? ComPointer { get ; }
 	
+	/*bool IDeviceChild.IsInitialized => IsInitialized ;
+	bool IUnknownWrapper< ID3D12Pageable >.IsInitialized => IsInitialized ;*/
 	
-	bool IDeviceChild.IsInitialized => IsInitialized ;
-	Type IDeviceChild.ComType => ComType ;
-	nint IDeviceChild.Pointer => Pointer ;
+	/*Type IDeviceChild.ComType => ComType ;
+	Type IUnknownWrapper< ID3D12Pageable >.ComType => ComType ;*/
 	
-	ID3D12DeviceChild? IDeviceChild.ComObject => ComObject ;
+	/*nint IDeviceChild.Pointer => Pointer ;
+	nint IUnknownWrapper< ID3D12Pageable >.Pointer => Pointer ;
+	nint IUnknownWrapper< ID3D12DeviceChild >.Pointer => Pointer ;*/
+	
+	ID3D12DeviceChild? IDeviceChild.ComObject => COMObject ;
 	ID3D12DeviceChild? IDeviceChild.COMObject => COMObject ;
+	ID3D12Pageable? IUnknownWrapper< ID3D12Pageable >.ComObject => COMObject ;
+	ID3D12DeviceChild? IUnknownWrapper< ID3D12DeviceChild >.ComObject => COMObject ;
 	
-	static Guid IUnknownWrapper<ID3D12DeviceChild>.InterfaceGUID =>
-		typeof(ID3D12DeviceChild).GUID ;
+	static Guid IUnknownWrapper< ID3D12Object >.InterfaceGUID => typeof(ID3D12Object).GUID ;
+	static Guid IUnknownWrapper< ID3D12Pageable >.InterfaceGUID => typeof(ID3D12Pageable).GUID ;
+	static Guid IUnknownWrapper< ID3D12DeviceChild >.InterfaceGUID => typeof(ID3D12DeviceChild).GUID ;
+
 	
-	static HResult IUnknownWrapper<ID3D12DeviceChild>
+	/*static HResult IUnknownWrapper<ID3D12DeviceChild>
 		.QueryInterface<T>(in IUnknownWrapper<T> wrapper, out T obj) =>
-	 		COMUtility.QueryInterface( wrapper.BasePointer, out obj ) ;
+			COMUtility.QueryInterface( wrapper.BasePointer, out obj ) ;*/
 } ;
 
 

@@ -10,7 +10,7 @@ namespace DXSharp.Direct3D12 ;
 // Enumerated Constants ::
 // ------------------------------------------------------------------------------
 
-[Equivalent( typeof( D3D12_UAV_DIMENSION ) )]
+[EquivalentOf( typeof( D3D12_UAV_DIMENSION ) )]
 public enum UAVDimensions {
 	/// <summary>The view type is unknown.</summary>
 	UNKNOWN = 0,
@@ -30,7 +30,7 @@ public enum UAVDimensions {
 	TEXTURE3D = 8,
 } ;
 
-[Flags, Equivalent( typeof( D3D12_BUFFER_UAV_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_BUFFER_UAV_FLAGS ) )]
 public enum BufferUAVFlags {
 	/// <summary>Indicates a default view.</summary>
 	NONE = 0x00000000,
