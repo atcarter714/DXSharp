@@ -1,5 +1,5 @@
 ﻿#region Using Directives
-
+using System.Buffers ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.System ;
@@ -21,7 +21,9 @@ namespace DXSharp.Direct3D12 ;
 public interface IDevice: IObject,
 						  IComObjectRef< ID3D12Device >,
 						  IUnknownWrapper< ID3D12Device > {
-	//static Guid IUnknownWrapper< ID3D12Device >.InterfaceGUID => typeof(ID3D12Device).GUID ;
+	static Guid IUnknownWrapper< ID3D12Object >.InterfaceGUID => typeof(ID3D12Object).GUID ;
+	static Guid IUnknownWrapper< ID3D12Device >.InterfaceGUID => typeof(ID3D12Device).GUID ;
+	
 	
 	new Type ComType => typeof( ID3D12Device ) ;
 	new Guid InterfaceGUID => typeof( ID3D12Device ).GUID ;
@@ -805,6 +807,8 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-makeresident#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void MakeResident< P >( uint NumObjects, Span< P > ppObjects ) where P : IPageable ;
+
+	
 	
 	/// <summary>Enables the page-out of data, which precludes GPU access of that data.</summary>
 	/// <param name="NumObjects">
@@ -824,9 +828,32 @@ public interface IDevice: IObject,
 	/// <para>Refer to the remarks for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-makeresident">MakeResident</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-evict#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void Evict< P >( uint NumObjects, Span< P > ppObjects ) where P : IPageable ;
-	
-	
+	void Evict< P >( uint NumObjects, Span<P> ppObjects ) where P: IPageable { 
+		unsafe {
+			// Extract the COM interface refs from the span of objects:
+			// A more efficient unsafe overload taking a raw ID3D12Pageable** should be written ...
+			var pageables = new ID3D12Pageable[ ppObjects.Length ] ;
+			var _pageableSpan = pageables.AsSpan( ) ;
+			
+			for( int i = 0; i < ppObjects.Length; i++ ) {
+				var next = ppObjects[ i ] ;
+#if DEBUG || DEV_BUILD
+				if( next is null ) throw new ArgumentNullException( nameof(ppObjects), 
+																	$"{nameof(IDevice)}.{nameof(Evict)} :: " +
+																	$"Span must not contain null references!" ) ;
+				if ( next.COMObject is null || ( next.ComPointer?.Disposed ?? true ) )
+					throw new ArgumentException( nameof( ppObjects ),
+												 $"{nameof( IDevice )}.{nameof( Evict )} :: " +
+												 $"Span must contain only COM objects!" ) ;
+#endif
+				_pageableSpan[ i ] = ppObjects[ i ].COMObject! ;
+			}
+			
+			COMObject!.Evict( NumObjects, pageables ) ;
+		}
+	}
+
+
 	/// <summary>Creates a fence object. (ID3D12Device.CreateFence)</summary>
 	/// <param name="InitialValue">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT64</a></b> The initial value for the fence.</para>
@@ -850,8 +877,16 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createfence">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateFence( ulong InitialValue, FenceFlags Flags, 
-							in Guid riid, out IFence ppFence ) ;
+	void CreateFence( ulong InitialValue, FenceFlags Flags,
+					  in Guid riid, out IFence ppFence ) {
+		unsafe { fixed ( void* ppFencePtr = &ppFence ) {
+				Guid iid = riid ;
+				COMObject!.CreateFence( InitialValue, (D3D12_FENCE_FLAGS)Flags, 
+										&iid, out var fence ) ;
+				ppFence = new Fence( (ID3D12Fence)fence ) ;
+			}
+		}
+	}
 
 	
 	/// <summary>Gets the reason that the device was removed.</summary>

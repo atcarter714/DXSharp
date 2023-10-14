@@ -151,7 +151,6 @@ public class Output: Object, IOutput {
 		_ = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		unsafe {
-			#warning Is this a CsWin32 bug? Seems like IDXGISurface::GetDisplaySurfaceData should take a pointer ...
 			COMObject.GetDisplaySurfaceData( pDestination.COMObject ) ;
 		}
 	}

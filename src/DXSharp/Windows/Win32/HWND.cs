@@ -76,7 +76,7 @@ namespace Windows.Win32.Foundation {
 		/// </summary>
 		/// <param name="obj">Object to compare to</param>
 		/// <returns>True if equal, otherwise false</returns>
-		public override bool Equals( object obj ) =>
+		public override bool Equals( object? obj ) =>
 									obj is HWND other && this.Equals( other ) ;
 
 		/// <summary>
