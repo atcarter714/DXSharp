@@ -8,9 +8,9 @@ public class Fence: Pageable, IFence, IInstantiable< Fence > {
 	static Fence IInstantiable< Fence >.Instantiate( ) => new( ) ;
 	static IDXCOMObject IInstantiable.  Instantiate( ) => new Fence( ) ;
 	
-	ComPtr< ID3D12Pageable >? IPageable.ComPointer => new( this.ComPointer.Interface ) ;
-	ComPtr< ID3D12DeviceChild >? IDeviceChild.ComPointer => new( this.ComPointer.Interface ) ;
-	ComPtr< ID3D12DeviceChild >? IUnknownWrapper< ID3D12DeviceChild >.ComPointer => new( this.ComPointer.Interface ) ;
+	ComPtr< ID3D12Pageable >? IPageable.ComPointer => new( this.ComPointer?.Interface! ) ;
+	ComPtr< ID3D12DeviceChild >? IDeviceChild.ComPointer => new( this.ComPointer?.Interface! ) ;
+	ComPtr< ID3D12DeviceChild >? IUnknownWrapper< ID3D12DeviceChild >.ComPointer => new( this.ComPointer?.Interface! ) ;
 
 	ID3D12Pageable? IPageable.COMObject => COMObject ;
 	ID3D12DeviceChild? IDeviceChild.COMObject => COMObject ;

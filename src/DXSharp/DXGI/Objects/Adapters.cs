@@ -64,7 +64,7 @@ public class Adapter: Object, IAdapter {
 	/// Enumerate adapter (video card) outputs.
 	/// </summary>
 	/// <param name="Output">The index of the output.</param>
-	/// <param name="ppOutput"><see cref="TOutput"/> interface at the position specified by the Output parameter.</param>
+	/// <param name="ppOutput"><typeparam name="TOutput"/> interface at the position specified by the Output parameter.</param>
 	/// <typeparam name="TOutput">The type of <see cref="IOutput"/> elements to enumerate through.</typeparam>
 	/// <returns>
 	/// A code that indicates success or failure (see DXGI_ERROR ).
@@ -104,8 +104,9 @@ public class Adapter: Object, IAdapter {
 		}
 	}
 
+	
 	public static TInterface Instantiate< TInterface >( ) where TInterface: class, IDXCOMObject {
-		return ( new Adapter( ) as TInterface ) ;
+		return ( new Adapter( ) as TInterface )! ;
 	}
 } ;
 

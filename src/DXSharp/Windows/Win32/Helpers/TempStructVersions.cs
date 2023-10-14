@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Gdi ;
+using DXSharp.Windows.Win32.Helpers ;
 
 namespace DXSharp.Windows.Win32 ;
 
@@ -56,4 +57,19 @@ public readonly struct HModule: IEquatable< HModule >,
 	public static bool operator !=( HModule left, HMODULE right ) => left.Value != right.Value ;
 	public static bool operator ==( HMODULE left, HModule right ) => left.Value == right.Value ;
 	public static bool operator !=( HMODULE left, HModule right ) => left.Value != right.Value ;
+} ;
+
+
+/// <summary>
+/// A structure receives information about the display device specified by
+/// the iDevNum parameter of the EnumDisplayDevices function.
+/// </summary>
+[DebuggerDisplay( "DisplayDevice {DeviceID}: \"{DeviceName.ToString()}\"" )]
+public struct DisplayDeviceA {
+	public uint        cb ;
+	public FixedStr32  DeviceName ;
+	public FixedStr128 DeviceString ;
+	public uint        StateFlags ;
+	public FixedStr128 DeviceID ;
+	public FixedStr128 DeviceKey ;
 } ;

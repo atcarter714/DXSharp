@@ -33,22 +33,102 @@ public struct DepthStencilDesc {
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_depth_stencilop_desc">D3D12_DEPTH_STENCILOP_DESC</a> structure that describes how to use the results of the depth test and the stencil test for pixels whose surface normal is facing away from the camera.</summary>
 	public DepthStencilOpDesc BackFace ;
+	
+	
+	public static DepthStencilDesc Default => new( ) {
+		DepthEnable = true,
+		DepthWriteMask = DepthWriteMask.ALL,
+		DepthFunc = ComparisonFunction.LESS,
+		StencilEnable = false,
+		StencilReadMask = 0xFF,
+		StencilWriteMask = 0xFF,
+		FrontFace = new( ) {
+			StencilFailOp      = StencilOperation.KEEP,
+			StencilDepthFailOp = StencilOperation.KEEP,
+			StencilPassOp      = StencilOperation.KEEP,
+			StencilFunc        = ComparisonFunction.ALWAYS,
+		},
+		BackFace = new( ) {
+			StencilFailOp      = StencilOperation.KEEP,
+			StencilDepthFailOp = StencilOperation.KEEP,
+			StencilPassOp      = StencilOperation.KEEP,
+			StencilFunc        = ComparisonFunction.ALWAYS,
+		},
+	} ;
+	
+	
+	public static implicit operator DepthStencilDesc( D3D12_DEPTH_STENCIL_DESC desc ) =>
+		new DepthStencilDesc {
+			DepthEnable = desc.DepthEnable,
+			DepthWriteMask = (DepthWriteMask)desc.DepthWriteMask,
+			DepthFunc = (ComparisonFunction)desc.DepthFunc,
+			StencilEnable = desc.StencilEnable,
+			StencilReadMask = desc.StencilReadMask,
+			StencilWriteMask = desc.StencilWriteMask,
+			FrontFace = (DepthStencilOpDesc)desc.FrontFace,
+			BackFace = (DepthStencilOpDesc)desc.BackFace,
+		} ;
+
+	public static implicit operator D3D12_DEPTH_STENCIL_DESC( DepthStencilDesc desc ) =>
+		new D3D12_DEPTH_STENCIL_DESC {
+			DepthEnable      = desc.DepthEnable,
+			DepthWriteMask   = (D3D12_DEPTH_WRITE_MASK)desc.DepthWriteMask,
+			DepthFunc        = (D3D12_COMPARISON_FUNC)desc.DepthFunc,
+			StencilEnable    = desc.StencilEnable,
+			StencilReadMask  = desc.StencilReadMask,
+			StencilWriteMask = desc.StencilWriteMask,
+			FrontFace        = (D3D12_DEPTH_STENCILOP_DESC)desc.FrontFace,
+			BackFace         = (D3D12_DEPTH_STENCILOP_DESC)desc.BackFace,
+		} ;
 } ;
+	
 
 [StructLayout(LayoutKind.Sequential),
 	ProxyFor( typeof( D3D12_DEPTH_STENCILOP_DESC ) )]
 public struct DepthStencilOpDesc {
+	/*public static DepthStencilOpDesc Default => new( ) {
+		StencilFailOp      = StencilOperation.KEEP,
+		StencilDepthFailOp = StencilOperation.KEEP,
+		StencilPassOp      = StencilOperation.KEEP,
+		StencilFunc        = ComparisonFunction.ALWAYS,
+	} ;*/
+	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_stencil_op">D3D12_STENCIL_OP</a>-typed value that identifies the stencil operation to perform when stencil testing fails.</summary>
-	public D3D12_STENCIL_OP StencilFailOp ;
+	public StencilOperation StencilFailOp ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_stencil_op">D3D12_STENCIL_OP</a>-typed value that identifies the stencil operation to perform when stencil testing passes and depth testing fails.</summary>
-	public D3D12_STENCIL_OP StencilDepthFailOp ;
+	public StencilOperation StencilDepthFailOp ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_stencil_op">D3D12_STENCIL_OP</a>-typed value that identifies the stencil operation to perform when stencil testing and depth testing both pass.</summary>
-	public D3D12_STENCIL_OP StencilPassOp ;
+	public StencilOperation StencilPassOp ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_comparison_func">D3D12_COMPARISON_FUNC</a>-typed value that identifies the function that compares stencil data against existing stencil data.</summary>
-	public D3D12_COMPARISON_FUNC StencilFunc ;
+	public ComparisonFunction StencilFunc ;
+	
+	
+	
+	public DepthStencilOpDesc( StencilOperation stencilFailOp, StencilOperation stencilDepthFailOp,
+							   StencilOperation stencilPassOp, ComparisonFunction stencilFunc ) {
+		StencilFailOp = stencilFailOp ;
+		StencilDepthFailOp = stencilDepthFailOp ;
+		StencilPassOp = stencilPassOp ;
+		StencilFunc = stencilFunc ;
+	}
+	
+	
+	public static implicit operator DepthStencilOpDesc( D3D12_DEPTH_STENCILOP_DESC desc ) =>
+		new( (StencilOperation)desc.StencilFailOp, 
+			 (StencilOperation)desc.StencilDepthFailOp, 
+			 (StencilOperation)desc.StencilPassOp, 
+			 (ComparisonFunction)desc.StencilFunc ) ;
+
+	public static implicit operator D3D12_DEPTH_STENCILOP_DESC( DepthStencilOpDesc desc ) =>
+		new D3D12_DEPTH_STENCILOP_DESC {
+			StencilFailOp      = (D3D12_STENCIL_OP)desc.StencilFailOp,
+			StencilDepthFailOp = (D3D12_STENCIL_OP)desc.StencilDepthFailOp,
+			StencilPassOp      = (D3D12_STENCIL_OP)desc.StencilPassOp,
+			StencilFunc        = (D3D12_COMPARISON_FUNC)desc.StencilFunc,
+		} ;
 } ;
 	
 

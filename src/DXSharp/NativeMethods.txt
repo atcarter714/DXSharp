@@ -74,7 +74,7 @@ ID3D12Fence
 
 
 // Win32 API Stuff:
-IUnknown
+// IUnknown
 GetClientRect
 PeekMessage
 GetMessage
@@ -152,14 +152,14 @@ DXGI_GAMMA_CONTROL
 // ------------------------------------------
 LoadCursorA
 LoadCursorW
-CommandLineToArgvA
 CommandLineToArgvW
 GetCommandLineA
 GetCommandLineW
 
-EnumDisplayAdapters1
+EnumDisplayDevicesA
+EnumDisplayDevicesW
 
-GetWindowLongPtrW
-SetWindowLongPtrW
+//GetWindowLongPtrW
+//SetWindowLongPtrW
 RegisterWindowMessageA
 RegisterWindowMessageW

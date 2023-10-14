@@ -120,10 +120,9 @@ public interface IDevice: IObject,
 	/// </remarks>
 	void CreateGraphicsPipelineState( in GraphicsPipelineStateDescription pDesc, in Guid riid,
 									  out IPipelineState ppPipelineState ) {
-		unsafe { fixed ( void* riidPtr = &riid, pDescPtr = &pDesc ) {
-				ComObject!
-					.CreateGraphicsPipelineState( *((D3D12_GRAPHICS_PIPELINE_STATE_DESC*)pDescPtr ),
-												  (Guid *)riidPtr, out var ppvPipelineState ) ;
+		unsafe { fixed ( Guid* riidPtr = &riid ) {
+				ComObject!.CreateGraphicsPipelineState( pDesc, riidPtr, 
+														out var ppvPipelineState ) ;
 				ppPipelineState = (IPipelineState)ppvPipelineState ;
 			}
 		}
@@ -879,12 +878,13 @@ public interface IDevice: IObject,
 	/// </remarks>
 	void CreateFence( ulong InitialValue, FenceFlags Flags,
 					  in Guid riid, out IFence ppFence ) {
-		unsafe { fixed ( void* ppFencePtr = &ppFence ) {
-				Guid iid = riid ;
-				COMObject!.CreateFence( InitialValue, (D3D12_FENCE_FLAGS)Flags, 
-										&iid, out var fence ) ;
-				ppFence = new Fence( (ID3D12Fence)fence ) ;
-			}
+		unsafe { 
+			Guid iid = riid ;
+			COMObject!.CreateFence( InitialValue, 
+									(D3D12_FENCE_FLAGS)Flags, 
+									&iid, 
+									out var fence ) ;
+			ppFence = new Fence( (ID3D12Fence)fence ) ;
 		}
 	}
 

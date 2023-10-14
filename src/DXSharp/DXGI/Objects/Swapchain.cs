@@ -11,7 +11,7 @@ namespace DXSharp.DXGI ;
 
 
 public class SwapChain: DeviceSubObject, ISwapChain {
-	public static ISwapChain Instantiate( IntPtr address ) {
+	public new static ISwapChain? Instantiate( IntPtr address ) {
 		if( address == IntPtr.Zero ) return null ;
 		return new SwapChain( address ) ;
 	}
@@ -115,7 +115,7 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 
 
 public class SwapChain1: SwapChain, ISwapChain1 {
-	public static ISwapChain Instantiate( IntPtr address ) {
+	public new static ISwapChain? Instantiate( IntPtr address ) {
 		if( address == IntPtr.Zero ) return null ;
 		return new SwapChain1( address ) ;
 	}
@@ -131,7 +131,7 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 		this(otherPtr.InterfaceVPtr) => ComPointer = otherPtr ;
 
 	public new IDXGISwapChain1? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGISwapChain1 > ComPointer { get ; protected set ; }
+	public new ComPtr< IDXGISwapChain1 >? ComPointer { get ; protected set ; }
 
 	public SwapChainDescription1 GetDesc1( ) {
 		GetDesc1( out var desc ) ;
