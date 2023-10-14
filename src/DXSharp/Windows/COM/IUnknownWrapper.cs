@@ -46,7 +46,7 @@ public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 							&& ComPointer.InterfaceVPtr.IsValid( )
 								&& ComPointer.Interface is not null ;
 	
-	public static HResult QueryInterface< T >( in IUnknownWrapper<T> wrapper, out T pInterface ) where T: IUnknown => 
+	public static virtual HResult QueryInterface< T >( in IUnknownWrapper<T> wrapper, out T pInterface ) where T: IUnknown => 
 		COMUtility.QueryInterface< T >( wrapper.Pointer, out pInterface ) ;
 	
 	internal void SetComPointer( ComPtr< TInterface >? otherPtr ) =>

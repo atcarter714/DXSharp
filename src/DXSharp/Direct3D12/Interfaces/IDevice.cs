@@ -1,5 +1,8 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using Windows.System ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Security ;
@@ -858,10 +861,14 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getdeviceremovedreason">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void GetDeviceRemovedReason( ) ;
+	HResult GetDeviceRemovedReason( ) => COMObject!.GetDeviceRemovedReason( ) ;
 
 	
-	/// <summary>Gets a resource layout that can be copied. Helps the app fill-in D3D12_PLACED_SUBRESOURCE_FOOTPRINT and D3D12_SUBRESOURCE_FOOTPRINT when suballocating space in upload heaps.</summary>
+	/// <summary>
+	/// Gets a resource layout that can be copied. Helps the app fill-in
+	/// D3D12_PLACED_SUBRESOURCE_FOOTPRINT and D3D12_SUBRESOURCE_FOOTPRINT
+	/// when suballocating space in upload heaps.
+	/// </summary>
 	/// <param name="pResourceDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">ResourceDescription</a>*</b> A description of the resource, as a pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">ResourceDescription</a> structure.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcopyablefootprints#parameters">Read more on docs.microsoft.com</a>.</para>
@@ -896,16 +903,51 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcopyablefootprints#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>
+	/// <para><b>WARNING: </b></para>
+	/// This function allocates unmanaged memory for the <see cref="PlacedSubresourceFootprint"/>
+	/// data returned by the API, and gives it to you in the form of a <see cref="Span{T}"/>.
+	/// Additionally, it returns a <see cref="nint"/> (pointer) to the allocated memory of the Span. 
+	/// It is the responsibility of the application to <i>release this memory when finished using it</i>.
+	/// Failure to do so will create a memory leak which can be detrimental to performance ...<para/>
 	/// <para>This routine assists the application in filling out <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint">D3D12_PLACED_SUBRESOURCE_FOOTPRINT</a> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_subresource_footprint">D3D12_SUBRESOURCE_FOOTPRINT</a> structures, when suballocating space in upload heaps. The resulting structures are GPU adapter-agnostic, meaning that the values will not vary from one GPU adapter to the next. <b>GetCopyableFootprints</b> uses specified details about resource formats, texture layouts, and alignment requirements (from the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">ResourceDescription</a> structure)  to fill out the subresource structures. Applications have access to all these details, so this method, or a variation of it, could be  written as part of the app.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcopyablefootprints#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void GetCopyableFootprints( in ResourceDescription pResourceDesc, uint FirstSubresource, 
-								uint NumSubresources, ulong BaseOffset,
-								[Optional] in PlacedSubresourceFootprint? pLayouts,
-												[Out] Span< uint > pNumRows, 
-													[Out] Span< ulong > pRowSizeInBytes, 
-														out ulong pTotalBytes ) ;
-	
+	unsafe nint GetCopyableFootprints( in ResourceDescription pResourceDesc, 
+									   uint FirstSubresource, 
+									   uint NumSubresources, 
+									   ulong BaseOffset,
+									   [Out] out Span< PlacedSubresourceFootprint > pLayouts,
+									   [Out] out Span< uint > pNumRows,
+									   [Out] out Span< ulong > pRowSizeInBytes,
+									   out ulong pTotalBytes ) {
+		//! pLayouts: to be filled with the description and placement of each subresource
+		//! pNumRows: to be filled with the number of rows for each subresource
+		//! pRowSizeInBytes: to be filled with the unpadded size in bytes of a row, of each subresource
+		
+		unsafe {
+			uint[ ]? _numRows         = default ;
+			ulong[ ]? _rowSizeInBytes = default ;
+			
+			// allocate memory for the layouts:
+			var _pLayouts = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT *)
+				( NativeMemory.Alloc( (nuint)
+									  (sizeof(PlacedSubresourceFootprint) 
+											* NumSubresources)) ) ;
+			
+			fixed ( ResourceDescription* _descPtr = &pResourceDesc ) {
+					COMObject!.GetCopyableFootprints( (D3D12_RESOURCE_DESC *)_descPtr, 
+													  FirstSubresource, 
+													  NumSubresources, BaseOffset,
+													  _pLayouts, _numRows, _rowSizeInBytes, 
+													  out pTotalBytes ) ;
+					
+					pLayouts = new( _pLayouts, (int)NumSubresources ) ;
+					pNumRows = _numRows ;
+					pRowSizeInBytes = _rowSizeInBytes ;
+					return (nint)_pLayouts ;
+			}
+		}
+	}
 	
 	
 	/// <summary>Creates a query heap. A query heap contains an array of queries.</summary>

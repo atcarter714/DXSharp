@@ -146,9 +146,11 @@ public interface IResource: IPageable,
 	/// </returns>
 	/// <remarks>See the Remarks section for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12resource-writetosubresource">WriteToSubresource</a>.</remarks>
 	void ReadFromSubresource( nint pDstData, uint DstRowPitch, uint DstDepthPitch, uint SrcSubresource, in Box? pSrcBox = null ) {
-		unsafe { fixed( Box* pSrcBoxPtr = &pSrcBox )
-				COMObject!.ReadFromSubresource( (void *)pDstData, DstRowPitch, DstDepthPitch,
-											   SrcSubresource, (D3D12_BOX *)pSrcBoxPtr ) ;
+		Box _box = pSrcBox ?? default ;
+		unsafe {
+			Box* pSrcBoxPtr = &_box ;
+			COMObject!.ReadFromSubresource( (void *)pDstData, DstRowPitch, DstDepthPitch,
+										   SrcSubresource, (D3D12_BOX *)pSrcBoxPtr ) ;
 		}
 	}
 

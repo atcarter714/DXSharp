@@ -37,8 +37,8 @@ public class DirectXAttribute: DXSharpAttribute, ITypeRelationship {
 [AttributeUsage( AttributeTargets.Class | AttributeTargets.Interface | 
 				 AttributeTargets.Struct | AttributeTargets.Enum,
 				 AllowMultiple = false )]
-public class EquivalentAttribute: DirectXAttribute {
-	public EquivalentAttribute( Type equivalent ): base(equivalent) { }
+public class EquivalentOfAttribute: DirectXAttribute {
+	public EquivalentOfAttribute( Type equivalent ): base(equivalent) { }
 } ;
 
 
@@ -72,3 +72,31 @@ public class NativeCallAttribute: DirectXAttribute {
 	public NativeCallAttribute( Type? native = null, string? functionName = null, string? tag = null ): 
 		base( native ?? typeof(void), functionName, tag ) { }
 } ;
+
+
+
+/// <summary>Contains information about the native library an interop type originates from.</summary>
+/// <remarks>
+/// This attribute is applied to classes, interfaces, structures, and enumerations that are
+/// managed wrappers or proxies for native types (i.e., COM interfaces, C++ classes, etc) ... 
+/// </remarks>
+[AttributeUsage( AttributeTargets.Class | AttributeTargets.Interface | 
+				 AttributeTargets.Struct | AttributeTargets.Enum,
+				 AllowMultiple = false )]
+public class NativeLibraryAttribute: DXSharpAttribute {
+	public string? SymbolName { get ; init ; }
+	public string? HeaderFile { get ; init ; }
+
+	public NativeLibraryAttribute( string? dllName    = null,
+								   string? symbolName = null,
+								   string? headerFile = null,
+								   string? tag        = null ):
+		base( dllName ?? string.Empty, tag ) {
+		this.SymbolName = symbolName ;
+		this.HeaderFile = headerFile ;
+	}
+} ;
+
+// -------------------------------------------------------------------------
+
+

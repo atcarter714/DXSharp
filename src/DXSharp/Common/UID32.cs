@@ -104,9 +104,20 @@ namespace DXSharp ;
 			id.Value = *(uint *)q ;
 		}}
 	}
-	public static UID32 CreateInstanceID( )                   => new( Guid.NewGuid() ) ;
-	public static UID32 CreateFromTypeGUID< T >( )            => new( typeof(T).GUID ) ;
-	public static UID32 GetTypeHashUID< T >( )                => typeof(T).GetHashCode( ) ;
+	public static UID32 CreateInstanceID( ) => new( Guid.NewGuid() ) ;
+	public static UID32 CreateFromTypeGUID< T >( ) => new( typeof(T).GUID ) ;
+	public static UID32 GetTypeHashUID< T >( ) => typeof(T).GetHashCode( ) ;
 	public static UID32 CreateInstanceIDFrom< T >( in T obj ) => ( obj?.GetHashCode() ?? Null ).Value ;
+	
+	public static UID32 Randomize( ) {
+		unsafe {
+			UID32        result ;
+			Span< byte > span = stackalloc byte[ sizeof( UID32 ) ] ;
+			Random.Shared.NextBytes( span ) ;
+			fixed ( byte* p = &span[ 0 ] )
+				result = *(UID32*)p ;
+			return result ;
+		}
+	}
 	#endregion
 } ;

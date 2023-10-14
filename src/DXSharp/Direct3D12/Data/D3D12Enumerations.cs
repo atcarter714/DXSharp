@@ -3,7 +3,7 @@
 namespace DXSharp.Direct3D12 ;
 
 
-[Equivalent( typeof( D3D12_COMMAND_LIST_TYPE ) )]
+[EquivalentOf( typeof( D3D12_COMMAND_LIST_TYPE ) )]
 public enum CommandListType {
 	/// <summary>Specifies a command buffer that the GPU can execute. A direct command list doesn't inherit any GPU state.</summary>
 	DIRECT = 0,
@@ -21,7 +21,7 @@ public enum CommandListType {
 	NONE         = -1,
 }
 
-[Flags, Equivalent( typeof( D3D12_COMMAND_QUEUE_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_COMMAND_QUEUE_FLAGS ) )]
 public enum CommandQueueFlags {
 	/// <summary>Indicates a default command queue.</summary>
 	NONE = 0x00000000,
@@ -29,7 +29,7 @@ public enum CommandQueueFlags {
 	DISABLE_GPU_TIMEOUT = 0x00000001,
 }
 
-[Flags, Equivalent( typeof( D3D12_TILE_RANGE_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_TILE_RANGE_FLAGS ) )]
 public enum TileRangeFlags {
 	/// <summary>No tile-mapping flags are specified.</summary>
 	NONE = 0,
@@ -41,7 +41,7 @@ public enum TileRangeFlags {
 	REUSE_SINGLE_TILE = 4,
 }
 
-[Flags, Equivalent( typeof( D3D12_TILE_MAPPING_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_TILE_MAPPING_FLAGS ) )]
 public enum TileMappingFlags {
 	/// <summary>No tile-mapping flags are specified.</summary>
 	NONE = 0x00000000,
@@ -49,7 +49,7 @@ public enum TileMappingFlags {
 	NO_HAZARD = 0x00000001,
 }
 
-[Flags, Equivalent( typeof( D3D12_HEAP_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_HEAP_FLAGS ) )]
 public enum HeapFlags {
 	/// <summary>No options are specified.</summary>
 	NONE = 0x00000000,
@@ -92,7 +92,7 @@ public enum HeapFlags {
 	ALLOW_ONLY_RT_DS_TEXTURES = 0x00000084,
 }
 
-[Flags, Equivalent( typeof( D3D12_RESOURCE_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_RESOURCE_FLAGS ) )]
 public enum ResourceFlags {
 	/// <summary>No options are specified.</summary>
 	NONE = 0x00000000,
@@ -155,7 +155,7 @@ public enum ResourceFlags {
 	RAYTRACING_ACCELERATION_STRUCTURE = 0x00000100,
 } ;
 
-[Flags, Equivalent( typeof( D3D12_PIPELINE_STATE_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_PIPELINE_STATE_FLAGS ) )]
 public enum PipelineStateFlags {
 	/// <summary>Indicates no flags.</summary>
 	NONE = 0x00000000,
@@ -168,7 +168,7 @@ public enum PipelineStateFlags {
 	DYNAMIC_INDEX_BUFFER_STRIP_CUT = 0x00000008,
 } ;
 
-[Flags, Equivalent( typeof( D3D12_DESCRIPTOR_HEAP_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_DESCRIPTOR_HEAP_FLAGS ) )]
 public enum DescriptorHeapFlags {
 	/// <summary>Indicates default usage of a heap.</summary>
 	NONE = 0x00000000,
@@ -181,7 +181,7 @@ public enum DescriptorHeapFlags {
 
 
 
-[Equivalent( typeof( D3D12_DESCRIPTOR_HEAP_TYPE ) )]
+[EquivalentOf( typeof( D3D12_DESCRIPTOR_HEAP_TYPE ) )]
 public enum DescriptorHeapType {
 	/// <summary>The descriptor heap for the combination of constant-buffer, shader-resource, and unordered-access views.</summary>
 	CBV_SRV_UAV = 0,
@@ -197,7 +197,7 @@ public enum DescriptorHeapType {
 
 
 
-[Equivalent( typeof( D3D12_SRV_DIMENSION ) )]
+[EquivalentOf( typeof( D3D12_SRV_DIMENSION ) )]
 public enum SRVDimension {
 	/// <summary>The type is unknown.</summary>
 	UNKNOWN = 0,
@@ -226,7 +226,7 @@ public enum SRVDimension {
 } ;
 
 
-[Flags, Equivalent( typeof( D3D12_BUFFER_SRV_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_BUFFER_SRV_FLAGS ) )]
 public enum BufferSRVFlags {
 	/// <summary>Indicates a default view.</summary>
 	NONE = 0x00000000,
@@ -234,7 +234,7 @@ public enum BufferSRVFlags {
 	RAW = 0x00000001,
 } ;
 
-[Equivalent( typeof( D3D12_RTV_DIMENSION ) )]
+[EquivalentOf( typeof( D3D12_RTV_DIMENSION ) )]
 public enum RTVDimension {
 	/// <summary>Do not use this value, as it will cause <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-createrendertargetview">ID3D12Device::CreateRenderTargetView</a> to fail.</summary>
 	UNKNOWN = 0,
@@ -256,7 +256,7 @@ public enum RTVDimension {
 	TEXTURE3D = 8,
 } ;
 
-[Equivalent( typeof(D3D12_DSV_DIMENSION) )]
+[EquivalentOf( typeof(D3D12_DSV_DIMENSION) )]
 public enum DSVDimension {
 	/// <summary><b>UNKNOWN</b> is not a valid value for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_depth_stencil_view_desc">D3D12_DEPTH_STENCIL_VIEW_DESC</a> and is not used.</summary>
 	UNKNOWN = 0,
@@ -274,7 +274,7 @@ public enum DSVDimension {
 	TEXTURE2DMSARRAY = 6,
 } ;
 
-[Flags, Equivalent( typeof( D3D12_DSV_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_DSV_FLAGS ) )]
 public enum DSVFlags {
 	/// <summary>Indicates a default view.</summary>
 	D3D12_DSV_FLAG_NONE = 0x00000000,
@@ -284,7 +284,7 @@ public enum DSVFlags {
 	D3D12_DSV_FLAG_READ_ONLY_STENCIL = 0x00000002,
 } ;
 
-[Equivalent( typeof( D3D12_FILTER ) )]
+[EquivalentOf( typeof( D3D12_FILTER ) )]
 public enum Filter {
 	/// <summary>Use point sampling for minification, magnification, and mip-level sampling.</summary>
 	MIN_MAG_MIP_POINT = 0,
@@ -364,7 +364,7 @@ public enum Filter {
 	MAXIMUM_ANISOTROPIC = 469,
 } ;
 
-[Equivalent( typeof( D3D12_TEXTURE_ADDRESS_MODE ) )]
+[EquivalentOf( typeof( D3D12_TEXTURE_ADDRESS_MODE ) )]
 public enum TextureAddressMode {
 	/// <summary>
 	/// <para>Tile the texture at every (u,v) integer junction. For example, for u values between 0 and 3, the texture is repeated three times.</para>
@@ -387,7 +387,7 @@ public enum TextureAddressMode {
 	MIRROR_ONCE = 5,
 } ;
 
-[Equivalent( typeof( D3D12_COMPARISON_FUNC ) )]
+[EquivalentOf( typeof( D3D12_COMPARISON_FUNC ) )]
 public enum ComparisonFunction {
 	NONE = 0,
 	/// <summary>Never pass the comparison.</summary>
@@ -408,7 +408,7 @@ public enum ComparisonFunction {
 	ALWAYS = 8,
 } ;
 
-[Equivalent( typeof( D3D12_RESOURCE_DIMENSION ) )]
+[EquivalentOf( typeof( D3D12_RESOURCE_DIMENSION ) )]
 public enum ResourceDimension {
 	/// <summary>Resource is of unknown type.</summary>
 	UNKNOWN = 0,
@@ -422,7 +422,7 @@ public enum ResourceDimension {
 	TEXTURE3D = 4,
 } ;
 
-[Equivalent( typeof( D3D12_TEXTURE_LAYOUT ) )]
+[EquivalentOf( typeof( D3D12_TEXTURE_LAYOUT ) )]
 public enum TextureLayout {
 	/// <summary>
 	/// <para>Indicates that the layout is unknown, and is likely adapter-dependent. During creation, the driver chooses the most efficient layout based on other resource properties, especially resource size and flags. Prefer this choice unless certain functionality is required from another texture layout. Zero-copy texture upload optimizations exist for UMA architectures; see <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-writetosubresource">ID3D12Resource::WriteToSubresource</a>.</para>
@@ -449,7 +449,7 @@ public enum TextureLayout {
 	_64KB_STANDARD_SWIZZLE = 3,
 } ;
 
-[Equivalent( typeof( D3D12_HEAP_TYPE ) )]
+[EquivalentOf( typeof( D3D12_HEAP_TYPE ) )]
 public enum HeapType {
 	/// <summary>Specifies the default heap. This heap type experiences the most bandwidth for the GPU, but cannot provide CPU access. The GPU can read and write to the memory from this pool, and resource transition barriers may be changed. The majority of heaps and resources are expected to be located here, and are typically populated through resources in upload heaps.</summary>
 	DEFAULT = 1,
@@ -472,7 +472,7 @@ public enum HeapType {
 	GPU_UPLOAD = 5,
 } ;
 
-[Flags, Equivalent( typeof( D3D12_RESOURCE_STATES ) )]
+[Flags, EquivalentOf( typeof( D3D12_RESOURCE_STATES ) )]
 public enum ResourceStates {
 	/// <summary>
 	/// <para>Your application should transition to this state only for accessing a resource across different graphics engine types. Specifically, a resource must be in the COMMON state before being used on a COPY queue (when previously used on DIRECT/COMPUTE), and before being used on DIRECT/COMPUTE (when previously used on COPY). This restriction doesn't exist when accessing data between DIRECT and COMPUTE queues. The COMMON state can be used for all usages on a Copy queue using the implicit state transitions. For more info, in <a href="https://docs.microsoft.com/windows/win32/direct3d12/user-mode-heap-synchronization">Multi-engine synchronization</a>, find "common". Additionally, textures must be in the COMMON state for CPU access to be legal, assuming the texture was created in a CPU-visible heap in the first place.</para>
@@ -548,7 +548,7 @@ public enum ResourceStates {
 	VIDEO_ENCODE_WRITE = 0x00800000,
 } ;
 
-[Equivalent( typeof( D3D12_RESOURCE_BARRIER_TYPE ) )]
+[EquivalentOf( typeof( D3D12_RESOURCE_BARRIER_TYPE ) )]
 public enum ResourceBarrierType {
 	/// <summary>A transition barrier that indicates a transition of a set of subresources between different usages. The caller must specify the before and after usages of the subresources.</summary>
 	TRANSITION = 0,
@@ -558,7 +558,7 @@ public enum ResourceBarrierType {
 	UAV = 2,
 } ;
 
-[Equivalent( typeof( D3D12_RESOURCE_BARRIER_FLAGS ) )]
+[EquivalentOf( typeof( D3D12_RESOURCE_BARRIER_FLAGS ) )]
 public enum ResourceBarrierFlags {
 	/// <summary>No flags.</summary>
 	NONE = 0x00000000,
@@ -568,7 +568,7 @@ public enum ResourceBarrierFlags {
 	END_ONLY = 0x00000002,
 } ;
 
-[Flags, Equivalent( typeof( D3D12_FENCE_FLAGS ) )]
+[Flags, EquivalentOf( typeof( D3D12_FENCE_FLAGS ) )]
 public enum FenceFlags {
 	/// <summary>No options are specified.</summary>
 	NONE = 0x00000000,
@@ -581,7 +581,7 @@ public enum FenceFlags {
 } ;
 
 
-[Equivalent( typeof( D3D12_QUERY_HEAP_TYPE ) )]
+[EquivalentOf( typeof( D3D12_QUERY_HEAP_TYPE ) )]
 public enum QueryHeapType {
 	/// <summary>This returns a binary 0/1 result:  0 indicates that no samples passed depth and stencil testing, 1 indicates that at least one sample passed depth and stencil testing.  This enables occlusion queries to not interfere with any GPU performance optimization associated with depth/stencil testing.</summary>
 	OCCLUSION = 0,
@@ -609,7 +609,7 @@ public enum QueryHeapType {
 	PIPELINE_STATISTICS1 = 7,
 } ;
 
-[Equivalent( typeof(D3D12_PRIMITIVE_TOPOLOGY_TYPE) )]
+[EquivalentOf( typeof(D3D12_PRIMITIVE_TOPOLOGY_TYPE) )]
 public enum PrimitiveTopology {
 	/// <summary>The shader has not been initialized with an input primitive type.</summary>
 	UNDEFINED = 0,
@@ -623,7 +623,7 @@ public enum PrimitiveTopology {
 	PATCH = 4,
 } ;
 
-[Equivalent( typeof( D3D12_INDEX_BUFFER_STRIP_CUT_VALUE ) )]
+[EquivalentOf( typeof( D3D12_INDEX_BUFFER_STRIP_CUT_VALUE ) )]
 public enum IndexBufferStripCutValue {
 	/// <summary>Indicates that there is no cut value.</summary>
 	DISABLED = 0,
@@ -633,7 +633,7 @@ public enum IndexBufferStripCutValue {
 	_0xFFFFFFFF = 2,
 } ;
 
-[Equivalent( typeof( D3D12_DEPTH_WRITE_MASK ) )]
+[EquivalentOf( typeof( D3D12_DEPTH_WRITE_MASK ) )]
 public enum DepthWriteMask {
 	/// <summary>Turn off writes to the depth-stencil buffer.</summary>
 	ZERO = 0,
@@ -641,7 +641,7 @@ public enum DepthWriteMask {
 	ALL = 1,
 } ;
 
-[Equivalent( typeof( D3D12_STENCIL_OP ) )]
+[EquivalentOf( typeof( D3D12_STENCIL_OP ) )]
 public enum StencilOperation {
 	/// <summary>Keep the existing stencil data.</summary>
 	KEEP = 1,
@@ -661,7 +661,7 @@ public enum StencilOperation {
 	DECR = 8,
 } ;
 
-[Equivalent( typeof( D3D12_BLEND ) )]
+[EquivalentOf( typeof( D3D12_BLEND ) )]
 public enum Blend {
 	/// <summary>The blend factor is (0, 0, 0, 0). No pre-blend operation.</summary>
 	ZERO = 1,
@@ -730,7 +730,7 @@ public enum Blend {
 	INV_ALPHA_FACTOR = 21,
 } ;
  
-[Equivalent( typeof( D3D12_BLEND_OP ) )]
+[EquivalentOf( typeof( D3D12_BLEND_OP ) )]
 public enum BlendOperation {
 	/// <summary>Add source 1 and source 2.</summary>
 	ADD = 1,
@@ -744,7 +744,7 @@ public enum BlendOperation {
 	MAX = 5,
 } ;
 
-[Equivalent( typeof( D3D12_LOGIC_OP ) )]
+[EquivalentOf( typeof( D3D12_LOGIC_OP ) )]
 public enum LogicOperation {
 	/// <summary>Set the logical operation to CLEAR.</summary>
 	CLEAR = 0,
@@ -780,7 +780,7 @@ public enum LogicOperation {
 	OR_INVERTED = 15,
 } ;
 
-[Equivalent( typeof( D3D12_FILL_MODE ) )]
+[EquivalentOf( typeof( D3D12_FILL_MODE ) )]
 public enum FillMode {
 	/// <summary>Draw lines connecting the vertices. Adjacent vertices are not drawn.</summary>
 	WIREFRAME = 2,
@@ -788,7 +788,7 @@ public enum FillMode {
 	SOLID = 3,
 } ;
 
-[Equivalent( typeof( D3D12_CULL_MODE ) )]
+[EquivalentOf( typeof( D3D12_CULL_MODE ) )]
 public enum CullMode {
 	/// <summary>Always draw all triangles.</summary>
 	NONE = 1,
@@ -798,7 +798,7 @@ public enum CullMode {
 	BACK = 3,
 } ;
 
-[Equivalent( typeof( D3D12_CONSERVATIVE_RASTERIZATION_MODE ) )]
+[EquivalentOf( typeof( D3D12_CONSERVATIVE_RASTERIZATION_MODE ) )]
 public enum ConservativeRasterizationMode {
 	/// <summary>Conservative rasterization is off.</summary>
 	OFF = 0,
@@ -807,7 +807,7 @@ public enum ConservativeRasterizationMode {
 } ;
 
 
-[Equivalent( typeof( D3D12_INPUT_CLASSIFICATION ) )]
+[EquivalentOf( typeof( D3D12_INPUT_CLASSIFICATION ) )]
 public enum InputClassification {
 	/// <summary>Input data is per-vertex data.</summary>
 	PerVertexData = 0,
@@ -816,7 +816,7 @@ public enum InputClassification {
 	PerInstanceData = 1,
 } ;
 
-[Equivalent( typeof(D3D12_CPU_PAGE_PROPERTY) )]
+[EquivalentOf( typeof(D3D12_CPU_PAGE_PROPERTY) )]
 public enum CPUPageProperty {
 	/// <summary>The CPU-page property is unknown.</summary>
 	UNKNOWN = 0,
@@ -828,7 +828,7 @@ public enum CPUPageProperty {
 	WRITE_BACK = 3,
 } ;
 
-[Equivalent( typeof(D3D12_MEMORY_POOL) )]
+[EquivalentOf( typeof(D3D12_MEMORY_POOL) )]
 public enum MemoryPool {
 	/// <summary>The memory pool is unknown.</summary>
 	UNKNOWN = 0,
@@ -844,7 +844,7 @@ public enum MemoryPool {
 	L1 = 2,
 } ;
 
-[Equivalent( typeof(D3D12_INDIRECT_ARGUMENT_TYPE) )]
+[EquivalentOf( typeof(D3D12_INDIRECT_ARGUMENT_TYPE) )]
 public enum IndirectArgumentType {
 	/// <summary>Indicates the type is a Draw call.</summary>
 	DRAW = 0,
@@ -881,7 +881,7 @@ public enum TiledResourcesTier { NotSupported = 0, Tier1 = 1, Tier2 = 2, Tier3 =
 
 //!!! ------------------------------------------------------------------------------------------------ !!!//
 
-[Equivalent( typeof( D3D12_TILE_COPY_FLAGS ) )]
+[EquivalentOf( typeof( D3D12_TILE_COPY_FLAGS ) )]
 public enum TileCopyFlags {
 	/// <summary>No tile-copy flags are specified.</summary>
 	None = 0x00000000,

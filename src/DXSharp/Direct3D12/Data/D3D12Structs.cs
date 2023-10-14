@@ -300,9 +300,35 @@ public struct ResourceDescription {
 
 	/// <summary>Bitwise-OR'd flags, as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_flags">D3D12_RESOURCE_FLAGS</a> enumeration constants.</summary>
 	public ResourceFlags Flags ;
-
+	
+	
+	public ResourceDescription( ResourceDimension dimension, ulong alignment, 
+								ulong width, uint height, ushort depthOrArraySize, 
+								ushort mipLevels, Format format, SampleDescription sampleDesc, 
+								TextureLayout layout, ResourceFlags flags ) {
+		Dimension        = dimension ;
+		Alignment        = alignment ;
+		Width            = width ;
+		Height           = height ;
+		DepthOrArraySize = depthOrArraySize ;
+		MipLevels        = mipLevels ;
+		Format           = format ;
+		SampleDesc       = sampleDesc ;
+		Layout           = layout ;
+		Flags            = flags ;
+	}
+	
 	public ResourceDescription( in D3D12_RESOURCE_DESC desc ) {
-		
+		Dimension        = (ResourceDimension)desc.Dimension ;
+		Alignment        = desc.Alignment ;
+		Width            = desc.Width ;
+		Height           = desc.Height ;
+		DepthOrArraySize = desc.DepthOrArraySize ;
+		MipLevels        = desc.MipLevels ;
+		Format           = (Format)desc.Format ;
+		SampleDesc       = (SampleDescription)desc.SampleDesc ;
+		Layout           = (TextureLayout)desc.Layout ;
+		Flags            = (ResourceFlags)desc.Flags ;
 	}
 	
 	public static implicit operator ResourceDescription( in D3D12_RESOURCE_DESC desc ) => new ResourceDescription {
@@ -332,9 +358,10 @@ public struct ResourceDescription {
 } ;
 
 
+
 /// <summary>Describes the rasterizer state.</summary>
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_RASTERIZER_DESC ) )]
+ ProxyFor( typeof(D3D12_RASTERIZER_DESC) )]
 public struct RasterizerDescription {
 	/// <summary>
 	/// A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_fill_mode">D3D12_FILL_MODE</a>-typed
@@ -968,13 +995,40 @@ public struct PlacedSubresourceFootprint {
 	/// <para>The offset of the subresource within the parent resource, in bytes. The offset between the start of the parent resource and this subresource.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public ulong Offset;
+	public ulong Offset ;
 
 	/// <summary>
 	/// <para>The format, width, height, depth, and row-pitch of the subresource, as a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_subresource_footprint">D3D12_SUBRESOURCE_FOOTPRINT</a> structure.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	public D3D12_SUBRESOURCE_FOOTPRINT Footprint;
+	public SubresourceFootprint Footprint ;
+	
+	
+	public PlacedSubresourceFootprint( ulong offset, 
+									   Format format, 
+									   uint width, uint height, 
+									   uint depth, uint rowPitch ) {
+		Offset = offset ;
+		Footprint = new( format, width, height, depth, rowPitch ) ;
+	}
+	
+	public PlacedSubresourceFootprint( ulong offset, in SubresourceFootprint footprint ) {
+		Offset = offset ;
+		Footprint = footprint ;
+	}
+	
+	public PlacedSubresourceFootprint( in D3D12_PLACED_SUBRESOURCE_FOOTPRINT desc ) {
+		Offset = desc.Offset ;
+		Footprint = desc.Footprint ;
+	}
+	
+	
+	public static implicit operator D3D12_PLACED_SUBRESOURCE_FOOTPRINT( in PlacedSubresourceFootprint desc ) => new D3D12_PLACED_SUBRESOURCE_FOOTPRINT {
+			Offset    = desc.Offset,
+			Footprint = desc.Footprint
+	} ;
+	
+	public static implicit operator PlacedSubresourceFootprint( in D3D12_PLACED_SUBRESOURCE_FOOTPRINT desc ) => new( desc ) ;
 } ;
 
 [StructLayout( LayoutKind.Sequential ),
@@ -994,6 +1048,31 @@ public struct SubresourceFootprint {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_subresource_footprint#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
 	public uint RowPitch ;
+	
+	public SubresourceFootprint( Format format,
+								 uint width, uint height, 
+								 uint depth, uint rowPitch ) {
+		Format = format ;
+		Width = width ;
+		Height = height ;
+		Depth = depth ;
+		RowPitch = rowPitch ;
+	}
+	
+	public SubresourceFootprint( in D3D12_SUBRESOURCE_FOOTPRINT desc ) {
+		Format = (Format)desc.Format ;
+		Width  = desc.Width ; Height = desc.Height ;
+		Depth  = desc.Depth ; RowPitch = desc.RowPitch ;
+	}
+	
+	public static implicit operator D3D12_SUBRESOURCE_FOOTPRINT( in SubresourceFootprint desc ) => new D3D12_SUBRESOURCE_FOOTPRINT {
+			Format   = ( DXGI_FORMAT )desc.Format,
+			Width    = desc.Width,
+			Height   = desc.Height,
+			Depth    = desc.Depth,
+			RowPitch = desc.RowPitch
+	} ;
+	public static implicit operator SubresourceFootprint( in D3D12_SUBRESOURCE_FOOTPRINT desc ) => new( desc ) ;
 } ;
 
 

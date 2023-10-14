@@ -7,7 +7,9 @@
     "preserveSigMethods": [
       "EnumAdapters",
       "EnumAdapters1",
-      "GetFrameDirtyRects"
+      "GetFrameDirtyRects",
+      "GetDeviceRemovedReason",
+      "ID3D12Device.GetDeviceRemovedReason"
     ]
   }
 }
