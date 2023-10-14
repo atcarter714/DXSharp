@@ -100,6 +100,9 @@
 	<ItemGroup Condition="$(TargetFramework.StartsWith('net6.0'))">
 		<Compile Remove="VectorDTypes.cs" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Windows\Win32\XTensions\" />
+	</ItemGroup>
 	
 
 </Project>

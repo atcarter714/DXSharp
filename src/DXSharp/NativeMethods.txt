@@ -2,9 +2,8 @@
 dxgi.*
 d3d12.*
 d3d11.*
-//dxguid.*
 user32.*
-
+d3dcompiler.*
 
 // DXGI COM Interfaces:
 IDXGIFactory7
@@ -20,8 +19,6 @@ DXGI_SAMPLE_DESC
 
 // D3D12 Structures:
 D3D12_VIEWPORT
-// NOTE: D3D12_RECT is just a typedef of RECT
-
 
 // D3D12 Interfaces:
 ID3D12Device
@@ -145,6 +142,8 @@ DXGI_ERROR_DEVICE_HUNG
 
 DXGI_GAMMA_CONTROL
 
+D3DCreateBlob
+D3DCompileFromFile
 
 // ------------------------------------------
 // Additional Win32 Functions needed:
@@ -159,7 +158,5 @@ GetCommandLineW
 EnumDisplayDevicesA
 EnumDisplayDevicesW
 
-//GetWindowLongPtrW
-//SetWindowLongPtrW
 RegisterWindowMessageA
 RegisterWindowMessageW

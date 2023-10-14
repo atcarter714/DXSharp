@@ -133,24 +133,22 @@ public class RenderForm: Form, IAppWindow
 	/// <summary>
 	/// Initializes a new instance of the <see cref="RenderForm"/> class.
 	/// </summary>
-	public RenderForm() : this( DEFAULT_TITLE ) { }
+	public RenderForm( ) : this( DEFAULT_TITLE ) { }
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="RenderForm"/> class.
 	/// </summary>
 	/// <param name="text">The text.</param>
 	public RenderForm( string text ) {
-		Text = text;
-		ClientSize = new System.Drawing.Size( 800, 600 );
-		//MinimumSize = new System.Drawing.Size(200, 200);
-
-		ResizeRedraw = true;
-		SetStyle( ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true );
-
-		Icon = LibResources.DXSharp_ICON_512;
-
-		previousWindowState = FormWindowState.Normal;
-		AllowUserResizing = true;
+		//this.Text = text ;
+		ResizeRedraw = true ;
+		AllowUserResizing = true ;
+		Icon = LibResources.DXSharp_ICON_512 ;
+		previousWindowState = FormWindowState.Normal ;
+		ClientSize = AppSettings.DEFAULT_WINDOW_SIZE ;
+		
+		SetStyle( ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true ) ;
+		this.SetTitle( text ) ;
 	}
 
 	// Event Handlers ------------------------------------------------------------------------

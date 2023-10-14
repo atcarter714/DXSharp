@@ -12,17 +12,16 @@ public class Device: Object, IDevice {
 	public new ComPtr< IDXGIDevice >? ComPointer { get ; protected set ; }
 
 	internal Device( ) { }
-	public Device( nint ptr ): base( ptr ) {
+	internal Device( nint ptr ): base( ptr ) {
 		ComPointer = new( ptr ) ;
 	}
-	public Device( in IDXGIDevice dxgiObj ): base( dxgiObj ) {
+	internal Device( in IDXGIDevice dxgiObj ): base( dxgiObj ) {
 		ComPointer = new( dxgiObj ) ;
 	}
 
 	
-	public T GetAdapter<T>( ) where T: class, IAdapter {
+	public T GetAdapter< T >( ) where T: class, IAdapter {
 		_throwIfNull( ) ;
-
 		unsafe {
 			var riid = typeof( T ).GUID ;
 			this.COMObject!.GetAdapter( out var ppAdapter ) ;
@@ -70,7 +69,7 @@ public class Device: Object, IDevice {
 
 		unsafe {
 			var pResourcesPtr = stackalloc nint[ ppResources.Length ] ;
-			for ( var i = 0; i < ppResources.Length; i++ )
+			for ( var i = 0; i < ppResources.Length; ++i )
 				pResourcesPtr[ i ] = ppResources[ i ].BasePointer ;
 
 			Residency* pResidencyStatusPtr = stackalloc Residency[ ppResources.Length ] ;
@@ -98,54 +97,6 @@ public class Device: Object, IDevice {
 	
 
 	
-	//! warning -----------------------------------
-	//#warning Potentially unnecessary overrides/duplication of base methods
-	//! TODO: Figure out if we actually need to override/hide the base versions
-	/*public void GetParent< T >( out T ppParent ) where T: IUnknownWrapper {
-		_throwIfDestroyed( ) ;
-		_throwIfNull( ) ;
-		ppParent = default! ;
-		
-		unsafe {
-			object parent = default! ;
-			var riid = typeof( T ).GUID ;
-			this.COMObject?.GetParent( &riid, out parent ) ;
-			ppParent = (T)parent! ;
-		}
-	}*/
-
-	/*public void GetPrivateData< TData >( out uint pDataSize, nint pData ) where TData: unmanaged {
-		_throwIfDestroyed( ) ;
-		_throwIfNull( ) ;
-
-		uint dataSize = 0U ;
-		Guid name     = typeof( IDXGIDevice ).GUID ;
-		
-		unsafe { this.COMObject!.GetPrivateData( &name, ref dataSize, (void*)pData ) ; }
-		pDataSize = dataSize ;
-	}
-
-	public void SetPrivateData< T >( uint DataSize, nint pData ) {
-		_throwIfDestroyed( ) ;
-		_throwIfNull( ) ;
-
-		uint dataSize = 0U ;
-		Guid name     = typeof( IDXGIDevice ).GUID ;
-		unsafe {
-			this.COMObject!.SetPrivateData( &name, dataSize, (void*)pData ) ;
-		}
-	}
-
-	public void SetPrivateDataInterface< T >( in T pUnknown ) where T: IUnknownWrapper< IUnknown > {
-		_throwIfDestroyed( ) ;
-		_throwIfNull( ) ;
-		
-		Guid name = typeof(IDXGIDevice).GUID ;
-		unsafe {
-			this.COMObject!.SetPrivateDataInterface( &name, pUnknown ) ;
-		}
-	}*/
-	//! warning -----------------------------------
 	
 	
 	

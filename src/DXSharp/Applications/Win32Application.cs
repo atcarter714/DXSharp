@@ -24,13 +24,9 @@ public class Win32Application {
 		
 		// Create GCHandle for the program:
 		GCHandle   sampleHandle = GCHandle.Alloc( sample, 
-												  //GCHandleType.Normal ) ;
 												  GCHandleType.WeakTrackResurrection ) ;
 		InstHandle instHandle   = new(hInstance, false) ;
 		var samplePtr = GCHandle.ToIntPtr( sampleHandle ) ;
-
-		var iconPath = @".\file\img\DXSharp_ICON_256.ico".ToPWSTR( ) ;
-		LoadIcon( hInstance, iconPath ) ;
 		
 		// Define window class:
 		WNDCLASS_STYLES ClassStyles = new( ) { } ;
@@ -63,14 +59,16 @@ public class Win32Application {
 			HWND.Null,
 			default,
 			instHandle,
-			(void *)samplePtr //sampleHandle.AddrOfPinnedObject( )
+			(void *)samplePtr
 		) ;
 
 		if( _hWnd.IsNull ) {
 			// Handle error: Window creation failed
 			// Use Marshal.GetLastWin32Error() to get the error code
 		}
-
+		
+		// Show the window:
+		PInvoke.ShowWindow( _hWnd, (SHOW_WINDOW_CMD)nCmdShow ) ;
 		//... rest of code
 
 		// Don't forget to free the handle at the end of your method
@@ -80,7 +78,7 @@ public class Win32Application {
 	
 	static LRESULT WindowProc( HWND hWnd, uint message, WPARAM wParam, LPARAM lParam ) {
 		if( !hWnd.IsNull ) {
-			nint ptr = GetWindowLong( hWnd, 
+			nint ptr = GetWindowLong( hWnd,
 									  (WINDOW_LONG_PTR_INDEX) WindowLongParam.GWLP_USERDATA ) ;
 			if( ptr.IsValid() ) {
 				_sample = (DXApp)( (GCHandle.FromIntPtr(ptr) )

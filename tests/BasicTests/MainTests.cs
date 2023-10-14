@@ -26,6 +26,7 @@ using System.Runtime.InteropServices;
 */
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Windows.Forms ;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Direct3D;
 /* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
@@ -262,20 +263,42 @@ public class D3D12GraphicsInterop
 	}
 
 	[Test, Order( 3 )]
-	public void Create_RenderForm() {
-		// Initialize the render form:
-		_renderForm = new RenderForm( "DX# Render Form (Unit Test)" )
-		{
-			ClientSize = new Size( _width, _height ),
-			FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D,
-			BackColor = Color.White,
-		};
-		Assert.IsNotNull( _renderForm );
+	public void Create_RenderForm( ) {
+		void _initRenderForm( ) {
+			if ( _renderForm is null ) 
+				throw new NullReferenceException( ) ;
+			_renderForm.BackColor       = Color.White ;
+			_renderForm.ClientSize      = new Size( _width, _height ) ;
+			_renderForm.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D ;
+			_renderForm.HandleCreated +=
+				( o, s ) => _showRenderForm( ) ;
+		}
+		void _showRenderForm( ) {
+			if ( _renderForm is null ) 
+				throw new NullReferenceException( ) ;
+			var presentForm = ( ) => {
+								  _renderForm.Activate( ) ;
+								  if( !_renderForm.Visible )
+									  _renderForm.Show( ) ;
+							  } ;
+			
+			if( _renderForm.InvokeRequired )
+				_renderForm.Invoke( presentForm ) ;
+			else presentForm( ) ;
+		}
 
-		_renderForm.Show();
-		_renderForm.Activate();
-		_ = _renderForm.Focus();
-		Assert.IsTrue( _renderForm.Visible );
+		
+		// Initialize the render form:
+		_renderForm = new RenderForm( "DX# Render Form (Unit Test)" ) ;
+		if( _renderForm.InvokeRequired )
+			_renderForm.Invoke( _initRenderForm ) ;
+		else _initRenderForm( ) ;
+
+		Thread.Sleep( 1500 ) ;
+		
+		Assert.IsNotNull( _renderForm ) ;
+		Assert.IsTrue( _renderForm.IsHandleCreated ) ;
+		Assert.IsTrue( _renderForm.Visible ) ;
 	}
 
 	[Test, Order( 4 )]
