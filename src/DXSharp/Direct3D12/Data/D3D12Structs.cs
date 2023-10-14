@@ -444,6 +444,63 @@ public struct RasterizerDescription {
 	/// D3D12_CONSERVATIVE_RASTERIZATION_MODE</a>-typed value that identifies whether conservative rasterization is on or off.
 	/// </summary>
 	public ConservativeRasterizationMode ConservativeRaster ;
+	
+	
+	public RasterizerDescription( FillMode fillMode, CullMode cullMode, BOOL frontCounterClockwise, int depthBias, float depthBiasClamp, float slopeScaledDepthBias, BOOL depthClipEnable, BOOL multisampleEnable, BOOL antialiasedLineEnable, uint forcedSampleCount, ConservativeRasterizationMode conservativeRaster ) {
+		FillMode               = fillMode ;
+		CullMode               = cullMode ;
+		FrontCounterClockwise  = frontCounterClockwise ;
+		DepthBias              = depthBias ;
+		DepthBiasClamp         = depthBiasClamp ;
+		SlopeScaledDepthBias   = slopeScaledDepthBias ;
+		DepthClipEnable        = depthClipEnable ;
+		MultisampleEnable      = multisampleEnable ;
+		AntialiasedLineEnable  = antialiasedLineEnable ;
+		ForcedSampleCount      = forcedSampleCount ;
+		ConservativeRaster     = conservativeRaster ;
+	}
+	
+	public RasterizerDescription( in D3D12_RASTERIZER_DESC desc ) {
+		FillMode               = (FillMode)desc.FillMode ;
+		CullMode               = (CullMode)desc.CullMode ;
+		FrontCounterClockwise  = desc.FrontCounterClockwise ;
+		DepthBias              = desc.DepthBias ;
+		DepthBiasClamp         = desc.DepthBiasClamp ;
+		SlopeScaledDepthBias   = desc.SlopeScaledDepthBias ;
+		DepthClipEnable        = desc.DepthClipEnable ;
+		MultisampleEnable      = desc.MultisampleEnable ;
+		AntialiasedLineEnable  = desc.AntialiasedLineEnable ;
+		ForcedSampleCount      = desc.ForcedSampleCount ;
+		ConservativeRaster     = (ConservativeRasterizationMode)desc.ConservativeRaster ;
+	}
+	
+	public static implicit operator RasterizerDescription( in D3D12_RASTERIZER_DESC desc ) => new RasterizerDescription {
+			FillMode               = (FillMode)desc.FillMode,
+			CullMode               = (CullMode)desc.CullMode,
+			FrontCounterClockwise  = desc.FrontCounterClockwise,
+			DepthBias              = desc.DepthBias,
+			DepthBiasClamp         = desc.DepthBiasClamp,
+			SlopeScaledDepthBias   = desc.SlopeScaledDepthBias,
+			DepthClipEnable        = desc.DepthClipEnable,
+			MultisampleEnable      = desc.MultisampleEnable,
+			AntialiasedLineEnable  = desc.AntialiasedLineEnable,
+			ForcedSampleCount      = desc.ForcedSampleCount,
+			ConservativeRaster     = (ConservativeRasterizationMode)desc.ConservativeRaster
+	} ;
+	
+	public static implicit operator D3D12_RASTERIZER_DESC( in RasterizerDescription desc ) => new D3D12_RASTERIZER_DESC {
+			FillMode               = (D3D12_FILL_MODE)desc.FillMode,
+			CullMode               = (D3D12_CULL_MODE)desc.CullMode,
+			FrontCounterClockwise  = desc.FrontCounterClockwise,
+			DepthBias              = desc.DepthBias,
+			DepthBiasClamp         = desc.DepthBiasClamp,
+			SlopeScaledDepthBias   = desc.SlopeScaledDepthBias,
+			DepthClipEnable        = desc.DepthClipEnable,
+			MultisampleEnable      = desc.MultisampleEnable,
+			AntialiasedLineEnable  = desc.AntialiasedLineEnable,
+			ForcedSampleCount      = desc.ForcedSampleCount,
+			ConservativeRaster     = (D3D12_CONSERVATIVE_RASTERIZATION_MODE)desc.ConservativeRaster
+	} ;
 } ;
 
 
@@ -631,6 +688,47 @@ public struct StreamOuputDescription {
 
 	/// <summary>The index number of the stream to be sent to the rasterizer stage.</summary>
 	public uint RasterizedStream ;
+	
+	public unsafe StreamOuputDescription( SODeclarationEntry* pSODeclaration, uint numEntries, 
+										  uint* pBufferStrides, uint numStrides, uint rasterizedStream ) {
+		this.pSODeclaration = pSODeclaration ;
+		this.NumEntries = numEntries ;
+		this.pBufferStrides = pBufferStrides ;
+		this.NumStrides = numStrides ;
+		this.RasterizedStream = rasterizedStream ;
+	}
+	
+	public StreamOuputDescription( in D3D12_STREAM_OUTPUT_DESC desc ) {
+		unsafe {
+			this.pSODeclaration = (SODeclarationEntry*)desc.pSODeclaration ;
+			this.NumEntries = desc.NumEntries ;
+			this.pBufferStrides = (uint*)desc.pBufferStrides ;
+			this.NumStrides = desc.NumStrides ;
+			this.RasterizedStream = desc.RasterizedStream ;
+		}
+	}
+	
+	public static implicit operator D3D12_STREAM_OUTPUT_DESC( in StreamOuputDescription desc ) {
+		unsafe { return new D3D12_STREAM_OUTPUT_DESC {
+				pSODeclaration = (D3D12_SO_DECLARATION_ENTRY*)desc.pSODeclaration,
+				NumEntries = desc.NumEntries,
+				pBufferStrides = (uint*)desc.pBufferStrides,
+				NumStrides = desc.NumStrides,
+				RasterizedStream = desc.RasterizedStream
+			} ;
+		}
+	}
+	
+	public static implicit operator StreamOuputDescription( in D3D12_STREAM_OUTPUT_DESC desc ) {
+		unsafe { return new StreamOuputDescription {
+				pSODeclaration = (SODeclarationEntry*)desc.pSODeclaration,
+				NumEntries = desc.NumEntries,
+				pBufferStrides = (uint*)desc.pBufferStrides,
+				NumStrides = desc.NumStrides,
+				RasterizedStream = desc.RasterizedStream
+			} ;
+		}
+	}
 } ;
 
 
@@ -638,8 +736,9 @@ public struct StreamOuputDescription {
  ProxyFor( typeof( D3D12_GRAPHICS_PIPELINE_STATE_DESC ) )]
 public struct GraphicsPipelineStateDescription {
 	/// <summary>A pointer to the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12rootsignature">ID3D12RootSignature</a> object.</summary>
-	public ID3D12RootSignature pRootSignature ;
-
+	[MarshalAs(UnmanagedType.Interface)] public ID3D12RootSignature pRootSignature ;
+	//public nint pRootSignature ;
+	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode">D3D12_SHADER_BYTECODE</a> structure that describes the vertex shader.</summary>
 	public ShaderBytecode VS;
 
@@ -701,7 +800,56 @@ public struct GraphicsPipelineStateDescription {
 	public CachedPipelineState CachedPSO ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_flags">D3D12_PIPELINE_STATE_FLAGS</a> enumeration constant such as for "tool debug".</summary>
-	public PipelineStateFlags Flags;
+	public PipelineStateFlags Flags ;
+	
+	public GraphicsPipelineStateDescription( in D3D12_GRAPHICS_PIPELINE_STATE_DESC desc ) {
+		this.pRootSignature        = desc.pRootSignature ;
+		this.VS                    = desc.VS ;
+		this.PS                    = desc.PS ;
+		this.DS                    = desc.DS ;
+		this.HS                    = desc.HS ;
+		this.GS                    = desc.GS ;
+		this.StreamOutput          = desc.StreamOutput ;
+		this.BlendState            = new( desc.BlendState ) ;
+		this.SampleMask            = desc.SampleMask ;
+		this.RasterizerState       = desc.RasterizerState ;
+		this.DepthStencilState     = desc.DepthStencilState ;
+		this.InputLayout           = desc.InputLayout ;
+		this.IBStripCutValue       = (IndexBufferStripCutValue)desc.IBStripCutValue ;
+		this.PrimitiveTopologyType = (PrimitiveTopology)desc.PrimitiveTopologyType ;
+		this.NumRenderTargets      = desc.NumRenderTargets ;
+		this.RTVFormats            = desc.RTVFormats ;
+		this.DSVFormat             = (Format)desc.DSVFormat ;
+		this.SampleDesc            = desc.SampleDesc ;
+		this.NodeMask              = desc.NodeMask ;
+		this.CachedPSO             = desc.CachedPSO ;
+		this.Flags                 = (PipelineStateFlags)desc.Flags ;
+	}
+	
+	public static implicit operator D3D12_GRAPHICS_PIPELINE_STATE_DESC( in GraphicsPipelineStateDescription desc ) => 
+		new D3D12_GRAPHICS_PIPELINE_STATE_DESC {
+			pRootSignature        = desc.pRootSignature,
+			VS                    = desc.VS,
+			PS                    = desc.PS,
+			DS                    = desc.DS,
+			HS                    = desc.HS,
+			GS                    = desc.GS,
+			StreamOutput          = desc.StreamOutput,
+			BlendState            = desc.BlendState,
+			SampleMask            = desc.SampleMask,
+			RasterizerState       = desc.RasterizerState,
+			DepthStencilState     = desc.DepthStencilState,
+			InputLayout           = desc.InputLayout,
+			IBStripCutValue       = (D3D12_INDEX_BUFFER_STRIP_CUT_VALUE)desc.IBStripCutValue,
+			PrimitiveTopologyType = (D3D12_PRIMITIVE_TOPOLOGY_TYPE)desc.PrimitiveTopologyType,
+			NumRenderTargets      = desc.NumRenderTargets,
+			RTVFormats            = desc.RTVFormats,
+			DSVFormat             = (DXGI_FORMAT)desc.DSVFormat,
+			SampleDesc            = desc.SampleDesc,
+			NodeMask              = desc.NodeMask,
+			CachedPSO             = desc.CachedPSO,
+			Flags                 = (D3D12_PIPELINE_STATE_FLAGS)desc.Flags
+	} ;
 } ;
 
 
@@ -736,6 +884,29 @@ public struct CachedPipelineState {
 
 	/// <summary>Specifies the size of the cache in bytes.</summary>
 	public ulong CachedBlobSizeInBytes ;
+	
+	
+	
+	public CachedPipelineState( nint pCachedBlob, ulong cachedBlobSizeInBytes ) {
+		this.pCachedBlob = pCachedBlob ;
+		this.CachedBlobSizeInBytes = cachedBlobSizeInBytes ;
+	}
+	
+	public CachedPipelineState( in D3D12_CACHED_PIPELINE_STATE desc ) {
+		unsafe { this.pCachedBlob = (nint)desc.pCachedBlob ; }
+		this.CachedBlobSizeInBytes = desc.CachedBlobSizeInBytes ;
+	}
+	
+	public static unsafe implicit operator D3D12_CACHED_PIPELINE_STATE( in CachedPipelineState desc ) => 
+		new D3D12_CACHED_PIPELINE_STATE {
+			pCachedBlob = (void *)desc.pCachedBlob,
+			CachedBlobSizeInBytes = (nuint)desc.CachedBlobSizeInBytes,
+		} ;
+	
+	public static unsafe implicit operator CachedPipelineState( in D3D12_CACHED_PIPELINE_STATE desc ) => new CachedPipelineState {
+			pCachedBlob = (nint)desc.pCachedBlob,
+			CachedBlobSizeInBytes = desc.CachedBlobSizeInBytes
+	} ;
 } ;
 
 
@@ -747,6 +918,20 @@ public struct ShaderBytecode {
 
 	/// <summary>The size, in bytes, of the shader data that the <b>pShaderBytecode</b> member points to.</summary>
 	public nuint BytecodeLength ;
+	
+	public ShaderBytecode( nint pShaderBytecode, nuint bytecodeLength ) {
+		this.pShaderBytecode = pShaderBytecode ;
+		this.BytecodeLength = bytecodeLength ;
+	}
+	
+	public static unsafe implicit operator D3D12_SHADER_BYTECODE( in ShaderBytecode bytecode ) => new D3D12_SHADER_BYTECODE {
+			pShaderBytecode = (void*)bytecode.pShaderBytecode,
+			BytecodeLength  = bytecode.BytecodeLength
+	} ;
+	public static unsafe implicit operator ShaderBytecode( in D3D12_SHADER_BYTECODE bytecode ) => new ShaderBytecode {
+			pShaderBytecode = (nint)bytecode.pShaderBytecode,
+			BytecodeLength  = bytecode.BytecodeLength
+	} ;
 } ;
 
 
@@ -904,6 +1089,33 @@ public struct BlendDescription {
 
 	/// <summary>An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc">D3D12_RENDER_TARGET_BLEND_DESC</a> structures that describe the blend states for render targets; these correspond to the eight render targets that can be bound to the <a href="https://docs.microsoft.com/windows/desktop/direct3d11/d3d10-graphics-programming-guide-output-merger-stage">output-merger stage</a> at one time.</summary>
 	public RTBlendDescription8 RenderTarget ;
+	
+	
+	
+	public BlendDescription( BOOL alphaToCoverageEnable, BOOL independentBlendEnable, 
+							 RTBlendDescription8 renderTarget ) {
+		AlphaToCoverageEnable = alphaToCoverageEnable ;
+		IndependentBlendEnable = independentBlendEnable ;
+		RenderTarget = renderTarget ;
+	}
+	
+	public BlendDescription( in D3D12_BLEND_DESC desc ) {
+		AlphaToCoverageEnable = desc.AlphaToCoverageEnable ;
+		IndependentBlendEnable = desc.IndependentBlendEnable ;
+		RenderTarget = desc.RenderTarget ;
+	}
+	
+	public static implicit operator D3D12_BLEND_DESC( in BlendDescription desc ) => new D3D12_BLEND_DESC {
+			AlphaToCoverageEnable = desc.AlphaToCoverageEnable,
+			IndependentBlendEnable = desc.IndependentBlendEnable,
+			RenderTarget = desc.RenderTarget
+	} ;
+	
+	public static implicit operator BlendDescription( in D3D12_BLEND_DESC desc ) => new BlendDescription {
+			AlphaToCoverageEnable = desc.AlphaToCoverageEnable,
+			IndependentBlendEnable = desc.IndependentBlendEnable,
+			RenderTarget = desc.RenderTarget
+	} ;
 } ;
 
 
@@ -939,13 +1151,56 @@ public struct RTBlendDescription {
 	public Blend DestBlendAlpha ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_blend_op">D3D12_BLEND_OP</a>-typed value that defines how to combine the <b>SrcBlendAlpha</b> and <b>DestBlendAlpha</b> operations.</summary>
-	public Blend BlendOpAlpha ;
+	public BlendOperation BlendOpAlpha ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_logic_op">D3D12_LOGIC_OP</a>-typed value that specifies the logical operation to configure for the render target.</summary>
 	public LogicOperation LogicOp ;
 
 	/// <summary>A combination of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_color_write_enable">D3D12_COLOR_WRITE_ENABLE</a>-typed values that are combined by using a bitwise OR operation. The resulting value specifies a write mask.</summary>
 	public byte RenderTargetWriteMask ;
+	
+	public RTBlendDescription( BOOL blendEnable, BOOL logicOpEnable, 
+							   Blend srcBlend, Blend destBlend, BlendOperation blendOp, 
+							   Blend srcBlendAlpha, Blend destBlendAlpha, BlendOperation blendOpAlpha, 
+							   LogicOperation logicOp, byte renderTargetWriteMask ) {
+		BlendEnable = blendEnable ;
+		LogicOpEnable = logicOpEnable ;
+		SrcBlend = srcBlend ;
+		DestBlend = destBlend ;
+		BlendOp = blendOp ;
+		SrcBlendAlpha = srcBlendAlpha ;
+		DestBlendAlpha = destBlendAlpha ;
+		BlendOpAlpha = blendOpAlpha ;
+		LogicOp = logicOp ;
+		RenderTargetWriteMask = renderTargetWriteMask ;
+	}
+	
+	public RTBlendDescription( in D3D12_RENDER_TARGET_BLEND_DESC desc ) {
+		BlendEnable           = desc.BlendEnable ;
+		LogicOpEnable         = desc.LogicOpEnable ;
+		SrcBlend              = (Blend)desc.SrcBlend ;
+		DestBlend             = (Blend)desc.DestBlend ;
+		BlendOp               = (BlendOperation)desc.BlendOp ;
+		SrcBlendAlpha         = (Blend)desc.SrcBlendAlpha ;
+		DestBlendAlpha        = (Blend)desc.DestBlendAlpha ;
+		BlendOpAlpha          = (BlendOperation)desc.BlendOpAlpha ;
+		LogicOp               = (LogicOperation)desc.LogicOp ;
+		RenderTargetWriteMask = desc.RenderTargetWriteMask ;
+	}
+	
+	public static implicit operator D3D12_RENDER_TARGET_BLEND_DESC( in RTBlendDescription desc ) => new D3D12_RENDER_TARGET_BLEND_DESC {
+			BlendEnable           = desc.BlendEnable,
+			LogicOpEnable         = desc.LogicOpEnable,
+			SrcBlend              = ( D3D12_BLEND )desc.SrcBlend,
+			DestBlend             = ( D3D12_BLEND )desc.DestBlend,
+			BlendOp               = ( D3D12_BLEND_OP )desc.BlendOp,
+			SrcBlendAlpha         = ( D3D12_BLEND )desc.SrcBlendAlpha,
+			DestBlendAlpha        = ( D3D12_BLEND )desc.DestBlendAlpha,
+			BlendOpAlpha          = ( D3D12_BLEND_OP )desc.BlendOpAlpha,
+			LogicOp               = ( D3D12_LOGIC_OP )desc.LogicOp,
+			RenderTargetWriteMask = desc.RenderTargetWriteMask
+	} ;
+	public static implicit operator RTBlendDescription( in D3D12_RENDER_TARGET_BLEND_DESC desc ) => new( desc ) ;
 } ;
 
 [StructLayout( LayoutKind.Sequential ),
@@ -965,7 +1220,7 @@ public struct RTBlendDescription8 {
 	/// ⚠ Important ⚠: When this struct is on the stack, do not let the returned span outlive the stack frame that defines it.
 	/// </remarks>
 	[UnscopedRef]
-	public Span< RTBlendDescription > AsSpan() =>
+	public Span< RTBlendDescription > AsSpan( ) =>
 		MemoryMarshal.CreateSpan( ref _0, SpanLength ) ;
 
 	/// <summary>
@@ -985,6 +1240,39 @@ public struct RTBlendDescription8 {
 		result.AsSpan( ).Slice( initLength, SpanLength - initLength ).Clear( ) ;
 		return result ;
 	}
+	
+	public static implicit operator RTBlendDescription8( Span< RTBlendDescription > value ) {
+		Unsafe.SkipInit( out RTBlendDescription8 result ) ;
+		value.CopyTo( result.AsSpan( ) ) ;
+		int initLength = value.Length ;
+		result.AsSpan( ).Slice( initLength, SpanLength - initLength ).Clear( ) ;
+		return result ;
+	}
+	
+	public static implicit operator RTBlendDescription8( in __D3D12_RENDER_TARGET_BLEND_DESC_8 value ) {
+		Unsafe.SkipInit( out RTBlendDescription8 result ) ;
+		result._0 = value._0 ;
+		result._1 = value._1 ;
+		result._2 = value._2 ;
+		result._3 = value._3 ;
+		result._4 = value._4 ;
+		result._5 = value._5 ;
+		result._6 = value._6 ;
+		result._7 = value._7 ;
+		return result ;
+	}
+	
+	public static implicit operator __D3D12_RENDER_TARGET_BLEND_DESC_8( in RTBlendDescription8 value ) =>
+		new __D3D12_RENDER_TARGET_BLEND_DESC_8 {
+			_0 = value._0,
+			_1 = value._1,
+			_2 = value._2,
+			_3 = value._3,
+			_4 = value._4,
+			_5 = value._5,
+			_6 = value._6,
+			_7 = value._7
+		} ;
 } ;
 
 

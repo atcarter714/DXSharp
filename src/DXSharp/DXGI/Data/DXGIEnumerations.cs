@@ -79,7 +79,7 @@ public enum D3D12Feature {
 	D3D12_FEATURE_D3D12_OPTIONS4 = 23,
 	/// <summary>Indicates a query for the level of support for heap serialization. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_serialization">D3D12_FEATURE_DATA_SERIALIZATION</a>.</summary>
 	D3D12_FEATURE_SERIALIZATION = 24,
-	/// <summary>Indicates a query for the level of support for the sharing of resources between different adapters&mdash;for example, multiple GPUs. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_cross_node">D3D12_FEATURE_DATA_CROSS_NODE</a>.</summary>
+	/// <summary>Indicates a query for the level of support for the sharing of resources between different adapters; for example, multiple GPUs. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_cross_node">D3D12_FEATURE_DATA_CROSS_NODE</a>.</summary>
 	D3D12_FEATURE_CROSS_NODE = 25,
 	/// <summary>Starting with Windows 10, version 1809 (10.0; Build 17763), indicates a query for the level of support for render passes, ray tracing, and shader-resource view tier 3 tiled resources. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options5">D3D12_FEATURE_DATA_D3D12_OPTIONS5</a>.</summary>
 	D3D12_FEATURE_D3D12_OPTIONS5 = 27,

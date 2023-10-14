@@ -1438,7 +1438,9 @@ public struct AdapterDescription {
 	public ulong DedicatedSystemMemory; // The amount of system memory that is not shared with the CPU.
 	public ulong SharedSystemMemory; // The amount of system memory that is shared with the CPU.
 	public Luid AdapterLuid; // A unique value that identifies the adapter.
-	public uint Flags; // Identifies the adapter type. The value is a bitwise OR of DXGI_ADAPTER_FLAG enumeration constants.
+	
+	//! DXGI_ADAPTER_DESC1 has a "Flags" field, but DXGI_ADAPTER_DESC doesn't ...
+	//public uint Flags; // Identifies the adapter type. The value is a bitwise OR of DXGI_ADAPTER_FLAG enumeration constants.
 	
 	public AdapterDescription( in AdapterDescription desc ) {
 		this.Description = desc.Description ;
@@ -1450,7 +1452,6 @@ public struct AdapterDescription {
 		this.DedicatedSystemMemory = desc.DedicatedSystemMemory ;
 		this.SharedSystemMemory = desc.SharedSystemMemory ;
 		this.AdapterLuid = desc.AdapterLuid ;
-		this.Flags = desc.Flags ;
 	}
 	
 	public AdapterDescription( in DXGI_ADAPTER_DESC desc ) {
@@ -1463,7 +1464,6 @@ public struct AdapterDescription {
 		this.DedicatedSystemMemory = desc.DedicatedSystemMemory ;
 		this.SharedSystemMemory    = desc.SharedSystemMemory ;
 		this.AdapterLuid           = new( desc.AdapterLuid ) ;
-		this.Flags                 = default ;
 	}
 	
 	public static implicit operator AdapterDescription( in DXGI_ADAPTER_DESC desc ) => new( desc ) ;
@@ -1478,8 +1478,6 @@ public struct AdapterDescription {
 		d.DedicatedSystemMemory = (nuint)desc.DedicatedSystemMemory ;
 		d.SharedSystemMemory    = (nuint)desc.SharedSystemMemory ;
 		d.AdapterLuid           = desc.AdapterLuid ;
-		//d.Flags                 = (uint)desc.Flags ;
-		#warning "DXGI_ADAPTER_DESC" doesn't have a "Flags", that is in DXGI_ADAPTER_DESC1+ ...
 		return d ;
 	}
 } ;

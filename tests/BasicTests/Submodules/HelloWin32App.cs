@@ -11,13 +11,13 @@ using DXSharp.Windows.Win32.XTensions;
 class HelloWin32App: DXApp {
 	const uint FrameCount = 2;
 	// Pipeline objects.
-	Viewport m_viewport ;
-	Rect     m_scissorRect ;
-	uint     m_rtvDescriptorSize ;
+	//Viewport m_viewport ;
+	//Rect     m_scissorRect ;
+	//uint     m_rtvDescriptorSize ;
 	const uint w = 1024, h = 768 ; //! default window size
 	
 	//! Typical objects used for DX12 rendering:
-	ComPtr<ID3D12Device>?           m_device ;
+	/*ComPtr<ID3D12Device>?           m_device ;
 	ComPtr<IDXGISwapChain3>?        m_swapChain ;
 	ComPtr<ID3D12CommandQueue>?     m_commandQueue ;
 	ComPtr<ID3D12CommandAllocator>? m_commandAllocator ;
@@ -25,7 +25,7 @@ class HelloWin32App: DXApp {
 	ComPtr<ID3D12DescriptorHeap>?      m_rtvHeap ;
 	ComPtr<ID3D12GraphicsCommandList>? m_commandList ;
 	ComPtr<ID3D12RootSignature>?       m_rootSignature ;
-	ComPtr<ID3D12PipelineState>?       m_pipelineState ;
+	ComPtr<ID3D12PipelineState>?       m_pipelineState ;*/
 	
 	ComPtr<ID3D12Resource>?[ ]?        m_renderTargets =
 					new ComPtr<ID3D12Resource>[FrameCount] ;

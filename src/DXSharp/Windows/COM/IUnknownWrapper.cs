@@ -35,7 +35,7 @@ public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 	public static virtual Guid InterfaceGUID => typeof(TInterface).GUID ;
 	internal Type ComType => typeof(TInterface) ;
 	
-	/// <summary>ComPtr to the native <typeparam name="TInterface"/> COM interface.</summary>
+	/// <summary>ComPtr of the native COM interface.</summary>
 	ComPtr< TInterface >? ComPointer { get ; }
 	ComPtr IUnknownWrapper.ComPtrBase => ComPointer! ;
 	internal TInterface? ComObject => ComPointer!.Interface ;

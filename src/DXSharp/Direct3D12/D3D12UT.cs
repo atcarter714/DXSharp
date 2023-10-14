@@ -51,7 +51,7 @@ internal static class D3D12UT {
 				DXSharpException( $"{nameof(D3D12UT)} (internal) :: {msg}", err ) ;
 #endif
 		}
-		return 0x00000000U ;
+		//return 0x00000000U ;
 	}
 	
 } ;

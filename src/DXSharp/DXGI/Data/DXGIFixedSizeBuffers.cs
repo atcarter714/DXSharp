@@ -3,6 +3,7 @@ using System.Collections ;
 using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using Windows.Win32.Graphics.Dxgi.Common ;
 using static DXSharp.InteropUtils ;
 #endregion
 namespace DXSharp.DXGI ;
@@ -69,4 +70,16 @@ public struct Format8: IEnumerable< Format > {
 		yield return _f4 ; yield return _f5 ; yield return _f6 ; yield return _f7 ;
 	}
 	IEnumerator IEnumerable.GetEnumerator( ) => GetEnumerator( ) ;
+	
+	public override string ToString( ) => $"{{ {string.Join( ", ", this )} }}" ;
+	public override int GetHashCode( ) => HashCode.Combine( _f0, _f1, _f2, _f3, _f4, _f5, _f6, _f7 ) ;
+	
+	public static implicit operator Format8( in __DXGI_FORMAT_8 data) => new( ) {
+		_f0 = (Format)data._0, _f1 = (Format)data._1, _f2 = (Format)data._2, _f3 = (Format)data._3,
+		_f4 = (Format)data._4, _f5 = (Format)data._5, _f6 = (Format)data._6, _f7 = (Format)data._7,
+	} ;
+	public static implicit operator __DXGI_FORMAT_8( in Format8 data) => new( ) {
+		_0 = (DXGI_FORMAT)data._f0, _1 = (DXGI_FORMAT)data._f1, _2 = (DXGI_FORMAT)data._f2, _3 = (DXGI_FORMAT)data._f3,
+		_4 = (DXGI_FORMAT)data._f4, _5 = (DXGI_FORMAT)data._f5, _6 = (DXGI_FORMAT)data._f6, _7 = (DXGI_FORMAT)data._f7,
+	} ;
 } ;

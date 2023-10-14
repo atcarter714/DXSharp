@@ -15,7 +15,7 @@ namespace DXSharp.DXGI ;
 // -----------------------------------------------
 
 public interface ISwapChain: DXGIWrapper< IDXGISwapChain > {
-	internal static abstract ISwapChain Instantiate( nint address ) ;
+	internal static abstract ISwapChain? Instantiate( nint address ) ;
 	
 	void Present( uint syncInterval, PresentFlags flags ) ;
 	
@@ -47,7 +47,7 @@ public interface ISwapChain: DXGIWrapper< IDXGISwapChain > {
 public interface ISwapChain1: ISwapChain,
 							  DXGIWrapper< IDXGISwapChain1 > {
 	new IDXGISwapChain1? COMObject { get ; }
-	new ComPtr< IDXGISwapChain1 > ComPointer { get ; }
+	new ComPtr< IDXGISwapChain1 >? ComPointer { get ; }
 	
 	void GetDesc1( out SwapChainDescription1 pDesc ) ;
 	void GetFullscreenDesc( out SwapChainFullscreenDescription pDesc ) ;

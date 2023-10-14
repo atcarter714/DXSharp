@@ -7,9 +7,11 @@ using static Windows.Win32.PInvoke ;
 #endregion
 namespace DXSharp ;
 
+public static class DXFunctions { }
 
-public static class DXFunctions {
-	
+
+
+
 	/*internal static TFactory? CreateFactory< TFactory >( )
 		where TFactory: class, IFactory< IDXGIFactory >
 	{
@@ -43,9 +45,6 @@ public static class DXFunctions {
 		return factory ;
 	}*/
 	
-}
-
-
 /*ArgumentNullException.ThrowIfNull( factoryType, nameof(factoryType) ) ;
 		if ( !typeof( TFactory ).IsAssignableFrom(factoryType) )
 			throw new ArgumentException( $"{nameof(factoryType)} must be assignable to {nameof(TFactory)}!" ) ;*/

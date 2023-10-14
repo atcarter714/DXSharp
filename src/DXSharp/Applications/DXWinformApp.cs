@@ -159,7 +159,7 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 		if ( _abort || IsRunning || IsPaused ) return ;
 		
 		//! Parallel Thread Settings Checks ::
-		if( !Settings.AdvancedSettings.EnableParallelJobs ) return ;
+		if( !Settings.AdvancedSettings?.EnableParallelJobs ?? false ) return ;
 		if( workActions is not { Length: > 0 } ) return ;
 		if( workActionConfig is null ) return ;
 		
