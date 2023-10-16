@@ -243,7 +243,7 @@ public class D3D12GraphicsInterop
 	}
 
 	[Test, Order( 2 )]
-	public void Create_Direct3D_Debug_Layer() {
+	public void Create_Direct3D_Debug_Layer( ) {
 		// Create a debug layer:
 		_debugController = default;
 		var hr = D3D12GetDebugInterface( typeof(ID3D12Debug5).GUID, out object? debugLayerObj );
@@ -261,8 +261,9 @@ public class D3D12GraphicsInterop
 		}
 		else throw new COMException( "Failed to create debug layer for Direct3D12!" );
 	}
-
-	[Test, Order( 3 )]
+	
+	
+	[STAThread, Test, Order( 3 )]
 	public void Create_RenderForm( ) {
 		void _initRenderForm( ) {
 			if ( _renderForm is null ) 
@@ -270,6 +271,7 @@ public class D3D12GraphicsInterop
 			_renderForm.BackColor       = Color.White ;
 			_renderForm.ClientSize      = new Size( _width, _height ) ;
 			_renderForm.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Fixed3D ;
+			//System.Windows.Forms.MessageBox.Show( $"{_renderForm.Handle}", "Handle:" ) ;
 			_renderForm.HandleCreated +=
 				( o, s ) => _showRenderForm( ) ;
 		}
@@ -294,10 +296,12 @@ public class D3D12GraphicsInterop
 			_renderForm.Invoke( _initRenderForm ) ;
 		else _initRenderForm( ) ;
 
-		Thread.Sleep( 1500 ) ;
+		Thread.Sleep( 3500 ) ;
 		
 		Assert.IsNotNull( _renderForm ) ;
 		Assert.IsTrue( _renderForm.IsHandleCreated ) ;
+		_showRenderForm( ) ;
+		Thread.Sleep( 2000 ) ;
 		Assert.IsTrue( _renderForm.Visible ) ;
 	}
 

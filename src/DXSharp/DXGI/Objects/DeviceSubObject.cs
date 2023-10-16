@@ -1,28 +1,39 @@
-﻿using Windows.Win32.Graphics.Dxgi ;
+﻿#region Using Directives
+using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows.COM ;
-
+#endregion
 namespace DXSharp.DXGI ;
 
 
-//! Concrete Base Implementation:
+/// <summary>Inherited from objects that are tied to the device so that they can retrieve a pointer to it.</summary>
+/// <remarks>
+/// Represents a <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgidevicesubobject">
+/// IDXGIDeviceSubObject interface
+/// </a>.
+/// </remarks>
 public class DeviceSubObject: Object,
 							  IDeviceSubObject {
-	public override ComPtr? ComPtrBase => ComPointer ;
-	internal IDXGIDeviceSubObject? COMObject => ComPointer?.Interface ;
+	internal new IDXGIDeviceSubObject? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIDeviceSubObject >? ComPointer { get ; protected set ; }
 	
+	
 	internal DeviceSubObject( ) { }
-	public DeviceSubObject( nint ptr ): base( ptr ) {
-		ComPointer = new( ptr ) ;
+	internal DeviceSubObject( nint ptr ) {
+		ComPointer      = new( ptr ) ;
+		base.ComPointer = (ComPtr< IDXGIObject >)ComPointer ;
 	}
-	public DeviceSubObject( in IDXGIDeviceSubObject dxgiObj ): base( dxgiObj ) {
-		ComPointer = new( dxgiObj ) ;
+	internal DeviceSubObject( in IDXGIDeviceSubObject dxgiObj ) {
+		ComPointer      = new( dxgiObj ) ;
+		base.ComPointer = (ComPtr< IDXGIObject >)ComPointer ;
+	}
+	internal DeviceSubObject( in ComPtr< IDXGIDeviceSubObject > dxgiObj ) {
+		ComPointer      = dxgiObj ;
+		base.ComPointer = (ComPtr< IDXGIObject >)ComPointer ;
 	}
 
 	
 	public T GetDevice< T >( ) where T: Device {
-		_throwIfDestroyed( ) ;
-
+		
 		unsafe {
 			var riid = typeof( T ).GUID ;
 			this.COMObject!.GetDevice( &riid, out var ppDevice ) ;

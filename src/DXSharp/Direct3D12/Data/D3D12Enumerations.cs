@@ -1,4 +1,5 @@
-﻿using Windows.Win32.Graphics.Direct3D12 ;
+﻿using Windows.Win32.Graphics.Direct3D ;
+using Windows.Win32.Graphics.Direct3D12 ;
 
 namespace DXSharp.Direct3D12 ;
 
@@ -609,8 +610,67 @@ public enum QueryHeapType {
 	PIPELINE_STATISTICS1 = 7,
 } ;
 
+
+
+[EquivalentOf( typeof(D3D12_QUERY_TYPE) )]
+public enum QueryType {
+	/// <summary>Indicates the query is for depth/stencil occlusion counts.</summary>
+	OCCLUSION = 0,
+
+	/// <summary>
+	/// <para>Indicates the query is for a binary depth/stencil occlusion statistics. This new query type acts like OCCLUSION except that it returns simply a binary 0/1 result:  0 indicates that no samples passed depth and stencil testing, 1 indicates that at least one sample passed depth and stencil testing.  This enables occlusion queries to not interfere with any GPU performance optimization associated with depth/stencil testing.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	BINARY_OCCLUSION = 1,
+
+	/// <summary>Indicates the query is for high definition GPU and CPU timestamps.</summary>
+	TIMESTAMP = 2,
+
+	/// <summary>Indicates the query type is for graphics pipeline statistics, refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_query_data_pipeline_statistics">D3D12_QUERY_DATA_PIPELINE_STATISTICS</a>.</summary>
+	PIPELINE_STATISTICS = 3,
+
+	/// <summary>Stream 0 output statistics. In Direct3D 12 there is no single stream output (SO) overflow query for all the output streams. Apps need to issue multiple single-stream queries, and then correlate the results. Stream output is the ability of the GPU to write vertices to a buffer. The stream output counters monitor progress.</summary>
+	SO_STATISTICS_STREAM0 = 4,
+
+	/// <summary>Stream 1 output statistics.</summary>
+	SO_STATISTICS_STREAM1 = 5,
+
+	/// <summary>Stream 2 output statistics.</summary>
+	SO_STATISTICS_STREAM2 = 6,
+
+	/// <summary>Stream 3 output statistics.</summary>
+	SO_STATISTICS_STREAM3 = 7,
+
+	/// <summary>
+	/// <para>Video decode statistics. Refer to [D3D12_QUERY_DATA_VIDEO_DECODE_STATISTICS](../d3d12video/ns-d3d12video-d3d12_query_data_video_decode_statistics.md). Use this query type to determine if a video was successfully decoded. If decoding fails due to insufficient BitRate or FrameRate parameters set during creation of the decode heap, then the status field of the query is set to [D3D12_VIDEO_DECODE_STATUS_RATE_EXCEEDED](../d3d12video/ne-d3d12video-d3d12_video_decode_status.md) and the query also contains new BitRate and FrameRate values that would succeed. This query type can only be performed on video decode command lists [(D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE)](/windows/desktop/api/d3d12/ne-d3d12-d3d12_command_list_type). This query type does not use [ID3D12VideoDecodeCommandList::BeginQuery](../d3d12video/nf-d3d12video-id3d12videodecodecommandlist-beginquery.md), only [ID3D12VideoDecodeCommandList::EndQuery](../d3d12video/nf-d3d12video-id3d12videodecodecommandlist-endquery.md). Statistics are recorded only for the most recent [ID3D12VideoDecodeCommandList::DecodeFrame](../d3d12video/nf-d3d12video-id3d12videodecodecommandlist-decodeframe.md) call in the same command list. Decode status structures are defined by the codec specification.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_type#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	VIDEO_DECODE_STATISTICS = 8,
+	PIPELINE_STATISTICS1 = 10,
+} ;
+
+
+[EquivalentOf( typeof( D3D12_PREDICATION_OP ) )]
+public enum PredicationOp {
+	/// <summary>Enables predication if all 64-bits are zero.</summary>
+	EqualsZero = 0,
+	/// <summary>Enables predication if at least one of the 64-bits are not zero.</summary>
+	NotEqualsZero = 1,
+} ;
+
+
+/// <summary>
+/// Specifies how the pipeline interprets geometry or hull shader input primitives.
+/// </summary>
+/// <remarks>
+/// <seealso cref="PrimitiveTopology"/>
+/// For more info, see: 
+/// <a href="https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_primitive_topology_type">
+/// D3D12_PRIMITIVE_TOPOLOGY_TYPE 
+/// </a>enumeration (defined in: <b><i>d3d12.h</i></b>)
+/// </remarks>
 [EquivalentOf( typeof(D3D12_PRIMITIVE_TOPOLOGY_TYPE) )]
-public enum PrimitiveTopology {
+public enum PrimitiveTopologyType {
 	/// <summary>The shader has not been initialized with an input primitive type.</summary>
 	UNDEFINED = 0,
 	/// <summary>Interpret the input primitive as a point.</summary>
@@ -622,6 +682,8 @@ public enum PrimitiveTopology {
 	/// <summary>Interpret the input primitive as a control point patch.</summary>
 	PATCH = 4,
 } ;
+
+
 
 [EquivalentOf( typeof( D3D12_INDEX_BUFFER_STRIP_CUT_VALUE ) )]
 public enum IndexBufferStripCutValue {

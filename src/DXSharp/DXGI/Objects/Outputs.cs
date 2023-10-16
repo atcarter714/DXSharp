@@ -10,23 +10,21 @@ namespace DXSharp.DXGI ;
 
 /// <summary>Proxy contract for the native <see cref="IDXGIOutput"/> COM interface.</summary>
 public class Output: Object, IOutput {
-	/*internal static ConstructWrapper< IObject, IDXGIObject >? 
-		ConstructFunction => (o) => new Output( o ) ;*/
+	public static Type ComType => typeof( IDXGIOutput ) ;
+	public static Guid InterfaceGUID => typeof( IDXGIOutput ).GUID ;
 	
+
 	public override ComPtr? ComPtrBase => ComPointer ;
-	public IDXGIOutput? COMObject => ComPointer?.Interface ;
+	public new IDXGIOutput? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutput >? ComPointer { get ; protected set ; }
+	
 	
 	#region Constructors
 	internal Output( ) { }
-	public Output( nint ptr ): base(ptr) {
-		ComPointer = new( ptr ) ;
-	}
-	public Output( [NotNull] in IDXGIOutput dxgiObj ): base( dxgiObj ) {
-		ComPointer = new( dxgiObj ) ;
-	}
-	public Output( [NotNull] ComPtr<IDXGIOutput> otherPtr ): this(otherPtr.Interface!) { }
-	public Output( in object? comObj ): this( COMUtility.GetIUnknownForObject(comObj) ) { }
+	internal Output( nint ptr ) => ComPointer = new( ptr ) ;
+	internal Output( in IDXGIOutput dxgiObj ) => ComPointer = new( dxgiObj ) ;
+	internal Output( ComPtr<IDXGIOutput> otherPtr ) => ComPointer = otherPtr ;
+	internal Output( in object? comObj ): this( COMUtility.GetIUnknownForObject(comObj) ) { }
 	#endregion
 	
 
@@ -172,8 +170,8 @@ public class Output: Object, IOutput {
 
 
 public class Output1: Output, IOutput1 {
-	/*internal new static ConstructWrapper< IObject, IDXGIObject >?
-		ConstructFunction => (o) => new Output1( o ) ;*/
+	public new static Type ComType => typeof( IDXGIOutput1 ) ;
+	public new static Guid InterfaceGUID => typeof( IDXGIOutput1 ).GUID ;
 	
 	public new IDXGIOutput1? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutput1 >? ComPointer { get ; protected set ; }
@@ -189,7 +187,7 @@ public class Output1: Output, IOutput1 {
 	public void GetDisplayModeList1( Format enumFormat, uint flags, 
 									 out uint pNumModes, 
 									 out Span< ModeDescription1 > pDescription ) {
-		_throwIfDestroyed( ) ;
+		
 		pDescription = default ; pNumModes = 0U ; uint modeCount = 0U ;
 		 
 		unsafe {
@@ -217,7 +215,7 @@ public class Output1: Output, IOutput1 {
 	public void FindClosestMatchingMode1( in ModeDescription1 pModeToMatch, 
 										  out ModeDescription1 pClosestMatch,
 										  IUnknownWrapper pConcernedDevice ) {
-		_throwIfDestroyed( ) ;
+		
 		pClosestMatch = default ;
 		unsafe {
 			DXGI_MODE_DESC1 result = default, modeToMatch_ = pModeToMatch ;
@@ -228,14 +226,14 @@ public class Output1: Output, IOutput1 {
 	}
 
 	public void GetDisplaySurfaceData1( IResource pDestination ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			COMObject!.GetDisplaySurfaceData1( pDestination.COMObject ) ;
 		}
 	}
 
 	public void DuplicateOutput( IDevice pDevice, out IOutputDuplication? ppOutputDuplication ) {
-		_throwIfDestroyed( ) ;
+		
 		ppOutputDuplication = null ;
 		unsafe {
 			COMObject!.DuplicateOutput( pDevice, out var dup ) ;
@@ -243,4 +241,5 @@ public class Output1: Output, IOutput1 {
 			ppOutputDuplication = new OutputDuplication( dup ) ;
 		}
 	}
+
 } ;

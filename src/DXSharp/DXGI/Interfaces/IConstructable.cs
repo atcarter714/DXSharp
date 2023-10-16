@@ -27,6 +27,7 @@ internal static class ComWrapperFactory {
 	}*/
 
 	/*static void f() {
-		Create< Adapter, IDXGIAdapter >( null ) ;
+		Adapter.Instantiate< Adapter1 >( ) ;
+		SwapChain1.Instantiate( ) ;
 	}*/
 } ;

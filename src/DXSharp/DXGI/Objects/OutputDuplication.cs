@@ -8,32 +8,28 @@ namespace DXSharp.DXGI ;
 
 
 public class OutputDuplication: Object, IOutputDuplication {
-	public override ComPtr? ComPtrBase => ComPointer ;
-	public IDXGIOutputDuplication? COMObject => ComPointer?.Interface ;
+	public static Type ComType => typeof( IDXGIOutputDuplication ) ;
+	public static Guid InterfaceGUID => typeof( IDXGIOutputDuplication ).GUID ;
+	
+	
+	public new IDXGIOutputDuplication? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutputDuplication >? ComPointer { get ; protected set ; }
 	
-	public OutputDuplication( nint ptr ): base( ptr ) { 
-		ComPointer = new( ptr ) ;
-	}
-	public OutputDuplication( IDXGIOutputDuplication dxgiObj ): base( dxgiObj ) {
-		ComPointer = new( dxgiObj ) ;
-	}
+	internal OutputDuplication( ) { }
+	internal OutputDuplication( nint ptr ) => ComPointer = new( ptr ) ;
+	internal OutputDuplication( IDXGIOutputDuplication dxgiObj ) => ComPointer = new( dxgiObj ) ;
+	internal OutputDuplication( ComPtr< IDXGIOutputDuplication >? comPtr ) => ComPointer = comPtr ;
 
-	public OutputDuplication( ComPtr< IDXGIOutputDuplication >? comPtr ): base( comPtr!.InterfaceVPtr ) {
-		ArgumentNullException.ThrowIfNull( comPtr, nameof(comPtr) ) ;
-		ComPointer = comPtr ;
-	}
-	
 	IDXGIOutputDuplication _dxgiInterface => COMObject ??
-		throw ( ComPointer is not null && ComPointer.Disposed
-				 ? new ObjectDisposedException( nameof(OutputDuplication) )
-				 : new NullReferenceException( $"{nameof(OutputDuplication)} :: " +
-											   $"internal {nameof(IDXGIOutputDuplication)} null reference." ) ) ;
+											 throw ( ComPointer is not null && ComPointer.Disposed
+														 ? new ObjectDisposedException( nameof(OutputDuplication) )
+														 : new NullReferenceException( $"{nameof(OutputDuplication)} :: " +
+																					   $"internal {nameof(IDXGIOutputDuplication)} null reference." ) ) ;
 	
 	
 	
 	public void GetDesc( out OutputDuplicationDescription pDesc ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			pDesc = default ;
 			DXGI_OUTDUPL_DESC desc = default ;
@@ -65,7 +61,7 @@ public class OutputDuplication: Object, IOutputDuplication {
 												   $"{nameof(GetFrameDirtyRects)} :: " +
 												   $"The maximum number of dirty rects is {MAX_RECTS}." ) ;
 		
-		_throwIfDestroyed( ) ;
+		
 		pDirtyRectsBuffer = default ;
 		pDirtyRectsBufferSizeRequired = default ;
 		unsafe {
@@ -104,7 +100,7 @@ public class OutputDuplication: Object, IOutputDuplication {
 			throw new ArgumentOutOfRangeException( nameof(MoveRectsBufferSize), MoveRectsBufferSize,
 												   $"{nameof(GetFrameMoveRects)} :: " +
 												   $"The maximum number of move rects is {MAX_MOVE_RECTS}." ) ;
-		_throwIfDestroyed( ) ;
+		
 		 
 		pMoveRectBuffer = default ;
 		pMoveRectsBufferSizeRequired = default ;
@@ -146,7 +142,7 @@ public class OutputDuplication: Object, IOutputDuplication {
 												   $"{nameof(GetFramePointerShape)} :: " +
 												   $"The maximum number of pointer shapes is {MAX_POINTER_SHAPE_BUFFER}." ) ;
 		
-		_throwIfDestroyed( ) ;
+		
 		pPointerShapeInfo = default ;
 		pPointerShapeBufferSizeRequired = default ;
 		unsafe {
@@ -182,7 +178,7 @@ public class OutputDuplication: Object, IOutputDuplication {
 	}
 
 	public void MapDesktopSurface( out MappedRect pLockedRect ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			DXGI_MAPPED_RECT lockedRect = default ;
 			_dxgiInterface.MapDesktopSurface( &lockedRect ) ;
@@ -191,13 +187,17 @@ public class OutputDuplication: Object, IOutputDuplication {
 	}
 
 	public void UnMapDesktopSurface( ) {
-		_throwIfDestroyed( ) ;
+		
 		_dxgiInterface.UnMapDesktopSurface( ) ;
 	}
 
 	public void ReleaseFrame( ) {
-		_throwIfDestroyed( ) ;
+		
 		_dxgiInterface.ReleaseFrame( ) ;
 	}
-	
+
+	public static IDXCOMObject Instantiate( ) => new OutputDuplication( ) ;
+	public static IDXCOMObject Instantiate( IntPtr pComObj ) => new OutputDuplication( pComObj ) ;
+	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
+		new OutputDuplication( ( pComObj as IDXGIOutputDuplication )! ) ;
 } ;

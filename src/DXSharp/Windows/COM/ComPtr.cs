@@ -44,6 +44,8 @@ public abstract class ComPtr: IDisposable {
 	static readonly HashSet< nint > _allPtrs = new( ) ;
 	#endregion
 	
+	public abstract Type ComType { get ; }
+	
 	nint _baseAddr ;
 	protected object? _comObjectRef ;
 	internal uint RefCount => _refCount ;
@@ -97,7 +99,7 @@ public abstract class ComPtr: IDisposable {
 	public ComPtr( ulong addr ): this( (nint)addr ) { }
 	public ComPtr( [NotNull] in IUnknown comInterface ): this( GetAddressIUnknown(comInterface) ) { }
 	public ComPtr( [NotNull] in IUnknownWrapper comInterface ): this( comInterface.BasePointer ) { }
-	public ComPtr( [NotNull] in IUnknownWrapper< IUnknown > comInterface ): this( comInterface.Pointer ) { }
+	public ComPtr( [NotNull] in IUnknownWrapper< IUnknown > comInterface ): this( comInterface.BasePointer ) { }
 	public ComPtr( [MaybeNull] in object? comObj ) {
 		ArgumentNullException.ThrowIfNull( comObj, nameof(comObj) ) ;
 		if( !comObj.GetType( ).IsCOMObject ) throw new ArgumentException( nameof(comObj),
@@ -170,13 +172,30 @@ public abstract class ComPtr: IDisposable {
 		if( ptr.IsValid() ) _allPtrs?.Add( ptr ) ;
 	}
 	internal static void UntrackPointer( nint ptr ) => _allPtrs?.Remove( ptr ) ;
+	
+	
+	internal static ComPtr< TInto > Convert< TFrom, TInto >( ComPtr< TFrom > other ) 
+																where TFrom: IUnknown 
+																where TInto: IUnknown {
+		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
+		if ( other.Disposed ) throw new ObjectDisposedException( nameof(other) ) ;
+
+		Type srcType = typeof(TFrom), dstType = typeof(TInto) ;
+		if ( srcType.IsAssignableTo(dstType) ) return new( other.BaseAddress ) ;
+		
+		throw new InvalidCastException( $"{nameof(ComPtr)} -> " +
+										$"{nameof(Convert)}<{dstType.Name}, {srcType.FullName}> :: " +
+										$"Failed to cast the COM object to {dstType.Name}!" ) ;
+	}
 } ;
+
 
 
 public sealed class ComPtr< T >: ComPtr 
 								 where T: IUnknown {
-	nint _interfaceVPtr ;
+	public override Type ComType => typeof(T) ;
 	
+	nint _interfaceVPtr ;
 	public Type InterfaceType => typeof(T) ;
 	public T? Interface { get ; private set ; }
 	public nint InterfaceVPtr => _interfaceVPtr ;
@@ -305,7 +324,10 @@ public sealed class ComPtr< T >: ComPtr
 		return newComPtr ;
 	}
 
-	
+
+	// ----------------------------------------------------------
+	// Operator Overloads:
+	// ----------------------------------------------------------
 	
 	public static explicit operator ComPtr< IUnknown >?( ComPtr< T >? other ) {
 		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
@@ -358,5 +380,38 @@ public sealed class ComPtr< T >: ComPtr
 
 		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
 										$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
+	}
+	
+	
+	public static explicit operator ComPtr< T >( DXGI.Object obj ) {
+		ArgumentNullException.ThrowIfNull( obj, nameof(obj) ) ;
+		if( obj.ComPointer?.Disposed ?? true ) throw new 
+			ObjectDisposedException( nameof(obj) ) ;
+
+		var other = obj.ComPointer ;
+		if ( obj.ComPointer.InterfaceType.IsAssignableTo(typeof(T)) ) {
+			var _result = new ComPtr< T >( obj.ComPointer.BaseAddress ) ;
+			_result.IncrementReferences( ) ;
+			return _result ;
+		}
+		
+		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
+			$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
+	}
+	
+	public static explicit operator ComPtr< T >( Direct3D12.Object obj ) {
+		ArgumentNullException.ThrowIfNull( obj, nameof(obj) ) ;
+		if( obj.ComPointer?.Disposed ?? true ) throw new 
+			ObjectDisposedException( nameof(obj) ) ;
+		
+		var other = obj.ComPointer ;
+		if ( obj.ComPointer.InterfaceType.IsAssignableTo(typeof(T)) ) {
+			var _result = new ComPtr< T >( obj.ComPointer.BaseAddress ) ;
+			_result.IncrementReferences( ) ;
+			return _result ;
+		}
+		
+		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
+			$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
 	}
 } ;

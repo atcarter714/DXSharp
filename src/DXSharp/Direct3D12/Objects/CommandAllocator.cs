@@ -1,14 +1,14 @@
-﻿using Windows.Win32.Graphics.Direct3D12 ;
+﻿#region Using Directives
+using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
+#endregion
+namespace DXSharp.Direct3D12 ;
 
-namespace DXSharp.Direct3D12.Objects ;
 
-
+[Wrapper(typeof(ID3D12CommandAllocator))]
 public class CommandAllocator: Pageable,
 							   ICommandAllocator,
 							   IInstantiable< CommandAllocator > {
-	static CommandAllocator IInstantiable< CommandAllocator >.Instantiate( ) => new( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( ) => new CommandAllocator( ) ;
 	
 	public new ID3D12CommandAllocator? COMObject => ComPointer?.Interface ;
 	public new ComPtr< ID3D12CommandAllocator >? ComPointer { get ; protected set ; }
@@ -19,4 +19,13 @@ public class CommandAllocator: Pageable,
 	internal CommandAllocator( ID3D12CommandAllocator comObject ) => ComPointer = new( comObject ) ;
 	
 	
+
+	// -------------------------------------------------------------------------------------------------------
+	public new static CommandAllocator Instantiate( ) => new( ) ;
+	static IDXCOMObject IInstantiable.Instantiate( ) => new CommandAllocator( ) ;
+	static CommandAllocator? IInstantiable< CommandAllocator >.Instantiate( IntPtr ptr ) => new( ptr ) ;
+	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new CommandAllocator( pComObj ) ;
+	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
+		new CommandAllocator( (ID3D12CommandAllocator)pComObj! ) ;
+	// =======================================================================================================
 } ;

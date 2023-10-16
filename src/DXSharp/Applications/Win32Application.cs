@@ -68,8 +68,9 @@ public class Win32Application {
 		}
 		
 		// Show the window:
-		PInvoke.ShowWindow( _hWnd, (SHOW_WINDOW_CMD)nCmdShow ) ;
+		//PInvoke.ShowWindow( _hWnd, (SHOW_WINDOW_CMD)nCmdShow ) ;
 		//... rest of code
+		
 
 		// Don't forget to free the handle at the end of your method
 		sampleHandle.Free( ) ;

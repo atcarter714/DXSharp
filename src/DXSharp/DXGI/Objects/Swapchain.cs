@@ -1,70 +1,61 @@
 ﻿#region Using Directives
 using System.Numerics ;
+using System.Runtime.Versioning ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Dxgi.Common ;
 
-using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
+using DXSharp.Windows.Win32 ;
 #endregion
 namespace DXSharp.DXGI ;
 
 
 public class SwapChain: DeviceSubObject, ISwapChain {
-	public new static ISwapChain? Instantiate( IntPtr address ) {
-		if( address == IntPtr.Zero ) return null ;
-		return new SwapChain( address ) ;
-	}
-	
 	public enum ColorSpaceSupportFlags: uint { Present = 0x1, OverlayPresent = 0x2, } ;
 	
-	//public ComPtr? ComPtrBase => ComPointer ;
-	public new IDXGISwapChain? COMObject { get ; init ; }
-	public new ComPtr< IDXGISwapChain >? ComPointer { get ; init ; }
+	public static Type ComType => typeof( IDXGISwapChain ) ;
+	public static Guid InterfaceGUID => ComType.GUID ;
+	public static SwapChain? Instantiate( ) => new( ) ;
+	
+	
+	public new ComPtr< IDXGISwapChain >? ComPointer { get ; protected set; }
+	public new IDXGISwapChain? COMObject => ComPointer?.Interface ;
+	
+	// -----------------------------------------------------------------
+	// Constructors:
+	// -----------------------------------------------------------------
 	
 	internal SwapChain( ) { }
-	public SwapChain( nint comObject ): base(comObject) { }
-	public SwapChain( in IDXGISwapChain? comObject ): base(comObject!) { }
-	public SwapChain( ComPtr< IDXGISwapChain > otherPtr ) {
+	internal SwapChain( nint comObject ) => 
+		ComPointer = new( comObject ) ;
+	internal SwapChain( in IDXGISwapChain comObject ) => 
+		ComPointer = new( comObject ) ;
+	internal SwapChain( ComPtr<IDXGISwapChain> otherPtr ) => 
 		this.ComPointer = otherPtr ;
-		this.COMObject  = otherPtr.Interface ;
-		uint r = this.AddRef( ) ;
-	}
+	
+	// -----------------------------------------------------------------
 
 	public void Present( uint syncInterval, PresentFlags flags ) => 
 						COMObject!.Present( syncInterval, (uint)flags ) ;
 
-	public void GetBuffer< TBuffer >( uint buffer, out TBuffer? pSurface )
-													where TBuffer:  class, ISurface,
-																	IUnknownWrapper< TBuffer, IDXGISurface >, 
-																	new( ) {
-		pSurface = null ;
+	public void GetBuffer( uint buffer, out Direct3D12.IResource? pSurface ) {
 		unsafe {
-			Guid guid = _getBufferIID< TBuffer >( ) ;
-			
+			pSurface = default ;
+			Guid guid = Resource.InterfaceGUID ;
 			COMObject!.GetBuffer( buffer, &guid, out var comObj ) ;
-			
-			pSurface = TBuffer.ConstructInstance<TBuffer, IDXGISurface>( (IDXGISurface)comObj )
-							as TBuffer ;
 		}
 	}
-	
-	static Guid _getBufferIID< TBuffer >( )
-		where TBuffer:	class, IUnknownWrapper< TBuffer, IDXGISurface >, new( ) => TBuffer.InterfaceGUID ;
-	
-	public void SetFullscreenState< TOutput >( bool fullscreen, in TOutput? pTarget )
-														where TOutput: class, IOutput {
-		ArgumentNullException.ThrowIfNull( pTarget, nameof(pTarget) ) ;
-		COMObject!.SetFullscreenState( fullscreen, pTarget.COMObject ) ;
-	}
-	
-	public void GetFullscreenState< TOutput >( out bool pFullscreen, out TOutput? ppTarget ) 
-																where TOutput: class, IOutput {
+
+	public void SetFullscreenState( bool fullscreen, in IOutput? pTarget ) => 
+		COMObject!.SetFullscreenState( fullscreen, pTarget?.COMObject ) ;
+
+	public void GetFullscreenState( out bool pFullscreen, out IOutput? ppTarget ) {
 		ppTarget = null ;
 		unsafe {
 			BOOL fullscreen = false ;
 			COMObject!.GetFullscreenState( &fullscreen, out var output ) ;
-			ppTarget = (TOutput)( (IOutput)new Output(output) ) ;
+			ppTarget = (IOutput)new Output( output ) ;
 			pFullscreen = fullscreen ;
 		}
 	}
@@ -96,7 +87,13 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 		if( output is null ) return null ;
 		return (TOutput)((IOutput) new Output(output)) ;
 	}
-	
+
+	public IOutput? GetContainingOutput( ) {
+		COMObject!.GetContainingOutput( out var output ) ;
+		if( output is null ) return null ;
+		return (IOutput) new Output(output) ;
+	}
+
 	public void GetFrameStatistics( out FrameStatistics pStats ) {
 		unsafe {
 			DXGI_FRAME_STATISTICS result = default ;
@@ -109,36 +106,34 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 		COMObject!.GetLastPresentCount( out var count ) ;
 		return count ;
 	}
-	
+
 } ;
 
 
 
 public class SwapChain1: SwapChain, ISwapChain1 {
-	public new static ISwapChain? Instantiate( IntPtr address ) {
-		if( address == IntPtr.Zero ) return null ;
-		return new SwapChain1( address ) ;
-	}
-	
-	internal SwapChain1( ) { }
-	public SwapChain1( nint ptr ): base( ptr ) { 
-		ComPointer = new( ptr ) ;
-	}
-	public SwapChain1( in IDXGISwapChain1? comObject ): base( comObject! ) {
-		ComPointer = new( comObject! ) ;
-	}
-	public SwapChain1( ComPtr< IDXGISwapChain1 > otherPtr ): 
-		this(otherPtr.InterfaceVPtr) => ComPointer = otherPtr ;
+	public new static Type ComType => typeof( IDXGISwapChain1 ) ;
+	public new static Guid InterfaceGUID => ComType.GUID ;
+	public new static SwapChain1? Instantiate( ) => new( ) ;
+	public new static ISwapChain? Instantiate( nint address ) => new SwapChain1( address ) ;
+	public new static ISwapChain? Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
+		new SwapChain1( (IDXGISwapChain1)obj! ) ;
 
 	public new IDXGISwapChain1? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGISwapChain1 >? ComPointer { get ; protected set ; }
+	
+	internal SwapChain1( ) { }
+	internal SwapChain1( nint ptr ) => ComPointer = new( ptr ) ;
+	internal SwapChain1( in IDXGISwapChain1? comObject ) => ComPointer = new( comObject! ) ;
+	internal SwapChain1( ComPtr< IDXGISwapChain1 > otherPtr ) => ComPointer = otherPtr ;
+
 
 	public SwapChainDescription1 GetDesc1( ) {
 		GetDesc1( out var desc ) ;
 		return desc ;
 	}
 	public void GetDesc1( out SwapChainDescription1 pDesc ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			DXGI_SWAP_CHAIN_DESC1 result = default ;
 			COMObject!.GetDesc1( &result ) ;
@@ -147,7 +142,7 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	}
 	
 	public void GetFullscreenDesc( out SwapChainFullscreenDescription pDesc ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			DXGI_SWAP_CHAIN_FULLSCREEN_DESC result = default ;
 			COMObject!.GetFullscreenDesc( &result ) ;
@@ -156,7 +151,7 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	}
 
 	public void GetHwnd( out HWND pHwnd ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			HWND result = default ;
 			COMObject!.GetHwnd( &result ) ;
@@ -165,7 +160,7 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	}
 
 	public void GetCoreWindow( Guid riid, out IUnknown? ppUnk ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			COMObject!.GetCoreWindow( &riid, out var unk ) ;
 			ppUnk = unk as IUnknown ;
@@ -177,7 +172,7 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	}
 	
 	public void Present1( uint syncInterval, PresentFlags flags, in PresentParameters pPresentParameters ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			DXGI_PRESENT_PARAMETERS desc = pPresentParameters ;
 			COMObject!.Present1( syncInterval, (uint)flags, &desc ) ;
@@ -187,7 +182,7 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	public bool IsTemporaryMonoSupported( ) => COMObject!.IsTemporaryMonoSupported( ) ;
 	
 	public void GetRestrictToOutput( out IOutput ppRestrictToOutput ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			COMObject!.GetRestrictToOutput( out var output ) ;
 			ppRestrictToOutput = new Output( output ) ;
@@ -195,7 +190,7 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	}
 
 	public void SetBackgroundColor( in RGBA pColor ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			fixed( RGBA* p = &pColor ) {
 				COMObject!.SetBackgroundColor( (DXGI_RGBA *)p ) ;
@@ -204,7 +199,7 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	}
 
 	public void GetBackgroundColor( out RGBA pColor ) {
-		_throwIfDestroyed( ) ;
+		
 		pColor = default ;
 		unsafe {
 			DXGI_RGBA result = default ;
@@ -214,20 +209,133 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	}
 
 	public void SetRotation( ModeRotation rotation ) {
-		_throwIfDestroyed( ) ;
+		
 		COMObject!.SetRotation( (DXGI_MODE_ROTATION)rotation ) ;
 	}
 
 	public void GetRotation( out ModeRotation pRotation ) {
-		_throwIfDestroyed( ) ;
+		
 		unsafe {
 			DXGI_MODE_ROTATION result = default ;
 			COMObject!.GetRotation( &result ) ;
 			pRotation = (ModeRotation)result ;
 		}
 	}
-	
+
 } ;
+
+
+
+public class SwapChain2: SwapChain1, ISwapChain2 {
+	public new static Type ComType => typeof( IDXGISwapChain2 ) ;
+	public new static Guid InterfaceGUID => ComType.GUID ;
+	public new static SwapChain2? Instantiate( ) => new( ) ;
+	public new static ISwapChain? Instantiate( nint address ) => new SwapChain2( address ) ;
+	public new static ISwapChain? Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
+		new SwapChain2( (IDXGISwapChain2)obj! ) ;
+
+	public new IDXGISwapChain2? COMObject => ComPointer?.Interface ;
+	public new ComPtr< IDXGISwapChain2 >? ComPointer { get ; protected set ; }
+	
+	internal SwapChain2( ) { }
+	internal SwapChain2( nint ptr ) => ComPointer = new( ptr ) ;
+	internal SwapChain2( in IDXGISwapChain2? comObject ) => ComPointer = new( comObject! ) ;
+	internal SwapChain2( ComPtr< IDXGISwapChain2 > otherPtr ) => ComPointer = otherPtr ;
+
+	
+	
+	public void SetSourceSize( uint width, uint height ) {
+		
+		COMObject!.SetSourceSize( width, height ) ;
+	}
+
+	public void GetSourceSize( out uint pWidth, out uint pHeight ) => 
+		COMObject!.GetSourceSize( out pWidth, out pHeight ) ;
+
+	public void SetMaximumFrameLatency( uint maxLatency ) {
+		
+		COMObject!.SetMaximumFrameLatency( maxLatency ) ;
+	}
+
+	public void GetMaximumFrameLatency( out uint pMaxLatency ) {
+		
+		COMObject!.GetMaximumFrameLatency( out pMaxLatency ) ;
+	}
+
+	public Win32Handle GetFrameLatencyWaitableObject( ) => COMObject!.GetFrameLatencyWaitableObject( ) ;
+
+	public void SetMatrixTransform( in Matrix3x2 pMatrix ) {
+		
+		unsafe {
+			fixed ( Matrix3x2* p = &pMatrix ) {
+				COMObject!.SetMatrixTransform( (DXGI_MATRIX_3X2_F*)p ) ;
+			}
+		}
+	}
+}
+
+
+
+[SupportedOSPlatform("windows10.0.10240")]
+public class SwapChain3: SwapChain2, ISwapChain3 {
+	public new static Guid InterfaceGUID => ComType.GUID ;
+	public new static Type ComType => typeof( IDXGISwapChain3 ) ;
+	public new static SwapChain3? Instantiate( ) => new( ) ;
+	public new static ISwapChain? Instantiate( nint address ) => new SwapChain3( address ) ;
+	public new static ISwapChain? Instantiate< ICom >( ICom obj ) where ICom: IUnknown? =>
+		new SwapChain3( (IDXGISwapChain3)obj! ) ;
+
+	
+	public new IDXGISwapChain3? COMObject => ComPointer?.Interface ;
+	public new ComPtr< IDXGISwapChain3 >? ComPointer { get ; protected set ; }
+
+	
+	internal SwapChain3( ) { }
+	internal SwapChain3( nint ptr ) => ComPointer = new( ptr ) ;
+	internal SwapChain3( in IDXGISwapChain3? comObject ) => ComPointer = new( comObject! ) ;
+	internal SwapChain3( ComPtr< IDXGISwapChain3 > otherPtr ) => ComPointer = otherPtr ;
+
+
+
+	[SupportedOSPlatform("windows10.0.10240")]
+	public uint GetCurrentBackBufferIndex( ) => COMObject!.GetCurrentBackBufferIndex( ) ;
+
+	
+	[SupportedOSPlatform("windows10.0.10240")]
+	public void CheckColorSpaceSupport( ColorSpaceType colorSpace, out ColorSpaceSupportFlags pColorSpaceSupport ) {
+		unsafe {
+			COMObject!.CheckColorSpaceSupport( (DXGI_COLOR_SPACE_TYPE)colorSpace, out var support ) ;
+			pColorSpaceSupport = (ColorSpaceSupportFlags)support ;
+		}
+	}
+	
+	
+	[SupportedOSPlatform("windows10.0.10240")]
+	public void SetColorSpace1( ColorSpaceType colorSpace ) {
+		
+		COMObject!.SetColorSpace1( (DXGI_COLOR_SPACE_TYPE)colorSpace ) ;
+	}
+
+	
+	[SupportedOSPlatform("windows10.0.10240")]
+	public void ResizeBuffers1( uint bufferCount, 
+								uint width, uint height, 
+								Format newFormat,
+								SwapChainFlags swapChainFlags,
+								in uint[ ] pCreationNodeMask,
+								in IUnknown[ ] ppPresentQueue ) {
+		
+		unsafe { fixed ( uint* pMask = pCreationNodeMask ) {
+				COMObject!.ResizeBuffers1( bufferCount, width, height, (DXGI_FORMAT)newFormat,
+											   (uint)swapChainFlags, pCreationNodeMask, ppPresentQueue ) ;
+			}
+		}
+	}
+	
+}
+
+
+
 
 
 

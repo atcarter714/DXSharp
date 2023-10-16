@@ -1,9 +1,6 @@
 ﻿#region Using Directives
-using System.Runtime.InteropServices ;
-using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
-using DXSharp.Direct3D12 ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 
@@ -12,16 +9,22 @@ using static DXSharp.InteropUtils ;
 namespace DXSharp ;
 
 
-public interface IComObjectRef { nint PointerToIUnknown { get; } } ;
-public interface IComObjectRef< T >: IComObjectRef
-	where T: IUnknown { T? COMObject { get; } } ;
+/*public interface IComObjectRef { nint PointerToIUnknown { get; } } ;*/
+public interface IComObjectRef< T >
+	where T: IUnknown {
+	/// <summary>A reference to the native COM object interface.</summary>
+	T? COMObject { get; }
+} ;
 
 public interface IInstantiable {
-	static abstract IDXCOMObject Instantiate( ) ;
+	public static abstract IDXCOMObject Instantiate( ) ;
+	public static abstract IDXCOMObject Instantiate( nint pComObj ) ;
+	public static abstract IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? ;
 } ;
+
 public interface IInstantiable< T >: IInstantiable
 	where T: class, IInstantiable< T > {
-	new static abstract T Instantiate( ) ;
+	new static abstract T? Instantiate( nint ptr ) ;
 } ;
 
 
@@ -246,4 +249,5 @@ public interface IDXCOMObject: IUnknownWrapper {
 
 
 
-public interface IDXWrapper< T >: IDXCOMObject, IUnknownWrapper< T > where T: IUnknown { } ;
+/*public interface IDXWrapper< T >: IDXCOMObject,
+								  IUnknownWrapper< T > where T: IUnknown { } ;*/

@@ -301,6 +301,14 @@ public class RenderForm: Form, IAppWindow
 		long wparam = m.WParam.ToInt64();
 
 		switch( m.Msg ) {
+			// !TODO: Figure out what's up with this:
+			// (Why is this necessary?)
+			case 0x0001:
+				CreateHandle( ) ;
+				OnHandleCreated( EventArgs.Empty ) ;
+				break;
+			
+			
 			case WM_SIZE:
 				if( wparam == SIZE_MINIMIZED ) {
 					previousWindowState = FormWindowState.Minimized;

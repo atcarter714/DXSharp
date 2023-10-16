@@ -6,24 +6,42 @@ using DXSharp.Windows.COM ;
 
 namespace DXSharp.DXGI ;
 
+[Wrapper(typeof(IDXGIDevice))]
 public interface IDevice: IObject,
-						  DXGIWrapper< IDXGIDevice > {
-						  //IUnknownWrapper< IDevice, IDXGIDevice > {
+						  IComObjectRef< IDXGIDevice >,
+						  IUnknownWrapper< IDXGIDevice >, IInstantiable {
+	public new static Guid InterfaceGUID => typeof( IDXGIDevice ).GUID ;
 	
-	T GetAdapter< T >(  ) where T: class, IAdapter ;
+	new Type ComType => typeof( IDXGIDevice ) ;
+	new IDXGIDevice? COMObject => ComPointer?.Interface ;
+	new IDXGIDevice? ComObject => ComPointer?.Interface ;
+	new ComPtr< IDXGIDevice >? ComPointer { get ; }
 	
-	internal void CreateSurface( in SurfaceDescription pDesc,
-									uint numSurfaces, uint usage,
-									in  SharedResource pSharedResource,
-												out Span< Surface > ppSurface ) ;
+	// ----------------------------------------------------------
+	// Interface Methods:
+	// ----------------------------------------------------------
+
+	IAdapter GetAdapter< T >( ) where T: class, IAdapter, IInstantiable ;
+	/*{
+		this.COMObject!.GetAdapter( out var ppAdapter ) ;
+		var _obj = (IAdapter)( T.Instantiate( ) ??
+							   throw new TypeInitializationException( nameof( T ), null ) ) ;
+		_obj.SetComPointer( new ComPtr< IDXGIAdapter >(ppAdapter) ) ;
+		return _obj ;
+	}*/
 	
 	
-	void QueryResourceResidency( in  IResource[ ] ppResources,
-								 out Residency[ ] pResidencyStatus,
-								 uint             numResources ) ;
+	internal void CreateSurface( in   SurfaceDescription pDesc,
+								 uint numSurfaces, uint usage,
+								 in   SharedResource pSharedResource,
+								 out  Span< Surface > ppSurface ) ;
+	
+	
+	void QueryResourceResidency( in  Resource?[ ] ppResources, 
+								 out Span< Residency > statusSpan, 
+								 uint numResources ) ;
 	
 	void SetGPUThreadPriority( int priority ) ;
-	
 	void GetGPUThreadPriority( out int pPriority ) ;
 } ;
 

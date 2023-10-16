@@ -53,7 +53,12 @@ public struct MappedRect {
 //[InterfaceType( ComInterfaceType.InterfaceIsIUnknown )]
 
 public interface ISurface:  IDeviceSubObject,
-							DXGIWrapper< IDXGISurface > {
+							IComObjectRef< IDXGISurface >,
+							IUnknownWrapper< IDXGISurface >,
+							IInstantiable {
+	new ComPtr< IDXGISurface >? ComPointer { get ; }
+	new IDXGISurface? COMObject { get ; }
+	
 	void GetDesc( out SurfaceDescription pDesc ) ;
 	void Map( ref MappedRect pLockedRect, uint MapFlags ) ;
 	void Unmap( ) ;
@@ -62,18 +67,26 @@ public interface ISurface:  IDeviceSubObject,
 
 //! Concrete Implementation of an IDXGISurface wrapper/proxy ::
 public class Surface: DeviceSubObject, ISurface {
-	//public ComPtr? ComPtrBase => ComPointer ;
+	public static Type ComType => typeof( IDXGISurface ) ;
+	public static Guid InterfaceGUID => typeof( IDXGISurface ).GUID ;
+
+	public static IDXCOMObject Instantiate( ) => new Surface( ) ;
+	public static IDXCOMObject Instantiate( nint ptr ) => new Surface( ptr ) ;
+	public static IDXCOMObject Instantiate<ICom>( ICom dxgiObj ) where ICom: IUnknown? => 
+		new Surface( (IDXGISurface)dxgiObj! ) ;
+
 	public new ComPtr< IDXGISurface >? ComPointer { get ; protected set ; }
 	public new IDXGISurface? COMObject => ComPointer?.Interface as IDXGISurface ;
 
+	
 	internal Surface( ) { }
-	public Surface( nint ptr ): base(ptr) {
+	internal Surface( nint ptr ) {
 		if ( !ptr.IsValid() )
 			throw new NullReferenceException( $"{nameof( Surface )} :: " +
 											  $"The internal COM interface is destroyed/null." ) ;
 		ComPointer = new( ptr ) ;
 	}
-	public Surface( in IDXGISurface dxgiObj ): base( dxgiObj ) {
+	internal Surface( in IDXGISurface dxgiObj ) {
 		if ( dxgiObj is null )
 			throw new NullReferenceException( $"{nameof( Surface )} :: " +
 											  $"The internal COM interface is destroyed/null." ) ;

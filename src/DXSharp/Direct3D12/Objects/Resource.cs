@@ -1,10 +1,14 @@
-﻿using Windows.Win32.Graphics.Direct3D12 ;
+﻿#region Using Directives
+using Windows.Win32.Graphics.Direct3D12 ;
+using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows.COM ;
+#endregion
+namespace DXSharp.Direct3D12 ;
 
-namespace DXSharp.Direct3D12.Objects ;
 
-
-public class Resource: Object, IResource,
+[Wrapper(typeof(ID3D12Resource))]
+public class Resource: Pageable,
+					   IResource,
 					   IInstantiable< Resource > {
 	
 	public new ID3D12Resource? COMObject => ComPointer?.Interface ;
@@ -15,23 +19,20 @@ public class Resource: Object, IResource,
 	internal Resource( ID3D12Resource _interface ) => ComPointer = new( _interface ) ;
 	internal Resource( nint address ) => ComPointer = new( address ) ;
 	
-
-
-	static Resource IInstantiable< Resource >.Instantiate( ) => new( ) ;
+	
+	// -----------------------------------------------------------------------------------------------------------------
+	
 	static IDXCOMObject IInstantiable.Instantiate( ) => new Resource( ) ;
+	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new Resource( pComObj ) ;
+	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
+			pComObj is not null ? ( new Resource( (ID3D12Resource)pComObj 
+							?? throw new InvalidCastException($"Cannot cast {nameof(pComObj)} " +
+									$"({pComObj.GetType().Name}) to {nameof(IDXGIResource)}!") ))
+				: throw new ArgumentNullException( nameof(pComObj) ) ;
 	
-	
-	//ID3D12Resource? _cachedObject ;
-	ID3D12Pageable? IPageable.COMObject => COMObject ;
-	ID3D12DeviceChild? IDeviceChild.COMObject => COMObject ;
-	ID3D12Pageable? IComObjectRef< ID3D12Pageable >.COMObject => COMObject ;
-	ID3D12DeviceChild? IComObjectRef< ID3D12DeviceChild >.COMObject => COMObject ;
-	
-	ComPtr< ID3D12Pageable >? IPageable.ComPointer => new( COMObject! ) ;
-	ComPtr< ID3D12DeviceChild >? IDeviceChild.ComPointer => new( COMObject! ) ;
-	ComPtr< ID3D12DeviceChild >? IUnknownWrapper< ID3D12DeviceChild >
-		.ComPointer => new( COMObject! ) ;
-
-	ComPtr< ID3D12Pageable >? IUnknownWrapper< ID3D12Pageable >.ComPointer => new( COMObject! ) ;
-	
+	static Resource? IInstantiable< Resource >.Instantiate( nint ptr ) => 
+		(ptr is 0x0000) ? null : new( ptr ) ;
+	static TResource Instantiate< TResource >( nint ptr ) => 
+		(TResource)( (IResource)new Resource( ptr ) ) ;
+	// =================================================================================================================
 } ;

@@ -1,12 +1,22 @@
-﻿using Windows.Win32.Graphics.Direct3D12 ;
+﻿#region Using Directives
+using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
-
+#endregion
 namespace DXSharp.Direct3D12 ;
 
-[Wrapper(typeof(ID3D12CommandAllocator))]
+
+[ProxyFor(typeof(ID3D12CommandAllocator))]
 public interface ICommandAllocator: IPageable,
 									IComObjectRef< ID3D12CommandAllocator >,
 									IUnknownWrapper< ID3D12CommandAllocator > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12CommandAllocator > ComPointer { get ; }
+	new ID3D12CommandAllocator? COMObject => ComPointer?.Interface ;
+	ID3D12CommandAllocator? IComObjectRef< ID3D12CommandAllocator >.COMObject => COMObject ;
+	ComPtr< ID3D12CommandAllocator >? IUnknownWrapper< ID3D12CommandAllocator >.ComPointer => ComPointer;
+	// ==================================================================================
+	
+	
 	/// <summary>Indicates to re-use the memory that is associated with the command allocator.</summary>
 	/// <returns>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns <b>E_FAIL</b> if there is an actively recording command list referencing the command allocator.  The debug layer will also issue an error in this case. See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> for other possible return values.</para>
@@ -17,15 +27,9 @@ public interface ICommandAllocator: IPageable,
 	/// </remarks>
 	void Reset( ) => COMObject!.Reset( ) ;
 	
-	new Type ComType => typeof( ID3D12CommandAllocator ) ;
-	new Guid InterfaceGUID => typeof( ID3D12CommandAllocator ).GUID ;
-	new ID3D12CommandAllocator? COMObject => ComPointer?.Interface ;
-	new ID3D12CommandAllocator? ComObject => ComPointer?.Interface ;
-	new ComPtr< ID3D12CommandAllocator >? ComPointer { get ; }
+	// ---------------------------------------------------------------------------------
+	static Type IUnknownWrapper.ComType => typeof(ID3D12CommandAllocator) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12CommandAllocator).GUID ;
+	// ==================================================================================
 } ;
 
-
-	/*
-	new bool IsInitialized => ( !ComPointer?.Disposed ?? false ) ;
-	bool IUnknownWrapper< ID3D12CommandAllocator >.IsInitialized => IsInitialized ;*/
-	//void Reset( ) => ( (ID3D12CommandAllocator)ComPtrBase?.InterfaceObjectRef! )!.Reset( ) ;
