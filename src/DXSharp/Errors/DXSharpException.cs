@@ -26,6 +26,12 @@ public class DirectXComError: DXSharpException {
 		if ( message is not null )
 			base.Data.Add( "Message", message ) ;
 	}
+	public DirectXComError( HResult hResult, string? message = null, COMException? comError = null ) {
+		APICallReturnValue = hResult ;
+		COMError           = comError ;
+		if ( message is not null )
+			base.Data.Add( "Message", message ) ;
+	}
 	public DirectXComError( COMException? comError = null ) => COMError = comError ;
 	public DirectXComError( string message, COMException? comError = null ): 
 		base(message) => COMError = comError ;

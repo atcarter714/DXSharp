@@ -1899,8 +1899,10 @@ public enum AdapterFlag: uint {
 	ForceDWord = 0xffffffff
 } ;
 
+
 [StructLayout( LayoutKind.Sequential )]
-public struct AdapterDescription1 {
+public struct AdapterDescription1: IEquatable< AdapterDescription1 > {
+	
 	/// <summary>
 	/// <para>Type: <b>WCHAR[128]</b> A string that contains the adapter description. On <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro">feature level</a> 9 graphics hardware, <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiadapter1-getdesc1">GetDesc1</a> returns “Software Adapter” for the description string.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi/ns-dxgi-dxgi_adapter_desc1#members">Read more on docs.microsoft.com</see>.</para>
@@ -1979,6 +1981,27 @@ public struct AdapterDescription1 {
 		this.Flags                 = (AdapterFlag)desc.Flags ;
 	}
 	
+	
+	
+	public override bool Equals( object? obj ) => 
+		obj is AdapterDescription1 other && other == this ;
+	public bool Equals( AdapterDescription1 other ) => other == this ;
+	public override int GetHashCode( ) {
+		HashCode hashCode = new HashCode( ) ;
+		hashCode.Add( Description ) ;
+		hashCode.Add( VendorId ) ;
+		hashCode.Add( DeviceId ) ;
+		hashCode.Add( SubSysId ) ;
+		hashCode.Add( Revision ) ;
+		hashCode.Add( DedicatedVideoMemory ) ;
+		hashCode.Add( DedicatedSystemMemory ) ;
+		hashCode.Add( SharedSystemMemory ) ;
+		hashCode.Add( AdapterLuid ) ;
+		hashCode.Add( (int)Flags ) ;
+		return hashCode.ToHashCode( ) ;
+	}
+
+	
 	public static implicit operator AdapterDescription1( in DXGI_ADAPTER_DESC1 desc ) => new( desc ) ;
 	public static implicit operator DXGI_ADAPTER_DESC1( in AdapterDescription1 desc ) => new( ) {
 		Description           = desc.Description,
@@ -1992,10 +2015,14 @@ public struct AdapterDescription1 {
 		AdapterLuid           = desc.AdapterLuid,
 		Flags                 = (uint)desc.Flags
 	} ;
+	
+	public static bool operator ==( in AdapterDescription1 a, in AdapterDescription1 b ) => a.Description == b.Description && a.VendorId == b.VendorId && a.DeviceId == b.DeviceId && a.SubSysId == b.SubSysId && a.Revision == b.Revision && a.DedicatedVideoMemory == b.DedicatedVideoMemory && a.DedicatedSystemMemory == b.DedicatedSystemMemory && a.SharedSystemMemory == b.SharedSystemMemory && a.AdapterLuid == b.AdapterLuid && a.Flags == b.Flags ;
+	public static bool operator !=( in AdapterDescription1 a, in AdapterDescription1 b ) => a.Description != b.Description || a.VendorId != b.VendorId || a.DeviceId != b.DeviceId || a.SubSysId != b.SubSysId || a.Revision != b.Revision || a.DedicatedVideoMemory != b.DedicatedVideoMemory || a.DedicatedSystemMemory != b.DedicatedSystemMemory || a.SharedSystemMemory != b.SharedSystemMemory || a.AdapterLuid != b.AdapterLuid || a.Flags != b.Flags ;
 } ;
 
+
 [ProxyFor(typeof(DXGI_ADAPTER_DESC2))]
-public struct AdapterDescription2 {
+public struct AdapterDescription2: IEquatable< AdapterDescription2 > { 
 	AdapterDescription1 Description1 ;
 	public FixedStr128 Description { 
 		get => Description1.Description ;
@@ -2049,6 +2076,17 @@ public struct AdapterDescription2 {
 		}
 	}
 	
+	
+	public override int GetHashCode( ) =>
+		HashCode.Combine( Description1,
+						  (int)GraphicsPreemptionGranularity,
+						  (int)ComputePreemptionGranularity ) ;
+	public override bool Equals( object? obj ) => 
+		obj is AdapterDescription2 other && other == this ;
+	public bool Equals( AdapterDescription2 other ) => other == this ;
+	
+	
+	
 	public static implicit operator AdapterDescription2( in DXGI_ADAPTER_DESC2 desc ) => new( desc ) ;
 	public static implicit operator DXGI_ADAPTER_DESC2( in AdapterDescription2 desc ) => new( ) {
 		Description           = desc.Description,
@@ -2064,4 +2102,12 @@ public struct AdapterDescription2 {
 		GraphicsPreemptionGranularity = (DXGI_GRAPHICS_PREEMPTION_GRANULARITY)desc.GraphicsPreemptionGranularity,
 		ComputePreemptionGranularity  = (DXGI_COMPUTE_PREEMPTION_GRANULARITY)desc.ComputePreemptionGranularity
 	} ;
+	
+	
+	public static bool operator ==( in AdapterDescription2 a, in AdapterDescription2 b ) => 
+		a.Description1 == b.Description1 && a.GraphicsPreemptionGranularity == b.GraphicsPreemptionGranularity 
+										 && a.ComputePreemptionGranularity == b.ComputePreemptionGranularity ;
+	public static bool operator !=( in AdapterDescription2 a, in AdapterDescription2 b ) => 
+		a.Description1 != b.Description1 || a.GraphicsPreemptionGranularity != b.GraphicsPreemptionGranularity 
+										 || a.ComputePreemptionGranularity != b.ComputePreemptionGranularity ;
 } ;

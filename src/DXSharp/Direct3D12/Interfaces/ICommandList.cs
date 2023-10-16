@@ -5,17 +5,16 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.Direct3D12 ;
 
 
+[ProxyFor(typeof(ID3D12CommandList))]
 public interface ICommandList: IDeviceChild,
 							   IComObjectRef< ID3D12CommandList >,
-							   IUnknownWrapper< ID3D12CommandList > {
-	static Guid IUnknownWrapper< ID3D12CommandList >.InterfaceGUID => 
-		typeof(ID3D12CommandList).GUID ;
-
-	new Type ComType => typeof( ID3D12CommandList ) ;
-	new Guid InterfaceGUID => typeof( ID3D12CommandList ).GUID ;
+							   IUnknownWrapper< ID3D12CommandList >, IInstantiable {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12CommandList > ComPointer { get ; }
 	new ID3D12CommandList? COMObject => ComPointer?.Interface ;
-	new ID3D12CommandList? ComObject => ComPointer?.Interface ;
-	new ComPtr< ID3D12CommandList >? ComPointer { get ; }
+	ID3D12CommandList? IComObjectRef< ID3D12CommandList >.COMObject => COMObject ;
+	ComPtr< ID3D12CommandList >? IUnknownWrapper< ID3D12CommandList >.ComPointer => ComPointer ;
+	// ---------------------------------------------------------------------------------
 	
 	
 	/// <summary>Gets the type of the command list, such as direct, bundle, compute, or copy.</summary>
@@ -30,4 +29,10 @@ public interface ICommandList: IDeviceChild,
 	/// Learn more about this API from docs.microsoft.com</a>.
 	/// </remarks>
 	CommandListType GetType( ) => (CommandListType)COMObject!.GetType( ) ;
+	
+	
+	// ---------------------------------------------------------------------------------
+	static Type IUnknownWrapper.ComType => typeof(ID3D12CommandList) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12CommandList).GUID ;
+	// ==================================================================================
 } ;

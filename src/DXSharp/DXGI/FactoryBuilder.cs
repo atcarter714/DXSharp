@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Collections.Concurrent ;
 using System.Collections.ObjectModel ;
 using System.Diagnostics.CodeAnalysis ;
 using Windows.Win32 ;
@@ -11,10 +13,13 @@ using static DXSharp.DXSharpUtils ;
 #endregion
 namespace DXSharp.DXGI ;
 
+//internal static class WrapperManager { } ;
+
+
 //! May be overkill, but I got annoyed with generics and constraints and wanted to see how this might look ...
 //! Now that I'm looking at it, I think it's probably a worse option that just using a Type parameter and if/else, LOL ...
 
-internal enum FactoryVersion: uint {
+/*internal enum FactoryVersion: uint {
 	Factory  = 0, Factory1 = 1, Factory2 = 2, Factory3 = 3, 
 	Factory4 = 4, Factory5 = 5, Factory6 = 6, Factory7 = 7,
 } ;
@@ -89,4 +94,4 @@ internal class FactoryBuilder< T >: FactoryBuilder where T: IDXGIFactory {
 	
 	Guid _selectGuid( FactoryVersion v ) => _selectType( v ).GUID ;
 	Type _selectType( FactoryVersion v ) => DXGITypesByVersion[ v ] ;
-} ;
+} ;*/

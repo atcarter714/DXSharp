@@ -9,25 +9,27 @@ namespace DXSharp.DXGI ;
 
 
 public class Resource: DeviceSubObject, IResource {
-	//public ComPtr? ComPtrBase => ComPointer ;
-	public new IDXGIResource? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGIResource >? ComPointer { get ; protected set ; }
+	public static Type ComType => typeof( IDXGIResource ) ;
+	public static Guid InterfaceGUID => typeof( IDXGIResource ).GUID ;
 	
+	public new ComPtr< IDXGIResource >? ComPointer { get ; protected set ; }
+	public new IDXGIResource? COMObject => ComPointer?.Interface ;
 	IDXGIResource _dxgiInterface => COMObject ??
 		 throw ( ComPointer is not null && ComPointer.Disposed
 					 ? new ObjectDisposedException( nameof(OutputDuplication) )
 					 : new NullReferenceException( $"{nameof(Resource)} :: " +
 									$"internal {nameof(IDXGIResource)} null reference." ) ) ;
 	
+	
 	internal Resource( ) { }
-	public Resource( nint ptr ): base( ptr ) {
+	internal Resource( nint ptr ): base( ptr ) => 
 		ComPointer = new( ptr ) ;
-	}
-	public Resource( IDXGIResource dxgiObj ): base( dxgiObj ) {
+	internal Resource( IDXGIResource dxgiObj ): base( dxgiObj ) => 
 		ComPointer = new( dxgiObj ) ;
-	}
+	internal Resource( ComPtr< IDXGIResource > otherPtr ) => 
+		ComPointer = otherPtr ;
 	
-	
+
 	public void GetEvictionPriority( out uint pEvictionPriority ) => 
 		_dxgiInterface.GetEvictionPriority( out pEvictionPriority ) ;
 
@@ -51,5 +53,5 @@ public class Resource: DeviceSubObject, IResource {
 			pSharedHandle = new( handle ) ;
 		}
 	}
-	
+
 } ;

@@ -1,35 +1,26 @@
 ﻿#region Using Directives
-using System.Buffers ;
-using System.Runtime.CompilerServices ;
-using System.Runtime.InteropServices ;
-using Windows.System ;
-using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using Windows.Win32.Security ;
-using DXSharp.Direct3D12.Objects ;
+using System.Runtime.InteropServices ;
+using Windows.Win32.Foundation ;
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
-using DXSharp.Windows.Win32.Helpers ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
-/// <summary>Wrapper interface for the native ID3D12Device COM interface</summary>
-[Wrapper( typeof(ID3D12Device) )]
+/// <summary>Proxy interface for the native ID3D12Device COM interface</summary>
+[ProxyFor( typeof(ID3D12Device) )]
 public interface IDevice: IObject,
 						  IComObjectRef< ID3D12Device >,
 						  IUnknownWrapper< ID3D12Device > {
-	static Guid IUnknownWrapper< ID3D12Object >.InterfaceGUID => typeof(ID3D12Object).GUID ;
-	static Guid IUnknownWrapper< ID3D12Device >.InterfaceGUID => typeof(ID3D12Device).GUID ;
-	
-	
-	new Type ComType => typeof( ID3D12Device ) ;
-	new Guid InterfaceGUID => typeof( ID3D12Device ).GUID ;
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device > ComPointer { get ; }
 	new ID3D12Device? COMObject => ComPointer?.Interface ;
-	new ID3D12Device? ComObject => ComPointer?.Interface ;
-	new ComPtr< ID3D12Device >? ComPointer { get ; }
+	ID3D12Device? IComObjectRef< ID3D12Device >.COMObject => COMObject ;
+	ComPtr< ID3D12Device >? IUnknownWrapper< ID3D12Device >.ComPointer => ComPointer ;
+	// ==================================================================================
 	
 	
 	/// <summary>Reports the number of physical adapters (nodes) that are associated with this device.</summary>
@@ -39,7 +30,7 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getnodecount">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	uint GetNodeCount( ) => ComObject!.GetNodeCount( ) ;
+	uint GetNodeCount( ) => COMObject!.GetNodeCount( ) ;
 	
 	/// <summary>Creates a command queue.</summary>
 	/// <param name="pDesc">
@@ -62,7 +53,7 @@ public interface IDevice: IObject,
 	void CreateCommandQueue( in CommandQueueDescription pDesc,
 								in Guid riid, out ICommandQueue ppCommandQueue ) {
 		unsafe { fixed ( void* descPtr = &pDesc, riidPtr = &riid ) {
-				ComObject!.CreateCommandQueue( (D3D12_COMMAND_QUEUE_DESC*)descPtr,
+				COMObject!.CreateCommandQueue( (D3D12_COMMAND_QUEUE_DESC*)descPtr,
 											   (Guid *)riidPtr, out var ppvCommandQueue ) ;
 				ppCommandQueue = (ICommandQueue)ppvCommandQueue ;
 			}
@@ -90,7 +81,7 @@ public interface IDevice: IObject,
 	void CreateCommandAllocator( CommandListType type, in Guid riid,
 									out ICommandAllocator ppCommandAllocator ) {
 		unsafe { fixed ( Guid* riidPtr = &riid ) {
-				ComObject!.CreateCommandAllocator( (D3D12_COMMAND_LIST_TYPE)type, riidPtr,
+				COMObject!.CreateCommandAllocator( (D3D12_COMMAND_LIST_TYPE)type, riidPtr,
 														out var ppvCommandAllocator ) ;
 				var _allocator = (ID3D12CommandAllocator)ppvCommandAllocator ;
 				CommandAllocator allocator = new( _allocator ) ;
@@ -121,7 +112,7 @@ public interface IDevice: IObject,
 	void CreateGraphicsPipelineState( in GraphicsPipelineStateDescription pDesc, in Guid riid,
 									  out IPipelineState ppPipelineState ) {
 		unsafe { fixed ( Guid* riidPtr = &riid ) {
-				ComObject!.CreateGraphicsPipelineState( pDesc, riidPtr, 
+				COMObject!.CreateGraphicsPipelineState( pDesc, riidPtr, 
 														out var ppvPipelineState ) ;
 				ppPipelineState = (IPipelineState)ppvPipelineState ;
 			}
@@ -1062,7 +1053,7 @@ public interface IDevice: IObject,
 			Guid _guid = riid ;
 			fixed ( CommandSignatureDescription* _ppDesc = &pDesc ) {
 				COMObject!.CreateCommandSignature( (D3D12_COMMAND_SIGNATURE_DESC *)_ppDesc, 
-												  pRootSignature.ComObject, &_guid, 
+												  pRootSignature.COMObject, &_guid, 
 												  out var signature ) ;
 				ppvCommandSignature = new
 					CommandSignature( (ID3D12CommandSignature)signature ) ;
@@ -1140,6 +1131,12 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getadapterluid#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	Luid GetAdapterLuid( ) => COMObject!.GetAdapterLuid( ) ;
+	
+	
+	// ---------------------------------------------------------------------------------
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device).GUID ;
+	// ==================================================================================
 } ;
 
 

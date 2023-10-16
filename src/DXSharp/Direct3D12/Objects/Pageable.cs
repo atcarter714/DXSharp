@@ -20,8 +20,8 @@ public abstract class Pageable: DeviceChild, IPageable {
 	protected Pageable( ID3D12Pageable child ): base( child ) => 
 		ComPointer = new( child ) ;
 	protected Pageable( ComPtr< IUnknown > childPtr ):
-		base( childPtr.Interface as ID3D12Pageable ?? throw new InvalidCastException() ) => 
-		ComPointer = (ComPtr< ID3D12Pageable >?)childPtr ?? throw new InvalidCastException() ;
+		base( childPtr.Interface as ID3D12Pageable ?? throw new InvalidCastException( ) ) => 
+		ComPointer = (ComPtr< ID3D12Pageable >?)childPtr ?? throw new InvalidCastException( ) ;
 } ;
 
 	//public override ComPtr? ComPtrBase => ComPointer ;

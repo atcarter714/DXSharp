@@ -9,55 +9,26 @@ namespace DXSharp.DXGI ;
 
 /// <summary>Wrapper interface for the native IDXGIObject COM interface</summary>
 public abstract class Object: DXComObject, IObject {
+	//public static Guid InterfaceGUID => typeof( IDXGIObject ).GUID ;
+	public virtual ComPtr< IDXGIObject >? ComPointer { get ; protected set ; }
+	public nint PointerToIUnknown => ComPointer?.BaseAddress ?? 0x0000 ;
+	public IDXGIObject? COMObject => ComPointer?.Interface ;
+	public override ComPtr? ComPtrBase => ComPointer ;
 	
-	protected Object( ) => this.ComPointer = new( ) ;
-	protected Object( IDXGIObject dxgiObject ) {
-		ArgumentNullException.ThrowIfNull( dxgiObject, nameof(dxgiObject) ) ;
-		this.ComPointer = new( dxgiObject ) ;
-		if ( this.ComPointer is not { Disposed: false } ) throw new
-			COMException( $"DXGI.Object.Create( {dxgiObject} ): " +
-				$"Unable to initialize COM object reference from the given address!" ) ;
-	}
-	protected Object( nint iUnknownPtr ) {
-		if ( iUnknownPtr is 0 ) throw new
-			ArgumentNullException( nameof(iUnknownPtr),
-		string.Format( LibResources.CantBeNull, nameof(iUnknownPtr) ) ) ;
-		
-		var dxgiObj = COMUtility.GetDXGIObject< IDXGIObject >( iUnknownPtr ) ;
-		this.ComPointer = new( dxgiObj! ) ;
-		
-		if ( this.ComPointer.Interface is null ) throw new
-			COMException( $"DXGI.Object.Create( {iUnknownPtr} ): " +
-				$"Unable to initialize COM object reference from the given address!" ) ;
-	}
-	protected Object( object obj ) {
-		ArgumentNullException
-			.ThrowIfNull( string.Format(LibResources.CantBeNull, 
-										nameof(obj)), nameof(obj) ) ;
-		var dxgiObj = COMUtility.GetIUnknownForObject( obj ) ;
-		this.ComPointer = new( dxgiObj! ) ;
-		
-		if ( this.ComPointer is not { Disposed: false } ) throw new
-			COMException( $"DXGI.Object.Create( {obj} ): " +
-				$"Unable to initialize COM object reference from the given address!" ) ;
-	}
-	
-	public ComPtr< IDXGIObject >? ComPointer { get ; init ; }
-	//IDXGIObject? _interface => ComPointer?.Interface ;
 	
 	public uint AddRef( ) => this.ComPointer?.Interface?.AddRef( ) ?? 0U ;
 	public uint Release( ) => this.ComPointer?.Interface?.Release( ) ?? 0U ;
 	
 	
-	
-	protected virtual void _throwIfDestroyed( ) {
+	/*protected virtual void _throwIfDestroyed( ) {
 		if ( ComPointer is null || ComPointer.Disposed || ComPointer.Interface is null )
 			throw new
 				ObjectDisposedException( nameof( Object ), $"{nameof( Object )} :: " + 
 							$"Internal object \"{nameof( ComPointer )}\" is destroyed/null." ) ;
-	}
+	}*/
 	
-	public static IObject ConstructInstance< TObject, TInterface >( TInterface pComObj )
+	
+	/*public static IObject ConstructInstance< TObject, TInterface >( TInterface pComObj )
 		where TObject: class, IObject, IUnknownWrapper< TInterface > where TInterface: IDXGIObject {
 		return TObject.ConstructInstance< TObject, TInterface >( pComObj ) ;
 	}
@@ -71,7 +42,9 @@ public abstract class Object: DXComObject, IObject {
 		return
 			(T2)T2.ConstructInstance< T2, I2 >
 				( (I2)( (IDXGIObject)( wrapper.ComPointer?.Interface )! ) ) ;
-	}
+	}*/
+
+	
 } ;
 
 
@@ -93,7 +66,6 @@ public abstract class Object: DXComObject, IObject {
 	
 /*public new static TInterface Instantiate< TInterface >( )
 	where TInterface: class, IDXCOMObject => TInterface.Instantiate< TInterface >( ) ;*/
-
 	
 /*public override void GetPrivateData< TData >( out uint pDataSize, nint pData ) where TData: unmanaged {
 	_throwIfDestroyed( ) ;

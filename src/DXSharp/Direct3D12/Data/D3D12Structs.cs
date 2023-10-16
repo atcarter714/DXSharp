@@ -14,7 +14,7 @@ namespace DXSharp.Direct3D12 ;
 
 
 [StructLayout(LayoutKind.Sequential),
- ProxyFor(typeof(D3D12_BOX))]
+ EquivalentOf(typeof(D3D12_BOX))]
 public struct Box {
 	/// <summary>The x position of the left hand side of the box.</summary>
 	public uint left ;
@@ -37,7 +37,7 @@ public struct Box {
 
 
 [StructLayout(LayoutKind.Sequential),
- ProxyFor(typeof(D3D12_COMMAND_QUEUE_DESC))]
+ EquivalentOf(typeof(D3D12_COMMAND_QUEUE_DESC))]
 public struct CommandQueueDescription {
 	public CommandListType Type ;
 	public int Priority ;
@@ -46,7 +46,7 @@ public struct CommandQueueDescription {
 }
 
 [StructLayout(LayoutKind.Sequential),
- ProxyFor(typeof(D3D12_TILED_RESOURCE_COORDINATE))]
+ EquivalentOf(typeof(D3D12_TILED_RESOURCE_COORDINATE))]
 public struct TiledResourceCoordinate {
 	/// <summary>The x-coordinate of the tiled resource.</summary>
 	public uint X;
@@ -57,13 +57,13 @@ public struct TiledResourceCoordinate {
 	
 	/// <summary>
 	/// <para>The index of the subresource for the tiled resource. For mipmaps that use nonstandard tiling, or are packed, or both use nonstandard tiling and are packed, any subresource value that indicates any of the packed mipmaps all refer to the same tile. Additionally, the X coordinate is used to indicate a tile within the packed mip region, rather than a logical region of a single subresource. The Y and Z coordinates must be zero.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_tiled_resource_coordinate#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_tiled_resource_coordinate#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint Subresource ;
 }
 
 [StructLayout(LayoutKind.Sequential),
- ProxyFor(typeof(D3D12_TILE_REGION_SIZE))]
+ EquivalentOf(typeof(D3D12_TILE_REGION_SIZE))]
 public struct TileRegionSize {
 	/// <summary>The number of tiles in the tiled region.</summary>
 	public uint NumTiles ;
@@ -75,7 +75,7 @@ public struct TileRegionSize {
 	/// <para>If <b>TRUE</b>, the runtime uses the <b>Width</b>, <b>Height</b>, and <b>Depth</b> members to define the region. In this case,  <b>NumTiles</b> should be equal to <b>Width</b> *  <b>Height</b> * <b>Depth</b>. If <b>FALSE</b>, the runtime ignores the <b>Width</b>, <b>Height</b>, and <b>Depth</b> members and uses the <b>NumTiles</b> member to traverse tiles in the resource linearly across x, then y, then z (as applicable) and then spills over mipmaps/arrays in subresource order.  For example, use this technique to map an entire resource at once.</para>
 	/// <para>Regardless of whether you specify <b>TRUE</b> or <b>FALSE</b> for <b>UseBox</b>, you use a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_tiled_resource_coordinate">D3D12_TILED_RESOURCE_COORDINATE</a> structure to specify the starting location for the region within the resource as a separate parameter outside of this structure by using x, y, and z coordinates.</para>
 	/// <para>When the region includes mipmaps that are packed with nonstandard tiling, <b>UseBox</b> must be <b>FALSE</b> because tile dimensions are not standard and the app only knows a count of how many tiles are consumed by the packed area, which is per array slice.  The corresponding (separate) starting location parameter uses x to offset into the flat range of tiles in this case, and y and z coordinates must each be 0.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_tile_region_size#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_tile_region_size#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public BOOL UseBox ;
 	/// <summary>The width of the tiled region, in tiles. Used for buffer and 1D, 2D, and 3D textures.</summary>
@@ -87,7 +87,7 @@ public struct TileRegionSize {
 }
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_HEAP_DESC ) )]
+ EquivalentOf( typeof( D3D12_HEAP_DESC ) )]
 public struct HeapDescription {
 	/// <summary>
 	/// <para>The size, in bytes, of the heap. To avoid wasting memory, applications should pass <i>SizeInBytes</i> values
@@ -109,13 +109,13 @@ public struct HeapDescription {
 	/// <para>The alignment value for the heap.  Valid values:</para>
 	/// <para></para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public ulong Alignment ;
 
 	/// <summary>
 	/// <para>A combination of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_heap_flags">D3D12_HEAP_FLAGS</a>-typed values that are combined by using a bitwise-OR operation. The resulting value identifies heap options. When creating heaps to support adapters with resource heap tier 1, an application must choose some flags.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public D3D12_HEAP_FLAGS Flags ;
 	
@@ -136,7 +136,7 @@ public struct HeapDescription {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_HEAP_PROPERTIES ) )]
+ EquivalentOf( typeof( D3D12_HEAP_PROPERTIES ) )]
 public struct HeapProperties {
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type">D3D12_HEAP_TYPE</a>-typed value that specifies the type of heap.</summary>
 	public HeapType Type ;
@@ -149,13 +149,13 @@ public struct HeapProperties {
 
 	/// <summary>
 	/// <para>For multi-adapter operation, this indicates the node where the resource should be created. Exactly one bit of this UINT must be set. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>. Passing zero is equivalent to passing one, in order to simplify the usage of single-GPU adapters.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_properties#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_properties#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint CreationNodeMask ;
 
 	/// <summary>
 	/// <para>For multi-adapter operation, this indicates the set of nodes where the resource is visible. <i>VisibleNodeMask</i> must have the same bit set that is set in <i>CreationNodeMask</i>. <i>VisibleNodeMask</i> can *also* have additional bits set for cross-node resources, but doing so can potentially reduce performance for resource accesses, so you should do so only when needed. Passing zero is equivalent to passing one, in order to simplify the usage of single-GPU adapters.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_properties#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_properties#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint VisibleNodeMask ;
 	
@@ -177,7 +177,7 @@ public struct HeapProperties {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_TILE_SHAPE ) )]
+ EquivalentOf( typeof( D3D12_TILE_SHAPE ) )]
 public struct TileShape {
 	/// <summary>The width in texels of the tile.</summary>
 	public uint WidthInTexels ;
@@ -190,7 +190,7 @@ public struct TileShape {
 } ;
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_PACKED_MIP_INFO ) )]
+ EquivalentOf( typeof( D3D12_PACKED_MIP_INFO ) )]
 public struct PackedMipInfo {
 	/// <summary>The number of standard mipmaps in the tiled resource.</summary>
 	public byte NumStandardMips;
@@ -199,21 +199,21 @@ public struct PackedMipInfo {
 	/// <para>The number of packed mipmaps in the tiled resource.</para>
 	/// <para>This number starts from the least detailed mipmap (either sharing tiles or using non standard tile layout). This number is 0 if no such packing is in the resource. For array surfaces, this value is the number of mipmaps that are packed for a given array slice where each array slice repeats the same packing.</para>
 	/// <para>On Tier_2 tiled resources hardware, mipmaps that fill at least one standard shaped tile in all dimensions are not allowed to be included in the set of packed mipmaps. On Tier_1 hardware, mipmaps that are an integer multiple of one standard shaped tile in all dimensions are not allowed to be included in the set of packed mipmaps. Mipmaps with at least one dimension less than the standard tile shape may or may not be packed. When a given mipmap needs to be packed, all coarser mipmaps for a given array slice are considered packed as well.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_packed_mip_info#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_packed_mip_info#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public byte NumPackedMips;
 
 	/// <summary>
 	/// <para>The number of tiles for the packed mipmaps in the tiled resource.</para>
 	/// <para>If there is no packing, this value is meaningless and is set to 0. Otherwise, it is set to the number of tiles that are needed to represent the set of packed mipmaps. The pixel layout within the packed mipmaps is hardware specific. If apps define only partial mappings for the set of tiles in packed mipmaps, read and write behavior is vendor specific and undefined. For arrays, this value is only the count of packed mipmaps within the subresources for each array slice.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_packed_mip_info#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_packed_mip_info#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint NumTilesForPackedMips;
 
 	/// <summary>
 	/// <para>The offset of the first packed tile for the resource in the overall range of tiles. If <b>NumPackedMips</b> is 0, this value is meaningless and is 0. Otherwise, it is the offset of the first packed tile for the resource in the overall range of tiles for the resource. A value of 0 for <b>StartTileIndexInOverallResource</b> means the entire resource is packed. For array surfaces, this is the offset for the tiles that contain the packed mipmaps for the first array slice. Packed mipmaps for each array slice in arrayed surfaces are at this offset past the beginning of the tiles for each array slice.</para>
 	/// <para><div class="alert"><b>Note</b>  The number of overall tiles, packed or not, for a given array slice is simply the total number of tiles for the resource divided by the resource's array size, so it is easy to locate the range of tiles for any given array slice, out of which <b>StartTileIndexInOverallResource</b> identifies which of those are packed. </div> <div> </div></para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_packed_mip_info#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_packed_mip_info#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint StartTileIndexInOverallResource;
 	
@@ -221,7 +221,7 @@ public struct PackedMipInfo {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_SUBRESOURCE_TILING ) )]
+ EquivalentOf( typeof( D3D12_SUBRESOURCE_TILING ) )]
 public struct SubresourceTiling {
 	/// <summary>The width in tiles of the subresource.</summary>
 	public uint WidthInTiles;
@@ -254,14 +254,14 @@ public struct SubresourceTiling {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_RANGE ) )]
+ EquivalentOf( typeof( D3D12_RANGE ) )]
 public struct Range {
 	/// <summary>The offset, in bytes, denoting the beginning of a memory range.</summary>
 	public nuint Begin ;
 
 	/// <summary>
 	/// <para>The offset, in bytes, denoting the end of a memory range. <b>End</b> is one-past-the-end.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_range#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_range#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public nuint End ;
 } ;
@@ -269,7 +269,7 @@ public struct Range {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_RESOURCE_DESC ) )]
+ EquivalentOf( typeof( D3D12_RESOURCE_DESC ) )]
 public struct ResourceDescription {
 	/// <summary>One member of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_dimension">D3D12_RESOURCE_DIMENSION</a>, specifying the dimensions of the resource (for example, D3D12_RESOURCE_DIMENSION_TEXTURE1D), or whether it is a buffer ((D3D12_RESOURCE_DIMENSION_BUFFER).</summary>
 	public ResourceDimension Dimension ;
@@ -361,7 +361,7 @@ public struct ResourceDescription {
 
 /// <summary>Describes the rasterizer state.</summary>
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof(D3D12_RASTERIZER_DESC) )]
+ EquivalentOf( typeof(D3D12_RASTERIZER_DESC) )]
 public struct RasterizerDescription {
 	/// <summary>
 	/// A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_fill_mode">D3D12_FILL_MODE</a>-typed
@@ -435,7 +435,7 @@ public struct RasterizerDescription {
 	/// 0 indicates that the sample count is not forced.
 	/// <b>Note</b>  If you want to render with <b>ForcedSampleCount</b> set to 1 or greater, you must follow these guidelines: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint ForcedSampleCount ;
 
@@ -505,14 +505,14 @@ public struct RasterizerDescription {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_INPUT_ELEMENT_DESC ) )]
+ EquivalentOf( typeof( D3D12_INPUT_ELEMENT_DESC ) )]
 public struct InputElementDescription {
 	/// <summary>The HLSL semantic associated with this element in a shader input-signature. See <a href="https://docs.microsoft.com/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics">HLSL Semantics</a> for more info.</summary>
 	public PCSTR SemanticName ;
 
 	/// <summary>
 	/// <para>The semantic index for the element. A semantic index modifies a semantic, with an integer index number. A semantic index is only needed in a case where there is more than one element with the same semantic. For example, a 4x4 matrix would have four components each with the semantic name <b>matrix</b>, however each of the four component would have different semantic indices (0, 1, 2, and 3).</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint SemanticIndex ;
 
@@ -524,7 +524,7 @@ public struct InputElementDescription {
 
 	/// <summary>
 	/// <para>Optional. Offset, in bytes, to this element from the start of the vertex. Use D3D12_APPEND_ALIGNED_ELEMENT (0xffffffff) for convenience to define the current element directly after the previous one, including any packing if necessary.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint AlignedByteOffset ;
 
@@ -533,14 +533,14 @@ public struct InputElementDescription {
 
 	/// <summary>
 	/// <para>The number of instances to draw using the same per-instance data before advancing in the buffer by one element. This value must be 0 for an element that contains per-vertex data (the slot class is set to the D3D12_INPUT_PER_VERTEX_DATA member of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_input_classification">D3D12_INPUT_CLASSIFICATION</a>).</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint InstanceDataStepRate ;
 } ;
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_INPUT_LAYOUT_DESC ) )]
+ EquivalentOf( typeof( D3D12_INPUT_LAYOUT_DESC ) )]
 public struct InputLayoutDescription {
 	/// <summary>
 	/// An array of <see cref="InputLayoutDescription"/> structures that describe the input data for the input-assembler stage.
@@ -637,42 +637,45 @@ public struct InputLayoutDescription {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_SO_DECLARATION_ENTRY ) )]
+ EquivalentOf( typeof( D3D12_SO_DECLARATION_ENTRY ) )]
 public struct SODeclarationEntry {
 	/// <summary>Zero-based, stream number.</summary>
 	public uint Stream ;
 
 	/// <summary>
 	/// <para>Type of output element; possible values include: <b>"POSITION"</b>, <b>"NORMAL"</b>, or <b>"TEXCOORD0"</b>. Note that if <b>SemanticName</b> is <b>NULL</b> then <b>ComponentCount</b> can be greater than 4 and the described entry will be a gap in the stream out where no data will be written.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public PCSTR SemanticName ;
 
-	/// <summary>Output element's zero-based index. Use, for example, if you have more than one texture coordinate stored in each vertex.</summary>
+	/// <summary>
+	/// Output element's zero-based index. Use, for example, if you have more than one
+	/// texture coordinate stored in each vertex.
+	/// </summary>
 	public uint SemanticIndex ;
-
+	
 	/// <summary>
 	/// <para>The component of the entry to begin writing out to. Valid values are 0 to 3. For example, if you only wish to output to the y and z components of a position, <b>StartComponent</b> is 1 and <b>ComponentCount</b> is 2.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public byte StartComponent ;
 
 	/// <summary>
 	/// <para>The number of components of the entry to write out to. Valid values are 1 to 4. For example, if you only wish to output to the y and z components of a position, <b>StartComponent</b> is 1 and <b>ComponentCount</b> is 2.  Note that if <b>SemanticName</b> is <b>NULL</b> then <b>ComponentCount</b> can be greater than 4 and the described entry will be a gap in the stream out where no data will be written.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public byte ComponentCount ;
 
 	/// <summary>
 	/// <para>The associated stream output buffer that is bound to the pipeline. The valid range for <b>OutputSlot</b> is 0 to 3.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public byte OutputSlot ;
 } ;
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_STREAM_OUTPUT_DESC ) )]
+ EquivalentOf( typeof( D3D12_STREAM_OUTPUT_DESC ) )]
 public struct StreamOuputDescription {
 	/// <summary>An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_so_declaration_entry">D3D12_SO_DECLARATION_ENTRY</a> structures. Can't be <b>NULL</b> if <b>NumEntries</b> &gt; 0.</summary>
 	public unsafe SODeclarationEntry* pSODeclaration ;
@@ -733,7 +736,7 @@ public struct StreamOuputDescription {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_GRAPHICS_PIPELINE_STATE_DESC ) )]
+ EquivalentOf( typeof( D3D12_GRAPHICS_PIPELINE_STATE_DESC ) )]
 public struct GraphicsPipelineStateDescription {
 	/// <summary>A pointer to the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12rootsignature">ID3D12RootSignature</a> object.</summary>
 	[MarshalAs(UnmanagedType.Interface)] public ID3D12RootSignature pRootSignature ;
@@ -776,7 +779,7 @@ public struct GraphicsPipelineStateDescription {
 	public IndexBufferStripCutValue IBStripCutValue;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_primitive_topology_type">D3D12_PRIMITIVE_TOPOLOGY_TYPE</a>-typed value for the type of primitive, and ordering of the primitive data.</summary>
-	public PrimitiveTopology PrimitiveTopologyType;
+	public PrimitiveTopologyType PrimitiveTopologyType;
 
 	/// <summary>The number of render target formats in the  <b>RTVFormats</b> member.</summary>
 	public uint NumRenderTargets;
@@ -792,7 +795,7 @@ public struct GraphicsPipelineStateDescription {
 
 	/// <summary>
 	/// <para>For single GPU operation, set this to zero. If there are multiple GPU nodes, set bits to identify the nodes (the  device's physical adapters) for which the graphics pipeline state is to apply. Each bit in the mask corresponds to a single node. Refer to <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_graphics_pipeline_state_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_graphics_pipeline_state_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint NodeMask ;
 
@@ -816,7 +819,7 @@ public struct GraphicsPipelineStateDescription {
 		this.DepthStencilState     = desc.DepthStencilState ;
 		this.InputLayout           = desc.InputLayout ;
 		this.IBStripCutValue       = (IndexBufferStripCutValue)desc.IBStripCutValue ;
-		this.PrimitiveTopologyType = (PrimitiveTopology)desc.PrimitiveTopologyType ;
+		this.PrimitiveTopologyType = (PrimitiveTopologyType)desc.PrimitiveTopologyType ;
 		this.NumRenderTargets      = desc.NumRenderTargets ;
 		this.RTVFormats            = desc.RTVFormats ;
 		this.DSVFormat             = (Format)desc.DSVFormat ;
@@ -854,7 +857,7 @@ public struct GraphicsPipelineStateDescription {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_COMPUTE_PIPELINE_STATE_DESC ) )]
+ EquivalentOf( typeof( D3D12_COMPUTE_PIPELINE_STATE_DESC ) )]
 public struct ComputePipelineStateDescription {
 	/// <summary>A pointer to the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12rootsignature">ID3D12RootSignature</a> object.</summary>
 	public IRootSignature pRootSignature ;
@@ -864,7 +867,7 @@ public struct ComputePipelineStateDescription {
 
 	/// <summary>
 	/// <para>For single GPU operation, set this to zero. If there are multiple GPU nodes, set bits to identify the nodes (the  device's physical adapters) for which the compute pipeline state is to apply. Each bit in the mask corresponds to a single node. Refer to <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_compute_pipeline_state_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_compute_pipeline_state_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint NodeMask ;
 
@@ -877,7 +880,7 @@ public struct ComputePipelineStateDescription {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_CACHED_PIPELINE_STATE ) )]
+ EquivalentOf( typeof( D3D12_CACHED_PIPELINE_STATE ) )]
 public struct CachedPipelineState {
 	/// <summary>Specifies pointer that references the memory location of the cache.</summary>
 	public nint pCachedBlob ;
@@ -911,7 +914,7 @@ public struct CachedPipelineState {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_SHADER_BYTECODE ) )]
+ EquivalentOf( typeof( D3D12_SHADER_BYTECODE ) )]
 public struct ShaderBytecode {
 	/// <summary>A pointer to a memory block that contains the shader data.</summary>
 	public nint pShaderBytecode ;
@@ -936,7 +939,7 @@ public struct ShaderBytecode {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_DESCRIPTOR_HEAP_DESC ) )]
+ EquivalentOf( typeof( D3D12_DESCRIPTOR_HEAP_DESC ) )]
 public struct DescriptorHeapDescription {
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_heap_type">D3D12_DESCRIPTOR_HEAP_TYPE</a>-typed value that specifies the types of descriptors in the heap.</summary>
 	public DescriptorHeapType Type ;
@@ -949,7 +952,7 @@ public struct DescriptorHeapDescription {
 
 	/// <summary>
 	/// <para>For single-adapter operation, set this to zero. If there are multiple adapter nodes, set a bit to identify the node (one of the device's physical adapters) to which the descriptor heap applies. Each bit in the mask corresponds to a single node. Only one bit must be set. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_descriptor_heap_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_descriptor_heap_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint NodeMask ;
 	
@@ -986,14 +989,14 @@ public struct DescriptorHeapDescription {
 // -------------------------------------------------------
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_CPU_DESCRIPTOR_HANDLE ) )]
+ EquivalentOf( typeof( D3D12_CPU_DESCRIPTOR_HANDLE ) )]
 public struct CPUDescriptorHandle {
 	/// <summary>The address of  the descriptor.</summary>
 	public nuint ptr ;
 } ;
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_GPU_DESCRIPTOR_HANDLE ) )]
+ EquivalentOf( typeof( D3D12_GPU_DESCRIPTOR_HANDLE ) )]
 public struct GPUDescriptorHandle {
 	/// <summary>The address of the descriptor.</summary>
 	public ulong ptr ;
@@ -1003,7 +1006,7 @@ public struct GPUDescriptorHandle {
 
 
 [StructLayout(LayoutKind.Sequential),
-	ProxyFor(typeof(D3D12_SAMPLER_DESC))]
+	EquivalentOf(typeof(D3D12_SAMPLER_DESC))]
 public struct SamplerDescription {
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">D3D12_FILTER</a>-typed value that specifies the filtering method to use when sampling a texture.</summary>
 	public Filter Filter;
@@ -1034,28 +1037,28 @@ public struct SamplerDescription {
 
 
 [StructLayout(LayoutKind.Sequential),
- ProxyFor(typeof(D3D12_RESOURCE_ALLOCATION_INFO))]
+ EquivalentOf(typeof(D3D12_RESOURCE_ALLOCATION_INFO))]
 public struct ResourceAllocationInfo {
 	/// <summary>
 	/// <para>Type: **[UINT64](/windows/win32/WinProg/windows-data-types)** The size, in bytes, of the resource.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public ulong SizeInBytes;
 
 	/// <summary>
 	/// <para>Type: **[UINT64](/windows/win32/WinProg/windows-data-types)** The alignment value for the resource; one of 4KB (4096), 64KB (65536), or 4MB (4194304) alignment.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public ulong Alignment;
 } ;
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_CLEAR_VALUE ) )]
+ EquivalentOf( typeof( D3D12_CLEAR_VALUE ) )]
 public struct ClearValue {
 	/// <summary>
 	/// <para>Specifies one member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a> enum. The format of the commonly cleared color follows the same validation rules as a view/ descriptor creation. In general, the format of the clear color can be any format in the same typeless group that the resource format belongs to. This <i>Format</i> must match the format of the view used during the clear operation. It indicates whether the <i>Color</i> or the <i>DepthStencil</i> member is valid and how to convert the values for usage with the resource.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_clear_value#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_clear_value#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public Format Format ;
 
@@ -1069,7 +1072,7 @@ public struct ClearValue {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_DEPTH_STENCIL_VALUE ) )]
+ EquivalentOf( typeof( D3D12_DEPTH_STENCIL_VALUE ) )]
 public struct DepthStencilValue {
 	/// <summary>Specifies the depth value.</summary>
 	public float Depth;
@@ -1083,7 +1086,7 @@ public struct BlendDescription {
 
 	/// <summary>
 	/// <para>Specifies whether to enable independent blending in simultaneous render targets. Set to <b>TRUE</b> to enable independent blending. If set to <b>FALSE</b>, only the <b>RenderTarget</b>[0] members are used; <b>RenderTarget</b>[1..7] are ignored. See the **Remarks** section for restrictions.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_blend_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_blend_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public BOOL IndependentBlendEnable ;
 
@@ -1121,17 +1124,17 @@ public struct BlendDescription {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_RENDER_TARGET_BLEND_DESC ) )]
+ EquivalentOf( typeof( D3D12_RENDER_TARGET_BLEND_DESC ) )]
 public struct RTBlendDescription {
 	/// <summary>
 	/// <para>Specifies whether to enable (or disable) blending. Set to <b>TRUE</b> to enable blending. > [!NOTE] > It's not valid for *LogicOpEnable* and *BlendEnable* to both be **TRUE**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public BOOL BlendEnable ;
 
 	/// <summary>
 	/// <para>Specifies whether to enable (or disable) a logical operation. Set to <b>TRUE</b> to enable a logical operation. > [!NOTE] > It's not valid for *LogicOpEnable* and *BlendEnable* to both be **TRUE**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public BOOL LogicOpEnable ;
 
@@ -1204,7 +1207,7 @@ public struct RTBlendDescription {
 } ;
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( __D3D12_RENDER_TARGET_BLEND_DESC_8 ) )]
+ EquivalentOf( typeof( __D3D12_RENDER_TARGET_BLEND_DESC_8 ) )]
 public struct RTBlendDescription8 {
 	const int SpanLength = 8 ;
 	
@@ -1277,17 +1280,17 @@ public struct RTBlendDescription8 {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_PLACED_SUBRESOURCE_FOOTPRINT ) )]
+ EquivalentOf( typeof( D3D12_PLACED_SUBRESOURCE_FOOTPRINT ) )]
 public struct PlacedSubresourceFootprint {
 	/// <summary>
 	/// <para>The offset of the subresource within the parent resource, in bytes. The offset between the start of the parent resource and this subresource.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public ulong Offset ;
 
 	/// <summary>
 	/// <para>The format, width, height, depth, and row-pitch of the subresource, as a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_subresource_footprint">D3D12_SUBRESOURCE_FOOTPRINT</a> structure.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public SubresourceFootprint Footprint ;
 	
@@ -1320,7 +1323,7 @@ public struct PlacedSubresourceFootprint {
 } ;
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_SUBRESOURCE_FOOTPRINT ) )]
+ EquivalentOf( typeof( D3D12_SUBRESOURCE_FOOTPRINT ) )]
 public struct SubresourceFootprint {
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>-typed value that  specifies the viewing format.</summary>
 	public Format Format ;
@@ -1333,7 +1336,7 @@ public struct SubresourceFootprint {
 
 	/// <summary>
 	/// <para>The row pitch, or width, or physical size, in bytes, of the subresource data. This must be a multiple of D3D12_TEXTURE_DATA_PITCH_ALIGNMENT (256), and must be greater than or equal to the size of the data within a row.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_subresource_footprint#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_subresource_footprint#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint RowPitch ;
 	
@@ -1365,7 +1368,7 @@ public struct SubresourceFootprint {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_QUERY_HEAP_DESC ) )]
+ EquivalentOf( typeof( D3D12_QUERY_HEAP_DESC ) )]
 public struct QueryHeapDescription {
 	/// <summary>Specifies one member of <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_heap_type">D3D12_QUERY_HEAP_TYPE</a>.</summary>
 	public QueryHeapType Type ;
@@ -1375,14 +1378,14 @@ public struct QueryHeapDescription {
 
 	/// <summary>
 	/// <para>For single GPU operation, set this to zero. If there are multiple GPU nodes, set a bit to identify the node (the  device's physical adapter) to which the query heap applies. Each bit in the mask corresponds to a single node. Only 1 bit must be set. Refer to <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_query_heap_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_query_heap_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint NodeMask ;
 } ;
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_COMMAND_SIGNATURE_DESC ) )]
+ EquivalentOf( typeof( D3D12_COMMAND_SIGNATURE_DESC ) )]
 public struct CommandSignatureDescription {
 	/// <summary>Specifies the size of each command in the drawing buffer, in bytes.</summary>
 	public uint ByteStride ;
@@ -1391,13 +1394,13 @@ public struct CommandSignatureDescription {
 	
 	/// <summary>
 	/// <para>An array of <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_indirect_argument_desc">D3D12_INDIRECT_ARGUMENT_DESC</a> structures, containing details of the arguments, including whether the argument is a vertex buffer, constant, constant buffer view, shader resource view, or unordered access view.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_command_signature_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_command_signature_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public unsafe D3D12_INDIRECT_ARGUMENT_DESC* pArgumentDescs ;
 
 	/// <summary>
 	/// <para>For single GPU operation, set this to zero. If there are multiple GPU nodes, set bits to identify the nodes (the  device's physical adapters) for which the command signature is to apply. Each bit in the mask corresponds to a single node. Refer to <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_command_signature_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_command_signature_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint NodeMask ;
 } ;
@@ -1408,7 +1411,7 @@ public struct CommandSignatureDescription {
 /// (<a href="https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_indirect_argument_desc">D3D12_COMMAND_SIGNATURE_DESC</a>).
 /// </summary>
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_INDIRECT_ARGUMENT_DESC ) )]
+ EquivalentOf( typeof( D3D12_INDIRECT_ARGUMENT_DESC ) )]
 public struct IndirectArgumentDescription {
 	/// <summary>A single <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_indirect_argument_type">D3D12_INDIRECT_ARGUMENT_TYPE</a> enumeration constant.</summary>
 	public IndirectArgumentType Type ;
@@ -1432,7 +1435,7 @@ public struct IndirectArgumentDescription {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_STREAM_OUTPUT_DESC ) )]
+ EquivalentOf( typeof( D3D12_STREAM_OUTPUT_DESC ) )]
 public struct StreamOutputDescription {
 	/// <summary>
 	/// An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_so_declaration_entry">D3D12_SO_DECLARATION_ENTRY</a>
@@ -1456,7 +1459,7 @@ public struct StreamOutputDescription {
 
 
 [StructLayout( LayoutKind.Sequential ),
- ProxyFor( typeof( D3D12_STREAM_OUTPUT_BUFFER_VIEW ) )]
+ EquivalentOf( typeof( D3D12_STREAM_OUTPUT_BUFFER_VIEW ) )]
 public struct StreamOutputBufferView {
 	/// <summary>
 	/// <para>A D3D12_GPU_VIRTUAL_ADDRESS (a UINT64) that points to the stream output buffer.
@@ -1493,3 +1496,119 @@ public struct StreamOutputBufferView {
 	} ;
 	public static implicit operator StreamOutputBufferView( in D3D12_STREAM_OUTPUT_BUFFER_VIEW view ) => new( view ) ;
 } ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf(typeof(D3D12_INDEX_BUFFER_VIEW))]
+public struct IndexBufferView {
+	/// <summary>
+	/// <para>The GPU virtual address of the index buffer. D3D12_GPU_VIRTUAL_ADDRESS is a typedef'd synonym of UINT64.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_index_buffer_view#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public ulong BufferLocation ;
+
+	/// <summary>The size in bytes of the index buffer.</summary>
+	public uint SizeInBytes;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>-typed value for the index-buffer format.</summary>
+	public Format Format ;
+	
+	
+	public IndexBufferView( ulong bufferLocation, uint sizeInBytes, Format format ) {
+		BufferLocation = bufferLocation ;
+		SizeInBytes = sizeInBytes ;
+		Format = format ;
+	}
+	public IndexBufferView( in D3D12_INDEX_BUFFER_VIEW view ) {
+		BufferLocation = view.BufferLocation ;
+		SizeInBytes = view.SizeInBytes ;
+		Format = (Format)view.Format ;
+	}
+	
+	public static implicit operator D3D12_INDEX_BUFFER_VIEW( in IndexBufferView view ) => new D3D12_INDEX_BUFFER_VIEW {
+			BufferLocation = view.BufferLocation,
+			SizeInBytes = view.SizeInBytes,
+			Format = ( DXGI_FORMAT )view.Format
+	} ;
+	public static implicit operator IndexBufferView( in D3D12_INDEX_BUFFER_VIEW view ) => new( view ) ;
+} ;
+
+[EquivalentOf(typeof(D3D12_VERTEX_BUFFER_VIEW))]
+public struct VertexBufferView {
+	/// <summary>Specifies a D3D12_GPU_VIRTUAL_ADDRESS that identifies the address of the buffer.</summary>
+	public ulong BufferLocation;
+
+	/// <summary>Specifies the size in bytes of the buffer.</summary>
+	public uint SizeInBytes;
+
+	/// <summary>Specifies the size in bytes of each vertex entry.</summary>
+	public uint StrideInBytes;
+	
+	
+	public VertexBufferView( ulong bufferLocation, uint sizeInBytes, uint strideInBytes ) {
+		BufferLocation = bufferLocation ;
+		SizeInBytes = sizeInBytes ;
+		StrideInBytes = strideInBytes ;
+	}
+	public VertexBufferView( in D3D12_VERTEX_BUFFER_VIEW view ) {
+		BufferLocation = view.BufferLocation ;
+		SizeInBytes = view.SizeInBytes ;
+		StrideInBytes = view.StrideInBytes ;
+	}
+	
+	public static implicit operator D3D12_VERTEX_BUFFER_VIEW( in VertexBufferView view ) => new D3D12_VERTEX_BUFFER_VIEW {
+			BufferLocation = view.BufferLocation,
+			SizeInBytes = view.SizeInBytes,
+			StrideInBytes = view.StrideInBytes
+	} ;
+	public static implicit operator VertexBufferView( in D3D12_VERTEX_BUFFER_VIEW view ) => new VertexBufferView( view ) ;
+} ;
+
+
+
+[EquivalentOf(typeof(D3D12_DISCARD_REGION))]
+public struct DiscardRegion {
+	/// <summary>The number of rectangles in the array that the <b>pRects</b> member specifies.</summary>
+	public uint NumRects ;
+	
+	/// <summary>
+	/// <para>An array of <b>D3D12_RECT</b> structures for the rectangles in the resource to discard. If <b>NULL</b>, <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-discardresource">DiscardResource</a> discards the entire resource.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_discard_region#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public unsafe Rect* pRects ;
+
+	/// <summary>Index of the first subresource in the resource to discard.</summary>
+	public uint FirstSubresource ;
+
+	/// <summary>The number of subresources in the resource to discard.</summary>
+	public uint NumSubresources ;
+	
+	// ----------------------------------------------------
+	
+	public unsafe DiscardRegion( uint numRects, Rect* rects,
+								 uint firstSubresource, uint numSubresources ) {
+		pRects = rects ;
+		NumRects = numRects ;
+		FirstSubresource = firstSubresource ;
+		NumSubresources = numSubresources ;
+	}
+	
+	public DiscardRegion( in D3D12_DISCARD_REGION desc ) {
+		unsafe { pRects = (Rect *)desc.pRects ; }
+		NumRects = desc.NumRects ;
+		FirstSubresource = desc.FirstSubresource ;
+		NumSubresources = desc.NumSubresources ;
+	}
+	
+	public static unsafe implicit operator D3D12_DISCARD_REGION( in DiscardRegion desc ) => new D3D12_DISCARD_REGION {
+			pRects = (RECT *)desc.pRects,
+			NumRects = desc.NumRects,
+			FirstSubresource = desc.FirstSubresource,
+			NumSubresources = desc.NumSubresources
+	} ;
+	public static implicit operator DiscardRegion( in D3D12_DISCARD_REGION desc ) => new DiscardRegion( desc ) ;
+} ;
+
+
+
+

@@ -4,9 +4,11 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.Direct3D12 ;
 
 
-public abstract class Object: DXComObject, IObject {
+public abstract class Object: DXComObject, 
+							  IObject {
 	public override ComPtr? ComPtrBase => ComPointer ;
-	public virtual ComPtr< ID3D12Object >? ComPointer { get ; protected set ; }
-	public nint PointerToIUnknown => ComPointer?.BaseAddress ?? 0x0000 ;
 	public ID3D12Object? COMObject => ComPointer?.Interface ;
-}
+	public nint PointerToIUnknown => ComPointer?.BaseAddress ?? 0x0000 ;
+	public virtual ComPtr< ID3D12Object >? ComPointer { get ; protected set ; }
+	
+} ;

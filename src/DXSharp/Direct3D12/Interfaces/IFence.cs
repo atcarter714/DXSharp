@@ -5,16 +5,16 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.Direct3D12 ;
 
 
-[Wrapper(typeof(ID3D12Fence))]
+[ProxyFor(typeof(ID3D12Fence))]
 public interface IFence: IPageable,
 						 IComObjectRef< ID3D12Fence >,
 						 IUnknownWrapper< ID3D12Fence > {
-	
-	new Type ComType => typeof( ID3D12Fence ) ;
-	new Guid InterfaceGUID => typeof( ID3D12Fence ).GUID ;
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Fence > ComPointer { get ; }
 	new ID3D12Fence? COMObject => ComPointer?.Interface ;
-	new ID3D12Fence? ComObject => ComPointer?.Interface ;
-	new ComPtr< ID3D12Fence >? ComPointer { get ; }
+	ID3D12Fence? IComObjectRef< ID3D12Fence >.COMObject => COMObject ;
+	ComPtr< ID3D12Fence >? IUnknownWrapper< ID3D12Fence >.ComPointer => ComPointer ;
+	// ==================================================================================
 	
 	/// <summary>Gets the current value of the fence. (ID3D12Fence.GetCompletedValue)</summary>
 	/// <returns>
@@ -53,4 +53,9 @@ public interface IFence: IPageable,
 	/// </returns>
 	/// <remarks>Use this method to set a fence value from the CPU side. Use <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-signal">ID3D12CommandQueue::Signal</a> to set a fence from the GPU side.</remarks>
 	void Signal( ulong Value ) => COMObject!.Signal( Value ) ;
+	
+	// ---------------------------------------------------------------------------------
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Fence) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Fence).GUID ;
+	// ==================================================================================
 } ;

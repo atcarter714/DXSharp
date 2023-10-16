@@ -5,8 +5,10 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.DXGI ;
 
 
-/// <summary>Helper interface for DXGI wrapper objects.</summary>
-public interface DXGIWrapper< T_DXGI >: IUnknownWrapper< T_DXGI >
+// <summary>Helper interface for DXGI wrapper objects.</summary>
+/*public interface DXGIWrapper< T_DXGI >: IUnknownWrapper< T_DXGI >
 								where T_DXGI: IDXGIObject {
 	internal T_DXGI? COMObject { get ; }
-} ;
+
+	ComPtr< T_DXGI >? IUnknownWrapper< T_DXGI >.ComPointer => ComPointer ;
+} ;*/

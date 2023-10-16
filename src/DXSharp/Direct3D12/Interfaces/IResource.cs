@@ -1,20 +1,21 @@
-﻿using System.Runtime.InteropServices ;
+﻿#region Using Directives
+using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
-
+#endregion
 namespace DXSharp.Direct3D12 ;
 
 
-[Wrapper(typeof(ID3D12Resource))]
+[ProxyFor(typeof(ID3D12Resource))]
 public interface IResource: IPageable,
 							IComObjectRef< ID3D12Resource >,
 							IUnknownWrapper< ID3D12Resource > {
-
-	new ID3D12Resource? COMObject { get ; }
-	new Type ComType => typeof( ID3D12Resource ) ;
+	// ---------------------------------------------------------------------------------
 	new ComPtr< ID3D12Resource >? ComPointer { get ; }
-	new Guid InterfaceGUID => typeof( ID3D12Resource ).GUID ;
-	new ID3D12Resource? ComObject => ComPointer?.Interface ;
+	new ID3D12Resource? COMObject => ComPointer?.Interface ;
+	ID3D12Resource? IComObjectRef< ID3D12Resource >.COMObject => COMObject ;
+	ComPtr< ID3D12Resource >? IUnknownWrapper< ID3D12Resource >.ComPointer => ComPointer ;
+	// ==================================================================================
 	
 	
 	/// <summary>Gets a CPU pointer to the specified subresource in the resource, but may not disclose the pointer value to applications. Map also invalidates the CPU cache, when necessary, so that CPU reads to this address reflect any modifications made by the GPU.</summary>
@@ -190,16 +191,10 @@ public interface IResource: IPageable,
 			pHeapProperties = _props ;
 		}
 	}
-
 	
-	// -----------------------------------------------------------------------------------------
-	// Static Members ::
-	// -----------------------------------------------------------------------------------------
-	
-	static Guid IUnknownWrapper< ID3D12Object >.InterfaceGUID => typeof(ID3D12Object).GUID ;
-	static Guid IUnknownWrapper< ID3D12Resource >.InterfaceGUID => typeof(ID3D12Resource).GUID ;
-	static Guid IUnknownWrapper< ID3D12Pageable >.InterfaceGUID => typeof(ID3D12Pageable).GUID ;
-	static Guid IUnknownWrapper< ID3D12DeviceChild >.InterfaceGUID => typeof(ID3D12DeviceChild).GUID ;
 
-	// =========================================================================================
+	// ---------------------------------------------------------------------------------
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Resource) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Resource).GUID ;
+	// ==================================================================================
 } ;

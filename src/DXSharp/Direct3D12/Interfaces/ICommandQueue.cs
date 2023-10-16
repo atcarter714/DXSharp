@@ -1,21 +1,21 @@
 ﻿#region Using Directives
-
 using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using DXSharp.DXGI ;
 using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
-[Wrapper(typeof(ID3D12CommandQueue))]
-public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue > {
-	
-	new Type ComType => typeof( ID3D12CommandQueue ) ;
-	new Guid InterfaceGUID => typeof( ID3D12CommandQueue ).GUID ;
+[ProxyFor(typeof(ID3D12CommandQueue))]
+public interface ICommandQueue: IPageable,
+								IComObjectRef< ID3D12CommandQueue >,
+								IUnknownWrapper< ID3D12CommandQueue > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12CommandQueue > ComPointer { get ; }
 	new ID3D12CommandQueue? COMObject => ComPointer?.Interface ;
-	new ID3D12CommandQueue? ComObject => ComPointer?.Interface ;
-	new ComPtr< ID3D12CommandQueue >? ComPointer { get ; }
+	ID3D12CommandQueue? IComObjectRef< ID3D12CommandQueue >.COMObject => COMObject ;
+	ComPtr< ID3D12CommandQueue >? IUnknownWrapper< ID3D12CommandQueue >.ComPointer => ComPointer ;
+	// ==================================================================================
 	
 	
 	
@@ -42,6 +42,7 @@ public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue >
 			in TileRegionSize pRegionSize,
 			TileMappingFlags Flags
 	) ;
+	
 	
 	/// <summary>Updates mappings of tile locations in reserved resources to memory locations in a resource heap.</summary>
 	/// <param name="pResource">A pointer to the reserved resource.</param>
@@ -86,6 +87,7 @@ public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue >
 	void ExecuteCommandLists< C >( uint NumCommandLists, Span< C > ppCommandLists )
 														where C: ICommandList ;
 	
+	
 	/// <summary>Not intended to be called directly.  Use the PIX event runtime to insert events into a command queue. (ID3D12CommandQueue.SetMarker)</summary>
 	/// <param name="Metadata">
 	/// <para>Type: <b>UINT</b> Internal.</para>
@@ -105,6 +107,7 @@ public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue >
 	/// </remarks>
 	void SetMarker( uint Metadata, [Optional] nint pData, uint Size ) ;
 	
+	
 	/// <summary>Updates a fence to a specified value.</summary>
 	/// <param name="pFence">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12fence">ID3D12Fence</a>*</b> A pointer to the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12fence">ID3D12Fence</a> object.</para>
@@ -119,6 +122,7 @@ public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue >
 	/// </returns>
 	/// <remarks>Use this method to set a fence value from the GPU side. Use <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12fence-signal">ID3D12Fence::Signal</a> to set a fence from the CPU side.</remarks>
 	void Signal( IFence pFence, ulong Value ) ;
+	
 	
 	/// <summary>Queues a GPU-side wait, and returns immediately. A GPU-side wait is where the GPU waits until the specified fence reaches or exceeds the specified value.</summary>
 	/// <param name="pFence">
@@ -138,6 +142,7 @@ public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue >
 	/// </remarks>
 	void Wait( IFence pFence, ulong Value ) ;
 
+	
 	/// <summary>This method is used to determine the rate at which the GPU timestamp counter increments.</summary>
 	/// <param name="pFrequency">
 	/// <para>Type: <b>UINT64*</b> The GPU timestamp counter frequency (in ticks/second).</para>
@@ -149,6 +154,7 @@ public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue >
 	/// <remarks>For more information, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/timing">Timing</a>.</remarks>
 	void GetTimestampFrequency( out ulong pFrequency ) ;
 
+	
 	/// <summary>This method samples the CPU and GPU timestamp counters at the same moment in time.</summary>
 	/// <param name="pGpuTimestamp">
 	/// <para>Type: <b>UINT64*</b> The value of the GPU timestamp counter.</para>
@@ -164,6 +170,7 @@ public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue >
 	/// <remarks>For more information, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/timing">Timing</a>.</remarks>
 	void GetClockCalibration( out ulong pGpuTimestamp, out ulong pCpuTimestamp ) ;
 
+	
 	/// <summary>Gets the description of the command queue.</summary>
 	/// <returns>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_command_queue_desc">D3D12_COMMAND_QUEUE_DESC</a></b> The description of the command queue, as a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_command_queue_desc">D3D12_COMMAND_QUEUE_DESC</a> structure.</para>
@@ -206,4 +213,10 @@ public interface ICommandQueue: IPageable, IUnknownWrapper< ID3D12CommandQueue >
 	void EndEvent( ) ;
 
 	// ---------------------------------------
+	
+	
+	// ---------------------------------------------------------------------------------
+	static Type IUnknownWrapper.ComType => typeof(ID3D12CommandQueue) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12CommandQueue).GUID ;
+	// ==================================================================================
 } ;
