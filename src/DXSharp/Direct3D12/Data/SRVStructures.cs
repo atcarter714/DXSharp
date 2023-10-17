@@ -26,6 +26,12 @@ public struct ConstBufferViewDescription {
 		BufferLocation = desc.BufferLocation ;
 		SizeInBytes    = desc.SizeInBytes ;
 	}
+	
+	public static implicit operator D3D12_CONSTANT_BUFFER_VIEW_DESC( in ConstBufferViewDescription desc ) =>
+		new D3D12_CONSTANT_BUFFER_VIEW_DESC { BufferLocation = desc.BufferLocation, SizeInBytes = desc.SizeInBytes } ;
+	 
+	public static implicit operator ConstBufferViewDescription( in D3D12_CONSTANT_BUFFER_VIEW_DESC desc ) =>
+		new ConstBufferViewDescription { BufferLocation = desc.BufferLocation, SizeInBytes = desc.SizeInBytes } ;
 } ;
 
 
@@ -272,6 +278,21 @@ public struct ShaderResourceViewDescription {
 		[FieldOffset(0)] public  TexCubeArraySRV TextureCubeArray ;
 		[FieldOffset(0)] public  RayTracingAccelerationStructureSRV RaytracingAccelerationStructure ;
 	} ;
+
+	
+	public static implicit operator D3D12_SHADER_RESOURCE_VIEW_DESC( in ShaderResourceViewDescription desc ) {
+		unsafe { fixed ( ShaderResourceViewDescription* ptr = &desc ) {
+				return *(D3D12_SHADER_RESOURCE_VIEW_DESC*)ptr ;
+			}
+		}
+	}
+	
+	public static implicit operator ShaderResourceViewDescription( in D3D12_SHADER_RESOURCE_VIEW_DESC desc ) {
+		unsafe { fixed ( D3D12_SHADER_RESOURCE_VIEW_DESC* ptr = &desc ) {
+				return *(ShaderResourceViewDescription*)ptr ;
+			}
+		}
+	}
 } ;
 
 

@@ -296,7 +296,7 @@ public class D3D12GraphicsInterop
 			_renderForm.Invoke( _initRenderForm ) ;
 		else _initRenderForm( ) ;
 
-		Thread.Sleep( 3500 ) ;
+		Thread.Sleep( 7000 ) ;
 		
 		Assert.IsNotNull( _renderForm ) ;
 		Assert.IsTrue( _renderForm.IsHandleCreated ) ;

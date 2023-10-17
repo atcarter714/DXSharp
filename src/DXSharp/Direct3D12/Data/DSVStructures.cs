@@ -156,6 +156,21 @@ public struct DepthStencilViewDesc {
 		[FieldOffset( 0 )] public Tex2DMSDSV      Texture2DMS ;
 		[FieldOffset( 0 )] public Tex2DMSArrayDSV Texture2DMSArray ;
 	} ;
+
+	
+	public static implicit operator D3D12_DEPTH_STENCIL_VIEW_DESC( in DepthStencilViewDesc desc ) {
+		unsafe {
+			fixed(DepthStencilViewDesc* ptr = &desc)
+				return *(D3D12_DEPTH_STENCIL_VIEW_DESC*)ptr ;
+		}
+	}
+	
+	public static implicit operator DepthStencilViewDesc( in D3D12_DEPTH_STENCIL_VIEW_DESC desc ) {
+		unsafe {
+			fixed(D3D12_DEPTH_STENCIL_VIEW_DESC* ptr = &desc)
+				return *(DepthStencilViewDesc*)ptr ;
+		}
+	}
 } ;
 
 

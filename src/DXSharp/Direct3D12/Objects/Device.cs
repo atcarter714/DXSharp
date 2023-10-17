@@ -6,11 +6,8 @@ namespace DXSharp.Direct3D12 ;
 
 
 public class Device: Object,
-					 //IDevice,
+					 IDevice,
 					 IInstantiable< Device > {
-	
-
-	
 	
 	public new ID3D12Device? COMObject => ComPointer?.Interface ;
 	public new ComPtr< ID3D12Device >? ComPointer { get ; protected set ; }
