@@ -860,6 +860,7 @@ public struct GraphicsPipelineStateDescription {
  EquivalentOf( typeof( D3D12_COMPUTE_PIPELINE_STATE_DESC ) )]
 public struct ComputePipelineStateDescription {
 	/// <summary>A pointer to the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12rootsignature">ID3D12RootSignature</a> object.</summary>
+	//[MarshalAs(UnmanagedType.Interface)] public nint pRootSignature ;
 	public IRootSignature pRootSignature ;
 	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode">D3D12_SHADER_BYTECODE</a> structure that describes the compute shader.</summary>
@@ -876,6 +877,26 @@ public struct ComputePipelineStateDescription {
 	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_flags">D3D12_PIPELINE_STATE_FLAGS</a> enumeration constant such as for "tool debug".</summary>
 	public PipelineStateFlags Flags ;
+	
+	
+	
+	public static implicit operator D3D12_COMPUTE_PIPELINE_STATE_DESC( in ComputePipelineStateDescription desc ) => 
+		new D3D12_COMPUTE_PIPELINE_STATE_DESC {
+			pRootSignature = desc.pRootSignature.COMObject,
+			CS             = desc.CS,
+			NodeMask       = desc.NodeMask,
+			CachedPSO      = desc.CachedPSO,
+			Flags          = (D3D12_PIPELINE_STATE_FLAGS)desc.Flags
+	} ;
+	
+	public static implicit operator ComputePipelineStateDescription( in D3D12_COMPUTE_PIPELINE_STATE_DESC desc ) => 
+		new ComputePipelineStateDescription {
+			pRootSignature = new RootSignature( desc.pRootSignature ),
+			CS             = desc.CS,
+			NodeMask       = desc.NodeMask,
+			CachedPSO      = desc.CachedPSO,
+			Flags          = (PipelineStateFlags)desc.Flags
+	} ;
 } ;
 
 
@@ -993,6 +1014,9 @@ public struct DescriptorHeapDescription {
 public struct CPUDescriptorHandle {
 	/// <summary>The address of  the descriptor.</summary>
 	public nuint ptr ;
+	
+	public static implicit operator D3D12_CPU_DESCRIPTOR_HANDLE( in CPUDescriptorHandle handle ) => new D3D12_CPU_DESCRIPTOR_HANDLE { ptr = handle.ptr } ;
+	public static implicit operator CPUDescriptorHandle( in D3D12_CPU_DESCRIPTOR_HANDLE handle ) => new CPUDescriptorHandle { ptr = handle.ptr } ;
 } ;
 
 [StructLayout( LayoutKind.Sequential ),
@@ -1000,6 +1024,9 @@ public struct CPUDescriptorHandle {
 public struct GPUDescriptorHandle {
 	/// <summary>The address of the descriptor.</summary>
 	public ulong ptr ;
+	
+	public static implicit operator D3D12_GPU_DESCRIPTOR_HANDLE( in GPUDescriptorHandle handle ) => new D3D12_GPU_DESCRIPTOR_HANDLE { ptr = handle.ptr } ;
+	public static implicit operator GPUDescriptorHandle( in D3D12_GPU_DESCRIPTOR_HANDLE handle ) => new GPUDescriptorHandle { ptr = handle.ptr } ;
 } ;
 
 // =======================================================
@@ -1033,6 +1060,69 @@ public struct SamplerDescription {
 
 	/// <summary>Upper end of the mipmap range to clamp access to, where 0 is the largest and most detailed mipmap level and any level higher than that is less detailed. This value must be greater than or equal to <b>MinLOD</b>. To have no upper limit on LOD, set this member to a large value.</summary>
 	public float MaxLOD;
+	
+	
+	public SamplerDescription( Filter filter, 
+							   TextureAddressMode addressU, 
+							   TextureAddressMode addressV, 
+							   TextureAddressMode addressW, 
+							   float mipLODBias = 0, 
+							   uint maxAnisotropy = 0, 
+							   ComparisonFunction comparisonFunc = ComparisonFunction.NEVER, 
+							   __float_4 borderColor = default, 
+							   float minLOD = 0, 
+							   float maxLOD = float.MaxValue ) {
+		Filter = filter;
+		AddressU = addressU;
+		AddressV = addressV;
+		AddressW = addressW;
+		MipLODBias = mipLODBias;
+		MaxAnisotropy = maxAnisotropy;
+		ComparisonFunc = comparisonFunc;
+		BorderColor = borderColor;
+		MinLOD = minLOD;
+		MaxLOD = maxLOD;
+	}
+	
+	public SamplerDescription( in D3D12_SAMPLER_DESC desc ) {
+		Filter         = (Filter)desc.Filter;
+		AddressU       = (TextureAddressMode)desc.AddressU;
+		AddressV       = (TextureAddressMode)desc.AddressV;
+		AddressW       = (TextureAddressMode)desc.AddressW;
+		MipLODBias     = desc.MipLODBias;
+		MaxAnisotropy  = desc.MaxAnisotropy;
+		ComparisonFunc = (ComparisonFunction)desc.ComparisonFunc;
+		BorderColor    = desc.BorderColor;
+		MinLOD         = desc.MinLOD;
+		MaxLOD         = desc.MaxLOD;
+	}
+	
+	
+	public static implicit operator D3D12_SAMPLER_DESC( in SamplerDescription desc ) => new D3D12_SAMPLER_DESC {
+			Filter         = ( D3D12_FILTER )desc.Filter,
+			AddressU       = ( D3D12_TEXTURE_ADDRESS_MODE )desc.AddressU,
+			AddressV       = ( D3D12_TEXTURE_ADDRESS_MODE )desc.AddressV,
+			AddressW       = ( D3D12_TEXTURE_ADDRESS_MODE )desc.AddressW,
+			MipLODBias     = desc.MipLODBias,
+			MaxAnisotropy  = desc.MaxAnisotropy,
+			ComparisonFunc = ( D3D12_COMPARISON_FUNC )desc.ComparisonFunc,
+			BorderColor    = desc.BorderColor,
+			MinLOD         = desc.MinLOD,
+			MaxLOD         = desc.MaxLOD
+	} ;
+	
+	public static implicit operator SamplerDescription( in D3D12_SAMPLER_DESC desc ) => new SamplerDescription {
+			Filter         = ( Filter )desc.Filter,
+			AddressU       = ( TextureAddressMode )desc.AddressU,
+			AddressV       = ( TextureAddressMode )desc.AddressV,
+			AddressW       = ( TextureAddressMode )desc.AddressW,
+			MipLODBias     = desc.MipLODBias,
+			MaxAnisotropy  = desc.MaxAnisotropy,
+			ComparisonFunc = ( ComparisonFunction )desc.ComparisonFunc,
+			BorderColor    = desc.BorderColor,
+			MinLOD         = desc.MinLOD,
+			MaxLOD         = desc.MaxLOD
+	} ;
 } ;
 
 
@@ -1050,6 +1140,17 @@ public struct ResourceAllocationInfo {
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public ulong Alignment;
+	
+	
+	public static implicit operator D3D12_RESOURCE_ALLOCATION_INFO( in ResourceAllocationInfo info ) => new D3D12_RESOURCE_ALLOCATION_INFO {
+			SizeInBytes = info.SizeInBytes,
+			Alignment   = info.Alignment
+	} ;
+	
+	public static implicit operator ResourceAllocationInfo( in D3D12_RESOURCE_ALLOCATION_INFO info ) => new ResourceAllocationInfo {
+			SizeInBytes = info.SizeInBytes,
+			Alignment   = info.Alignment
+	} ;
 } ;
 
 

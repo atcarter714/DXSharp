@@ -1,7 +1,9 @@
 ﻿#region Using Directives
 using Windows.Win32.Graphics.Direct3D12 ;
 using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Foundation ;
+using Windows.Win32.Security ;
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
@@ -139,9 +141,15 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcomputepipelinestate">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateComputePipelineState( in ComputePipelineStateDescription pDesc,
-											in Guid riid, out IPipelineState ppPipelineState ) ;
-	
-	
+									 in Guid riid, out IPipelineState ppPipelineState ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe { 
+			device.CreateComputePipelineState( pDesc, riid, out var ppvPipelineState ) ;
+			ppPipelineState = new PipelineState( (ID3D12PipelineState)ppvPipelineState ) ;
+		}
+	}
+
+
 	/// <summary>Creates a command list.</summary>
 	/// <param name="nodeMask">
 	/// <para>Type: **[UINT](/windows/win32/WinProg/windows-data-types)** For single-GPU operation, set this to zero. If there are multiple GPU nodes, then set a bit to identify the node (the device's physical adapter) for which to create the command list. Each bit in the mask corresponds to a single node. Only one bit must be set. Also see [Multi-adapter systems](/windows/win32/direct3d12/multi-engine).</para>
@@ -171,13 +179,22 @@ public interface IDevice: IObject,
 	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/desktop/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10). |Return value|Description| |-|-| |E_OUTOFMEMORY|There is insufficient memory to create the command list.| See [Direct3D 12 return codes](/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues) for other possible return values.</para>
 	/// </returns>
 	/// <remarks>The device creates command lists from the command allocator.</remarks>
-	void CreateCommandList( uint nodeMask, CommandListType type,
-								ICommandAllocator pCommandAllocator, 
-								IPipelineState pInitialState,
-								in Guid riid, out ICommandList ppCommandList ) ;
-	
-	
-	
+	void CreateCommandList( uint nodeMask,
+							CommandListType type,
+							ICommandAllocator pCommandAllocator,
+							IPipelineState pInitialState,
+							in Guid riid, out ICommandList ppCommandList ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		Guid _guid = riid ;
+		unsafe {
+			device.CreateCommandList( nodeMask, (D3D12_COMMAND_LIST_TYPE)type, pCommandAllocator.COMObject,
+									  pInitialState.COMObject, &_guid, out var _cmdList ) ;
+			ppCommandList = new CommandList( (ID3D12CommandList)_cmdList ) ;
+		}
+	}
+
+
+
 	/// <summary>
 	/// Gets information about the features that are supported by the current graphics driver. (ID3D12Device.CheckFeatureSupport)
 	/// </summary>
@@ -201,8 +218,14 @@ public interface IDevice: IObject,
 	/// <para>This doc was truncated.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-checkfeaturesupport#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CheckFeatureSupport( D3D12Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) ;
-	
+	void CheckFeatureSupport( D3D12Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			device.CheckFeatureSupport( (D3D12_FEATURE)Feature, (void *)pFeatureSupportData, FeatureSupportDataSize ) ;
+		}
+	}
+
+
 	/// <summary>Creates a descriptor heap object.</summary>
 	/// <param name="pDescriptorHeapDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_descriptor_heap_desc">D3D12_DESCRIPTOR_HEAP_DESC</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_descriptor_heap_desc">D3D12_DESCRIPTOR_HEAP_DESC</a> structure that describes the heap.</para>
@@ -221,14 +244,23 @@ public interface IDevice: IObject,
 	/// </returns>
 	/// <remarks>The <b>REFIID</b>, or <b>GUID</b>, of the interface to the descriptor heap can be obtained by using the __uuidof() macro. For example, __uuidof(<a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12descriptorheap">ID3D12DescriptorHeap</a>) will get the <b>GUID</b> of the interface to a descriptor heap.</remarks>
 	void CreateDescriptorHeap( in DescriptorHeapDescription pDescriptorHeapDesc,
-									  in Guid riid, out IDescriptorHeap ppvHeap ) ;
+							   in Guid riid, out IDescriptorHeap ppvHeap ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		device.CreateDescriptorHeap( pDescriptorHeapDesc, riid, out var ppvDescriptorHeap ) ;
+		ppvHeap = new DescriptorHeap( (ID3D12DescriptorHeap)ppvDescriptorHeap ) ;
+	}
 	
-	
+
 	/// <summary>Gets the size of the handle increment for the given type of descriptor heap. This value is typically used to increment a handle into a descriptor array by the correct amount.</summary>
 	/// <param name="DescriptorHeapType">The <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_descriptor_heap_type">D3D12_DESCRIPTOR_HEAP_TYPE</a>-typed value that specifies the type of descriptor heap to get the size of the handle increment for.</param>
 	/// <returns>Returns the size of the handle increment for the given type of descriptor heap, including any necessary padding.</returns>
 	/// <remarks>The descriptor size returned by this method is used as one input to the helper structures <a href="https://docs.microsoft.com/windows/desktop/direct3d12/cd3dx12-cpu-descriptor-handle">CD3DX12_CPU_DESCRIPTOR_HANDLE</a> and <a href="https://docs.microsoft.com/windows/desktop/direct3d12/cd3dx12-gpu-descriptor-handle">CD3DX12_GPU_DESCRIPTOR_HANDLE</a>.</remarks>
-	uint GetDescriptorHandleIncrementSize( DescriptorHeapType DescriptorHeapType ) ;
+	uint GetDescriptorHandleIncrementSize( DescriptorHeapType DescriptorHeapType ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		return device.GetDescriptorHandleIncrementSize( (D3D12_DESCRIPTOR_HEAP_TYPE)DescriptorHeapType ) ;
+	}
+
+
 	
 	/// <summary>Creates a root signature layout.</summary>
 	/// <param name="nodeMask">
@@ -261,10 +293,17 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrootsignature#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateRootSignature( uint nodeMask,
-							  nint pBlobWithRootSignature, 
-							  nuint blobLengthInBytes, in Guid riid, 
-								out IRootSignature ppvRootSignature ) ;
-	
+							  nint pBlobWithRootSignature,
+							  nuint blobLengthInBytes, in Guid riid,
+							  out IRootSignature ppvRootSignature ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			device.CreateRootSignature( nodeMask, (void *)pBlobWithRootSignature,
+										blobLengthInBytes, riid, out var ppvSignature ) ;
+			ppvRootSignature = new RootSignature( (ID3D12RootSignature)ppvSignature ) ;
+		}
+	}
+
 
 	/// <summary>Creates a constant-buffer view for accessing resource data.</summary>
 	/// <param name="pDesc">
@@ -279,7 +318,11 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createconstantbufferview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateConstantBufferView( [Optional] in ConstBufferViewDescription pDesc,
-													CPUDescriptorHandle DestDescriptor ) ;
+								   in CPUDescriptorHandle DestDescriptor ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		device.CreateConstantBufferView( pDesc, DestDescriptor ) ;
+	}
+
 
 	/// <summary>Creates a shader-resource view for accessing data in a resource. (ID3D12Device.CreateShaderResourceView)</summary>
 	/// <param name="pResource">
@@ -299,8 +342,11 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createshaderresourceview#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateShaderResourceView( IResource pResource,
-									[Optional] in ShaderResourceViewDescription pDesc, 
-										CPUDescriptorHandle DestDescriptor ) ;
+								   [Optional] in ShaderResourceViewDescription pDesc,
+								   CPUDescriptorHandle DestDescriptor ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		device.CreateShaderResourceView( pResource.COMObject, pDesc, DestDescriptor ) ;
+	}
 
 	/// <summary>Creates a view for unordered accessing.</summary>
 	/// <param name="pResource">
@@ -324,9 +370,13 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createunorderedaccessview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateUnorderedAccessView( IResource pResource,
-											IResource pCounterResource,
-												out UnorderedAccessViewDescription pDesc,
-													CPUDescriptorHandle DestDescriptor ) ;
+									IResource pCounterResource,
+									in UnorderedAccessViewDescription pDesc,
+									CPUDescriptorHandle DestDescriptor ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		device.CreateUnorderedAccessView( pResource.COMObject, pCounterResource.COMObject, pDesc, DestDescriptor ) ;
+	}
+
 
 	/// <summary>Creates a render-target view for accessing resource data. (ID3D12Device.CreateRenderTargetView)</summary>
 	/// <param name="pResource">
@@ -345,9 +395,13 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrendertargetview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateRenderTargetView( IResource pResource, 
-									[Optional] in RenderTargetViewDesc pDesc, 
-										CPUDescriptorHandle DestDescriptor ) ;
+	void CreateRenderTargetView( IResource pResource,
+								 [Optional] in RenderTargetViewDesc pDesc,
+								 CPUDescriptorHandle DestDescriptor ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		device.CreateRenderTargetView( pResource.COMObject, pDesc, DestDescriptor ) ;
+	}
+
 
 	/// <summary>Creates a depth-stencil view for accessing resource data.</summary>
 	/// <param name="pResource">
@@ -368,10 +422,13 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createdepthstencilview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateDepthStencilView( IResource pResource,
-									 [Optional] in DepthStencilViewDesc pDesc,
-											CPUDescriptorHandle DestDescriptor ) ;
+								 [Optional] in DepthStencilViewDesc pDesc,
+								 CPUDescriptorHandle DestDescriptor ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		device.CreateDepthStencilView( pResource.COMObject, pDesc, DestDescriptor ) ;
+	}
 
-	
+
 	/// <summary>Create a sampler object that encapsulates sampling information for a texture.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_sampler_desc">D3D12_SAMPLER_DESC</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_sampler_desc">D3D12_SAMPLER_DESC</a> structure that describes the sampler.</para>
@@ -384,9 +441,12 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createsampler">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateSampler( in SamplerDescription pDesc, CPUDescriptorHandle DestDescriptor );
+	void CreateSampler( in SamplerDescription pDesc, CPUDescriptorHandle DestDescriptor ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		device.CreateSampler( pDesc, DestDescriptor ) ;
+	}
 
-	
+
 	/// <summary>Copies descriptors from a source to a destination. (ID3D12Device.CopyDescriptors)</summary>
 	/// <param name="NumDestDescriptorRanges">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of destination descriptor ranges to copy to.</para>
@@ -418,12 +478,26 @@ public interface IDevice: IObject,
 	/// </param>
 	/// <remarks>Where applicable, prefer [**ID3D12Device::CopyDescriptorsSimple**](/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptorssimple) to this method. It can have a better CPU cache miss rate due to the linear nature of the copy.</remarks>
 	void CopyDescriptors( uint NumDestDescriptorRanges,
-						  out Span< CPUDescriptorHandle > pDestDescriptorRangeStarts,
-						  Span< uint > pDestDescriptorRangeSizes, uint NumSrcDescriptorRanges,
-						  in Span< CPUDescriptorHandle > pSrcDescriptorRangeStarts,
-						  in Span< uint > pSrcDescriptorRangeSizes,
-						  DescriptorHeapType DescriptorHeapsType ) ;
-	
+						  in Span< CPUDescriptorHandle > pDestDescriptorRangeStarts,
+						  uint[ ] pDestDescriptorRangeSizes,
+						  uint NumSrcDescriptorRanges,
+						  in Span< CPUDescriptorHandle >  pSrcDescriptorRangeStarts,
+						  uint[ ] pSrcDescriptorRangeSizes,
+						  DescriptorHeapType DescriptorHeapsType ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			fixed( CPUDescriptorHandle* pDestRangeStart = pDestDescriptorRangeStarts, pSrcRangeStart = pSrcDescriptorRangeStarts ) {
+				device.CopyDescriptors( NumDestDescriptorRanges,
+										(D3D12_CPU_DESCRIPTOR_HANDLE *)pDestRangeStart,
+										pDestDescriptorRangeSizes,
+										NumSrcDescriptorRanges,
+										(D3D12_CPU_DESCRIPTOR_HANDLE *)pSrcRangeStart,
+										pSrcDescriptorRangeSizes,
+										( D3D12_DESCRIPTOR_HEAP_TYPE )DescriptorHeapsType ) ;
+			}
+		}
+	}
+
 
 	/// <summary>Copies descriptors from a source to a destination. (ID3D12Device.CopyDescriptorsSimple)</summary>
 	/// <param name="NumDescriptors">
@@ -443,11 +517,18 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptorssimple#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>Where applicable, prefer this method to [**ID3D12Device::CopyDescriptors**](/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptors). It can have a better CPU cache miss rate due to the linear nature of the copy.</remarks>
-	void CopyDescriptorsSimple( uint NumDescriptors, 
-						   CPUDescriptorHandle DestDescriptorRangeStart,
-						   CPUDescriptorHandle SrcDescriptorRangeStart,
-						   DescriptorHeapType DescriptorHeapsType ) ;
-	
+	void CopyDescriptorsSimple( uint NumDescriptors,
+								CPUDescriptorHandle DestDescriptorRangeStart,
+								CPUDescriptorHandle SrcDescriptorRangeStart,
+								DescriptorHeapType  DescriptorHeapsType ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		device.CopyDescriptorsSimple( NumDescriptors,
+									  DestDescriptorRangeStart,
+									  SrcDescriptorRangeStart,
+									  ( D3D12_DESCRIPTOR_HEAP_TYPE )DescriptorHeapsType ) ;
+	}
+
+
 	/// <summary>Gets the size and alignment of memory required for a collection of resources on this adapter.</summary>
 	/// <param name="visibleMask">
 	/// <para>Type: **[UINT](/windows/win32/WinProg/windows-data-types)** For single-GPU operation, set this to zero. If there are multiple GPU nodes, then set bits to identify the nodes (the device's physical adapters). Each bit in the mask corresponds to a single node. Also see [Multi-adapter systems](/windows/win32/direct3d12/multi-engine).</para>
@@ -470,8 +551,17 @@ public interface IDevice: IObject,
 	/// </remarks>
 	ResourceAllocationInfo GetResourceAllocationInfo( uint visibleMask,
 													  uint numResourceDescs,
-													  Span< ResourceDescription > pResourceDescs ) ;
+													  Span< ResourceDescription > pResourceDescs ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			fixed( ResourceDescription* pResourceDesc = pResourceDescs ) {
+				var allocInfo = device.GetResourceAllocationInfo( visibleMask, numResourceDescs, (D3D12_RESOURCE_DESC *)pResourceDesc ) ;
+				return allocInfo ;
+			}
+		}
+	}
 
+	
 	
 	/// <summary>Divulges the equivalent custom heap properties that are used for non-custom heap types, based on the adapter's architectural properties.</summary>
 	/// <param name="nodeMask">
@@ -491,9 +581,10 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcustomheapproperties">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	HeapProperties GetCustomHeapProperties( uint nodeMask, HeapType heapType ) ;
-	
-	
+	HeapProperties GetCustomHeapProperties( uint nodeMask, HeapType heapType ) => 
+		COMObject!.GetCustomHeapProperties( nodeMask, (D3D12_HEAP_TYPE)heapType ) ;
+
+
 	/// <summary>Creates both a resource and an implicit heap, such that the heap is big enough to contain the entire resource, and the resource is mapped to the heap.</summary>
 	/// <param name="pHeapProperties">
 	/// <para>Type: **const [D3D12_HEAP_PROPERTIES](./ns-d3d12-d3d12_heap_properties.md)\*** A pointer to a **D3D12_HEAP_PROPERTIES** structure that provides properties for the resource's heap.</para>
@@ -531,12 +622,29 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommittedresource#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateCommittedResource( in HeapProperties pHeapProperties,
-									  HeapFlags HeapFlags, in ResourceDescription pDesc,
-										  ResourceStates InitialResourceState,
-											  [Optional] in ClearValue pOptimizedClearValue,
-													in Guid riidResource, out IResource ppvResource ) ;
-	
-	
+								  HeapFlags HeapFlags,
+								  in ResourceDescription pDesc,
+								  ResourceStates InitialResourceState,
+								  [Optional] in ClearValue pOptimizedClearValue,
+								  in Guid riidResource,
+								  out IResource ppvResource ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe { fixed( void* _pHeapProps = &pHeapProperties, 
+					   _pDesc = &pDesc,
+					   _pClearValue = &pOptimizedClearValue,
+					   _riidResource = &riidResource ) {
+				device.CreateCommittedResource( (D3D12_HEAP_PROPERTIES *)_pHeapProps, 
+												(D3D12_HEAP_FLAGS)HeapFlags,
+											   (D3D12_RESOURCE_DESC*)_pDesc, 
+											   (D3D12_RESOURCE_STATES)InitialResourceState,
+											   (D3D12_CLEAR_VALUE*)_pClearValue, 
+											   (Guid *)_riidResource, out var _resource ) ;
+				ppvResource = new Resource( (ID3D12Resource)_resource ) ;
+			}
+		}
+	}
+
+
 	/// <summary>Creates a heap that can be used with placed resources and reserved resources.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: **const [D3D12_HEAP_DESC](./ns-d3d12-d3d12_heap_desc.md)\*** A pointer to a constant **D3D12_HEAP_DESC** structure that describes the heap.</para>
@@ -557,9 +665,16 @@ public interface IDevice: IObject,
 	/// <para>**CreateHeap** creates a heap that can be used with placed resources and reserved resources. Before releasing the final reference on the heap, your application must ensure that the GPU will no longer read or write to this heap. A placed resource object holds a reference on the heap it is created on; but a reserved resource doesn't hold a reference for each mapping made to a heap.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createheap#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateHeap( in HeapDescription pDesc, in Guid riid, out IHeap ppvHeap ) ;
-	
-	
+	void CreateHeap( in HeapDescription pDesc, in Guid riid, out IHeap ppvHeap ) {
+		unsafe {
+			HeapDescription _heapDesc = pDesc ;
+			Guid _riid = riid ;
+			COMObject!.CreateHeap( (D3D12_HEAP_DESC *)&_heapDesc, &_riid, out var _heap ) ;
+			ppvHeap = new Heap( (ID3D12Heap)_heap ) ;
+		}
+	}
+
+
 	/// <summary>
 	/// Creates a resource that is placed in a specific heap. Placed resources are the lightest
 	/// weight resource objects available, and are the fastest to create and destroy.
@@ -646,12 +761,32 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource#">
 	/// Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreatePlacedResource( IHeap pHeap, ulong HeapOffset, 
+	void CreatePlacedResource( IHeap pHeap, ulong HeapOffset,
 							   in ResourceDescription pDesc,
 							   ResourceStates InitialState,
-							   [Optional] in ClearValue pOptimizedClearValue,
-							   in Guid riid, out IResource ppvResource ) ;
-	
+							   [Optional] in ClearValue? pOptimizedClearValue,
+							   in Guid riid, out IResource ppvResource ) { unsafe {
+			Guid _riid = riid ;
+			ClearValue _clrValue = default ;
+			var _pDesc = pDesc ;
+			D3D12_CLEAR_VALUE* pClearValue = null ;
+
+			if ( pOptimizedClearValue.HasValue ) {
+				_clrValue   = pOptimizedClearValue.Value ;
+				pClearValue = (D3D12_CLEAR_VALUE*)&_clrValue ;
+			}
+
+			COMObject!.CreatePlacedResource( pHeap.COMObject, HeapOffset,
+											(D3D12_RESOURCE_DESC*)&_pDesc,
+											(D3D12_RESOURCE_STATES)InitialState,
+											pClearValue,
+											&_riid,
+											out var _res ) ;
+
+			ppvResource = new Resource( (ID3D12Resource)_res ) ;
+		}
+	}
+
 	
 	/// <summary>Creates a resource that is reserved, and not yet mapped to any pages in a heap.</summary>
 	/// <param name="pDesc">
@@ -681,11 +816,30 @@ public interface IDevice: IObject,
 	/// <para>**CreateReservedResource** is equivalent to [D3D11_RESOURCE_MISC_TILED](../d3d11/ne-d3d11-d3d11_resource_misc_flag.md) in Direct3D 11. It creates a resource with virtual memory only, no backing store. You need to map the resource to physical memory (that is, to a heap) using <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-copytilemappings">CopyTileMappings</a> and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-updatetilemappings">UpdateTileMappings</a>. These resource types can only be created when the adapter supports tiled resource tier 1 or greater. The tiled resource tier defines the behavior of accessing a resource that is not mapped to a heap.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createreservedresource#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateReservedResource( in ResourceDescription pDesc, 
-								 ResourceStates InitialState, 
-								 [Optional] in ClearValue pOptimizedClearValue, 
-								 in Guid riid, out IResource ppvResource ) ;
-	
+	void CreateReservedResource( in ResourceDescription   pDesc,
+								 ResourceStates InitialState,
+								 [Optional] in ClearValue? pOptimizedClearValue,
+								 in Guid riid, out IResource ppvResource ) { unsafe {
+			Guid _riid = riid ;
+			ClearValue _clrValue = default ;
+			var _pDesc = pDesc ;
+			D3D12_CLEAR_VALUE* pClearValue = null ;
+			
+			if ( pOptimizedClearValue.HasValue ) {
+				_clrValue = pOptimizedClearValue.Value ;
+				pClearValue = (D3D12_CLEAR_VALUE*)&_clrValue ;
+			}
+			
+			COMObject!.CreateReservedResource( (D3D12_RESOURCE_DESC *)&_pDesc, 
+											  (D3D12_RESOURCE_STATES)InitialState, 
+											  pClearValue, 
+											  &_riid,
+											  out var _res ) ;
+			
+			ppvResource = new Resource( (ID3D12Resource)_res ) ;
+		}
+	}
+
 
 	/// <summary>Creates a shared handle to a heap, resource, or fence object.</summary>
 	/// <param name="pObject">
@@ -725,10 +879,19 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createsharedhandle#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateSharedHandle( IDeviceChild pObject,
-							 [Optional] in SecurityAttributes pAttributes, 
-								uint Access, PCWSTR Name, out Win32Handle pHandle ) ;
-	
-	
+							 [Optional] in SecurityAttributes pAttributes,
+							 uint Access, string Name, out Win32Handle pHandle ) {
+		unsafe {
+			fixed ( SecurityAttributes* _attrPtr = &pAttributes ) {
+				Win32Handle _handle = default ;
+				COMObject!.CreateSharedHandle( pObject.COMObject, (SECURITY_ATTRIBUTES *)_attrPtr, 
+											  Access, Name, (HANDLE *)&_handle ) ;
+				pHandle = _handle ;
+			}
+		}
+	}
+
+
 	/// <summary>Opens a handle for shared resources, shared heaps, and shared fences, by using HANDLE and REFIID.</summary>
 	/// <param name="NTHandle">
 	/// <para>Type: <b>HANDLE</b> The handle that was output by the call to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createsharedhandle">ID3D12Device::CreateSharedHandle</a>.</para>
@@ -752,7 +915,18 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-opensharedhandle">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void OpenSharedHandle( Win32Handle NTHandle, in Guid riid, out object ppvObj ) ;
+	void OpenSharedHandle( Win32Handle NTHandle, in Guid riid, out object ppvObj ) {
+		// Get the ID3D12Device
+		var device = this.COMObject
+					 ?? throw new Exception("COMObject is null");
+
+		// Make local (fixed) Guid to easily obtain pointer:
+		Guid _riid = riid ;
+		unsafe {
+			device.OpenSharedHandle( NTHandle, &_riid, out var ppv ) ;
+			ppvObj = ppv ;
+		}
+	}
 
 	/// <summary>Opens a handle for shared resources, shared heaps, and shared fences, by using Name and Access.</summary>
 	/// <param name="Name">
@@ -773,9 +947,24 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-opensharedhandlebyname">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void OpenSharedHandleByName( PCWSTR Name, uint Access, ref HANDLE pNTHandle ) ;
+	void OpenSharedHandleByName( string Name, uint Access, ref Win32Handle pNTHandle ) {
+		// Get the ID3D12Device
+		var device = this.COMObject
+							  ?? throw new Exception("COMObject is null");
+
+		// Copy Name to PCWSTR from string (uses implicit op):
+		PCWSTR name   = Name ;
+		HANDLE handle = pNTHandle ;
+		
+		// Call the OpenSharedHandleByName method 
+		unsafe { device.OpenSharedHandleByName( name, Access, &handle ) ; }
+		
+		// Set the HANDLE
+		pNTHandle = handle ;
+	}
+
 	
-	
+
 	/// <summary>Makes objects resident for the device.</summary>
 	/// <param name="NumObjects">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of objects  in the <i>ppObjects</i> array to make resident for the device.</para>
@@ -796,9 +985,25 @@ public interface IDevice: IObject,
 	/// <para><b>MakeResident</b> is ref-counted, such that <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-evict">Evict</a> must be called the same amount of times as <b>MakeResident</b> before <b>Evict</b> takes effect. Objects that support residency are made resident during creation, so a single <b>Evict</b> call will actually evict the object. Applications must use fences to ensure the GPU doesn't use non-resident objects. <b>MakeResident</b> must return before the GPU executes a command list that references the object. <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-evict">Evict</a> must be called after the GPU finishes executing a command list that references the object. Evicted objects still consume the same GPU virtual address and same amount of GPU virtual address space. Therefore, resource descriptors and other GPU virtual address references are not invalidated after <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-evict">Evict</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-makeresident#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void MakeResident< P >( uint NumObjects, Span< P > ppObjects ) where P : IPageable ;
+	void MakeResident< P >( uint NumObjects, Span< P > ppObjects ) where P: IPageable {
+		var pageables = new ID3D12Pageable[ NumObjects ] ;
+		for ( int i = 0; i < NumObjects; ++i ) {
+			var next = ppObjects[i] ;
+#if DEBUG || DEV_BUILD
+			if( next is null ) throw new ArgumentNullException( nameof(ppObjects), 
+																$"{nameof(IDevice)}.{nameof(MakeResident)} :: " +
+																$"Span must not contain null references!" ) ;
+			if ( next.COMObject is null || ( next.ComPointer?.Disposed ?? true ) )
+				throw new ArgumentException( nameof( ppObjects ),
+											 $"{nameof( IDevice )}.{nameof( MakeResident )} :: " +
+											 $"Span must contain only COM objects!" ) ;
+#endif
 
-	
+			pageables[ i ] = next.COMObject ;
+		}
+		COMObject!.MakeResident( NumObjects, pageables ) ;
+	}
+
 	
 	/// <summary>Enables the page-out of data, which precludes GPU access of that data.</summary>
 	/// <param name="NumObjects">

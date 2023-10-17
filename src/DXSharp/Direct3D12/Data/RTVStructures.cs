@@ -18,16 +18,20 @@ namespace DXSharp.Direct3D12 ;
 /// </remarks>
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_RENDER_TARGET_VIEW_DESC ) )]
-public struct RenderTargetViewDesc {
+public struct RenderTargetViewDesc
+{
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>-typed value that specifies the viewing format.</summary>
 	public Format Format ;
+
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_rtv_dimension">D3D12_RTV_DIMENSION</a>-typed value that specifies how the render-target resource will be accessed. This type specifies how the resource will be accessed. This member also determines which _RTV to use in the following union.</summary>
 	public RTVDimension ViewDimension ;
 
 	/// <summary>Reads the <see cref="RenderTargetViewDesc"/> data as a union.</summary>
 	public _anon_rtv_union ReadAs ;
+
 	[StructLayout( LayoutKind.Explicit )]
-	public partial struct _anon_rtv_union {
+	public partial struct _anon_rtv_union
+	{
 		[FieldOffset( 0 )] public BufferRTV       Buffer ;
 		[FieldOffset( 0 )] public Tex1DRTV        Tex1D ;
 		[FieldOffset( 0 )] public Tex1DArrayRTV   Texture1DArray ;
@@ -37,7 +41,25 @@ public struct RenderTargetViewDesc {
 		[FieldOffset( 0 )] public Tex2DMSArrayRTV Texture2DMSArray ;
 		[FieldOffset( 0 )] public Tex3DRTV        Texture3D ;
 	} ;
-}
+
+
+	public static implicit operator D3D12_RENDER_TARGET_VIEW_DESC( in RenderTargetViewDesc o ) {
+		unsafe {
+			fixed ( RenderTargetViewDesc* ptr = &o ) {
+				return *(D3D12_RENDER_TARGET_VIEW_DESC*)ptr ;
+			}
+		}
+	}
+
+	public static implicit operator RenderTargetViewDesc( in D3D12_RENDER_TARGET_VIEW_DESC o ) {
+		unsafe {
+			fixed ( D3D12_RENDER_TARGET_VIEW_DESC* ptr = &o ) {
+				return *(RenderTargetViewDesc*)ptr ;
+			}
+		}
+	}
+} ;
+
 
 // ------------------------------
 // RTV Descriptors:

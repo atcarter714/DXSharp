@@ -23,7 +23,7 @@ public interface IDescriptorHeap: IPageable,
 								  IComObjectRef< ID3D12DescriptorHeap >, 
 								  IUnknownWrapper< ID3D12DescriptorHeap > {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12DescriptorHeap > ComPointer { get ; }
+	new ComPtr< ID3D12DescriptorHeap >? ComPointer { get ; }
 	new ID3D12DescriptorHeap? COMObject => ComPointer?.Interface ;
 	ID3D12DescriptorHeap? IComObjectRef< ID3D12DescriptorHeap >.COMObject => COMObject ;
 	ComPtr< ID3D12DescriptorHeap >? IUnknownWrapper< ID3D12DescriptorHeap >.ComPointer => ComPointer ;

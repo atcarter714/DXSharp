@@ -69,6 +69,19 @@ public struct UnorderedAccessViewDescription {
 
 		[FieldOffset( 0 )] public Tex3DUAV Texture3D ;
 	} ;
+
+	
+	public static implicit operator D3D12_UNORDERED_ACCESS_VIEW_DESC( in UnorderedAccessViewDescription desc ) {
+		unsafe { fixed ( UnorderedAccessViewDescription* ptr = &desc )
+				return *(D3D12_UNORDERED_ACCESS_VIEW_DESC*)ptr ;
+		}
+	}
+	
+	public static implicit operator UnorderedAccessViewDescription( in D3D12_UNORDERED_ACCESS_VIEW_DESC desc ) {
+		unsafe { fixed ( D3D12_UNORDERED_ACCESS_VIEW_DESC* ptr = &desc )
+				return *(UnorderedAccessViewDescription*)ptr ;
+		}
+	}
 } ;
 
 

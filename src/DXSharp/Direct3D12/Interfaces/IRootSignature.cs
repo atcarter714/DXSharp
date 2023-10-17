@@ -10,7 +10,7 @@ public interface IRootSignature: IDeviceChild,
 								 IComObjectRef< ID3D12RootSignature >,
 								 IUnknownWrapper< ID3D12RootSignature > {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12RootSignature > ComPointer { get ; }
+	new ComPtr< ID3D12RootSignature >? ComPointer { get ; }
 	new ID3D12RootSignature? COMObject => ComPointer?.Interface ;
 	ID3D12RootSignature? IComObjectRef< ID3D12RootSignature >.COMObject => COMObject ;
 	ComPtr< ID3D12RootSignature >? IUnknownWrapper< ID3D12RootSignature >.ComPointer => ComPointer ;
