@@ -5,14 +5,16 @@ using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.System.Com ;
-using WinCom = Windows.Win32.System.Com;
 
+using WinCom = Windows.Win32.System.Com;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
-[ProxyFor( typeof( IResourceUnmanaged ) )]
+[ProxyFor( typeof(ID3D12Resource_unmanaged) )]
 public unsafe struct IResourceUnmanaged: IComIID {
+	
+	
 	
 	public HRESULT QueryInterface( in Guid riid, out void* ppvObject ) {
 		fixed ( void** ppvObjectLocal = &ppvObject ) {
@@ -24,9 +26,11 @@ public unsafe struct IResourceUnmanaged: IComIID {
 	}
 
 	public HRESULT QueryInterface( Guid* riid, void** ppvObject ) {
-		return
-			( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, void**, HRESULT>)lpVtbl
-					[ 0 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), riid, ppvObject ) ;
+		return ( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, void**, HRESULT>)lpVtbl[ 0 ])( 
+				 (IResourceUnmanaged *)Unsafe.AsPointer( ref this ), 
+				 riid,
+				 ppvObject
+			 ) ;
 	}
 
 	
@@ -41,7 +45,7 @@ public unsafe struct IResourceUnmanaged: IComIID {
 			( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint>)lpVtbl[ 2 ] )( (IResourceUnmanaged*)
 				Unsafe.AsPointer( ref this ) ) ;
 	}
-
+	
 	
 	public void GetPrivateData( in Guid guid, ref uint pDataSize, void* pData ) {
 		fixed ( Guid* guidLocal = &guid ) {
