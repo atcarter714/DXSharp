@@ -16,9 +16,10 @@ namespace DXSharp.Direct3D12 ;
 [ProxyFor( typeof(ID3D12Device) )]
 public interface IDevice: IObject,
 						  IComObjectRef< ID3D12Device >,
-						  IUnknownWrapper< ID3D12Device > {
+						  IUnknownWrapper< ID3D12Device >,
+						  IInstantiable {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device > ComPointer { get ; }
+	new ComPtr< ID3D12Device >? ComPointer { get ; }
 	new ID3D12Device? COMObject => ComPointer?.Interface ;
 	ID3D12Device? IComObjectRef< ID3D12Device >.COMObject => COMObject ;
 	ComPtr< ID3D12Device >? IUnknownWrapper< ID3D12Device >.ComPointer => ComPointer ;
@@ -57,7 +58,7 @@ public interface IDevice: IObject,
 		unsafe { fixed ( void* descPtr = &pDesc, riidPtr = &riid ) {
 				COMObject!.CreateCommandQueue( (D3D12_COMMAND_QUEUE_DESC*)descPtr,
 											   (Guid *)riidPtr, out var ppvCommandQueue ) ;
-				ppCommandQueue = (ICommandQueue)ppvCommandQueue ;
+				ppCommandQueue = new CommandQueue( (ID3D12CommandQueue)ppvCommandQueue) ;
 			}
 		}
 	}
@@ -92,6 +93,7 @@ public interface IDevice: IObject,
 		}
 	}
 
+	
 	/// <summary>Creates a graphics pipeline state object.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_graphics_pipeline_state_desc">D3D12_GRAPHICS_PIPELINE_STATE_DESC</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_graphics_pipeline_state_desc">D3D12_GRAPHICS_PIPELINE_STATE_DESC</a> structure that describes graphics pipeline state.</para>
@@ -116,11 +118,12 @@ public interface IDevice: IObject,
 		unsafe { fixed ( Guid* riidPtr = &riid ) {
 				COMObject!.CreateGraphicsPipelineState( pDesc, riidPtr, 
 														out var ppvPipelineState ) ;
-				ppPipelineState = (IPipelineState)ppvPipelineState ;
+				ppPipelineState = new PipelineState( (ID3D12PipelineState)ppvPipelineState ) ;
 			}
 		}
 	}
 
+	
 	/// <summary>Creates a compute pipeline state object.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_compute_pipeline_state_desc">D3D12_COMPUTE_PIPELINE_STATE_DESC</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_compute_pipeline_state_desc">D3D12_COMPUTE_PIPELINE_STATE_DESC</a> structure that describes compute pipeline state.</para>
@@ -182,14 +185,23 @@ public interface IDevice: IObject,
 	void CreateCommandList( uint nodeMask,
 							CommandListType type,
 							ICommandAllocator pCommandAllocator,
-							IPipelineState pInitialState,
-							in Guid riid, out ICommandList ppCommandList ) {
+							[Optional] IPipelineState? pInitialState,
+							in Guid riid,
+							out ICommandList ppCommandList ) {
 		var device = COMObject ?? throw new NullReferenceException( ) ;
 		Guid _guid = riid ;
 		unsafe {
-			device.CreateCommandList( nodeMask, (D3D12_COMMAND_LIST_TYPE)type, pCommandAllocator.COMObject,
-									  pInitialState.COMObject, &_guid, out var _cmdList ) ;
-			ppCommandList = new CommandList( (ID3D12CommandList)_cmdList ) ;
+			var hr = device.CreateCommandList( nodeMask, 
+									(D3D12_COMMAND_LIST_TYPE)type, 
+									pCommandAllocator.COMObject,
+									pInitialState?.COMObject,
+									&_guid,
+									out object _cmdList 
+									) ;
+			if (_guid == IGraphicsCommandList.InterfaceGUID)
+				ppCommandList = new GraphicsCommandList( (ID3D12GraphicsCommandList)_cmdList ) ;
+			else
+				ppCommandList = new CommandList( (ID3D12CommandList)_cmdList ) ;
 		}
 	}
 
@@ -348,6 +360,7 @@ public interface IDevice: IObject,
 		device.CreateShaderResourceView( pResource.COMObject, pDesc, DestDescriptor ) ;
 	}
 
+	
 	/// <summary>Creates a view for unordered accessing.</summary>
 	/// <param name="pResource">
 	/// <para>Type: [in, optional] <b><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12resource">ID3D12Resource</a>*</b> A pointer to the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12resource">ID3D12Resource</a> object that represents the unordered access. At least one of <i>pResource</i> or <i>pDesc</i> must be provided. A null <i>pResource</i> is used to initialize a null descriptor, which guarantees Direct3D 11-like null binding behavior (reading 0s, writes are discarded), but must have a valid <i>pDesc</i> in order to determine the descriptor type.</para>
@@ -384,7 +397,7 @@ public interface IDevice: IObject,
 	/// <para>At least one of <i>pResource</i> or <i>pDesc</i>  must be provided. A null <i>pResource</i> is used to initialize a null descriptor, which guarantees D3D11-like null binding behavior (reading 0s, writes are discarded), but must have a valid <i>pDesc</i> in order to determine the descriptor type.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrendertargetview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
-	/// <param name="pDesc">
+	/// <param name="pDescription">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_render_target_view_desc">D3D12_RENDER_TARGET_VIEW_DESC</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_render_target_view_desc">D3D12_RENDER_TARGET_VIEW_DESC</a> structure that describes the render-target view. A null <i>pDesc</i> is used to initialize a default descriptor, if possible. This behavior is identical to the D3D11 null descriptor behavior, where defaults are filled in. This behavior inherits the resource format and dimension (if not typeless) and RTVs target the first mip and all array slices. Not all resources support null descriptor initialization.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrendertargetview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
@@ -396,10 +409,10 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrendertargetview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateRenderTargetView( IResource pResource,
-								 [Optional] in RenderTargetViewDesc pDesc,
+								 [Optional] in RenderTargetViewDescription pDescription,
 								 CPUDescriptorHandle DestDescriptor ) {
 		var device = COMObject ?? throw new NullReferenceException( ) ;
-		device.CreateRenderTargetView( pResource.COMObject, pDesc, DestDescriptor ) ;
+		device.CreateRenderTargetView( pResource.COMObject, pDescription, DestDescriptor ) ;
 	}
 
 
@@ -625,7 +638,7 @@ public interface IDevice: IObject,
 								  HeapFlags HeapFlags,
 								  in ResourceDescription pDesc,
 								  ResourceStates InitialResourceState,
-								  [Optional] in ClearValue pOptimizedClearValue,
+								  [Optional] in ClearValue? pOptimizedClearValue,
 								  in Guid riidResource,
 								  out IResource ppvResource ) {
 		var device = COMObject ?? throw new NullReferenceException( ) ;
@@ -633,11 +646,16 @@ public interface IDevice: IObject,
 					   _pDesc = &pDesc,
 					   _pClearValue = &pOptimizedClearValue,
 					   _riidResource = &riidResource ) {
+
+				D3D12_CLEAR_VALUE* pD3D12ClearValue =
+					pOptimizedClearValue is null ? null 
+						: (D3D12_CLEAR_VALUE*)_pClearValue ;
+
 				device.CreateCommittedResource( (D3D12_HEAP_PROPERTIES *)_pHeapProps, 
 												(D3D12_HEAP_FLAGS)HeapFlags,
 											   (D3D12_RESOURCE_DESC*)_pDesc, 
 											   (D3D12_RESOURCE_STATES)InitialResourceState,
-											   (D3D12_CLEAR_VALUE*)_pClearValue, 
+												pD3D12ClearValue,
 											   (Guid *)_riidResource, out var _resource ) ;
 				ppvResource = new Resource( (ID3D12Resource)_resource ) ;
 			}
@@ -1339,8 +1357,18 @@ public interface IDevice: IObject,
 	
 	
 	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device).GUID ;
 	static Type IUnknownWrapper.ComType => typeof(ID3D12Device) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device).GUID ;
+	// ---------------------------------------------------------------------------------
+	static IDXCOMObject IInstantiable.Instantiate( ) => new Device( ) ;
+	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new Device( pComObj ) ;
+	
+	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
+		new Device( (ID3D12Device)pComObj! ) ;
+	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new Device( (ID3D12Device)pComObj! ) ;
 	// ==================================================================================
 } ;
 

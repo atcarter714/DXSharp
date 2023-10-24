@@ -31,7 +31,11 @@ public interface ISwapChain: IDeviceSubObject,
 	
 	void GetDesc( out SwapChainDescription pDesc ) ;
 	void Present( uint syncInterval, PresentFlags flags ) ;
-	void GetBuffer( uint buffer, out Direct3D12.IResource? pSurface ) ;
+	
+	//void GetBuffer( uint buffer, out Direct3D12.IResource pSurface ) ;
+	void GetBuffer< TResource >( uint buffer, out TResource pSurface )
+												where TResource: IDXCOMObject, IInstantiable ;
+	
 	void SetFullscreenState( bool fullscreen, in IOutput? pTarget ) ;
 	void GetFullscreenState( out bool pFullscreen, out IOutput? ppTarget ) ;
 	
@@ -96,7 +100,7 @@ public interface ISwapChain2: ISwapChain1,
 							  IComObjectRef< IDXGISwapChain2 >,
 							  IUnknownWrapper< IDXGISwapChain2 > {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< IDXGISwapChain2 > ComPointer { get ; }
+	new ComPtr< IDXGISwapChain2 >? ComPointer { get ; }
 	new IDXGISwapChain2? COMObject => ComPointer?.Interface ;
 	IDXGISwapChain2? IComObjectRef< IDXGISwapChain2 >.COMObject => COMObject ;
 
@@ -117,7 +121,7 @@ public interface ISwapChain3: ISwapChain2,
 							  IUnknownWrapper< IDXGISwapChain3 > {
 	
 	// ---------------------------------------------------------------------------------
-	new ComPtr< IDXGISwapChain3 > ComPointer { get ; }
+	new ComPtr< IDXGISwapChain3 >? ComPointer { get ; }
 	new IDXGISwapChain3? COMObject => ComPointer?.Interface ;
 	IDXGISwapChain3? IComObjectRef< IDXGISwapChain3 >.COMObject => COMObject ;
 

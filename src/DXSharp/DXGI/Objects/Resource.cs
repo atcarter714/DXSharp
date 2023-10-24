@@ -9,8 +9,8 @@ namespace DXSharp.DXGI ;
 
 
 public class Resource: DeviceSubObject, IResource {
-	public static Type ComType => typeof( IDXGIResource ) ;
-	public static Guid InterfaceGUID => typeof( IDXGIResource ).GUID ;
+	public new static Type ComType => typeof( IDXGIResource ) ;
+	public new static Guid InterfaceGUID => typeof( IDXGIResource ).GUID ;
 	
 	public new ComPtr< IDXGIResource >? ComPointer { get ; protected set ; }
 	public new IDXGIResource? COMObject => ComPointer?.Interface ;

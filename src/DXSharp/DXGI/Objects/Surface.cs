@@ -67,8 +67,8 @@ public interface ISurface:  IDeviceSubObject,
 
 //! Concrete Implementation of an IDXGISurface wrapper/proxy ::
 public class Surface: DeviceSubObject, ISurface {
-	public static Type ComType => typeof( IDXGISurface ) ;
-	public static Guid InterfaceGUID => typeof( IDXGISurface ).GUID ;
+	public new static Type ComType => typeof( IDXGISurface ) ;
+	public new static Guid InterfaceGUID => typeof( IDXGISurface ).GUID ;
 
 	public static IDXCOMObject Instantiate( ) => new Surface( ) ;
 	public static IDXCOMObject Instantiate( nint ptr ) => new Surface( ptr ) ;

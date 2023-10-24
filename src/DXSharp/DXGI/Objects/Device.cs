@@ -73,7 +73,7 @@ public class Device: Object,
 			Residency* stackPtr = stackalloc Residency[ ppResources.Length ] ;
 			
 			var array = ppResources
-						.Select< Resource, object >( p => p?.COMObject! )?
+						.Select< Resource?, object >( p => p?.COMObject! )?
 								.ToArray( ) ;
 			
 			this.COMObject?.QueryResourceResidency( array,

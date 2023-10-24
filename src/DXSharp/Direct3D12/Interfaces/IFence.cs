@@ -1,6 +1,7 @@
 ﻿using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
+using DXSharp.Windows.Win32 ;
 
 namespace DXSharp.Direct3D12 ;
 
@@ -10,7 +11,7 @@ public interface IFence: IPageable,
 						 IComObjectRef< ID3D12Fence >,
 						 IUnknownWrapper< ID3D12Fence > {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Fence > ComPointer { get ; }
+	new ComPtr< ID3D12Fence >? ComPointer { get ; }
 	new ID3D12Fence? COMObject => ComPointer?.Interface ;
 	ID3D12Fence? IComObjectRef< ID3D12Fence >.COMObject => COMObject ;
 	ComPtr< ID3D12Fence >? IUnknownWrapper< ID3D12Fence >.ComPointer => ComPointer ;
@@ -41,7 +42,7 @@ public interface IFence: IPageable,
 	/// <para>To specify multiple fences before an event is triggered, refer to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion">SetEventOnMultipleFenceCompletion</a>. If *hEvent* is a null handle, then this API will not return until the specified fence value(s) have been reached. This method can be safely called from multiple threads at one time.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12fence-seteventoncompletion#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void SetEventOnCompletion( ulong Value, HANDLE hEvent ) => COMObject!.SetEventOnCompletion( Value, hEvent ) ;
+	void SetEventOnCompletion( ulong Value, Win32Handle hEvent ) => COMObject!.SetEventOnCompletion( Value, hEvent ) ;
 
 	/// <summary>Sets the fence to the specified value.</summary>
 	/// <param name="Value">
@@ -57,5 +58,7 @@ public interface IFence: IPageable,
 	// ---------------------------------------------------------------------------------
 	static Type IUnknownWrapper.ComType => typeof(ID3D12Fence) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Fence).GUID ;
+	public new static Type ComType => typeof(ID3D12Fence) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Fence).GUID ;
 	// ==================================================================================
 } ;

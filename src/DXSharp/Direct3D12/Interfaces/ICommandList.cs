@@ -8,9 +8,12 @@ namespace DXSharp.Direct3D12 ;
 [ProxyFor(typeof(ID3D12CommandList))]
 public interface ICommandList: IDeviceChild,
 							   IComObjectRef< ID3D12CommandList >,
-							   IUnknownWrapper< ID3D12CommandList >, IInstantiable {
+							   IUnknownWrapper< ID3D12CommandList >, IInstantiable
+{
+	public new static Guid InterfaceGUID => typeof( ID3D12CommandList ).GUID;
+	public new static Type ComType => typeof( ID3D12GraphicsCommandList );
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12CommandList > ComPointer { get ; }
+	new ComPtr< ID3D12CommandList >? ComPointer { get ; }
 	new ID3D12CommandList? COMObject => ComPointer?.Interface ;
 	ID3D12CommandList? IComObjectRef< ID3D12CommandList >.COMObject => COMObject ;
 	ComPtr< ID3D12CommandList >? IUnknownWrapper< ID3D12CommandList >.ComPointer => ComPointer ;

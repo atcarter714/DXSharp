@@ -11,4 +11,14 @@
       <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ClCompile Include="shaders.hlsl" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="shader1.hlsl">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

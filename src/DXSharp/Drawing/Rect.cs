@@ -20,6 +20,11 @@ public struct Rect {
 		Left  = left ; Top     = top ; 
 		Right = right ; Bottom = bottom ;
 	}
+	public Rect( uint left  = 0, uint top    = 0, 
+				 uint right = 0, uint bottom = 0 ) {
+		Left  = (int)left ; Top     = (int)top ; 
+		Right = (int)right ; Bottom = (int)bottom ;
+	}
 	public unsafe Rect( RECT* pRect ) {
 		unsafe { fixed( Rect* pThis = &this )
 			*((RECT*)pThis) = *pRect ;

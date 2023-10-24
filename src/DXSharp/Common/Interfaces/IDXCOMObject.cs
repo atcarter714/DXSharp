@@ -246,8 +246,3 @@ public interface IDXCOMObject: IUnknownWrapper {
 #endif
 	}
 } ;
-
-
-
-/*public interface IDXWrapper< T >: IDXCOMObject,
-								  IUnknownWrapper< T > where T: IUnknown { } ;*/

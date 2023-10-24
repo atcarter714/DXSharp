@@ -29,6 +29,25 @@ public class Adapter: Object, IAdapter {
 	
 	public new ComPtr< IDXGIAdapter >? ComPointer { get ; protected set ; }
 	public new IDXGIAdapter? COMObject => ComPointer?.Interface ;
+	
+	
+	protected AdapterDescription _descCached = default ;
+	public virtual AdapterDescription Description {
+		get {
+			if( _descCached.DeviceId is 0 )
+				GetDesc( out _descCached ) ;
+			return _descCached ;
+		}
+	}
+	
+	public GPUVendor Vendor => 
+		Description.VendorId switch {
+			0x10DE => GPUVendor.Nvidia,
+			0x1002 => GPUVendor.AMD,
+			0x8086 => GPUVendor.Intel,
+			_      => GPUVendor.Unknown,
+		} ;
+	
 	// -------------------------------------------------------------------------------------
 	
 	
@@ -107,22 +126,26 @@ public class Adapter1: Adapter, IAdapter1 {
 	public new ComPtr< IDXGIAdapter1 >? ComPointer { get ; protected set ; }
 	
 	
-	AdapterDescription1 _desc1Cached = default ;
+	protected AdapterDescription1 _desc1Cached = default ;
 	public AdapterDescription1 Description1 {
 		get {
-			if( _desc1Cached.DeviceId is 0 )
+			if( _desc1Cached.DeviceId is 0 ) {
 				GetDesc1( out _desc1Cached ) ;
+				base._descCached = new AdapterDescription {
+					VendorId              = _desc1Cached.VendorId,
+					DeviceId              = _desc1Cached.DeviceId,
+					SubSysId              = _desc1Cached.SubSysId,
+					Revision              = _desc1Cached.Revision,
+					DedicatedVideoMemory  = _desc1Cached.DedicatedVideoMemory,
+					DedicatedSystemMemory = _desc1Cached.DedicatedSystemMemory,
+					SharedSystemMemory    = _desc1Cached.SharedSystemMemory,
+					AdapterLuid           = _desc1Cached.AdapterLuid,
+					Description           = _desc1Cached.Description,
+				} ;
+			}
 			return _desc1Cached ;
 		}
 	}
-	
-	public GPUVendor Vendor => 
-		Description1.VendorId switch {
-			0x10DE => GPUVendor.Nvidia,
-			0x1002 => GPUVendor.AMD,
-			0x8086 => GPUVendor.Intel,
-			_      => GPUVendor.Unknown,
-		} ;
 	
 	
 	internal Adapter1( ) { }
@@ -174,21 +197,28 @@ public class Adapter2: Adapter1, IAdapter2,
 	public new IDXGIAdapter2? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIAdapter2 >? ComPointer { get ; protected set ; }
 	
-	AdapterDescription2 _desc2Cached = default ;
+	protected AdapterDescription2 _desc2Cached = default ;
 	public AdapterDescription2 Description2 {
 		get {
-			if( _desc2Cached.DeviceId is 0 )
+			if( _desc2Cached.DeviceId is 0 ) {
 				GetDesc2( out _desc2Cached ) ;
+				base._desc1Cached = _desc2Cached.Description1 ;
+				base._descCached = new AdapterDescription {
+					VendorId              = _desc2Cached.VendorId,
+					DeviceId              = _desc2Cached.DeviceId,
+					SubSysId              = _desc2Cached.SubSysId,
+					Revision              = _desc2Cached.Revision,
+					DedicatedVideoMemory  = _desc2Cached.DedicatedVideoMemory,
+					DedicatedSystemMemory = _desc2Cached.DedicatedSystemMemory,
+					SharedSystemMemory    = _desc2Cached.SharedSystemMemory,
+					AdapterLuid           = _desc2Cached.AdapterLuid,
+					Description           = _desc2Cached.Description,
+				} ;
+			}
 			return _desc2Cached ;
 		}
 	}
 	
-	public GPUVendor Vendor => Description2.VendorId switch {
-		0x10DE => GPUVendor.Nvidia,
-		0x1002 => GPUVendor.AMD,
-		0x8086 => GPUVendor.Intel,
-		_ => GPUVendor.Unknown,
-	} ;
 	
 	// --------------------------------------------------------------
 	// Internal Constructors:
@@ -229,9 +259,9 @@ public class Adapter2: Adapter1, IAdapter2,
 	
 	#region IInstantiable Implementation:
 	static Adapter2 IInstantiable< Adapter2 >.Instantiate( nint ptr ) => new( ptr ) ;
-	public static IDXCOMObject Instantiate( ) => new Adapter2( ) ;
-	public static IDXCOMObject Instantiate( nint ptr ) => new Adapter2( ptr ) ;
-	public static IDXCOMObject Instantiate< ICom >( ICom? obj ) where ICom: IUnknown? => 
+	public new static IDXCOMObject Instantiate( ) => new Adapter2( ) ;
+	public new static IDXCOMObject Instantiate( nint ptr ) => new Adapter2( ptr ) ;
+	public new static IDXCOMObject Instantiate< ICom >( ICom? obj ) where ICom: IUnknown? => 
 		new Adapter2( ( obj as IDXGIAdapter2 )! ) ;
 	#endregion
 	

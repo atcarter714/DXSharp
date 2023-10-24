@@ -1,4 +1,5 @@
 ﻿#region Using Directives
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using winMD = Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
@@ -54,29 +55,34 @@ public class Factory: Object,
 		ComPointer = new( factory ) ;
 	internal Factory( ComPtr< IDXGIFactory > ptr ) => 
 		ComPointer = ptr ;
-	internal Factory( object obj ) {
+	internal Factory( object obj ) =>
 		ComPointer = new( COMUtility.GetIUnknownForObject(obj) ) ;
-	}
 
-	
-	
-	public HResult CreateSwapChain< TDevice, TSwapChain >( in TDevice pDevice,
-															   in SwapChainDescription desc,
-																out TSwapChain? ppSwapChain ) 
-										where TDevice: class, IUnknownWrapper< ID3D12Device >
+
+	public virtual HResult CreateSwapChain< TCmdObj, TSwapChain >( in TCmdObj pCmdQueue,
+																   in SwapChainDescription desc,
+																   out TSwapChain? ppSwapChain )
+															where TCmdObj: class, IUnknownWrapper< ID3D12CommandQueue >
 															where TSwapChain: class, ISwapChain {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		ObjectDisposedException.ThrowIf( ComPointer?.Disposed ?? true, nameof(Factory) ) ;
+		ArgumentNullException.ThrowIfNull( pCmdQueue, nameof(pCmdQueue) ) ;
+		if( pCmdQueue.ComPointer is null ) throw new NullReferenceException( nameof(pCmdQueue.ComPointer) ) ;
+#endif
 		
 		unsafe {
 			ppSwapChain = default ;
 			var descCopy = desc ;
-			var _hr = COMObject!.CreateSwapChain( pDevice.ComPointer.Interface,
+			var cmdQueue = pCmdQueue.ComPointer.Interface ;
+			
+			var _hr = COMObject!.CreateSwapChain( cmdQueue,
 												(DXGI_SWAP_CHAIN_DESC *)&descCopy, 
 													out IDXGISwapChain? pSwapChain ) ;
 			
 			if( pSwapChain is null || _hr.Failed ) return _hr ;
 			ppSwapChain = (TSwapChain)(TSwapChain.Instantiate(pSwapChain)) ;
+			return _hr ;
 		}
-		return HResult.S_OK ;
 	}
 	
 	public void CreateSoftwareAdapter< TAdapter >( HInstance Module, out TAdapter? ppAdapter ) 
@@ -106,17 +112,21 @@ public class Factory: Object,
 		}
 	}
 	
-	
 	public HResult EnumAdapters< TAdapter >( uint index, out TAdapter? ppAdapter ) 
 												where TAdapter: class, IAdapter {
 		_ = COMObject ?? throw new NullReferenceException( ) ;
 		ppAdapter = default ;
 		
-		COMObject.EnumAdapters( index, out IDXGIAdapter? pAdapter ) ;
+		var hr = COMObject.EnumAdapters( index, out IDXGIAdapter? pAdapter ) ;
+		if ( hr.Failed ) {
+			ppAdapter = null ;
+			return hr ;
+		}
+		
 		var adapter = (TAdapter)( TAdapter.Instantiate(pAdapter) ) ;
 		ppAdapter = adapter ;
 		
-		return HResult.S_OK ;
+		return hr ;
 	}
 } ;
 
@@ -138,10 +148,10 @@ public class Factory1: Factory, IFactory1 {
 	public new ComPtr< IDXGIFactory1 >? ComPointer { get ; protected set ; }
 	
 	internal Factory1( ) { }
-	public Factory1( nint ptr ) => ComPointer = new( ptr ) ;
-	public Factory1( IDXGIFactory1 dxgiObj ) => ComPointer = new( dxgiObj ) ;
-	public Factory1( ComPtr< IDXGIFactory1 > ptr ) => ComPointer = ptr ;
-	public Factory1( object obj ) => 
+	public Factory1( nint ptr ): base(ptr) => ComPointer = new( ptr ) ;
+	public Factory1( IDXGIFactory1 dxgiObj ): base(dxgiObj) => ComPointer = new( dxgiObj ) ;
+	public Factory1( ComPtr< IDXGIFactory1 > ptr ): base(ptr) => ComPointer = ptr ;
+	public Factory1( object obj ): base(obj) =>
 		ComPointer = new( COMUtility.GetIUnknownForObject(obj) ) ;
 
 
@@ -150,11 +160,34 @@ public class Factory1: Factory, IFactory1 {
 		if( COMObject is null ) throw new NullReferenceException( ) ;
 		ppAdapter = default ;
 		
-		var _hr = COMObject.EnumAdapters1( index, out IDXGIAdapter1? pAdapter ) ; 
+		var _hr = COMObject.EnumAdapters1( index, out IDXGIAdapter1? pAdapter ) ;
+		if( _hr.Failed ) {
+			ppAdapter = null ;
+			return _hr ;
+		}
 		
 		ppAdapter = ( (TAdapter.Instantiate(pAdapter) )
 										as TAdapter ?? throw new NullReferenceException() ) ;
 		
-		return HResult.S_OK ;
+		return _hr ;
+	}
+
+	
+	public override HResult CreateSwapChain< TDevice, TSwapChain >( in  TDevice pCmdQueue, in SwapChainDescription desc,
+																	out TSwapChain? ppSwapChain ) where TSwapChain: class {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		ObjectDisposedException.ThrowIf( ComPointer?.Disposed ?? true, nameof(Factory) ) ;
+		ArgumentNullException.ThrowIfNull( pCmdQueue, nameof(pCmdQueue) ) ;
+		if( pCmdQueue.ComPointer is null ) throw new NullReferenceException( nameof(pCmdQueue.ComPointer) ) ;
+#endif
+
+		var hr = COMObject.CreateSwapChain( pCmdQueue.ComPointer.Interface, desc, out var pSwapChain ) ;
+		if(hr.Failed || pSwapChain is null) {
+			ppSwapChain = null ;
+			return hr ;
+		}
+		
+		ppSwapChain = (TSwapChain)(TSwapChain.Instantiate(pSwapChain)) ;
+		return hr ;
 	}
 } ;

@@ -13,7 +13,7 @@ public interface IResource: IDeviceSubObject,
 							IUnknownWrapper< IDXGIResource >,
 							IInstantiable {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< IDXGIResource > ComPointer { get ; }
+	new ComPtr< IDXGIResource >? ComPointer { get ; }
 	new IDXGIResource? COMObject => ComPointer?.Interface ;
 	IDXGIResource? IComObjectRef< IDXGIResource >.COMObject => COMObject ;
 

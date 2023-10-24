@@ -10,7 +10,7 @@ public interface IHeap: IPageable,
 						IComObjectRef< ID3D12Heap >,
 						IUnknownWrapper< ID3D12Heap > {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Heap > ComPointer { get ; }
+	new ComPtr< ID3D12Heap >? ComPointer { get ; }
 	new ID3D12Heap? COMObject => ComPointer?.Interface ;
 	ID3D12Heap? IComObjectRef< ID3D12Heap >.COMObject => COMObject ;
 	ComPtr< ID3D12Heap >? IUnknownWrapper< ID3D12Heap >.ComPointer => ComPointer ;

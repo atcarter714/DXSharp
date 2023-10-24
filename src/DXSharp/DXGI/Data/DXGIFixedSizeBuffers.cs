@@ -11,19 +11,21 @@ namespace DXSharp.DXGI ;
 
 /// <summary>An "inline" fixed buffer of DXGI.Format values.</summary>
 /// <remarks>Has a fixed length of 8x elements (indicated by the <b>const</b> <see cref="DXSharp.DXGI.Format8.ElementCount"/>)</remarks>
-[StructLayout(LayoutKind.Explicit, Size = (sizeof(Format) * 8) )]
+[StructLayout(LayoutKind.Explicit, Size = TotalSize ),
+ EquivalentOf(typeof(__DXGI_FORMAT_8))]
 public struct Format8: IEnumerable< Format > {
 	public const int ElementCount = 8,
-					 FormatSize   = sizeof(Format),
-					 TotalSize    = FormatSize * ElementCount ;
-	[FieldOffset(FormatSize * 0)] Format _f0 ;
-	[FieldOffset(FormatSize * 1)] Format _f1 ;
-	[FieldOffset(FormatSize * 2)] Format _f2 ;
-	[FieldOffset(FormatSize * 3)] Format _f3 ;
-	[FieldOffset(FormatSize * 4)] Format _f4 ;
-	[FieldOffset(FormatSize * 5)] Format _f5 ;
-	[FieldOffset(FormatSize * 6)] Format _f6 ;
-	[FieldOffset(FormatSize * 7)] Format _f7 ;
+					 ElementSize  = sizeof(Format),
+					 TotalSize    = ElementSize * ElementCount ;
+	
+	[FieldOffset(ElementSize * 0)] Format _f0 ;
+	[FieldOffset(ElementSize * 1)] Format _f1 ;
+	[FieldOffset(ElementSize * 2)] Format _f2 ;
+	[FieldOffset(ElementSize * 3)] Format _f3 ;
+	[FieldOffset(ElementSize * 4)] Format _f4 ;
+	[FieldOffset(ElementSize * 5)] Format _f5 ;
+	[FieldOffset(ElementSize * 6)] Format _f6 ;
+	[FieldOffset(ElementSize * 7)] Format _f7 ;
 	
 	public int Length => ElementCount ;
 	
@@ -48,6 +50,25 @@ public struct Format8: IEnumerable< Format > {
 				}
 			}
 		}
+	}
+
+	public Format this[ Index index ] {
+		[MethodImpl( _MAXOPT_ )] get => this[ index.Value ] ;
+		[MethodImpl( _MAXOPT_ )] set => this[ index.Value ] = value ;
+	}
+	
+	
+	public Format8( params Format[ ] formats) {
+		for( int i = 0 ; i < ElementCount ; ++i ) 
+			this[ i ] = formats[ i ] ;
+	}
+	
+	public Format8( Format f0 = default , Format f1 = default , 
+					Format f2 = default , Format f3 = default , 
+					Format f4 = default , Format f5 = default , 
+					Format f6 = default , Format f7 = default ) {
+		_f0 = f0 ; _f1 = f1 ; _f2 = f2 ; _f3 = f3 ;
+		_f4 = f4 ; _f5 = f5 ; _f6 = f6 ; _f7 = f7 ;
 	}
 	
 	

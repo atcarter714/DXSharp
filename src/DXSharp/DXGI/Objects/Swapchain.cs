@@ -2,6 +2,7 @@
 using System.Numerics ;
 using System.Runtime.Versioning ;
 using Windows.Win32.Foundation ;
+using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Dxgi.Common ;
 
@@ -14,8 +15,8 @@ namespace DXSharp.DXGI ;
 public class SwapChain: DeviceSubObject, ISwapChain {
 	public enum ColorSpaceSupportFlags: uint { Present = 0x1, OverlayPresent = 0x2, } ;
 	
-	public static Type ComType => typeof( IDXGISwapChain ) ;
-	public static Guid InterfaceGUID => ComType.GUID ;
+	public new static Type ComType => typeof( IDXGISwapChain ) ;
+	public new static Guid InterfaceGUID => ComType.GUID ;
 	public static SwapChain? Instantiate( ) => new( ) ;
 	
 	
@@ -39,11 +40,19 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 	public void Present( uint syncInterval, PresentFlags flags ) => 
 						COMObject!.Present( syncInterval, (uint)flags ) ;
 
-	public void GetBuffer( uint buffer, out Direct3D12.IResource? pSurface ) {
+	//public void GetBuffer( uint buffer, out Direct3D12.IResource pSurface ) {
+	public void GetBuffer< TResource >( uint buffer, out TResource pSurface ) where TResource: IDXCOMObject, IInstantiable {
 		unsafe {
-			pSurface = default ;
-			Guid guid = Resource.InterfaceGUID ;
+			Guid guid = TResource.InterfaceGUID ;
 			COMObject!.GetBuffer( buffer, &guid, out var comObj ) ;
+			
+#if DEBUG || DEBUG_COM || DEV_BUILD
+			if( comObj is null ) throw new DirectXComError( $"{nameof(SwapChain)}.{nameof(GetBuffer)} :: " +
+															$"Failed to obtain buffer resource of type \"{typeof(TResource).Name}\" " +
+															$"(GUID: {typeof(TResource).GUID})" ) ;
+#endif
+			var surface = (TResource)TResource.Instantiate( (IUnknown)comObj ) ;
+			pSurface = surface ;
 		}
 	}
 
@@ -115,8 +124,8 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	public new static Type ComType => typeof( IDXGISwapChain1 ) ;
 	public new static Guid InterfaceGUID => ComType.GUID ;
 	public new static SwapChain1? Instantiate( ) => new( ) ;
-	public new static ISwapChain? Instantiate( nint address ) => new SwapChain1( address ) ;
-	public new static ISwapChain? Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
+	public static ISwapChain? Instantiate( nint address ) => new SwapChain1( address ) ;
+	public static ISwapChain? Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
 		new SwapChain1( (IDXGISwapChain1)obj! ) ;
 
 	public new IDXGISwapChain1? COMObject => ComPointer?.Interface ;

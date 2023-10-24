@@ -3,7 +3,8 @@ dxgi.*
 d3d12.*
 d3d11.*
 user32.*
-d3dcompiler.*
+
+dxcompiler.*
 
 // DXGI COM Interfaces:
 IDXGIFactory7
@@ -164,3 +165,71 @@ EnumDisplayDevicesW
 
 RegisterWindowMessageA
 RegisterWindowMessageW
+
+// ------------------------------------------
+// Additional D3D12/D3DX12 Items:
+// ------------------------------------------
+DXCoreCreateAdapterFactory
+D3D12_FEATURE_ARCHITECTURE
+D3D12_FEATURE_ARCHITECTURE1
+D3D12_FEATURE_DATA_ARCHITECTURE
+D3D12_FEATURE_DATA_ARCHITECTURE1
+D3D12_FEATURE_DATA_CROSS_NODE
+
+// ------------------------------------------
+// DXC, DXIL & Shader Compilation Items
+// ------------------------------------------
+d3d12shader.h
+D3dcompiler_47.*
+dxil.*
+
+IDxcBlob
+IDxcBlobEncoding
+IDxcBlobUtf8
+IDxcBlobUtf16
+IDxcCompiler
+IDxcCompiler2
+IDxcCompiler3
+IDxcCompilerArgs
+IDxcAssembler
+IDxcContainerBuilder
+IDxcContainerReflection
+IDxcExtraOutputs
+IDxcIncludeHandler
+IDxcLibrary
+IDxcLinker
+IDxcOperationResult
+IDxcOptimizer
+IDxcOptimizerPass
+IDxcPbdUtils
+IDxcResult
+IDxcUtils
+IDxcValidator
+IDxcValidator2
+IDxcVersionInfo
+IDxcVersionInfo2
+IDxcVersionInfo3
+DxcArgPair
+DxcShaderHash
+DxcText
+DxcBuffer
+IDxc*
+
+DXC_*
+DXC_OUT_KIND
+
+GetProcAddress
+DxcCreateInstance
+Dxc*
+
+D3D12_TILED_RESOURCES_TIER
+D3D12_SHADER_VERSION_TYPE
+D3D_RESOURCE_RETURN_TYPE
+D3D12_SHADER_BUFFER_DESC
+D3D12_COLOR_WRITE_ENABLE
+D3D12_DEFAULT_STENCIL_READ_MASK
+
+// Includes everything (use temporarily):
+D3D12_*
+D3D12*
+ID3D12*

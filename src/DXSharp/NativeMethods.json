@@ -5,11 +5,12 @@
 
   "comInterop": {
     "preserveSigMethods": [
-      "EnumAdapters",
-      "EnumAdapters1",
+      "IDXGIFactory.EnumAdapters",
+      "IDXGIFactory1.EnumAdapters1",
       "GetFrameDirtyRects",
       "GetDeviceRemovedReason",
-      "ID3D12Device.GetDeviceRemovedReason"
+      "ID3D12Device.GetDeviceRemovedReason",
+      "ID3D12Device.CreateCommandList"
     ]
   }
 }

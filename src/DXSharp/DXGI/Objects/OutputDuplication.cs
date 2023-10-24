@@ -8,8 +8,8 @@ namespace DXSharp.DXGI ;
 
 
 public class OutputDuplication: Object, IOutputDuplication {
-	public static Type ComType => typeof( IDXGIOutputDuplication ) ;
-	public static Guid InterfaceGUID => typeof( IDXGIOutputDuplication ).GUID ;
+	public new static Type ComType => typeof( IDXGIOutputDuplication ) ;
+	public new static Guid InterfaceGUID => typeof( IDXGIOutputDuplication ).GUID ;
 	
 	
 	public new IDXGIOutputDuplication? COMObject => ComPointer?.Interface ;

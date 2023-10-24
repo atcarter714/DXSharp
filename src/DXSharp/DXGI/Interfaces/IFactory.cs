@@ -29,7 +29,7 @@ public interface IFactory: IObject,
 	new static Type ComType => typeof( IDXGIFactory ) ;
 	new static Guid InterfaceGUID => typeof( IDXGIFactory ).GUID ;
 	
-	new ComPtr< IDXGIFactory > ComPointer { get ; }
+	new ComPtr< IDXGIFactory >? ComPointer { get ; }
 	new IDXGIFactory? COMObject => ComPointer?.Interface ;
 	IDXGIFactory? IComObjectRef< IDXGIFactory >.COMObject => COMObject ;
 
@@ -98,7 +98,7 @@ public interface IFactory: IObject,
 
 	
 	/// <summary>Creates a swap chain.</summary>
-	/// <param name="pDevice">
+	/// <param name="pCmdQueue">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/unknwn/nn-unknwn-iunknown">IUnknown</a>*</b> For Direct3D 11, and earlier versions of Direct3D, this is a pointer to the Direct3D device for the swap chain. For Direct3D 12 this is a pointer to a direct command queue (refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12commandqueue">ID3D12CommandQueue</a>) . This parameter cannot be <b>NULL</b>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
@@ -117,10 +117,10 @@ public interface IFactory: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	HResult CreateSwapChain< TDevice, TSwapChain >( in  TDevice pDevice,
+	HResult CreateSwapChain< TCmdObj, TSwapChain >( in  TCmdObj pCmdQueue,
 													in  SwapChainDescription desc,
 													out TSwapChain? ppSwapChain )
-														where TDevice: class, IUnknownWrapper< ID3D12Device >
+														where TCmdObj: class, IUnknownWrapper< ID3D12CommandQueue >
 														where TSwapChain: class, ISwapChain ;
 
 	
@@ -156,9 +156,9 @@ public interface IFactory1: IFactory,
 	new IDXGIFactory1? COMObject => ComPointer?.Interface ;
 	IDXGIFactory? IComObjectRef< IDXGIFactory >.COMObject => COMObject ;
 	
-	new ComPtr< IDXGIFactory1 > ComPointer { get ; }
+	new ComPtr< IDXGIFactory1 >? ComPointer { get ; }
 
-	ComPtr< IDXGIFactory > IFactory.ComPointer =>
+	ComPtr< IDXGIFactory >? IFactory.ComPointer =>
 		ComPtr.Convert< IDXGIFactory1, IDXGIFactory >( ComPointer ) ;
 	
 	
