@@ -7,9 +7,11 @@ using DXSharp.DXGI ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
+
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_DEPTH_STENCIL_DESC ) )]
 public struct DepthStencilDesc {
+	
 	/// <summary>Specifies whether to enable depth testing. Set this member to <b>TRUE</b> to enable depth testing.</summary>
 	public BOOL DepthEnable ;
 
@@ -35,64 +37,52 @@ public struct DepthStencilDesc {
 	public DepthStencilOpDesc BackFace ;
 	
 	
-	public static DepthStencilDesc Default => new( ) {
-		DepthEnable = true,
-		DepthWriteMask = DepthWriteMask.ALL,
-		DepthFunc = ComparisonFunction.LESS,
-		StencilEnable = false,
-		StencilReadMask = 0xFF,
+	
+	public static readonly DepthStencilDesc Default = new( ) {
+		DepthEnable      = true,
+		DepthWriteMask   = DepthWriteMask.All,
+		DepthFunc        = ComparisonFunction.Less,
+		StencilEnable    = false,
+		StencilReadMask  = 0xFF,
 		StencilWriteMask = 0xFF,
-		FrontFace = new( ) {
-			StencilFailOp      = StencilOperation.KEEP,
-			StencilDepthFailOp = StencilOperation.KEEP,
-			StencilPassOp      = StencilOperation.KEEP,
-			StencilFunc        = ComparisonFunction.ALWAYS,
-		},
-		BackFace = new( ) {
-			StencilFailOp      = StencilOperation.KEEP,
-			StencilDepthFailOp = StencilOperation.KEEP,
-			StencilPassOp      = StencilOperation.KEEP,
-			StencilFunc        = ComparisonFunction.ALWAYS,
-		},
+		FrontFace        = DepthStencilOpDesc.Default,
+		BackFace         = DepthStencilOpDesc.Default,
 	} ;
 	
 	
-	public static implicit operator DepthStencilDesc( D3D12_DEPTH_STENCIL_DESC desc ) =>
-		new DepthStencilDesc {
-			DepthEnable = desc.DepthEnable,
-			DepthWriteMask = (DepthWriteMask)desc.DepthWriteMask,
-			DepthFunc = (ComparisonFunction)desc.DepthFunc,
-			StencilEnable = desc.StencilEnable,
-			StencilReadMask = desc.StencilReadMask,
-			StencilWriteMask = desc.StencilWriteMask,
-			FrontFace = (DepthStencilOpDesc)desc.FrontFace,
-			BackFace = (DepthStencilOpDesc)desc.BackFace,
-		} ;
-
-	public static implicit operator D3D12_DEPTH_STENCIL_DESC( DepthStencilDesc desc ) =>
-		new D3D12_DEPTH_STENCIL_DESC {
-			DepthEnable      = desc.DepthEnable,
-			DepthWriteMask   = (D3D12_DEPTH_WRITE_MASK)desc.DepthWriteMask,
-			DepthFunc        = (D3D12_COMPARISON_FUNC)desc.DepthFunc,
-			StencilEnable    = desc.StencilEnable,
-			StencilReadMask  = desc.StencilReadMask,
-			StencilWriteMask = desc.StencilWriteMask,
-			FrontFace        = (D3D12_DEPTH_STENCILOP_DESC)desc.FrontFace,
-			BackFace         = (D3D12_DEPTH_STENCILOP_DESC)desc.BackFace,
-		} ;
+	public DepthStencilDesc( bool depthEnable, DepthWriteMask depthWriteMask, ComparisonFunction depthFunc,
+							 bool stencilEnable, byte stencilReadMask, byte stencilWriteMask,
+							 DepthStencilOpDesc frontFace, DepthStencilOpDesc backFace ) {
+		DepthEnable = depthEnable ;
+		DepthWriteMask = depthWriteMask ;
+		DepthFunc = depthFunc ;
+		StencilEnable = stencilEnable ;
+		StencilReadMask = stencilReadMask ;
+		StencilWriteMask = stencilWriteMask ;
+		FrontFace = frontFace ;
+		BackFace = backFace ;
+	}
+	
+	public DepthStencilDesc( bool depthEnable = true,
+							 DepthWriteMask depthWriteMask = DepthWriteMask.All,
+							 ComparisonFunction depthFunc = ComparisonFunction.Less,
+							 bool stencilEnable = false, byte stencilReadMask = 0xFF, byte stencilWriteMask = 0xFF,
+							 DepthStencilOpDesc? frontFace = null, DepthStencilOpDesc? backFace = null ) {
+		DepthEnable = depthEnable ;
+		DepthWriteMask = depthWriteMask ;
+		DepthFunc = depthFunc ;
+		StencilEnable = stencilEnable ;
+		StencilReadMask = stencilReadMask ;
+		StencilWriteMask = stencilWriteMask ;
+		FrontFace = frontFace ?? DepthStencilOpDesc.Default ;
+		BackFace = backFace ?? DepthStencilOpDesc.Default ;
+	}
 } ;
 	
 
 [StructLayout(LayoutKind.Sequential),
 	ProxyFor( typeof( D3D12_DEPTH_STENCILOP_DESC ) )]
 public struct DepthStencilOpDesc {
-	/*public static DepthStencilOpDesc Default => new( ) {
-		StencilFailOp      = StencilOperation.KEEP,
-		StencilDepthFailOp = StencilOperation.KEEP,
-		StencilPassOp      = StencilOperation.KEEP,
-		StencilFunc        = ComparisonFunction.ALWAYS,
-	} ;*/
-	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_stencil_op">D3D12_STENCIL_OP</a>-typed value that identifies the stencil operation to perform when stencil testing fails.</summary>
 	public StencilOperation StencilFailOp ;
 
@@ -107,28 +97,22 @@ public struct DepthStencilOpDesc {
 	
 	
 	
-	public DepthStencilOpDesc( StencilOperation stencilFailOp, StencilOperation stencilDepthFailOp,
-							   StencilOperation stencilPassOp, ComparisonFunction stencilFunc ) {
+	public static readonly DepthStencilOpDesc Default = new( ) {
+		StencilFailOp      = StencilOperation.Keep,
+		StencilDepthFailOp = StencilOperation.Keep,
+		StencilPassOp      = StencilOperation.Keep,
+		StencilFunc        = ComparisonFunction.Always,
+	} ;
+	
+	public DepthStencilOpDesc( StencilOperation stencilFailOp = StencilOperation.Keep,
+							   StencilOperation stencilDepthFailOp = StencilOperation.Keep,
+							   StencilOperation stencilPassOp = StencilOperation.Keep,
+							   ComparisonFunction stencilFunc = ComparisonFunction.Always ) {
 		StencilFailOp = stencilFailOp ;
 		StencilDepthFailOp = stencilDepthFailOp ;
 		StencilPassOp = stencilPassOp ;
 		StencilFunc = stencilFunc ;
 	}
-	
-	
-	public static implicit operator DepthStencilOpDesc( D3D12_DEPTH_STENCILOP_DESC desc ) =>
-		new( (StencilOperation)desc.StencilFailOp, 
-			 (StencilOperation)desc.StencilDepthFailOp, 
-			 (StencilOperation)desc.StencilPassOp, 
-			 (ComparisonFunction)desc.StencilFunc ) ;
-
-	public static implicit operator D3D12_DEPTH_STENCILOP_DESC( DepthStencilOpDesc desc ) =>
-		new D3D12_DEPTH_STENCILOP_DESC {
-			StencilFailOp      = (D3D12_STENCIL_OP)desc.StencilFailOp,
-			StencilDepthFailOp = (D3D12_STENCIL_OP)desc.StencilDepthFailOp,
-			StencilPassOp      = (D3D12_STENCIL_OP)desc.StencilPassOp,
-			StencilFunc        = (D3D12_COMPARISON_FUNC)desc.StencilFunc,
-		} ;
 } ;
 	
 
@@ -158,18 +142,35 @@ public struct DepthStencilViewDesc {
 	} ;
 
 	
-	public static implicit operator D3D12_DEPTH_STENCIL_VIEW_DESC( in DepthStencilViewDesc desc ) {
-		unsafe {
-			fixed(DepthStencilViewDesc* ptr = &desc)
-				return *(D3D12_DEPTH_STENCIL_VIEW_DESC*)ptr ;
-		}
+	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex1DDSV texture1D ) {
+		Flags         = flags ; Format = format ;
+		ViewDimension = DSVDimension.Texture1D ;
+		ReadAs        = new( ) { Texture1D = texture1D } ;
 	}
-	
-	public static implicit operator DepthStencilViewDesc( in D3D12_DEPTH_STENCIL_VIEW_DESC desc ) {
-		unsafe {
-			fixed(D3D12_DEPTH_STENCIL_VIEW_DESC* ptr = &desc)
-				return *(DepthStencilViewDesc*)ptr ;
-		}
+	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex1DArrayDSV texture1DArray ) {
+		Flags         = flags ; Format = format ;
+		ViewDimension = DSVDimension.Texture1DArray ;
+		ReadAs        = new( ) { Texture1DArray = texture1DArray } ;
+	}
+	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex2DDSV texture2D ) {
+		Flags         = flags ; Format = format ;
+		ViewDimension = DSVDimension.Texture2D ;
+		ReadAs        = new( ) { Texture2D = texture2D } ;
+	}
+	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex2DArrayDSV texture2DArray ) {
+		Flags         = flags ; Format = format ;
+		ViewDimension = DSVDimension.Texture2DArray ;
+		ReadAs        = new( ) { Texture2DArray = texture2DArray } ;
+	}
+	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex2DMSDSV texture2DMS ) {
+		Flags         = flags ; Format = format ;
+		ViewDimension = DSVDimension.Texture2DMS ;
+		ReadAs        = new( ) { Texture2DMS = texture2DMS } ;
+	}
+	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex2DMSArrayDSV texture2DMSArray ) {
+		Flags         = flags ; Format = format ;
+		ViewDimension = DSVDimension.Texture2DMSArray ;
+		ReadAs        = new( ) { Texture2DMSArray = texture2DMSArray } ;
 	}
 } ;
 
@@ -181,17 +182,29 @@ public struct DepthStencilViewDesc {
 public struct Tex1DDSV {
 	/// <summary>The index of the first mipmap level to use.</summary>
 	public uint MipSlice ;
+	
+	public Tex1DDSV( uint mipSlice ) => MipSlice = mipSlice ;
+	public static implicit operator uint( Tex1DDSV dsv ) => dsv.MipSlice ;
+	public static implicit operator Tex1DDSV( uint mipSlice ) => new( mipSlice ) ;
 } ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_TEX1D_ARRAY_DSV ) )]
 public struct Tex1DArrayDSV {
 	/// <summary>The index of the first mipmap level to use.</summary>
-	public uint MipSlice;
+	public uint MipSlice ;
 	/// <summary>The index of the first texture to use in an array of textures.</summary>
-	public uint FirstArraySlice;
+	public uint FirstArraySlice ;
 	/// <summary>Number of textures to use.</summary>
-	public uint ArraySize;
+	public uint ArraySize ;
+	
+	
+	public Tex1DArrayDSV( uint mipSlice, uint firstArraySlice, uint arraySize ) {
+		MipSlice = mipSlice ; FirstArraySlice = firstArraySlice ; ArraySize = arraySize ;
+	}
+	public static implicit operator Tex1DArrayDSV( in (uint mipSlice, uint firstArraySlice, uint arraySize) dsv ) =>
+		new( dsv.mipSlice, dsv.firstArraySlice, dsv.arraySize ) ;
 } ;
 
 // --- Tex2D ---
@@ -201,7 +214,12 @@ public struct Tex1DArrayDSV {
 public struct Tex2DDSV {
 	/// <summary>The index of the first mipmap level to use.</summary>
 	public uint MipSlice ;
+	
+	public Tex2DDSV( uint mipSlice ) => MipSlice = mipSlice ;
+	public static implicit operator uint( Tex2DDSV dsv ) => dsv.MipSlice ;
+	public static implicit operator Tex2DDSV( uint mipSlice ) => new( mipSlice ) ;
 } ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_TEX2D_ARRAY_DSV ) )]
@@ -212,14 +230,28 @@ public struct Tex2DArrayDSV {
 	public uint FirstArraySlice ;
 	/// <summary>Number of textures to use.</summary>
 	public uint ArraySize ;
+	
+	public Tex2DArrayDSV( uint mipSlice, uint firstArraySlice, uint arraySize ) {
+		MipSlice = mipSlice ; FirstArraySlice = firstArraySlice ; ArraySize = arraySize ;
+	}
+	public static implicit operator Tex2DArrayDSV( in (uint mipSlice, uint firstArraySlice, uint arraySize) dsv ) =>
+		new( dsv.mipSlice, dsv.firstArraySlice, dsv.arraySize ) ;
 } ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  ProxyFor( typeof( D3D12_TEX2DMS_DSV ) )]
 public struct Tex2DMSDSV {
 	/// <summary>Unused.</summary>
-	public uint UnusedField_NothingToDefine;
+	public uint UnusedField_NothingToDefine ;
+	
+	
+	public static readonly Tex2DMSDSV Default =
+		new( ) { UnusedField_NothingToDefine = 0 } ;
+	internal Tex2DMSDSV( uint unusedField_NothingToDefine ) =>
+		UnusedField_NothingToDefine = unusedField_NothingToDefine ;
 } ;
+
 
 [StructLayout(LayoutKind.Sequential),
  ProxyFor(typeof(D3D12_TEX2DMS_ARRAY_DSV))]
@@ -228,4 +260,10 @@ public struct Tex2DMSArrayDSV {
 	public uint FirstArraySlice ;
 	/// <summary>Number of textures to use.</summary>
 	public uint ArraySize ;
+	
+	public Tex2DMSArrayDSV( uint firstArraySlice, uint arraySize ) {
+		FirstArraySlice = firstArraySlice ; ArraySize = arraySize ;
+	}
+	public static implicit operator Tex2DMSArrayDSV( in (uint firstArraySlice, uint arraySize) dsv ) =>
+		new( dsv.firstArraySlice, dsv.arraySize ) ;
 } ;

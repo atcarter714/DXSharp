@@ -653,6 +653,8 @@ public struct Rational: IEquatable< Rational > {
 /// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgicommon/ns-dxgicommon-dxgi_sample_desc#">Read more on docs.microsoft.com</see>.</para>
 /// </remarks>
 public struct SampleDescription {
+	public static readonly SampleDescription Default = new( 1, 0 ) ;
+	
 	internal SampleDescription( in DXGI_SAMPLE_DESC desc ) {
 		this.count = desc.Count;
 		this.quality = desc.Quality;
@@ -2023,53 +2025,55 @@ public struct AdapterDescription1: IEquatable< AdapterDescription1 > {
 
 [ProxyFor(typeof(DXGI_ADAPTER_DESC2))]
 public struct AdapterDescription2: IEquatable< AdapterDescription2 > { 
-	AdapterDescription1 Description1 ;
+	AdapterDescription1 _description1 ;
 	public FixedStr128 Description { 
-		get => Description1.Description ;
-		set => Description1.Description = value ;
+		get => _description1.Description ;
+		set => _description1.Description = value ;
 	}
 	public uint VendorId { 
-		get => Description1.VendorId ;
-		set => Description1.VendorId = value ;
+		get => _description1.VendorId ;
+		set => _description1.VendorId = value ;
 	}
 	public uint DeviceId {
-		get => Description1.DeviceId ;
-		set => Description1.DeviceId = value ;
+		get => _description1.DeviceId ;
+		set => _description1.DeviceId = value ;
 	}
 	public uint SubSysId {
-		get => Description1.SubSysId ;
-		set => Description1.SubSysId = value ;
+		get => _description1.SubSysId ;
+		set => _description1.SubSysId = value ;
 	}
 	public uint Revision {
-		get => Description1.Revision ;
-		set => Description1.Revision = value ;
+		get => _description1.Revision ;
+		set => _description1.Revision = value ;
 	}
 	public nuint DedicatedVideoMemory {
-		get => Description1.DedicatedVideoMemory ;
-		set => Description1.DedicatedVideoMemory = value ;
+		get => _description1.DedicatedVideoMemory ;
+		set => _description1.DedicatedVideoMemory = value ;
 	}
 	public nuint DedicatedSystemMemory {
-		get => Description1.DedicatedSystemMemory ;
-		set => Description1.DedicatedSystemMemory = value ;
+		get => _description1.DedicatedSystemMemory ;
+		set => _description1.DedicatedSystemMemory = value ;
 	}
 	public nuint SharedSystemMemory {
-		get => Description1.SharedSystemMemory ;
-		set => Description1.SharedSystemMemory = value ;
+		get => _description1.SharedSystemMemory ;
+		set => _description1.SharedSystemMemory = value ;
 	}
 	public Luid AdapterLuid {
-		get => Description1.AdapterLuid ;
-		set => Description1.AdapterLuid = value ;
+		get => _description1.AdapterLuid ;
+		set => _description1.AdapterLuid = value ;
 	}
 	public AdapterFlag Flags {
-		get => Description1.Flags ;
-		set => Description1.Flags = value ;
+		get => _description1.Flags ;
+		set => _description1.Flags = value ;
 	}
 	public GraphicsPreemptionGranularity GraphicsPreemptionGranularity ;
 	public ComputePreemptionGranularity ComputePreemptionGranularity ;
 	
+	internal AdapterDescription1 Description1 => this._description1 ;
+	
 	public AdapterDescription2( in DXGI_ADAPTER_DESC2 desc ) {
 		unsafe { fixed ( DXGI_ADAPTER_DESC2* src = &desc ) {
-				this.Description1                  = *(AdapterDescription1*)src ;
+				this._description1                  = *(AdapterDescription1*)src ;
 				this.GraphicsPreemptionGranularity = (GraphicsPreemptionGranularity)desc.GraphicsPreemptionGranularity ;
 				this.ComputePreemptionGranularity  = (ComputePreemptionGranularity)desc.ComputePreemptionGranularity ;
 			}
@@ -2078,7 +2082,7 @@ public struct AdapterDescription2: IEquatable< AdapterDescription2 > {
 	
 	
 	public override int GetHashCode( ) =>
-		HashCode.Combine( Description1,
+		HashCode.Combine( _description1,
 						  (int)GraphicsPreemptionGranularity,
 						  (int)ComputePreemptionGranularity ) ;
 	public override bool Equals( object? obj ) => 
@@ -2105,9 +2109,9 @@ public struct AdapterDescription2: IEquatable< AdapterDescription2 > {
 	
 	
 	public static bool operator ==( in AdapterDescription2 a, in AdapterDescription2 b ) => 
-		a.Description1 == b.Description1 && a.GraphicsPreemptionGranularity == b.GraphicsPreemptionGranularity 
+		a._description1 == b._description1 && a.GraphicsPreemptionGranularity == b.GraphicsPreemptionGranularity 
 										 && a.ComputePreemptionGranularity == b.ComputePreemptionGranularity ;
 	public static bool operator !=( in AdapterDescription2 a, in AdapterDescription2 b ) => 
-		a.Description1 != b.Description1 || a.GraphicsPreemptionGranularity != b.GraphicsPreemptionGranularity 
+		a._description1 != b._description1 || a.GraphicsPreemptionGranularity != b.GraphicsPreemptionGranularity 
 										 || a.ComputePreemptionGranularity != b.ComputePreemptionGranularity ;
 } ;

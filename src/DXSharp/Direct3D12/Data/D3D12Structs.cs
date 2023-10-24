@@ -1,5 +1,6 @@
 ﻿#region Using Directives
 
+using System.Buffers ;
 using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
@@ -8,6 +9,7 @@ using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi.Common ;
 using DXSharp.DXGI ;
+using static DXSharp.InteropUtils ;
 
 #endregion
 namespace DXSharp.Direct3D12 ;
@@ -36,40 +38,61 @@ public struct Box {
 } ;
 
 
-[StructLayout(LayoutKind.Sequential),
- EquivalentOf(typeof(D3D12_COMMAND_QUEUE_DESC))]
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf( typeof( D3D12_COMMAND_QUEUE_DESC ) )]
 public struct CommandQueueDescription {
-	public CommandListType Type ;
-	public int Priority ;
+	public CommandListType   Type ;
+	public int               Priority ;
 	public CommandQueueFlags Flags ;
-	public uint NodeMask ;
-}
+	public uint              NodeMask ;
 
-[StructLayout(LayoutKind.Sequential),
- EquivalentOf(typeof(D3D12_TILED_RESOURCE_COORDINATE))]
+	public CommandQueueDescription( CommandListType   type     = CommandListType.Direct,
+									int               priority = 0,
+									CommandQueueFlags flags    = CommandQueueFlags.None,
+									uint              nodeMask = 0 ) {
+		Type     = type ;
+		Priority = priority ;
+		Flags    = flags ;
+		NodeMask = nodeMask ;
+	}
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf( typeof( D3D12_TILED_RESOURCE_COORDINATE ) )]
 public struct TiledResourceCoordinate {
 	/// <summary>The x-coordinate of the tiled resource.</summary>
-	public uint X;
+	public uint X ;
+
 	/// <summary>The y-coordinate of the tiled resource.</summary>
-	public uint Y;
+	public uint Y ;
+
 	/// <summary>The z-coordinate of the tiled resource.</summary>
-	public uint Z;
-	
+	public uint Z ;
+
 	/// <summary>
 	/// <para>The index of the subresource for the tiled resource. For mipmaps that use nonstandard tiling, or are packed, or both use nonstandard tiling and are packed, any subresource value that indicates any of the packed mipmaps all refer to the same tile. Additionally, the X coordinate is used to indicate a tile within the packed mip region, rather than a logical region of a single subresource. The Y and Z coordinates must be zero.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_tiled_resource_coordinate#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint Subresource ;
-}
+
+	public TiledResourceCoordinate( uint x = 0, uint y = 0, uint z = 0, uint subresource = 0u ) {
+		X           = x ;
+		Y           = y ;
+		Z           = z ;
+		Subresource = subresource ;
+	}
+} ;
+
+
+//! TODO: Come up with better way to handle bool vs BOOL size difference
+//! For now, we'll just use BOOL until we implement our own "BOOL" type
 
 [StructLayout(LayoutKind.Sequential),
  EquivalentOf(typeof(D3D12_TILE_REGION_SIZE))]
 public struct TileRegionSize {
 	/// <summary>The number of tiles in the tiled region.</summary>
 	public uint NumTiles ;
-	
-	//! TODO: Come up with better way to handle bool vs BOOL size difference
-	//! For now, we'll just use BOOL until we implement our own "BOOL" type
 	/// <summary>
 	/// <para>Specifies whether the runtime uses the <b>Width</b>, <b>Height</b>, and <b>Depth</b> members to define the region.</para>
 	/// <para>If <b>TRUE</b>, the runtime uses the <b>Width</b>, <b>Height</b>, and <b>Depth</b> members to define the region. In this case,  <b>NumTiles</b> should be equal to <b>Width</b> *  <b>Height</b> * <b>Depth</b>. If <b>FALSE</b>, the runtime ignores the <b>Width</b>, <b>Height</b>, and <b>Depth</b> members and uses the <b>NumTiles</b> member to traverse tiles in the resource linearly across x, then y, then z (as applicable) and then spills over mipmaps/arrays in subresource order.  For example, use this technique to map an entire resource at once.</para>
@@ -84,7 +107,34 @@ public struct TileRegionSize {
 	public ushort Height ;
 	/// <summary>The depth of the tiled region, in tiles. Used for 3D textures or arrays. For arrays, used for advancing in depth jumps to next slice of same mipmap size, which isn't contiguous in the subresource counting space if there are multiple mipmaps.</summary>
 	public ushort Depth ;
+	
+	
+	public TileRegionSize( uint numTiles, BOOL useBox, uint width, ushort height, ushort depth ) {
+		NumTiles = numTiles ;
+		UseBox   = useBox ;
+		Width    = width ;
+		Height   = height ;
+		Depth    = depth ;
+	}
+	
+	public TileRegionSize( in D3D12_TILE_REGION_SIZE size ) {
+		NumTiles = size.NumTiles ;
+		UseBox   = size.UseBox ;
+		Width    = size.Width ;
+		Height   = size.Height ;
+		Depth    = size.Depth ;
+	}
+	
+	public static implicit operator TileRegionSize( in D3D12_TILE_REGION_SIZE size ) => new TileRegionSize( size ) ;
+	public static implicit operator D3D12_TILE_REGION_SIZE( in TileRegionSize size ) => new D3D12_TILE_REGION_SIZE {
+		NumTiles = size.NumTiles,
+		UseBox   = size.UseBox,
+		Width    = size.Width,
+		Height   = size.Height,
+		Depth    = size.Depth
+	} ;
 }
+
 
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_HEAP_DESC ) )]
@@ -142,7 +192,7 @@ public struct HeapProperties {
 	public HeapType Type ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_cpu_page_property">D3D12_CPU_PAGE_PROPERTY</a>-typed value that specifies the CPU-page properties for the heap.</summary>
-	public CPUPageProperty CPUPageProperty ;
+	public CpuPageProperty CPUPageProperty ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_memory_pool">D3D12_MEMORY_POOL</a>-typed value that specifies the memory pool for the heap.</summary>
 	public MemoryPool MemoryPoolPreference ;
@@ -159,20 +209,17 @@ public struct HeapProperties {
 	/// </summary>
 	public uint VisibleNodeMask ;
 	
-	public static implicit operator HeapProperties( in D3D12_HEAP_PROPERTIES props ) => new HeapProperties {
-			Type                 = (HeapType)props.Type,
-			CPUPageProperty      = (CPUPageProperty)props.CPUPageProperty,
-			MemoryPoolPreference = (MemoryPool)props.MemoryPoolPreference,
-			CreationNodeMask     = props.CreationNodeMask,
-			VisibleNodeMask      = props.VisibleNodeMask
-	} ;
-	public static implicit operator D3D12_HEAP_PROPERTIES( in HeapProperties props ) => new D3D12_HEAP_PROPERTIES {
-			Type                 = (D3D12_HEAP_TYPE)props.Type,
-			CPUPageProperty      = (D3D12_CPU_PAGE_PROPERTY)props.CPUPageProperty,
-			MemoryPoolPreference = (D3D12_MEMORY_POOL)props.MemoryPoolPreference,
-			CreationNodeMask     = props.CreationNodeMask,
-			VisibleNodeMask      = props.VisibleNodeMask
-	} ;
+	
+	public HeapProperties( HeapType type,
+						   CpuPageProperty cpuPageProperty = CpuPageProperty.Unknown, 
+						   MemoryPool memoryPoolPreference = MemoryPool.Unknown,
+						   uint creationNodeMask = 1, uint visibleNodeMask = 1 ) {
+		Type                 = type ;
+		CPUPageProperty      = cpuPageProperty ;
+		MemoryPoolPreference = memoryPoolPreference ;
+		CreationNodeMask     = creationNodeMask ;
+		VisibleNodeMask      = visibleNodeMask ;
+	}
 } ;
 
 
@@ -302,10 +349,12 @@ public struct ResourceDescription {
 	public ResourceFlags Flags ;
 	
 	
-	public ResourceDescription( ResourceDimension dimension, ulong alignment, 
-								ulong width, uint height, ushort depthOrArraySize, 
-								ushort mipLevels, Format format, SampleDescription sampleDesc, 
-								TextureLayout layout, ResourceFlags flags ) {
+	public ResourceDescription( ResourceDimension dimension,
+								ulong alignment, ulong width,
+								uint height, ushort depthOrArraySize, ushort mipLevels, 
+								Format format, SampleDescription sampleDesc,
+								TextureLayout layout = TextureLayout.Unknown, 
+								ResourceFlags flags = ResourceFlags.None ) {
 		Dimension        = dimension ;
 		Alignment        = alignment ;
 		Width            = width ;
@@ -331,30 +380,14 @@ public struct ResourceDescription {
 		Flags            = (ResourceFlags)desc.Flags ;
 	}
 	
-	public static implicit operator ResourceDescription( in D3D12_RESOURCE_DESC desc ) => new ResourceDescription {
-			Dimension       = (ResourceDimension)desc.Dimension,
-			Alignment       = desc.Alignment,
-			Width           = desc.Width,
-			Height          = desc.Height,
-			DepthOrArraySize= desc.DepthOrArraySize,
-			MipLevels       = desc.MipLevels,
-			Format          = (Format)desc.Format,
-			SampleDesc      = (SampleDescription)desc.SampleDesc,
-			Layout          = (TextureLayout)desc.Layout,
-			Flags           = (ResourceFlags)desc.Flags
-	} ;
-	public static implicit operator D3D12_RESOURCE_DESC( in ResourceDescription desc ) => new D3D12_RESOURCE_DESC {
-			Dimension       = (D3D12_RESOURCE_DIMENSION)desc.Dimension,
-			Alignment       = desc.Alignment,
-			Width           = desc.Width,
-			Height          = desc.Height,
-			DepthOrArraySize= desc.DepthOrArraySize,
-			MipLevels       = desc.MipLevels,
-			Format          = (DXGI_FORMAT)desc.Format,
-			SampleDesc      = (DXGI_SAMPLE_DESC)desc.SampleDesc,
-			Layout          = (D3D12_TEXTURE_LAYOUT)desc.Layout,
-			Flags           = (D3D12_RESOURCE_FLAGS)desc.Flags
-	} ;
+	
+	public static ResourceDescription Buffer( ulong width, ResourceFlags flags = ResourceFlags.None, ulong alignment = 0 ) {
+		return new ResourceDescription( ResourceDimension.Buffer, alignment, width, 1U,
+								 (ushort)1U, (ushort)1U,
+								 format: default,
+								 SampleDescription.Default,
+								 TextureLayout.RowMajor, flags ) ;
+	}
 } ;
 
 
@@ -363,6 +396,13 @@ public struct ResourceDescription {
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof(D3D12_RASTERIZER_DESC) )]
 public struct RasterizerDescription {
+	public static readonly RasterizerDescription Default =
+		new RasterizerDescription( FillMode.Solid, CullMode.Back,
+								   false, 0,
+								   0.0f, 0.0f,
+								   true, false, false,
+								   0, ConservativeRasterizationMode.Off ) ;
+	
 	/// <summary>
 	/// A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_fill_mode">D3D12_FILL_MODE</a>-typed
 	/// value that specifies the fill mode to use when rendering.
@@ -446,7 +486,12 @@ public struct RasterizerDescription {
 	public ConservativeRasterizationMode ConservativeRaster ;
 	
 	
-	public RasterizerDescription( FillMode fillMode, CullMode cullMode, BOOL frontCounterClockwise, int depthBias, float depthBiasClamp, float slopeScaledDepthBias, BOOL depthClipEnable, BOOL multisampleEnable, BOOL antialiasedLineEnable, uint forcedSampleCount, ConservativeRasterizationMode conservativeRaster ) {
+	public RasterizerDescription( FillMode fillMode, CullMode cullMode, 
+								  BOOL frontCounterClockwise, int depthBias, 
+								  float depthBiasClamp, float slopeScaledDepthBias, 
+								  BOOL depthClipEnable, BOOL multisampleEnable, 
+								  BOOL antialiasedLineEnable, uint forcedSampleCount, 
+								  ConservativeRasterizationMode conservativeRaster ) {
 		FillMode               = fillMode ;
 		CullMode               = cullMode ;
 		FrontCounterClockwise  = frontCounterClockwise ;
@@ -569,10 +614,10 @@ public struct InputLayoutDescription {
 	/// when the structure goes out of scope you will no longer know the allocation address, thus the memory will be leaked! Use wisely and
 	/// don't forget to do your chores and clean up! This exists for convenience, but can turn out bad if misused!
 	/// </remarks>
-	internal InputLayoutDescription[ ]? InputLayoutDescriptions {
+	internal InputElementDescription[ ]? InputElementDescriptions {
 		get { unsafe {
-				if ( pInputElementDescs is 0x0000 || NumElements is 0 ) return Array.Empty< InputLayoutDescription >( ) ;
-				Span< InputLayoutDescription > descSpan = new( (InputLayoutDescription*)pInputElementDescs, (int)NumElements ) ;
+				if ( pInputElementDescs is 0x0000 || NumElements is 0 ) return Array.Empty< InputElementDescription >( ) ;
+				Span< InputElementDescription > descSpan = new( (InputElementDescription*)pInputElementDescs, (int)NumElements ) ;
 				return descSpan.ToArray( ) ;
 			}
 		}
@@ -583,34 +628,37 @@ public struct InputLayoutDescription {
 					NumElements = 0 ;
 					return ;
 				}
-				fixed ( InputLayoutDescription* pValue = value ) {
+				fixed ( InputElementDescription* pValue = value ) {
 					NumElements = (uint)value.Length ;
 					
-					Span< InputLayoutDescription > descSpan = new( pValue, value.Length ) ;
-					nint address = Marshal.AllocHGlobal( sizeof(InputLayoutDescription) * value.Length ) ;
-					descSpan.CopyTo( new( (InputLayoutDescription *)address, value.Length ) ) ;
+					Span< InputElementDescription > descSpan = new( pValue, value.Length ) ;
+					nint address = Marshal.AllocHGlobal( sizeof(InputElementDescription) * value.Length ) ;
+					descSpan.CopyTo( new( (InputElementDescription *)address, value.Length ) ) ;
 					pInputElementDescs = address ;
 				}
 			}
 		}
 	}
 	
+	
+	
 	public InputLayoutDescription( nint pInputElementDescs, uint numElements ) {
 		this.pInputElementDescs = pInputElementDescs ;
 		this.NumElements = numElements ;
 	}
-	/// <summary>Creates an input LayoutDescription with backing unmanaged memory for the array of <see cref="InputLayoutDescription"/> structures.</summary>
+	
+	/// <summary>Creates an input LayoutDescription with backing unmanaged memory for the array of <see cref="InputElementDescription"/> structures.</summary>
 	/// <remarks>
 	/// <b>WARNING:</b> <para/>
 	/// This allocates unmanaged memory which is not garbage-collected for you!
-	/// See the warning of the <see cref="InputLayoutDescriptions"/> property for more information.
+	/// See the warning of the <see cref="InputElementDescriptions"/> property for more information.
 	/// Release the memory pointed to by <see cref="pInputElementDescs"/> when you are done with it
 	/// by calling <see cref="Marshal.FreeHGlobal(IntPtr)"/> or other memory management functions.<para/>
 	/// These things are marked `internal` to prevent them from wrecking people's day.
 	/// </remarks>
 	/// <param name="inputLayoutDescriptions">Managed array of InputLayoutDescription structures to allocate into unmanaged memory.</param>
-	internal InputLayoutDescription( InputLayoutDescription[ ] inputLayoutDescriptions ) {
-		this.InputLayoutDescriptions = inputLayoutDescriptions ;
+	public InputLayoutDescription( in InputElementDescription[ ] inputLayoutDescriptions ) {
+		this.InputElementDescriptions = inputLayoutDescriptions ;
 		this.NumElements = (uint)inputLayoutDescriptions.Length ;
 	}
 	
@@ -619,20 +667,39 @@ public struct InputLayoutDescription {
 		this.NumElements = desc.NumElements ;
 	}
 	
-	public static implicit operator D3D12_INPUT_LAYOUT_DESC( in InputLayoutDescription desc ) {
-		unsafe { return new D3D12_INPUT_LAYOUT_DESC {
-				pInputElementDescs = (D3D12_INPUT_ELEMENT_DESC*)desc.pInputElementDescs,
-				NumElements = desc.NumElements
-			} ;
+	/*public InputLayoutDescription( Memory< InputElementDescription > inputElements ) {
+		unsafe { this.pInputElementDescs = (nint)inputElements.Pin( ).Pointer ; }
+		this.NumElements = (uint)inputElements.Length ;
+	}
+	public InputLayoutDescription( ReadOnlyMemory< InputElementDescription > inputElements ) {
+		unsafe { this.pInputElementDescs = (nint)inputElements.Pin( ).Pointer ; }
+		this.NumElements = (uint)inputElements.Length ;
+	}*/
+	
+	
+	public Span< InputElementDescription > AsSpan( ) {
+		unsafe {
+			if ( pInputElementDescs is 0x0000 || NumElements is 0 ) 
+				return Span< InputElementDescription >.Empty ;
+			
+			return new(
+					   (InputElementDescription*)pInputElementDescs,
+						(int)NumElements ) ;
 		}
 	}
-	public static implicit operator InputLayoutDescription( in D3D12_INPUT_LAYOUT_DESC desc ) {
-		unsafe { return new InputLayoutDescription {
-				pInputElementDescs = (nint)desc.pInputElementDescs,
-				NumElements = desc.NumElements
+	
+	public static MemoryHandle Create( in Memory< InputElementDescription > inputElements, 
+									   out InputLayoutDescription layoutDescription ) {
+		unsafe {
+			var handle = inputElements.Pin( ) ;
+			layoutDescription = new( ) {
+				pInputElementDescs = (nint)handle.Pointer,
+				NumElements = (uint)inputElements.Length
 			} ;
+			return handle ;
 		}
 	}
+	
 } ;
 
 
@@ -671,12 +738,33 @@ public struct SODeclarationEntry {
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_so_declaration_entry#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public byte OutputSlot ;
+	
+	
+	public SODeclarationEntry( uint stream, PCSTR semanticName, uint semanticIndex, 
+							   byte startComponent, byte componentCount, byte outputSlot ) {
+		this.Stream = stream ;
+		this.SemanticName = semanticName ;
+		this.SemanticIndex = semanticIndex ;
+		this.StartComponent = startComponent ;
+		this.ComponentCount = componentCount ;
+		this.OutputSlot = outputSlot ;
+	}
+	public SODeclarationEntry( uint stream, string semanticName, uint semanticIndex, 
+							  byte startComponent, byte componentCount, byte outputSlot = 0 ) {
+		this.Stream = stream ;
+		this.SemanticName = semanticName ;
+		this.SemanticIndex = semanticIndex ;
+		this.StartComponent = startComponent ;
+		this.ComponentCount = componentCount ;
+		this.OutputSlot = 0 ;
+	}
 } ;
 
 
+/*
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_STREAM_OUTPUT_DESC ) )]
-public struct StreamOuputDescription {
+public struct StreamOutputDescription {
 	/// <summary>An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_so_declaration_entry">D3D12_SO_DECLARATION_ENTRY</a> structures. Can't be <b>NULL</b> if <b>NumEntries</b> &gt; 0.</summary>
 	public unsafe SODeclarationEntry* pSODeclaration ;
 
@@ -692,7 +780,7 @@ public struct StreamOuputDescription {
 	/// <summary>The index number of the stream to be sent to the rasterizer stage.</summary>
 	public uint RasterizedStream ;
 	
-	public unsafe StreamOuputDescription( SODeclarationEntry* pSODeclaration, uint numEntries, 
+	public unsafe StreamOutputDescription( SODeclarationEntry* pSODeclaration, uint numEntries, 
 										  uint* pBufferStrides, uint numStrides, uint rasterizedStream ) {
 		this.pSODeclaration = pSODeclaration ;
 		this.NumEntries = numEntries ;
@@ -701,7 +789,7 @@ public struct StreamOuputDescription {
 		this.RasterizedStream = rasterizedStream ;
 	}
 	
-	public StreamOuputDescription( in D3D12_STREAM_OUTPUT_DESC desc ) {
+	public StreamOutputDescription( in D3D12_STREAM_OUTPUT_DESC desc ) {
 		unsafe {
 			this.pSODeclaration = (SODeclarationEntry*)desc.pSODeclaration ;
 			this.NumEntries = desc.NumEntries ;
@@ -732,14 +820,15 @@ public struct StreamOuputDescription {
 			} ;
 		}
 	}
-} ;
+} ;*/
 
 
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_GRAPHICS_PIPELINE_STATE_DESC ) )]
 public struct GraphicsPipelineStateDescription {
 	/// <summary>A pointer to the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12rootsignature">ID3D12RootSignature</a> object.</summary>
-	[MarshalAs(UnmanagedType.Interface)] public ID3D12RootSignature pRootSignature ;
+	[MarshalAs(UnmanagedType.Interface)]
+	public ID3D12RootSignature pRootSignature ;
 	//public nint pRootSignature ;
 	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode">D3D12_SHADER_BYTECODE</a> structure that describes the vertex shader.</summary>
@@ -758,7 +847,7 @@ public struct GraphicsPipelineStateDescription {
 	public ShaderBytecode GS;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_stream_output_desc">D3D12_STREAM_OUTPUT_DESC</a> structure that describes a streaming output buffer.</summary>
-	public StreamOuputDescription StreamOutput;
+	public StreamOutputDescription StreamOutput;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_blend_desc">D3D12_BLEND_DESC</a> structure that describes the blend state.</summary>
 	public BlendDescription BlendState;
@@ -805,6 +894,8 @@ public struct GraphicsPipelineStateDescription {
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_flags">D3D12_PIPELINE_STATE_FLAGS</a> enumeration constant such as for "tool debug".</summary>
 	public PipelineStateFlags Flags ;
 	
+	
+	
 	public GraphicsPipelineStateDescription( in D3D12_GRAPHICS_PIPELINE_STATE_DESC desc ) {
 		this.pRootSignature        = desc.pRootSignature ;
 		this.VS                    = desc.VS ;
@@ -829,30 +920,6 @@ public struct GraphicsPipelineStateDescription {
 		this.Flags                 = (PipelineStateFlags)desc.Flags ;
 	}
 	
-	public static implicit operator D3D12_GRAPHICS_PIPELINE_STATE_DESC( in GraphicsPipelineStateDescription desc ) => 
-		new D3D12_GRAPHICS_PIPELINE_STATE_DESC {
-			pRootSignature        = desc.pRootSignature,
-			VS                    = desc.VS,
-			PS                    = desc.PS,
-			DS                    = desc.DS,
-			HS                    = desc.HS,
-			GS                    = desc.GS,
-			StreamOutput          = desc.StreamOutput,
-			BlendState            = desc.BlendState,
-			SampleMask            = desc.SampleMask,
-			RasterizerState       = desc.RasterizerState,
-			DepthStencilState     = desc.DepthStencilState,
-			InputLayout           = desc.InputLayout,
-			IBStripCutValue       = (D3D12_INDEX_BUFFER_STRIP_CUT_VALUE)desc.IBStripCutValue,
-			PrimitiveTopologyType = (D3D12_PRIMITIVE_TOPOLOGY_TYPE)desc.PrimitiveTopologyType,
-			NumRenderTargets      = desc.NumRenderTargets,
-			RTVFormats            = desc.RTVFormats,
-			DSVFormat             = (DXGI_FORMAT)desc.DSVFormat,
-			SampleDesc            = desc.SampleDesc,
-			NodeMask              = desc.NodeMask,
-			CachedPSO             = desc.CachedPSO,
-			Flags                 = (D3D12_PIPELINE_STATE_FLAGS)desc.Flags
-	} ;
 } ;
 
 
@@ -1015,8 +1082,23 @@ public struct CPUDescriptorHandle {
 	/// <summary>The address of  the descriptor.</summary>
 	public nuint ptr ;
 	
+	public static implicit operator nuint( CPUDescriptorHandle handle ) => handle.ptr ;
+	public static implicit operator CPUDescriptorHandle( nuint ptr ) => new CPUDescriptorHandle { ptr = ptr } ;
 	public static implicit operator D3D12_CPU_DESCRIPTOR_HANDLE( in CPUDescriptorHandle handle ) => new D3D12_CPU_DESCRIPTOR_HANDLE { ptr = handle.ptr } ;
 	public static implicit operator CPUDescriptorHandle( in D3D12_CPU_DESCRIPTOR_HANDLE handle ) => new CPUDescriptorHandle { ptr = handle.ptr } ;
+
+	public static CPUDescriptorHandle operator +( CPUDescriptorHandle handle, int offset ) => 
+		new CPUDescriptorHandle { ptr = handle.ptr + (uint)offset } ;
+	public static CPUDescriptorHandle operator +( CPUDescriptorHandle handle, uint offset ) => 
+		new CPUDescriptorHandle { ptr = handle.ptr + offset } ;
+	public static CPUDescriptorHandle operator -( CPUDescriptorHandle handle, int offset ) =>
+	 		new CPUDescriptorHandle { ptr = handle.ptr - (uint)offset } ;
+	public static CPUDescriptorHandle operator -( CPUDescriptorHandle handle, uint offset ) =>
+	 		new CPUDescriptorHandle { ptr = handle.ptr - offset } ;
+	public static CPUDescriptorHandle operator ++( CPUDescriptorHandle handle ) =>
+	 		new CPUDescriptorHandle { ptr = handle.ptr + 1 } ;
+	public static CPUDescriptorHandle operator --( CPUDescriptorHandle handle ) =>
+	 		new CPUDescriptorHandle { ptr = handle.ptr - 1 } ;
 } ;
 
 [StructLayout( LayoutKind.Sequential ),
@@ -1025,8 +1107,30 @@ public struct GPUDescriptorHandle {
 	/// <summary>The address of the descriptor.</summary>
 	public ulong ptr ;
 	
+	
+	public static implicit operator ulong( GPUDescriptorHandle handle ) => handle.ptr ;
+	public static implicit operator GPUDescriptorHandle( ulong ptr ) => new GPUDescriptorHandle { ptr = ptr } ;
 	public static implicit operator D3D12_GPU_DESCRIPTOR_HANDLE( in GPUDescriptorHandle handle ) => new D3D12_GPU_DESCRIPTOR_HANDLE { ptr = handle.ptr } ;
 	public static implicit operator GPUDescriptorHandle( in D3D12_GPU_DESCRIPTOR_HANDLE handle ) => new GPUDescriptorHandle { ptr = handle.ptr } ;
+	
+	public static GPUDescriptorHandle operator +( GPUDescriptorHandle handle, int offset ) => 
+		new GPUDescriptorHandle { ptr = handle.ptr + (uint)offset } ;
+	public static GPUDescriptorHandle operator +( GPUDescriptorHandle handle, uint offset ) => 
+		new GPUDescriptorHandle { ptr = handle.ptr + offset } ;
+	public static GPUDescriptorHandle operator +( GPUDescriptorHandle handle, ulong offset ) => 
+		new GPUDescriptorHandle { ptr = handle.ptr + offset } ;
+	
+	public static GPUDescriptorHandle operator -( GPUDescriptorHandle handle, int offset ) =>
+		new GPUDescriptorHandle { ptr = handle.ptr - (uint)offset } ;
+	public static GPUDescriptorHandle operator -( GPUDescriptorHandle handle, uint offset ) =>
+		new GPUDescriptorHandle { ptr = handle.ptr - offset } ;
+	public static GPUDescriptorHandle operator -( GPUDescriptorHandle handle, ulong offset ) =>
+		new GPUDescriptorHandle { ptr = handle.ptr - offset } ;
+	
+	public static GPUDescriptorHandle operator ++( GPUDescriptorHandle handle ) =>
+		new GPUDescriptorHandle { ptr = handle.ptr + 1UL } ;
+	public static GPUDescriptorHandle operator --( GPUDescriptorHandle handle ) =>
+		new GPUDescriptorHandle { ptr = handle.ptr - 1UL } ;
 } ;
 
 // =======================================================
@@ -1068,7 +1172,7 @@ public struct SamplerDescription {
 							   TextureAddressMode addressW, 
 							   float mipLODBias = 0, 
 							   uint maxAnisotropy = 0, 
-							   ComparisonFunction comparisonFunc = ComparisonFunction.NEVER, 
+							   ComparisonFunction comparisonFunc = ComparisonFunction.Never, 
 							   __float_4 borderColor = default, 
 							   float minLOD = 0, 
 							   float maxLOD = float.MaxValue ) {
@@ -1196,7 +1300,7 @@ public struct BlendDescription {
 	
 	
 	
-	public BlendDescription( BOOL alphaToCoverageEnable, BOOL independentBlendEnable, 
+	public BlendDescription( bool alphaToCoverageEnable, bool independentBlendEnable, 
 							 RTBlendDescription8 renderTarget ) {
 		AlphaToCoverageEnable = alphaToCoverageEnable ;
 		IndependentBlendEnable = independentBlendEnable ;
@@ -1208,35 +1312,53 @@ public struct BlendDescription {
 		IndependentBlendEnable = desc.IndependentBlendEnable ;
 		RenderTarget = desc.RenderTarget ;
 	}
-	
-	public static implicit operator D3D12_BLEND_DESC( in BlendDescription desc ) => new D3D12_BLEND_DESC {
-			AlphaToCoverageEnable = desc.AlphaToCoverageEnable,
-			IndependentBlendEnable = desc.IndependentBlendEnable,
-			RenderTarget = desc.RenderTarget
-	} ;
-	
-	public static implicit operator BlendDescription( in D3D12_BLEND_DESC desc ) => new BlendDescription {
-			AlphaToCoverageEnable = desc.AlphaToCoverageEnable,
-			IndependentBlendEnable = desc.IndependentBlendEnable,
-			RenderTarget = desc.RenderTarget
+
+	public static readonly BlendDescription Default = new( ) {
+		AlphaToCoverageEnable  = false,
+		IndependentBlendEnable = false,
+		RenderTarget             = RTBlendDescription8.Default,
 	} ;
 } ;
 
 
 
-[StructLayout( LayoutKind.Sequential ),
- EquivalentOf( typeof( D3D12_RENDER_TARGET_BLEND_DESC ) )]
+[StructLayout( LayoutKind.Sequential, Size = SizeInBytes ),
+ EquivalentOf( typeof(D3D12_RENDER_TARGET_BLEND_DESC) )]
 public struct RTBlendDescription {
-	/// <summary>
-	/// <para>Specifies whether to enable (or disable) blending. Set to <b>TRUE</b> to enable blending. > [!NOTE] > It's not valid for *LogicOpEnable* and *BlendEnable* to both be **TRUE**.</para>
+	public const int SizeInBytes =   sizeof(int) * 2 
+								   + sizeof(Blend) * 4 
+								   + sizeof(BlendOperation) * 2 
+								   + sizeof(LogicOperation) * 2
+								   + sizeof(ColorWriteEnableFlags) ;
+	
+	public static readonly RTBlendDescription Default = new RTBlendDescription {
+		BlendEnable = false,
+		LogicOpEnable = false,
+		SrcBlend = Blend.One,
+		DestBlend = Blend.Zero,
+		BlendOp = BlendOperation.Add,
+		SrcBlendAlpha = Blend.One,
+		DestBlendAlpha = Blend.Zero,
+		BlendOpAlpha = BlendOperation.Add,
+		LogicOp = LogicOperation.NOOP,
+		RenderTargetWriteMask = ColorWriteEnableFlags.All
+	} ;
+	
+	
+	/// <summary>Specifies whether to enable (or disable) blending. Set to <b>true</b> to enable blending, <b>false</b> to disable.</summary>
+	/// <remarks>
+	/// <b>NOTE:</b> It's not valid for <b>LogicOpEnable</b> and <b>BlendEnable</b> to both be <b>true</b>.
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc#members">Read more on docs.microsoft.com</a>.</para>
-	/// </summary>
+	/// </remarks>
 	public BOOL BlendEnable ;
 
-	/// <summary>
-	/// <para>Specifies whether to enable (or disable) a logical operation. Set to <b>TRUE</b> to enable a logical operation. > [!NOTE] > It's not valid for *LogicOpEnable* and *BlendEnable* to both be **TRUE**.</para>
+	/// <summary>Specifies whether to enable (or disable) a logical operation. Set to <b>true</b> to enable a logical operation, <b>false</b> to disable.
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
+	/// <remarks>
+	/// <b>NOTE:</b> It's not valid for <b>LogicOpEnable</b> and <b>BlendEnable</b> to both be <b>true</b>.
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_target_blend_desc#members">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
 	public BOOL LogicOpEnable ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_blend">D3D12_BLEND</a>-typed value that specifies the operation to perform on the RGB value that the pixel shader outputs. The <b>BlendOp</b> member defines how to combine the <b>SrcBlend</b> and <b>DestBlend</b> operations.</summary>
@@ -1261,12 +1383,13 @@ public struct RTBlendDescription {
 	public LogicOperation LogicOp ;
 
 	/// <summary>A combination of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_color_write_enable">D3D12_COLOR_WRITE_ENABLE</a>-typed values that are combined by using a bitwise OR operation. The resulting value specifies a write mask.</summary>
-	public byte RenderTargetWriteMask ;
+	public ColorWriteEnableFlags RenderTargetWriteMask ;
+	
 	
 	public RTBlendDescription( BOOL blendEnable, BOOL logicOpEnable, 
 							   Blend srcBlend, Blend destBlend, BlendOperation blendOp, 
 							   Blend srcBlendAlpha, Blend destBlendAlpha, BlendOperation blendOpAlpha, 
-							   LogicOperation logicOp, byte renderTargetWriteMask ) {
+							   LogicOperation logicOp, ColorWriteEnableFlags renderTargetWriteMask ) {
 		BlendEnable = blendEnable ;
 		LogicOpEnable = logicOpEnable ;
 		SrcBlend = srcBlend ;
@@ -1289,34 +1412,72 @@ public struct RTBlendDescription {
 		DestBlendAlpha        = (Blend)desc.DestBlendAlpha ;
 		BlendOpAlpha          = (BlendOperation)desc.BlendOpAlpha ;
 		LogicOp               = (LogicOperation)desc.LogicOp ;
-		RenderTargetWriteMask = desc.RenderTargetWriteMask ;
+		RenderTargetWriteMask = (ColorWriteEnableFlags)desc.RenderTargetWriteMask ;
 	}
-	
-	public static implicit operator D3D12_RENDER_TARGET_BLEND_DESC( in RTBlendDescription desc ) => new D3D12_RENDER_TARGET_BLEND_DESC {
-			BlendEnable           = desc.BlendEnable,
-			LogicOpEnable         = desc.LogicOpEnable,
-			SrcBlend              = ( D3D12_BLEND )desc.SrcBlend,
-			DestBlend             = ( D3D12_BLEND )desc.DestBlend,
-			BlendOp               = ( D3D12_BLEND_OP )desc.BlendOp,
-			SrcBlendAlpha         = ( D3D12_BLEND )desc.SrcBlendAlpha,
-			DestBlendAlpha        = ( D3D12_BLEND )desc.DestBlendAlpha,
-			BlendOpAlpha          = ( D3D12_BLEND_OP )desc.BlendOpAlpha,
-			LogicOp               = ( D3D12_LOGIC_OP )desc.LogicOp,
-			RenderTargetWriteMask = desc.RenderTargetWriteMask
-	} ;
-	public static implicit operator RTBlendDescription( in D3D12_RENDER_TARGET_BLEND_DESC desc ) => new( desc ) ;
 } ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( __D3D12_RENDER_TARGET_BLEND_DESC_8 ) )]
 public struct RTBlendDescription8 {
-	const int SpanLength = 8 ;
+	public const int ElementCount = 8,
+					 ElementSize  = RTBlendDescription.SizeInBytes,
+					 TotalSize    = ElementCount * ElementSize ;
+	public static readonly RTBlendDescription8 Default = 
+		new RTBlendDescription8 {
+		_0 = RTBlendDescription.Default,
+		_1 = RTBlendDescription.Default,
+		_2 = RTBlendDescription.Default,
+		_3 = RTBlendDescription.Default,
+		_4 = RTBlendDescription.Default,
+		_5 = RTBlendDescription.Default,
+		_6 = RTBlendDescription.Default,
+		_7 = RTBlendDescription.Default
+	} ;
+	
+
+	public RTBlendDescription _0, _1, _2, _3, 
+							  _4, _5, _6, _7 ;
+	
+	public RTBlendDescription this[ int index ] {
+		[MethodImpl(_MAXOPT_)] get {
+#if DEBUG || DEV_BUILD // Strip bounds checking in release builds
+			if( index < 0 || index >= ElementCount ) 
+				throw new ArgumentOutOfRangeException( ) ;
+#endif
+			unsafe { fixed ( RTBlendDescription8* p = &this ) {
+					return ( (RTBlendDescription *)p )[ index ] ;
+				}
+			}
+		}
+		
+		[MethodImpl(_MAXOPT_)] set {
+#if DEBUG || DEV_BUILD // Strip bounds checking in release builds
+			if( index < 0 || index >= ElementCount ) throw new ArgumentOutOfRangeException( ) ;
+#endif
+			unsafe { fixed ( RTBlendDescription8* p = &this ) {
+					((RTBlendDescription*)p)[ index ] = value ;
+				}
+			}
+		}
+	}
+
+	public RTBlendDescription this[ Index index ] {
+		[MethodImpl( _MAXOPT_ )] get => this[ index.Value ] ;
+		[MethodImpl( _MAXOPT_ )] set => this[ index.Value ] = value ;
+	}
+	
+	public ref RTBlendDescription this[ uint x ] {
+		get { unsafe { fixed ( RTBlendDescription8* p = &this )
+						return ref ( (RTBlendDescription*)p )[ x ] ;
+		}}
+	}
+	
 	
 	/// <summary>The length of the inline array.</summary>
-	public readonly int Length => SpanLength ;
-
-	public RTBlendDescription _0, _1, _2, _3, _4, _5, _6, _7 ;
-
+	public readonly int Length => ElementCount ;
+	
+	
 	/// <summary>
 	/// Gets this inline array as a span.
 	/// </summary>
@@ -1325,8 +1486,9 @@ public struct RTBlendDescription8 {
 	/// </remarks>
 	[UnscopedRef]
 	public Span< RTBlendDescription > AsSpan( ) =>
-		MemoryMarshal.CreateSpan( ref _0, SpanLength ) ;
+		MemoryMarshal.CreateSpan( ref _0, ElementCount ) ;
 
+	
 	/// <summary>
 	/// Gets this inline array as a span.
 	/// </summary>
@@ -1334,14 +1496,15 @@ public struct RTBlendDescription8 {
 	/// ⚠ Important ⚠: When this struct is on the stack, do not let the returned span outlive the stack frame that defines it.
 	/// </remarks>
 	[UnscopedRef]
-	public readonly ReadOnlySpan< RTBlendDescription > AsReadOnlySpan() =>
-		MemoryMarshal.CreateReadOnlySpan( ref Unsafe.AsRef( _0 ), SpanLength ) ;
+	public readonly ReadOnlySpan< RTBlendDescription > AsReadOnlySpan( ) =>
+		MemoryMarshal.CreateReadOnlySpan( ref Unsafe.AsRef( _0 ), ElementCount ) ;
 
+	
 	public static implicit operator RTBlendDescription8( ReadOnlySpan< RTBlendDescription > value ) {
 		Unsafe.SkipInit( out RTBlendDescription8 result ) ;
 		value.CopyTo( result.AsSpan( ) ) ;
 		int initLength = value.Length ;
-		result.AsSpan( ).Slice( initLength, SpanLength - initLength ).Clear( ) ;
+		result.AsSpan( ).Slice( initLength, ElementCount - initLength ).Clear( ) ;
 		return result ;
 	}
 	
@@ -1349,34 +1512,9 @@ public struct RTBlendDescription8 {
 		Unsafe.SkipInit( out RTBlendDescription8 result ) ;
 		value.CopyTo( result.AsSpan( ) ) ;
 		int initLength = value.Length ;
-		result.AsSpan( ).Slice( initLength, SpanLength - initLength ).Clear( ) ;
+		result.AsSpan( ).Slice( initLength, ElementCount - initLength ).Clear( ) ;
 		return result ;
 	}
-	
-	public static implicit operator RTBlendDescription8( in __D3D12_RENDER_TARGET_BLEND_DESC_8 value ) {
-		Unsafe.SkipInit( out RTBlendDescription8 result ) ;
-		result._0 = value._0 ;
-		result._1 = value._1 ;
-		result._2 = value._2 ;
-		result._3 = value._3 ;
-		result._4 = value._4 ;
-		result._5 = value._5 ;
-		result._6 = value._6 ;
-		result._7 = value._7 ;
-		return result ;
-	}
-	
-	public static implicit operator __D3D12_RENDER_TARGET_BLEND_DESC_8( in RTBlendDescription8 value ) =>
-		new __D3D12_RENDER_TARGET_BLEND_DESC_8 {
-			_0 = value._0,
-			_1 = value._1,
-			_2 = value._2,
-			_3 = value._3,
-			_4 = value._4,
-			_5 = value._5,
-			_6 = value._6,
-			_7 = value._7
-		} ;
 } ;
 
 
@@ -1422,6 +1560,7 @@ public struct PlacedSubresourceFootprint {
 	
 	public static implicit operator PlacedSubresourceFootprint( in D3D12_PLACED_SUBRESOURCE_FOOTPRINT desc ) => new( desc ) ;
 } ;
+
 
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_SUBRESOURCE_FOOTPRINT ) )]
@@ -1543,7 +1682,6 @@ public struct StreamOutputDescription {
 	/// structures. Can't be <b>NULL</b> if <b>NumEntries</b> &gt; 0.
 	/// </summary>
 	public unsafe SODeclarationEntry* pSODeclaration ;
-	public unsafe Span< SODeclarationEntry > SODeclarations => new( pSODeclaration, ( int )NumEntries ) ;
 	
 	/// <summary>The number of entries in the stream output declaration array that the <b>pSODeclaration</b> member points to.</summary>
 	public uint NumEntries ;
@@ -1556,6 +1694,57 @@ public struct StreamOutputDescription {
 
 	/// <summary>The index number of the stream to be sent to the rasterizer stage.</summary>
 	public uint RasterizedStream ;
+	
+	// -----------------------------------------------------------------
+	// Properties:
+	// -----------------------------------------------------------------
+	
+	/// <summary>
+	/// Gets a Span of <see cref="SODeclarationEntry"/> structures at the memory address
+	/// pointed to by the <see cref="pSODeclaration"/> field.
+	/// </summary>
+	public unsafe Span< SODeclarationEntry > SODeclarations => new( pSODeclaration, (int)NumEntries ) ;
+	
+	/// <summary>
+	/// Gets a Span of <see cref="uint"/> values at the memory address
+	/// pointed to by the <see cref="pBufferStrides"/> field.
+	/// </summary>
+	public unsafe Span< uint > BufferStrides => new( pBufferStrides, (int)NumStrides ) ;
+	
+	// -----------------------------------------------------------------
+	// Constructors:
+	// -----------------------------------------------------------------
+	
+	public unsafe StreamOutputDescription( uint numEntries, uint  numStrides, uint rasterizedStream,
+										   SODeclarationEntry* soDeclarations, uint* bufferStrides ) {
+		NumEntries       = numEntries ;
+		NumStrides       = numStrides ;
+		RasterizedStream = rasterizedStream ;
+		pSODeclaration   = soDeclarations ;
+		pBufferStrides   = bufferStrides ;
+	}
+
+
+	public static StreamOutputDescription Create( SODeclarationEntry[ ] soDeclarations, uint[ ] bufferStrides,
+												  out MemoryHandle soDeclarationsHandle,
+												  out MemoryHandle bufferStridesHandle ) {
+		unsafe {
+			Unsafe.SkipInit( out StreamOutputDescription result ) ;
+			result.NumEntries       = (uint)soDeclarations.Length ;
+			result.NumStrides       = (uint)bufferStrides.Length ;
+			result.RasterizedStream = 0 ;
+			
+			Memory< SODeclarationEntry > soDeclarationsMem = new( soDeclarations ) ;
+			Memory< uint > bufferStridesMem = new( bufferStrides ) ;
+			soDeclarationsHandle = soDeclarationsMem.Pin( ) ;
+			bufferStridesHandle  = bufferStridesMem.Pin( ) ;
+			
+			result.pSODeclaration = (SODeclarationEntry *)soDeclarationsHandle.Pointer ;
+			result.pBufferStrides = (uint *)bufferStridesHandle.Pointer ;
+			
+			return result ;
+		}
+	}
 } ;
 
 
@@ -1711,5 +1900,236 @@ public struct DiscardRegion {
 } ;
 
 
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf( typeof( D3D12_ROOT_SIGNATURE_DESC ) )]
+public struct RootSignatureDescription {
+	/// <summary>The number of slots in the root signature. This number is also the number of elements in the <i>pParameters</i> array.</summary>
+	public uint NumParameters ;
+
+	/// <summary>An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_root_parameter">D3D12_ROOT_PARAMETER</a> structures for the slots in the root signature.</summary>
+	public unsafe RootParameter* pParameters ;
+
+	/// <summary>Specifies the number of static samplers.</summary>
+	public uint NumStaticSamplers ;
+
+	/// <summary>Pointer to one or more <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_static_sampler_desc">D3D12_STATIC_SAMPLER_DESC</a> structures.</summary>
+	public unsafe StaticSamplerDescription* pStaticSamplers ;
+
+	/// <summary>
+	/// <para>A combination of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_root_signature_flags">D3D12_ROOT_SIGNATURE_FLAGS</a>-typed values that are combined by using a bitwise OR operation. The resulting value specifies options for the root signature layout.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_root_signature_desc#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public RootSignatureFlags Flags ;
 
 
+	public unsafe RootSignatureDescription( uint numParameters, RootParameter* parameters,
+											uint numStaticSamplers, StaticSamplerDescription* staticSamplers,
+											RootSignatureFlags flags ) {
+		NumParameters     = numParameters ;
+		pParameters       = parameters ;
+		NumStaticSamplers = numStaticSamplers ;
+		pStaticSamplers   = staticSamplers ;
+		Flags             = flags ;
+	}
+
+	public RootSignatureDescription( RootSignatureFlags flags = RootSignatureFlags.AllowInputAssemblerInputLayout ) {
+		unsafe {
+			NumParameters     = 0 ;
+			pParameters       = null ;
+			NumStaticSamplers = 0 ;
+			pStaticSamplers   = null ;
+			Flags             = flags ;
+		}
+	}
+	
+	public IBlob? Serialize( out IBlob? errorBlob ) {
+		unsafe {
+			fixed( RootSignatureDescription* thisPtr = &this ) {
+				PInvoke.D3D12SerializeRootSignature( (D3D12_ROOT_SIGNATURE_DESC*)thisPtr,
+													 D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1,
+													 out var signature,
+													 out var errors ) ;
+
+				IBlob? result = signature is null ? default : new Blob( signature ) ;
+				errorBlob = errors is null ? default : new Blob( errors ) ;
+				return result ;
+			}
+		}
+	}
+	
+	public IBlob Serialize( ) => Serialize( out _ ) ;
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf( typeof( D3D12_ROOT_PARAMETER ) )]
+public struct RootParameter {
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_root_parameter_type">D3D12_ROOT_PARAMETER_TYPE</a>-typed value that  specifies the type of root signature slot. This member determines which type to use in the union below.</summary>
+	public RootParameterType ParameterType ;
+
+	public _rootParamUnion ReadAs ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_shader_visibility">D3D12_SHADER_VISIBILITY</a>-typed value that  specifies the shaders that can access the contents of the root signature slot.</summary>
+	public ShaderVisibility ShaderVisibility ;
+
+	[StructLayout( LayoutKind.Explicit )]
+	public partial struct _rootParamUnion {
+		[FieldOffset( 0 )] public RootDescriptorTable DescriptorTable ;
+		[FieldOffset( 0 )] public RootConstants Constants ;
+		[FieldOffset( 0 )] public RootDescriptor Descriptor ;
+	}
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf( typeof( D3D12_ROOT_DESCRIPTOR_TABLE ) )]
+public struct RootDescriptorTable {
+	/// <summary>The number of ranges in the descriptor table.</summary>
+	public uint NumDescriptorRanges ;
+
+	/// <summary>
+	/// An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_descriptor_range">D3D12_DESCRIPTOR_RANGE</a>
+	/// structures that describe the descriptor ranges.
+	/// </summary>
+	public unsafe D3D12_DESCRIPTOR_RANGE* pDescriptorRanges ;
+} ;
+
+
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf( typeof( D3D12_ROOT_CONSTANTS ) )]
+public struct RootConstants {
+	/// <summary>The shader register that contains the constants.</summary>
+	public uint ShaderRegister ;
+
+	/// <summary>The register space. This is typically 0.</summary>
+	public uint RegisterSpace ;
+
+	/// <summary>
+	/// <para>The number of constants that occupy a single shader slot (these constants appear like a single constant buffer). All constants occupy a single root signature bind slot.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_root_constants#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public uint Num32BitValues ;
+} ;
+	
+
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf( typeof( D3D12_ROOT_DESCRIPTOR ) )]
+public struct RootDescriptor {
+	/// <summary>The shader register.</summary>
+	public uint ShaderRegister;
+
+	/// <summary>The register space.</summary>
+	public uint RegisterSpace;
+} ;
+
+
+[StructLayout(LayoutKind.Sequential),
+ EquivalentOf(typeof(D3D12_STATIC_SAMPLER_DESC))]
+public struct StaticSamplerDescription {
+	/// <summary>The filtering method to use when sampling a texture, as a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">D3D12_FILTER</a> enumeration constant.</summary>
+	public Filter Filter ;
+
+	/// <summary>Specifies the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">D3D12_TEXTURE_ADDRESS_MODE</a> mode to use for resolving a <i>u</i> texture coordinate that is outside the 0 to 1 range.</summary>
+	public TextureAddressMode AddressU ;
+
+	/// <summary>Specifies the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">D3D12_TEXTURE_ADDRESS_MODE</a> mode to use for resolving a <i>v</i> texture coordinate that is outside the 0 to 1 range.</summary>
+	public TextureAddressMode AddressV ;
+
+	/// <summary>Specifies the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">D3D12_TEXTURE_ADDRESS_MODE</a> mode to use for resolving a <i>w</i> texture coordinate that is outside the 0 to 1 range.</summary>
+	public TextureAddressMode AddressW ;
+
+	/// <summary>Offset from the calculated mipmap level. For example, if Direct3D calculates that a texture should be sampled at mipmap level 3 and MipLODBias is 2, then the texture will be sampled at mipmap level 5.</summary>
+	public float MipLODBias ;
+
+	/// <summary>Clamping value used if D3D12_FILTER_ANISOTROPIC or D3D12_FILTER_COMPARISON_ANISOTROPIC is specified as the filter. Valid values are between 1 and 16.</summary>
+	public uint MaxAnisotropy ;
+
+	/// <summary>
+	/// <para>A function that compares sampled data against existing sampled data. The function options are listed in <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_comparison_func">D3D12_COMPARISON_FUNC</a>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_static_sampler_desc#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public ComparisonFunction ComparisonFunc ;
+
+	/// <summary>
+	/// <para>One member of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_static_border_color">D3D12_STATIC_BORDER_COLOR</a>, the border color to use if D3D12_TEXTURE_ADDRESS_MODE_BORDER is specified for AddressU, AddressV, or AddressW. Range must be between 0.0 and 1.0 inclusive.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_static_sampler_desc#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public StaticBorderColor BorderColor ;
+
+	/// <summary>Lower end of the mipmap range to clamp access to, where 0 is the largest and most detailed mipmap level and any level higher than that is less detailed.</summary>
+	public float MinLOD ;
+
+	/// <summary>Upper end of the mipmap range to clamp access to, where 0 is the largest and most detailed mipmap level and any level higher than that is less detailed. This value must be greater than or equal to MinLOD. To have no upper limit on LOD set this to a large value such as D3D12_FLOAT32_MAX.</summary>
+	public float MaxLOD ;
+
+	/// <summary>
+	/// <para>The <i>ShaderRegister</i> and <i>RegisterSpace</i> parameters correspond to the binding syntax of HLSL.  For example, in HLSL:</para>
+	/// <para></para>
+	/// <para>This doc was truncated.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_static_sampler_desc#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public uint ShaderRegister ;
+
+	/// <summary>
+	/// <para>See the description for <i>ShaderRegister</i>. Register space is optional; the default register space is 0.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_static_sampler_desc#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public uint RegisterSpace ;
+
+	/// <summary>Specifies the visibility of the sampler to the pipeline shaders, one member of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_shader_visibility">D3D12_SHADER_VISIBILITY</a>.</summary>
+	public ShaderVisibility ShaderVisibility ;
+}
+
+
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf( typeof( D3D12_DESCRIPTOR_RANGE ) )]
+public struct DescriptorRange {
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_descriptor_range_type">D3D12_DESCRIPTOR_RANGE_TYPE</a>-typed value that specifies the type of descriptor range.</summary>
+	public DescriptorRangeType RangeType ;
+
+	/// <summary>The number of descriptors in the range. Use -1 or UINT_MAX to specify an unbounded size. If a given descriptor range is unbounded, then it must either be the last range in the table definition, or else the following range in the table definition must have a value for *OffsetInDescriptorsFromTableStart* that is not [D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND]().</summary>
+	public uint NumDescriptors ;
+
+	/// <summary>The base shader register in the range. For example, for shader-resource views (SRVs), 3 maps to ": register(t3);" in HLSL.</summary>
+	public uint BaseShaderRegister ;
+
+	/// <summary>
+	/// <para>The register space. Can typically be 0, but allows multiple descriptor  arrays of unknown size to not appear to overlap. For example, for SRVs, by extending the example in the <b>BaseShaderRegister</b> member description, 5 maps to ": register(t3,space5);" in HLSL.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_descriptor_range#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public uint RegisterSpace ;
+
+	/// <summary>The offset in descriptors, from the start of the descriptor table which was set as the root argument value for this parameter slot. This value can be <b>D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND</b>, which indicates this range should immediately follow the preceding range.</summary>
+	public uint OffsetInDescriptorsFromTableStart ;
+} ;
+
+
+
+/// <summary>Opaque data structure describing driver versioning for a serialized acceleration structure.</summary>
+/// <remarks>
+/// <para><b>NOTE:</b></para>
+/// You can pass this structure into a call to
+/// <a href="https://learn.microsoft.com/en-us/windows/desktop/api/d3d12/nf-d3d12-id3d12device5-checkdrivermatchingidentifier">ID3D12Device5::CheckDriverMatchingIdentifier</a> 
+/// to determine if a previously serialized acceleration structure is compatible with the current driver/device,
+/// and can therefore be deserialized and used for raytracing.<para/>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_serialized_data_driver_matching_identifier">
+/// Learn more about this API from docs.microsoft.com
+/// </a>.</para>
+/// </remarks>
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf( typeof( D3D12_SERIALIZED_DATA_DRIVER_MATCHING_IDENTIFIER ) )]
+public struct SerializedDataDriverMatchingIdentifier {
+	/// <summary>The opaque identifier of the driver.</summary>
+	public Guid DriverOpaqueGUID ;
+	/// <summary>The opaque driver versioning data.</summary>
+	public __byte_16 DriverOpaqueVersioningData ;
+	
+	public SerializedDataDriverMatchingIdentifier( in Guid driverOpaqueGUID, in __byte_16 driverOpaqueVersioningData ) {
+		DriverOpaqueGUID = driverOpaqueGUID ;
+		DriverOpaqueVersioningData = driverOpaqueVersioningData ;
+	}
+	public SerializedDataDriverMatchingIdentifier( in Guid driverOpaqueGUID, ReadOnlySpan<byte> driverOpaqueVersioningData ) {
+		DriverOpaqueGUID = driverOpaqueGUID ;
+		DriverOpaqueVersioningData = driverOpaqueVersioningData ;
+	}
+} ;

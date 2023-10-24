@@ -56,7 +56,7 @@ public abstract class DXAppBase: IDXApp {
 		OnDestroyUnmanaged( ) ;
 		if ( disposing ) OnDestroyManaged( ) ;
 	}
-	async ValueTask DisposeAsyncCore( ) => OnDestroyUnmanaged( ) ;
+	async ValueTask DisposeAsyncCore( ) => await Task.Run( OnDestroyUnmanaged );
 
 	public void Dispose( ) {
 		Dispose( true ) ;

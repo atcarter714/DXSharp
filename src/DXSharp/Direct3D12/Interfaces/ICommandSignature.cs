@@ -10,7 +10,7 @@ public interface ICommandSignature: IPageable,
 									IComObjectRef< ID3D12CommandSignature >,
 									IUnknownWrapper< ID3D12CommandSignature > {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12CommandSignature > ComPointer { get ; }
+	new ComPtr< ID3D12CommandSignature >? ComPointer { get ; }
 	new ID3D12CommandSignature? COMObject => ComPointer?.Interface ;
 	ID3D12CommandSignature? IComObjectRef< ID3D12CommandSignature >.COMObject => COMObject ;
 	ComPtr< ID3D12CommandSignature >? IUnknownWrapper< ID3D12CommandSignature >.ComPointer => ComPointer ;

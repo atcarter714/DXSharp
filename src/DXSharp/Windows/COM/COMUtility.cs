@@ -16,8 +16,12 @@ public static class COMUtility {
 	internal static HResult LastHResult => _lastHResult ;
 	
 	//! TODO: Decide which of these versions (Exists vs IsDestroyed) to keep ...
-	[MethodImpl(_MAXOPT_)] public static bool Exists( nint pUnknown ) =>
-					GetCOM_RCW( pUnknown ) is not null ;
+	[MethodImpl(_MAXOPT_)] public static bool Exists( nint pUnknown ) {
+		bool valid = 
+			GetCOM_RCW( pUnknown ) is not null ;
+		if( valid ) Release( pUnknown ) ;
+		return valid ;
+	}
 	
 	[MethodImpl(_MAXOPT_)] public static bool IsDestroyed( nint pUnknown ) {
 		try {
@@ -62,14 +66,16 @@ public static class COMUtility {
 	public static T? GetCOMObject< T >( nint pUnknown )
 										where T: IUnknown {
 		var guid = __uuidof<T>( ) ;
-		var hr = Marshal.QueryInterface( pUnknown, ref guid,
+		/*var hr = Marshal.QueryInterface( pUnknown, ref guid,
 									out nint ptrToInterface ) ;
-		_lastHResult = new( hr ) ;
+		_lastHResult = new( hr ) ;*/
+		
 		var _interface = (T)Marshal
-			.GetTypedObjectForIUnknown( ptrToInterface, typeof(T) ) ;
+			.GetTypedObjectForIUnknown( pUnknown, typeof(T) ) ;
 		return _interface ;
-	} //(T)GetCOM_RCW( pUnknown )! ;
+	}
 
+	
 	/*[MethodImpl( _MAXOPT_ )]
 	public static void GetCOMObject< T >( nint pUnknown, out T? ppObject ) where T: IUnknown =>
 		ppObject = GetCOMObject< T >( pUnknown ) ; //(T)GetCOM_RCW( pUnknown )! ;
@@ -135,11 +141,10 @@ public static class COMUtility {
 	public static bool IsCOMObject( in object obj ) => Marshal.IsComObject( obj ) ;
 	[MethodImpl(_MAXOPT_)]
 	public static bool IsCOMObject< T >( in T? obj ) => 
-		obj is not null && Marshal.IsComObject( obj ) ;
+		typeof(T).IsCOMObject && obj is not null && Marshal.IsComObject( obj ) ;
 	[MethodImpl(_MAXOPT_)]
 	public static bool IsCOMObjectOfType< T >( nint ptr ) => 
 		ptr.IsValid() && GetCOM_RCW( ptr ) is T ;
-	
 	
 	
 	//! TODO: Test this method ...

@@ -21,7 +21,10 @@ public class CommandAllocator: Pageable,
 	
 
 	// -------------------------------------------------------------------------------------------------------
-	public new static CommandAllocator Instantiate( ) => new( ) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12CommandAllocator).GUID ;
+	public new static Type ComType => typeof(ID3D12CommandAllocator) ;
+	
+	public static CommandAllocator Instantiate( ) => new( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( ) => new CommandAllocator( ) ;
 	static CommandAllocator? IInstantiable< CommandAllocator >.Instantiate( IntPtr ptr ) => new( ptr ) ;
 	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new CommandAllocator( pComObj ) ;

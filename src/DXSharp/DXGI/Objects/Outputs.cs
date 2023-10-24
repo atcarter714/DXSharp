@@ -10,8 +10,8 @@ namespace DXSharp.DXGI ;
 
 /// <summary>Proxy contract for the native <see cref="IDXGIOutput"/> COM interface.</summary>
 public class Output: Object, IOutput {
-	public static Type ComType => typeof( IDXGIOutput ) ;
-	public static Guid InterfaceGUID => typeof( IDXGIOutput ).GUID ;
+	public new static Type ComType => typeof( IDXGIOutput ) ;
+	public new static Guid InterfaceGUID => typeof( IDXGIOutput ).GUID ;
 	
 
 	public override ComPtr? ComPtrBase => ComPointer ;

@@ -114,9 +114,9 @@ internal static partial class DXGIFunctions {
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	[MethodImpl(_MAXOPT_)]
 	internal static T? CreateDXGIFactory1<T>( out HRESULT hr ) where T : IDXGIFactory1 {
-		var factory = DXGIFunctions.CreateDXGIFactory<T>( typeof(T).GUID, out hr ) ;
+		hr = PInvoke.CreateDXGIFactory1( typeof( T ).GUID, out var factory ) ;
 		_ = hr.ThrowOnFailure( ) ;
-		return factory ;
+		return (T)factory ;
 	}
 
 	/// <summary>
@@ -126,7 +126,7 @@ internal static partial class DXGIFunctions {
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	/// <exception cref="COMException">Thrown if the call fails and contains detailed error information</exception>
 	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory1< T >( ) where T : IDXGIFactory1 {
-		var factory = CreateDXGIFactory1< T >( out var hr );
+		var factory = CreateDXGIFactory1< T >( out var hr ) ;
 		_ = hr.ThrowOnFailure( ) ;
 		return factory;
 	}

@@ -9,7 +9,8 @@ namespace DXSharp.Direct3D12 ;
 [ProxyFor(typeof(ID3D12Resource))]
 public interface IResource: IPageable,
 							IComObjectRef< ID3D12Resource >,
-							IUnknownWrapper< ID3D12Resource > {
+							IUnknownWrapper< ID3D12Resource >,
+							IInstantiable {
 	// ---------------------------------------------------------------------------------
 	new ComPtr< ID3D12Resource >? ComPointer { get ; }
 	new ID3D12Resource? COMObject => ComPointer?.Interface ;
@@ -196,5 +197,7 @@ public interface IResource: IPageable,
 	// ---------------------------------------------------------------------------------
 	static Type IUnknownWrapper.ComType => typeof(ID3D12Resource) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Resource).GUID ;
+	public new static Type ComType => typeof(ID3D12Resource) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Resource).GUID ;
 	// ==================================================================================
 } ;

@@ -48,8 +48,6 @@
 		</None>
 
 		<Compile Remove="DXGI\xxhierarchy.cs" />
-
-		<None Include="DXGI\xxhierarchy.cs" />
 	</ItemGroup>
 
 

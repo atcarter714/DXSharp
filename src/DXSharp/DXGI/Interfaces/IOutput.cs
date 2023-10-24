@@ -14,7 +14,7 @@ public interface IOutput: IObject,
 						  IUnknownWrapper< IDXGIOutput >,
 						  IInstantiable {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< IDXGIOutput > ComPointer { get ; }
+	new ComPtr< IDXGIOutput >? ComPointer { get ; }
 	new IDXGIOutput? COMObject => ComPointer?.Interface ;
 	IDXGIOutput? IComObjectRef< IDXGIOutput >.COMObject => COMObject ;
 
@@ -63,7 +63,7 @@ public interface IOutput1: IOutput,
 						   IUnknownWrapper< IDXGIOutput1 >,
 						   IInstantiable {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< IDXGIOutput1 > ComPointer { get ; }
+	new ComPtr< IDXGIOutput1 >? ComPointer { get ; }
 	new IDXGIOutput1? COMObject => ComPointer?.Interface ;
 	IDXGIOutput1? IComObjectRef< IDXGIOutput1 >.COMObject => COMObject ;
 

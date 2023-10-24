@@ -71,15 +71,11 @@ public abstract class ComPtr: IDisposable {
 															  $"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
 															  $"The pointer is a {nameof(NULL_PTR)} (0x00000000) value!" ) ;
 		
-		//! Reducing number of debug checks for performance ...
-		/*if( !Exists(ptr) ) throw new ArgumentException( nameof(ptr),
-														$"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
-														$"The pointer is not a valid COM object!" ) ;*/
-		
 		var _hr = QueryInterface< IUnknown >( ptr, out nint pUnknown ) ;
 		if( _hr.Failed ) throw new ArgumentException( nameof(ptr),
 													  $"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
 													  $"The pointer is not a valid COM object implementing {nameof(IUnknown)} interface!" ) ;
+		Release( ptr ) ;
 #endif
 		
 		var pObject = GetCOM_RCW( ptr )
@@ -101,18 +97,23 @@ public abstract class ComPtr: IDisposable {
 	public ComPtr( [NotNull] in IUnknownWrapper comInterface ): this( comInterface.BasePointer ) { }
 	public ComPtr( [NotNull] in IUnknownWrapper< IUnknown > comInterface ): this( comInterface.BasePointer ) { }
 	public ComPtr( [MaybeNull] in object? comObj ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		ArgumentNullException.ThrowIfNull( comObj, nameof(comObj) ) ;
 		if( !comObj.GetType( ).IsCOMObject ) throw new ArgumentException( nameof(comObj),
 																		  $"{nameof(ComPtr)} -> c'tor( {nameof(Object)} ) :: " +
 																		  $"The object is not a valid COM object!" ) ;
+#endif
 		
 		nint pUnknown = GetIUnknownForObject( comObj ) ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		if ( !pUnknown.IsValid() ) throw new ArgumentException( nameof(comObj),
 																$"{nameof(ComPtr)} -> c'tor( {nameof(Object)} ) :: " +
 																$"The object is not a valid COM object implementing {nameof(IUnknown)}!" ) ;
+#endif
 
 		_setBasePointer( pUnknown ) ;
 		_comObjectRef = comObj ;
+		Release( pUnknown ) ; // Release the reference we just added.
 	}
 	#endregion
 	
@@ -143,12 +144,11 @@ public abstract class ComPtr: IDisposable {
 		if( !Exists(newPtr) ) throw new 
 			ArgumentException( nameof(newPtr), errMsg + 
 											   $"The pointer is not a valid COM object!" ) ;
-		
+#endif
 		var _hr = QueryInterface< IUnknown >( newPtr, out nint pUnknown ) ;
 		if( _hr.Failed ) throw new 
 			ArgumentException( nameof(newPtr), errMsg +
 											   $"Failed to obtain {nameof(IUnknown)} interface!" ) ;
-#endif
 		
 		Release( ref _baseAddr ) ;
 		_setBasePointer( pUnknown ) ;
@@ -174,7 +174,7 @@ public abstract class ComPtr: IDisposable {
 	internal static void UntrackPointer( nint ptr ) => _allPtrs?.Remove( ptr ) ;
 	
 	
-	internal static ComPtr< TInto > Convert< TFrom, TInto >( ComPtr< TFrom > other ) 
+	internal static ComPtr< TInto > Convert< TFrom, TInto >( ComPtr< TFrom >? other ) 
 																where TFrom: IUnknown 
 																where TInto: IUnknown {
 		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
@@ -258,12 +258,12 @@ public sealed class ComPtr< T >: ComPtr
 	
 	internal override void Set< TInterface >( in TInterface? newComObject ) where TInterface: default {
 #if DEBUG || DEBUG_COM || DEV_BUILD
+		ArgumentNullException.ThrowIfNull( newComObject, nameof(newComObject) ) ;
 		if( !typeof(TInterface).IsCOMObject )
 			throw new ArgumentException( nameof(newComObject), 
 										 $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " + 
 										 $"{nameof(Set)}( {newComObject.GetType().Name} {nameof(newComObject)} ) :: " +
 										 $"The object is not a valid COM object!" ) ;
-		ArgumentNullException.ThrowIfNull( nameof(newComObject) ) ;
 		
 		// Get the base IUnknown pointer:
 		/*nint pUnknown = GetIUnknownForObject( newComObject ) ;

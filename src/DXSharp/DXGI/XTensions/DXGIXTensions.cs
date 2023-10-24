@@ -43,16 +43,23 @@ public static partial class DXGIXTensions {
 	
 	
 	public static IAdapter? FindBestAdapter< A >( this IFactory factory )
-													//where F: class, IFactory
 													where A: class, IAdapter {
 		ArgumentNullException.ThrowIfNull( factory, nameof(factory) ) ;
 		const int MAX = IFactory.MAX_ADAPTER_COUNT ;
+		
+		//! TODO: Decide if we keep or ditch generic versions of these methods ...
+		// Maybe we can keep generic version and route calls like this:
+		if( factory is IFactory1 factory1 ) {
+			if ( typeof(A).IsAssignableTo( typeof(IAdapter1 ) ) ) {
+				return factory1.FindBestAdapter1( ) ;
+			}
+		}
 		
 		A? adapter = null ;
 		AdapterDescription desc = default ;
 		
 		for ( int i = 0; i < MAX; ++i ) {
-			var hr = factory.EnumAdapters< A >( 0, out var _adapter ) ;
+			var hr = factory.EnumAdapters< A >( (uint)i, out var _adapter ) ;
 			if ( hr.Failed ) {
 				if ( hr.Is( HResult.DXGI_ERROR_NOT_FOUND ) ) break ;
 				throw new DirectXComError( hr, $"{nameof( DXGIXTensions )} :: " +
@@ -72,6 +79,40 @@ public static partial class DXGIXTensions {
 			if ( _desc.DedicatedVideoMemory > desc.DedicatedVideoMemory ) {
 				adapter = _adapter ;
 				desc	= _desc ;
+			}
+		}
+		
+		return adapter ;
+	}
+
+	public static IAdapter1? FindBestAdapter1( this IFactory1 factory1 ) {
+		ArgumentNullException.ThrowIfNull( factory1, nameof(factory1) ) ;
+		const int MAX = IFactory.MAX_ADAPTER_COUNT ;
+		
+		IAdapter1? adapter = null ;
+		AdapterDescription1 desc = default ;
+		
+		for ( int i = 0; i < MAX; ++i ) {
+			var hr = factory1.EnumAdapters1< IAdapter1 >( (uint)i, out var _adapter ) ;
+			if ( hr.Failed ) {
+				if ( hr.Is( HResult.DXGI_ERROR_NOT_FOUND ) ) break ;
+				throw new DirectXComError( hr, $"{nameof( DXGIXTensions )} :: " +
+											   $"Error enumerating adapters! " +
+											   $"HRESULT: 0x{hr.Value:X} ({hr.Value})" ) ;
+			}
+			
+			if ( _adapter is null ) continue ;
+			_adapter.GetDesc1( out var _desc ) ;
+			
+			// Assign the "best" adapter by greatest amount of VRAM:
+			if ( adapter is null ) {
+				adapter = _adapter ;
+				desc    = _desc ;
+				continue ;
+			}
+			if ( _desc.DedicatedVideoMemory > desc.DedicatedVideoMemory ) {
+				adapter = _adapter ;
+				desc    = _desc ;
 			}
 		}
 		

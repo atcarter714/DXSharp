@@ -257,7 +257,7 @@ public class D3D12GraphicsInterop
 					throw new COMException( "Could not create ID3D12Debug5 layer!" );
 			} );
 			Assert.IsNotNull( _debugController );
-			_debugController.EnableDebugLayer();
+			_debugController!.EnableDebugLayer( ) ;
 		}
 		else throw new COMException( "Failed to create debug layer for Direct3D12!" );
 	}

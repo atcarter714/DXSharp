@@ -5,15 +5,35 @@ using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.System.Com ;
-
+using DXSharp.Windows.COM ;
 using WinCom = Windows.Win32.System.Com;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
 [ProxyFor( typeof(ID3D12Resource_unmanaged) )]
-public unsafe struct IResourceUnmanaged: IComIID {
+public unsafe struct ResourceUnmanaged: IComIID {
+	// ---------------------------------------------------------------------------------------------------
+	// Constructors:
+	// ---------------------------------------------------------------------------------------------------
 	
+	public ResourceUnmanaged( void** lpVtbl ) {
+		this.lpVtbl = lpVtbl ;
+	}
+	
+	public ResourceUnmanaged( nint lpVtbl ) {
+		this.lpVtbl = (void**)lpVtbl;
+	}
+
+	public ResourceUnmanaged( ID3D12Resource d3D12Resource ) {
+		Guid riid = IID_Guid ;
+		d3D12Resource.QueryInterface( ref riid, out var pVtbl ) ;
+		this.lpVtbl = (void **)pVtbl ;
+	}
+	
+	public ResourceUnmanaged( IResource resource ): this( resource.COMObject! ) { }
+	
+	// ---------------------------------------------------------------------------------------------------
 	
 	
 	public HRESULT QueryInterface( in Guid riid, out void* ppvObject ) {
@@ -26,8 +46,8 @@ public unsafe struct IResourceUnmanaged: IComIID {
 	}
 
 	public HRESULT QueryInterface( Guid* riid, void** ppvObject ) {
-		return ( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, void**, HRESULT>)lpVtbl[ 0 ])( 
-				 (IResourceUnmanaged *)Unsafe.AsPointer( ref this ), 
+		return ( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, Guid*, void**, HRESULT>)lpVtbl[ 0 ])( 
+				 (ResourceUnmanaged *)Unsafe.AsPointer( ref this ), 
 				 riid,
 				 ppvObject
 			 ) ;
@@ -36,13 +56,13 @@ public unsafe struct IResourceUnmanaged: IComIID {
 	
 	public uint AddRef( ) {
 		return
-			( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint>)lpVtbl[ 1 ] )( (IResourceUnmanaged*)
+			( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, uint>)lpVtbl[ 1 ] )( (ResourceUnmanaged*)
 				Unsafe.AsPointer( ref this ) ) ;
 	}
 
 	public uint Release( ) {
 		return
-			( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint>)lpVtbl[ 2 ] )( (IResourceUnmanaged*)
+			( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, uint>)lpVtbl[ 2 ] )( (ResourceUnmanaged*)
 				Unsafe.AsPointer( ref this ) ) ;
 	}
 	
@@ -55,8 +75,8 @@ public unsafe struct IResourceUnmanaged: IComIID {
 
 	
 	public void GetPrivateData( Guid* guid, ref uint pDataSize, [Optional] void* pData ) {
-		( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, ref uint, void*, HRESULT>)lpVtbl
-					[ 3 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), guid, ref pDataSize, pData )
+		( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, Guid*, ref uint, void*, HRESULT>)lpVtbl
+					[ 3 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ), guid, ref pDataSize, pData )
 			.ThrowOnFailure( ) ;
 	}
 
@@ -69,8 +89,8 @@ public unsafe struct IResourceUnmanaged: IComIID {
 
 	
 	public void SetPrivateData( Guid* guid, uint DataSize, [Optional] void* pData ) {
-		( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, uint, void*, HRESULT>)lpVtbl
-					[ 4 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), guid, DataSize, pData )
+		( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, Guid*, uint, void*, HRESULT>)lpVtbl
+					[ 4 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ), guid, DataSize, pData )
 			.ThrowOnFailure( ) ;
 	}
 
@@ -82,8 +102,8 @@ public unsafe struct IResourceUnmanaged: IComIID {
 	}
 
 	public void SetPrivateDataInterface( Guid* guid, [Optional] WinCom.IUnknown* pData ) {
-		( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, WinCom.IUnknown*, HRESULT>)
-				lpVtbl[ 5 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), guid, pData )
+		( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, Guid*, WinCom.IUnknown*, HRESULT>)
+				lpVtbl[ 5 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ), guid, pData )
 			.ThrowOnFailure( ) ;
 	}
 
@@ -95,8 +115,8 @@ public unsafe struct IResourceUnmanaged: IComIID {
 	}
 
 	public void SetName( PCWSTR Name ) {
-		( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, PCWSTR, HRESULT>)lpVtbl
-					[ 6 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), Name ).ThrowOnFailure( ) ;
+		( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, PCWSTR, HRESULT>)lpVtbl
+					[ 6 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ), Name ).ThrowOnFailure( ) ;
 	}
 
 	
@@ -107,8 +127,8 @@ public unsafe struct IResourceUnmanaged: IComIID {
 	}
 
 	public void GetDevice( Guid* riid, [Optional] void** ppvDevice ) {
-		( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, void**, HRESULT>)lpVtbl
-					[ 7 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), riid, ppvDevice )
+		( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, Guid*, void**, HRESULT>)lpVtbl
+					[ 7 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ), riid, ppvDevice )
 			.ThrowOnFailure( ) ;
 	}
 
@@ -122,8 +142,8 @@ public unsafe struct IResourceUnmanaged: IComIID {
 	public void Map( uint Subresource,
 					 [Optional] Range* pReadRange,
 					 [Optional] void** ppData ) {
-		( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint, Range*, void**, HRESULT>)lpVtbl
-					[ 8 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), Subresource, pReadRange, ppData )
+		( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, uint, Range*, void**, HRESULT>)lpVtbl
+					[ 8 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ), Subresource, pReadRange, ppData )
 			.ThrowOnFailure( ) ;
 	}
 
@@ -136,20 +156,20 @@ public unsafe struct IResourceUnmanaged: IComIID {
 
 	public void Unmap( uint Subresource,
 							  [Optional] Range* pWrittenRange ) {
-		( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint, Range*, void>)lpVtbl
-					[ 9 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), Subresource, pWrittenRange ) ;
+		( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, uint, Range*, void>)lpVtbl
+					[ 9 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ), Subresource, pWrittenRange ) ;
 	}
 
 	
 	public ResourceDescription GetDesc( ) {
 		return
-			( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, ResourceDescription>)lpVtbl
-					[ 10 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ) ) ;
+			( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, ResourceDescription>)lpVtbl
+					[ 10 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ) ) ;
 	}
 
 	public ulong GetGPUVirtualAddress( ) {
 		return
-			( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, ulong>)lpVtbl[ 11 ] )( (IResourceUnmanaged
+			( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, ulong>)lpVtbl[ 11 ] )( (ResourceUnmanaged
 				*)Unsafe.AsPointer( ref this ) ) ;
 	}
 
@@ -168,8 +188,8 @@ public unsafe struct IResourceUnmanaged: IComIID {
 										   void* pSrcData,
 										   uint SrcRowPitch, 
 										   uint SrcDepthPitch ) {
-		( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint, Box*, void*, uint, uint, HRESULT>)lpVtbl
-					[ 12 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), DstSubresource, pDstBox,
+		( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, uint, Box*, void*, uint, uint, HRESULT>)lpVtbl
+					[ 12 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ), DstSubresource, pDstBox,
 							  pSrcData, SrcRowPitch, SrcDepthPitch ).ThrowOnFailure( ) ;
 	}
 
@@ -191,55 +211,55 @@ public unsafe struct IResourceUnmanaged: IComIID {
 											uint DstDepthPitch, 
 											uint SrcSubresource,
 											[Optional] Box* pSrcBox ) {
-		( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, void*, uint, uint, uint, Box*, HRESULT>)lpVtbl
-					[ 13 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), pDstData, DstRowPitch,
+		( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, void*, uint, uint, uint, Box*, HRESULT>)lpVtbl
+					[ 13 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ), pDstData, DstRowPitch,
 							  DstDepthPitch, SrcSubresource, pSrcBox ).ThrowOnFailure( ) ;
 	}
 
 	
 	public void GetHeapProperties( [Optional] HeapProperties* pHeapProperties,
 										  [Optional] HeapFlags* pHeapFlags ) {
-		( (delegate *unmanaged [Stdcall]<IResourceUnmanaged*, HeapProperties*, HeapFlags*, HRESULT>)
-				lpVtbl[ 14 ] )( (IResourceUnmanaged*)Unsafe.AsPointer( ref this ), pHeapProperties, pHeapFlags )
+		( (delegate *unmanaged [Stdcall]<ResourceUnmanaged*, HeapProperties*, HeapFlags*, HRESULT>)
+				lpVtbl[ 14 ] )( (ResourceUnmanaged*)Unsafe.AsPointer( ref this ), pHeapProperties, pHeapFlags )
 			.ThrowOnFailure( ) ;
 	}
 
 	
 	public struct Vtbl {
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, void**, HRESULT> QueryInterface_1 ;
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, Guid*, void**, HRESULT> QueryInterface_1 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint> AddRef_2 ;
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, uint> AddRef_2 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint> Release_3 ;
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, uint> Release_3 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, ref uint, void*, HRESULT>
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, Guid*, ref uint, void*, HRESULT>
 			GetPrivateData_4 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, uint, void*, HRESULT>
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, Guid*, uint, void*, HRESULT>
 			SetPrivateData_5 ;
 
 		internal delegate *unmanaged [Stdcall]
-			< IResourceUnmanaged*, Guid*, WinCom.IUnknown*, HRESULT > SetPrivateDataInterface_6 ;
+			< ResourceUnmanaged*, Guid*, WinCom.IUnknown*, HRESULT > SetPrivateDataInterface_6 ;
 		
-		internal delegate *unmanaged [Stdcall]< IResourceUnmanaged*, PCWSTR, HRESULT> SetName_7 ;
+		internal delegate *unmanaged [Stdcall]< ResourceUnmanaged*, PCWSTR, HRESULT> SetName_7 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, Guid*, void**, HRESULT> GetDevice_8 ;
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, Guid*, void**, HRESULT> GetDevice_8 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint, Range*, void**, HRESULT> Map_9 ;
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, uint, Range*, void**, HRESULT> Map_9 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint, Range*, void> Unmap_10 ;
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, uint, Range*, void> Unmap_10 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, ResourceDescription> GetDesc_11 ;
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, ResourceDescription> GetDesc_11 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, ulong> GetGPUVirtualAddress_12 ;
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, ulong> GetGPUVirtualAddress_12 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, uint, Box*, void*, uint, uint, HRESULT>
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, uint, Box*, void*, uint, uint, HRESULT>
 			WriteToSubresource_13 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, void*, uint, uint, uint, Box*, HRESULT>
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, void*, uint, uint, uint, Box*, HRESULT>
 			ReadFromSubresource_14 ;
 
-		internal delegate *unmanaged [Stdcall]<IResourceUnmanaged*, HeapProperties*, HeapFlags*,
+		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, HeapProperties*, HeapFlags*,
 			HRESULT> GetHeapProperties_15 ;
 	}
 
@@ -247,13 +267,14 @@ public unsafe struct IResourceUnmanaged: IComIID {
 	
 	
 	// ---------------------------------------------------------------------------------------------------
+	// Static Members:
+	// ---------------------------------------------------------------------------------------------------
 	
 	/// <summary>The IID guid for this interface.</summary>
 	/// <value>{696442be-a72e-4059-bc79-5b5c98040fad}</value>
 	public static readonly Guid IID_Guid =
-		new Guid( 0x696442BE, 0xA72E, 0x4059, 0xBC, 
-				  0x79, 0x5B, 0x5C, 0x98, 0x04, 
-				  0x0F, 0xAD ) ;
+		new Guid( 0x696442BE, 0xA72E, 0x4059, 0xBC,
+				  0x79, 0x5B, 0x5C, 0x98, 0x04, 0x0F, 0xAD ) ;
 
 	
 	static ref readonly Guid IComIID.Guid {
@@ -267,9 +288,38 @@ public unsafe struct IResourceUnmanaged: IComIID {
 			
 			return ref Unsafe
 					   .As< byte, Guid >( ref MemoryMarshal
-											  .GetReference( data ) ) ;
+											  .GetReference(data) ) ;
 		}
 	}
+	
+	
+	
+	public static ResourceUnmanaged GetUnmanaged( IResource resource ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		ArgumentNullException.ThrowIfNull( resource, nameof(resource) ) ;
+		ObjectDisposedException.ThrowIf( resource.COMObject is null, nameof(resource) ) ;
+#endif
+
+		/*var d3d12Resource = resource.COMObject ;
+		Guid iid = typeof( ID3D12Resource ).GUID ;
+		d3d12Resource.QueryInterface( ref iid, out nint pInterface ) ;
+		var unmanaged = new ResourceUnmanaged( pInterface ) ;
+		d3d12Resource.Release( ) ;*/
+		ResourceUnmanaged unmanaged = new( resource.ComPointer.InterfaceVPtr) ;
+		
+		return unmanaged ;
+	}
+	
+	public static IResource GetManaged( ResourceUnmanaged unmanaged ) => 
+		new Resource( (nint)unmanaged.lpVtbl ) ;
+	
+	public static IResource GetManaged( ResourceUnmanaged* unmanaged ) => 
+		new Resource( (nint)unmanaged->lpVtbl ) ;
+
+	// ---------------------------------------------------------------------------------------------------
+	// Operator Overloads:
+	// ---------------------------------------------------------------------------------------------------
+	
 	
 	// ====================================================================================================
 } ;

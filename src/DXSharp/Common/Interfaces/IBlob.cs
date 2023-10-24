@@ -11,13 +11,17 @@ namespace DXSharp {
 	[Wrapper( typeof( ID3DBlob ) )]
 	public interface IBlob: IComObjectRef< ID3DBlob >, 
 							IUnknownWrapper< ID3DBlob > {
+		public ulong Size64 => GetBufferSize( ) ;
+		public uint Size => (uint)GetBufferSize( ) ;
+		public unsafe nint Pointer => (nint)GetBufferPointer( ) ;
+		
 		/// <summary>Retrieves a pointer to the blob's data.</summary>
 		/// <returns>The address of the blob data.</returns>
-		unsafe nint GetBufferPointer( ) => ( nint )COMObject!.GetBufferPointer( ) ;
+		unsafe void* GetBufferPointer( ) => COMObject!.GetBufferPointer( ) ;
 
 		/// <summary>Retrieves the size, in bytes, of the blob's data.</summary>
 		/// <returns>64-bit unsigned integer specifying the total size of the blob's data.</returns>
-		ulong GetBufferSize( ) => COMObject!.GetBufferSize( ) ;
+		nuint GetBufferSize( ) => COMObject!.GetBufferSize( ) ;
 	} ;
 }
 

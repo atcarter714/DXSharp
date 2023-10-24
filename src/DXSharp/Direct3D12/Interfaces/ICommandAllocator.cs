@@ -10,7 +10,7 @@ public interface ICommandAllocator: IPageable,
 									IComObjectRef< ID3D12CommandAllocator >,
 									IUnknownWrapper< ID3D12CommandAllocator > {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12CommandAllocator > ComPointer { get ; }
+	new ComPtr< ID3D12CommandAllocator >? ComPointer { get ; }
 	new ID3D12CommandAllocator? COMObject => ComPointer?.Interface ;
 	ID3D12CommandAllocator? IComObjectRef< ID3D12CommandAllocator >.COMObject => COMObject ;
 	ComPtr< ID3D12CommandAllocator >? IUnknownWrapper< ID3D12CommandAllocator >.ComPointer => ComPointer;

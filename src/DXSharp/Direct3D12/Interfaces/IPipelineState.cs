@@ -14,7 +14,7 @@ public interface IPipelineState: IPageable,
 								 IComObjectRef< ID3D12PipelineState >,
 								 IUnknownWrapper< ID3D12PipelineState > {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12PipelineState > ComPointer { get ; }
+	new ComPtr< ID3D12PipelineState >? ComPointer { get ; }
 	new ID3D12PipelineState? COMObject => ComPointer?.Interface ;
 	ID3D12PipelineState? IComObjectRef< ID3D12PipelineState >.COMObject => COMObject ;
 	ComPtr< ID3D12PipelineState >? IUnknownWrapper< ID3D12PipelineState >.ComPointer => ComPointer ;

@@ -6,6 +6,10 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.Direct3D12 ;
 
 
+/// <summary>
+/// Provides methods for submitting command lists, synchronizing command list execution,
+/// instrumenting the command queue, and updating resource tile mappings.
+/// </summary>
 [ProxyFor(typeof(ID3D12CommandQueue))]
 public interface ICommandQueue: IPageable,
 								IComObjectRef< ID3D12CommandQueue >,
@@ -15,10 +19,13 @@ public interface ICommandQueue: IPageable,
 	new ID3D12CommandQueue? COMObject => ComPointer?.Interface ;
 	ID3D12CommandQueue? IComObjectRef< ID3D12CommandQueue >.COMObject => COMObject ;
 	ComPtr< ID3D12CommandQueue >? IUnknownWrapper< ID3D12CommandQueue >.ComPointer => ComPointer ;
+
+	public new static Type ComType => typeof( ID3D12CommandQueue );
+	public new static Guid InterfaceGUID => typeof( ID3D12CommandQueue ).GUID;
 	// ==================================================================================
-	
-	
-	
+
+
+
 	/// <summary>Copies mappings from a source reserved resource to a destination reserved resource.</summary>
 	/// <param name="pDstResource">A pointer to the destination reserved resource.</param>
 	/// <param name="pDstRegionStartCoordinate">
@@ -57,7 +64,7 @@ public interface ICommandQueue: IPageable,
 	/// <para>An array of tiles. An array of values that specify the number of tiles in each tile range. The <i>NumRanges</i> parameter specifies the number of values in the array.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-updatetilemappings#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
-	/// <param name="Flags">A combination of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_tile_mapping_flags">D3D12_TILE_MAPPING_FLAGS</a> values that are combined by using a bitwise OR operation.</param>
+	/// <param name="flags">A combination of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_tile_mapping_flags">D3D12_TILE_MAPPING_FLAGS</a> values that are combined by using a bitwise OR operation.</param>
 	/// <remarks>
 	/// <para>Use <b>UpdateTileMappings</b> to map the virtual pages of a reserved resource to the physical pages of a heap. The mapping does not have to be in order. The operation is similar to  <a href="https://docs.microsoft.com/windows/desktop/api/d3d11_2/nf-d3d11_2-id3d11devicecontext2-updatetilemappings">ID3D11DeviceContext2::UpdateTileMappings</a> with the one key difference that D3D12 allows a reserved resource to have tiles from multiple heaps. In a single call to <b>UpdateTileMappings</b>, you can map one or more ranges of resource tiles to one or more ranges of heap tiles.</para>
 	/// <para>You can organize the parameters of  <b>UpdateTileMappings</b> in these ways to perform an update:</para>
@@ -67,14 +74,14 @@ public interface ICommandQueue: IPageable,
 	/// </remarks>
 	void UpdateTileMappings( IResource pResource,
 							 uint NumResourceRegions,
-							 in TiledResourceCoordinate pResourceRegionStartCoordinates,
-							 in TileRegionSize pResourceRegionSizes,
+							 [Optional] in Span< TiledResourceCoordinate > pResourceRegionStartCoordinates,
+							 [Optional] in Span< TileRegionSize > pResourceRegionSizes,
 							 IHeap pHeap,
 							 uint NumRanges,
-							 in TileRangeFlags pRangeFlags,
-							 in uint pHeapRangeStartOffsets,
-							 in uint pRangeTileCounts,
-							 TileMappingFlags Flags ) ;
+							 [Optional] in Span< TileRangeFlags > pRangeFlags,
+							 uint[ ] pHeapRangeStartOffsets,
+							 uint[ ] pRangeTileCounts,
+							 TileMappingFlags flags ) ;
 	
 
 	/// <summary>Submits an array of command lists for execution.</summary>
@@ -88,7 +95,7 @@ public interface ICommandQueue: IPageable,
 														where C: ICommandList ;
 	
 	
-	/// <summary>Not intended to be called directly.  Use the PIX event runtime to insert events into a command queue. (ID3D12CommandQueue.SetMarker)</summary>
+	/// <summary>Not intended to be called directly. Use the PIX event runtime to insert events into a command queue. (ID3D12CommandQueue.SetMarker)</summary>
 	/// <param name="Metadata">
 	/// <para>Type: <b>UINT</b> Internal.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-setmarker#parameters">Read more on docs.microsoft.com</see>.</para>
@@ -102,7 +109,7 @@ public interface ICommandQueue: IPageable,
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-setmarker#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>
-	/// <para>This is a support method used internally by the PIX event runtime.  It is not intended to be called directly. To insert instrumentation markers at the current location within a D3D12 command queue, use the <b>PIXSetMarker</b> function.  This is provided by the <a href="https://devblogs.microsoft.com/pix/winpixeventruntime/">WinPixEventRuntime</a> NuGet package.</para>
+	/// <para>This is a support method used internally by the PIX event runtime. It is not intended to be called directly. To insert instrumentation markers at the current location within a D3D12 command queue, use the <b>PIXSetMarker</b> function. This is provided by the <a href="https://devblogs.microsoft.com/pix/winpixeventruntime/">WinPixEventRuntime</a> NuGet package.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-setmarker#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
 	void SetMarker( uint Metadata, [Optional] nint pData, uint Size ) ;
@@ -186,7 +193,7 @@ public interface ICommandQueue: IPageable,
 	// INTERNAL CALLS (USE PIX EVENTS INSTEAD
 	// ---------------------------------------
 	
-	/// <summary>Not intended to be called directly.  Use the PIX event runtime to insert events into a command queue. (ID3D12CommandQueue.BeginEvent)</summary>
+	/// <summary>Not intended to be called directly. Use the PIX event runtime to insert events into a command queue. (ID3D12CommandQueue.BeginEvent)</summary>
 	/// <param name="Metadata">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> Internal.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-beginevent#parameters">Read more on docs.microsoft.com</see>.</para>
@@ -200,14 +207,14 @@ public interface ICommandQueue: IPageable,
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-beginevent#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>
-	/// <para>This is a support method used internally by the PIX event runtime.  It is not intended to be called directly. To mark the start of an instrumentation region at the current location within a D3D12 command queue, use the <b>PIXBeginEvent</b> function or <b>PIXScopedEvent</b> macro.  These are provided by the <a href="https://devblogs.microsoft.com/pix/winpixeventruntime/">WinPixEventRuntime</a> NuGet package.</para>
+	/// <para>This is a support method used internally by the PIX event runtime. It is not intended to be called directly. To mark the start of an instrumentation region at the current location within a D3D12 command queue, use the <b>PIXBeginEvent</b> function or <b>PIXScopedEvent</b> macro. These are provided by the <a href="https://devblogs.microsoft.com/pix/winpixeventruntime/">WinPixEventRuntime</a> NuGet package.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-beginevent#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
 	unsafe void BeginEvent( uint Metadata, void* pData, uint Size ) ;
 
-	/// <summary>Not intended to be called directly.  Use the PIX event runtime to insert events into a command queue. (ID3D12CommandQueue.EndEvent)</summary>
+	/// <summary>Not intended to be called directly. Use the PIX event runtime to insert events into a command queue. (ID3D12CommandQueue.EndEvent)</summary>
 	/// <remarks>
-	/// <para>This is a support method used internally by the PIX event runtime.  It is not intended to be called directly. To mark the end of an instrumentation region at the current location within a D3D12 command queue, use the <b>PIXEndEvent</b> function or <b>PIXScopedEvent</b> macro.  These are provided by the <a href="https://devblogs.microsoft.com/pix/winpixeventruntime/">WinPixEventRuntime</a> NuGet package.</para>
+	/// <para>This is a support method used internally by the PIX event runtime. It is not intended to be called directly. To mark the end of an instrumentation region at the current location within a D3D12 command queue, use the <b>PIXEndEvent</b> function or <b>PIXScopedEvent</b> macro. These are provided by the <a href="https://devblogs.microsoft.com/pix/winpixeventruntime/">WinPixEventRuntime</a> NuGet package.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-endevent#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
 	void EndEvent( ) ;

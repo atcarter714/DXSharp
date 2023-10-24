@@ -99,4 +99,7 @@ public class NativeLibraryAttribute: DXSharpAttribute {
 
 // -------------------------------------------------------------------------
 
-
+public class CsWin32Attribute: DXSharpAttribute {
+	public CsWin32Attribute( string? name = null, string? tag = null ): 
+		base( name ?? string.Empty, tag ) { }
+} ;
