@@ -1,8 +1,10 @@
-﻿using System.Runtime.InteropServices ;
+﻿#region Using Directives
+using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
-
+#endregion
 namespace DXSharp.Direct3D12 ;
+
 
 public class DescriptorHeap: Pageable, IDescriptorHeap {
 	// ---------------------------------------------------------------------------------
@@ -17,16 +19,5 @@ public class DescriptorHeap: Pageable, IDescriptorHeap {
 	internal DescriptorHeap( ComPtr< ID3D12DescriptorHeap > ptr ) => ComPointer = ptr ;
 	internal DescriptorHeap( nint ptr ) => ComPointer = new( ptr ) ;
 	public DescriptorHeap( ID3D12DescriptorHeap ptr ) => ComPointer = new( ptr ) ;
-
 	
-	public DescriptorHeapDescription GetDesc( ) {
-		ID3D12DescriptorHeap heap = COMObject ?? throw new ObjectDisposedException( nameof( DescriptorHeap ) ) ;
-		var guid = typeof( ID3D12DescriptorHeap ).GUID ;
-		Marshal.QueryInterface( ComPointer.BaseAddress, ref guid, out var ptr ) ;
-		ComPtr<ID3D12DescriptorHeap> dheap = new( ptr ) ;
-		var ddd = dheap.Interface.GetDesc(  ) ;
-		
-		heap.SetName( "DescHeap" ) ;
-		return heap.GetDesc( ) ;
-	}
 } ;

@@ -566,7 +566,7 @@ public enum HeapType {
 	/// <para>Specifies a heap used for reading back. This heap type has CPU access optimized for reading data back from the GPU, but does not experience the maximum amount of bandwidth for the GPU. This heap type is best for GPU-write-once, CPU-readable data. The CPU cache behavior is write-back, which is conducive for multiple sub-cache-line CPU reads. Resources in this heap must be created with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATE</a>_COPY_DEST, and cannot be changed away from this.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
-	Readback = 3,
+	ReadBack = 3,
 	/// <summary>
 	/// <para>Specifies a custom heap. The application may specify the memory pool and CPU cache properties directly, which can be useful for UMA optimizations, multi-engine, multi-adapter, or other special cases. To do so, the application is expected to understand the adapter architecture to make the right choice. For more details, see <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_feature">D3D12_FEATURE</a>_ARCHITECTURE, <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture">D3D12_FEATURE_DATA_ARCHITECTURE</a>, and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcustomheapproperties">GetCustomHeapProperties</a>.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</see>.</para>
@@ -1210,4 +1210,15 @@ public enum ColorWriteEnableFlags: byte {
 
 	/// <summary>Allow data to be stored in all components.</summary>
 	All = 15,
+} ;
+
+
+
+/// <summary>Defines constants that specify the lifetime state of a lifetime-tracked object.</summary>
+[EquivalentOf(typeof(D3D12_LIFETIME_STATE))]
+public enum LifetimeState {
+	/// <summary>Specifies that the lifetime-tracked object is in use.</summary>
+	InUse = 0,
+	/// <summary>Specifies that the lifetime-tracked object is not in use.</summary>
+	NotInUse = 1,
 } ;

@@ -1,7 +1,10 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Dxgi ;
 using System.Runtime.Versioning ;
+using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using DXSharp.Windows.COM ;
 #endregion
@@ -22,6 +25,20 @@ public interface ISwapChain: IDeviceSubObject,
 	new IDXGISwapChain? COMObject => ComPointer?.Interface ;
 	IDXGISwapChain? IComObjectRef< IDXGISwapChain >.COMObject => COMObject ;
 
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISwapChain ).GUID
+															   .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
+	
 	static IDXCOMObject IInstantiable.Instantiate( ) => new SwapChain( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new SwapChain( pComObj ) ;
 	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
@@ -60,10 +77,22 @@ public interface ISwapChain1: ISwapChain,
 							  IComObjectRef< IDXGISwapChain1 >,
 							  IUnknownWrapper< IDXGISwapChain1 > {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< IDXGISwapChain1 > ComPointer { get ; }
+	new ComPtr< IDXGISwapChain1 >? ComPointer { get ; }
 	new IDXGISwapChain1? COMObject => ComPointer?.Interface ;
 	IDXGISwapChain1? IComObjectRef< IDXGISwapChain1 >.COMObject => COMObject ;
-
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISwapChain1 ).GUID
+																.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
 	static IDXCOMObject IInstantiable.Instantiate( ) => new SwapChain1( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new SwapChain1( pComObj ) ;
 	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
@@ -104,6 +133,18 @@ public interface ISwapChain2: ISwapChain1,
 	new IDXGISwapChain2? COMObject => ComPointer?.Interface ;
 	IDXGISwapChain2? IComObjectRef< IDXGISwapChain2 >.COMObject => COMObject ;
 
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISwapChain2 ).GUID
+																 .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
 	static IDXCOMObject IInstantiable.Instantiate( ) => new SwapChain2( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new SwapChain2( pComObj ) ;
 	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
@@ -124,6 +165,18 @@ public interface ISwapChain3: ISwapChain2,
 	new ComPtr< IDXGISwapChain3 >? ComPointer { get ; }
 	new IDXGISwapChain3? COMObject => ComPointer?.Interface ;
 	IDXGISwapChain3? IComObjectRef< IDXGISwapChain3 >.COMObject => COMObject ;
+
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISwapChain3 ).GUID
+																 .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
 
 	static IDXCOMObject IInstantiable.Instantiate( ) => new SwapChain3( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new SwapChain3( pComObj ) ;

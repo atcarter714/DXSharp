@@ -1,4 +1,8 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
 #endregion
@@ -23,11 +27,27 @@ public interface IPageable: IDeviceChild,
 	new ID3D12Pageable? COMObject => ComPointer?.Interface ;
 	ID3D12Pageable? IComObjectRef< ID3D12Pageable >.COMObject => COMObject ;
 	ComPtr< ID3D12Pageable >? IUnknownWrapper< ID3D12Pageable >.ComPointer => ComPointer ;
+	
+	ID3D12DeviceChild? IDeviceChild.COMObject => COMObject ;
 	// ---------------------------------------------------------------------------------
 	
 	// ---------------------------------------------------------------------------------
 	static Type IUnknownWrapper.ComType => typeof(ID3D12Pageable) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Pageable).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12Pageable).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
 	// ==================================================================================
 } ;
 

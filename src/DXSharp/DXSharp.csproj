@@ -99,6 +99,7 @@
 		<Compile Remove="VectorDTypes.cs" />
 	</ItemGroup>
 	<ItemGroup>
+	  <Folder Include="Common\Numerics\" />
 	  <Folder Include="Windows\Win32\XTensions\" />
 	</ItemGroup>
 	

@@ -19,5 +19,6 @@ public class Blob: DisposableObject, IBlob {
 	
 	//! IDisposable:
 	public override bool Disposed => ComPointer?.Disposed ?? true ;
-	protected override void DisposeUnmanaged( ) => ComPointer?.Dispose( ) ;
+	protected override async ValueTask DisposeUnmanaged( ) =>
+		await Task.Run( ( ) => ComPointer?.Dispose() ) ;
 } ;

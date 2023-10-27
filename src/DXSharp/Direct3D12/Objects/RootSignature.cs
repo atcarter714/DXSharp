@@ -10,6 +10,7 @@ public class RootSignature: DeviceChild, IRootSignature {
 	// ------------------------------------------------------------------------------------------
 	public new ID3D12RootSignature? COMObject => ComPointer?.Interface ;
 	public new ComPtr< ID3D12RootSignature >? ComPointer { get ; protected set ; }
+	
 	// ------------------------------------------------------------------------------------------
 	
 	internal RootSignature( ) { }

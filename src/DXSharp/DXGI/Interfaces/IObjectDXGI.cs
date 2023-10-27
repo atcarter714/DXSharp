@@ -1,5 +1,8 @@
 ﻿#region Using Directives
 #pragma warning disable CS1591
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using DXSharp.Windows.COM ;
 using Windows.Win32.Graphics.Dxgi ;
 #endregion
@@ -16,16 +19,38 @@ public interface IObject: IDXCOMObject,
 	// Property Overrides ::
 	// ----------------------------------------------------------
 	/// <inheritdoc cref="IUnknownWrapper{TInterface}.ComPointer"/>
-	new abstract ComPtr< IDXGIObject >? ComPointer { get ; }
+	new ComPtr< IDXGIObject >? ComPointer { get ; }
 	
 	/// <inheritdoc cref="IComObjectRef{TInterface}.COMObject"/>
 	new IDXGIObject? COMObject => ComPointer?.Interface ;
+
+	static Type IUnknownWrapper.ComType => typeof(IDXGIObject) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(IDXGIObject).GUID ;
 	
+	void IDisposable.Dispose( ) {
+		ComPointer?.Dispose( ) ;
+	}
+
 	// ----------------------------------------------------------
     // Explicit Interface Implementations / Disambiguation ::
     // ----------------------------------------------------------
     IDXGIObject? IComObjectRef< IDXGIObject >.COMObject => COMObject ;
     ComPtr< IDXGIObject >? IUnknownWrapper< IDXGIObject >.ComPointer => ComPointer ;
+	
+	int IUnknownWrapper.RefCount => (int)( ComPointer?.RefCount ?? 0 ) ;
+
+	static ref readonly Guid IComIID.Guid  {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIObject).GUID
+														   .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
 	// ==========================================================
 	
 	

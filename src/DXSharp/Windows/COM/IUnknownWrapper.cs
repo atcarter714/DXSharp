@@ -1,5 +1,10 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices;
+using Windows.Win32 ;
+using DXSharp.Direct3D12 ;
+
 #endregion
 namespace DXSharp.Windows.COM ;
 
@@ -11,8 +16,10 @@ namespace DXSharp.Windows.COM ;
 /// <summary>Base interface of all DXSharp COM wrapper types.</summary>
 public interface IUnknownWrapper: IDisposable,
 								  IAsyncDisposable {
-	public static abstract Type ComType { get ; }
-	public static abstract Guid InterfaceGUID { get ; }
+	/// <summary>The type of COM runtime proxy interface.</summary>
+	public static virtual Type ComType => typeof( IUnknown ) ;
+	/// <summary>The GUID (<b>IID</b>) of the COM runtime proxy interface.</summary>
+	public static virtual Guid InterfaceGUID => typeof( IUnknown ).GUID ;
 	
 	bool Disposed { get; }
 	internal int RefCount { get ; }
@@ -27,17 +34,26 @@ public interface IUnknownWrapper: IDisposable,
 	
 	/*HResult QueryInterface< T >( out nint ppvInterface ) where T: IUnknown =>
 		COMUtility.QueryInterface< T >( BasePointer, out ppvInterface ) ;*/
+	
 } ;
 
 
 /// <summary>Contract for COM object wrapper.</summary>
 /// <typeparam name="TInterface">The native COM interface type.</typeparam>
-public interface IUnknownWrapper< TInterface >: IUnknownWrapper
+public interface IUnknownWrapper< TInterface >: IUnknownWrapper, IComIID
 												where TInterface: IUnknown {
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(TInterface).GUID ;
 	static Type IUnknownWrapper.ComType => typeof(TInterface) ;
-
-
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(TInterface).GUID ;
+	
+	/// <summary>A reference to the IID guid for this interface.</summary>
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(TInterface).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal.GetReference(data) ) ;
+		}
+	}
+	
 	/// <summary>ComPtr of the native COM interface.</summary>
 	ComPtr< TInterface >? ComPointer { get ; }
 	

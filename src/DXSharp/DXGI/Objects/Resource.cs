@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows ;
@@ -12,6 +15,7 @@ public class Resource: DeviceSubObject, IResource {
 	public new static Type ComType => typeof( IDXGIResource ) ;
 	public new static Guid InterfaceGUID => typeof( IDXGIResource ).GUID ;
 	
+	
 	public new ComPtr< IDXGIResource >? ComPointer { get ; protected set ; }
 	public new IDXGIResource? COMObject => ComPointer?.Interface ;
 	IDXGIResource _dxgiInterface => COMObject ??
@@ -19,8 +23,20 @@ public class Resource: DeviceSubObject, IResource {
 					 ? new ObjectDisposedException( nameof(OutputDuplication) )
 					 : new NullReferenceException( $"{nameof(Resource)} :: " +
 									$"internal {nameof(IDXGIResource)} null reference." ) ) ;
-	
-	
+
+	public static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGIResource ).GUID
+																   .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
+
 	internal Resource( ) { }
 	internal Resource( nint ptr ): base( ptr ) => 
 		ComPointer = new( ptr ) ;

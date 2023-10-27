@@ -1,8 +1,9 @@
 ﻿#region Using Directives
 using System.Numerics ;
 using System.Runtime.Versioning ;
+using System.Runtime.CompilerServices ;
+
 using Windows.Win32.Foundation ;
-using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Dxgi.Common ;
 
@@ -12,13 +13,13 @@ using DXSharp.Windows.Win32 ;
 namespace DXSharp.DXGI ;
 
 
+[Wrapper(typeof(IDXGISwapChain))]
 public class SwapChain: DeviceSubObject, ISwapChain {
 	public enum ColorSpaceSupportFlags: uint { Present = 0x1, OverlayPresent = 0x2, } ;
 	
 	public new static Type ComType => typeof( IDXGISwapChain ) ;
 	public new static Guid InterfaceGUID => ComType.GUID ;
 	public static SwapChain? Instantiate( ) => new( ) ;
-	
 	
 	public new ComPtr< IDXGISwapChain >? ComPointer { get ; protected set; }
 	public new IDXGISwapChain? COMObject => ComPointer?.Interface ;
@@ -119,7 +120,7 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 } ;
 
 
-
+[Wrapper(typeof(IDXGISwapChain1))]
 public class SwapChain1: SwapChain, ISwapChain1 {
 	public new static Type ComType => typeof( IDXGISwapChain1 ) ;
 	public new static Guid InterfaceGUID => ComType.GUID ;
@@ -230,11 +231,10 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 			pRotation = (ModeRotation)result ;
 		}
 	}
-
 } ;
 
 
-
+[Wrapper(typeof(IDXGISwapChain2))]
 public class SwapChain2: SwapChain1, ISwapChain2 {
 	public new static Type ComType => typeof( IDXGISwapChain2 ) ;
 	public new static Guid InterfaceGUID => ComType.GUID ;
@@ -284,7 +284,7 @@ public class SwapChain2: SwapChain1, ISwapChain2 {
 }
 
 
-
+[Wrapper(typeof(IDXGISwapChain3))]
 [SupportedOSPlatform("windows10.0.10240")]
 public class SwapChain3: SwapChain2, ISwapChain3 {
 	public new static Guid InterfaceGUID => ComType.GUID ;
@@ -333,10 +333,10 @@ public class SwapChain3: SwapChain2, ISwapChain3 {
 								SwapChainFlags swapChainFlags,
 								in uint[ ] pCreationNodeMask,
 								in IUnknown[ ] ppPresentQueue ) {
-		
 		unsafe { fixed ( uint* pMask = pCreationNodeMask ) {
+				var presentQueue = Unsafe.As< object[] >( ppPresentQueue ) ;
 				COMObject!.ResizeBuffers1( bufferCount, width, height, (DXGI_FORMAT)newFormat,
-											   (uint)swapChainFlags, pCreationNodeMask, ppPresentQueue ) ;
+											   (uint)swapChainFlags, pCreationNodeMask, presentQueue ) ;
 			}
 		}
 	}

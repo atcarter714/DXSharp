@@ -1,4 +1,7 @@
-﻿using Windows.Win32.Graphics.Dxgi ;
+﻿using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
+using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows.COM ;
 
 namespace DXSharp.DXGI ;
@@ -17,6 +20,26 @@ public interface IOutput: IObject,
 	new ComPtr< IDXGIOutput >? ComPointer { get ; }
 	new IDXGIOutput? COMObject => ComPointer?.Interface ;
 	IDXGIOutput? IComObjectRef< IDXGIOutput >.COMObject => COMObject ;
+
+	ComPtr< IDXGIOutput >? IUnknownWrapper< IDXGIOutput >.ComPointer => 
+		new( ComPointer?.InterfaceVPtr ?? 0 ) ;
+
+	
+	static Type IUnknownWrapper.ComType => typeof(IDXGIOutput) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(IDXGIOutput).GUID ;
+
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIOutput).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
 
 	static IDXCOMObject IInstantiable.Instantiate( ) => new Output( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Output( pComObj ) ;
@@ -66,6 +89,25 @@ public interface IOutput1: IOutput,
 	new ComPtr< IDXGIOutput1 >? ComPointer { get ; }
 	new IDXGIOutput1? COMObject => ComPointer?.Interface ;
 	IDXGIOutput1? IComObjectRef< IDXGIOutput1 >.COMObject => COMObject ;
+	
+	ComPtr< IDXGIOutput1 >? IUnknownWrapper< IDXGIOutput1 >.ComPointer => 
+		new( ComPointer?.InterfaceVPtr ?? 0 ) ;
+	
+	static Type IUnknownWrapper.ComType => typeof(IDXGIOutput1) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(IDXGIOutput1).GUID ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIOutput1).GUID
+														   .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
 
 	static IDXCOMObject IInstantiable.Instantiate( ) => new Output1( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Output1( pComObj ) ;
@@ -86,4 +128,73 @@ public interface IOutput1: IOutput,
 	
 	void DuplicateOutput( IDevice pDevice, out IOutputDuplication? ppOutputDuplication ) ;
 } ;
+
+
+
+public interface IOutput2: IOutput1,
+						   IComObjectRef< IDXGIOutput2 >,
+						   IUnknownWrapper< IDXGIOutput2 >,
+						   IInstantiable {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< IDXGIOutput2 >? ComPointer { get ; }
+	new IDXGIOutput2? COMObject => ComPointer?.Interface ;
+	
+	ComPtr< IDXGIOutput2 >? IUnknownWrapper< IDXGIOutput2 >.ComPointer => 
+		new( ComPointer?.InterfaceVPtr ?? 0 ) ;
+	
+	IDXGIOutput1? IOutput1.COMObject => COMObject ;
+	IDXGIOutput1? IComObjectRef< IDXGIOutput1 >.COMObject => COMObject ;
+	IDXGIOutput2? IComObjectRef< IDXGIOutput2 >.COMObject => COMObject ;
+
+	static Type IUnknownWrapper.ComType => typeof( IDXGIOutput2 ) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof( IDXGIOutput2 ).GUID ;
+
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGIOutput2 ).GUID
+															  .ToByteArray( ) ;
+
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference( data ) ) ;
+		}
+	}
+
+}
+
+
+public interface IOutput3: IOutput2,
+						   IComObjectRef< IDXGIOutput3 >,
+						   IUnknownWrapper< IDXGIOutput3 >,
+						   IInstantiable
+{
+	// ---------------------------------------------------------------------------------
+	new ComPtr< IDXGIOutput3 >? ComPointer { get ; }
+	new IDXGIOutput3? COMObject => ComPointer?.Interface ;
+	IDXGIOutput3? IComObjectRef< IDXGIOutput3 >.COMObject => COMObject ;
+	
+	ComPtr< IDXGIOutput2 >? IUnknownWrapper< IDXGIOutput2 >.ComPointer => 
+		new( ComPointer?.InterfaceVPtr ?? 0 ) ;
+	
+	IDXGIOutput2? IOutput2.COMObject => COMObject ;
+	IDXGIOutput2? IComObjectRef< IDXGIOutput2 >.COMObject => COMObject ;
+
+	static Type IUnknownWrapper.ComType => typeof( IDXGIOutput3 ) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof( IDXGIOutput3 ).GUID ;
+
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGIOutput3 ).GUID
+															  .ToByteArray( ) ;
+
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference( data ) ) ;
+		}
+	}
+
+}
 

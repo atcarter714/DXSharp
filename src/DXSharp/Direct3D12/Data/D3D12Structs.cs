@@ -2,6 +2,7 @@
 
 using System.Buffers ;
 using System.Diagnostics.CodeAnalysis ;
+using System.Numerics ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
@@ -1023,6 +1024,10 @@ public struct ShaderBytecode {
 			pShaderBytecode = (nint)bytecode.pShaderBytecode,
 			BytecodeLength  = bytecode.BytecodeLength
 	} ;
+
+	
+	public static ShaderBytecode FromShaderBlob( IBlob blob ) => 
+		new( blob.Pointer, blob.GetBufferSize( ) ) ;
 } ;
 
 
@@ -1046,7 +1051,7 @@ public struct DescriptorHeapDescription {
 	
 	
 	public DescriptorHeapDescription( DescriptorHeapType type, 
-									  uint numDescriptors, 
+									  uint numDescriptors = 1,
 									  DescriptorHeapFlags flags = 0, 
 									  uint nodeMask = 0 ) {
 		Type = type ;
@@ -1273,18 +1278,50 @@ public struct ClearValue {
 		[FieldOffset( 0 )] public __float_4 Color ;
 		[FieldOffset( 0 )] public DepthStencilValue DepthStencil ;
 	} ;
+	
+	public ClearValue( Format format, __float_4 color ) {
+		Format = format ;
+		ReadAs = new _anon_clrval_union { Color = color } ;
+	}
+	public ClearValue( Format format, ColorF color ) {
+		Format = format ;
+		ReadAs = new _anon_clrval_union { Color = new( color ) } ;
+	}
+	public ClearValue( Format format, Color color ) {
+		Format = format ;
+		ReadAs = new _anon_clrval_union { Color = new( color ) } ;
+	}
+	public ClearValue( Format format, KnownColor knownColor ): 
+		this( format, Color.FromKnownColor(knownColor) ) { }
+	public ClearValue( Format format, float r, float g, float b, float a ) {
+		Format = format ;
+		ReadAs = new _anon_clrval_union { Color = new( r, g, b, a ) } ;
+	}
+	public ClearValue( Format format, DepthStencilValue depthStencil ) {
+		Format = format ;
+		ReadAs = new _anon_clrval_union { DepthStencil = depthStencil } ;
+	}
 } ;
+
 
 
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_DEPTH_STENCIL_VALUE ) )]
 public struct DepthStencilValue {
 	/// <summary>Specifies the depth value.</summary>
-	public float Depth;
+	public float Depth ;
 	/// <summary>Specifies the stencil value.</summary>
-	public byte Stencil;
+	public byte Stencil ;
+
+	public DepthStencilValue( float depth = 0, byte stencil = 0 ) {
+		this.Depth = depth ;
+		this.Stencil = stencil ;
+	}
 } ;
 
+
+[StructLayout(LayoutKind.Sequential),
+ EquivalentOf(typeof(D3D12_BLEND_DESC))]
 public struct BlendDescription {
 	/// <summary>Specifies whether to use alpha-to-coverage as a multisampling technique when setting a pixel to a render target. For more info about using alpha-to-coverage, see <a href="https://docs.microsoft.com/windows/desktop/direct3d11/d3d10-graphics-programming-guide-blend-state">Alpha-To-Coverage</a>.</summary>
 	public BOOL AlphaToCoverageEnable ;
@@ -1436,6 +1473,7 @@ public struct RTBlendDescription8 {
 	} ;
 	
 
+	
 	public RTBlendDescription _0, _1, _2, _3, 
 							  _4, _5, _6, _7 ;
 	
@@ -1473,9 +1511,36 @@ public struct RTBlendDescription8 {
 		}}
 	}
 	
-	
 	/// <summary>The length of the inline array.</summary>
 	public readonly int Length => ElementCount ;
+
+	
+	
+	public RTBlendDescription8( RTBlendDescription repeat ) {
+		this._0 = this._1 = this._2 = this._3 = 
+			this._4 = this._5 = this._6 = this._7 = repeat ;
+	}
+	
+	public RTBlendDescription8( RTBlendDescription f0, RTBlendDescription f1, RTBlendDescription f2, RTBlendDescription f3,
+								RTBlendDescription f4, RTBlendDescription f5, RTBlendDescription f6, RTBlendDescription f7 ) {
+		this._0 = f0 ; this._1 = f1 ; this._2 = f2 ; this._3 = f3 ;
+		this._4 = f4 ; this._5 = f5 ; this._6 = f6 ; this._7 = f7 ;
+	}
+
+	public RTBlendDescription8( params RTBlendDescription[ ] blendDescs ) {
+		int len = blendDescs.Length ;
+		for ( uint i = 0x00U; i < ElementCount && i < len; ++i ) {
+			this[ i ] = blendDescs[ i ] ;
+		}
+	}
+
+	public RTBlendDescription8( Span< RTBlendDescription > blendDescs ) {
+		int len = blendDescs.Length ;
+		for ( uint i = 0x00U; i < ElementCount && i < len; ++i ) {
+			this[ i ] = blendDescs[ (int)i ] ;
+		}
+	}
+	
 	
 	
 	/// <summary>

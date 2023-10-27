@@ -1,4 +1,8 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.DXGI ;
 using DXSharp.Windows.COM ;
@@ -11,10 +15,21 @@ public interface IDevice: IObject,
 						  IComObjectRef< IDXGIDevice >,
 						  IUnknownWrapper< IDXGIDevice >, IInstantiable {
 	public new static Guid InterfaceGUID => typeof( IDXGIDevice ).GUID ;
+	public new static Type ComType => typeof( IDXGIDevice ) ;
 	
-	new Type ComType => typeof( IDXGIDevice ) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIDevice).GUID
+																	.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
 	new IDXGIDevice? COMObject => ComPointer?.Interface ;
-	new IDXGIDevice? ComObject => ComPointer?.Interface ;
 	new ComPtr< IDXGIDevice >? ComPointer { get ; }
 	
 	// ----------------------------------------------------------
@@ -22,20 +37,12 @@ public interface IDevice: IObject,
 	// ----------------------------------------------------------
 
 	IAdapter GetAdapter< T >( ) where T: class, IAdapter, IInstantiable ;
-	/*{
-		this.COMObject!.GetAdapter( out var ppAdapter ) ;
-		var _obj = (IAdapter)( T.Instantiate( ) ??
-							   throw new TypeInitializationException( nameof( T ), null ) ) ;
-		_obj.SetComPointer( new ComPtr< IDXGIAdapter >(ppAdapter) ) ;
-		return _obj ;
-	}*/
 	
-	
-	internal void CreateSurface( in   SurfaceDescription pDesc,
-								 uint numSurfaces, uint usage,
-								 in   SharedResource pSharedResource,
-								 out  Span< Surface > ppSurface ) ;
-	
+	internal void CreateSurface( in SurfaceDescription pDesc,
+								 uint numSurfaces,
+								 uint usage,
+								 ref SharedResource? pSharedResource,
+								 out Span< Surface > ppSurface  ) ;
 	
 	void QueryResourceResidency( in  Resource?[ ] ppResources, 
 								 out Span< Residency > statusSpan, 
@@ -53,4 +60,20 @@ public interface IDevice: IObject,
 //! Abstract Base Interface:
 public interface IDeviceSubObject: IObject {
 	T GetDevice<T>( ) where T: Device ;
+
+	static Type IUnknownWrapper.ComType => typeof(IDXGIDeviceSubObject) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(IDXGIDeviceSubObject).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIDeviceSubObject).GUID
+														   .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
 } ;

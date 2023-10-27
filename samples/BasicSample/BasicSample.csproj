@@ -12,10 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ClCompile Include="shaders.hlsl" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Update="shader1.hlsl">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
@@ -32,6 +34,19 @@ public interface IFactory: IObject,
 	new ComPtr< IDXGIFactory >? ComPointer { get ; }
 	new IDXGIFactory? COMObject => ComPointer?.Interface ;
 	IDXGIFactory? IComObjectRef< IDXGIFactory >.COMObject => COMObject ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory).GUID
+																	.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
 
 	static IDXCOMObject IInstantiable.Instantiate( ) => new Factory( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Factory( pComObj ) ;
@@ -161,6 +176,20 @@ public interface IFactory1: IFactory,
 	ComPtr< IDXGIFactory >? IFactory.ComPointer =>
 		ComPtr.Convert< IDXGIFactory1, IDXGIFactory >( ComPointer ) ;
 	
+
+
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory1).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
 	
 	
 	/// <summary>Enumerates both adapters (video cards) with or without outputs.</summary>
@@ -224,6 +253,20 @@ public interface IFactory2: IFactory1,
 	
 	ComPtr< IDXGIFactory1 > IFactory1.ComPointer =>
 		ComPtr.Convert< IDXGIFactory2, IDXGIFactory1 >( ComPointer ) ;
+
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory2).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
 
 	
 

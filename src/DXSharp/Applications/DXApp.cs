@@ -2,6 +2,7 @@
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Direct3D ;
+using DXSharp.DXGI ;
 using DXSharp.Windows.Win32.XTensions ;
 
 using static Windows.Win32.PInvoke ;
@@ -63,8 +64,8 @@ public abstract class DXApp: IDisposable {
     // --------------------------------------
     // Static Methods ::
     public static void GetHardwareAdapter( IDXGIFactory2? dxgiFactory,
-                                                out IDXGIAdapter1? dxgiAdapter,
-                                                bool requestHighPerformanceAdapter ) {
+                                           out IDXGIAdapter1? dxgiAdapter,
+                                           bool requestHighPerformanceAdapter ) {
         ArgumentNullException.ThrowIfNull( dxgiFactory, nameof(dxgiFactory) ) ;
         dxgiAdapter = null ;
         var adapterIndex = 0U ;
@@ -79,7 +80,7 @@ public abstract class DXApp: IDisposable {
     
     static bool IsHardwareAdapterSupported( IDXGIAdapter1 adapter ) {
         adapter.GetDesc1( out var desc ) ;
-        
+        AdapterFlag f ;
         if ( (desc.Flags & 
               (uint)DXGI_ADAPTER_FLAG3.DXGI_ADAPTER_FLAG3_SOFTWARE) is not 0 ) {
             // Don't select the Basic Render Driver adapter.

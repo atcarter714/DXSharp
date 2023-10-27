@@ -10,16 +10,40 @@ using DXSharp.Windows ;
 
 namespace DXSharp.Direct3D12.Shader ;
 
-public static class ShaderCompiler
-{
-	public static IBlob CompileFromFile( string fileName, 
+public static class ShaderCompiler {
+	
+	/// <summary>
+	/// Default flags for compiling shaders.
+	/// </summary>
+	public const ShaderCompileFlags DefaultFlags =
+#if !DEBUG || DEV_BUILD
+			ShaderCompileFlags.EnableStrictness | ShaderCompileFlags.Debug
+#else
+			ShaderCompileFlags.OptimizationLevel3 | ShaderCompileFlags.AvoidFlowControl
+#endif
+		;
+	
+	
+	public static IBlob CompileFromFile( string             fileName, 
+										 ShaderMacro[ ]     defines, 
+										 Include[ ]         includes, 
+										 string             entryPoint,
+										 ShaderProfile      profile,
+										 out IBlob?         errors,
+										 ShaderCompileFlags flags1 = DefaultFlags,  
+										 ShaderCompileFlags flags2 = DefaultFlags ) {
+		return CompileFromFile( fileName, defines, includes, entryPoint, profile.ToString( ), 
+								(uint)flags1, (uint)flags2, out errors ) ;
+	}
+	
+	public static IBlob CompileFromFile( string         fileName, 
 										 ShaderMacro[ ] defines, 
-										 Include[ ] includes, 
-										 string entryPoint,
-										 string target,
-										 uint flags1,  
-										 uint flags2,
-										 out IBlob errors ) {
+										 Include[ ]     includes, 
+										 string         entryPoint,
+										 string         target,
+										 uint           flags1,  
+										 uint           flags2,
+										 out IBlob?     errors ) {
 		HResult hr = CompileFromFile( fileName, defines.AsSpan(), includes.AsSpan(), 
 									  entryPoint, target, flags1, flags2, 
 									  out var code, out errors ) ;
@@ -28,13 +52,17 @@ public static class ShaderCompiler
 			hr.ThrowOnFailure( ) ;
 		}
 		
-		return code ;
+		return code!
+#if DEBUG || DEV_BUILD
+			   ?? throw new DXSharpException( $"Failed to compile") 
+#endif
+			   ;
 	}
 	
 	
 	public static HResult CompileFromFile( PCWSTR                          pFileName,
-										   [Optional] in Span<ShaderMacro> pDefines,
-										   [Optional] in Span<Include>     pInclude,
+										   [Optional] in Span< ShaderMacro > pDefines,
+										   [Optional] in Span< Include >     pInclude,
 										   PCSTR                           pEntrypoint,
 										   PCSTR                           pTarget,
 										   uint                            Flags1,
@@ -57,6 +85,19 @@ public static class ShaderCompiler
 			}
 		}
 	}
+	
+	
+	
+	public static string? GetErrorMessage( IBlob errorBlob ) {
+		ArgumentNullException.ThrowIfNull( errorBlob, nameof(errorBlob) ) ;
+		unsafe {
+			var errMsgPtr= errorBlob.GetBufferPointer( ) ;
+			PCSTR  msg   = new( (byte *)errMsgPtr ) ;
+			string error = msg.ToString( ) ;
+			return error ;
+		}
+	}
+	
 } ;
 
 
@@ -88,6 +129,7 @@ public static class ShaderCompiler
 #define D3DCOMPILE_ALL_RESOURCES_BOUND                  (1 << 21)
  */
  
+[Flags]
 public enum ShaderCompileFlags: uint {
 	/// <summary>
 	/// Insert debug file/line/type/symbol information.

@@ -20,8 +20,7 @@ namespace DXSharp.DXGI ;
 /// </remarks>
 public class Adapter: Object, IAdapter {
 	// -------------------------------------------------------------------------------------
-	//public new static Type ComType => typeof(IDXGIAdapter) ;
-	///public new static Guid InterfaceGUID => typeof(IDXGIAdapter).GUID ;
+	
 	static IDXCOMObject IInstantiable.Instantiate( ) => new Adapter( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new Adapter( ptr ) ;
 	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom obj ) => 

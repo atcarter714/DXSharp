@@ -10,6 +10,8 @@ dxcompiler.*
 IDXGIFactory7
 IDXGIAdapter4
 IDXGIOutput6
+IDXGISurface1
+IDXGISurface2
 
 // DXGI Enumerations:
 DXGI_SWAP_CHAIN_FLAG
@@ -22,8 +24,9 @@ DXGI_SAMPLE_DESC
 D3D12_VIEWPORT
 
 // D3D12 Structures:
-D3D_FEATURE_DATA_ARCHITECTURE
-D3D_FEATURE_DATA_ARCHITECTURE1
+D3D12_FEATURE_DATA_ARCHITECTURE
+D3D12_FEATURE_DATA_ARCHITECTURE1
+D3D12_FEATURE_DATA_FEATURE_LEVELS
 
 // D3D12 Interfaces:
 ID3D12Device
@@ -170,8 +173,7 @@ RegisterWindowMessageW
 // Additional D3D12/D3DX12 Items:
 // ------------------------------------------
 DXCoreCreateAdapterFactory
-D3D12_FEATURE_ARCHITECTURE
-D3D12_FEATURE_ARCHITECTURE1
+D3D12_FEATURE
 D3D12_FEATURE_DATA_ARCHITECTURE
 D3D12_FEATURE_DATA_ARCHITECTURE1
 D3D12_FEATURE_DATA_CROSS_NODE
@@ -179,9 +181,7 @@ D3D12_FEATURE_DATA_CROSS_NODE
 // ------------------------------------------
 // DXC, DXIL & Shader Compilation Items
 // ------------------------------------------
-d3d12shader.h
 D3dcompiler_47.*
-dxil.*
 
 IDxcBlob
 IDxcBlobEncoding
@@ -201,7 +201,6 @@ IDxcLinker
 IDxcOperationResult
 IDxcOptimizer
 IDxcOptimizerPass
-IDxcPbdUtils
 IDxcResult
 IDxcUtils
 IDxcValidator
@@ -213,7 +212,6 @@ DxcArgPair
 DxcShaderHash
 DxcText
 DxcBuffer
-IDxc*
 
 DXC_*
 DXC_OUT_KIND
@@ -222,14 +220,18 @@ GetProcAddress
 DxcCreateInstance
 Dxc*
 
+IDXGIKeyedMutex
+
 D3D12_TILED_RESOURCES_TIER
 D3D12_SHADER_VERSION_TYPE
 D3D_RESOURCE_RETURN_TYPE
 D3D12_SHADER_BUFFER_DESC
 D3D12_COLOR_WRITE_ENABLE
 D3D12_DEFAULT_STENCIL_READ_MASK
+DXGI_ADAPTER_FLAG
+DXGI_ADAPTER_FLAG3
+D3D12_LIFETIME_STATE
 
 // Includes everything (use temporarily):
 D3D12_*
 D3D12*
-ID3D12*

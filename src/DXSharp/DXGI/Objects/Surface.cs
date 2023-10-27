@@ -1,7 +1,11 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Dxgi.Common ;
+using Windows.Win32.Graphics.Gdi ;
 using DXSharp.DXGI ;
 using DXSharp.Windows.COM ;
 
@@ -11,64 +15,11 @@ namespace DXSharp.DXGI ;
 
 
 
-[StructLayout( LayoutKind.Sequential )]
-public struct SurfaceDescription {
-	public uint Width, 
-				Height ;
-	public Format Format ;
-	public SampleDescription SampleDesc ;
-	public SurfaceDescription( uint width, uint height, Format format,
-							   SampleDescription sampleDesc ) {
-		Width = width ; Height = height ;
-		Format = format ; SampleDesc = sampleDesc ;
-	}
-	
-	public static implicit operator SurfaceDescription( in DXGI_SURFACE_DESC desc ) =>
-		new( desc.Width, desc.Height, (Format)desc.Format, desc.SampleDesc ) ;
-	public static unsafe implicit operator DXGI_SURFACE_DESC( in SurfaceDescription desc ) =>
-	 		new DXGI_SURFACE_DESC {
-			Width = desc.Width, Height = desc.Height,
-			Format = (DXGI_FORMAT)desc.Format, SampleDesc = desc.SampleDesc, } ;
-} ;
 
-
-[StructLayout( LayoutKind.Sequential )]
-public struct MappedRect { 
-	public int Pitch ; public nint pBits ;
-	public MappedRect( int pitch, nint bits ) {
-		Pitch = pitch ; pBits = bits ;
-	}
-	public MappedRect( in DXGI_MAPPED_RECT rect ) {
-		Pitch = rect.Pitch ;
-		unsafe { pBits = (nint)rect.pBits ; }
-	}
-	public static implicit operator MappedRect( in DXGI_MAPPED_RECT rect ) => new( rect ) ;
-	public static unsafe implicit operator DXGI_MAPPED_RECT( in MappedRect rect ) => new DXGI_MAPPED_RECT {
-		Pitch = rect.Pitch, pBits = (byte*)rect.pBits, } ;
-} ;
-
-
-// Wrapper Interface of IDXGISurface ::
-//[ComImport, Guid( "cafcb56c-6ac3-4889-bf47-9e23bbd260ec" )]
-//[InterfaceType( ComInterfaceType.InterfaceIsIUnknown )]
-
-public interface ISurface:  IDeviceSubObject,
-							IComObjectRef< IDXGISurface >,
-							IUnknownWrapper< IDXGISurface >,
-							IInstantiable {
-	new ComPtr< IDXGISurface >? ComPointer { get ; }
-	new IDXGISurface? COMObject { get ; }
-	
-	void GetDesc( out SurfaceDescription pDesc ) ;
-	void Map( ref MappedRect pLockedRect, uint MapFlags ) ;
-	void Unmap( ) ;
-} ;
 
 
 //! Concrete Implementation of an IDXGISurface wrapper/proxy ::
 public class Surface: DeviceSubObject, ISurface {
-	public new static Type ComType => typeof( IDXGISurface ) ;
-	public new static Guid InterfaceGUID => typeof( IDXGISurface ).GUID ;
 
 	public static IDXCOMObject Instantiate( ) => new Surface( ) ;
 	public static IDXCOMObject Instantiate( nint ptr ) => new Surface( ptr ) ;
@@ -100,25 +51,92 @@ public class Surface: DeviceSubObject, ISurface {
 } ;
 
 
-	/*public T GetDevice< T >( ) where T: class, IDevice {
-		this._throwIfDestroyed( ) ;
-		unsafe {
-			var riid = typeof( T ).GUID ;
-			this.COMObject?.GetDevice( &riid, out var ppDevice ) ;
-			return new Device( ppDevice as IDXGIDevice ) ;
-		}
-	}*/
+public class Surface1: Surface, ISurface1 {
+	public new ComPtr< IDXGISurface1 >? ComPointer { get ; protected set ; }
+	public new IDXGISurface1? COMObject => ComPointer?.Interface as IDXGISurface1 ;
+
+	public static IDXCOMObject Instantiate( ) => new Surface1( ) ;
+	public static IDXCOMObject Instantiate( nint ptr ) => new Surface1( ptr ) ;
+	public new static IDXCOMObject Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
+		new Surface1( (IDXGISurface1)dxgiObj! ) ;
 	
-	/*public void GetDevice< T >( out T ppDevice ) where T: class, IDevice {
-		ppDevice = default ;
-		var _obj = COMUtility.GetDXGIObject< IDXGIDeviceSubObject >( this.BasePointer ) ;
-		if ( _obj is { } subObject ) {
-			unsafe {
-				var riid = typeof(IDXGIDevice).GUID ;
-				subObject.GetDevice( &riid, out var pDevice ) ;
-				ppDevice = (T)pDevice ;
+	internal Surface1( ) { }
+	internal Surface1( nint ptr ) {
+		if ( !ptr.IsValid() )
+			throw new NullReferenceException( $"{nameof( Surface1 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		ComPointer = new( ptr ) ;
+	}
+	internal Surface1( in IDXGISurface1 dxgiObj ) {
+		if ( dxgiObj is null )
+			throw new NullReferenceException( $"{nameof( Surface1 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		ComPointer = new( dxgiObj ) ;
+	}
+	
+	
+	/// <inheritdoc cref="ISurface1.GetDC"/>
+	public void GetDC( bool Discard, ref HDC phdc ) {
+		var surface1 = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe { 
+			fixed( HDC* pHdc = &phdc ) {
+				surface1.GetDC( Discard, pHdc ) ;
+				phdc = *pHdc ;
 			}
 		}
-		else throw new NullReferenceException( $"{nameof(Surface)} :: " +
-											   $"The internal COM interface is destroyed/null." ) ;
-	}*/
+	}
+
+	/// <inheritdoc cref="ISurface1.ReleaseDC"/>
+	public void ReleaseDC( in Rect? pDirtyRect = default ) {
+		var surface1 = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			if( pDirtyRect is null )
+				surface1.ReleaseDC( null ) ;
+			else {
+				Rect Rect = pDirtyRect.Value ;
+				surface1.ReleaseDC( (RECT *)&Rect ) ;
+			}
+		}
+	}
+	
+} ;
+
+
+public class Surface2: Surface1, ISurface2 {
+	public new ComPtr< IDXGISurface2 >? ComPointer { get ; protected set ; }
+	public new IDXGISurface2? COMObject => ComPointer?.Interface as IDXGISurface2 ;
+
+	public static IDXCOMObject Instantiate( ) => new Surface2( ) ;
+	public static IDXCOMObject Instantiate( nint ptr ) => new Surface2( ptr ) ;
+	public new static IDXCOMObject Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
+		new Surface2( (IDXGISurface2)dxgiObj! ) ;
+	
+	internal Surface2( ) { }
+	internal Surface2( nint ptr ) {
+		if ( !ptr.IsValid() )
+			throw new NullReferenceException( $"{nameof( Surface2 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		ComPointer = new( ptr ) ;
+	}
+	internal Surface2( in IDXGISurface2 dxgiObj ) {
+		if ( dxgiObj is null )
+			throw new NullReferenceException( $"{nameof( Surface2 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		ComPointer = new( dxgiObj ) ;
+	}
+
+	
+	/// <inheritdoc cref="ISurface2.GetResource{ TRes }"/>
+	public void GetResource< TRes >( in Guid riid, out TRes ppParentResource, out uint pSubresourceIndex )
+																				where TRes: IUnknownWrapper, 
+																							IInstantiable {
+		unsafe {
+			var surface2 = COMObject ?? throw new NullReferenceException( ) ;
+			fixed( Guid* pRiid = &riid ) {
+				surface2.GetResource( pRiid, out var parentResource, out pSubresourceIndex) ;
+				ppParentResource = (TRes)TRes.Instantiate( (parentResource as IDXGIResource)! ) ;
+			}
+		}
+	}
+	
+} ;
