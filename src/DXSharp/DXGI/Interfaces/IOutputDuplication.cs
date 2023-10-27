@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows.COM ;
 #endregion
@@ -15,8 +18,25 @@ public interface IOutputDuplication: IObject,
 									 IInstantiable {
 	new ComPtr<IDXGIOutputDuplication>? ComPointer { get ; }
 	new IDXGIOutputDuplication? COMObject => ComPointer!.Interface ;
+	
+	
+	#region ComPtr<T> Implementations:
+	ComPtr< IDXGIObject >? IObject.ComPointer => 
+		new( ComPointer?.Interface! as IDXGIObject ) ;
+	ComPtr< IDXGIOutputDuplication >? IUnknownWrapper< IDXGIOutputDuplication >.ComPointer => 
+		new( ComPointer?.InterfaceVPtr ?? 0 ) ;
+	ComPtr< IDXGIObject >? IUnknownWrapper< IDXGIObject >.ComPointer => 
+		new( COMObject! as IDXGIObject ) ;
+	#endregion
 
+	#region COMObject Implementations:
+	IDXGIOutputDuplication? IComObjectRef< IDXGIOutputDuplication >.COMObject => COMObject ;
+	IDXGIObject? IComObjectRef< IDXGIObject >.COMObject => COMObject ;
+	IDXGIObject? IObject.COMObject => COMObject ;
+	#endregion
 
+	
+	
 	/// <summary>
 	/// Retrieves a description of a duplicated output.
 	/// This description specifies the dimensions of
@@ -32,6 +52,7 @@ public interface IOutputDuplication: IObject,
 	/// </remarks>
 	void GetDesc( out OutputDuplicationDescription pDesc ) ;
 
+	
 	/// <summary>Indicates that the application is ready to process the next desktop image.</summary>
 	/// <param name="TimeoutInMilliseconds">
 	/// <para>The time-out interval, in milliseconds. This interval specifies the amount of time that this method waits for a new frame before it returns to the caller.  This method returns if the interval elapses, and a new desktop image is not available. For more information about the time-out interval, see Remarks.</para>
@@ -51,6 +72,7 @@ public interface IOutputDuplication: IObject,
 						   out OutputDuplicationFrameInfo pFrameInfo,
 						   out IResource? ppDesktopResource ) ;
 
+	
 	/// <summary>Gets information about dirty rectangles for the current desktop frame.</summary>
 	/// <param name="DirtyRectsBufferSize">
 	/// <para>The size in bytes of the buffer that the caller passed to the  <i>pDirtyRectsBuffer</i> parameter.</para>
@@ -77,6 +99,7 @@ public interface IOutputDuplication: IObject,
 							 out Span< Rect > pDirtyRectsBuffer,
 							 out uint pDirtyRectsBufferSizeRequired ) ;
 
+	
 	/// <summary>Gets information about the moved rectangles for the current desktop frame.</summary>
 	/// <param name="MoveRectsBufferSize">The size in bytes of the buffer that the caller passed to the  <i>pMoveRectBuffer</i> parameter.</param>
 	/// <param name="pMoveRectBuffer">
@@ -100,6 +123,7 @@ public interface IOutputDuplication: IObject,
 							out Span< OutputDuplicationMoveRect > pMoveRectBuffer,
 							out uint pMoveRectsBufferSizeRequired ) ;
 
+	
 	/// <summary>Gets information about the new pointer shape for the current desktop frame.</summary>
 	/// <param name="PointerShapeBufferSize">The size in bytes of the buffer that the caller passed to the  <i>pPointerShapeBuffer</i> parameter.</param>
 	/// <param name="pPointerShapeBuffer">A pointer to a buffer to which <b>GetFramePointerShape</b> copies and returns pixel data for the new pointer shape.</param>
@@ -122,6 +146,7 @@ public interface IOutputDuplication: IObject,
 							   out uint pPointerShapeBufferSizeRequired,
 							   out Span< OutputDuplicationPointerShapeInfo > pPointerShapeInfo ) ;
 
+	
 	/// <summary>
 	/// Provides the CPU with efficient access to a desktop image if that desktop image is already in system memory.
 	/// </summary>
@@ -129,6 +154,7 @@ public interface IOutputDuplication: IObject,
 	/// <remarks>You can successfully call <b>MapDesktopSurface</b> if the <b>DesktopImageInSystemMemory</b> member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_outdupl_desc">DXGI_OUTDUPL_DESC</a> structure is set to <b>TRUE</b>. If <b>DesktopImageInSystemMemory</b> is <b>FALSE</b>, <b>MapDesktopSurface</b> returns DXGI_ERROR_UNSUPPORTED. Call <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getdesc">IDXGIOutputDuplication::GetDesc</a> to retrieve the <b>DXGI_OUTDUPL_DESC</b> structure.</remarks>
 	void MapDesktopSurface( out MappedRect pLockedRect ) ;
 
+	
 	/// <summary>Invalidates the pointer to the desktop image that was retrieved by using IDXGIOutputDuplication::MapDesktopSurface.</summary>
 	/// <remarks>
 	/// <para>
@@ -139,6 +165,7 @@ public interface IOutputDuplication: IObject,
 	/// </remarks>
 	void UnMapDesktopSurface( ) ;
 
+	
 	/// <summary>Indicates that the application finished processing the frame.</summary>
 	/// <remarks>
 	/// <para>The application must release the frame before it acquires the next frame.
@@ -167,4 +194,22 @@ public interface IOutputDuplication: IObject,
 	/// </para>
 	/// </remarks>
 	void ReleaseFrame( ) ;
+	
+	
+	
+	static Type IUnknownWrapper.ComType => typeof( IDXGIOutputDuplication ) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof( IDXGIOutputDuplication ).GUID ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGIOutputDuplication ).GUID
+															  .ToByteArray( ) ;
+
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference( data ) ) ;
+		}
+	}
+
 } ;

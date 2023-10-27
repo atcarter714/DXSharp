@@ -17,13 +17,13 @@ public class CommandAllocator: Pageable,
 	internal CommandAllocator( ComPtr< ID3D12CommandAllocator > comPtr ) => ComPointer = comPtr ;
 	internal CommandAllocator( nint address ) => ComPointer = new( address ) ;
 	internal CommandAllocator( ID3D12CommandAllocator comObject ) => ComPointer = new( comObject ) ;
-	
-	
+
 
 	// -------------------------------------------------------------------------------------------------------
 	public new static Guid InterfaceGUID => typeof(ID3D12CommandAllocator).GUID ;
 	public new static Type ComType => typeof(ID3D12CommandAllocator) ;
-	
+	// -------------------------------------------------------------------------------------------------------
+
 	public static CommandAllocator Instantiate( ) => new( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( ) => new CommandAllocator( ) ;
 	static CommandAllocator? IInstantiable< CommandAllocator >.Instantiate( IntPtr ptr ) => new( ptr ) ;

@@ -4,18 +4,16 @@ using System.Numerics ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Windows.Forms;
-using Windows.Win32 ;
-using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Direct3D ;
-using Windows.Win32.Graphics.Direct3D.Dxc ;
-using Windows.Win32.Graphics.Direct3D12 ;
+
 using DXSharp ;
-using DXSharp.Applications ;
-using DXSharp.Direct3D12 ;
-using DXSharp.Direct3D12.Shader ;
 using DXSharp.DXGI ;
+using DXSharp.Direct3D12 ;
+using DXSharp.Applications ;
 using DXSharp.DXGI.XTensions ;
 using DXSharp.Windows.Win32 ;
+using DXSharp.Direct3D12.Shader ;
+using DXSharp.Direct3D12.XTensions ;
+
 using Device = DXSharp.Direct3D12.Device ;
 using IDevice = DXSharp.Direct3D12.IDevice ;
 using IResource = DXSharp.Direct3D12.IResource ;
@@ -28,13 +26,14 @@ namespace BasicSample ;
 public class Graphics: DisposableObject {
 	public const int FrameCount = 2 ;
 	const string shaderFilePath =
-		@"C:\Users\atcar\source\repos\AC\DXSharp\bin\BasicSample\Debug\net7.0-windows10.0.22621.0\shader1.hlsl" ;
+		@"shader1.hlsl" ;
 
 	
 	HWnd                          hwnd ;
 	IResource                     vertexBuffer ;
 	VertexBufferView              vertexBufferView ;
 	readonly List< MemoryHandle > cleanupList   = new( ) ;
+	readonly List< IDisposable >  _disposables  = new( ) ;
 	readonly Resource[ ]          renderTargets = new Resource[ FrameCount ] ;
 	
 	
@@ -50,6 +49,7 @@ public class Graphics: DisposableObject {
 	AutoResetEvent fenceEvent ;
 	ulong          fenceValue ;
 	uint           frameIndex ;
+	ColorF 	       clearColor4 ;
 
 	public IDXApp Application { get ; init ; }
 	
@@ -69,10 +69,22 @@ public class Graphics: DisposableObject {
 	public Graphics( IDXApp app ) => Application = app ;
 	
 
-	protected override void DisposeUnmanaged( ) {
+	protected override ValueTask DisposeUnmanaged( ) {
 		WaitForPreviousFrame( ) ;
 		foreach ( var target in renderTargets )
 			target?.Dispose( ) ;
+
+		try {
+			foreach ( var handle in cleanupList )
+				handle.Dispose( ) ;
+		}
+		finally { cleanupList.Clear( ) ; }
+
+		try {
+			foreach ( var disposable in _disposables )
+				disposable.Dispose( ) ;
+		}
+		finally { _disposables.Clear( ) ; }
 		
 		commandAllocator?.Dispose( ) ;
 		commandQueue?.Dispose( ) ;
@@ -83,18 +95,14 @@ public class Graphics: DisposableObject {
 		fence?.Dispose( ) ;
 		SwapChain?.Dispose( ) ;
 		GraphicsDevice?.Dispose( ) ;
-
-		try {
-			foreach ( var handle in cleanupList )
-				handle.Dispose( ) ;
-		}
-		finally { cleanupList.Clear( ) ; }
+		
+		return ValueTask.CompletedTask ;
 	}
 
 
 	public void LoadPipeline( ) {
 		hwnd = Application.Window!.Handle ;
-		var settings = Application.Settings ?? AppSettings.Default ;
+		AppSettings settings = Application.Settings ?? AppSettings.Default ;
 		
 		// Create viewport and scissor rect:
 		MainViewport = new Viewport( settings.WindowSize.Width, 
@@ -105,6 +113,10 @@ public class Graphics: DisposableObject {
 								settings.WindowSize.Height ) ;
 		scissorRects[ 0 ] = ScissorRect ;
 		
+		clearColor4 = settings?.StyleSettings?.BackBufferColor 
+					  ?? AppSettings.Style.DEFAULT_BUFFER_COLOR ;
+		
+		
 		// Create DXGI factory:
 		using var factory = Factory1.Create< Factory1 >( ) ;
 		
@@ -113,7 +125,7 @@ public class Graphics: DisposableObject {
 		adapter.GetDesc1( out var _adapterDesc) ;
 		
 		// Create device (default is FeatureLevel.D3D_12_0):
-		IDevice device = Device.CreateDevice< IDevice >( adapter, FeatureLevel.D3D11_0 ) ;
+		IDevice device = Device.CreateDevice< IDevice >( adapter, FeatureLevel.D3D12_0 ) ;
 		this.GraphicsDevice = device ;
 		
 		// Create command queue:
@@ -133,13 +145,13 @@ public class Graphics: DisposableObject {
 			Format           = Format.R8G8B8A8_UNORM,
 			RefreshRate      = new Rational( 60, 1 ),
 			ScanlineOrdering = ScanlineOrder.Unspecified,
-			Scaling          = ScalingMode.Stretched,
+			Scaling          = ScalingMode.Unspecified,
 		} ;
 		var swapChainDescription = new SwapChainDescription {
 			BufferCount  = FrameCount,
 			SampleDesc   = ( 1, 0 ),
 			SwapEffect   = SwapEffect.FlipDiscard,
-			Flags        = SwapChainFlags.NONE,
+			Flags        = SwapChainFlags.None,
 			BufferUsage  = Usage.RenderTargetOutput,
 			OutputWindow = hwnd,
 			BufferDesc   = bufferDesc,
@@ -181,9 +193,6 @@ public class Graphics: DisposableObject {
 				ViewDimension = RTVDimension.Texture2D,
 			} ;
 			
-			/*rtvDescriptorSize = GraphicsDevice
-				.GetDescriptorHandleIncrementSize( DescriptorHeapType.RTV ) ;*/
-			
 			for ( uint i = 0 ; i < FrameCount ; ++i ) {
 				swapChain!.GetBuffer< Resource >( i, out var renderTarget ) ;
 				GraphicsDevice.CreateRenderTargetView( renderTarget, rtvDesc, rtvHandle ) ;
@@ -201,8 +210,9 @@ public class Graphics: DisposableObject {
 				.Serialize( ) ;
 		
 		GraphicsDevice.CreateRootSignature( 0,
-											serializedRootSig.Pointer, serializedRootSig.GetBufferSize( ),
-											RootSignature.InterfaceGUID, out rootSignature ) ;
+											serializedRootSig.Pointer, 
+											serializedRootSig.GetBufferSize( ),
+											IRootSignature.InterfaceGUID, out rootSignature ) ;
 		
 		
 		// Create the pipeline state, which includes compiling and loading shaders.
@@ -213,16 +223,13 @@ public class Graphics: DisposableObject {
 												   "vs_5_0", 0, 0,
 												   out var vertexShaderBlob,
 												   out var vertexShaderErrorMsgs ) ;
-		if ( hr.Failed ) {
-			string errorMessage = "Failed to compile vertex shader!";
-			unsafe { if (vertexShaderErrorMsgs is not null) {
-					int errBufferSize = (int)vertexShaderErrorMsgs.GetBufferSize( ) ;
-					var errMsgPtr = vertexShaderErrorMsgs.GetBufferPointer( ) ;
-					PCSTR msg = new( (byte*)errMsgPtr ) ;
-					string error = msg.ToString( ) ;
-					MessageBox.Show(error, "Shader Compilation Error:") ;
-					errorMessage += $"\n{error}";
-				}
+		if ( hr.Failed || vertexShaderBlob is null ) {
+			string errorMessage = "Failed to compile vertex shader!" ;
+			if ( vertexShaderErrorMsgs is not null ) {
+				string error = ShaderCompiler.GetErrorMessage( vertexShaderErrorMsgs ) 
+							   ?? $"No error message available!" ;
+				errorMessage += $"\n{error}" ;
+				MessageBox.Show(errorMessage, "Shader Compilation Error:") ;
 			}
 			throw new DirectXComError( hr, errorMessage ) ;
 		}
@@ -234,27 +241,21 @@ public class Graphics: DisposableObject {
 											   "ps_5_0", 0, 0, 
 											   out var pixelShaderBlob, 
 											   out var pixelShaderErrorMsgs ) ;
-		if ( hr.Failed ) {
+		if ( hr.Failed || pixelShaderBlob is null ) {
 			string errorMessage = "Failed to compile pixel shader!";
-			unsafe {
-				if( vertexShaderErrorMsgs is not null ) {
-					int errBufferSize = (int)vertexShaderErrorMsgs.GetBufferSize( ) ;
-					var errMsgPtr = vertexShaderErrorMsgs.GetBufferPointer( ) ;
-					PCSTR msg = new( (byte*)errMsgPtr ) ;
-					string error = msg.ToString( ) ;
-					MessageBox.Show( error, "Shader Compilation Error:" );
-					errorMessage += $"\n{error}";
-				}
+			if ( pixelShaderErrorMsgs is not null ) {
+				string error = ShaderCompiler.GetErrorMessage( pixelShaderErrorMsgs ) 
+							   ?? $"No error message available!" ;
+				errorMessage += $"\n{error}" ;
+				MessageBox.Show(errorMessage, "Shader Compilation Error:") ;
 			}
 			throw new DirectXComError( hr, errorMessage ) ;
 		}
-
-
-
-		nuint vertexShaderSize = vertexShaderBlob.GetBufferSize( ) ;
-		nuint pixelShaderSize  = pixelShaderBlob.GetBufferSize( ) ;
-		ShaderBytecode vertexShader = new( vertexShaderBlob.Pointer, vertexShaderSize ) ;
-		ShaderBytecode pixelShader  = new( pixelShaderBlob.Pointer, pixelShaderSize ) ;
+		
+		// Create shader bytecode structures:
+		ShaderBytecode vertexShader     = ShaderBytecode.FromShaderBlob( vertexShaderBlob ) ;
+		ShaderBytecode pixelShader      = ShaderBytecode.FromShaderBlob( pixelShaderBlob ) ;
+		_disposables.Add( vertexShaderBlob ) ; _disposables.Add( pixelShaderBlob ) ;
 		
 		// Define the vertex input layout:
 		var inputElementDescs = new[ ] {
@@ -263,7 +264,7 @@ public class Graphics: DisposableObject {
 					InputSlot         = 0,
 					SemanticIndex     = 0,
 					AlignedByteOffset = 0,
-					Format            = Format.R32G32B32A32_FLOAT, 
+					Format            = Format.R32G32B32_FLOAT, 
 				},
 				
 				new InputElementDescription {
@@ -412,9 +413,8 @@ public class Graphics: DisposableObject {
 		// fences to determine GPU execution progress.
 		commandAllocator.Reset( ) ;
 
-		// However, when ExecuteCommandList() is called on a particular command 
-		// list, that command list can then be reset at any time and must be before 
-		// re-recording.
+		// However, when ExecuteCommandList() is called on a particular command list,
+		// that command list can then be reset at any time and must be before re-recording.
 		commandList.Reset( commandAllocator, pipelineState ) ;
 
 
@@ -424,26 +424,21 @@ public class Graphics: DisposableObject {
 		commandList.RSSetScissorRects( 1, scissorRects.AsSpan( ) ) ;
 
 		// Indicate that the back buffer will be used as a render target:
-		//_transition( renderTargets[ frameIndex ], ResourceStates.Present, ResourceStates.RenderTarget ) ;
-
-
-		transitionBarriers[ 0 ] = ResourceBarrier.Transition(
-			renderTargets[ frameIndex ], 
-			ResourceStates.Present, 
-			ResourceStates.RenderTarget
-		) ;
+		transitionBarriers[ 0 ] = ResourceBarrier.Transition( renderTargets[ frameIndex ], 
+															  ResourceStates.Present, 
+															  ResourceStates.RenderTarget ) ;
 		commandList.ResourceBarrier( 1, transitionBarriers ) ;
 		
 		
 		// Set the render target for the output merger stage:
 		var rtvHandle = rtvHeap.GetCPUDescriptorHandleForHeapStart( ) ;
-		rtvHandle += frameIndex * rtvDescriptorSize;
+		rtvHandle += frameIndex * rtvDescriptorSize ;
 		commandList.OMSetRenderTargets(1,
 									   new[ ] { rtvHandle },
 									   false, null ) ;
 
 		// Clear the render target:
-		commandList.ClearRenderTargetView( rtvHandle, clearColor, 0 ) ;
+		commandList.ClearRenderTargetView( rtvHandle, Application.Settings.StyleSettings.BackBufferColor ) ;
 
 		// Draw the triangle:
 		commandList.IASetPrimitiveTopology( PrimitiveTopology.D3D_TriangleList ) ;
@@ -452,35 +447,14 @@ public class Graphics: DisposableObject {
 
 		// Indicate that the back buffer will now be used to present.
 
-		transitionBarriers[ 0 ] = ResourceBarrier.Transition( renderTargets[ frameIndex ], 
-						ResourceStates.RenderTarget, 
-							ResourceStates.Present ) ;
+		transitionBarriers[ 0 ] = ResourceBarrier.Transition( renderTargets[ frameIndex ],
+															  ResourceStates.RenderTarget, 
+															  ResourceStates.Present ) ;
 
 		commandList.ResourceBarrier( 1, transitionBarriers ) ;
 		
 		// Done recording commands ...
 		commandList.Close( ) ;
-		
-		
-		//! TODO: This should become a static helper method:
-		void _transition( Resource resource, ResourceStates before, ResourceStates after ) {
-			unsafe {
-				ResourceUnmanaged _rt = ResourceUnmanaged.GetUnmanaged( resource ) ;
-				var transition = new ResourceBarrier {
-					Type  = ResourceBarrierType.Transition,
-					Flags = ResourceBarrierFlags.None,
-					Anonymous = new( ) {
-						Transition = new _ResourceTransitionBarrier {
-							Subresource = 0,
-							pResource   = &_rt,
-							StateBefore = before,
-							StateAfter  = after,
-						}
-					}
-				} ;
-				transitionBarriers[ 0 ] = transition ;
-			}
-		}
 	}
 }
 
@@ -525,4 +499,27 @@ public struct Vertex {
 	var heapDescription1 = _descHeap.GetDesc( ) ;
 	var rtvHeap2 = new DescriptorHeap( _descHeap ) ;
 	var heapDescription2 = rtvHeap2.GetDesc( ) ;
-}*/
+}
+
+
+
+
+		void _transition( Resource resource, ResourceStates before, ResourceStates after ) {
+			unsafe {
+				ResourceUnmanaged _rt = ResourceUnmanaged.GetUnmanaged( resource ) ;
+				var transition = new ResourceBarrier {
+					Type  = ResourceBarrierType.Transition,
+					Flags = ResourceBarrierFlags.None,
+					Anonymous = new( ) {
+						Transition = new _ResourceTransitionBarrier {
+							Subresource = 0,
+							pResource   = &_rt,
+							StateBefore = before,
+							StateAfter  = after,
+						}
+					}
+				} ;
+				transitionBarriers[ 0 ] = transition ;
+			}
+		}
+		*/

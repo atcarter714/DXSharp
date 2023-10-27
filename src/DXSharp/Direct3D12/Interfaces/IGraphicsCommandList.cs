@@ -23,6 +23,12 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	new ID3D12GraphicsCommandList? COMObject => ComPointer?.Interface ;
 	ID3D12GraphicsCommandList? IComObjectRef< ID3D12GraphicsCommandList >.COMObject => COMObject ;
 	ComPtr< ID3D12GraphicsCommandList >? IUnknownWrapper< ID3D12GraphicsCommandList >.ComPointer => ComPointer ;
+	ComPtr< ID3D12CommandList >? ICommandList.ComPointer => new(COMObject!) ;
+	
+	ID3D12CommandList? ICommandList.COMObject => COMObject ;
+	ID3D12CommandList? IComObjectRef< ID3D12CommandList >.COMObject => COMObject ;
+
+	
 	// ---------------------------------------------------------------------------------
 
 
@@ -257,8 +263,8 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para><b>CopyResource</b> operations are performed on the GPU, and do not incur a significant CPU workload linearly dependent on the size of the data to copy. <b>CopyResource</b> can be used to initialize resources that alias the same heap memory. See <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource">CreatePlacedResource</a> for more details.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copyresource#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CopyResource(ID3D12Resource pDstResource, ID3D12Resource pSrcResource) => 
-		COMObject!.CopyResource( pDstResource, pSrcResource ) ;
+	void CopyResource( IResource pDstResource, IResource pSrcResource ) =>
+		COMObject!.CopyResource( pDstResource.COMObject, pSrcResource.COMObject ) ;
 
 	
 	/// <summary>Copies tiles from buffer to tiled resource or vice versa. (ID3D12GraphicsCommandList.CopyTiles)</summary>
@@ -909,11 +915,17 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void ClearRenderTargetView( CPUDescriptorHandle RenderTargetView, 
-								float[ ] ColorRGBA, 
+								float[ ] ColorRGBA,
 								uint NumRects,
-								[Optional] Span< Rect > pRects ) {
-		fixed( Rect* pRectsPtr = pRects ) {
-			COMObject!.ClearRenderTargetView( RenderTargetView, ColorRGBA, NumRects, (RECT*)pRectsPtr ) ;
+								Span< Rect > pRects = default ) {
+		if( pRects is not { Length: > 0 } )
+			pRects = default ;
+		
+		fixed( Rect* pRectsPtr = (pRects == default ? null : pRects) ) {
+			COMObject!.ClearRenderTargetView( RenderTargetView,
+											  ColorRGBA,
+											  pRectsPtr is null ? 0 : NumRects, 
+											  (RECT *)pRectsPtr ) ;
 		}
 	}
 
@@ -1204,10 +1216,24 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	// ---------------------------------------------------------------------------------
 	static Type IUnknownWrapper.ComType => typeof(ID3D12GraphicsCommandList) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12GraphicsCommandList).GUID ;
-
-	static IDXCOMObject IInstantiable.Instantiate() => new GraphicsCommandList();
-	static IDXCOMObject IInstantiable.Instantiate(nint pComObj) => new GraphicsCommandList(pComObj);
-	static IDXCOMObject IInstantiable.Instantiate<ICom>(ICom pComObj) => new GraphicsCommandList((ID3D12GraphicsCommandList)pComObj);
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12GraphicsCommandList).GUID
+														  .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
+	static IDXCOMObject IInstantiable.Instantiate() => new GraphicsCommandList( ) ;
+	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new GraphicsCommandList( pComObj ) ;
+	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+		new GraphicsCommandList( (ID3D12GraphicsCommandList?)pComObj! ) ;
+	
 	// ==================================================================================
 
 }

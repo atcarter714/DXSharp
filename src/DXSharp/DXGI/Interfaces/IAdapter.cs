@@ -1,7 +1,11 @@
 ﻿// Implements an idiomatic C# version of IDXGIAdapter interface:
 // https://docs.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter
 #region Using Directives
+
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
 using System.Runtime.Versioning ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
@@ -90,6 +94,28 @@ public interface IAdapter: IObject,
 	// ---------------------------------------------------------------------------------
 	static Type IUnknownWrapper.ComType => typeof(IDXGIAdapter) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(IDXGIAdapter).GUID ;
+
+	IDXGIObject? IObject.COMObject => COMObject ;
+	IDXGIObject? IComObjectRef< IDXGIObject >.COMObject => COMObject ;
+	ComPtr< IDXGIAdapter >? IUnknownWrapper< IDXGIAdapter >.ComPointer => ComPointer ;
+
+	ComPtr< IDXGIObject >? IUnknownWrapper< IDXGIObject >.ComPointer => new ( COMObject! ) ;
+	ComPtr< IDXGIObject >? IObject.ComPointer => new( COMObject! ) ;
+
+	int IUnknownWrapper.RefCount => (int)( ComPointer?.RefCount ?? 0 ) ;
+
+	static ref readonly Guid IComIID.Guid  {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIAdapter).GUID
+														   .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
 	static IDXCOMObject IInstantiable.Instantiate( ) => new Adapter( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Adapter( pComObj ) ;
 	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
@@ -132,6 +158,18 @@ public interface IAdapter1: IAdapter,
 	static Type IUnknownWrapper.ComType => typeof(IDXGIAdapter1) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(IDXGIAdapter1).GUID ;
 
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIAdapter1).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
 	static IDXCOMObject IInstantiable.Instantiate( ) => new Adapter1( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Adapter1( pComObj ) ;
 	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
@@ -145,8 +183,8 @@ public interface IAdapter1: IAdapter,
 // Version :: IDXGIAdapter2
 // ------------------------------------------------------------------------------
 
-[SupportedOSPlatform("windows8.0")]
-[ProxyFor(typeof(IDXGIAdapter2))]
+[SupportedOSPlatform( "windows8.0" )]
+[ProxyFor( typeof( IDXGIAdapter2 ) )]
 public interface IAdapter2: IAdapter1,
 							IComObjectRef< IDXGIAdapter2 >,
 							IUnknownWrapper< IDXGIAdapter2 > {
@@ -155,17 +193,30 @@ public interface IAdapter2: IAdapter1,
 	new IDXGIAdapter2? COMObject => ComPointer?.Interface ;
 	IDXGIAdapter2? IComObjectRef< IDXGIAdapter2 >.COMObject => COMObject ;
 
-	static Type IUnknownWrapper.ComType => typeof(IDXGIAdapter2) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(IDXGIAdapter2).GUID ;
-	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Adapter2( ) ;
+	static Type IUnknownWrapper.ComType => typeof( IDXGIAdapter2 ) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof( IDXGIAdapter2 ).GUID ;
+
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGIAdapter2 ).GUID
+															   .ToByteArray( ) ;
+
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference( data ) ) ;
+		}
+	}
+
+	static IDXCOMObject IInstantiable.Instantiate( )              => new Adapter2( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Adapter2( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+
+	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
 		new Adapter( (IDXGIAdapter2)pComObj! ) ;
 	// ==================================================================================
-	
-	
-	
+
+
+
 	/// <summary>Gets a Microsoft DirectX Graphics Infrastructure (DXGI) 1.2 description of an adapter or video card.</summary>
 	/// <param name="pDesc">
 	/// <para>A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_adapter_desc2">DXGI_ADAPTER_DESC2</a> structure that describes the adapter. This parameter must not be <b>NULL</b>. On <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro">feature level</a> 9 graphics hardware, earlier versions of  <b>GetDesc2</b> (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiadapter-getdesc">GetDesc</a> and <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiadapter1-getdesc1">GetDesc1</a>) return zeros for the PCI ID in the <b>VendorId</b>, <b>DeviceId</b>, <b>SubSysId</b>, and <b>Revision</b> members of the adapter description structure and “Software Adapter” for the description string in the <b>Description</b> member. <b>GetDesc2</b> returns the actual feature level 9 hardware values in these members.</para>
@@ -177,7 +228,7 @@ public interface IAdapter2: IAdapter1,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiadapter2-getdesc2#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void GetDesc2( out AdapterDescription2 pDesc ) ;
-}
+} ;
 
 
 // ------------------------------------------------------------------------------

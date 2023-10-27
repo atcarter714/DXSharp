@@ -15,6 +15,7 @@ public class OutputDuplication: Object, IOutputDuplication {
 	public new IDXGIOutputDuplication? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGIOutputDuplication >? ComPointer { get ; protected set ; }
 	
+	
 	internal OutputDuplication( ) { }
 	internal OutputDuplication( nint ptr ) => ComPointer = new( ptr ) ;
 	internal OutputDuplication( IDXGIOutputDuplication dxgiObj ) => ComPointer = new( dxgiObj ) ;

@@ -2,6 +2,7 @@
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
 #endregion
@@ -42,19 +43,19 @@ public interface IDescriptorHeap: IPageable,
 	/// </remarks>
 	DescriptorHeapDescription GetDesc( ) {
 		unsafe {
-			D3D12_DESCRIPTOR_HEAP_DESC description = default ;
-			var descHeap = COMObject ?? throw new NullReferenceException( ) ;
-
-			var heap = (ID3D12DescriptorHeap*)ComPointer.InterfaceVPtr ;
-
-			var vtable = *(nint**)ComPointer.InterfaceVPtr ;
-			var getDescription = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, D3D12_DESCRIPTOR_HEAP_DESC >)( vtable[ 8 ] ) ;
-
+			DescriptorHeapDescription description = default ;
+			var pDescHeap = ComPointer 
+							?? throw new NullReferenceException( ) ;
+			
+			var fnPtr = pDescHeap.GetVTableMethod< ID3D12DescriptorHeap >( 8 ) ;
+			var getDescription = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, DescriptorHeapDescription >)( fnPtr ) ;
+			var heap = (ID3D12DescriptorHeap *)pDescHeap.InterfaceVPtr ;
+			
 			description = getDescription( heap ) ;
 			return description ;
 		}
 	}
-
+	
 	
 	/// <summary>Gets the CPU descriptor handle that represents the start of the heap.</summary>
 	/// <returns>
@@ -66,13 +67,13 @@ public interface IDescriptorHeap: IPageable,
 	CPUDescriptorHandle GetCPUDescriptorHandleForHeapStart( ) {
 		unsafe {
 			D3D12_CPU_DESCRIPTOR_HANDLE handle = default ;
-			var descHeap = COMObject ?? throw new NullReferenceException( ) ;
+			var pDescHeap = ComPointer 
+							?? throw new NullReferenceException( ) ;
+
+			var fnPtr = pDescHeap.GetVTableMethod< ID3D12DescriptorHeap >( 9 ) ;
+			var getDescriptor = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, D3D12_CPU_DESCRIPTOR_HANDLE >)( fnPtr ) ;
 
 			var heap = (ID3D12DescriptorHeap*)ComPointer.InterfaceVPtr ;
-
-			var vtable = *(nint**)ComPointer.InterfaceVPtr ;
-			var getDescriptor = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, D3D12_CPU_DESCRIPTOR_HANDLE >)( vtable[ 9 ] ) ;
-
 			handle = getDescriptor( heap ) ;
 			return handle ;
 		}
@@ -91,14 +92,14 @@ public interface IDescriptorHeap: IPageable,
 	GPUDescriptorHandle GetGPUDescriptorHandleForHeapStart( ) {
 		unsafe {
 			D3D12_GPU_DESCRIPTOR_HANDLE handle = default ;
-			var descHeap = COMObject ?? throw new NullReferenceException( ) ;
+			var pDescHeap = ComPointer ?? throw new NullReferenceException( ) ;
 
+			var fnPtr = pDescHeap.GetVTableMethod<ID3D12DescriptorHeap>( 10 ) ;
+			var getDescriptor = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, D3D12_GPU_DESCRIPTOR_HANDLE >)( fnPtr ) ;
+			
 			var heap = (ID3D12DescriptorHeap *)ComPointer.InterfaceVPtr ;
+			handle = getDescriptor( heap ) ;
 
-			var vtable = *(nint **)ComPointer.InterfaceVPtr ;
-			var getDescriptor = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, D3D12_GPU_DESCRIPTOR_HANDLE >)( vtable[ 10 ] ) ;
-
-			handle = getDescriptor( heap );
 			return handle ;
 		}
 	}
@@ -109,6 +110,19 @@ public interface IDescriptorHeap: IPageable,
 	public new static Guid InterfaceGUID => typeof(ID3D12DescriptorHeap).GUID ;
 	static Type IUnknownWrapper.ComType => typeof(ID3D12DescriptorHeap) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12DescriptorHeap).GUID ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12DescriptorHeap).GUID
+														  .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
 	// ==================================================================================
 } ;
 

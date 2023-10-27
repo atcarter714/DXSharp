@@ -18,7 +18,7 @@ public static class COMUtility {
 	//! TODO: Decide which of these versions (Exists vs IsDestroyed) to keep ...
 	[MethodImpl(_MAXOPT_)] public static bool Exists( nint pUnknown ) {
 		bool valid = 
-			GetCOM_RCW( pUnknown ) is not null ;
+			GetRCWObject( pUnknown ) is not null ;
 		if( valid ) Release( pUnknown ) ;
 		return valid ;
 	}
@@ -58,7 +58,7 @@ public static class COMUtility {
 	
 	
 	[MethodImpl(_MAXOPT_)]
-	public static object? GetCOM_RCW( nint pUnknown ) =>
+	public static object? GetRCWObject( nint pUnknown ) =>
 		!pUnknown.IsValid( ) ? null : Marshal.GetObjectForIUnknown( pUnknown ) ;
 
 
@@ -70,9 +70,17 @@ public static class COMUtility {
 									out nint ptrToInterface ) ;
 		_lastHResult = new( hr ) ;*/
 		
-		var _interface = (T)Marshal
-			.GetTypedObjectForIUnknown( pUnknown, typeof(T) ) ;
+		var _interface = (T?)GetCOMObject( typeof(T), pUnknown ) ;
 		return _interface ;
+	}
+
+	public static IUnknown? GetCOMObject( Type type, nint pUnknown ) {
+		
+		var guid = type.GUID ;
+		
+		var _interface = Marshal
+			.GetTypedObjectForIUnknown( pUnknown, type ) ;
+		return ( IUnknown )_interface ;
 	}
 
 	
@@ -144,13 +152,13 @@ public static class COMUtility {
 		typeof(T).IsCOMObject && obj is not null && Marshal.IsComObject( obj ) ;
 	[MethodImpl(_MAXOPT_)]
 	public static bool IsCOMObjectOfType< T >( nint ptr ) => 
-		ptr.IsValid() && GetCOM_RCW( ptr ) is T ;
+		ptr.IsValid() && GetRCWObject( ptr ) is T ;
 	
 	
 	//! TODO: Test this method ...
 	[MethodImpl(_MAXOPT_)]
 	public static bool IsCOMObjectOfType( nint ptr, Type t ) =>
-		ptr.IsValid( ) && ( GetCOM_RCW(ptr)?.GetType() == t ) ;
+		ptr.IsValid( ) && ( GetRCWObject(ptr)?.GetType() == t ) ;
 	
 	
 
@@ -204,10 +212,10 @@ public static class COMUtility {
 	
 	
 	[MethodImpl(_MAXOPT_)] public static T? GetDXGIObject< T >( nint pUnknown )
-		where T: class, IDXGIObject => GetCOM_RCW( pUnknown ) as T ;
+		where T: class, IDXGIObject => GetRCWObject( pUnknown ) as T ;
 	
 	[MethodImpl(_MAXOPT_)] public static T? GetD3D12Object< T >( nint pUnknown )
-		where T: class, ID3D12Object => GetCOM_RCW( pUnknown ) as T ;
+		where T: class, ID3D12Object => GetRCWObject( pUnknown ) as T ;
 		
 	// ------------------------------------------------------------------------------
 	// Extension Methods:

@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
@@ -657,6 +659,7 @@ public interface IDevice: IObject,
 											   (D3D12_RESOURCE_STATES)InitialResourceState,
 												pD3D12ClearValue,
 											   (Guid *)_riidResource, out var _resource ) ;
+				
 				ppvResource = new Resource( (ID3D12Resource)_resource ) ;
 			}
 		}
@@ -1361,6 +1364,19 @@ public interface IDevice: IObject,
 	public new static Guid InterfaceGUID => typeof(ID3D12Device).GUID ;
 	static Type IUnknownWrapper.ComType => typeof(ID3D12Device) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12Device).GUID
+														  .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
 	// ---------------------------------------------------------------------------------
 	static IDXCOMObject IInstantiable.Instantiate( ) => new Device( ) ;
 	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new Device( pComObj ) ;

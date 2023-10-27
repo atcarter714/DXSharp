@@ -60,20 +60,43 @@ public struct ResourceBarrier {
 
 
 
- public static ResourceBarrier Transition( Resource renderTarget, 
-											ResourceStates stateBefore, 
-											ResourceStates stateAfter ) {
+ public static ResourceBarrier Transition( IResource resource, 
+                                           ResourceStates stateBefore = ResourceStates.Common, 
+                                           ResourceStates stateAfter = ResourceStates.Common, 
+                                           uint subresource = 0 ) {
 	 ResourceBarrier resBarrier = default ;
 	 resBarrier.Anonymous.Transition = _ResourceTransitionBarrier.Default ;
 	 resBarrier.Anonymous.Transition.StateBefore = stateBefore ;
 	 resBarrier.Anonymous.Transition.StateAfter = stateAfter ;
-	 resBarrier.Anonymous.Transition.Subresource = 0 ;
+	 resBarrier.Anonymous.Transition.Subresource = subresource ;
 	 unsafe {
 		 resBarrier.Anonymous.Transition.pResource =
-			 (ResourceUnmanaged*)(renderTarget.ComPointer.InterfaceVPtr);
+			 (ResourceUnmanaged *)(resource.ComPointer.InterfaceVPtr);
 	 }
 	 
 	 return resBarrier ;
+ }
+ 
+ public static ResourceBarrier Aliasing( IResource resourceBefore, IResource resourceAfter ) {
+  ResourceBarrier resBarrier = default ;
+  unsafe {
+   resBarrier.Anonymous.Aliasing.pResourceBefore =
+    (ResourceUnmanaged *)(resourceBefore.ComPointer.InterfaceVPtr) ;
+   resBarrier.Anonymous.Aliasing.pResourceAfter =
+    (ResourceUnmanaged *)(resourceAfter.ComPointer.InterfaceVPtr) ;
+  }
+  
+  return resBarrier ;
+ }
+ 
+ public static ResourceBarrier UAV( IResource resource ) {
+  ResourceBarrier resBarrier = default ;
+  unsafe {
+   resBarrier.Anonymous.UAV.pResource =
+    (ResourceUnmanaged *)(resource.ComPointer.InterfaceVPtr);
+  }
+  
+  return resBarrier ;
  }
 
 } ;

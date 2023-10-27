@@ -64,48 +64,20 @@ public class CommandQueue: Pageable, ICommandQueue {
 
 	
 	public void ExecuteCommandLists< C >( uint NumCommandLists, Span< C > ppCommandLists ) where C: ICommandList {
+		var pCommandLists = new ID3D12CommandList[ NumCommandLists ] ;
 		
-		/*var pCommandLists = new ID3D12CommandList[ NumCommandLists ] ;
-		for ( int i = 0; i < NumCommandLists; i++ ) {
-			
-			pCommandLists[i] = ( ppCommandLists is Span<GraphicsCommandList> graphicsCommandLists ) ?
-			ppCommandLists[ i ].COMObject
+		for ( int i = 0; i < ppCommandLists.Length; ++i ) {
+			pCommandLists[ i ] = ppCommandLists[i].COMObject
 #if DEBUG || DEBUG_COM || DEV_BUILD
-			                   ?? throw new NullReferenceException()
+								 ?? throw new NullReferenceException( )
 #endif
-				;
-		}*/
-
-		if( typeof(C) == typeof(GraphicsCommandList) )
-		{;
-			var graphicsCommandLists = new ID3D12GraphicsCommandList[ ppCommandLists.Length ] ;
-			for (int i = 0; i < ppCommandLists.Length; i++)
-			{
-				graphicsCommandLists[i] = (ID3D12GraphicsCommandList)
-					((IGraphicsCommandList)ppCommandLists[i]).COMObject ;
-			}
-			cmdQueue.ExecuteCommandLists( NumCommandLists, graphicsCommandLists ) ;
-			return ;
-		}
-		else
-		{
-			var commandLists = _copyAs< ID3D12GraphicsCommandList >( ppCommandLists ) ;
-			cmdQueue.ExecuteCommandLists( NumCommandLists, commandLists );
-			return;
+								 ;
 		}
 
-
-		TD3D[ ] _copyAs<TD3D>( Span<C> lists ) where TD3D : ID3D12CommandList {
-			var listObjs = new TD3D[ lists.Length ] ;
-
-			for (int i = 0; i < NumCommandLists; i++) {
-				listObjs[i] = (TD3D)lists[i].COMObject ;
-			}
-
-			return listObjs ;
-		}
+		cmdQueue.ExecuteCommandLists( NumCommandLists, pCommandLists ) ;
 	}
-
+	
+	
 	
 	public unsafe void SetMarker( uint Metadata, [Optional] nint pData, uint Size ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD

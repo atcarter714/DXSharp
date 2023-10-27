@@ -1,4 +1,9 @@
 ﻿#region Using Directives
+
+using System.Diagnostics.CodeAnalysis ;
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
 #endregion
@@ -22,6 +27,8 @@ public interface IDeviceChild: IObject,
 	// ---------------------------------------------------------------------------------
 	new ComPtr< ID3D12DeviceChild >? ComPointer { get ; }
 	new ID3D12DeviceChild? COMObject => ComPointer?.Interface ;
+	
+	ID3D12Object? IObject.COMObject => ComPointer?.Interface ;
 	
 	//! Explicit Interface Implementations / Disambiguation ::
 	ID3D12DeviceChild? IComObjectRef< ID3D12DeviceChild >.COMObject => COMObject ;
@@ -54,5 +61,18 @@ public interface IDeviceChild: IObject,
 	// ---------------------------------------------------------------------------------
 	static Type IUnknownWrapper.ComType => typeof(ID3D12DeviceChild) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12DeviceChild).GUID ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12DeviceChild).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
 	// ==================================================================================
 } ;

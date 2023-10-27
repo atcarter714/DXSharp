@@ -1,9 +1,12 @@
-﻿using System.Runtime.InteropServices ;
+﻿#region Using Directives
+using System.Runtime.InteropServices ;
 using Windows.Win32.Foundation ;
-
+#endregion
 namespace DXSharp ;
 
-[StructLayout(LayoutKind.Sequential)]
+
+[StructLayout( LayoutKind.Sequential ),
+ EquivalentOf( typeof(RECT) )]
 public struct Rect {
 	public int Left, Top, Right, Bottom ;
 	
@@ -38,8 +41,18 @@ public struct Rect {
 		unsafe { *( (Rect *)&r ) = rect ; }
 		return r ;
 	}
-	public static RECT FromXYWH( int x, int y, int width, int height ) =>
-		new RECT( x, y, unchecked( x + width ), unchecked( y + height ) ) ;
+	
+	/// <summary>
+	/// Creates a new <see cref="Rect"/> from the given <paramref name="x"/>, <paramref name="y"/>, <paramref name="width"/> and <paramref name="height"/>.
+	/// </summary>
+	/// <param name="x">The rectangle X coordinate</param>
+	/// <param name="y">The rectangle Y coordinate</param>
+	/// <param name="width">The width of the rectangle</param>
+	/// <param name="height">The height of the rectangle</param>
+	/// <returns></returns>
+	public static Rect FromXYWH( int x, int y, int width, int height ) =>
+		new Rect( x, y, unchecked( x + width ), unchecked( y + height ) ) ;
+	
 	
 	public readonly Size Size => new( this.Width, this.Height ) ;
 	public readonly int Width => unchecked( this.Right - this.Left ) ;

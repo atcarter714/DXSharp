@@ -23,12 +23,17 @@
 // -----------------------------------------------------------------------------
 
 #region Using Directives
+
+using System.Diagnostics ;
 using System.Runtime.InteropServices ;
 using System.Diagnostics.CodeAnalysis ;
+using System.Runtime.CompilerServices ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
+
 using static DXSharp.Windows.COM.COMUtility ;
+using static DXSharp.InteropUtils ;
 #endregion
 namespace DXSharp.Windows.COM ;
 
@@ -52,8 +57,9 @@ public abstract class ComPtr: IDisposable {
 	protected uint _refCount, _marshalRefCount ;
 	
 	internal nint BaseAddress => _baseAddr ;
+
 	internal object? InterfaceObjectRef =>
-		_comObjectRef ??= GetCOM_RCW( _baseAddr ) ;
+		_comObjectRef ;//??= GetCOM_RCW( _baseAddr ) ;
 	
 	//! Constructors & Initializers:
 	void _setBasePointer( nint pUnknown ) {
@@ -64,35 +70,38 @@ public abstract class ComPtr: IDisposable {
 
 	
 	#region Constructors
+	/// <summary>Creates an empty/unitialized ComPtr</summary>
 	internal ComPtr( ) { }
-	public ComPtr( nint ptr ) {
+	
+	internal ComPtr( nint ptr ) {
 #if (DEBUG || DEBUG_COM) || DEV_BUILD
 		if( !ptr.IsValid() ) throw new ArgumentNullException( nameof(ptr), 
 															  $"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
 															  $"The pointer is a {nameof(NULL_PTR)} (0x00000000) value!" ) ;
 		
-		var _hr = QueryInterface< IUnknown >( ptr, out nint pUnknown ) ;
-		if( _hr.Failed ) throw new ArgumentException( nameof(ptr),
-													  $"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
-													  $"The pointer is not a valid COM object implementing {nameof(IUnknown)} interface!" ) ;
-		Release( ptr ) ;
 #endif
 		
-		var pObject = GetCOM_RCW( ptr )
+		var _hr = QueryInterface< IUnknown >( ptr, out nint pUnknown ) ;
+		_hr.ThrowOnFailure( ) ;
+		_refCount = 1 ;
+		
+		var pObject = GetCOMObject( ComType, ptr )
 #if DEBUG || DEBUG_COM || DEV_BUILD
 					  ?? throw new DirectXComError( $"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
 													$"Failed to get the COM object!" )
 #endif
 			;
+		_marshalRefCount = (uint)Release( ptr ) ;
 		
 		_setBasePointer( pUnknown ) ;
 		_comObjectRef = pObject ;
 	}
-	public unsafe ComPtr( void* ptr ): this( (nint)ptr ) { }
+	
 	public ComPtr( int addr ): this( (nint)addr ) { }
 	public ComPtr( uint addr ): this( (nint)addr ) { }
 	public ComPtr( long addr ): this( (nint)addr ) { }
 	public ComPtr( ulong addr ): this( (nint)addr ) { }
+	public unsafe ComPtr( void* ptr ): this( (nint)ptr ) { }
 	public ComPtr( [NotNull] in IUnknown comInterface ): this( GetAddressIUnknown(comInterface) ) { }
 	public ComPtr( [NotNull] in IUnknownWrapper comInterface ): this( comInterface.BasePointer ) { }
 	public ComPtr( [NotNull] in IUnknownWrapper< IUnknown > comInterface ): this( comInterface.BasePointer ) { }
@@ -110,14 +119,14 @@ public abstract class ComPtr: IDisposable {
 																$"{nameof(ComPtr)} -> c'tor( {nameof(Object)} ) :: " +
 																$"The object is not a valid COM object implementing {nameof(IUnknown)}!" ) ;
 #endif
-
 		_setBasePointer( pUnknown ) ;
 		_comObjectRef = comObj ;
-		Release( pUnknown ) ; // Release the reference we just added.
+		_refCount = 1 ;
 	}
 	#endregion
 	
 		
+	
 	//! System.Object overrides:
 	public override string ToString( ) => $"COM OBJECT[ Address: 0x{BaseAddress:X} ]" ;
 	public override int GetHashCode( ) => BaseAddress.GetHashCode( ) ;
@@ -190,7 +199,9 @@ public abstract class ComPtr: IDisposable {
 } ;
 
 
-
+#if DEBUG || DEBUG_COM
+[DebuggerDisplay($"{nameof(ComPtr)}<{nameof(T)}>" + " :: {DebuggerDisplay,nq}")]
+#endif
 public sealed class ComPtr< T >: ComPtr 
 								 where T: IUnknown {
 	public override Type ComType => typeof(T) ;
@@ -199,7 +210,13 @@ public sealed class ComPtr< T >: ComPtr
 	public Type InterfaceType => typeof(T) ;
 	public T? Interface { get ; private set ; }
 	public nint InterfaceVPtr => _interfaceVPtr ;
-	
+
+#if DEBUG || DEBUG_COM
+	public string DebuggerDisplay => $"COM OBJECT[ vTable Pointer: 0x{InterfaceVPtr:X}" +
+									 $"\nBase Address: 0x{BaseAddress:X}," +
+									 $"\nType: {InterfaceType.Name}\n" +
+									 $"Ref Count: {RefCount} (Marshal: {_marshalRefCount}) ]" ;
+#endif
 	
 	internal ComPtr( ) { }
 	public ComPtr( [NotNull] in T comInterface ): 
@@ -208,6 +225,8 @@ public sealed class ComPtr< T >: ComPtr
 		var _hr = QueryInterface<T>( base.BaseAddress, out nint ptrToInterface ) ;
 		if( _hr.Failed ) throw new COMException($"{nameof(ComPtr<T>)} -> c'tor( {nameof(IUnknown)} ) :: " +
 												$"Failed to get a COM interface pointer to {nameof(T)}!", _hr.Value ) ;
+		++_refCount ;
+		
 		this.Interface      = comInterface ;
 		this._interfaceVPtr = ptrToInterface ;
 	}
@@ -218,13 +237,16 @@ public sealed class ComPtr< T >: ComPtr
 				$"{nameof(ComPtr)}<{typeof(T).FullName}> -> c'tor( {nameof(IntPtr)} ) :: " +
 							$"The pointer is a \"{nameof(NULL_PTR)}\" (null/0x{NULL_PTR:X}) value!" ) ;
 		
-		var _interface = GetCOMObject< T >(address) ;
+		//var _interface = GetCOMObject< T >( address ) ;
+		T? _interface = (T?)base.InterfaceObjectRef ?? default ;
 		if( _interface is null ) throw new ArgumentException( nameof(address),
 							$"{nameof(ComPtr)}<{typeof(T).FullName}> -> c'tor( {nameof(IntPtr)} ) :: " +
 							$"The pointer is not a valid COM object implementing {typeof(T).FullName} interface!" ) ;
 		
 		Interface           = _interface ;
 		this._interfaceVPtr = GetInterfaceVPointer< T, T >( _interface ) ;
+		_marshalRefCount = (uint)Release( _interfaceVPtr ) ;
+		
 		//Marshal.GetComInterfaceForObject( _interface, typeof(T) ) ;
 	}
 	
@@ -324,7 +346,21 @@ public sealed class ComPtr< T >: ComPtr
 		return newComPtr ;
 	}
 
+	
+	[MethodImpl(_MAXOPT_)] public nint GetVTableMethod< TUnknown >( int index ) where TUnknown: IUnknown {
+		nint interfacePtr = InterfaceVPtr ;
+		if ( typeof( TUnknown ) != typeof( T ) ) {
+			QueryInterface< TUnknown >( BaseAddress, out interfacePtr ) ;
+			Release( interfacePtr ) ;
+		}
+		
+		unsafe {
+			var vtable = *(nint **)interfacePtr ;
+			return vtable[ index ] ;
+		}
+	}
 
+	
 	// ----------------------------------------------------------
 	// Operator Overloads:
 	// ----------------------------------------------------------

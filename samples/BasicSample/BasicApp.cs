@@ -23,11 +23,13 @@ namespace BasicSample ;
 public class BasicApp: DXWinformApp {
 	Debug? dbgLayer ;
 	Graphics? graphics ;
+
+	public BasicApp( AppSettings? settings = null ): base( settings ) { }
 	
 	public override void Initialize( ) {
 		base.Initialize( ) ;
 		Window!.SetTitle( Settings.Title) ;
-		Window.SetSize( new (1920, 1080) );
+		
 #if DEBUG
 		// Enable debug layer in debug builds:
 		dbgLayer = Debug.CreateDebugLayer( ) ;
@@ -43,56 +45,5 @@ public class BasicApp: DXWinformApp {
 		base.Draw( ) ;
 		graphics!.OnRender( ) ;
 	}
-}
-
-
 	
-/*static Adapter? _findBestAdapter( IFactory factory ) {
-	Adapter?                                                  adapter     = null ;
-	AdapterDescription                                        desc        = default ;
-	List< (Adapter Adapter, AdapterDescription Description) > allAdapters = new( ) ;
-
-	for ( int i = 0; i < 8; ++i ) {
-		var hr = factory.EnumAdapters< Adapter >( (uint)i, out var _adapter ) ;
-		if ( hr.Failed ) {
-			if ( hr == HResult.DXGI_ERROR_NOT_FOUND ) break ;
-			throw new DirectXComError( hr, $"{nameof( DXWinformApp )} :: Error enumerating adapters! " +
-										   $"HRESULT: 0x{hr.Value:X} ({hr.Value})" ) ;
-		}
-
-		if ( _adapter is null ) continue ;
-		_adapter.GetDesc( out var _desc ) ;
-		allAdapters.Add( ( _adapter, _desc ) ) ;
-
-		if ( adapter is null ) {
-			adapter = _adapter ;
-			desc    = _desc ;
-			continue ;
-		}
-
-		if ( _desc.DedicatedVideoMemory > desc.DedicatedVideoMemory ) {
-			adapter = _adapter ;
-			desc    = _desc ;
-		}
-	}
-
-	return adapter ;
-}
-
-static unsafe ComPtr< ID3D12Debug >? _enableDebugLayer( ) {
-	ComPtr< ID3D12Debug >? debugController = null ;
-	try {
-		var dbgGuid = typeof(ID3D12Debug).GUID ;
-		var hrDbg   = PInvoke.D3D12GetDebugInterface( &dbgGuid, out var _debug ) ;
-		if ( hrDbg.Failed || _debug is null )
-			throw new DirectXComError( $"Failed to create the {nameof( ID3D12Debug )} layer!" ) ;
-
-		debugController = new( (ID3D12Debug)_debug ) ;
-		( (ID3D12Debug)debugController.Interface! )
-			.EnableDebugLayer( ) ;
-	}
-	catch ( COMException ex ) { return null ; }
-	catch ( Exception ex ) { return null ; }
-	finally {  }
-	return debugController ;
-}*/
+} ;

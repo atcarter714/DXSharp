@@ -1,9 +1,13 @@
-﻿using Windows.Win32.Graphics.Direct3D12 ;
+﻿using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
+using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
 
 namespace DXSharp.Direct3D12 ;
 
 public abstract class Pageable: DeviceChild, IPageable {
+	
 	ComPtr< ID3D12Pageable >? IPageable.ComPointer => ComPointer ;
 	public new ID3D12Pageable? COMObject => ComPointer?.Interface ;
 	public new virtual ComPtr< ID3D12Pageable >? ComPointer { get ; }
@@ -13,7 +17,23 @@ public abstract class Pageable: DeviceChild, IPageable {
 	ComPtr< ID3D12DeviceChild >? IDeviceChild.ComPointer => 
 		new( ComPointer?.Interface as ID3D12DeviceChild
 			 ?? throw new ObjectDisposedException( nameof(ComPointer) ) ) ;
+
 	
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12Pageable).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
+	public new static Type ComType => typeof(ID3D12Pageable) ;
+	public new static Guid InterfaceGUID => typeof(IPageable).GUID ;
+
 	protected Pageable( ) { }
 	protected Pageable( nint childAddr ): base( childAddr ) => 
 		ComPointer = new( childAddr ) ;
@@ -22,6 +42,7 @@ public abstract class Pageable: DeviceChild, IPageable {
 	protected Pageable( ComPtr< IUnknown > childPtr ):
 		base( childPtr.Interface as ID3D12Pageable ?? throw new InvalidCastException( ) ) => 
 		ComPointer = (ComPtr< ID3D12Pageable >?)childPtr ?? throw new InvalidCastException( ) ;
+	
 } ;
 
 	//public override ComPtr? ComPtrBase => ComPointer ;

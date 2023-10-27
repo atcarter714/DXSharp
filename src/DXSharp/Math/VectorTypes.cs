@@ -33,12 +33,10 @@ using SysVec4 = System.Numerics.Vector4 ;
 #endregion
 
 
-namespace DXSharp;
+namespace DXSharp ;
 
 
-/// <summary>
-/// A 2D Euclidean vector.
-/// </summary>
+/// <summary>A 2D Euclidean vector.</summary>
 public struct Vector2 {
 	#region Const & Readonly Values
 	/// <summary>
@@ -128,9 +126,7 @@ public struct Vector2 {
 
 
 
-/// <summary>
-/// A 3D Euclidean vector.
-/// </summary>
+/// <summary>A 3D Euclidean vector.</summary>
 public struct Vector3: IEquatable< Vector3 >, IFormattable {
 	#region Const & Readonly Values
 	/// <summary>
@@ -304,7 +300,7 @@ public struct Vector3: IEquatable< Vector3 >, IFormattable {
 	//public static Vector3 operator *( Vector3 left, Matrix4x4 right ) => Transform( left, right );
 
 	#endregion
-};
+} ;
 
 
 /*

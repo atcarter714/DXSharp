@@ -1,4 +1,8 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
 #endregion
@@ -16,7 +20,20 @@ public interface ICommandSignature: IPageable,
 	ComPtr< ID3D12CommandSignature >? IUnknownWrapper< ID3D12CommandSignature >.ComPointer => ComPointer ;
 	// ==================================================================================
 
-	
+	ComPtr< ID3D12DeviceChild >? IDeviceChild.ComPointer => new(COMObject!) ;
+
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12CommandSignature).GUID
+														  .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
 	// ---------------------------------------------------------------------------------
 	static Type IUnknownWrapper.ComType => typeof(ID3D12CommandSignature) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12CommandSignature).GUID ;

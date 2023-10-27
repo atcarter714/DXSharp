@@ -1,4 +1,8 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
 #endregion
@@ -11,7 +15,7 @@ public interface ICommandList: IDeviceChild,
 							   IUnknownWrapper< ID3D12CommandList >, IInstantiable
 {
 	public new static Guid InterfaceGUID => typeof( ID3D12CommandList ).GUID;
-	public new static Type ComType => typeof( ID3D12GraphicsCommandList );
+	public new static Type ComType => typeof( ID3D12CommandList );
 	// ---------------------------------------------------------------------------------
 	new ComPtr< ID3D12CommandList >? ComPointer { get ; }
 	new ID3D12CommandList? COMObject => ComPointer?.Interface ;
@@ -37,5 +41,26 @@ public interface ICommandList: IDeviceChild,
 	// ---------------------------------------------------------------------------------
 	static Type IUnknownWrapper.ComType => typeof(ID3D12CommandList) ;
 	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12CommandList).GUID ;
+
+	
+
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12CommandList).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+
+	
+	
+	static IDXCOMObject IInstantiable.Instantiate( ) => new CommandList( ) ;
+	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new CommandList( pComObj ) ;
+	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new CommandList( (ID3D12CommandList?)pComObj ) ;
+
 	// ==================================================================================
 } ;
