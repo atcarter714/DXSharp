@@ -1,11 +1,14 @@
-﻿using System.Runtime.CompilerServices ;
+﻿#region Using Directives
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
-
+#endregion
 namespace DXSharp.Direct3D12 ;
 
+
+[ProxyFor(typeof(ID3D12LifetimeOwner))]
 public interface ILifetimeOwner: IUnknownWrapper< ID3D12LifetimeOwner >, 
 								 IComObjectRef< ID3D12LifetimeOwner > {
 	new ComPtr< ID3D12LifetimeOwner >? ComPointer { get ; }
@@ -32,6 +35,8 @@ public interface ILifetimeOwner: IUnknownWrapper< ID3D12LifetimeOwner >,
 		COMObject!.LifetimeStateUpdated( NewState ) ;
 } ;
 
+
+[Wrapper(typeof(ID3D12LifetimeOwner))]
 internal class LifetimeOwner: DisposableObject, ILifetimeOwner {
 	protected override ValueTask DisposeUnmanaged( ) {
 		ComPointer?.Dispose( ) ;
@@ -46,4 +51,4 @@ internal class LifetimeOwner: DisposableObject, ILifetimeOwner {
 	internal LifetimeOwner( ComPtr< ID3D12LifetimeOwner > ptr ) => ComPointer = ptr ;
 	internal LifetimeOwner( nint ptr ) => ComPointer = new( ptr ) ;
 	internal LifetimeOwner( ID3D12LifetimeOwner comObj ) => ComPointer = new( comObj ) ;
-}
+} ;

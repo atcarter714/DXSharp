@@ -12,6 +12,11 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.Direct3D12 ;
 
 
+
+// ===================================================================================
+// ID3D12GraphicsCommandList interface
+// ===================================================================================
+
 [ProxyFor(typeof(ID3D12GraphicsCommandList))]
 public unsafe interface IGraphicsCommandList: ICommandList,
 											  IComObjectRef< ID3D12GraphicsCommandList >,
@@ -467,7 +472,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 				_barriers[i] = pBarriers[i] ;
 			}
 			var _barriers2 = Unsafe.As< D3D12_RESOURCE_BARRIER[ ] >( pBarriers ) ;
-			var cmdList = (ID3D12GraphicsCommandList*) ComPointer.InterfaceVPtr ;
+			var cmdList = (ID3D12GraphicsCommandList *) ComPointer!.InterfaceVPtr ;
 
 
 			var vtable = *( nint**)ComPointer.InterfaceVPtr ;
@@ -1235,5 +1240,711 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 		new GraphicsCommandList( (ID3D12GraphicsCommandList?)pComObj! ) ;
 	
 	// ==================================================================================
+} ;
 
-}
+
+// ===================================================================================
+// ID3D12GraphicsCommandList1 interface ::
+// ===================================================================================
+
+[ProxyFor(typeof(ID3D12GraphicsCommandList1))]
+public interface IGraphicsCommandList1 : IGraphicsCommandList,
+										 IComObjectRef< ID3D12GraphicsCommandList1 >,
+										 IUnknownWrapper< ID3D12GraphicsCommandList1 > {
+	// ---------------------------------------------------------------------------------
+	public new static Guid InterfaceGUID => typeof(ID3D12GraphicsCommandList1).GUID ;
+	public new static Type ComType => typeof( ID3D12GraphicsCommandList1 ) ;
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12GraphicsCommandList1 >? ComPointer { get ; }
+	new ID3D12GraphicsCommandList1? COMObject => ComPointer?.Interface ;
+	ID3D12GraphicsCommandList1? IComObjectRef< ID3D12GraphicsCommandList1 >.COMObject => COMObject ;
+	ComPtr< ID3D12GraphicsCommandList1 >? IUnknownWrapper< ID3D12GraphicsCommandList1 >.ComPointer => ComPointer ;
+	ComPtr< ID3D12GraphicsCommandList >? IGraphicsCommandList.ComPointer => new(COMObject!) ;
+	
+	ID3D12GraphicsCommandList? IGraphicsCommandList.COMObject => COMObject ;
+	ID3D12GraphicsCommandList? IComObjectRef< ID3D12GraphicsCommandList >.COMObject => COMObject ;
+
+	
+	// ---------------------------------------------------------------------------------
+
+
+	/// <summary>Atomically copies a primary data element of type UINT from one resource to another, along with optional dependent resources.</summary>
+	/// <param name="pDstBuffer">
+	/// <para>Type: <b>ID3D12Resource*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> The resource that the UINT primary data element is copied into.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="DstOffset">
+	/// <para>Type: <b>UINT64</b> An offset into the destination resource buffer that specifies where the primary data element is copied into, in bytes. This offset combined with the base address of the resource buffer must result in a memory address that's naturally aligned for UINT values.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pSrcBuffer">
+	/// <para>Type: <b>ID3D12Resource*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> The resource that the UINT primary data element is copied from. This data is typically an address, index, or other handle that shader code can use to locate the most-recent version of latency-sensitive information.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="SrcOffset">
+	/// <para>Type: <b>UINT64</b> An offset into the source resource buffer that specifies where the primary data element is copied from, in bytes. This offset combined with the base address of the resource buffer must result in a memory address that's naturally aligned for UINT values.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="Dependencies">
+	/// <para>Type: <b>UINT</b> The number of dependent resources.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="ppDependentResources">
+	/// <para>Type: <b>ID3D12Resource*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_reads_(Dependencies)</c> An array of resources that contain the dependent elements of the data payload.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pDependentSubresourceRanges">
+	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_subresource_range_uint64">D3D12_SUBRESOURCE_RANGE_UINT64</a>*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values?view=vs-2015">SAL</a>: <c>_In_reads_(Dependencies)</c> An array of subresource ranges that specify the dependent elements of the data payload. These elements are completely updated before the primary data element is itself atomically copied. This ensures that the entire operation is logically atomic; that is, the primary data element never refers to an incomplete data payload.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <remarks>This method is typically used to update resources for which normal rendering pipeline latency can be detrimental to user experience. For example, an application can compute a view matrix from the latest user input (such as from the sensors of a head-mounted display), and use this function to update and activate this matrix in command lists already dispatched to the GPU to reduce perceived latency between input and rendering.</remarks>
+	void AtomicCopyBufferUINT( IResource               pDstBuffer,
+							   ulong                   DstOffset,
+							   IResource               pSrcBuffer,
+							   ulong                   SrcOffset,
+							   uint                    Dependencies,
+							   IResource[ ]            ppDependentResources,
+							   in SubresourceRangeUInt64 pDependentSubresourceRanges ) {
+		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		
+		// Copy dependent resources to an array (optimize later):
+		ID3D12Resource[ ] dependentResources = new ID3D12Resource[ ppDependentResources.Length ] ;
+		for ( int i = 0; i < dependentResources.Length; ++i ) {
+			dependentResources[ i ] = ppDependentResources[ i ].COMObject
+#if DEBUG || DEBUG_COM || DEV_BUILD
+				?? throw new ArgumentException( $"{nameof(IGraphicsCommandList1)}.{nameof(AtomicCopyBufferUINT)} :: " +
+											 $"Collection of dependent resources cannot contain null values!" )
+#endif
+				;
+		}
+		
+		unsafe {
+			fixed(SubresourceRangeUInt64* pDependentRanges = &pDependentSubresourceRanges)
+				cmdList.AtomicCopyBufferUINT( pDstBuffer.COMObject, DstOffset,
+											  pSrcBuffer.COMObject, SrcOffset,
+											  Dependencies, dependentResources,
+											  (D3D12_SUBRESOURCE_RANGE_UINT64 *)pDependentRanges ) ;
+		}
+	}
+
+
+	/// <summary>Atomically copies a primary data element of type UINT64 from one resource to another, along with optional dependent resources.</summary>
+	/// <param name="pDstBuffer">
+	/// <para>Type: <b>ID3D12Resource*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values?view=vs-2015">SAL</a>: <c>_In_</c> The resource that the UINT64 primary data element is copied into.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint64#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="DstOffset">
+	/// <para>Type: <b>UINT64</b> An offset into the destination resource buffer that specifies where the primary data element is copied into, in bytes. This offset combined with the base address of the resource buffer must result in a memory address that's naturally aligned for UINT64 values.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint64#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pSrcBuffer">
+	/// <para>Type: <b>ID3D12Resource*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> The resource that the UINT64 primary data element is copied from. This data is typically an address, index, or other handle that shader code can use to locate the most-recent version of latency-sensitive information.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint64#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="SrcOffset">
+	/// <para>Type: <b>UINT64</b> An offset into the source resource buffer that specifies where the primary data element is copied from, in bytes. This offset combined with the base address of the resource buffer must result in a memory address that's naturally aligned for UINT64 values.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint64#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="Dependencies">
+	/// <para>Type: <b>UINT</b> The number of dependent resources.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint64#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="ppDependentResources">
+	/// <para>Type: <b>ID3D12Resource*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_reads_(Dependencies)</c> An array of resources that contain the dependent elements of the data payload.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint64#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pDependentSubresourceRanges">
+	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_subresource_range_uint64">D3D12_SUBRESOURCE_RANGE_UINT64</a>*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_reads_(Dependencies)</c> An array of subresource ranges that specify the dependent elements of the data payload. These elements are completely updated before the primary data element is itself atomically copied. This ensures that the entire operation is logically atomic; that is, the primary data element never refers to an incomplete data payload.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint64#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <remarks>This method is typically used to update resources for which normal rendering pipeline latency can be detrimental to user experience. For example, an application can compute a view matrix from the latest user input (such as from the sensors of a head-mounted display), and use this function to update and activate this matrix in command lists already dispatched to the GPU to reduce perceived latency between input and rendering.</remarks>
+	void AtomicCopyBufferUINT64( IResource pDstBuffer,
+										ulong DstOffset,
+										IResource pSrcBuffer,
+										ulong SrcOffset,
+										uint Dependencies,
+										IResource[ ] ppDependentResources,
+										in SubresourceRangeUInt64 pDependentSubresourceRanges ) {
+		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		
+		// Copy dependent resources to an array (optimize later):
+		ID3D12Resource[ ] dependentResources = new ID3D12Resource[ ppDependentResources.Length ] ;
+		for ( int i = 0; i < dependentResources.Length; ++i ) {
+			dependentResources[ i ] = ppDependentResources[ i ].COMObject
+#if DEBUG || DEBUG_COM || DEV_BUILD
+									  ?? throw new ArgumentException( $"{nameof(IGraphicsCommandList1)}.{nameof(AtomicCopyBufferUINT)} :: " +
+																	  $"Collection of dependent resources cannot contain null values!" )
+#endif
+				;
+		}
+		
+		unsafe {
+			fixed(SubresourceRangeUInt64* pDependentRanges = &pDependentSubresourceRanges)
+				cmdList.AtomicCopyBufferUINT64( pDstBuffer.COMObject, DstOffset,
+												pSrcBuffer.COMObject, SrcOffset,
+												Dependencies, dependentResources,
+												(D3D12_SUBRESOURCE_RANGE_UINT64 *)pDependentRanges ) ;
+		}
+	}
+	
+
+	/// <summary>This method enables you to change the depth bounds dynamically.</summary>
+	/// <param name="Min">
+	/// <para>Type: <b>FLOAT</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> Specifies the minimum depth bounds. The default value is 0. NaN values silently convert to 0.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-omsetdepthbounds#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="Max">
+	/// <para>Type: <b>FLOAT</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> Specifies the maximum depth bounds. The default value is 1. NaN values silently convert to 0.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-omsetdepthbounds#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <remarks>
+	/// <para>Depth-bounds testing allows pixels and samples to be discarded if the currently-stored depth value is outside the range specified by <i>Min</i> and <i>Max</i>, inclusive. If the currently-stored depth value of the pixel or sample is inside this range, then the depth-bounds test passes and it is rendered; otherwise, the depth-bounds test fails and the pixel or sample is discarded. Note that the depth-bounds test considers the currently-stored depth value, not the depth value generated by the executing pixel shader. To use depth-bounds testing, the application must use the new <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device2-createpipelinestate">CreatePipelineState</a> method to enable depth-bounds testing on the PSO and then can use this command list method to change the depth-bounds dynamically. OMSetDepthBounds is an optional feature. Use the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-checkfeaturesupport">CheckFeatureSupport</a> method to determine whether or not this feature is supported by the user-mode driver. Support for this feature is reported through the [D3D12_FEATURE_D3D12_OPTIONS2](./ne-d3d12-d3d12_feature.md) structure.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-omsetdepthbounds#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void OMSetDepthBounds( float Min, float Max ) => COMObject!.OMSetDepthBounds( Min, Max ) ;
+	
+
+	/// <summary>This method configures the sample positions used by subsequent draw, copy, resolve, and similar operations.</summary>
+	/// <param name="NumSamplesPerPixel">
+	/// <para>Type: <b>UINT</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> Specifies the number of samples to take, per pixel. This value can be 1, 2, 4, 8, or 16, otherwise the SetSamplePosition call is dropped. The number of samples must match the sample count configured in the PSO at draw time, otherwise the behavior is undefined.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-setsamplepositions#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="NumPixels">
+	/// <para>Type: <b>UINT</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> Specifies the number of pixels that sample patterns are being specified for. This value can be either 1 or 4, otherwise the SetSamplePosition call is dropped. A value of 1 configures a single sample pattern to be used for each pixel; a value of 4 configures separate sample patterns for each pixel in a 2x2 pixel grid which is repeated over the render-target or viewport space, aligned to even coordinates. Note that the maximum number of combined samples can't exceed 16, otherwise the call is dropped. If NumPixels is set to 4, NumSamplesPerPixel can specify no more than 4 samples.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-setsamplepositions#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pSamplePositions">
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_sample_position">D3D12_SAMPLE_POSITION</a>*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_reads_(NumSamplesPerPixel*NumPixels)</c> Specifies an array of D3D12_SAMPLE_POSITION elements. The size of the array is NumPixels * NumSamplesPerPixel. If NumPixels is set to 4, then the first group of sample positions corresponds to the upper-left pixel in the 2x2 grid of pixels; the next group of sample positions corresponds to the upper-right pixel, the next group to the lower-left pixel, and the final group to the lower-right pixel. If centroid interpolation is used during rendering, the order of positions for each pixel determines centroid-sampling priority. That is, the first covered sample in the order specified is chosen as the centroid sample location.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-setsamplepositions#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <remarks>
+	/// <para>The operational semantics of sample positions are determined by the various draw, copy, resolve, and other operations that can occur. <b>CommandList:</b> In the absence of any prior calls to SetSamplePositions in a CommandList, samples assume the default position based on the Pipeline State Object (PSO). The default positions are determined either by the SAMPLE_DESC portion of the PSO if it is present, or by the standard sample positions if the RASTERIZER_DESC portion of the PSO has ForcedSampleCount set to a value greater than 0. After SetSamplePosition has been called, subsequent draw calls must use a PSO that specifies a matching sample count either using the SAMPLE_DESC portion of the PSO, or ForcedSampleCount in the RASTERIZER_DESC portion of the PSO. SetSamplePositions can only be called on a graphics CommandList. It can't be called in a bundle; bundles inherit sample position state from the calling CommandList and don't modify it. Calling SetSamplePositions(0, 0, NULL) reverts the sample positions to their default values. <b>Clear RenderTarget:</b> Sample positions are ignored when clearing a render target. <b>Clear DepthStencil:</b> When clearing the depth portion of a depth-stencil surface or any region of it, the sample positions must be set to match those of future rendering to the cleared surface or region; the contents of any uncleared regions produced using different sample positions become undefined. When clearing the stencil portion of a depth-stencil surface or any region of it, the sample positions are ignored. <b>Draw to RenderTarget:</b> When drawing to a render target the sample positions can be changed for each draw call, even when drawing to a region that overlaps previous draw calls. The current sample positions determine the operational semantics of each draw call and samples are taken from taken from the stored contents of the render target, even if the contents were produced using different sample positions. <b>Draw using DepthStencil:</b> When drawing to a depth-stencil surface (read or write) or any region of it, the sample positions must be set to match those used to clear the affected region previously. To use a different sample position, the target region must be cleared first. The pixels outside the clear region are unaffected. Hardware may store the depth portion or a depth-stencil surface as plane equations, and evaluate them to produce depth values when the application issues a read. Only the rasterizer and output-merger are required to support programmable sample positions of the depth portion of a depth-stencil surface. Any other read or write of the depth portion that has been rendered with sample positions set may ignore them and instead sample at the standard positions. <b>Resolve RenderTarget:</b> When resolving a render target or any region of it, the sample positions are ignored; these APIs operate only on stored color values. <b>Resolve DepthStencil:</b> When resolving the depth portion of a depth-stencil surface or any region of it, the sample positions must be set to match those of past rendering to the resolved surface or region. To use a different sample position, the target region must be cleared first. When resolving the stencil portion of a depth-stencil surface or any region of it, the sample positions are ignored; stencil resolves operate only on stored stencil values. <b>Copy RenderTarget:</b> When copying from a render target, the sample positions are ignored regardless of whether it is a full or partial copy. <b>Copy DepthStencil (Full Subresource):</b> When copying a full subresource from a depth-stencil surface, the sample positions must be set to match the sample positions used to generate the source surface. To use a different sample position, the target region must be cleared first. On some hardware properties of the source surface (such as stored plane equations for depth values) transfer to the destination. Therefore, if the destination surface is subsequently drawn to, the sample positions originally used to generate the source content need to be used with the destination surface. The API requires this on all hardware for consistency even if it may only apply to some. <b>Copy DepthStencil (Partial Subresource):</b> When copying a partial subresource from a depth-stencil surface, the sample positions must be set to match the sample positions used to generate the source surface, similarly to copying a full subresource. However, if the content of an affected destination subresources is only partially covered by the copy, the contents of the uncovered portion within those subresources becomes undefined unless all of it was generated using the same sample positions as the copy source. To use a different sample position, the target region must be cleared first. When copying a partial subresource from the stencil portion of a depth-stencil surface, the sample postions are ignored. It doesn’t matter what sample positions were used to generate content for any other areas of the destination buffer not covered by the copy – those contents remain valid. <b>Shader SamplePos:</b> The HLSL SamplePos intrinsic is not aware of programmable sample positions and results returned to shaders calling this on a surface rendered with programmable positions is undefined. Applications must pass coordinates into their shader manually if needed. Similarly evaluating attributes by sample index is undefined with programmable sample positions. <b>Transitioning out of DEPTH_READ or DEPTH_WRITE state:</b> If a subresource in DEPTH_READ or DEPTH_WRITE state is transitioned to any other state, including COPY_SOURCE or RESOLVE_SOURCE, some hardware might need to decompress the surface. Therefore, the sample positions must be set on the command list to match those used to generate the content in the source surface. Furthermore, for any subsequent transitions of the surface while the same depth data remains in it, the sample positions must continue to match those set on the command list. To use a different sample position, the target region must be cleared first. If an application wants to minimize the decompressed area when only a portion needs to be used, or just to preserve compression, ResolveSubresourceRegion() can be called in DECOMPRESS mode with a rect specified.  This will decompress just the relevant area to a separate resource leaving the source intact on some hardware, though on other hardware even the source area is decompressed. The separate explicitly decompressed resource can then be transitioned to the desired state (such as SHADER_RESOURCE). <b>Transitioning out of RENDER_TARGET state:</b> If a subresource in RENDER_TARGET state is transitioned to anything other than COPY_SOURCE or RESOLVE_SOURCE, some implementations may need to decompress the surface. This decompression is agnostic to sample positions. If an application wants to minimize the decompressed area when only a portion needs to be used, or just to preserve compression, ResolveSubresourceRegion() can be called in DECOMPRESS mode with a rect specified.  This will decompress just the relevant area to a separate resource leaving the source intact on some hardware, though on other hardware even the source area is decompressed. The separate explicitly decompressed resource can then be transitioned to the desired state (such as SHADER_RESOURCE).</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-setsamplepositions#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void SetSamplePositions( uint NumSamplesPerPixel, uint NumPixels, in SamplePosition pSamplePositions ) {
+		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		
+		unsafe {
+			fixed( SamplePosition* pSamplePos = &pSamplePositions )
+				cmdList.SetSamplePositions( NumSamplesPerPixel, NumPixels, (D3D12_SAMPLE_POSITION *)pSamplePos ) ;
+		}
+	}
+
+	
+	/// <summary>Copy a region of a multisampled or compressed resource into a non-multisampled or non-compressed resource.</summary>
+	/// <param name="pDstResource">
+	/// <para>Type: <b>ID3D12Resource*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> Destination resource. Must be created with the <b>D3D11_USAGE_DEFAULT</b> flag and must be single-sampled unless its to be resolved from a compressed resource (<b>D3D12_RESOLVE_MODE_DECOMPRESS</b>); in this case it must have the same sample count as the compressed source.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-resolvesubresourceregion#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="DstSubresource">
+	/// <para>Type: <b>UINT</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> A zero-based index that identifies the destination subresource. Use <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12calcsubresource">D3D12CalcSubresource</a> to calculate the subresource index if the parent resource is complex.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-resolvesubresourceregion#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="DstX">
+	/// <para>Type: <b>UINT</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> The X coordinate of the left-most edge of the destination region. The width of the destination region is the same as the width of the source rect.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-resolvesubresourceregion#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="DstY">
+	/// <para>Type: <b>UINT</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> The Y coordinate of the top-most edge of the destination region. The height of the destination region is the same as the height of the source rect.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-resolvesubresourceregion#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pSrcResource">
+	/// <para>Type: <b>ID3D12Resource*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> Source resource. Must be multisampled or compressed.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-resolvesubresourceregion#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="SrcSubresource">
+	/// <para>Type: <b>UINT</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> A zero-based index that identifies the source subresource.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-resolvesubresourceregion#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pSrcRect">
+	/// <para>Type: <b>D3D12_RECT*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_opt_</c> Specifies the rectangular region of the source resource to be resolved. Passing NULL for <i>pSrcRect</i> specifies that the entire subresource is to be resolved.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-resolvesubresourceregion#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="format">
+	/// <para>Type: <b>DXGI_FORMAT</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> A DXGI_FORMAT that specifies how the source and destination resource formats are consolidated.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-resolvesubresourceregion#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="resolveMode">
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resolve_mode">D3D12_RESOLVE_MODE</a></b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> Specifies the operation used to resolve the source samples. When using the <b>D3D12_RESOLVE_MODE_DECOMPRESS</b> operation, the sample count can be larger than 1 as long as the source and destination have the same sample count, and source and destination may specify the same resource as long as the source rect aligns with the destination X and Y coordinates, in which case decompression occurs in place. When using the <b>D3D12_RESOLVE_MODE_MIN</b>, <b>D3D12_RESOLVE_MODE_MAX</b>, or <b>D3D12_RESOLVE_MODE_AVERAGE</b> operation, the destination must have a sample count of 1.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-resolvesubresourceregion#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <remarks>ResolveSubresourceRegion operates like <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-resolvesubresource">ResolveSubresource</a> but allows for only part of a resource to be resolved and for source samples to be resolved in several ways. Partial resolves can be useful in multi-adapter scenarios; for example, when the rendered area has been partitioned across adapters, each adapter might only need to resolve the portion of a subresource that corresponds to its assigned partition.</remarks>
+	void ResolveSubresourceRegion( IResource           pDstResource,
+								   uint                DstSubresource,
+								   uint                DstX,
+								   uint                DstY,
+								   IResource           pSrcResource,
+								   uint                SrcSubresource,
+								   [Optional] in Rect? pSrcRect,
+								   Format              format,
+								   ResolveMode         resolveMode ) {
+		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			Unsafe.SkipInit( out RECT srcRect ) ;
+			RECT* srcRectPtr = null ;
+			if ( pSrcRect.HasValue ) {
+				srcRect = pSrcRect.Value ;
+				srcRectPtr = &srcRect ;
+			}
+			
+			cmdList.ResolveSubresourceRegion( pDstResource.COMObject, DstSubresource, DstX, DstY,
+											  pSrcResource.COMObject, SrcSubresource, srcRectPtr,
+											  (DXGI_FORMAT)format, (D3D12_RESOLVE_MODE)resolveMode ) ;
+		}
+	}
+
+	
+	/// <summary>Set a mask that controls which view instances are enabled for subsequent draws.</summary>
+	/// <param name="Mask">
+	/// <para>Type: <b>UINT</b> A mask that specifies which views are enabled or disabled. If bit <i>i</i> starting from the least-significant bit is set, view instance <i>i</i> is enabled.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-setviewinstancemask#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <remarks>
+	/// <para>The view instance mask only affects PSOs that declare view instance masking by specifying the D3D12_VIEW_INSTANCING_FLAG_ENABLE_VIEW_INSTANCE_MASKING flag during their creation. Attempting to create a PSO that declares view instance masking will fail on adapters that don't support view instancing. The view instance mask defaults to 0 which disables all views. This forces applications that declare view instance masking to explicitly choose the views to enable, otherwise nothing will be rendered. If the view instance mask enabled all views by default the application might not remember to disable unused views, resulting in lost performance due to wasted work. Bundles don't inherit their view instance mask from their caller, defaulting to 0 instead. This is because the mask setting must be known when the bundle is recorded if it affects how an implementation records draws. The view instance mask set by a bundle does persist to the caller after the bundle completes, however. These inheritance semantics are similar to those of PSOs. No shader code paths that are dependent on SV_ViewID are executed at any shader stage for view instances that are masked off and no clipping, viewport processing, or rasterization is performed. Implementations that inspect the mask during rendering can incur a small performance penalty over PSOs that don't declare view instance masking at all, but usually the penalty can be overcome by the performance savings that result from skipping the work associated with the masked off views. Depending on the frequency and amount of skipped work, the performance gains can be significant.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-setviewinstancemask#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void SetViewInstanceMask( uint Mask ) => COMObject!.SetViewInstanceMask( Mask ) ;
+	
+	// ---------------------------------------------------------------------------------
+	// Static Interface Members:
+	// ---------------------------------------------------------------------------------
+	static Type IUnknownWrapper.ComType => typeof(ID3D12GraphicsCommandList1) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12GraphicsCommandList1).GUID ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )] get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal.GetReference(data) ) ;
+		}
+	}
+	
+	static IDXCOMObject IInstantiable.Instantiate( ) => new GraphicsCommandList( ) ;
+	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new GraphicsCommandList( pComObj ) ;
+	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+		new GraphicsCommandList( (ID3D12GraphicsCommandList?)pComObj! ) ;
+	
+	// ==================================================================================
+} ;
+
+
+// ===================================================================================
+// ID3D12GraphicsCommandList2 interface ::
+// ===================================================================================
+
+[ProxyFor( typeof( ID3D12GraphicsCommandList2 ) )]
+public interface IGraphicsCommandList2: IGraphicsCommandList1,
+										IComObjectRef< ID3D12GraphicsCommandList2 >,
+										IUnknownWrapper< ID3D12GraphicsCommandList2 > {
+	// ---------------------------------------------------------------------------------
+	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList2 ).GUID ;
+
+	public new static Type ComType => typeof( ID3D12GraphicsCommandList2 ) ;
+
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12GraphicsCommandList2 >? ComPointer { get ; }
+	new ID3D12GraphicsCommandList2? COMObject => ComPointer?.Interface ;
+	ID3D12GraphicsCommandList2? IComObjectRef< ID3D12GraphicsCommandList2 >.COMObject => COMObject ;
+	ComPtr< ID3D12GraphicsCommandList2 >? IUnknownWrapper< ID3D12GraphicsCommandList2 >.ComPointer => ComPointer ;
+	ComPtr< ID3D12GraphicsCommandList1 >? IGraphicsCommandList1.ComPointer => new( COMObject! ) ;
+
+	ID3D12GraphicsCommandList1? IGraphicsCommandList1.COMObject => COMObject ;
+	ID3D12GraphicsCommandList1? IComObjectRef< ID3D12GraphicsCommandList1 >.COMObject => COMObject ;
+
+
+	// ---------------------------------------------------------------------------------
+
+	/// <summary>Writes a number of 32-bit immediate values to the specified buffer locations directly from the command stream. (ID3D12GraphicsCommandList2.WriteBufferImmediate)</summary>
+	/// <param name="Count">The number of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_writebufferimmediate_parameter">D3D12_WRITEBUFFERIMMEDIATE_PARAMETER</a> structures that are pointed to by <i>pParams</i> and <i>pModes</i>.</param>
+	/// <param name="pParams">The address of an array containing a number of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_writebufferimmediate_parameter">D3D12_WRITEBUFFERIMMEDIATE_PARAMETER</a> structures equal to <i>Count</i>.</param>
+	/// <param name="pModes">The address of an array containing a number of  <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_writebufferimmediate_mode">D3D12_WRITEBUFFERIMMEDIATE_MODE</a> structures equal to <i>Count</i>. The default value is <b>null</b>; passing <b>null</b> causes the system to write all immediate values using <b>D3D12_WRITEBUFFERIMMEDIATE_MODE_DEFAULT</b>.</param>
+	/// <remarks>
+	/// <para><b>WriteBufferImmediate</b> performs <i>Count</i> number of 32-bit writes: one for each value and destination specified in <i>pParams</i>. The receiving buffer (resource) must be in the <b>D3D12_RESOURCE_STATE_COPY_DEST</b> state to be a valid destination for <b>WriteBufferImmediate</b>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist2-writebufferimmediate#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void WriteBufferImmediate( uint Count, in Span< WriteBufferImmediateParameter > pParams,
+							   Span< WriteBufferImmediateMode > pModes = default ) {
+		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			D3D12_WRITEBUFFERIMMEDIATE_MODE* modesPtr = null ;
+			fixed ( void* _params = &pParams[ 0 ], modes = &pModes[ 0 ] ) {
+				if ( pModes is { Length: > 0 } ) modesPtr = (D3D12_WRITEBUFFERIMMEDIATE_MODE*)modes ;
+				cmdList.WriteBufferImmediate( Count, (D3D12_WRITEBUFFERIMMEDIATE_PARAMETER*)_params, modesPtr ) ;
+			}
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+
+	static IDXCOMObject IInstantiable.Instantiate( ) => new GraphicsCommandList2( ) ;
+	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList2( ptr ) ;
+	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new GraphicsCommandList2( (ID3D12GraphicsCommandList3?)pComObj! ) ;
+} ;
+
+
+// ===================================================================================
+// ID3D12GraphicsCommandList3 interface ::
+// ===================================================================================
+
+[ProxyFor( typeof( ID3D12GraphicsCommandList3 ) )]
+public interface IGraphicsCommandList3: IGraphicsCommandList2,
+										IComObjectRef< ID3D12GraphicsCommandList3 >,
+										IUnknownWrapper< ID3D12GraphicsCommandList3 > {
+	// ---------------------------------------------------------------------------------
+	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList3 ).GUID ;
+
+	public new static Type ComType => typeof( ID3D12GraphicsCommandList3 ) ;
+
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12GraphicsCommandList3 >? ComPointer { get ; }
+	new ID3D12GraphicsCommandList3? COMObject => ComPointer?.Interface ;
+	ID3D12GraphicsCommandList3? IComObjectRef< ID3D12GraphicsCommandList3 >.COMObject => COMObject ;
+	ComPtr< ID3D12GraphicsCommandList3 >? IUnknownWrapper< ID3D12GraphicsCommandList3 >.ComPointer => ComPointer ;
+	ComPtr< ID3D12GraphicsCommandList2 >? IGraphicsCommandList2.ComPointer => new( COMObject! ) ;
+
+	ID3D12GraphicsCommandList2? IGraphicsCommandList2.COMObject => COMObject ;
+	ID3D12GraphicsCommandList2? IComObjectRef< ID3D12GraphicsCommandList2 >.COMObject => COMObject ;
+
+	// ---------------------------------------------------------------------------------
+
+	/// <summary>Specifies whether or not protected resources can be accessed by subsequent commands in the command list.</summary>
+	/// <param name="pProtectedResourceSession">
+	/// <para>Type: **[ID3D12ProtectedResourceSession](./nn-d3d12-id3d12protectedresourcesession.md)\*** An optional pointer to an **ID3D12ProtectedResourceSession**. You can obtain an **ID3D12ProtectedResourceSession** by calling [ID3D12Device4::CreateProtectedResourceSession](./nf-d3d12-id3d12device4-createprotectedresourcesession.md).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist3-setprotectedresourcesession#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>If set, indicates that protected resources can be accessed with the given session. Access to protected resources can only happen after <b>SetProtectedResourceSession</b> is called with a valid session. The command list state is cleared when calling this method. If you pass <b>NULL</b>, then no protected resources can be accessed.</returns>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist3-setprotectedresourcesession">Learn more about this API from docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void SetProtectedResourceSession( IProtectedResourceSession pProtectedResourceSession ) => 
+		COMObject!.SetProtectedResourceSession( pProtectedResourceSession.COMObject ) ;
+
+	// ---------------------------------------------------------------------------------
+
+	static IDXCOMObject IInstantiable.Instantiate( ) => new GraphicsCommandList3( ) ;
+	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList3( ptr ) ;
+	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new GraphicsCommandList3( (ID3D12GraphicsCommandList3?)pComObj! ) ;
+} ;
+
+
+// ===================================================================================
+// ID3D12GraphicsCommandList4 interface ::
+// ===================================================================================
+
+[ProxyFor( typeof( ID3D12GraphicsCommandList4 ) )]
+public interface IGraphicsCommandList4: IGraphicsCommandList3,
+										IComObjectRef< ID3D12GraphicsCommandList4 >,
+										IUnknownWrapper< ID3D12GraphicsCommandList4 > {
+	// ---------------------------------------------------------------------------------
+	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList4 ).GUID ;
+
+	public new static Type ComType => typeof( ID3D12GraphicsCommandList4 ) ;
+
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12GraphicsCommandList4 >? ComPointer { get ; }
+	new ID3D12GraphicsCommandList4? COMObject => ComPointer?.Interface ;
+	ID3D12GraphicsCommandList4? IComObjectRef< ID3D12GraphicsCommandList4 >.COMObject => COMObject ;
+	ComPtr< ID3D12GraphicsCommandList4 >? IUnknownWrapper< ID3D12GraphicsCommandList4 >.ComPointer => ComPointer ;
+	ComPtr< ID3D12GraphicsCommandList3 >? IGraphicsCommandList3.ComPointer => new( COMObject! ) ;
+
+	ID3D12GraphicsCommandList3? IGraphicsCommandList3.COMObject => COMObject ;
+	ID3D12GraphicsCommandList3? IComObjectRef< ID3D12GraphicsCommandList3 >.COMObject => COMObject ;
+
+	// ---------------------------------------------------------------------------------
+
+
+	/// <summary>Marks the beginning of a render pass by binding a set of output resources for the duration of the render pass. These bindings are to one or more render target views (RTVs), and/or to a depth stencil view (DSV).</summary>
+	/// <param name="NumRenderTargets">A <b>UINT</b>. The number of render targets being bound.</param>
+	/// <param name="pRenderTargets">A pointer to a constant <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_pass_render_target_desc">D3D12_RENDER_PASS_RENDER_TARGET_DESC</a>, which describes bindings (fixed for the duration of the render pass) to one or more render target views (RTVs), as well as their beginning and ending access characteristics.</param>
+	/// <param name="pDepthStencil">A pointer to a constant <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_pass_depth_stencil_desc">D3D12_RENDER_PASS_DEPTH_STENCIL_DESC</a>, which describes a binding (fixed for the duration of the render pass) to a depth stencil view (DSV), as well as its beginning and ending access characteristics.</param>
+	/// <param name="Flags">A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_render_pass_flags">D3D12_RENDER_PASS_FLAGS</a>. The nature/requirements of the render pass; for example, whether it is a suspending or a resuming render pass, or whether it wants to write to unordered access view(s).</param>
+	/// <remarks>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-beginrenderpass">Learn more about this API from docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void BeginRenderPass( uint NumRenderTargets,
+						  RenderPassRenderTargetDescription[ ] pRenderTargets,
+						  in RenderPassDepthStencilDescription? pDepthStencil  = null,
+						  RenderPassFlags Flags = RenderPassFlags.None ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		ArgumentNullException.ThrowIfNull( pRenderTargets, nameof(pRenderTargets) ) ;
+#endif
+		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var descArray = Unsafe.As< D3D12_RENDER_PASS_RENDER_TARGET_DESC[ ] >( pRenderTargets ) ;
+		cmdList.BeginRenderPass( descArray, pDepthStencil, (D3D12_RENDER_PASS_FLAGS)Flags ) ;
+	}
+
+	
+	/// <summary>Marks the ending of a render pass.</summary>
+	/// <remarks>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-endrenderpass">Learn more about this API from docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void EndRenderPass( ) => COMObject!.EndRenderPass( ) ;
+	
+
+	/// <summary>Initializes the specified meta command.</summary>
+	/// <param name="pMetaCommand">A pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12metacommand">ID3D12MetaCommand</a> representing the meta command to initialize.</param>
+	/// <param name="pInitializationParametersData">An optional pointer to a constant structure containing the values of the parameters for initializing the meta command.</param>
+	/// <param name="InitializationParametersDataSizeInBytes">A <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">SIZE_T</a> containing the size of the structure pointed to by <i>pInitializationParametersData</i>, if set, otherwise 0.</param>
+	/// <returns>If this method succeeds, it returns <b>S_OK</b>. Otherwise, it returns an <b>HRESULT</b> error code.</returns>
+	/// <remarks>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-initializemetacommand">Learn more about this API from docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void InitializeMetaCommand( IMetaCommand    pMetaCommand,
+								[Optional] nint pInitializationParametersData,
+								nuint           InitializationParametersDataSizeInBytes = 0x00U ) {
+		unsafe {
+			COMObject!.InitializeMetaCommand( pMetaCommand.COMObject, (void*)pInitializationParametersData,
+											  InitializationParametersDataSizeInBytes ) ;
+		}
+	}
+
+
+	/// <summary>Records the execution (or invocation) of the specified meta command into a graphics command list.</summary>
+	/// <param name="pMetaCommand">A pointer to an <b>ID3D12MetaCommand</b> representing the meta command to initialize.</param>
+	/// <param name="pExecutionParametersData">An optional pointer to a constant structure containing the values of the parameters for executing the meta command.</param>
+	/// <param name="ExecutionParametersDataSizeInBytes">A <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">SIZE_T</a> containing the size of the structure pointed to by <i>pExecutionParametersData</i>, if set, otherwise 0.</param>
+	/// <returns>If this method succeeds, it returns <b>S_OK</b>. Otherwise, it returns an <b>HRESULT</b> error code.</returns>
+	/// <remarks>
+	/// <para>Your application is responsible for setting up the resources supplied to a meta command in the state required according to the meta command specification. The meta command definition specification defines the expected resource state for each parameter. Your application is responsible for inserting unordered access view (UAV) barriers for input resources before the meta command's algorithm can consume them. You're also responsible for inserting the UAV barrier for the output resources when you intend to read them back. During an algorithm invocation, the driver may insert as many UAV barriers to output resources as are needed to synchronize the output resource usage in the algorithm implementation. From your application's point of view, you should assume that all out and in/out resources are written to by the meta command, including scratch memory.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-executemetacommand#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void ExecuteMetaCommand( IMetaCommand    pMetaCommand,
+							 [Optional] nint pExecutionParametersData,
+							 nuint           ExecutionParametersDataSizeInBytes = 0x00U ) {
+		unsafe {
+			COMObject!.ExecuteMetaCommand( pMetaCommand.COMObject, (void *)pExecutionParametersData,
+										   ExecutionParametersDataSizeInBytes ) ;
+		}
+	}
+	
+
+	/// <summary>Performs a raytracing acceleration structure build on the GPU and optionally outputs post-build information immediately after the build.</summary>
+	/// <param name="pDesc">Description of the acceleration structure to build.</param>
+	/// <param name="NumPostbuildInfoDescs">Size of the <i>pPostbuildInfoDescs</i> array.  Set to 0 if no post-build info is needed.</param>
+	/// <param name="pPostbuildInfoDescs">Optional array of descriptions for post-build info to generate describing properties of the acceleration structure that was built.</param>
+	/// <remarks>
+	/// <para>This method can be called on graphics or compute command lists but not from bundles. Post-build information can also be obtained separately from an already built acceleration structure by calling <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-emitraytracingaccelerationstructurepostbuildinfo">EmitRaytracingAccelerationStructurePostbuildInfo</a>.  The advantage of generating post-build info along with a build is that a barrier isn’t needed in between the build completing and requesting post-build information, enabling scenarios where the app needs the post-build info right away.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-buildraytracingaccelerationstructure#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void BuildRaytracingAccelerationStructure( in BuildRaytracingAccelerationStructureDescription pDesc, 
+											   uint NumPostbuildInfoDescs,
+											   [Optional] Span< RaytracingAccelerationStructurePostBuildInfoDescription > pPostbuildInfoDescs ) ;
+
+
+	/// <summary>
+	/// Emits post-build properties for a set of acceleration structures. This enables applications to know the output resource requirements for performing acceleration
+	/// structure operations via ID3D12GraphicsCommandList4::CopyRaytracingAccelerationStructure.
+	/// </summary>
+	/// <param name="pDesc">A <see cref="RaytracingAccelerationStructurePostBuildInfoDescription"/> object describing post-build information to generate.</param>
+	/// <param name="NumSourceAccelerationStructures">Number of pointers to acceleration structure GPU virtual addresses pointed to by <i>pSourceAccelerationStructureData</i>.
+	/// This number also affects the destination (output), which will be a contiguous array of <b>NumSourceAccelerationStructures</b> output structures, where the type of the
+	/// structures depends on <i>InfoType</i> field of the supplied in the <i>pDesc</i> description.</param>
+	/// <param name="pSourceAccelerationStructureData">
+	/// <para>Pointer to array of GPU virtual addresses of size <i>NumSourceAccelerationStructures</i>.
+	/// The address must be aligned to 256 bytes, defined as
+	/// <a href="https://docs.microsoft.com/windows/desktop/direct3d12/constants">D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT</a>.
+	/// The memory pointed to must be in state
+	/// <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE</a>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-emitraytracingaccelerationstructurepostbuildinfo#parameters">
+	/// Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <remarks>This method can be called from graphics or compute command lists but not from bundles.</remarks>
+	void EmitRaytracingAccelerationStructurePostbuildInfo( in RaytracingAccelerationStructurePostBuildInfoDescription pDesc,
+														   uint NumSourceAccelerationStructures,
+														   ulong[ ] pSourceAccelerationStructureData ) {
+		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			fixed ( RaytracingAccelerationStructurePostBuildInfoDescription* descPtr = &pDesc ) {
+				cmdList.EmitRaytracingAccelerationStructurePostbuildInfo( (D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC *) descPtr, 
+																		  NumSourceAccelerationStructures, pSourceAccelerationStructureData ) ;
+			}
+		}
+	}
+
+
+	/// <summary>Copies a source acceleration structure to destination memory while applying the specified transformation.</summary>
+	/// <param name="DestAccelerationStructureData">
+	/// <para>The destination memory. The required size can be discovered by calling <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-emitraytracingaccelerationstructurepostbuildinfo">EmitRaytracingAccelerationStructurePostbuildInfo</a> beforehand, if necessary for the specified <i>Mode</i>. The destination start address must be aligned to 256 bytes, defined as <a href="https://docs.microsoft.com/windows/desktop/direct3d12/constants">D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT</a>, regardless of the specified <i>Mode</i>. The destination memory range cannot overlap source. Otherwise, results are undefined. The resource state that the memory pointed to must be in depends on the <i>Mode</i> parameter. For more information, see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_raytracing_acceleration_structure_copy_mode">D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE</a>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-copyraytracingaccelerationstructure#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="SourceAccelerationStructureData">
+	/// <para>The address of the acceleration structure or other type of data to copy/transform based on the specified <i>Mode</i>.  The data remains unchanged and usable.  The operation only copies the data  pointed to by <i>SourceAccelerationStructureData</i> and not any other data, such as acceleration structures, that the source data may point to.  For example, in the case of a top-level acceleration structure, any bottom-level acceleration structures that it points to are not copied in the operation. The source memory must be aligned to 256 bytes, defined as <a href="https://docs.microsoft.com/windows/desktop/direct3d12/constants">D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT</a>, regardless of the specified <i>Mode</i>. The resource state that the memory pointed to must be in depends on the <i>Mode</i> parameter. For more information, see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_raytracing_acceleration_structure_copy_mode">D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE</a>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-copyraytracingaccelerationstructure#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="Mode">The type of copy operation to perform. For more information, see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_raytracing_acceleration_structure_copy_mode">D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE</a>.</param>
+	/// <remarks>
+	/// <para>Since raytracing acceleration structures may contain internal pointers and have a device dependent opaque layout, copying them around or otherwise manipulating them requires a dedicated API so that drivers can handle the requested operation. This method can be called from graphics or compute command lists but not from bundles.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-copyraytracingaccelerationstructure#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void CopyRaytracingAccelerationStructure( ulong DestAccelerationStructureData,
+											  ulong SourceAccelerationStructureData,
+											  RaytracingAccelerationStructureCopyMode Mode ) {
+		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		cmdList.CopyRaytracingAccelerationStructure( DestAccelerationStructureData, SourceAccelerationStructureData,
+													 ( D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE ) Mode ) ;
+	}
+
+	
+	/// <summary>Sets a state object on the command list.</summary>
+	/// <param name="pStateObject">The state object to set on the command list. In the current release, this can only be of type <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_state_object_type">D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE</a>.</param>
+	/// <remarks>
+	/// <para>This method can be called from graphics or compute command lists and bundles. This method is an alternative to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setpipelinestate">ID3D12GraphicsCommandList::SetPipelineState</a>, which is only defined for graphics and compute shaders.  There is only one pipeline state active on a command list at a time, so either call sets the current pipeline state.  The distinction between the calls is that each sets particular types of pipeline state only.  In the current release, <b>SetPipelineState1</b> is only used for setting raytracing pipeline state.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-setpipelinestate1#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void SetPipelineState1( IStateObject pStateObject ) => 
+		COMObject!.SetPipelineState1( pStateObject.COMObject ) ;
+
+	
+	/// <summary>Launch the threads of a ray generation shader.</summary>
+	/// <param name="pDesc">A description of the ray dispatch</param>
+	/// <remarks>
+	/// <para>This method can be called from graphics or compute command lists and bundles.</para>
+	/// <para>A raytracing pipeline state must be set on the command list. Otherwise, the behavior of this call is undefined. There are 3 dimensions passed in to set the grid size:
+	/// width/height/depth.  These dimensions are constrained such that width * height * depth &lt;= 2^30. Exceeding this produces undefined behavior. If any grid dimension is 0,
+	/// no threads are launched.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-dispatchrays#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void DispatchRays( in DispatchRaysDescription pDesc ) ;
+};
+
+// ===================================================================================
+// ID3D12GraphicsCommandList5 interface ::
+// ===================================================================================
+
+[ProxyFor( typeof( ID3D12GraphicsCommandList5 ) )]
+public interface IGraphicsCommandList5: IGraphicsCommandList4,
+										IComObjectRef< ID3D12GraphicsCommandList5 >,
+										IUnknownWrapper< ID3D12GraphicsCommandList5 > {
+	// ---------------------------------------------------------------------------------
+	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList5 ).GUID ;
+
+	public new static Type ComType => typeof( ID3D12GraphicsCommandList5 ) ;
+
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12GraphicsCommandList5 >? ComPointer { get ; }
+	new ID3D12GraphicsCommandList5? COMObject => ComPointer?.Interface ;
+	ID3D12GraphicsCommandList5? IComObjectRef< ID3D12GraphicsCommandList5 >.COMObject => COMObject ;
+	ComPtr< ID3D12GraphicsCommandList5 >? IUnknownWrapper< ID3D12GraphicsCommandList5 >.ComPointer => ComPointer ;
+	ComPtr< ID3D12GraphicsCommandList4 >? IGraphicsCommandList4.ComPointer => new( COMObject! ) ;
+
+	ID3D12GraphicsCommandList4? IGraphicsCommandList4.COMObject => COMObject ;
+	ID3D12GraphicsCommandList4? IComObjectRef< ID3D12GraphicsCommandList4 >.COMObject => COMObject ;
+
+	// ---------------------------------------------------------------------------------
+
+	
+	/// <summary>The ID3D12GraphicsCommandList5::RSSetShadingRate method (d3d12.h) sets the base shading rate, and combiners, for variable-rate shading (VRS).</summary>
+	/// <param name="baseShadingRate">
+	/// <para>A constant from the <see cref="ShadingRate"/> enumeration describing the base shading rate to set.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist5-rssetshadingrate#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="combiners">
+	/// <para>An (optional) pointer to a constant array of <see cref="ShadingRateCombiner"/> values containing the shading rate combiners to set.
+	/// The count of <see cref="ShadingRateCombiner"/> elements in the array must be equal
+	/// to the constant <b>D3D12_RS_SET_SHADING_RATE_COMBINER_COUNT</b>, which is equal to <b>2</b>.
+	/// Because per-primitive and screen-space image-based <a href="https://learn.microsoft.com/en-us/windows/win32/direct3d12/vrs">VRS</a> isn't supported on Tier1, for these values to be meaningful,
+	/// the adapter requires Tier2 VRS support. See <a href="https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options6">D3D12_FEATURE_DATA_D3D12_OPTIONS6</a> and
+	/// <a href="https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_variable_shading_rate_tier">D3D12_VARIABLE_SHADING_RATE_TIER</a>.<para/>
+	/// A <b>NULL</b> pointer is equivalent to the default shading combiners, which are both <see cref="ShadingRateCombiner.Passthrough"/>.
+	/// The algorithm for final shading-rate is determined by the following.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist5-rssetshadingrate#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	void RSSetShadingRate( ShadingRate baseShadingRate, [Optional] Span< ShadingRateCombiner > combiners ) {
+		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			if( combiners is { Length: > 0 } ) {
+				D3D12_SHADING_RATE_COMBINER* combinersPtr = null ;
+				fixed ( ShadingRateCombiner* combinerSpanPtr = combiners ) {
+					combinersPtr = (D3D12_SHADING_RATE_COMBINER*)combinerSpanPtr ;
+					cmdList.RSSetShadingRate( (D3D12_SHADING_RATE)baseShadingRate,
+											  combinersPtr ) ;
+				}
+			}
+			else cmdList.RSSetShadingRate( (D3D12_SHADING_RATE)baseShadingRate, null ) ;
+		}
+	}
+
+	
+	/// <summary>The ID3D12GraphicsCommandList5::RSSetShadingRateImage method (d3d12.h) sets the screen-space shading-rate image for variable-rate shading (VRS).</summary>
+	/// <param name="shadingRateImage">
+	/// <para>Type: **[ID3D12Resource](/windows/desktop/api/d3d12/nn-d3d12-id3d12resource)\*** An optional pointer to an [ID3D12Resource](/windows/desktop/api/d3d12/nn-d3d12-id3d12resource) representing a screen-space shading-rate image. If **NULL**, the effect is the same as having a shading-rate image where all values are a shading rate of 1x1. This texture must have the [**D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE**](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states) state applied. The tile-size of the shading-rate image can be determined via [**D3D12_FEATURE_DATA_D3D12_OPTIONS6**](/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options6). The size of the shading-rate image should therefore be </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist5-rssetshadingrateimage#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <remarks>
+	/// <para>For the screen-space shading-rate image to take affect, [**ID3D12GraphicsCommandList5::RSSetShadingRate**](/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist5-rssetshadingrate) must have been called to set the combiners for shading. Else, with the default combiners (both [**D3D12_SHADING_RATE_COMBINER_PASSTHROUGH**](/windows/win32/api/d3d12/ne-d3d12-d3d12_shading_rate_combiner)), the screen-space shading-rate image is ignored in determining shading granularity. The second combiner passed to  [**ID3D12GraphicsCommandList5::RSSetShadingRate**] is the one which applies to the shading-rate image, which occurs after the global shading rate and the per-primitive shading rate have been combined. The algorithm for final shading-rate is determined by </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist5-rssetshadingrateimage#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void RSSetShadingRateImage( IResource shadingRateImage ) =>
+		COMObject!.RSSetShadingRateImage( shadingRateImage.COMObject ) ;
+	
+	// ===================================================================================
+} ;
+
+
+// ===================================================================================
+// ID3D12GraphicsCommandList6 interface ::
+// ===================================================================================
+
+[ProxyFor( typeof( ID3D12GraphicsCommandList6 ) )]
+public interface IGraphicsCommandList6: IGraphicsCommandList5,
+										IComObjectRef< ID3D12GraphicsCommandList6 >,
+										IUnknownWrapper< ID3D12GraphicsCommandList6 > {
+	// ---------------------------------------------------------------------------------
+	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList6 ).GUID ;
+	public new static Type ComType => typeof( ID3D12GraphicsCommandList6 ) ;
+
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12GraphicsCommandList6 >? ComPointer { get ; }
+	new ID3D12GraphicsCommandList6? COMObject => ComPointer?.Interface ;
+	ID3D12GraphicsCommandList6? IComObjectRef< ID3D12GraphicsCommandList6 >.COMObject => COMObject ;
+	ComPtr< ID3D12GraphicsCommandList6 >? IUnknownWrapper< ID3D12GraphicsCommandList6 >.ComPointer => ComPointer ;
+	ComPtr< ID3D12GraphicsCommandList5 >? IGraphicsCommandList5.ComPointer => new( COMObject! ) ;
+
+	ID3D12GraphicsCommandList5? IGraphicsCommandList5.COMObject => COMObject ;
+	ID3D12GraphicsCommandList5? IComObjectRef< ID3D12GraphicsCommandList5 >.COMObject => COMObject ;
+
+	// ---------------------------------------------------------------------------------
+
+	void DispatchMesh( uint ThreadGroupCountX, uint ThreadGroupCountY, uint ThreadGroupCountZ ) =>
+		COMObject!.DispatchMesh( ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ ) ;
+
+	// ===================================================================================
+} ;
+
+// ===================================================================================
+// ID3D12GraphicsCommandList7 interface ::
+// ===================================================================================
+[ProxyFor( typeof( ID3D12GraphicsCommandList7 ) )]
+public interface IGraphicsCommandList7: IGraphicsCommandList6,
+										IComObjectRef< ID3D12GraphicsCommandList7 >,
+										IUnknownWrapper< ID3D12GraphicsCommandList7 > {
+	// ---------------------------------------------------------------------------------
+	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList7 ).GUID ;
+	public new static Type ComType => typeof( ID3D12GraphicsCommandList7 ) ;
+
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12GraphicsCommandList7 >? ComPointer { get ; }
+	new ID3D12GraphicsCommandList7? COMObject => ComPointer?.Interface ;
+	ID3D12GraphicsCommandList7? IComObjectRef< ID3D12GraphicsCommandList7 >.COMObject => COMObject ;
+	ComPtr< ID3D12GraphicsCommandList7 >? IUnknownWrapper< ID3D12GraphicsCommandList7 >.ComPointer => ComPointer ;
+	ComPtr< ID3D12GraphicsCommandList6 >? IGraphicsCommandList6.ComPointer => new( COMObject! ) ;
+
+	ID3D12GraphicsCommandList6? IGraphicsCommandList6.COMObject => COMObject ;
+	ID3D12GraphicsCommandList6? IComObjectRef< ID3D12GraphicsCommandList6 >.COMObject => COMObject ;
+
+	// ---------------------------------------------------------------------------------
+	
+	
+	/// <summary>Adds a collection of barriers into a graphics command list recording.</summary>
+	/// <param name="NumBarrierGroups">Number of barrier groups pointed to by *pBarrierGroups*.</param>
+	/// <param name="pBarrierGroups">Pointer to an array of [D3D12_BARRIER_GROUP](/windows/win32/api/d3d12/ns-d3d12-d3d12_barrier_group) objects.</param>
+	void Barrier( uint NumBarrierGroups, BarrierGroup[ ] pBarrierGroups ) {
+		var cmdList       = COMObject ?? throw new NullReferenceException( ) ;
+		var barrierGroups = Unsafe.As< D3D12_BARRIER_GROUP[ ] >( pBarrierGroups ) ;
+		cmdList.Barrier( NumBarrierGroups, barrierGroups ) ;
+	}
+
+	// ===================================================================================
+} ;

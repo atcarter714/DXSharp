@@ -26,3 +26,28 @@ public class Fence: Pageable,
 		where ICom: IUnknown? => new Fence( (ID3D12Fence) pComObj! ) ;
 	// ===============================================================================================
 } ;
+
+
+[Wrapper( typeof( ID3D12Fence1 ) )]
+public class Fence1: Fence, IFence1 {
+	// -----------------------------------------------------------------------------------------------
+	public new ID3D12Fence1? COMObject => ComPointer?.Interface ;
+	public new ComPtr< ID3D12Fence1 >? ComPointer { get ; protected set ; }
+
+	// -----------------------------------------------------------------------------------------------
+
+	internal Fence1( ) { }
+	internal Fence1( ComPtr< ID3D12Fence1 > comPtr ) => ComPointer = comPtr ;
+	internal Fence1( nint address ) => ComPointer = new( address ) ;
+	internal Fence1( ID3D12Fence1 comObject ) => ComPointer = new( comObject ) ;
+
+	// -----------------------------------------------------------------------------------------------
+	
+	public FenceFlags GetCreationFlags( ) {
+		var fence = COMObject ?? throw new NullReferenceException( ) ;
+		return (FenceFlags)fence.GetCreationFlags( ) ;
+	}
+	
+	// ===============================================================================================
+
+} ;
