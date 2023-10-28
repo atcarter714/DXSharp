@@ -1301,6 +1301,15 @@ public struct ClearValue {
 		Format = format ;
 		ReadAs = new _anon_clrval_union { DepthStencil = depthStencil } ;
 	}
+	
+	public static implicit operator ClearValue( (Format format, ColorF color) tuple ) => 
+		new( tuple.format, tuple.color ) ;
+	public static implicit operator ClearValue( (Format format, Color color) tuple ) => 
+		new( tuple.format, tuple.color ) ;
+	public static implicit operator ClearValue( (Format format, KnownColor knownColor) tuple ) => 
+		new( tuple.format, tuple.knownColor ) ;
+	public static implicit operator ClearValue( (Format format, float r, float g, float b, float a) tuple ) =>
+	 		new( tuple.format, tuple.r, tuple.g, tuple.b, tuple.a ) ;
 } ;
 
 

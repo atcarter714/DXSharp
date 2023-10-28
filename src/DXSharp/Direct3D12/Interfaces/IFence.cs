@@ -12,7 +12,8 @@ namespace DXSharp.Direct3D12 ;
 [ProxyFor(typeof(ID3D12Fence))]
 public interface IFence: IPageable,
 						 IComObjectRef< ID3D12Fence >,
-						 IUnknownWrapper< ID3D12Fence > {
+						 IUnknownWrapper< ID3D12Fence >, 
+						 IInstantiable {
 	// ---------------------------------------------------------------------------------
 	new ComPtr< ID3D12Fence >? ComPointer { get ; }
 	new ID3D12Fence? COMObject => ComPointer?.Interface ;
@@ -75,6 +76,53 @@ public interface IFence: IPageable,
 											  .GetReference(data) ) ;
 		}
 	}
+
+	static IDXCOMObject IInstantiable.Instantiate( ) => new Fence( ) ;
+	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new Fence( pComObj ) ;
+	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Fence( (ID3D12Fence)pComObj! ) ;
+
+	// ==================================================================================
+} ;
+
+
+public interface IFence1: IFence,
+						  IComObjectRef< ID3D12Fence1 >,
+						  IUnknownWrapper< ID3D12Fence1 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Fence1 >? ComPointer { get ; }
+	new ID3D12Fence1? COMObject => ComPointer?.Interface ;
+	ID3D12Fence1? IComObjectRef< ID3D12Fence1 >.COMObject => COMObject ;
+	ComPtr< ID3D12Fence1 >? IUnknownWrapper< ID3D12Fence1 >.ComPointer => ComPointer ;
+	// ---------------------------------------------------------------------------------
+	
+	/// <summary>Gets the flags used to create the fence represented by the current instance.</summary>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_fence_flags">D3D12_FENCE_FLAGS</a></b> The flags used to create the fence.</para>
+	/// </returns>
+	/// <remarks>The flags returned by <b>GetCreationFlags</b> are used mainly for opening a shared fence.</remarks>
+	FenceFlags GetCreationFlags( ) ;
+	
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Fence1) ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Fence1) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Fence1).GUID ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Fence1).GUID ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	static IDXCOMObject IInstantiable.Instantiate( ) => new Fence1( ) ;
+	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new Fence1( pComObj ) ;
+	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Fence1( (ID3D12Fence1)pComObj! ) ;	
+	// ---------------------------------------------------------------------------------
 	
 	// ==================================================================================
 } ;

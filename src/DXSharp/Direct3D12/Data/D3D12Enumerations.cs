@@ -132,13 +132,13 @@ public enum HeapFlags {
 
 	/// <summary>
 	/// <para>Ensures that atomic operations will be atomic on this heap's memory, according to components able to see the memory. Creating a heap with this flag will fail under either of these conditions. - The heap type is **D3D12_HEAP_TYPE_DEFAULT**, and the heap can be visible on multiple nodes, but the device does *not* support [**D3D12_CROSS_NODE_SHARING_TIER_3**](./ne-d3d12-d3d12_cross_node_sharing_tier.md). - The heap is CPU-visible, but the heap type is *not* **D3D12_HEAP_TYPE_CUSTOM**. Note that heaps with this flag might be a limited resource on some systems.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	AllowShaderAtomics = 0x00000400,
 
 	/// <summary>
 	/// <para>The heap is created in a non-resident state and must be made resident using [ID3D12Device::MakeResident](./nf-d3d12-id3d12device-makeresident.md) or [ID3D12Device3::EnqueueMakeResident](./nf-d3d12-id3d12device3-enqueuemakeresident.md). By default, the final step of heap creation is to make the heap resident, so this flag skips this step and allows the application to decide when to do so.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	CreateNotResident = 0x00000800,
 
@@ -168,48 +168,48 @@ public enum ResourceFlags {
 	/// <summary>
 	/// <para>Allows a render target view to be created for the resource; and also enables the resource to transition into the state of [D3D12_RESOURCE_STATE_RENDER_TARGET](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states). Some adapter architectures allocate extra memory for textures with this flag to reduce the effective bandwidth during common rendering. This characteristic may not be beneficial for textures that are never rendered to, nor is it available for textures compressed with BC formats. Your application should avoid setting this flag when rendering will never occur. The following restrictions and interactions apply: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	AllowRenderTarget = 0x00000001,
 
 	/// <summary>
 	/// <para>Allows a depth stencil view to be created for the resource, as well as enables the resource to transition into the state of [D3D12_RESOURCE_STATE_DEPTH_WRITE](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states) and/or **D3D12_RESOURCE_STATE_DEPTH_READ**. Most adapter architectures allocate extra memory for textures with this flag to reduce the effective bandwidth, and maximize optimizations for early depth-test. Your application should avoid setting this flag when depth operations will never occur. The following restrictions and interactions apply: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	AllowDepthStencil = 0x00000002,
 
 	/// <summary>
 	/// <para>Allows an unordered access view to be created for the resource, as well as enables the resource to transition into the state of [D3D12_RESOURCE_STATE_UNORDERED_ACCESS](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states). Some adapter architectures must resort to less efficient texture layouts in order to provide this functionality. If a texture is rarely used for unordered access, then it might be worth having two textures around and copying between them. One texture would have this flag, while the other wouldn't. Your application should avoid setting this flag when unordered access operations will never occur. The following restrictions and interactions apply: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	AllowUnorderedAccess = 0x00000004,
 
 	/// <summary>
 	/// <para>Disallows a shader resource view from being created for the resource, as well as disables the resource from transitioning into the state of [D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states) or **D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE**. Some adapter architectures experience increased bandwidth for depth stencil textures when shader resource views are precluded. If a texture is rarely used for shader resources, then it might be worth having two textures around and copying between them. One texture would have this flag, while the other wouldn't. Your application should set this flag when depth stencil textures will never be used from shader resource views. The following restrictions and interactions apply: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	DenyShaderResource = 0x00000008,
 
 	/// <summary>
 	/// <para>Allows the resource to be used for cross-adapter data, as well as those features enabled by **D3D12_RESOURCE_FLAGS::ALLOW_SIMULTANEOUS_ACCESS**. Cross-adapter resources commonly preclude techniques that reduce effective texture bandwidth during usage, and some adapter architectures might require different caching behavior. Your application should avoid setting this flag when the resource data will never be used with another adapter. The following restrictions and interactions apply: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	AllowCrossAdapter = 0x00000010,
 
 	/// <summary>
 	/// <para>Allows a resource to be simultaneously accessed by multiple different queues, devices, or processes (for example, allows a resource to be used with [ResourceBarrier](/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-resourcebarrier) transitions performed in more than one command list executing at the same time). Simultaneous access allows multiple readers and one writer, as long as the writer doesn't concurrently modify the texels that other readers are accessing. Some adapter architectures can't leverage techniques to reduce effective texture bandwidth during usage. However, your application should avoid setting this flag when multiple readers are not required during frequent, non-overlapping writes to textures. Use of this flag can compromise resource fences to perform waits, and prevent any compression being used with a resource. The following restrictions and interactions apply: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	AllowSimultaneousAccess = 0x00000020,
 
 	/// <summary>
 	/// <para>Specfies that this resource may be used only as a decode reference frame. It may be written to or read only by the video decode operation. [D3D12_VIDEO_DECODE_TIER_1](../d3d12video/ne-d3d12video-d3d12_video_decode_tier.md) and [D3D12_VIDEO_DECODE_TIER_2](../d3d12video/ne-d3d12video-d3d12_video_decode_tier.md) may report [D3D12_VIDEO_DECODE_CONFIGURATION_FLAG_REFERENCE_ONLY_ALLOCATIONS_REQUIRED](../d3d12video/ne-d3d12video-d3d12_video_decode_configuration_flags.md) in the [D3D12_FEATURE_DATA_VIDEO_DECODE_SUPPORT](../d3d12video/ns-d3d12video-d3d12_feature_data_video_decode_support.md) structure configuration flag. If that happens, then your application must allocate reference frames with the **D3D12_RESOURCE_FLAGS::VIDEO_DECODE_REFERENCE_ONLY** resource flag. [D3D12_VIDEO_DECODE_TIER_3](../d3d12video/ne-d3d12video-d3d12_video_decode_tier.md) must not set the [D3D12_VIDEO_DECODE_CONFIGURATION_FLAG_REFERENCE_ONLY_ALLOCATIONS_REQUIRED] (../d3d12video/ne-d3d12video-d3d12_video_decode_configuration_flags) configuration flag, and must not require the use of this resource flag.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	VideoDecodeReferenceOnly = 0x00000040,
 
@@ -218,7 +218,7 @@ public enum ResourceFlags {
 
 	/// <summary>
 	/// <para>Reserved for future use. Don't use. Requires the DirectX 12 Agility SDK 1.7 or later. Indicates that a buffer is to be used as a raytracing acceleration structure.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	RaytracingAccelerationStructure = 0x00000100,
 } ;
@@ -230,7 +230,7 @@ public enum PipelineStateFlags {
 	None = 0x00000000,
 	/// <summary>
 	/// <para>Indicates that the pipeline state should be compiled with additional information to assist debugging. This can only be set on WARP devices.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	ToolDebug                  = 0x00000001,
 	DynamicDepthBias           = 0x00000004,
@@ -244,7 +244,7 @@ public enum DescriptorHeapFlags {
 	None = 0x00000000,
 	/// <summary>
 	/// <para>The flag [D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE](/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_heap_flags) can optionally be set on a descriptor heap to indicate it is be bound on a command list for reference by shaders. Descriptor heaps created <i>without</i> this flag allow applications the option to stage descriptors in CPU memory before copying them to a shader visible descriptor heap, as a convenience. But it is also fine for applications to directly create descriptors into shader visible descriptor heaps with no requirement to stage anything on the CPU. Descriptor heaps bound via [ID3D12GraphicsCommandList::SetDescriptorHeaps](/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setdescriptorheaps) must have the **D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE** flag set, else the debug layer will produce an error. Descriptor heaps with the **D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE** flag can't be used as the source heaps in calls to [ID3D12Device::CopyDescriptors](/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptors) or [ID3D12Device::CopyDescriptorsSimple](/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptorssimple), because they could be resident in **WRITE_COMBINE** memory or GPU-local memory, which is very inefficient to read from. This flag only applies to CBV/SRV/UAV descriptor heaps, and sampler descriptor heaps. It does not apply to other descriptor heap types since shaders do not directly reference the other types. Attempting to create an RTV/DSV heap with **D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE** results in a debug layer error.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_heap_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_heap_flags#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	ShaderVisible = 0x00000001,
 } ;
@@ -467,12 +467,12 @@ public enum Filter {
 public enum TextureAddressMode {
 	/// <summary>
 	/// <para>Tile the texture at every (u,v) integer junction. For example, for u values between 0 and 3, the texture is repeated three times.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_address_mode#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_address_mode#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	Wrap = 1,
 	/// <summary>
 	/// <para>Flip the texture at every (u,v) integer junction. For u values between 0 and 1, for example, the texture is addressed normally; between 1 and 2, the texture is flipped (mirrored); between 2 and 3, the texture is normal again; and so on.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_address_mode#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_address_mode#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	Mirror = 2,
 	/// <summary>Texture coordinates outside the range [0.0, 1.0] are set to the texture color at 0.0 or 1.0, respectively.</summary>
@@ -481,7 +481,7 @@ public enum TextureAddressMode {
 	Border = 4,
 	/// <summary>
 	/// <para>Similar to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">MIRROR</a> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">CLAMP</a>. Takes the absolute value of the texture coordinate (thus, mirroring around 0), and then clamps to the maximum value.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_address_mode#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_address_mode#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	MirrorOnce = 5,
 } ;
@@ -528,25 +528,25 @@ public enum ResourceDimension {
 public enum TextureLayout {
 	/// <summary>
 	/// <para>Indicates that the layout is unknown, and is likely adapter-dependent. During creation, the driver chooses the most efficient layout based on other resource properties, especially resource size and flags. Prefer this choice unless certain functionality is required from another texture layout. Zero-copy texture upload optimizations exist for UMA architectures; see <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-writetosubresource">ID3D12Resource::WriteToSubresource</a>.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	Unknown = 0,
 	/// <summary>
 	/// <para>Indicates that data for the texture is stored in row-major order (sometimes called "pitch-linear order"). This texture layout locates consecutive texels of a row contiguously in memory, before the texels of the next row. Similarly, consecutive texels of a particular depth or array slice are contiguous in memory before the texels of the next depth or array slice. Padding may exist between rows and between depth or array slices to align collections of data. A stride is the distance in memory between rows, depth, or array slices; and it includes any padding. This texture layout enables sharing of the texture data between multiple adapters, when other layouts aren't available. Many restrictions apply, because this layout is generally not efficient for extensive usage: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	RowMajor = 1,
 	/// <summary>
 	/// <para>Indicates that the layout within 64KB tiles and tail mip packing is up to the driver. No standard swizzle pattern. This texture layout is arranged into contiguous 64KB regions, also known as tiles, containing near equilateral amount of consecutive number of texels along each dimension. Tiles are arranged in row-major order. While there is no padding between tiles, there are typically unused texels within the last tile in each dimension. The layout of texels within the tile is undefined. Each subresource immediately follows where the previous subresource end, and the subresource order follows the same sequence as subresource ordinals. However, tail mip packing is adapter-specific. For more details, see tiled resource tier and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourcetiling">ID3D12Device::GetResourceTiling</a>. This texture layout enables partially resident or sparse texture scenarios when used together with virtual memory page mapping functionality. This texture layout must be used together with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createreservedresource">ID3D12Device::CreateReservedResource</a> to enable the usage of <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-updatetilemappings">ID3D12CommandQueue::UpdateTileMappings</a>. Some restrictions apply to textures with this layout: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	UndefinedSwizzle_64KB = 2,
 	/// <summary>
 	/// <para>Indicates that a default texture uses the standardized swizzle pattern. This texture layout is arranged the same way that 64KB_UNDEFINED_SWIZZLE is, except that the layout of texels within the tile is defined. Tail mip packing is adapter-specific. This texture layout enables optimizations when marshaling data between multiple adapters or between the CPU and GPU. The amount of copying can be reduced when multiple components understand the texture memory layout. This layout is generally more efficient for extensive usage than row-major layout, due to the rotationally invariant locality of neighboring texels. This layout can typically only be used with adapters that support standard swizzle, but exceptions exist for cross-adapter shared heaps. The restrictions for this layout are that the following aren't supported: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	StandardSwizzle_64KB = 3,
 } ;
@@ -559,17 +559,17 @@ public enum HeapType {
 	/// <summary>
 	/// <para>Specifies a heap used for uploading. This heap type has CPU access optimized for uploading to the GPU, but does not experience the maximum amount of bandwidth for the GPU. This heap type is best for CPU-write-once, GPU-read-once data; but GPU-read-once is stricter than necessary. GPU-read-once-or-from-cache is an acceptable use-case for the data; but such usages are hard to judge due to differing GPU cache designs and sizes. If in doubt, stick to the GPU-read-once definition or profile the difference on many GPUs between copying the data to a _DEFAULT heap vs. reading the data from an _UPLOAD heap. Resources in this heap must be created with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATE</a>_GENERIC_READ and cannot be changed away from this. The CPU address for such heaps is commonly not efficient for CPU reads. The following are typical usages for _UPLOAD heaps: </para>
 	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	Upload = 2,
 	/// <summary>
 	/// <para>Specifies a heap used for reading back. This heap type has CPU access optimized for reading data back from the GPU, but does not experience the maximum amount of bandwidth for the GPU. This heap type is best for GPU-write-once, CPU-readable data. The CPU cache behavior is write-back, which is conducive for multiple sub-cache-line CPU reads. Resources in this heap must be created with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATE</a>_COPY_DEST, and cannot be changed away from this.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	ReadBack = 3,
 	/// <summary>
 	/// <para>Specifies a custom heap. The application may specify the memory pool and CPU cache properties directly, which can be useful for UMA optimizations, multi-engine, multi-adapter, or other special cases. To do so, the application is expected to understand the adapter architecture to make the right choice. For more details, see <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_feature">D3D12_FEATURE</a>_ARCHITECTURE, <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture">D3D12_FEATURE_DATA_ARCHITECTURE</a>, and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcustomheapproperties">GetCustomHeapProperties</a>.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	Custom = 4,
 	GpuUpload = 5,
@@ -580,7 +580,7 @@ public enum HeapType {
 public enum ResourceStates {
 	/// <summary>
 	/// <para>Your application should transition to this state only for accessing a resource across different graphics engine types. Specifically, a resource must be in the COMMON state before being used on a COPY queue (when previously used on DIRECT/COMPUTE), and before being used on DIRECT/COMPUTE (when previously used on COPY). This restriction doesn't exist when accessing data between DIRECT and COMPUTE queues. The COMMON state can be used for all usages on a Copy queue using the implicit state transitions. For more info, in <a href="https://docs.microsoft.com/windows/win32/direct3d12/user-mode-heap-synchronization">Multi-engine synchronization</a>, find "common". Additionally, textures must be in the COMMON state for CPU access to be legal, assuming the texture was created in a CPU-visible heap in the first place.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	Common = 0x00000000,
 	/// <summary>A subresource must be in this state when it is accessed by the GPU as a vertex buffer or constant buffer. This is a read-only state.</summary>
@@ -589,7 +589,7 @@ public enum ResourceStates {
 	IndexBuffer = 0x00000002,
 	/// <summary>
 	/// <para>The resource is used as a render target. A subresource must be in this state when it is rendered to, or when it is cleared with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview">ID3D12GraphicsCommandList::ClearRenderTargetView</a>. This is a write-only state. To read from a render target as a shader resource, the resource must be in either **NON_PIXEL_SHADER_RESOURCE** or **PIXEL_SHADER_RESOURCE**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	RenderTarget = 0x00000004,
 	/// <summary>The resource is used for unordered access. A subresource must be in this state when it is accessed by the GPU via an unordered access view. A subresource must also be in this state when it is cleared with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearunorderedaccessviewuint">ID3D12GraphicsCommandList::ClearUnorderedAccessViewInt</a> or <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearunorderedaccessviewfloat">ID3D12GraphicsCommandList::ClearUnorderedAccessViewFloat</a>. This is a read/write state.</summary>
@@ -606,17 +606,17 @@ public enum ResourceStates {
 	StreamOut = 0x00000100,
 	/// <summary>
 	/// <para>The resource is used as an indirect argument. Subresources must be in this state when they are used as the argument buffer passed to the indirect drawing method <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-executeindirect">ID3D12GraphicsCommandList::ExecuteIndirect</a>. This is a read-only state.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	IndirectArgument = 0x00000200,
 	/// <summary>
 	/// <para>The resource is used as the destination in a copy operation. Subresources must be in this state when they are used as the destination of copy operation, or a blt operation. This is a write-only state.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	CopyDest = 0x00000400,
 	/// <summary>
 	/// <para>The resource is used as the source in a copy operation. Subresources must be in this state when they are used as the source of copy operation, or a blt operation. This is a read-only state.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	CopySource = 0x00000800,
 	/// <summary>The resource is used as the destination in a resolve operation.</summary>
@@ -625,7 +625,7 @@ public enum ResourceStates {
 	ResolveSource = 0x00002000,
 	/// <summary>
 	/// <para>When a buffer is created with this as its initial state, it indicates that the resource is a raytracing acceleration structure, for use in <a href="nf-d3d12-id3d12graphicscommandlist4-buildraytracingaccelerationstructure.md">ID3D12GraphicsCommandList4::BuildRaytracingAccelerationStructure</a>, <a href="nf-d3d12-id3d12graphicscommandlist4-copyraytracingaccelerationstructure.md">ID3D12GraphicsCommandList4::CopyRaytracingAccelerationStructure</a>, or <a href="nf-d3d12-id3d12device-createshaderresourceview.md">ID3D12Device::CreateShaderResourceView</a> for the <a href="ne-d3d12-d3d12_srv_dimension.md">D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE</a> dimension. > [!NOTE] > A resource to be used for the **RAYTRACING_ACCELERATION_STRUCTURE** state must be created in that state, and then never transitioned out of it. Nor may a resource that was created not in that state be transitioned into it. For more info, see [Acceleration structure memory restrictions](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#acceleration-structure-memory-restrictions) in the DirectX raytracing (DXR) functional specification on GitHub.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	RaytracingAccelerationStructure = 0x00400000,
 	/// <summary>Starting with Windows 10, version 1903 (10.0; Build 18362), indicates that the resource is a screen-space shading-rate image for variable-rate shading (VRS). For more info, see <a href="https://docs.microsoft.com/windows/win32/direct3d12/vrs">Variable-rate shading (VRS)</a>.</summary>
@@ -704,13 +704,13 @@ public enum QueryHeapType {
 
 	/// <summary>
 	/// <para>Indicates the heap is to contain video decode statistics data. Refer to [D3D12_QUERY_DATA_VIDEO_DECODE_STATISTICS](../d3d12video/ns-d3d12video-d3d12_query_data_video_decode_statistics.md). Video decode statistics can only be queried from video decode command lists (<a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_command_list_type">D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE</a>). See <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_type">D3D12_QUERY_TYPE_DECODE_STATISTICS</a> for more details.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_heap_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_heap_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	VideoDecodeStatistics = 4,
 
 	/// <summary>
 	/// <para>Indicates the heap is to contain timestamp queries emitted exclusively by copy command lists. Copy queue timestamps can only be queried from a copy command list, and a copy command list can not emit to a regular timestamp query Heap. Support for this query heap type is not universal. You must use <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-checkfeaturesupport">CheckFeatureSupport</a> with [D3D12_FEATURE_D3D12_OPTIONS3](./ne-d3d12-d3d12_feature.md) to determine whether the adapter supports copy queue timestamp queries.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_heap_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_heap_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	CopyQueueTimestamp = 5,
 	PipelineStatistics1 = 7,
@@ -724,7 +724,7 @@ public enum QueryType {
 
 	/// <summary>
 	/// <para>Indicates the query is for a binary depth/stencil occlusion statistics. This new query type acts like OCCLUSION except that it returns simply a binary 0/1 result:  0 indicates that no samples passed depth and stencil testing, 1 indicates that at least one sample passed depth and stencil testing.  This enables occlusion queries to not interfere with any GPU performance optimization associated with depth/stencil testing.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_query_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	BinaryOcclusion = 1,
 
@@ -865,7 +865,7 @@ public enum Blend {
 
 	/// <summary>
 	/// <para>The blend factor is (f, f, f, 1); where f = min(Aₛ, 1 - A<sub>d</sub>). The pre-blend operation clamps the data to 1 or less.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_blend#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_blend#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	SrcAlphaSat = 11,
 
@@ -889,13 +889,13 @@ public enum Blend {
 
 	/// <summary>
 	/// <para>The blend factor is (A, A, A, A), where the constant, A, is taken from the blend factor set with [OMSetBlendFactor](/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetblendfactor). To successfully use this constant on a target machine, the [D3D12_FEATURE_DATA_D3D12_OPTIONS13](ns-d3d12-d3d12_feature_data_d3d12_options13.md) returned from [capability querying](/windows/win32/direct3d12/capability-querying) must have its *AlphaBlendFactorSupported* set to `TRUE`.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_blend#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_blend#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	AlphaFactor = 20,
 
 	/// <summary>
 	/// <para>The blend factor is (1 – A, 1 – A, 1 – A, 1 – A), where the constant, A, is taken from the blend factor set with [OMSetBlendFactor](/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetblendfactor). To successfully use this constant on a target machine, the [D3D12_FEATURE_DATA_D3D12_OPTIONS13](ns-d3d12-d3d12_feature_data_d3d12_options13.md) returned from [capability querying](/windows/win32/direct3d12/capability-querying) must have its *AlphaBlendFactorSupported* set to `TRUE`.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_blend#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_blend#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	InvAlphaFactor = 21,
 } ;
@@ -1011,12 +1011,12 @@ public enum MemoryPool {
 	Unknown = 0,
 	/// <summary>
 	/// <para>The memory pool is L0. L0 is the physical system memory pool. When the adapter is discrete/NUMA, this pool has greater bandwidth for the CPU and less bandwidth for the GPU. When the adapter is UMA, this pool is the only one which is valid.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_memory_pool#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_memory_pool#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	L0 = 1,
 	/// <summary>
 	/// <para>The memory pool is L1. L1 is typically known as the physical video memory pool. L1 is only available when the adapter is discrete/NUMA, and has greater bandwidth for the GPU and cannot even be accessed by the CPU. When the adapter is UMA, this pool is not available.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_memory_pool#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_memory_pool#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	L1 = 2,
 } ;
@@ -1213,7 +1213,6 @@ public enum ColorWriteEnableFlags: byte {
 } ;
 
 
-
 /// <summary>Defines constants that specify the lifetime state of a lifetime-tracked object.</summary>
 [EquivalentOf(typeof(D3D12_LIFETIME_STATE))]
 public enum LifetimeState {
@@ -1222,3 +1221,315 @@ public enum LifetimeState {
 	/// <summary>Specifies that the lifetime-tracked object is not in use.</summary>
 	NotInUse = 1,
 } ;
+
+
+/// <summary>Specifies a resolve operation.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-resolvesubresourceregion">ID3D12GraphicsCommandList1::ResolveSubresourceRegion</a> function.</remarks>
+[EquivalentOf(typeof(D3D12_RESOLVE_MODE))]
+public enum ResolveMode {
+	/// <summary>Resolves compressed source samples to their uncompressed values. When using this operation, the source and destination resources must have the same sample count, unlike the min, max, and average operations that require the destination to have a sample count of 1.</summary>
+	Decompress = 0,
+	/// <summary>Resolves the source samples to their minimum value. It can be used with any render target or depth stencil format.</summary>
+	Min = 1,
+	/// <summary>Resolves the source samples to their maximum value. It can be used with any render target or depth stencil format.</summary>
+	Max = 2,
+	/// <summary>Resolves the source samples to their average value. It can be used with any non-integer render target format, including the depth plane. It can't be used with integer render target formats, including the stencil plane.</summary>
+	Average = 3,
+	
+	EncodeSamplerFeedback = 4,
+	DecodeSamplerFeedback = 5,
+} ;
+
+
+/// <summary>Specifies the mode used by a WriteBufferImmediate operation.</summary>
+/// <remarks>
+/// <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_writebufferimmediate_mode">Learn more about this API from docs.microsoft.com</a>.
+/// </remarks>
+[EquivalentOf(typeof(D3D12_WRITEBUFFERIMMEDIATE_MODE))]
+public enum WriteBufferImmediateMode {
+	/// <summary>The write operation behaves the same as normal copy-write operations.</summary>
+	Default = 0,
+	/// <summary>The write operation is guaranteed to occur after all preceding commands in the command stream have started, including previous <b>WriteBufferImmediate</b> operations.</summary>
+	MarkerIn = 1,
+	/// <summary>The write operation is deferred until all previous commands in the command stream have completed through the GPU pipeline, including previous <b>WriteBufferImmediate</b> operations. Write operations that specify <b>MARKER_OUT</b> don't block subsequent operations from starting. If there are no previous operations in the command stream, then the write operation behaves as if <b>MARKER_IN</b> was specified.</summary>
+	MarkerOut = 2,
+} ;
+
+
+/// <summary>Defines constants that specify protected session status.</summary>
+[EquivalentOf(typeof(D3D12_PROTECTED_SESSION_STATUS))]
+public enum ProtectedSessionStatus {
+	/// <summary>Indicates that the protected session is in a valid state.</summary>
+	OK = 0,
+	/// <summary>Indicates that the protected session is not in a valid state.</summary>
+	Invalid = 1,
+} ;
+
+
+/// <summary>Defines constants that specify protected resource session flags.</summary>
+/// <remarks>Doesn't have any actual values: May be used in API updates ...</remarks>
+[Flags, EquivalentOf( typeof( D3D12_PROTECTED_RESOURCE_SESSION_FLAGS ) )]
+public enum ProtectedResourceSessionFlags {
+	/// <summary>Specifies no flag.</summary>
+	None = 0x00000000,
+} ;
+
+
+/// <summary>Defines constants that specify the stage of a parameter to a meta command.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_meta_command_parameter_stage">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_META_COMMAND_PARAMETER_STAGE))]
+public enum MetaCommandParameterStage {
+	/// <summary>Specifies that the parameter is used at the meta command creation stage.</summary>
+	Creation = 0,
+	/// <summary>Specifies that the parameter is used at the meta command initialization stage.</summary>
+	Initialization = 1,
+	/// <summary>Specifies that the parameter is used at the meta command execution stage.</summary>
+	Execution = 2,
+} ;
+
+
+/// <summary>Defines constants that specify the flags for a parameter to a meta command. Values can be bitwise OR'd together.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_meta_command_parameter_flags">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[Flags, EquivalentOf(typeof(D3D12_META_COMMAND_PARAMETER_FLAGS))]
+public enum MetaCommandParameterFlags {
+	/// <summary>Specifies that the parameter is an input resource.</summary>
+	Input = 0x00000001,
+	/// <summary>Specifies that the parameter is an output resource.</summary>
+	Output = 0x00000002,
+} ;
+
+
+/// <summary>Specifies the type of access that an application is given to the specified resource(s) at the transition into a render pass.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_render_pass_beginning_access_type">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE))]
+public enum RenderPassBeginningAccessType {
+	/// <summary>
+	/// <para>Indicates that your application doesn't have any dependency on the prior contents of the resource(s). You also shouldn't have any expectations about those contents, because a display driver may return the previously-written contents, or it may return uninitialized data. You can be assured that reading from the resource(s) won't hang the GPU, even if you do get undefined data back. A read is defined as a traditional read from an unordered access view (UAV), a shader resource view (SRV), a constant buffer view (CBV), a vertex buffer view (VBV), an index buffer view (IBV), an IndirectArg binding/read, or a blend/depth-testing-induced read.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_render_pass_beginning_access_type#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Discard = 0,
+	/// <summary>Indicates that your application has a dependency on the prior contents of the resource(s), so the contents must be loaded from main memory.</summary>
+	Preserve = 1,
+	/// <summary>
+	/// <para>Indicates that your application needs the resource(s) to be cleared to a specific value (a value that your application specifies). This clear occurs whether or not you interact with the resource(s) during the render pass. You specify the clear value at <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-beginrenderpass">BeginRenderPass</a> time, in the <b>Clear</b> member of your <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_render_pass_beginning_access">D3D12_RENDER_PASS_BEGINNING_ACCESS</a> structure.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_render_pass_beginning_access_type#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Clear = 2,
+	/// <summary>Indicates that your application will neither read from nor write  to the resource(s) during the render pass. You would most likely use this value to indicate that you won't be accessing the depth/stencil plane for a depth/stencil view (DSV). You must pair this value with <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_render_pass_ending_access_type">D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS</a> in the corresponding <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_render_pass_ending_access">D3D12_RENDER_PASS_ENDING_ACCESS</a> structure.</summary>
+	NoAccess = 3,
+	PreserveLocalRender = 4,
+	PreserveLocalSRV = 5,
+	PreserveLocalUAV = 6,
+} ;
+
+
+/// <summary>Specifies the type of access that an application is given to the specified resource(s) at the transition out of a render pass.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_render_pass_ending_access_type">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf( typeof( D3D12_RENDER_PASS_ENDING_ACCESS_TYPE ) )]
+public enum RenderPassEndingAccessType {
+	/// <summary>Indicates that your application won't have any future dependency on any data that you wrote to the resource(s) during this render pass. For example, a depth buffer that won't be textured from before it's written to again.</summary>
+	Discard = 0,
+	/// <summary>Indicates that your application will have a dependency on the written contents of the resource(s) in the future, and so they must be preserved.</summary>
+	Preserve = 1,
+	/// <summary>Indicates that the resource(s)—for example, a multi-sample anti-aliasing (MSAA) surface—should be directly resolved to a separate resource at the conclusion of the render pass. For a tile-based deferred renderer (TBDR), this should ideally happen while the MSAA contents are still in the tile cache. You should ensure that the resolve destination is in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATE_RESOLVE_DEST</a> resource state when the render pass ends. The resolve source is left in its initial resource state at the time the render pass ends.  A resolve operation submitted by a render pass doesn't implicitly change the state of any resource.</summary>
+	Resolve = 2,
+	/// <summary>Indicates that your application will neither read from nor write  to the resource(s) during the render pass. You would most likely use this value to indicate that you won't be accessing the depth/stencil plane for a depth/stencil view (DSV). You must pair this value with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_render_pass_beginning_access_type">D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS</a> in the corresponding <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_render_pass_beginning_access">D3D12_RENDER_PASS_BEGINNING_ACCESS</a> structure.</summary>
+	NoAccess = 3,
+	PreserveLocalRender = 4,
+	PreserveLocalSRV = 5,
+	PreserveLocalUAV = 6,
+} ;
+
+
+/// <summary>Specifies the nature of the render pass; for example, whether it is a suspending or a resuming render pass.</summary>
+/// <remarks><para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_render_pass_flags">Learn more about this API from docs.microsoft.com</a>.</para></remarks>
+[EquivalentOf( typeof( D3D12_RENDER_PASS_FLAGS ) )]
+public enum RenderPassFlags {
+	/// <summary>Indicates that the render pass has no special requirements.</summary>
+	None = 0x00000000,
+	/// <summary>Indicates that writes to unordered access view(s) should be allowed during the render pass.</summary>
+	AllowUAVWrites = 0x00000001,
+	/// <summary>Indicates that this is a suspending render pass.</summary>
+	SuspendingPass = 0x00000002,
+	/// <summary>Indicates that this is a resuming render pass.</summary>
+	ResumingPass = 0x00000004,
+	BindReadOnlyDepth   = 0x00000008,
+	BindReadOnlyStencil = 0x00000010,
+} ;
+
+
+/// <summary>Describes how the locations of elements are identified.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_elements_layout">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_ELEMENTS_LAYOUT))]
+public enum ElementsLayout {
+	/// <summary>For a data set of <i>n</i> elements, the pointer parameter points to the start of <i>n</i> elements in memory.</summary>
+	Array = 0,
+	/// <summary>For a data set of <i>n</i> elements, the pointer parameter points to an array of <i>n</i> pointers in memory, each pointing to an individual element of the set.</summary>
+	ArrayOfPointers = 1,
+} ;
+
+
+/// <summary>Defines constants that specify the shading rate (for variable-rate shading, or VRS).</summary>
+[EquivalentOf( typeof( D3D12_SHADING_RATE ) )]
+public enum ShadingRate {
+	/// <summary>Specifies no change to the shading rate.</summary>
+	Rate_1X1 = 0,
+
+	/// <summary>Specifies that the shading rate should reduce vertical resolution 2x.</summary>
+	Rate_1X2 = 1,
+
+	/// <summary>Specifies that the shading rate should reduce horizontal resolution 2x.</summary>
+	Rate_2X1 = 4,
+
+	/// <summary>Specifies that the shading rate should reduce the resolution of both axes 2x.</summary>
+	Rate_2X2 = 5,
+
+	/// <summary>Specifies that the shading rate should reduce horizontal resolution 2x, and reduce vertical resolution 4x.</summary>
+	Rate_2X4 = 6,
+
+	/// <summary>Specifies that the shading rate should reduce horizontal resolution 4x, and reduce vertical resolution 2x.</summary>
+	Rate_4X2 = 9,
+
+	/// <summary>Specifies that the shading rate should reduce the resolution of both axes 4x.</summary>
+	Rate_4X4 = 10,
+} ;
+
+
+/// <summary>Defines constants that specify a shading rate combiner (for variable-rate shading, or VRS).</summary>
+[EquivalentOf(typeof(D3D12_SHADING_RATE_COMBINER))]
+public enum ShadingRateCombiner {
+	/// <summary>Specifies the combiner `C.xy = A.xy`, for combiner (C) and inputs (A and B).</summary>
+	Passthrough = 0,
+	/// <summary>Specifies the combiner `C.xy = B.xy`, for combiner (C) and inputs (A and B).</summary>
+	Override = 1,
+	/// <summary>Specifies the combiner `C.xy = max(A.xy, B.xy)`, for combiner (C) and inputs (A and B).</summary>
+	Min = 2,
+	/// <summary>Specifies the combiner `C.xy = min(A.xy, B.xy)`, for combiner (C) and inputs (A and B).</summary>
+	Max = 3,
+	/// <summary>Specifies the combiner C.xy = min(maxRate, A.xy + B.xy)`, for combiner (C) and inputs (A and B).</summary>
+	Sum = 4,
+} ;
+
+
+[EquivalentOf(typeof(D3D12_BARRIER_TYPE))]
+public enum BarrierType {
+	Global  = 0,
+	Texture = 1,
+	Buffer  = 2,
+} ;
+
+
+[Flags, EquivalentOf(typeof(D3D12_BARRIER_SYNC))]
+public enum BarrierSync {
+	None = 0x00000000,
+	All = 0x00000001,
+	Draw = 0x00000002,
+	IndexInput = 0x00000004,
+	VertexShading = 0x00000008,
+	PixelShading = 0x00000010,
+	DepthStencil = 0x00000020,
+	RenderTarget = 0x00000040,
+	ComputeShading = 0x00000080,
+	Raytracing = 0x00000100,
+	Copy = 0x00000200,
+	Resolve = 0x00000400,
+	ExecuteIndirect = 0x00000800,
+	Predication = 0x00000800,
+	AllShading = 0x00001000,
+	NonPixelShading = 0x00002000,
+	EmitRaytracingAccelerationStructurePostbuildInfo = 0x00004000,
+	ClearUnorderedAccessView = 0x00008000,
+	VideoDecode = 0x00100000,
+	VideoProcess = 0x00200000,
+	VideoEncode = 0x00400000,
+	BuildRaytracingAccelerationStructure = 0x00800000,
+	CopyRaytracingAccelerationStructure = 0x01000000,
+	Split = unchecked((int)0x80000000),
+} ;
+
+
+[Flags, EquivalentOf(typeof(D3D12_BARRIER_ACCESS))]
+public enum BarrierAccess {
+	Common = 0x00000000,
+	VertexBuffer = 0x00000001,
+	ConstantBuffer = 0x00000002,
+	IndexBuffer = 0x00000004,
+	RenderTarget = 0x00000008,
+	UnorderedAccess = 0x00000010,
+	DepthStencilWrite = 0x00000020,
+	DepthStencilRead = 0x00000040,
+	ShaderResource = 0x00000080,
+	StreamOutput = 0x00000100,
+	IndirectArgument = 0x00000200,
+	Predication = 0x00000200,
+	CopyDest = 0x00000400,
+	CopySource = 0x00000800,
+	ResolveDest = 0x00001000,
+	ResolveSource = 0x00002000,
+	RaytracingAccelerationStructureRead = 0x00004000,
+	RaytracingAccelerationStructureWrite = 0x00008000,
+	ShadingRateSource = 0x00010000,
+	VideoDecodeRead = 0x00020000,
+	VideoDecodeWrite = 0x00040000,
+	VideoProcessRead = 0x00080000,
+	VideoProcessWrite = 0x00100000,
+	VideoEncodeRead = 0x00200000,
+	VideoEncodeWrite = 0x00400000,
+	NoAccess = unchecked((int)0x80000000),
+} ;
+
+
+[EquivalentOf(typeof(D3D12_BARRIER_LAYOUT))]
+public enum BarrierLayout {
+	Undefined = -1,
+	Common = 0,
+	Present = 0,
+	GenericRead = 1,
+	RenderTarget = 2,
+	UnorderedAccess = 3,
+	DepthStencilWrite = 4,
+	DepthStencilRead = 5,
+	ShaderResource = 6,
+	CopySource = 7,
+	CopyDest = 8,
+	ResolveSource = 9,
+	ResolveDest = 10,
+	ShadingRateSource = 11,
+	VideoDecodeRead = 12,
+	VideoDecodeWrite = 13,
+	VideoProcessRead = 14,
+	VideoProcessWrite = 15,
+	VideoEncodeRead = 16,
+	VideoEncodeWrite = 17,
+	DirectQueueCommon = 18,
+	DirectQueueGenericRead = 19,
+	DirectQueueUnorderedAccess = 20,
+	DirectQueueShaderResource = 21,
+	DirectQueueCopySource = 22,
+	DirectQueueCopyDest = 23,
+	ComputeQueueCommon = 24,
+	ComputeQueueGenericRead = 25,
+	ComputeQueueUnorderedAccess = 26,
+	ComputeQueueShaderResource = 27,
+	ComputeQueueCopySource = 28,
+	ComputeQueueCopyDest = 29,
+	VideoQueueCommon = 30,
+} ;
+
+
+[Flags, EquivalentOf(typeof(D3D12_TEXTURE_BARRIER_FLAGS))]
+public enum TextureBarrierFlags {
+	None = 0x00000000,
+	Discard = 0x00000001,
+} ;
+

@@ -1,11 +1,10 @@
 ﻿#region Using Directives
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
+using Windows.Win32.Graphics.Dxgi.Common ;
 using DXSharp.Direct3D12 ;
 #endregion
 namespace DXSharp.DXGI ;
-
-
 
 
 /// <summary>Identifies the alpha value, transparency behavior, of a surface.</summary>
@@ -13,15 +12,20 @@ namespace DXSharp.DXGI ;
 /// <para>For more information about alpha mode, see <a href="https://docs.microsoft.com/windows/desktop/api/dcommon/ne-dcommon-d2d1_alpha_mode">DXGI_ALPHA_MODE</a>.</para>
 /// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ne-dxgi1_2-dxgi_alpha_mode#">Read more on docs.microsoft.com</a>.</para>
 /// </remarks>
+[EquivalentOf( typeof( DXGI_ALPHA_MODE ) )]
 public enum AlphaMode: uint {
 	/// <summary>Indicates that the transparency behavior is not specified.</summary>
 	Unspecified = 0U,
+
 	/// <summary>Indicates that the transparency behavior is premultiplied. Each color is first scaled by the alpha value. The alpha value itself is the same in both straight and premultiplied alpha. Typically, no color channel value is greater than the alpha channel value. If a color channel value in a premultiplied format is greater than the alpha channel, the standard source-over blending math results in an additive blend.</summary>
 	Premultiplied = 1U,
+
 	/// <summary>Indicates that the transparency behavior is not premultiplied. The alpha channel indicates the transparency of the color.</summary>
 	Straight = 2U,
+
 	/// <summary>Indicates to ignore the transparency behavior.</summary>
 	Ignore = 3U,
+
 	/// <summary>
 	/// <para>Forces this enumeration to compile to 32 bits in size. Without this value, some compilers would allow this enumeration to compile to a size other than 32 bits. This value is not used.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ne-dxgi1_2-dxgi_alpha_mode#members">Read more on docs.microsoft.com</a>.</para>
@@ -30,7 +34,8 @@ public enum AlphaMode: uint {
 	/// For these C# bindings this should be a non-issue. The underlying type is already uint/UInt32, which is 32-bit.
 	/// </remarks>
 	ForceDWORD = 4294967295U,
-}
+} ;
+
 
 /// <summary>
 /// Flags indicating the method the raster uses to create an image on a surface.
@@ -38,6 +43,7 @@ public enum AlphaMode: uint {
 /// <remarks>
 /// <para>See <a href="https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb173067(v=vs.85)">DXGI_MODE_SCANLINE_ORDER</a> for more info.</para>
 /// </remarks>
+[EquivalentOf(typeof(DXGI_MODE_SCANLINE_ORDER))]
 public enum ScanlineOrder {
 	/// <summary>
 	/// Scanline order is unspecified.
@@ -55,7 +61,8 @@ public enum ScanlineOrder {
 	/// The image is created beginning with the lower field.
 	/// </summary>
 	LowerFieldFirst = 3,
-};
+} ;
+
 
 /// <summary>Identifies resize behavior when the back-buffer size does not match the size of the target output.</summary>
 /// <remarks>
@@ -94,6 +101,7 @@ public enum ScanlineOrder {
 /// Note that <i>outputWidth</i> and <i>outputHeight</i> are the pixel sizes of the presentation target size. In the case of <b>CoreWindow</b>, this requires converting the <i>logicalWidth</i> and <i>logicalHeight</i> values from DIPS to pixels using the window's DPI property.</para>
 /// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi1_2/ne-dxgi1_2-dxgi_scaling#">Read more on docs.microsoft.com</a>.</para>
 /// </remarks>
+[EquivalentOf(typeof(DXGI_SCALING))]
 public enum Scaling {
 	/// <summary>
 	/// Directs DXGI to make the back-buffer contents scale to fit the presentation target size. 
@@ -117,6 +125,7 @@ public enum Scaling {
 	AspectRatioStretch = 2,
 };
 
+
 /// <summary>
 /// Flags indicating how an image is stretched to fit a given monitor's resolution.
 /// </summary>
@@ -131,6 +140,7 @@ public enum Scaling {
 /// </para>
 /// More information at <a href="https://learn.microsoft.com/en-us/previous-versions/windows/desktop/legacy/bb173066(v=vs.85)">DXGI_MODE_SCALING enumeration</a>
 /// </remarks>
+[EquivalentOf(typeof(DXGI_MODE_SCALING))]
 public enum ScalingMode {
 	/// <summary>
 	/// Unspecified scaling.
@@ -148,6 +158,7 @@ public enum ScalingMode {
 	Stretched = 2,
 };
 
+
 /// <summary>
 /// Flags for surface and resource creation options.
 /// </summary>
@@ -155,6 +166,7 @@ public enum ScalingMode {
 /// For more information see: 
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/dxgi-usage">DXGI_USAGE</a>
 /// </remarks>
+[EquivalentOf(typeof(DXGI_USAGE))]
 public enum Usage: long {
 	/// <summary>
 	/// No flags
@@ -193,12 +205,14 @@ public enum Usage: long {
 	UnorderedAccess             = 1L << (6 + 4),
 };
 
+
 /// <summary>Options for handling pixels in a display surface after calling DXGI.ISwapChain1.Present1.</summary>
 /// <remarks>
 /// <para>
 /// <a href="https://docs.microsoft.com/windows/win32/api//dxgi/ne-dxgi-dxgi_swap_effect#">Read more on docs.microsoft.com</a>.
 /// </para>
 /// </remarks>
+[EquivalentOf(typeof(DXGI_SWAP_EFFECT))]
 public enum SwapEffect {
 	/// <summary>
 	/// <para>Use this flag to specify the bit-block transfer (bitblt) model and to specify that DXGI discard the contents of the back buffer after you call <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-present1">IDXGISwapChain1::Present1</a>. This flag is valid for a swap chain with more than one back buffer, although, applications only have read and write access to buffer 0. Use this flag to enable the display driver to select the most efficient presentation technique for the swap chain. <b>Direct3D 12:  </b>This enumeration value is never supported. D3D12 apps must using <b>FlipSequential</b> or <b>FlipDiscard</b>. <div class="alert"><b>Note</b>  There are differences between full screen exclusive and full screen UWP. If you are porting a Direct3D 11 application to UWP on a Windows PC, be aware that the use of  <b>Discard</b> when creating swap chains does not behave the same way in UWP as it does in Win32, and its use may be detrimental to GPU performance. This is because UWP applications are forced into FLIP swap modes (even if other swap modes are set), because this reduces the computation time used by the memory copies originally done by the older bitblt model. The recommended approach is to manually convert DX11 Discard swap chains to use flip models within UWP,  using <b>FlipDiscard</b> instead of <b>Discard</b> where possible. Refer to the Example below, and see <a href="https://docs.microsoft.com/windows/win32/direct3ddxgi/for-best-performance--use-dxgi-flip-model">this article</a> for more information.</div> <div> </div></para>
@@ -226,7 +240,7 @@ public enum SwapEffect {
 	FlipDiscard     = 4,
 };
 
-// CsWin32 did not generate an enumerated type for this?
+
 /// <summary>
 /// Options for swap-chain behavior.
 /// </summary>
@@ -245,7 +259,7 @@ public enum SwapEffect {
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a>
 /// </para>
 /// </remarks>
-[Flags]
+[Flags, EquivalentOf(typeof(DXGI_SWAP_CHAIN_FLAG))]
 public enum SwapChainFlags {
 	/// <summary>
 	/// No flags
@@ -392,6 +406,9 @@ public enum SwapChainFlags {
 };
 
 
+/// <summary>Flags indicating the memory location of a resource.</summary>
+/// <remarks>This enum is used by <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgidevice-queryresourceresidency">QueryResourceResidency</a>.</remarks>
+[EquivalentOf(typeof(DXGI_RESIDENCY))]
 public enum Residency {
 	/// <summary>The resource is located in video memory.</summary>
 	FullResident = 1,
@@ -402,8 +419,16 @@ public enum Residency {
 } ;
 
 
-
-[ProxyFor(typeof(DXGI_GRAPHICS_PREEMPTION_GRANULARITY))]
+/// <summary>Identifies the granularity at which the graphics processing unit (GPU) can be preempted from performing its current graphics rendering task.</summary>
+/// <remarks>
+/// <para>You call the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgiadapter2-getdesc2">IDXGIAdapter2::GetDesc2</a> method to
+/// retrieve the granularity level at which the GPU can be preempted from performing its current graphics rendering task. The operating system specifies the
+/// graphics granularity level in the  <b>GraphicsPreemptionGranularity</b> member of the
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_adapter_desc2">DXGI_ADAPTER_DESC2</a> structure.
+/// The following figure shows granularity of graphics rendering tasks. </para>
+/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/ne-dxgi1_2-dxgi_graphics_preemption_granularity#">Read more on docs.microsoft.com</see>.</para>
+/// </remarks>
+[EquivalentOf(typeof(DXGI_GRAPHICS_PREEMPTION_GRANULARITY))]
 public enum GraphicsPreemptionGranularity {
 	DMA_BUFFER_BOUNDARY  = 0,
 	PRIMITIVE_BOUNDARY   = 1,
@@ -412,7 +437,15 @@ public enum GraphicsPreemptionGranularity {
 	INSTRUCTION_BOUNDARY = 4,
 } ;
 
-[ProxyFor(typeof(DXGI_COMPUTE_PREEMPTION_GRANULARITY))]
+
+/// <summary>Identifies the granularity at which the graphics processing unit (GPU) can be preempted from performing its current compute task.</summary>
+/// <remarks>
+/// You call the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgiadapter2-getdesc2">IDXGIAdapter2::GetDesc2</a>
+/// method to retrieve the granularity level at which the GPU can be preempted from performing its current compute task. The operating system
+/// specifies the compute granularity level in the  <b>ComputePreemptionGranularity</b> member of the
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_adapter_desc2">DXGI_ADAPTER_DESC2</a> structure.
+/// </remarks>
+[EquivalentOf(typeof(DXGI_COMPUTE_PREEMPTION_GRANULARITY))]
 public enum ComputePreemptionGranularity {
 	DMA_BUFFER_BOUNDARY   = 0,
 	DISPATCH_BOUNDARY     = 1,
@@ -422,14 +455,13 @@ public enum ComputePreemptionGranularity {
 } ;
 
 
-
 /// <summary>Defines constants that specify a Direct3D 12 feature or feature set to query about.</summary>
 /// <remarks>
 /// Use a constant from this enumeration in a call to the <see cref="IDevice"/> interface's <b>CheckFeatureSupport</b> method 
 /// to query a driver about support for various Direct3D 12 features. Each value in this enumeration has a corresponding data structure
 /// that you must pass (by pointer reference) in the <i>pFeatureSupportData</i> parameter of <b>ID3D12Device::CheckFeatureSupport</b>.
 /// </remarks>
-[ProxyFor(typeof(D3D12_FEATURE))]
+[EquivalentOf(typeof(D3D12_FEATURE))]
 public enum D3D12Feature {
 	/// <summary>Indicates a query for the level of support for basic Direct3D 12 feature options. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a>.</summary>
 	D3D12_FEATURE_D3D12_OPTIONS = 0,
@@ -514,3 +546,42 @@ public enum D3D12Feature {
 	D3D12_FEATURE_D3D12_OPTIONS18 = 47,
 	D3D12_FEATURE_D3D12_OPTIONS19 = 48,
 } ;
+
+
+/// <summary>
+/// Identifies the importance of a resource’s content when you call the
+/// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgidevice2-offerresources">IDXGIDevice2::OfferResources</a>
+/// method to offer the resource.
+/// </summary>
+/// <remarks>Priority determines how likely the operating system is to discard an offered resource. Resources offered with lower priority are discarded first.</remarks>
+[EquivalentOf(typeof(DXGI_OFFER_RESOURCE_PRIORITY))]
+public enum OfferResourcePriority {
+	/// <summary>
+	/// The resource is low priority. The operating system discards a low priority resource before other offered resources with higher priority.
+	/// It is a good programming practice to mark a resource as low priority if it has no useful content.
+	/// </summary>
+	Low = 1,
+	/// <summary>The resource is normal priority. You mark a resource as normal priority if it has  content that is easy to regenerate.</summary>
+	Normal = 2,
+	/// <summary>
+	/// The resource is high priority. The operating system discards other offered resources with lower priority before it discards a high priority resource.
+	/// You mark a resource as high priority if it has useful content that is difficult to regenerate.
+	/// </summary>
+	High = 3,
+} ;
+
+
+/// <summary>Identifies the type of pointer shape.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/ne-dxgi1_2-dxgi_outdupl_pointer_shape_type">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(DXGI_OUTDUPL_POINTER_SHAPE_TYPE))]
+public enum OutputDuplicationPointerShapeType {
+	/// <summary>The pointer type is a monochrome mouse pointer, which is  a monochrome bitmap. The bitmap's size is specified by width and height in a 1 bits per pixel (bpp) device independent bitmap (DIB) format AND mask that is followed by another 1 bpp DIB format XOR mask of the same size.</summary>
+	Monochrome = 1,
+	/// <summary>The pointer type is a color mouse pointer, which is  a color bitmap. The bitmap's size is specified by width and height in a 32 bpp ARGB DIB format.</summary>
+	Color = 2,
+	/// <summary>The pointer type is a masked color mouse pointer.  A masked color mouse pointer is a 32 bpp ARGB format bitmap with the mask value in the alpha bits. The only allowed mask values are 0 and 0xFF. When the mask value is 0, the RGB value should replace the screen pixel. When the mask value is 0xFF, an XOR operation is performed on the RGB value and the screen pixel; the result replaces the screen pixel.</summary>
+	MaskedColor = 4,
+} ;
+

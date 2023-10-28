@@ -18,6 +18,7 @@ using System.Runtime.InteropServices ;
 
 using Windows.Win32 ;
 using Windows.Win32.Graphics ;
+using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi.Common ;
 using DXSharp ;
 using DXSharp.Direct3D12 ;
@@ -562,3 +563,157 @@ public partial struct D3D12_RESOURCE_BARRIER {
 }*/
 
 
+[CsWin32, EquivalentOf( typeof( WriteBufferImmediateParameter ) )]
+public partial struct D3D12_WRITEBUFFERIMMEDIATE_PARAMETER {
+	public D3D12_WRITEBUFFERIMMEDIATE_PARAMETER( ulong dest = 0UL, uint value = 0U ) {
+		Dest = dest ; Value = value ;
+	}
+	
+	public static implicit operator D3D12_WRITEBUFFERIMMEDIATE_PARAMETER( in WriteBufferImmediateParameter o ) {
+		unsafe {
+			fixed ( WriteBufferImmediateParameter* ptr = &o ) {
+				return *(D3D12_WRITEBUFFERIMMEDIATE_PARAMETER*)ptr ;
+			}
+		}
+	}
+	public static implicit operator WriteBufferImmediateParameter( in D3D12_WRITEBUFFERIMMEDIATE_PARAMETER o ) {
+		unsafe {
+			fixed ( D3D12_WRITEBUFFERIMMEDIATE_PARAMETER* ptr = &o ) {
+				return *(WriteBufferImmediateParameter*)ptr ;
+			}
+		}
+	}
+} ;
+
+
+[CsWin32, EquivalentOf(typeof(ProtectedResourceSessionDescription))]
+public partial struct D3D12_PROTECTED_RESOURCE_SESSION_DESC {
+	public D3D12_PROTECTED_RESOURCE_SESSION_DESC( uint nodeMask = 0, D3D12_PROTECTED_RESOURCE_SESSION_FLAGS flags = D3D12_PROTECTED_RESOURCE_SESSION_FLAGS.D3D12_PROTECTED_RESOURCE_SESSION_FLAG_NONE ) {
+		NodeMask   = nodeMask ;
+		this.Flags = flags ;
+	}
+	
+	public static implicit operator D3D12_PROTECTED_RESOURCE_SESSION_DESC( in ProtectedResourceSessionDescription desc ) => new D3D12_PROTECTED_RESOURCE_SESSION_DESC {
+		NodeMask = desc.NodeMask,
+		Flags = (D3D12_PROTECTED_RESOURCE_SESSION_FLAGS)desc.Flags,
+	} ;
+	
+	public static implicit operator ProtectedResourceSessionDescription( in D3D12_PROTECTED_RESOURCE_SESSION_DESC desc ) => new ProtectedResourceSessionDescription {
+		NodeMask = desc.NodeMask,
+		Flags = (ProtectedResourceSessionFlags)desc.Flags,
+	} ;
+} ;
+
+
+[CsWin32, EquivalentOf(typeof(ProtectedResourceSessionDescription1))]
+public partial struct D3D12_PROTECTED_RESOURCE_SESSION_DESC1
+{
+	public D3D12_PROTECTED_RESOURCE_SESSION_DESC1( uint nodeMask = 0, D3D12_PROTECTED_RESOURCE_SESSION_FLAGS flags = D3D12_PROTECTED_RESOURCE_SESSION_FLAGS.D3D12_PROTECTED_RESOURCE_SESSION_FLAG_NONE, Guid? protectionType = null ) {
+		NodeMask = nodeMask ;
+		this.Flags = flags ;
+		ProtectionType = protectionType ?? Guid.Empty ;
+	}
+	
+	public static implicit operator D3D12_PROTECTED_RESOURCE_SESSION_DESC1( in ProtectedResourceSessionDescription1 desc ) => new D3D12_PROTECTED_RESOURCE_SESSION_DESC1 {
+		NodeMask = desc.NodeMask,
+		Flags = (D3D12_PROTECTED_RESOURCE_SESSION_FLAGS)desc.Flags,
+		ProtectionType = desc.ProtectionType,
+	} ;
+	
+	public static implicit operator ProtectedResourceSessionDescription1( in D3D12_PROTECTED_RESOURCE_SESSION_DESC1 desc ) => new ProtectedResourceSessionDescription1 {
+		NodeMask = desc.NodeMask,
+		Flags = (ProtectedResourceSessionFlags)desc.Flags,
+		ProtectionType = desc.ProtectionType,
+	} ;
+} ;
+
+
+
+[CsWin32, EquivalentOf( typeof( RenderPassBeginningAccess ) )]
+public partial struct D3D12_RENDER_PASS_BEGINNING_ACCESS {
+	public static implicit operator D3D12_RENDER_PASS_BEGINNING_ACCESS( in RenderPassBeginningAccess desc ) {
+		unsafe {
+			Unsafe.SkipInit( out D3D12_RENDER_PASS_BEGINNING_ACCESS result ) ;
+			var unionPtr = &result.Anonymous ;
+			fixed( RenderPassBeginningAccess._accessUnion* pSrc = &desc.Access ) {
+				var pDst = (RenderPassBeginningAccess._accessUnion *)unionPtr ;
+				*pDst = *(RenderPassBeginningAccess._accessUnion*)pSrc ;
+			}
+			return result ;
+		}
+	}
+	public static implicit operator RenderPassBeginningAccess( in D3D12_RENDER_PASS_BEGINNING_ACCESS desc ) {
+		unsafe {
+			Unsafe.SkipInit( out RenderPassBeginningAccess result ) ;
+			var pDst = &result.Access ;
+			
+			fixed ( D3D12_RENDER_PASS_BEGINNING_ACCESS._Anonymous_e__Union* pSrc = &desc.Anonymous ) {
+				*pDst = *(RenderPassBeginningAccess._accessUnion *)pSrc ;
+			}
+
+			return result ;
+		}
+	}
+} ;
+
+
+public partial struct D3D12_RENDER_PASS_ENDING_ACCESS
+{
+	public static implicit operator D3D12_RENDER_PASS_ENDING_ACCESS( in RenderPassEndingAccess desc ) {
+		unsafe {
+			Unsafe.SkipInit( out D3D12_RENDER_PASS_ENDING_ACCESS result ) ;
+			var unionPtr = &result.Anonymous ;
+			fixed( RenderPassEndingAccess._endAccessUnion* pSrc = &desc.Access ) {
+				var pDst = (RenderPassEndingAccess._endAccessUnion *)unionPtr ;
+				*pDst = *(RenderPassEndingAccess._endAccessUnion*)pSrc ;
+			}
+			return result ;
+		}
+	}
+	public static implicit operator RenderPassEndingAccess( in D3D12_RENDER_PASS_ENDING_ACCESS desc ) {
+		unsafe {
+			Unsafe.SkipInit( out RenderPassEndingAccess result ) ;
+			var pDst = &result.Access ;
+			
+			fixed ( D3D12_RENDER_PASS_ENDING_ACCESS._Anonymous_e__Union* pSrc = &desc.Anonymous ) {
+				*pDst = *(RenderPassEndingAccess._endAccessUnion *)pSrc ;
+			}
+
+			return result ;
+		}
+	}
+} ;
+
+
+[CsWin32, EquivalentOf(typeof(RenderPassDepthStencilDescription))]
+public partial struct D3D12_RENDER_PASS_DEPTH_STENCIL_DESC {
+	public D3D12_RENDER_PASS_DEPTH_STENCIL_DESC( D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptor = default, 
+												 D3D12_RENDER_PASS_BEGINNING_ACCESS depthBeginningAccess = default, 
+												 D3D12_RENDER_PASS_BEGINNING_ACCESS stencilBeginningAccess = default, 
+												 D3D12_RENDER_PASS_ENDING_ACCESS depthEndingAccess = default, 
+												 D3D12_RENDER_PASS_ENDING_ACCESS stencilEndingAccess = default ) {
+		this.cpuDescriptor          = cpuDescriptor ;
+		this.DepthBeginningAccess   = depthBeginningAccess ;
+		this.StencilBeginningAccess = stencilBeginningAccess ;
+		this.DepthEndingAccess      = depthEndingAccess ;
+		this.StencilEndingAccess    = stencilEndingAccess ;
+	}
+	
+	public static implicit operator D3D12_RENDER_PASS_DEPTH_STENCIL_DESC( in RenderPassDepthStencilDescription desc ) => 
+		new D3D12_RENDER_PASS_DEPTH_STENCIL_DESC {
+		cpuDescriptor          = desc.cpuDescriptor,
+		DepthBeginningAccess   = desc.DepthBeginningAccess,
+		StencilBeginningAccess = desc.StencilBeginningAccess,
+		DepthEndingAccess      = desc.DepthEndingAccess,
+		StencilEndingAccess    = desc.StencilEndingAccess,
+	} ;
+	
+	public static implicit operator RenderPassDepthStencilDescription( in D3D12_RENDER_PASS_DEPTH_STENCIL_DESC desc ) => 
+		new RenderPassDepthStencilDescription {
+		cpuDescriptor          = desc.cpuDescriptor,
+		DepthBeginningAccess   = desc.DepthBeginningAccess,
+		StencilBeginningAccess = desc.StencilBeginningAccess,
+		DepthEndingAccess      = desc.DepthEndingAccess,
+		StencilEndingAccess    = desc.StencilEndingAccess,
+	} ;
+} ;
