@@ -65,9 +65,9 @@ public interface IProtectedSession: IDeviceChild,
 		}
 	}
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new ProtectedSession( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new ProtectedSession( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new ProtectedSession( (ID3D12ProtectedSession?) pComObj! ) ;
+	static IInstantiable IInstantiable. Instantiate( )                      => new ProtectedSession( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       ptr )     => new ProtectedSession( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new ProtectedSession( (ID3D12ProtectedSession?) pComObj! ) ;
 } ;
 
 

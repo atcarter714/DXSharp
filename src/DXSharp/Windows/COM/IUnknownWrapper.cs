@@ -29,8 +29,8 @@ public interface IUnknownWrapper: IDisposable,
 	/// <summary>Indicates if this instance is fully initialized.</summary>
 	bool IsInitialized => ( ComPtrBase is { Disposed: false } ) ;
 	
-	uint AddRef( ) => (uint)Marshal.AddRef( BasePointer ) ;
-	uint Release( ) => (uint)Marshal.Release( BasePointer ) ;
+	uint AddReference( ) => (uint)Marshal.AddRef( BasePointer ) ;
+	uint ReleaseReference( ) => (uint)Marshal.Release( BasePointer ) ;
 	
 	/*HResult QueryInterface< T >( out nint ppvInterface ) where T: IUnknown =>
 		COMUtility.QueryInterface< T >( BasePointer, out ppvInterface ) ;*/

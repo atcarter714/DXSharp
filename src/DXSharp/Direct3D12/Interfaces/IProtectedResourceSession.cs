@@ -47,9 +47,9 @@ public interface IProtectedResourceSession: IProtectedSession,
 		}
 	}
 	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new ProtectedResourceSession( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new ProtectedResourceSession( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new ProtectedResourceSession( (ID3D12ProtectedResourceSession?) pComObj! ) ;
+	static IInstantiable IInstantiable. Instantiate( )                      => new ProtectedResourceSession( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       ptr )     => new ProtectedResourceSession( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new ProtectedResourceSession( (ID3D12ProtectedResourceSession?) pComObj! ) ;
 } ;
 
 
@@ -89,9 +89,9 @@ public interface IProtectedResourceSession1: IProtectedResourceSession,
 	}
 	
 	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new ProtectedResourceSession1( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new ProtectedResourceSession1( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new ProtectedResourceSession1( (ID3D12ProtectedResourceSession1?) pComObj! ) ;
+	static IInstantiable IInstantiable. Instantiate( )                      => new ProtectedResourceSession1( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       ptr )     => new ProtectedResourceSession1( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new ProtectedResourceSession1( (ID3D12ProtectedResourceSession1?) pComObj! ) ;
 } ;
 
 

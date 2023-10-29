@@ -15,9 +15,9 @@ public class Device: Object,
 					 IDevice {
 	public new static Type ComType => typeof(IDXGIDevice) ;
 	public new static Guid InterfaceGUID => typeof(IDXGIDevice).GUID ;
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Device( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new Device( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom obj ) => 
+	static IInstantiable IInstantiable. Instantiate( )            => new Device( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr ptr ) => new Device( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => 
 		new Device( ( obj as IDXGIDevice )! ) ;
 	
 	public new IDXGIDevice? COMObject => ComPointer?.Interface ;

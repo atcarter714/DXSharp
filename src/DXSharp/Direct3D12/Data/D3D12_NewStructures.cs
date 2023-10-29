@@ -625,6 +625,7 @@ public partial struct GlobalBarrier {
 	}
 } ;
 
+
 [EquivalentOf( typeof( D3D12_TEXTURE_BARRIER_unmanaged ) )]
 public partial struct TextureBarrierUnmanaged {
 	public BarrierSync   SyncBefore,   SyncAfter ;
@@ -719,3 +720,42 @@ public partial struct BufferBarrierUnmanaged {
 		Size = size ;
 	}
 } ;
+
+
+/// <summary>Describes a pipeline state stream.</summary>
+/// <remarks>
+/// <para>Use this structure with the <see cref="IDevice2.CreatePipelineState"/> method to create pipeline state objects.
+/// The format of the provided stream should consist of an alternating set of <see cref="PipelineStateSubObjectType"/>, and the
+/// corresponding subobject types for them (for example, <see cref="PipelineStateSubObjectType.Rasterizer"/> pairs with <see cref="RasterizerDescription"/>).
+/// In terms of alignment, the D3D12 runtime expects subobjects to be individual struct pairs of enum-struct, rather than a continuous
+/// set of fields. It also expects them to be aligned to the natural word alignment of the system. This can be achieved either using
+/// `alignas(void*)`, or making a `union` of the enum + subobject and a `void*`.<para/>
+/// <b>[IMPORTANT]</b> It isn't sufficient to simply union the <see cref="PipelineStateSubObjectType"/> with a <b>void*</b>, because this will result in certain subobjects being misaligned.
+/// 
+/// For example, <see cref="PipelineStateSubObjectType.PrimitiveTopology"/> is followed by a <see cref="PrimitiveTopology"/> enum.
+/// If the subobject type is unioned with a <b>void*</b>, then there will be additional padding between these 2 members, resulting
+/// in corruption of the stream. Because of this, you should union the entire subobject struct with a <b>void*</b>, when `alignas`
+/// is not available An example of a suitable subobject for use with <see cref="RasterizerDescription"/> is shown here: </para>
+/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc#">Read more on docs.microsoft.com</see>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_PIPELINE_STATE_STREAM_DESC))]
+public partial struct PipelineStateStreamDescription {
+	/// <summary>
+	/// <para><a href="https://docs.microsoft.com/cpp/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> Specifies the size of the opaque data structure pointed to by the pPipelineStateSubobjectStream member, in bytes.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public nuint SizeInBytes ;
+
+	/// <summary>
+	/// <para><a href="https://docs.microsoft.com/cpp/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_reads_(_Inexpressible_("Dependentonsizeofsubobjects"))</c> Specifies the address of a data structure that describes as a bytestream an arbitrary pipeline state subobject.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public nint pPipelineStateSubobjectStream ;
+	
+	public PipelineStateStreamDescription( nuint sizeInBytes, nint pPipelineStateSubobjectStream ) {
+		SizeInBytes = sizeInBytes ; this.pPipelineStateSubobjectStream = pPipelineStateSubobjectStream ;
+	}
+	
+} ;
+
+

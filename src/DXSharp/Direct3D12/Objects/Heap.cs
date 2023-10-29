@@ -17,11 +17,11 @@ public class Heap: Pageable,
 	internal Heap( ID3D12Heap d3D12Heap ) => ComPointer = new( d3D12Heap ) ;
 	
 	// ------------------------------------------------------------------------------------------
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Heap( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Heap( pComObj ) ;
+	static IInstantiable IInstantiable. Instantiate( )                => new Heap( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Heap( pComObj ) ;
 	
 	static Heap? IInstantiable< Heap >.Instantiate( nint ptr ) => new( ptr ) ;
-	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? =>
+	public static IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? =>
 		new Heap( (ID3D12Heap)pComObj! ) ;
 	// ==========================================================================================
 } ;

@@ -24,11 +24,11 @@ public class CommandAllocator: Pageable,
 	public new static Type ComType => typeof(ID3D12CommandAllocator) ;
 	// -------------------------------------------------------------------------------------------------------
 
-	public static CommandAllocator Instantiate( ) => new( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( ) => new CommandAllocator( ) ;
-	static CommandAllocator? IInstantiable< CommandAllocator >.Instantiate( IntPtr ptr ) => new( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new CommandAllocator( pComObj ) ;
-	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
+	public static CommandAllocator                                    Instantiate( )                => new( ) ;
+	static        IInstantiable IInstantiable.                         Instantiate( )                => new CommandAllocator( ) ;
+	static        CommandAllocator? IInstantiable< CommandAllocator >.Instantiate( IntPtr ptr )     => new( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new CommandAllocator( pComObj ) ;
+	public static IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
 		new CommandAllocator( (ID3D12CommandAllocator)pComObj! ) ;
 	// =======================================================================================================
 } ;

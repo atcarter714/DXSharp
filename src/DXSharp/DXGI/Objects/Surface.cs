@@ -21,9 +21,9 @@ namespace DXSharp.DXGI ;
 //! Concrete Implementation of an IDXGISurface wrapper/proxy ::
 public class Surface: DeviceSubObject, ISurface {
 
-	public static IDXCOMObject Instantiate( ) => new Surface( ) ;
-	public static IDXCOMObject Instantiate( nint ptr ) => new Surface( ptr ) ;
-	public static IDXCOMObject Instantiate<ICom>( ICom dxgiObj ) where ICom: IUnknown? => 
+	public static IInstantiable  Instantiate( )            => new Surface( ) ;
+	public static IInstantiable Instantiate( IntPtr ptr ) => new Surface( ptr ) ;
+	public static IInstantiable Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
 		new Surface( (IDXGISurface)dxgiObj! ) ;
 
 	public new ComPtr< IDXGISurface >? ComPointer { get ; protected set ; }
@@ -55,9 +55,9 @@ public class Surface1: Surface, ISurface1 {
 	public new ComPtr< IDXGISurface1 >? ComPointer { get ; protected set ; }
 	public new IDXGISurface1? COMObject => ComPointer?.Interface as IDXGISurface1 ;
 
-	public static IDXCOMObject Instantiate( ) => new Surface1( ) ;
-	public static IDXCOMObject Instantiate( nint ptr ) => new Surface1( ptr ) ;
-	public new static IDXCOMObject Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
+	public static IInstantiable  Instantiate( )            => new Surface1( ) ;
+	public static IInstantiable Instantiate( IntPtr ptr ) => new Surface1( ptr ) ;
+	public new static IInstantiable Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
 		new Surface1( (IDXGISurface1)dxgiObj! ) ;
 	
 	internal Surface1( ) { }
@@ -106,9 +106,9 @@ public class Surface2: Surface1, ISurface2 {
 	public new ComPtr< IDXGISurface2 >? ComPointer { get ; protected set ; }
 	public new IDXGISurface2? COMObject => ComPointer?.Interface as IDXGISurface2 ;
 
-	public static IDXCOMObject Instantiate( ) => new Surface2( ) ;
-	public static IDXCOMObject Instantiate( nint ptr ) => new Surface2( ptr ) ;
-	public new static IDXCOMObject Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
+	public static IInstantiable  Instantiate( )            => new Surface2( ) ;
+	public static IInstantiable Instantiate( IntPtr ptr ) => new Surface2( ptr ) ;
+	public new static IInstantiable Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
 		new Surface2( (IDXGISurface2)dxgiObj! ) ;
 	
 	internal Surface2( ) { }

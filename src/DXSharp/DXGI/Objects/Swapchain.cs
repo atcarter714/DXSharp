@@ -19,7 +19,7 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 	
 	public new static Type ComType => typeof( IDXGISwapChain ) ;
 	public new static Guid InterfaceGUID => ComType.GUID ;
-	public static SwapChain? Instantiate( ) => new( ) ;
+	
 	
 	public new ComPtr< IDXGISwapChain >? ComPointer { get ; protected set; }
 	public new IDXGISwapChain? COMObject => ComPointer?.Interface ;
@@ -124,10 +124,10 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 public class SwapChain1: SwapChain, ISwapChain1 {
 	public new static Type ComType => typeof( IDXGISwapChain1 ) ;
 	public new static Guid InterfaceGUID => ComType.GUID ;
-	public new static SwapChain1? Instantiate( ) => new( ) ;
-	public static ISwapChain? Instantiate( nint address ) => new SwapChain1( address ) ;
-	public static ISwapChain? Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
-		new SwapChain1( (IDXGISwapChain1)obj! ) ;
+	/*public new static IInstantiable Instantiate( ) => new( ) ;
+	public static IInstantiable Instantiate( IntPtr address ) => new SwapChain1( address ) ;
+	public static IInstantiable Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
+		new SwapChain1( (IDXGISwapChain1)obj! ) ;*/
 
 	public new IDXGISwapChain1? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGISwapChain1 >? ComPointer { get ; protected set ; }
@@ -238,10 +238,10 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 public class SwapChain2: SwapChain1, ISwapChain2 {
 	public new static Type ComType => typeof( IDXGISwapChain2 ) ;
 	public new static Guid InterfaceGUID => ComType.GUID ;
-	public new static SwapChain2? Instantiate( ) => new( ) ;
-	public new static ISwapChain? Instantiate( nint address ) => new SwapChain2( address ) ;
-	public new static ISwapChain? Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
-		new SwapChain2( (IDXGISwapChain2)obj! ) ;
+	/*public new static IInstantiable   Instantiate( )                => new( ) ;
+	public new static IInstantiable Instantiate( IntPtr address ) => new SwapChain2( address ) ;
+	public new static IInstantiable Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
+		new SwapChain2( (IDXGISwapChain2)obj! ) ;*/
 
 	public new IDXGISwapChain2? COMObject => ComPointer?.Interface ;
 	public new ComPtr< IDXGISwapChain2 >? ComPointer { get ; protected set ; }

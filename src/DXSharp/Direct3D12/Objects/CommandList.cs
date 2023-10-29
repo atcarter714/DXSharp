@@ -23,9 +23,9 @@ public class CommandList: Pageable, ICommandList {
 	internal CommandList( ID3D12CommandList? comObject ) => ComPointer = new( comObject! ) ;
 	
 	
-	public static IDXCOMObject Instantiate( ) => new CommandList( ) ;
-	public static IDXCOMObject Instantiate( IntPtr pComObj ) => new CommandList( pComObj ) ;
-	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => new CommandList( pComObj as ID3D12CommandList ) ;
+	public static IInstantiable  Instantiate( )                                            => new CommandList( ) ;
+	public static IInstantiable Instantiate( IntPtr       pComObj )                       => new CommandList( pComObj ) ;
+	public static IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => new CommandList( pComObj as ID3D12CommandList ) ;
 
 	
 	public new static ref readonly Guid Guid {

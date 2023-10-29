@@ -41,9 +41,9 @@ public interface IOutput: IObject,
 	}
 
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Output( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Output( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+	static IInstantiable IInstantiable. Instantiate( )                => new Output( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Output( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
 		new Output( pComObj! ) ;
 	// ==================================================================================
 	
@@ -109,9 +109,9 @@ public interface IOutput1: IOutput,
 	}
 
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Output1( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Output1( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+	static IInstantiable IInstantiable. Instantiate( )                => new Output1( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Output1( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
 		new Output1( pComObj! ) ;
 	// ==================================================================================
 	

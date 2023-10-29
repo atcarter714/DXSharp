@@ -39,9 +39,9 @@ public interface ISwapChain: IDeviceSubObject,
 	}
 
 	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new SwapChain( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new SwapChain( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+	static IInstantiable IInstantiable. Instantiate( )                => new SwapChain( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new SwapChain( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
 		new SwapChain( (IDXGISwapChain)pComObj! ) ;
 	// ==================================================================================
 	
@@ -93,9 +93,9 @@ public interface ISwapChain1: ISwapChain,
 		}
 	}
 	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new SwapChain1( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new SwapChain1( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+	static IInstantiable IInstantiable. Instantiate( )                => new SwapChain1( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new SwapChain1( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
 		new SwapChain1( (IDXGISwapChain1)pComObj! ) ;
 	// ==================================================================================
 	
@@ -145,9 +145,9 @@ public interface ISwapChain2: ISwapChain1,
 		}
 	}
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new SwapChain2( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new SwapChain2( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+	static IInstantiable IInstantiable. Instantiate( )                => new SwapChain2( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new SwapChain2( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
 		new SwapChain2( (IDXGISwapChain2)pComObj! ) ;
 	// ==================================================================================
 
@@ -178,9 +178,9 @@ public interface ISwapChain3: ISwapChain2,
 		}
 	}
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new SwapChain3( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new SwapChain3( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+	static IInstantiable IInstantiable. Instantiate( )                => new SwapChain3( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new SwapChain3( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
 		new SwapChain3( (IDXGISwapChain3)pComObj! ) ;
 	// ==================================================================================
 } ;
