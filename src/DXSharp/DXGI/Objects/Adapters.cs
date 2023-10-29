@@ -21,9 +21,9 @@ namespace DXSharp.DXGI ;
 public class Adapter: Object, IAdapter {
 	// -------------------------------------------------------------------------------------
 	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Adapter( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new Adapter( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom obj ) => 
+	static IInstantiable IInstantiable. Instantiate( )            => new Adapter( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr ptr ) => new Adapter( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => 
 		new Adapter( ( obj as IDXGIAdapter )! ) ;
 	
 	public new ComPtr< IDXGIAdapter >? ComPointer { get ; protected set ; }
@@ -115,9 +115,9 @@ public class Adapter: Object, IAdapter {
 
 
 public class Adapter1: Adapter, IAdapter1 {
-	public static IDXCOMObject Instantiate( ) => new Adapter1( ) ;
-	public static IDXCOMObject Instantiate( nint ptr ) => new Adapter1( ptr ) ;
-	public static IDXCOMObject Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
+	public static IInstantiable  Instantiate( )            => new Adapter1( ) ;
+	public static IInstantiable Instantiate( IntPtr ptr ) => new Adapter1( ptr ) ;
+	public static IInstantiable Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
 		new Adapter1( ( obj as IDXGIAdapter1 )! ) ;
 	
 	
@@ -257,10 +257,10 @@ public class Adapter2: Adapter1, IAdapter2,
 	// --------------------------------------------------------------
 	
 	#region IInstantiable Implementation:
-	static Adapter2 IInstantiable< Adapter2 >.Instantiate( nint ptr ) => new( ptr ) ;
-	public new static IDXCOMObject Instantiate( ) => new Adapter2( ) ;
-	public new static IDXCOMObject Instantiate( nint ptr ) => new Adapter2( ptr ) ;
-	public new static IDXCOMObject Instantiate< ICom >( ICom? obj ) where ICom: IUnknown? => 
+	static            Adapter2 IInstantiable< Adapter2 >.Instantiate( nint ptr )   => new( ptr ) ;
+	public new static IInstantiable                       Instantiate( )            => new Adapter2( ) ;
+	public new static IInstantiable                      Instantiate( IntPtr ptr ) => new Adapter2( ptr ) ;
+	public new static IInstantiable Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
 		new Adapter2( ( obj as IDXGIAdapter2 )! ) ;
 	#endregion
 	

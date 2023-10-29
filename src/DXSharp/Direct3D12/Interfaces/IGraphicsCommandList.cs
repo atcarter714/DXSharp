@@ -1234,9 +1234,9 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 		}
 	}
 	
-	static IDXCOMObject IInstantiable.Instantiate() => new GraphicsCommandList( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new GraphicsCommandList( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+	static IInstantiable IInstantiable. Instantiate()                 => new GraphicsCommandList( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new GraphicsCommandList( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
 		new GraphicsCommandList( (ID3D12GraphicsCommandList?)pComObj! ) ;
 	
 	// ==================================================================================
@@ -1518,9 +1518,9 @@ public interface IGraphicsCommandList1 : IGraphicsCommandList,
 		}
 	}
 	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new GraphicsCommandList( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new GraphicsCommandList( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+	static IInstantiable IInstantiable. Instantiate( )                => new GraphicsCommandList( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new GraphicsCommandList( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
 		new GraphicsCommandList( (ID3D12GraphicsCommandList?)pComObj! ) ;
 	
 	// ==================================================================================
@@ -1575,9 +1575,9 @@ public interface IGraphicsCommandList2: IGraphicsCommandList1,
 	
 	// ---------------------------------------------------------------------------------
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new GraphicsCommandList2( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList2( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+	static IInstantiable IInstantiable. Instantiate( )            => new GraphicsCommandList2( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr ptr ) => new GraphicsCommandList2( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
 		new GraphicsCommandList2( (ID3D12GraphicsCommandList3?)pComObj! ) ;
 } ;
 
@@ -1621,9 +1621,9 @@ public interface IGraphicsCommandList3: IGraphicsCommandList2,
 
 	// ---------------------------------------------------------------------------------
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new GraphicsCommandList3( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList3( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new GraphicsCommandList3( (ID3D12GraphicsCommandList3?)pComObj! ) ;
+	static IInstantiable IInstantiable. Instantiate( )                      => new GraphicsCommandList3( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       ptr )     => new GraphicsCommandList3( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new GraphicsCommandList3( (ID3D12GraphicsCommandList3?)pComObj! ) ;
 } ;
 
 

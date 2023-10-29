@@ -45,9 +45,9 @@ public interface ILifetimeTracker: IDeviceChild,
 	void DestroyOwnedObject( IDeviceChild pObject ) => 
 		COMObject!.DestroyOwnedObject( pObject.COMObject ) ;
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new LifetimeTracker( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new LifetimeTracker( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new LifetimeTracker( (ID3D12LifetimeTracker?) pComObj! ) ;
+	static IInstantiable IInstantiable. Instantiate( )                      => new LifetimeTracker( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       ptr )     => new LifetimeTracker( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new LifetimeTracker( (ID3D12LifetimeTracker?) pComObj! ) ;
 } ;
 
 

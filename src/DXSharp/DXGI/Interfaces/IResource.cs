@@ -17,9 +17,9 @@ public interface IResource: IDeviceSubObject,
 	new IDXGIResource? COMObject => ComPointer?.Interface ;
 	IDXGIResource? IComObjectRef< IDXGIResource >.COMObject => COMObject ;
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Resource( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Resource( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+	static IInstantiable IInstantiable. Instantiate( )                => new Resource( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Resource( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
 		new Resource( (IDXGIResource)pComObj! ) ;
 	// ==================================================================================
 	

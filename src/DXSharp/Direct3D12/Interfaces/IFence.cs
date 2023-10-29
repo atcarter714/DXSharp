@@ -77,9 +77,9 @@ public interface IFence: IPageable,
 		}
 	}
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Fence( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new Fence( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Fence( (ID3D12Fence)pComObj! ) ;
+	static IInstantiable IInstantiable. Instantiate( )                      => new Fence( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Fence( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Fence( (ID3D12Fence)pComObj! ) ;
 
 	// ==================================================================================
 } ;
@@ -119,9 +119,9 @@ public interface IFence1: IFence,
 		}
 	}
 	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Fence1( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new Fence1( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Fence1( (ID3D12Fence1)pComObj! ) ;	
+	static IInstantiable IInstantiable. Instantiate( )                      => new Fence1( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Fence1( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Fence1( (ID3D12Fence1)pComObj! ) ;	
 	// ---------------------------------------------------------------------------------
 	
 	// ==================================================================================

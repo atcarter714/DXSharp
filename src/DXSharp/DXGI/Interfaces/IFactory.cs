@@ -48,9 +48,9 @@ public interface IFactory: IObject,
 		}
 	}
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Factory( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Factory( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory( pComObj! ) ;
+	static IInstantiable IInstantiable. Instantiate( )                      => new Factory( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Factory( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory( pComObj! ) ;
 
 	internal static virtual IFactory Create< TFactory >( ) 
 		where TFactory: class, IFactory, IInstantiable {
@@ -223,7 +223,7 @@ public interface IFactory1: IFactory,
 	
 
 	
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Factory1( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Factory1( pComObj ) ;
 
 	static IFactory IFactory.Create< TFactory >( ) {
 		var factory = DXGIFunctions.CreateDXGIFactory1< IDXGIFactory1 >( out var hr ) ;

@@ -116,9 +116,9 @@ public interface IAdapter: IObject,
 		}
 	}
 	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Adapter( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Adapter( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+	static IInstantiable IInstantiable. Instantiate( )                => new Adapter( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Adapter( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
 		new Adapter( (IDXGIAdapter)pComObj! ) ;
 	// ================================================================================
 } ;
@@ -170,9 +170,9 @@ public interface IAdapter1: IAdapter,
 		}
 	}
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Adapter1( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Adapter1( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+	static IInstantiable IInstantiable. Instantiate( )                => new Adapter1( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Adapter1( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
 		new Adapter1( (IDXGIAdapter1)pComObj! ) ;
 	
 	// ==================================================================================
@@ -208,10 +208,10 @@ public interface IAdapter2: IAdapter1,
 		}
 	}
 
-	static IDXCOMObject IInstantiable.Instantiate( )              => new Adapter2( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Adapter2( pComObj ) ;
+	static IInstantiable IInstantiable. Instantiate( )                => new Adapter2( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Adapter2( pComObj ) ;
 
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
 		new Adapter( (IDXGIAdapter2)pComObj! ) ;
 	// ==================================================================================
 

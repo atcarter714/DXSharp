@@ -197,8 +197,8 @@ public class OutputDuplication: Object, IOutputDuplication {
 		_dxgiInterface.ReleaseFrame( ) ;
 	}
 
-	public static IDXCOMObject Instantiate( ) => new OutputDuplication( ) ;
-	public static IDXCOMObject Instantiate( IntPtr pComObj ) => new OutputDuplication( pComObj ) ;
-	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
+	public static IInstantiable  Instantiate( )                => new OutputDuplication( ) ;
+	public static IInstantiable Instantiate( IntPtr pComObj ) => new OutputDuplication( pComObj ) ;
+	public static IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
 		new OutputDuplication( ( pComObj as IDXGIOutputDuplication )! ) ;
 } ;

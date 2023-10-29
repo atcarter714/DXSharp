@@ -1533,3 +1533,201 @@ public enum TextureBarrierFlags {
 	Discard = 0x00000001,
 } ;
 
+
+/// <summary>Specifies multiple wait flags for multiple fences.</summary>
+/// <remarks>
+/// This enum is used by the
+/// <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion">SetEventOnMultipleFenceCompletion</a> method.
+/// </remarks>
+[Flags, EquivalentOf(typeof(D3D12_MULTIPLE_FENCE_WAIT_FLAGS))]
+public enum MultiFenceWaitFlags {
+	/// <summary>No flags are being passed. This means to use the default behavior, which is to wait for all fences before signaling the event.</summary>
+	None = 0x00000000,
+	/// <summary>Modifies behavior to indicate that the event should be signaled after any one of the fence values has been reached by its corresponding fence.</summary>
+	Any = 0x00000001,
+	/// <summary>An alias for **D3D12_MULTIPLE_FENCE_WAIT_FLAG_NONE**, meaning to use the default behavior and wait for all fences.</summary>
+	All = 0x00000000,
+} ;
+
+
+/// <summary>Specifies broad residency priority buckets useful for quickly establishing an application priority scheme.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority">SetResidencyPriority</a> method.</remarks>
+[EquivalentOf(typeof(D3D12_RESIDENCY_PRIORITY))]
+public enum ResidencyPriority {
+	/// <summary>Indicates a minimum priority.</summary>
+	Minimum = 671088640,
+	/// <summary>Indicates a low priority.</summary>
+	Low = 1342177280,
+	/// <summary>Indicates a normal, medium, priority.</summary>
+	Normal = 2013265920,
+	/// <summary>Indicates a high priority. Applications are discouraged from using priories greater than this. For more information see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority">ID3D12Device1::SetResidencyPriority</a>.</summary>
+	High = -1610547200,
+	/// <summary>Indicates a maximum priority. Applications are discouraged from using priorities greater than this; <b>D3D12_RESIDENCY_PRIORITY_MAXIMUM</b> is not guaranteed to be available. For more information see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority">ID3D12Device1::SetResidencyPriority</a></summary>
+	Maximum = -939524096,
+} ;
+
+/// <summary>Specifies the type of a sub-object in a pipeline state stream description.</summary>
+/// <remarks>
+/// This enum is used in the creation of pipeline state objects using the ID3D12Device1::CreatePipelineState method.
+/// The CreatePipelineState method takes a D3D12_PIPELINE_STATE_STREAM_DESC as one of its parameters, this structure
+/// in turn describes a bytestream made up of alternating D3D12_PIPELINE_STATE_SUBOBJECT_TYPE enumeration values and
+/// their corresponding subobject description structs. This bytestream description can be made a concrete type by
+/// defining a structure that has the same alternating pattern of alternating D3D12_PIPELINE_STATE_SUBOBJECT_TYPE
+/// enumeration values and their corresponding subobject description structs as members.
+/// </remarks>
+[EquivalentOf(typeof(D3D12_PIPELINE_STATE_SUBOBJECT_TYPE))]
+public enum PipelineStateSubObjectType
+{
+	/// <summary>
+	/// <para>Indicates a root signature subobject type. The corresponding subobject type is **[ID3D12RootSignature](/windows/win32/api/d3d12/nn-d3d12-id3d12rootsignature)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	RootSignature = 0,
+
+	/// <summary>
+	/// <para>Indicates a vertex shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	VS = 1,
+
+	/// <summary>
+	/// <para>Indicates a pixel shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	PS = 2,
+
+	/// <summary>
+	/// <para>Indicates a domain shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	DS = 3,
+
+	/// <summary>
+	/// <para>Indicates a hull shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	HS = 4,
+
+	/// <summary>
+	/// <para>Indicates a geometry shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	GS = 5,
+
+	/// <summary>
+	/// <para>Indicates a compute shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	CS = 6,
+
+	/// <summary>
+	/// <para>Indicates a stream-output subobject type. The corresponding subobject type is **[D3D12_STREAM_OUTPUT_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_stream_output_desc)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	StreamOutput = 7,
+
+	/// <summary>
+	/// <para>Indicates a blend subobject type. The corresponding subobject type is **[D3D12_BLEND_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_blend_desc)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	Blend = 8,
+
+	/// <summary>
+	/// <para>Indicates a sample mask subobject type. The corresponding subobject type is **UINT**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	SampleMask = 9,
+
+	/// <summary>
+	/// <para>Indicates indicates a rasterizer subobject type. The corresponding subobject type is **[D3D12_RASTERIZER_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	Rasterizer = 10,
+
+	/// <summary>
+	/// <para>Indicates a depth stencil subobject type. The corresponding subobject type is **[D3D12_DEPTH_STENCIL_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	DepthStencil = 11,
+
+	/// <summary>
+	/// <para>Indicates an input layout subobject type. The corresponding subobject type is **[D3D12_INPUT_LAYOUT_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_input_layout_desc)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	InputLayout = 12,
+
+	/// <summary>
+	/// <para>Indicates an index buffer strip cut value subobject type. The corresponding subobject type is **[D3D12_INDEX_BUFFER_STRIP_CUT_VALUE](/windows/win32/api/d3d12/ne-d3d12-d3d12_index_buffer_strip_cut_value)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	IBStripCutValue = 13,
+
+	/// <summary>
+	/// <para>Indicates a primitive topology subobject type. The corresponding subobject type is **[D3D12_PRIMITIVE_TOPOLOGY_TYPE](/windows/win32/api/d3d12/ne-d3d12-d3d12_primitive_topology_type)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	PrimitiveTopology = 14,
+
+	/// <summary>Indicates a render target formats subobject type. The corresponding subobject type is **[D3D12_RT_FORMAT_ARRAY](/windows/win32/api/d3d12/ns-d3d12-d3d12_rt_format_array)** structure, which wraps an array of render target formats along with a count of the array elements.</summary>
+	RenderTargetFormats = 15,
+
+	/// <summary>
+	/// <para>Indicates a depth stencil format subobject. The corresponding subobject type is **[DXGI_FORMAT](/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	DepthStencilFormat = 16,
+
+	/// <summary>
+	/// <para>Indicates a sample description subobject type. The corresponding subobject type is **[DXGI_SAMPLE_DESC](/windows/win32/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	SampleDesc = 17,
+
+	/// <summary>
+	/// <para>Indicates a node mask subobject type. The corresponding subobject type is **[D3D12_NODE_MASK](/windows/win32/api/d3d12/ns-d3d12-d3d12_node_mask)** or **UINT**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	NodeMask = 18,
+
+	/// <summary>
+	/// <para>Indicates a cached pipeline state object subobject type. The corresponding subobject type is **[D3D12_CACHED_PIPELINE_STATE](/windows/win32/api/d3d12/ns-d3d12-d3d12_cached_pipeline_state)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	CachedPSO = 19,
+
+	/// <summary>
+	/// <para>Indicates a flags subobject type. The corresponding subobject type is **[D3D12_PIPELINE_STATE_FLAGS](/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_flags)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	Flags = 20,
+
+	/// <summary>
+	/// <para>Indicates an expanded depth stencil subobject type. This expansion of the depth stencil subobject supports optional depth bounds checking. The corresponding subobject type is **[D3D12_DEPTH_STENCIL_DESC1](/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc1)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	DepthStencil1 = 21,
+
+	/// <summary>
+	/// <para>Indicates a view instancing subobject type. The corresponding subobject type is **[D3D12_VIEW_INSTANCING_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_view_instancing_desc)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	ViewInstancing = 22,
+
+	/// <summary>
+	/// <para>Indicates an amplification shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	AS = 24,
+
+	/// <summary>
+	/// <para>Indicates a mesh shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	MS = 25,
+	DepthStencil2 = 26,
+	Rasterizer1   = 27,
+	Rasterizer2   = 28,
+
+	/// <summary>A sentinel value that marks the exclusive upper-bound of valid values this enumeration represents.</summary>
+	MaxValid = 29,
+} ;

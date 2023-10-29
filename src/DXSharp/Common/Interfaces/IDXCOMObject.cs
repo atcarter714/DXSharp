@@ -17,9 +17,9 @@ public interface IComObjectRef< T >
 } ;
 
 public interface IInstantiable {
-	public static abstract IDXCOMObject Instantiate( ) ;
-	public static abstract IDXCOMObject Instantiate( nint pComObj ) ;
-	public static abstract IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? ;
+	public static abstract IInstantiable Instantiate( ) ;
+	public static abstract IInstantiable Instantiate( IntPtr       pComObj ) ;
+	public static abstract IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? ;
 } ;
 
 public interface IInstantiable< T >: IInstantiable

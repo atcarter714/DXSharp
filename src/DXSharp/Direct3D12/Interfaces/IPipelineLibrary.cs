@@ -26,8 +26,8 @@ public interface IPipelineLibrary: IDeviceChild,
 	ID3D12PipelineLibrary? IComObjectRef< ID3D12PipelineLibrary >.COMObject => COMObject ;
 	ComPtr< ID3D12PipelineLibrary >? IUnknownWrapper< ID3D12PipelineLibrary >.ComPointer => ComPointer;
 	// ==================================================================================
-	
-	
+
+
 	/// <summary>Adds the input PSO to an internal database with the corresponding name.</summary>
 	/// <param name="pName">
 	/// <para>Type: <b>LPCWSTR</b> Specifies a unique name for the library. Overwriting is not supported.</para>
@@ -41,9 +41,13 @@ public interface IPipelineLibrary: IDeviceChild,
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns an HRESULT success or error code, including E_INVALIDARG if the name already exists, E_OUTOFMEMORY if unable to allocate storage in the library.</para>
 	/// </returns>
 	/// <remarks>Refer to the remarks and examples for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary">CreatePipelineLibrary</a>.</remarks>
-	void StorePipeline( string pName, ID3D12PipelineState pPipeline ) ;
+	void StorePipeline( string pName, ID3D12PipelineState pPipeline ) {
+		var lib = COMObject ?? throw new NullReferenceException( ) ;
+		using PCWSTR _name = pName ;
+		lib.StorePipeline( _name, pPipeline ) ;
+	}
 
-	
+
 	/// <summary>Retrieves the requested PSO from the library.</summary>
 	/// <param name="pName">
 	/// <para>Type: <b>LPCWSTR</b> The unique name of the PSO.</para>
@@ -67,9 +71,17 @@ public interface IPipelineLibrary: IDeviceChild,
 	/// <remarks>Refer to the remarks and examples for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary">CreatePipelineLibrary</a>.</remarks>
 	void LoadGraphicsPipeline( string pName,
 							   in GraphicsPipelineStateDescription pDesc,
-							   Guid riid,
-							   out object ppPipelineState ) ;
-	
+							   in Guid riid,
+							   out object ppPipelineState ) {
+		var lib = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe { fixed ( void* pRiid = &riid, _desc = &pDesc ) {
+				using PCWSTR _name = pName ;
+				lib.LoadGraphicsPipeline( _name, pDesc, (Guid *)pRiid, out var pso ) ;
+				ppPipelineState = new PipelineState( (ID3D12PipelineState)pso ) ;
+			}
+		}
+	}
+
 
 	/// <summary>Retrieves the requested PSO from the library. The input desc is matched against the data in the current library database, and remembered in order to prevent duplication of PSO contents.</summary>
 	/// <param name="pName">
@@ -93,9 +105,16 @@ public interface IPipelineLibrary: IDeviceChild,
 	/// </returns>
 	/// <remarks>Refer to the remarks and examples for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary">CreatePipelineLibrary</a>.</remarks>
 	void LoadComputePipeline( PCWSTR pName,
-									 in ComputePipelineStateDescription pDesc, 
-									 in Guid riid,
-									 out object ppPipelineState ) ;
+							  in ComputePipelineStateDescription pDesc,
+							  in Guid riid,
+							  out object ppPipelineState ) {
+		var lib = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe { fixed ( void* pRiid = &riid, _desc = &pDesc ) {
+				lib.LoadComputePipeline( pName, pDesc, (Guid *)pRiid, out var pso ) ;
+				ppPipelineState = new PipelineState( (ID3D12PipelineState)pso ) ;
+			}
+		}
+	}
 
 	
 	/// <summary>Returns the amount of memory required to serialize the current contents of the database.</summary>
@@ -103,7 +122,10 @@ public interface IPipelineLibrary: IDeviceChild,
 	/// <para>Type: <b>SIZE_T</b> This method returns a SIZE_T object, containing the size required in bytes.</para>
 	/// </returns>
 	/// <remarks>Refer to the remarks and examples for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary">CreatePipelineLibrary</a>.</remarks>
-	nuint GetSerializedSize( ) ;
+	nuint GetSerializedSize( ) {
+		var lib = COMObject ?? throw new NullReferenceException( ) ;
+		return lib.GetSerializedSize( ) ;
+	}
 
 	
 	/// <summary>Writes the contents of the library to the provided memory, to be provided back to the runtime at a later time.</summary>
@@ -119,25 +141,103 @@ public interface IPipelineLibrary: IDeviceChild,
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns an HRESULT success or error code, including E_INVALIDARG if the buffer provided isn’t big enough.</para>
 	/// </returns>
 	/// <remarks>Refer to the remarks and examples for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary">CreatePipelineLibrary</a>.</remarks>
-	void Serialize( nint pData, nuint DataSizeInBytes ) ;
+	void Serialize( nint pData, nuint DataSizeInBytes ) {
+		var lib = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe { lib.Serialize( (void*)pData, DataSizeInBytes ) ; }
+	}
 	
 	
 	// ---------------------------------------------------------------------------------
+	new static Type ComType => typeof(ID3D12PipelineLibrary) ;
 	static Type IUnknownWrapper.ComType => typeof(ID3D12PipelineLibrary) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12PipelineLibrary).GUID ;
 	
+	new static Guid InterfaceGUID => typeof(ID3D12PipelineLibrary).GUID ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12PipelineLibrary).GUID ;
+	 
 	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = typeof(ID3D12PipelineLibrary).GUID
-																		.ToByteArray( ) ;
-			
-			return ref Unsafe
-					   .As< byte, Guid >( ref MemoryMarshal
-											  .GetReference(data) ) ;
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
 		}
 	}
 	
 	// ==================================================================================
 } ;
+
+
+/// <summary>
+/// Manages a pipeline library, which is a collection of pipeline state objects
+/// (PSOs) that can be retrieved or loaded by name.
+/// </summary>
+[ProxyFor( typeof( ID3D12PipelineLibrary1 ) )]
+public interface IPipelineLibrary1: IPipelineLibrary,
+									IComObjectRef< ID3D12PipelineLibrary1 >,
+									IUnknownWrapper< ID3D12PipelineLibrary1 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12PipelineLibrary1 > ComPointer { get ; }
+	new ID3D12PipelineLibrary1? COMObject => ComPointer?.Interface ;
+
+	ID3D12PipelineLibrary1? IComObjectRef< ID3D12PipelineLibrary1 >.COMObject => COMObject ;
+	ComPtr< ID3D12PipelineLibrary1 >? IUnknownWrapper< ID3D12PipelineLibrary1 >.ComPointer => ComPointer ;
+
+	// ---------------------------------------------------------------------------------
+
+	/// <summary>Retrieves the requested PSO from the library. The pipeline stream description is matched against the library database and remembered in order to prevent duplication of PSO contents.</summary>
+	/// <param name="pName"><para>The unique name of the PSO.</para></param>
+	/// <param name="pDesc">Describes the required PSO using a <see cref="PipelineStateStreamDescription"/> structure.
+	/// This description is matched against the library database and stored in order to prevent duplication of PSO contents.
+	/// </param>
+	/// <param name="riid">
+	/// Specifies a REFIID for the ID3D12PipelineStateState object. Applications should typically set this argument and the following argument, ppPipelineState,
+	/// by using the macro IID_PPV_ARGS(&amp;PSO1), where PSO1 is the name of the object.
+	/// </param>
+	/// <param name="ppPipelineState">Specifies the pointer that will reference the PSO after the function successfully returns.</param>
+	/// <returns>
+	/// <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b>
+	/// This method returns an HRESULT success or error code, which can include E_INVALIDARG if the name doesn't exist or the stream description doesn't match the
+	/// data in the library, and E_OUTOFMEMORY if the function is unable to allocate the resulting PSO.
+	/// </returns>
+	/// <remarks>
+	/// This function takes the pipeline description as a <see cref="PipelineStateStreamDescription"/> and is a replacement for the
+	/// <see cref="IPipelineLibrary.LoadGraphicsPipeline"/> and <see cref="IPipelineLibrary.LoadComputePipeline"/> functions,
+	/// which take their pipeline description as the less-flexible <see cref="GraphicsPipelineStateDescription"/> and 
+	/// <see cref="ComputePipelineStateDescription"/> structs, respectively.
+	/// </remarks>
+	void LoadPipeline( string  pName, in PipelineStateStreamDescription pDesc,
+							  in Guid riid, out IPipelineState ppPipelineState ) {
+		var lib1 = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe { fixed ( void* pRiid = &riid, _desc = &pDesc ) {
+				using PCWSTR _name = pName ;
+				lib1.LoadPipeline( _name, (D3D12_PIPELINE_STATE_STREAM_DESC *)_desc,
+								   (Guid *)pRiid, out var pso ) ;
+				
+				ppPipelineState = new PipelineState( (ID3D12PipelineState)pso ) ;
+			}
+		}
+	}
+
+	
+	// ---------------------------------------------------------------------------------
+	
+	new static Type ComType => typeof(ID3D12PipelineLibrary) ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12PipelineLibrary) ;
+	
+	new static Guid InterfaceGUID => typeof(ID3D12PipelineLibrary).GUID ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12PipelineLibrary).GUID ;
+	 
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ==================================================================================
+}

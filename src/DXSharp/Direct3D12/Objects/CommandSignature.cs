@@ -22,10 +22,10 @@ public class CommandSignature: Pageable,
 	
 	
 	// -------------------------------------------------------------------------------------------------------
-	static IDXCOMObject IInstantiable.Instantiate( ) => new CommandSignature( ) ;
-	static CommandSignature? IInstantiable< CommandSignature >.Instantiate( IntPtr ptr ) => new( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new CommandSignature( pComObj ) ;
-	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
+	static IInstantiable IInstantiable.                         Instantiate( )                => new CommandSignature( ) ;
+	static CommandSignature? IInstantiable< CommandSignature >.Instantiate( IntPtr ptr )     => new( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new CommandSignature( pComObj ) ;
+	public static IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
 		new CommandSignature( (ID3D12CommandSignature)pComObj! ) ;
 	// =======================================================================================================
 } ;

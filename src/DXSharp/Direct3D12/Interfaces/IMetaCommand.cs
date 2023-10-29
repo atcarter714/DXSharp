@@ -50,9 +50,9 @@ public interface IMetaCommand: IPageable,
 		COMObject!.GetRequiredParameterResourceSize( (D3D12_META_COMMAND_PARAMETER_STAGE)stage, parameterIndex ) ;
 
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new MetaCommand( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint ptr ) => new MetaCommand( ptr ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new MetaCommand( (ID3D12MetaCommand?) pComObj! ) ;
+	static IInstantiable IInstantiable. Instantiate( )                      => new MetaCommand( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       ptr )     => new MetaCommand( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new MetaCommand( (ID3D12MetaCommand?) pComObj! ) ;
 } ;
 
 /// <summary>Provides a base class for <see cref="IMetaCommand"/>. </summary>

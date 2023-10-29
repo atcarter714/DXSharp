@@ -16,8 +16,8 @@ public abstract class Object: DXComObject, IObject {
 	public override ComPtr? ComPtrBase => ComPointer ;
 	
 	
-	public uint AddRef( ) => this.ComPointer?.Interface?.AddRef( ) ?? 0U ;
-	public uint Release( ) => this.ComPointer?.Interface?.Release( ) ?? 0U ;
+	public uint AddReference( ) => this.ComPointer?.Interface?.AddRef( ) ?? 0U ;
+	public uint ReleaseReference( ) => this.ComPointer?.Interface?.Release( ) ?? 0U ;
 	
 	
 	/*protected virtual void _throwIfDestroyed( ) {

@@ -22,9 +22,9 @@ public class Resource: Pageable,
 	
 	// -----------------------------------------------------------------------------------------------------------------
 	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Resource( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new Resource( pComObj ) ;
-	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
+	static IInstantiable IInstantiable. Instantiate( )                => new Resource( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Resource( pComObj ) ;
+	public static IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
 			pComObj is not null ? ( new Resource( (ID3D12Resource)pComObj 
 							?? throw new InvalidCastException($"Cannot cast {nameof(pComObj)} " +
 									$"({pComObj.GetType().Name}) to {nameof(IDXGIResource)}!") ))

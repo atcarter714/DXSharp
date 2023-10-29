@@ -1,8 +1,8 @@
 ﻿#region Using Directives
-
 using System.Runtime.CompilerServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using System.Runtime.InteropServices ;
+using System.Runtime.Versioning ;
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Security ;
@@ -148,10 +148,8 @@ public interface IDevice: IObject,
 	void CreateComputePipelineState( in ComputePipelineStateDescription pDesc,
 									 in Guid riid, out IPipelineState ppPipelineState ) {
 		var device = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe { 
-			device.CreateComputePipelineState( pDesc, riid, out var ppvPipelineState ) ;
-			ppPipelineState = new PipelineState( (ID3D12PipelineState)ppvPipelineState ) ;
-		}
+		device.CreateComputePipelineState( pDesc, riid, out var ppvPipelineState ) ;
+		ppPipelineState = new PipelineState( (ID3D12PipelineState)ppvPipelineState ) ;
 	}
 
 
@@ -200,7 +198,12 @@ public interface IDevice: IObject,
 									&_guid,
 									out object _cmdList 
 									) ;
-			if (_guid == IGraphicsCommandList.InterfaceGUID)
+
+#if DEBUG || DEBUG_COM || DEV_BUILD
+			hr.ThrowOnFailure( ) ;
+#endif
+			
+			if ( _guid == IGraphicsCommandList.InterfaceGUID )
 				ppCommandList = new GraphicsCommandList( (ID3D12GraphicsCommandList)_cmdList ) ;
 			else
 				ppCommandList = new CommandList( (ID3D12CommandList)_cmdList ) ;
@@ -788,13 +791,12 @@ public interface IDevice: IObject,
 							   [Optional] in ClearValue? pOptimizedClearValue,
 							   in Guid riid, out IResource ppvResource ) { unsafe {
 			Guid _riid = riid ;
-			ClearValue _clrValue = default ;
 			var _pDesc = pDesc ;
 			D3D12_CLEAR_VALUE* pClearValue = null ;
 
 			if ( pOptimizedClearValue.HasValue ) {
-				_clrValue   = pOptimizedClearValue.Value ;
-				pClearValue = (D3D12_CLEAR_VALUE*)&_clrValue ;
+				ClearValue _clrValue = pOptimizedClearValue.Value ;
+				pClearValue = (D3D12_CLEAR_VALUE *)&_clrValue ;
 			}
 
 			COMObject!.CreatePlacedResource( pHeap.COMObject, HeapOffset,
@@ -842,12 +844,11 @@ public interface IDevice: IObject,
 								 [Optional] in ClearValue? pOptimizedClearValue,
 								 in Guid riid, out IResource ppvResource ) { unsafe {
 			Guid _riid = riid ;
-			ClearValue _clrValue = default ;
 			var _pDesc = pDesc ;
 			D3D12_CLEAR_VALUE* pClearValue = null ;
 			
 			if ( pOptimizedClearValue.HasValue ) {
-				_clrValue = pOptimizedClearValue.Value ;
+				ClearValue _clrValue = pOptimizedClearValue.Value ;
 				pClearValue = (D3D12_CLEAR_VALUE*)&_clrValue ;
 			}
 			
@@ -1044,29 +1045,27 @@ public interface IDevice: IObject,
 	/// <para>Refer to the remarks for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-makeresident">MakeResident</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-evict#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void Evict< P >( uint NumObjects, Span<P> ppObjects ) where P: IPageable { 
-		unsafe {
-			// Extract the COM interface refs from the span of objects:
-			// A more efficient unsafe overload taking a raw ID3D12Pageable** should be written ...
-			var pageables = new ID3D12Pageable[ ppObjects.Length ] ;
-			var _pageableSpan = pageables.AsSpan( ) ;
+	void Evict< P >( uint NumObjects, Span<P> ppObjects ) where P: IPageable {
+		// Extract the COM interface refs from the span of objects:
+		// A more efficient unsafe overload taking a raw ID3D12Pageable** should be written ...
+		var pageables     = new ID3D12Pageable[ ppObjects.Length ] ;
+		var _pageableSpan = pageables.AsSpan( ) ;
 			
-			for( int i = 0; i < ppObjects.Length; i++ ) {
-				var next = ppObjects[ i ] ;
+		for( int i = 0; i < ppObjects.Length; i++ ) {
+			var next = ppObjects[ i ] ;
 #if DEBUG || DEV_BUILD
-				if( next is null ) throw new ArgumentNullException( nameof(ppObjects), 
-																	$"{nameof(IDevice)}.{nameof(Evict)} :: " +
-																	$"Span must not contain null references!" ) ;
-				if ( next.COMObject is null || ( next.ComPointer?.Disposed ?? true ) )
-					throw new ArgumentException( nameof( ppObjects ),
-												 $"{nameof( IDevice )}.{nameof( Evict )} :: " +
-												 $"Span must contain only COM objects!" ) ;
+			if( next is null ) throw new ArgumentNullException( nameof(ppObjects), 
+																$"{nameof(IDevice)}.{nameof(Evict)} :: " +
+																$"Span must not contain null references!" ) ;
+			if ( next.COMObject is null || ( next.ComPointer?.Disposed ?? true ) )
+				throw new ArgumentException( nameof( ppObjects ),
+											 $"{nameof( IDevice )}.{nameof( Evict )} :: " +
+											 $"Span must contain only COM objects!" ) ;
 #endif
-				_pageableSpan[ i ] = ppObjects[ i ].COMObject! ;
-			}
-			
-			COMObject!.Evict( NumObjects, pageables ) ;
+			_pageableSpan[ i ] = ppObjects[ i ].COMObject! ;
 		}
+			
+		COMObject!.Evict( NumObjects, pageables ) ;
 	}
 
 
@@ -1164,39 +1163,39 @@ public interface IDevice: IObject,
 	/// <para>This routine assists the application in filling out <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint">D3D12_PLACED_SUBRESOURCE_FOOTPRINT</a> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_subresource_footprint">D3D12_SUBRESOURCE_FOOTPRINT</a> structures, when suballocating space in upload heaps. The resulting structures are GPU adapter-agnostic, meaning that the values will not vary from one GPU adapter to the next. <b>GetCopyableFootprints</b> uses specified details about resource formats, texture layouts, and alignment requirements (from the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">ResourceDescription</a> structure)  to fill out the subresource structures. Applications have access to all these details, so this method, or a variation of it, could be  written as part of the app.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcopyablefootprints#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	unsafe nint GetCopyableFootprints( in ResourceDescription pResourceDesc, 
-									   uint FirstSubresource, 
-									   uint NumSubresources, 
-									   ulong BaseOffset,
+	nint GetCopyableFootprints( in ResourceDescription                       pResourceDesc, 
+									   uint                                         FirstSubresource, 
+									   uint                                         NumSubresources, 
+									   ulong                                        BaseOffset,
 									   [Out] out Span< PlacedSubresourceFootprint > pLayouts,
-									   [Out] out Span< uint > pNumRows,
-									   [Out] out Span< ulong > pRowSizeInBytes,
-									   out ulong pTotalBytes ) {
+									   [Out] out Span< uint >                       pNumRows,
+									   [Out] out Span< ulong >                      pRowSizeInBytes,
+									   out       ulong                              pTotalBytes ) {
 		//! pLayouts: to be filled with the description and placement of each subresource
 		//! pNumRows: to be filled with the number of rows for each subresource
 		//! pRowSizeInBytes: to be filled with the unpadded size in bytes of a row, of each subresource
-		
+
+		uint[ ]?  _numRows        = default ;
+		ulong[ ]? _rowSizeInBytes = default ;
+			
+		// allocate memory for the layouts:
 		unsafe {
-			uint[ ]? _numRows         = default ;
-			ulong[ ]? _rowSizeInBytes = default ;
-			
-			// allocate memory for the layouts:
-			var _pLayouts = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT *)
+			var _pLayouts = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)
 				( NativeMemory.Alloc( (nuint)
-									  (sizeof(PlacedSubresourceFootprint) 
-											* NumSubresources)) ) ;
-			
+									  ( sizeof( PlacedSubresourceFootprint )
+										* NumSubresources ) ) ) ;
+
 			fixed ( ResourceDescription* _descPtr = &pResourceDesc ) {
-					COMObject!.GetCopyableFootprints( (D3D12_RESOURCE_DESC *)_descPtr, 
-													  FirstSubresource, 
-													  NumSubresources, BaseOffset,
-													  _pLayouts, _numRows, _rowSizeInBytes, 
-													  out pTotalBytes ) ;
-					
-					pLayouts = new( _pLayouts, (int)NumSubresources ) ;
-					pNumRows = _numRows ;
-					pRowSizeInBytes = _rowSizeInBytes ;
-					return (nint)_pLayouts ;
+				COMObject!.GetCopyableFootprints( (D3D12_RESOURCE_DESC*)_descPtr,
+												  FirstSubresource,
+												  NumSubresources, BaseOffset,
+												  _pLayouts, _numRows, _rowSizeInBytes,
+												  out pTotalBytes ) ;
+
+				pLayouts        = new( _pLayouts, (int)NumSubresources ) ;
+				pNumRows        = _numRows ;
+				pRowSizeInBytes = _rowSizeInBytes ;
+				return (nint)_pLayouts ;
 			}
 		}
 	}
@@ -1325,21 +1324,25 @@ public interface IDevice: IObject,
 	/// <para>For more information on tiled resources, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/volume-tiled-resources">Volume Tiled Resources</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourcetiling#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	unsafe void GetResourceTiling( in IResource pTiledResource,
+	void GetResourceTiling( in IResource pTiledResource,
 							out uint pNumTilesForEntireResource,
 							out PackedMipInfo pPackedMipDesc,
 							out TileShape pStandardTileShapeForNonPackedMips,
 							ref uint pNumSubresourceTilings, 
 							uint FirstSubresourceTilingToGet,
-							SubresourceTiling* pSubresourceTilingsForNonPackedMips ) {
+							ref SubresourceTiling pSubresourceTilingsForNonPackedMips ) {
 		unsafe {
 			var _pMipDesc = stackalloc D3D12_PACKED_MIP_INFO[ 1 ] ;
 			var _ptileShapeForNonPacked = stackalloc D3D12_TILE_SHAPE[ 1 ] ;
-			COMObject!.GetResourceTiling( pTiledResource.COMObject,
-										 out pNumTilesForEntireResource,
-										 _pMipDesc, _ptileShapeForNonPacked,
-										 ref pNumSubresourceTilings, FirstSubresourceTilingToGet,
-										 (D3D12_SUBRESOURCE_TILING *)pSubresourceTilingsForNonPackedMips ) ;
+			
+			fixed( SubresourceTiling* pSubresourceTiling = &pSubresourceTilingsForNonPackedMips ) {
+				COMObject!.GetResourceTiling( pTiledResource.COMObject,
+											  out pNumTilesForEntireResource,
+											  _pMipDesc, _ptileShapeForNonPacked,
+											  ref pNumSubresourceTilings, FirstSubresourceTilingToGet,
+											  (D3D12_SUBRESOURCE_TILING*)pSubresourceTiling ) ;
+			}
+			
 			pPackedMipDesc = *(PackedMipInfo *)_pMipDesc ;
 			pStandardTileShapeForNonPackedMips = *(TileShape *)_ptileShapeForNonPacked ;
 		}
@@ -1378,15 +1381,581 @@ public interface IDevice: IObject,
 		}
 	}
 	// ---------------------------------------------------------------------------------
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Device( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( IntPtr pComObj ) => new Device( pComObj ) ;
+	static IInstantiable IInstantiable. Instantiate( )                => new Device( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device( pComObj ) ;
 	
-	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
-		new Device( (ID3D12Device)pComObj! ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
 		new Device( (ID3D12Device)pComObj! ) ;
 	// ==================================================================================
 } ;
+
+
+[ProxyFor( typeof( ID3D12Device1 ) )]
+public interface IDevice1: IDevice,
+						   IComObjectRef< ID3D12Device1 >,
+						   IUnknownWrapper< ID3D12Device1 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device1 >? ComPointer { get ; }
+	new ID3D12Device1? COMObject => ComPointer?.Interface ;
+	ID3D12Device1? IComObjectRef< ID3D12Device1 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device1 >? IUnknownWrapper< ID3D12Device1 >.ComPointer => ComPointer ;
+	// ==================================================================================
+
+
+	/// <summary>Creates a cached pipeline library.</summary>
+	/// <param name="pLibraryBlob">
+	/// <para>Type: [in] **const void\*** If the input library blob is empty, then the initial content of the library is empty. If the input library blob is not empty, then it is validated for integrity, parsed, and the pointer is stored. The pointer provided as input to this method must remain valid for the lifetime of the object returned. For efficiency reasons, the data is not copied.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="BlobLength">
+	/// <para>Type: **[SIZE_T](/windows/win32/winprog/windows-data-types)** Specifies the length of *pLibraryBlob* in bytes.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: **REFIID** Specifies a unique REFIID for the [ID3D12PipelineLibrary](./nn-d3d12-id3d12pipelinelibrary.md) object.
+	/// Typically set this and the following parameter with the macro `IID_PPV_ARGS`, where **Library** is the name of the object.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppPipelineLibrary">
+	/// <para>Type: [out] **void\*\*** Returns a pointer to the created library.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/win32/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10), including **E_INVALIDARG** if the blob is corrupted or unrecognized, **D3D12_ERROR_DRIVER_VERSION_MISMATCH** if the provided data came from an old driver or runtime, and **D3D12_ERROR_ADAPTER_NOT_FOUND** if the data came from different hardware. If you pass `nullptr` for *pPipelineLibrary* then the runtime still performs the validation of the blob but avoid creating the actual library and returns S_FALSE if the library would have been created. Also, the feature requires an updated driver, and attempting to use it on old drivers will return DXGI_ERROR_UNSUPPORTED.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>A pipeline library enables the following operations. - Adding pipeline state objects (PSOs) to an existing library object (refer to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12pipelinelibrary-storepipeline">StorePipeline</a>). - Serializing a PSO library into a contiguous block of memory for disk storage (refer to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12pipelinelibrary-serialize">Serialize</a>). - De-serializing a PSO library from persistent storage (this is handled by <b>CreatePipelineLibrary</b>). - Retrieving individual PSOs from the library (refer to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12pipelinelibrary-loadcomputepipeline">LoadComputePipeline</a> and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12pipelinelibrary-loadgraphicspipeline">LoadGraphicsPipeline</a>). At no point in the lifecycle of a pipeline library is there duplication between PSOs with identical sub-components. A recommended solution for managing the lifetime of the provided pointer while only having to ref-count the returned interface is to leverage <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setprivatedatainterface">ID3D12Object::SetPrivateDataInterface</a>, and use an object which implements <b>IUnknown</b>, and frees the memory when the ref-count reaches 0.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void CreatePipelineLibrary( nint pLibraryBlob,
+								nuint BlobLength,
+								in Guid riid,
+								out IPipelineLibrary ppPipelineLibrary ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			Guid _guid = riid ;
+			device.CreatePipelineLibrary( (void *)pLibraryBlob, BlobLength, &_guid, out var result ) ;
+			ppPipelineLibrary = new PipelineLibrary( (ID3D12PipelineLibrary)result ) ;
+		}
+	}
+
+
+	/// <summary>Specifies an event that should be fired when one or more of a collection of fences reach specific values.</summary>
+	/// <param name="ppFences">
+	/// <para>Type: <b>ID3D12Fence*</b> An array of length <i>NumFences</i> that specifies the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12fence">ID3D12Fence</a> objects.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pFenceValues">
+	/// <para>Type: <b>const UINT64*</b> An array of length <i>NumFences</i> that specifies the fence values required for the event is to be signaled.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="NumFences">
+	/// <para>Type: <b>UINT</b> Specifies the number of fences to be included.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="Flags">
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_multiple_fence_wait_flags">D3D12_MULTIPLE_FENCE_WAIT_FLAGS</a></b> Specifies one  of the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_multiple_fence_wait_flags">D3D12_MULTIPLE_FENCE_WAIT_FLAGS</a> that determines how to proceed.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="hEvent">
+	/// <para>Type: <b>HANDLE</b> A handle to the event object.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns an HRESULT success or error code.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>To specify a single fence refer to the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12fence-seteventoncompletion">SetEventOnCompletion</a> method. If *hEvent* is a null handle, then this API will not return until the specified fence value(s) have been reached.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void SetEventOnMultipleFenceCompletion( IFence[ ]           ppFences,
+											ulong[ ]            pFenceValues,
+											uint                NumFences,
+											MultiFenceWaitFlags Flags,
+											Win32Handle         hEvent ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		ID3D12Fence[ ] _fences = new ID3D12Fence[ NumFences ] ;
+		for ( uint i = 0; i < NumFences; ++i ) {
+			_fences[ i ] = ppFences[ i ].COMObject
+#if DEBUG || DEBUG_COM || DEV_BUILD
+						   ?? throw new NullReferenceException( )
+#endif
+			 						   ;
+		}
+		device.SetEventOnMultipleFenceCompletion( _fences,
+												  pFenceValues,
+												  NumFences,(D3D12_MULTIPLE_FENCE_WAIT_FLAGS)Flags,
+												  hEvent ) ;
+	}
+
+
+	/// <summary>This method sets residency priorities of a specified list of objects.</summary>
+	/// <param name="NumObjects">
+	/// <para>Type: <b>UINT</b> Specifies the number of objects in the <i>ppObjects</i> and <i>pPriorities</i> arrays.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppObjects">
+	/// <para>Type: <b>ID3D12Pageable*</b> Specifies an array, of length <i>NumObjects</i>, containing references to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12pageable">ID3D12Pageable</a> objects.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pPriorities">
+	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_residency_priority">D3D12_RESIDENCY_PRIORITY</a>*</b> Specifies an array, of length <i>NumObjects</i>, of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_residency_priority">D3D12_RESIDENCY_PRIORITY</a> values for the list of objects.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns an HRESULT success or error code.</para>
+	/// </returns>
+	/// <remarks>For more information, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/residency">Residency</a>.</remarks>
+	void SetResidencyPriority( uint NumObjects,
+							   IPageable[ ] ppObjects,
+							   Span< ResidencyPriority > pPriorities ) {
+		var device = COMObject ?? throw new NullReferenceException( ) ;
+		ID3D12Pageable[ ] _objects = new ID3D12Pageable[ NumObjects ] ;
+		for ( uint i = 0; i < NumObjects; ++i ) {
+			_objects[ i ] = ppObjects[ i ].COMObject
+#if DEBUG || DEBUG_COM || DEV_BUILD
+							?? throw new NullReferenceException( ) 
+#endif
+							;
+		}
+		unsafe {
+			fixed ( ResidencyPriority* pPriorities_ = pPriorities ) {
+				device.SetResidencyPriority( NumObjects, _objects, (D3D12_RESIDENCY_PRIORITY *)pPriorities_ ) ;
+			}
+		}
+	}
+
+	
+	// ---------------------------------------------------------------------------------
+	new static Type ComType => typeof(ID3D12Device1) ;
+	new static Guid InterfaceGUID => typeof(ID3D12Device1).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device1) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device1).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable.Instantiate( ) => new Device1( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device1( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device1( (ID3D12Device1)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+[ProxyFor( typeof( ID3D12Device2 ) )]
+public interface IDevice2: IDevice1,
+						   IComObjectRef< ID3D12Device2 >,
+						   IUnknownWrapper< ID3D12Device2 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device2 >? ComPointer { get ; }
+	new ID3D12Device2? COMObject => ComPointer?.Interface ;
+	ID3D12Device2? IComObjectRef< ID3D12Device2 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device2 >? IUnknownWrapper< ID3D12Device2 >.ComPointer => ComPointer ;
+	// ==================================================================================
+
+	// ---------------------------------------------------------------------------------
+	new static Type ComType => typeof(ID3D12Device2) ;
+	new static Guid InterfaceGUID => typeof(ID3D12Device2).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device2) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device2).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable.Instantiate( )                      => new Device2( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device2( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device2( (ID3D12Device2)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+[ProxyFor( typeof( ID3D12Device3 ) )]
+public interface IDevice3: IDevice2,
+						   IComObjectRef< ID3D12Device3 >,
+						   IUnknownWrapper< ID3D12Device3 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device3 >? ComPointer { get ; }
+	new ID3D12Device3? COMObject => ComPointer?.Interface ;
+	ID3D12Device3? IComObjectRef< ID3D12Device3 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device3 >? IUnknownWrapper< ID3D12Device3 >.ComPointer => ComPointer ;
+	// ==================================================================================
+
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device3) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device3).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device3) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device3).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable.Instantiate( )                      => new Device3( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device3( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device3( (ID3D12Device3)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+[ProxyFor( typeof( ID3D12Device4 ) )]
+public interface IDevice4: IDevice3,
+						   IComObjectRef< ID3D12Device4 >,
+						   IUnknownWrapper< ID3D12Device4 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device4 >? ComPointer { get ; }
+	new ID3D12Device4? COMObject => ComPointer?.Interface ;
+	ID3D12Device4? IComObjectRef< ID3D12Device4 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device4 >? IUnknownWrapper< ID3D12Device4 >.ComPointer => ComPointer ;
+	// ==================================================================================
+
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device4) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device4).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device4) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device4).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable.Instantiate( ) => new Device4( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device4( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device4( (ID3D12Device4)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+[SupportedOSPlatform("windows10.0.17763")]
+[ProxyFor( typeof( ID3D12Device5 ) )]
+public interface IDevice5: IDevice4,
+						   IComObjectRef< ID3D12Device5 >,
+						   IUnknownWrapper< ID3D12Device5 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device5 >? ComPointer { get ; }
+	new ID3D12Device5? COMObject => ComPointer?.Interface ;
+	ID3D12Device5? IComObjectRef< ID3D12Device5 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device5 >? IUnknownWrapper< ID3D12Device5 >.ComPointer => ComPointer ;
+	// ==================================================================================
+
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device5) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device5).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device5) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device5).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable.Instantiate( ) => new Device5( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device5( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device5( (ID3D12Device5)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+[ProxyFor( typeof( ID3D12Device6 ) )]
+public interface IDevice6: IDevice5,
+						   IComObjectRef< ID3D12Device6 >,
+						   IUnknownWrapper< ID3D12Device6 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device6 >? ComPointer { get ; }
+	new ID3D12Device6? COMObject => ComPointer?.Interface ;
+	ID3D12Device6? IComObjectRef< ID3D12Device6 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device6 >? IUnknownWrapper< ID3D12Device6 >.ComPointer => ComPointer ;
+	// ==================================================================================
+
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device6) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device6).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device6) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device6).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable.Instantiate( ) => new Device6( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device6( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device6( (ID3D12Device6)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+[ProxyFor( typeof( ID3D12Device7 ) )]
+public interface IDevice7: IDevice6,
+						   IComObjectRef< ID3D12Device7 >,
+						   IUnknownWrapper< ID3D12Device7 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device7 >? ComPointer { get ; }
+	new ID3D12Device7? COMObject => ComPointer?.Interface ;
+	ID3D12Device7? IComObjectRef< ID3D12Device7 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device7 >? IUnknownWrapper< ID3D12Device7 >.ComPointer => ComPointer ;
+	// ==================================================================================
+
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device7) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device7).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device7) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device7).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable. Instantiate( )                      => new Device7( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device7( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device7( (ID3D12Device7)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+[ProxyFor( typeof( ID3D12Device8 ) )]
+public interface IDevice8: IDevice7,
+						   IComObjectRef< ID3D12Device8 >,
+						   IUnknownWrapper< ID3D12Device8 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device8 >? ComPointer { get ; }
+	new ID3D12Device8? COMObject => ComPointer?.Interface ;
+	ID3D12Device8? IComObjectRef< ID3D12Device8 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device8 >? IUnknownWrapper< ID3D12Device8 >.ComPointer => ComPointer ;
+	// ==================================================================================
+
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device8) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device8).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device8) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device8).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable. Instantiate( )                      => new Device8( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device8( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device8( (ID3D12Device8)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+[ProxyFor( typeof( ID3D12Device9 ) )]
+public interface IDevice9: IDevice8,
+						   IComObjectRef< ID3D12Device9 >,
+						   IUnknownWrapper< ID3D12Device9 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device9 >? ComPointer { get ; }
+	new ID3D12Device9? COMObject => ComPointer?.Interface ;
+	ID3D12Device9? IComObjectRef< ID3D12Device9 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device9 >? IUnknownWrapper< ID3D12Device9 >.ComPointer => ComPointer ;
+	// ==================================================================================
+
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device9) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device9).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device9) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device9).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable. Instantiate( )                      => new Device9( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device9( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device9( (ID3D12Device9)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+
+[ProxyFor( typeof( ID3D12Device10 ) )]
+public interface IDevice10: IDevice9,
+						   IComObjectRef< ID3D12Device10 >,
+						   IUnknownWrapper< ID3D12Device10 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device10 >? ComPointer { get ; }
+	new ID3D12Device10? COMObject => ComPointer?.Interface ;
+	ID3D12Device10? IComObjectRef< ID3D12Device10 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device10 >? IUnknownWrapper< ID3D12Device10 >.ComPointer => ComPointer ;
+	// ==================================================================================
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device10) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device10).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device10) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device10).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable. Instantiate( )                      => new Device10( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device10( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device10( (ID3D12Device10)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+[ProxyFor( typeof( ID3D12Device11 ) )]
+public interface IDevice11: IDevice10,
+							IComObjectRef< ID3D12Device11 >,
+							IUnknownWrapper< ID3D12Device11 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device11 >? ComPointer { get ; }
+	new ID3D12Device11? COMObject => ComPointer?.Interface ;
+	ID3D12Device11? IComObjectRef< ID3D12Device11 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device11 >? IUnknownWrapper< ID3D12Device11 >.ComPointer => ComPointer ;
+	// ==================================================================================
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device11) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device11).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device11) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device11).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable. Instantiate( )                      => new Device11( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device11( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device11( (ID3D12Device11)pComObj! ) ;
+	// ==================================================================================
+}
+
+
+[ProxyFor( typeof( ID3D12Device12 ) )]
+public interface IDevice12: IDevice11,
+							IComObjectRef< ID3D12Device12 >,
+							IUnknownWrapper< ID3D12Device12 > {
+	// ---------------------------------------------------------------------------------
+	new ComPtr< ID3D12Device12 >? ComPointer { get ; }
+	new ID3D12Device12? COMObject => ComPointer?.Interface ;
+	ID3D12Device12? IComObjectRef< ID3D12Device12 >.COMObject => COMObject ;
+	ComPtr< ID3D12Device12 >? IUnknownWrapper< ID3D12Device12 >.ComPointer => ComPointer ;
+	// ==================================================================================
+	
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof(ID3D12Device12) ;
+	public new static Guid InterfaceGUID => typeof(ID3D12Device12).GUID ;
+	static Type IUnknownWrapper.ComType => typeof(ID3D12Device12) ;
+	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device12).GUID ;
+	
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------
+	static IInstantiable IInstantiable. Instantiate( )                      => new Device12( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device12( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device12( (ID3D12Device12)pComObj! ) ;
+	// ==================================================================================
+}
+
+
 
 
 

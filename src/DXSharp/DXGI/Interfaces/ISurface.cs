@@ -120,9 +120,9 @@ public interface ISurface1: ISurface,
 
 	void IDisposable.Dispose( ) => ComPointer?.Dispose( ) ;
 
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Surface1( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Surface1( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Surface1( (pComObj as IDXGISurface1)! ) ;
+	static IInstantiable IInstantiable. Instantiate( )                      => new Surface1( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Surface1( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Surface1( (pComObj as IDXGISurface1)! ) ;
 
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
@@ -201,9 +201,9 @@ public interface ISurface2: ISurface1,
 		}
 	}
 	
-	static IDXCOMObject IInstantiable.Instantiate( ) => new Surface2( ) ;
-	static IDXCOMObject IInstantiable.Instantiate( nint pComObj ) => new Surface2( pComObj ) ;
-	static IDXCOMObject IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+	static IInstantiable IInstantiable. Instantiate( )                => new Surface2( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Surface2( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
 		new Surface2( (pComObj as IDXGISurface2)! ) ;
 
 	IDXGIObject? IObject.COMObject => COMObject ;
