@@ -19,7 +19,11 @@ public abstract class DXComObject: DisposableObject,
 		ComPtrBase?.Dispose( ) ;
 		return ValueTask.CompletedTask ;
 	}
-	
-	
+
+	protected override void Dispose( bool disposing ) {
+		if( disposing ) DisposeManaged( ) ;
+		DisposeUnmanaged( ) ;
+		base.Dispose( disposing ) ;
+	}
 } ;
 

@@ -7,15 +7,17 @@ public abstract class DisposableObject: IDisposable,
 	public virtual bool Disposed { get ; protected set ; } = false ;
 	~DisposableObject( ) => Dispose( false ) ;
 
-	async void Dispose( bool disposing ) {
+	protected virtual void Dispose( bool disposing ) {
 		if ( disposing ) DisposeManaged( ) ;
-		await DisposeUnmanaged( ) ;
+		DisposeUnmanaged( ) ;
 		this.Disposed = true ;
 	}
 	
-	protected virtual void DisposeManaged( ) { }
+	protected void DisposeManaged( ) { }
 	protected abstract ValueTask DisposeUnmanaged( ) ;
-	
+
 	public void Dispose( ) => Dispose( true ) ;
-	public ValueTask DisposeAsync( ) => new( Task.Run( Dispose ) ) ;
+
+	
+	public virtual ValueTask DisposeAsync( ) => new( Task.Run( Dispose ) ) ;
 } ;
