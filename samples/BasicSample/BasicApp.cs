@@ -21,7 +21,7 @@ namespace BasicSample ;
 
 
 public class BasicApp: DXWinformApp {
-	Debug? dbgLayer ;
+	IDebug? dbgLayer ;
 	Graphics? graphics ;
 
 	public BasicApp( AppSettings? settings = null ): base( settings ) { }
@@ -32,8 +32,9 @@ public class BasicApp: DXWinformApp {
 		
 #if DEBUG
 		// Enable debug layer in debug builds:
-		dbgLayer = Debug.CreateDebugLayer( ) ;
-		dbgLayer.EnableDebugLayer( ) ;
+		var hr = D3D12.GetDebugInterface( out dbgLayer ) ;
+		hr.ThrowOnFailure( ) ;
+		dbgLayer?.EnableDebugLayer( ) ;
 #endif
 		
 		graphics = new( this ) ;

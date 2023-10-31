@@ -1,10 +1,12 @@
 ﻿using System.Drawing ;
 using DXSharp.Applications ;
+using DXSharp.Direct3D12 ;
 using DXSharp.Direct3D12.Debug ;
+using HelloTexture ;
 
 
 AppSettings Settings = new( "DXSharp: Hello Texture",
-							(1280, 720),
+							(1920, 1080),
 							new AppSettings.Style {
 								FontSize        = 13,
 								FontName        = "Consolas",
@@ -14,10 +16,24 @@ AppSettings Settings = new( "DXSharp: Hello Texture",
 							} ) ;
 
 #if DEBUG || DEBUG_COM
-var debug = Debug.CreateDebugLayer( ) ;
-debug.EnableDebugLayer( ) ;
+IDebug6? debug6 = default ;
+var hr = D3D12.GetDebugInterface( out debug6 ) ;
+hr.ThrowOnFailure( ) ;
+ObjectDisposedException.ThrowIf( debug6 is null, typeof( IDebug6 ) ) ;
+
+IDebug3 debug3 = (IDebug3)debug6 ;
+debug3?.EnableDebugLayer( ) ;
+debug3?.SetEnableGPUBasedValidation( true ) ;
 #endif
 
-IDXApp app = new DXWinformApp( Settings ) ;
+using IDXApp app = new BasicApp( Settings ) ;
 app.Initialize( ) ;
 app.Run( ) ;
+
+#if DEBUG || DEBUG_COM
+//debug3.DisposeAsync( ) ;
+debug3.Dispose( ) ;
+System.Diagnostics.Debug.Write($"Marshal: {debug6.ComPointer.MarshalRefCount}");
+System.Diagnostics.Debug.Write($"Disposed") ;
+#endif
+

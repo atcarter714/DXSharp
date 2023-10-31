@@ -168,7 +168,7 @@ public static class COMUtility {
 	[MethodImpl( MethodImplOptions.AggressiveOptimization )]
 	public static nint GetInterfaceVPointer< T, I >( [NotNull] T comObj ) =>
 		Marshal.GetComInterfaceForObject< T, I >( comObj ?? throw new ArgumentNullException(nameof(comObj)) ) ;
-
+	
 	[MethodImpl(MethodImplOptions.AggressiveOptimization)]
 	public static HResult QueryInterface< TInterface >( nint pUnknown,
 															out nint pInterface ) {

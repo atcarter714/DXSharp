@@ -18,6 +18,7 @@ public interface IUnknownWrapper: IDisposable,
 								  IAsyncDisposable {
 	/// <summary>The type of COM runtime proxy interface.</summary>
 	public static virtual Type ComType => typeof( IUnknown ) ;
+	
 	/// <summary>The GUID (<b>IID</b>) of the COM runtime proxy interface.</summary>
 	public static virtual Guid InterfaceGUID => typeof( IUnknown ).GUID ;
 	

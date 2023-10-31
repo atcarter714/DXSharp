@@ -107,6 +107,7 @@ public class Device5: Device4,
 	internal Device5( ) { }
 	internal Device5( ComPtr< ID3D12Device5 > comPtr ) => ComPointer = comPtr ;
 	
+	[SupportedOSPlatform("windows10.0.17763")]
 	internal Device5( nint address ) => ComPointer = new( address ) ;
 	internal Device5( ID3D12Device5 comObject ) => ComPointer = new( comObject ) ;
 	

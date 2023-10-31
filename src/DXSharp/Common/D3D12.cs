@@ -27,8 +27,8 @@ public static class D3D12 {
 		return (TWrapper) TWrapper.Instantiate( (D)device ) ;
 	}
 
-	public static HResult GetDebugInterface< TDbg >( out TDbg _interface ) 
-													where TDbg: IDebug {
+	public static HResult GetDebugInterface< TDbg >( out TDbg? _interface ) 
+													where TDbg: IUnknownWrapper, IInstantiable {
 		var hr = PInvoke.D3D12GetDebugInterface( TDbg.InterfaceGUID, out var pDebug ) ;
 		
 		if( TDbg.InterfaceGUID == IDebug6.InterfaceGUID )
