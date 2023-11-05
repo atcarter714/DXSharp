@@ -80,7 +80,7 @@ public abstract class DXApp: IDisposable {
     
     static bool IsHardwareAdapterSupported( IDXGIAdapter1 adapter ) {
         adapter.GetDesc1( out var desc ) ;
-        AdapterFlag f ;
+        
         if ( (desc.Flags & 
               (uint)DXGI_ADAPTER_FLAG3.DXGI_ADAPTER_FLAG3_SOFTWARE) is not 0 ) {
             // Don't select the Basic Render Driver adapter.

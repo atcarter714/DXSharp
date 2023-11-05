@@ -39,7 +39,7 @@ internal class LifetimeOwner: DisposableObject,
 							  IComObjectRef< ID3D12LifetimeOwner > {
 	// -----------------------------------------------------------------------------------------------
 	
-	protected ComObject? ComResources { get ; set ; }
+	protected COMResource? ComResources { get ; set ; }
 	public int RefCount => ( ComPointer?.RefCount ?? 0 ) ;
 	
 	ComPtr< ID3D12LifetimeOwner >? _comPtr ;
@@ -51,7 +51,7 @@ internal class LifetimeOwner: DisposableObject,
 	
 	// -----------------------------------------------------------------------------------------------
 	
-	public ID3D12LifetimeOwner? COMObject => ComPointer?.Interface ;
+	public ID3D12LifetimeOwner? ComObject => ComPointer?.Interface ;
 	
 	internal LifetimeOwner( ) {
 	 _comPtr = ComResources?.GetPointer< ID3D12LifetimeOwner >( ) ;
@@ -98,7 +98,7 @@ internal class LifetimeOwner: DisposableObject,
 	// -----------------------------------------------------------------------------------------------
 	
 	public void LifetimeStateUpdated( LifetimeState NewState ) => 
-		COMObject!.LifetimeStateUpdated( NewState ) ;
+		ComObject!.LifetimeStateUpdated( NewState ) ;
 	
 	// -----------------------------------------------------------------------------------------------
 	

@@ -40,7 +40,7 @@ internal class QueryHeap: Pageable,
 	ComPtr< ID3D12QueryHeap >? _comPtr ;
 	public new virtual ComPtr< ID3D12QueryHeap >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12QueryHeap >( ) ;
-	public override ID3D12QueryHeap? COMObject => ComPointer?.Interface ;
+	public override ID3D12QueryHeap? ComObject => ComPointer?.Interface ;
 	
 	public new static Type ComType => typeof(ID3D12QueryHeap) ;
 	

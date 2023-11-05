@@ -18,7 +18,7 @@ internal class PipelineLibrary: DeviceChild,
 	public new ComPtr< ID3D12PipelineLibrary >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12PipelineLibrary >( ) ;
 
-	public override ID3D12PipelineLibrary? COMObject => ComPointer?.Interface ;
+	public override ID3D12PipelineLibrary? ComObject => ComPointer?.Interface ;
 	// -----------------------------------------------------------------------------------------------
 
 	internal PipelineLibrary( ) {
@@ -44,20 +44,20 @@ internal class PipelineLibrary: DeviceChild,
 
 	public void StorePipeline( string pName, ID3D12PipelineState pPipeline ) {
 		using PCWSTR _name = pName ;
-		COMObject!.StorePipeline( _name, pPipeline ) ;
+		ComObject!.StorePipeline( _name, pPipeline ) ;
 	}
 	
 	public void StorePipeline( string pName, IPipelineState pPipeline ) {
 		using PCWSTR _name    = pName ;
 		var          pipeline = (IComObjectRef< ID3D12PipelineState >)pPipeline ;
-		COMObject!.StorePipeline( _name, pipeline.COMObject ) ;
+		ComObject!.StorePipeline( _name, pipeline.ComObject ) ;
 	}
 
 	public void LoadGraphicsPipeline( string                               pName,
 									  in  GraphicsPipelineStateDescription pDesc,
 									  in  Guid                             riid,
 									  out object                           ppPipelineState ) {
-		var lib = COMObject ?? throw new NullReferenceException( ) ;
+		var lib = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed ( void* pRiid = &riid ) {
 				using PCWSTR _name = pName ;
@@ -71,7 +71,7 @@ internal class PipelineLibrary: DeviceChild,
 									 in  ComputePipelineStateDescription pDesc,
 									 in  Guid                            riid,
 									 out object                          ppPipelineState ) {
-		var lib = COMObject ?? throw new NullReferenceException( ) ;
+		var lib = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed ( void* pRiid = &riid ) {
 				using PCWSTR _name = pName ;
@@ -82,13 +82,13 @@ internal class PipelineLibrary: DeviceChild,
 	}
 
 	public nuint GetSerializedSize( ) {
-		var lib = COMObject ?? throw new NullReferenceException( ) ;
+		var lib = ComObject ?? throw new NullReferenceException( ) ;
 		return lib.GetSerializedSize( ) ;
 	}
 
 
 	public void Serialize( nint pData, nuint DataSizeInBytes ) {
-		var lib = COMObject ?? throw new NullReferenceException( ) ;
+		var lib = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			lib.Serialize( (void*)pData, DataSizeInBytes ) ;
 		}
@@ -123,7 +123,7 @@ internal class PipelineLibrary1: PipelineLibrary,
 	public new ComPtr< ID3D12PipelineLibrary1 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12PipelineLibrary1 >( ) ;
 	
-	public override ID3D12PipelineLibrary1? COMObject => ComPointer?.Interface ;
+	public override ID3D12PipelineLibrary1? ComObject => ComPointer?.Interface ;
 	
 	// -----------------------------------------------------------------------------------------------
 
@@ -149,7 +149,7 @@ internal class PipelineLibrary1: PipelineLibrary,
 							  in  PipelineStateStreamDescription pDesc,
 							  in Guid riid,
 							  out IPipelineState ppPipelineState ) {
-		var lib1 = COMObject ?? throw new NullReferenceException( ) ;
+		var lib1 = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe { fixed ( void* pRiid = &riid, _desc = &pDesc ) {
 				using PCWSTR _name = pName ;
 				lib1.LoadPipeline( _name, (D3D12_PIPELINE_STATE_STREAM_DESC *)_desc,

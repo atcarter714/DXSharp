@@ -23,7 +23,7 @@ internal class Device: Object,
 	ComPtr< IDXGIDevice >? _comPtr ;
 	public new ComPtr< IDXGIDevice >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIDevice >( ) ;
-	public override IDXGIDevice? COMObject => ComPointer?.Interface ;
+	public override IDXGIDevice? ComObject => ComPointer?.Interface ;
 	// ----------------------------------------------------------
 
 	public Device( ) {
@@ -42,7 +42,7 @@ internal class Device: Object,
 	// ----------------------------------------------------------
 	
 	public HResult GetAdapter( out IAdapter adapter ) {
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -68,7 +68,7 @@ internal class Device: Object,
 		ppSurface = default! ;
 		if( numSurfaces <= 0U ) return ;
 		
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -105,7 +105,7 @@ internal class Device: Object,
 	public void QueryResourceResidency( in IResource?[ ] ppResources, 
 										out Span< Residency > pResidencyStatus, 
 										uint numResources ) {
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -116,7 +116,7 @@ internal class Device: Object,
 			var array = new object[ ppResources.Length ] ;
 			for ( var i = 0; i < ppResources.Length; ++i )
 				array[ i ] = ( (IComObjectRef< IDXGIResource >?)ppResources[ i ] )!
-								.COMObject! ;
+								.ComObject! ;
 			
 			var _residencies = new Residency[ ppResources.Length ] ;
 			fixed( Residency* pResidencies = _residencies )
@@ -128,7 +128,7 @@ internal class Device: Object,
 
 	
 	public void SetGPUThreadPriority( int priority ) {
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -140,7 +140,7 @@ internal class Device: Object,
 
 	
 	public void GetGPUThreadPriority( out int pPriority ) {
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -180,7 +180,7 @@ internal class Device1: Device,
 	ComPtr< IDXGIDevice1 >? _comPtr ;
 	public new virtual ComPtr< IDXGIDevice1 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIDevice1 >( ) ;
-	public override IDXGIDevice1? COMObject => ComPointer?.Interface ;
+	public override IDXGIDevice1? ComObject => ComPointer?.Interface ;
 	// ----------------------------------------------------------
 	
 	public Device1( ) {
@@ -199,10 +199,10 @@ internal class Device1: Device,
 	// ----------------------------------------------------------
 
 	public void SetMaximumFrameLatency( uint maxLatency ) =>
-		this.COMObject!.SetMaximumFrameLatency( maxLatency ) ;
+		this.ComObject!.SetMaximumFrameLatency( maxLatency ) ;
 	
 	public void GetMaximumFrameLatency( out uint pMaxLatency ) =>
-		this.COMObject!.GetMaximumFrameLatency( out pMaxLatency ) ;
+		this.ComObject!.GetMaximumFrameLatency( out pMaxLatency ) ;
 	
 	// ----------------------------------------------------------
 	
@@ -230,7 +230,7 @@ internal class Device2: Device1,
 	ComPtr< IDXGIDevice2 >? _comPtr ;
 	public new virtual ComPtr< IDXGIDevice2 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIDevice2 >( ) ;
-	public override IDXGIDevice2? COMObject => ComPointer?.Interface ;
+	public override IDXGIDevice2? ComObject => ComPointer?.Interface ;
 	// ----------------------------------------------------------
 	
 	public Device2( ) {
@@ -249,7 +249,7 @@ internal class Device2: Device1,
 	// ----------------------------------------------------------
 
 	public void OfferResources( uint NumResources, IResource[ ] ppResources, OfferResourcePriority Priority ) {
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -259,13 +259,13 @@ internal class Device2: Device1,
 		var array = new IDXGIResource[ NumResources ] ;
 		for ( var i = 0; i < NumResources; ++i )
 			array[ i ] = ( (IComObjectRef< IDXGIResource >)ppResources[ i ] )
-								.COMObject! ;
+								.ComObject! ;
 		
 		device.OfferResources( NumResources, array, (DXGI_OFFER_RESOURCE_PRIORITY)Priority ) ;
 	}
 
 	public void ReclaimResources( uint NumResources, IResource[ ] ppResources, out Span< BOOL > pDiscarded ) {
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -275,7 +275,7 @@ internal class Device2: Device1,
 		var array = new IDXGIResource[ NumResources ] ;
 		for ( var i = 0; i < NumResources; ++i )
 			array[ i ] = ( (IComObjectRef< IDXGIResource >)ppResources[ i ] )
-								.COMObject! ;
+								.ComObject! ;
 		
 		unsafe {
 			var discarded = new BOOL[ (int)NumResources ] ;
@@ -287,7 +287,7 @@ internal class Device2: Device1,
 	}
 
 	public void EnqueueSetEvent( Win32Handle hEvent ) {
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -321,7 +321,7 @@ internal class Device3: Device2,
 	ComPtr< IDXGIDevice3 >? _comPtr ;
 	public new virtual ComPtr< IDXGIDevice3 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIDevice3 >( ) ;
-	public override IDXGIDevice3? COMObject => ComPointer?.Interface ;
+	public override IDXGIDevice3? ComObject => ComPointer?.Interface ;
 	// ----------------------------------------------------------
 	
 	public Device3( ) {
@@ -340,7 +340,7 @@ internal class Device3: Device2,
 	// ----------------------------------------------------------
 	
 	public void Trim( ) {
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -376,7 +376,7 @@ internal class Device4: Device3,
 	ComPtr< IDXGIDevice4 >? _comPtr ;
 	public new virtual ComPtr< IDXGIDevice4 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIDevice4 >( ) ;
-	public override IDXGIDevice4? COMObject => ComPointer?.Interface ;
+	public override IDXGIDevice4? ComObject => ComPointer?.Interface ;
 	// ----------------------------------------------------------
 	
 	public Device4( ) {
@@ -398,7 +398,7 @@ internal class Device4: Device3,
 								 IResource[ ]          ppResources,
 								 OfferResourcePriority Priority = OfferResourcePriority.Normal, 
 								 OfferResourceFlags    Flags    = OfferResourceFlags.AllowDecommit ) {
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -408,7 +408,7 @@ internal class Device4: Device3,
 		var array = new IDXGIResource[ NumResources ] ;
 		for ( var i = 0; i < NumResources; ++i )
 			array[ i ] = ( (IComObjectRef< IDXGIResource >)ppResources[ i ] )
-								.COMObject! ;
+								.ComObject! ;
 		
 		device.OfferResources1( NumResources, array, (DXGI_OFFER_RESOURCE_PRIORITY)Priority, (uint)Flags ) ;
 	}
@@ -416,7 +416,7 @@ internal class Device4: Device3,
 	public void ReclaimResources1( uint NumResources, 
 								   IResource[ ] ppResources, 
 								   out Span< ReclaimResourceResults > pResults ) {
-		var device = this.COMObject
+		var device = this.ComObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
@@ -426,7 +426,7 @@ internal class Device4: Device3,
 		var array = new IDXGIResource[ NumResources ] ;
 		for ( var i = 0; i < NumResources; ++i )
 			array[ i ] = ( (IComObjectRef< IDXGIResource >)ppResources[ i ] )
-								.COMObject! ;
+								.ComObject! ;
 		
 		unsafe {
 			var reclaimResults = new ReclaimResourceResults[ (int)NumResources ] ;

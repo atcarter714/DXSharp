@@ -18,8 +18,9 @@ namespace DXSharp.Objects ;
 internal abstract class DXComObject: DisposableObject,
 									 IDXCOMObject {
 	//! ---------------------------------------------------------------------------------
-	protected ComObject? ComResources { get ; set ; }
-	protected internal void _initOrAdd<T>( ComPtr<T> ptr ) where T: IUnknown {
+	/// <summary>The COM object management instance.</summary>
+	protected COMResource? ComResources { get ; set ; }
+	protected internal void _initOrAdd< T >( ComPtr< T > ptr ) where T: IUnknown {
 		if( ComResources is null ) ComResources = new( ptr ) ;
 		else ComResources.AddPointer<T>( ptr ) ;
 	}
@@ -30,213 +31,118 @@ internal abstract class DXComObject: DisposableObject,
 	public virtual ComPtr? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IUnknown >( )! ;
 	
-	public virtual IUnknown? COMObject =>
+	
+	public virtual IUnknown? ComObject =>
 		(IUnknown)ComPointer?.InterfaceObjectRef! ;
 	
 	//! ---------------------------------------------------------------------------------
 	
 	//! IDisposable:
-	protected override ValueTask DisposeUnmanaged( ) {
-		_comPtr?.Dispose( ) ;
-		return ValueTask.CompletedTask ;
+	protected override async ValueTask DisposeUnmanaged( ) {
+		if( _comPtr is not null )
+			await _comPtr.DisposeAsync( ) ;
 	}
-
 	protected override void Dispose( bool disposing ) {
-		if( disposing ) DisposeManaged( ) ;
-		DisposeUnmanaged( ) ;
 		base.Dispose( disposing ) ;
+		if( disposing ) 
+			DisposeManaged( ) ;
+		DisposeUnmanaged( ) ;
 	}
-
 	public override async ValueTask DisposeAsync( ) {
 		await base.DisposeAsync( ) ;
 		await Task.Run( Dispose ) ;
 	}
 	
-	
 	// ----------------------------------------------------------------------------------
 	
-	public void GetPrivateData( in Guid name, ref uint pDataSize, nint pData = 0x0000 ) {
-		HResult hr = HResult.E_FAIL ;
-		try {
-			Guid _name       = name ;
-			uint _sizeResult = 0U ;
-			bool _sizeCheck  = pData is NULL_PTR || !pData.IsValid( ) ;
-			var comObj = this.ComPtrBase?.InterfaceObjectRef
-						 ?? throw new ObjectDisposedException( nameof( this.ComPtrBase ) ) ;
-			var underlyingType = comObj.GetType( ) ;
-
-#if DEBUG || DEV_BUILD || DEBUG_COM //! Development safety/sanity checks (can remove after testing)
-			bool isValid = comObj.GetType( ).IsCOMObject ;
-			if ( !isValid ) {
-				throw new DXSharpException( $"{nameof( IDXCOMObject )}.{nameof( GetPrivateData )}" +
-											$"( {nameof( pDataSize )}, {nameof( pData )} ) :: " +
-											$"The backing field of the internal " +
-											$"{nameof( ComPtrBase )}.{nameof( ComPtrBase.InterfaceObjectRef )}'s " +
-											$"internal property is not a valid COM object reference! \n" +
-											$"(Invalid Type: {underlyingType.Name}, Guid: {underlyingType.GUID})" ) ;
-			}
+	public HResult GetPrivateData( in Guid name, ref uint pDataSize, nint pData = 0x0000 ) {
+		// Obtain interface references:
+		var _name = name ;
+		
+		// Get the interface object:
+		var comObj = this.ComPtrBase?.InterfaceObjectRef
+#if DEBUG || DEV_BUILD || DEBUG_COM
+					 ?? throw new ObjectDisposedException( nameof( this.ComPtrBase ) )
 #endif
-
-			// Request the size of the data?
-			if ( _sizeCheck ) { pDataSize = _fetchDataSize( _name, comObj ) ; return ; }
-
-			// Retrieve the data:
-			bool _ok = false ;
-			if ( comObj is IDXGIObject dxgiObject ) {
-				unsafe { hr = dxgiObject.GetPrivateData( &_name, ref _sizeResult, (void*)pData ) ; }
-				_ok = true ;
-			}
-
-			// Is it a D3D12 object?
-			else if ( comObj is ID3D12Object d3d12Object ) {
-				unsafe { hr = d3d12Object.GetPrivateData( &_name, ref _sizeResult, (void*)pData ) ; }
-				_ok = true ;
-			}
-			
-#if DEBUG || DEV_BUILD || DEBUG_COM //! Development safety/sanity checks (can remove after testing)
-			if ( !_ok ) {
-				throw new
-					DXSharpException( $"{nameof( IDXCOMObject )}.{nameof( GetPrivateData )}" +
-									  $"( {nameof( name )}, {nameof( pDataSize )}, {nameof( pData )} ) :: " +
-									  $"The internal {nameof( ComPtrBase )}.{nameof( ComPtrBase.InterfaceObjectRef )} " +
-									  $"is not a valid DXGI or D3D12 object!\n" + $"(Name: {underlyingType.Name}, GUID: {underlyingType.GUID})" ) ;
-			}
-#endif
-			
-			pDataSize = _sizeResult ;
-		}
-
-		finally { hr.SetAsLastErrorForThread( ) ; }
-
-		//! Local function to get data size:
-		unsafe uint _fetchDataSize( Guid _guid, object obj ) {
-			bool _ok = false ;
-			uint _dataSize = 0U ;
-			HResult _hr = HResult.E_FAIL;
-			
-			// Is it a DXGI object?
-			if ( obj is IDXGIObject _dxgiObj ) {
-				_hr = _dxgiObj.GetPrivateData( &_guid, ref _dataSize, null ) ;
-				_ok = true ;
-			}
-
-			// Is it a D3D12 object?
-			else if ( obj is ID3D12Object d3d12Object ) {
-				_hr = d3d12Object.GetPrivateData( &_guid, ref _dataSize, null ) ;
-				_ok = true ;
-			}
-			
-			_hr.SetAsLastErrorForThread( ) ;
-			
-#if DEBUG || DEV_BUILD || DEBUG_COM //! Development safety/sanity checks (can remove after testing)
-			if ( !_ok ) {
-				throw new DXSharpException( $"{nameof( IDXCOMObject )}.{nameof( GetPrivateData )}" +
-											$"( {nameof( pDataSize )}, {nameof( pData )} ) :: " +
-											$"The internal {nameof( ComPtrBase )}.{nameof( ComPtrBase.InterfaceObjectRef )} " +
-											$"is not a valid DXGI or D3D12 object!\n" +
-											$"(Name: {obj.GetType( ).Name}, GUID: {obj.GetType( ).GUID})" ) ;
-			}
-#endif
-			return _dataSize ;
-		}
-	}
-	
-	public unsafe void SetPrivateData< TData >( in Guid name, uint DataSize, nint pData ) {
+		 					 ;
+		 
+		// Get the data: ---------------------------------------------------------------
 		HResult hr = default ;
-		var guid = typeof(TData).GUID ;
-		bool dataIsCOMObject = typeof(TData).IsCOMObject ;
-		var comObj = this.ComPtrBase?.InterfaceObjectRef 
-					 ?? throw new ObjectDisposedException( nameof(this.ComPtrBase) ) ;
-		var underlyingType = comObj.GetType( ) ;
-		
-#if DEBUG || DEV_BUILD || DEBUG_COM //! Development safety/sanity checks (can remove after testing)
-		bool isValid = comObj.GetType( ).IsCOMObject ;
-		if( !isValid ) throw new DXSharpException( $"{nameof(IDXCOMObject)}.{nameof(SetPrivateData)}<{nameof(TData)}>" +
-												   $"( {nameof(DataSize)}, {nameof(pData)} ) :: " +
-												   $"The backing field of the internal " +
-												   $"{nameof(ComPtrBase)}.{nameof(ComPtrBase.InterfaceObjectRef)}'s " +
-												   $"internal property is not a valid COM object reference! \n" +
-												   $"(Invalid Type: {underlyingType.Name}, Guid: {underlyingType.GUID})" ) ;
-#endif
-		
-		// Set the data:
-		bool _ok = false ;
-		if ( comObj is IDXGIObject dxgiObject ) { 
-			hr = dxgiObject.SetPrivateData( &guid, DataSize, (void *)pData ) ;
-			_ok         = true ;
+		//! Is it a D3D12 object?
+		if ( comObj is ID3D12Object d3d12Object ) {
+			unsafe { hr = d3d12Object.GetPrivateData( &_name, ref pDataSize, (void*)pData ) ; }
 		}
-		// Is it a D3D12 object?
-		else if ( comObj is ID3D12Object d3d12Object ) { 
-			hr = d3d12Object.SetPrivateData( &guid, DataSize, (void *)pData ) ;
-			_ok         = true ;
+		//! Is it a DXGI object?
+		else if ( comObj is IDXGIObject dxgiObject ) {
+			unsafe { hr = dxgiObject.GetPrivateData( &_name, ref pDataSize, (void*)pData ) ; }
 		}
+		// ----------------------------------------------------------------------------------
 		
-#if DEBUG || DEV_BUILD || DEBUG_COM //! Development safety/sanity checks (can remove after testing)
-		if( !_ok ) throw new DXSharpException( $"{nameof(IDXCOMObject)}.{nameof(SetPrivateData)}<{nameof(TData)}>" +
-											   $"( {nameof(DataSize)}, {nameof(pData)} ) :: " +
-											   $"The internal {nameof(ComPtrBase)}.{nameof(ComPtrBase.InterfaceObjectRef)} " +
-											   $"is not a valid DXGI or D3D12 object!\n" +
-											   $"(Name: {underlyingType.Name}, GUID: {underlyingType.GUID})" ) ;
-#endif
 		hr.SetAsLastErrorForThread( ) ;
+		return hr ;
 	}
 	
-	public void SetPrivateDataInterface< T >( in Guid name, in T? pUnknown )
-													where T: IUnknownWrapper {
+	public unsafe HResult SetPrivateData< TData >( in Guid name, uint DataSize, nint pData ) {
+		// Obtain interface references:
 		HResult hr = default ;
 		var _name = name ;
-		bool dataIsCOMObject = typeof(T).IsCOMObject ;
 		
+		// Get the interface object:
 		var comObj = this.ComPtrBase?.InterfaceObjectRef
-					 ?? throw new ObjectDisposedException( nameof( this.ComPtrBase ) ) ;
-		var underlyingType = comObj.GetType( ) ;
-		
-#if DEBUG || DEV_BUILD || DEBUG_COM //! Development safety/sanity checks (can remove after testing)
-		bool isValid = comObj.GetType( ).IsCOMObject ;
-		if( !isValid ) {
-			throw new DXSharpException( $"{nameof( IDXCOMObject )}.{nameof( SetPrivateDataInterface )}<{nameof(T)}>" +
-										$"( {nameof( pUnknown )} ) :: " +
-										$"The backing field of the internal " +
-										$"{nameof( ComPtrBase )}.{nameof( ComPtrBase.InterfaceObjectRef )}'s " +
-										$"internal property is not a valid COM object reference! \n" +
-										$"(Invalid Type: {underlyingType.Name}, Guid: {underlyingType.GUID})" ) ;
-		}
+#if DEBUG || DEV_BUILD || DEBUG_COM
+					 ?? throw new ObjectDisposedException( nameof( this.ComPtrBase ) )
 #endif
+		 					 ;
 		
-		// Get the pointer to the interface data:
-		// (NOTE: Null pointers/objects are valid - used to clear data)
-		var dataObj = pUnknown?.ComPtrBase?.InterfaceObjectRef ;
+		// Set the data: ---------------------------------------------------------------
 		
-		// Set the data:
-		bool _ok = false ;
-		if ( comObj is IDXGIObject dxgiObject ) {
-			unsafe { hr = dxgiObject.SetPrivateDataInterface( &_name, ( (IUnknown)dataObj! ?? null ) ) ; }
-			_ok = true ;
+		//! Is it a D3D12 object?
+		if ( comObj is ID3D12Object d3d12Object ) {
+			unsafe { hr = d3d12Object.SetPrivateData( &_name, DataSize, (void*)pData ) ; }
 		}
-		
-		// Is it a D3D12 object?
-		else if ( comObj is ID3D12Object d3d12Object ) {
-			unsafe { hr = d3d12Object.SetPrivateDataInterface( &_name, ( (IUnknown)dataObj! ?? null ) ) ; }
-			_ok = true ;
+		//! Is it a DXGI object?
+		else if ( comObj is IDXGIObject dxgiObject ) {
+			unsafe { hr = dxgiObject.SetPrivateData( &_name, DataSize, (void*)pData ) ; }
 		}
-
 		hr.SetAsLastErrorForThread( ) ;
+		return hr ;
+	}
+	
+	public HResult SetPrivateDataInterface< T >( in Guid name, in T? pUnknown ) where T: IDXCOMObject {
+		// Obtain interface references:
+		HResult hr = default ;
+		var _name = name ;
 		
-#if DEBUG || DEV_BUILD || DEBUG_COM //! Development safety/sanity checks (can remove after testing)
-		if( !_ok ) {
-			throw new DXSharpException( $"{nameof( IDXCOMObject )}.{nameof( SetPrivateDataInterface )}<{nameof(T)}>" +
-										$"( {nameof( pUnknown )} ) :: " +
-										$"The internal {nameof( ComPtrBase )}.{nameof( ComPtrBase.InterfaceObjectRef )} " +
-										$"is not a valid DXGI or D3D12 object!\n" +
-										$"(Name: {underlyingType.Name}, GUID: {underlyingType.GUID})" ) ;
-		}
+		// Get the interface object:
+		var comObj = this.ComPtrBase?.InterfaceObjectRef
+#if DEBUG || DEV_BUILD || DEBUG_COM
+					 ?? throw new ObjectDisposedException( nameof( this.ComPtrBase ) )
+#endif 
+					 ;
+		
+		// Get the ref to the IUnknown interface:
+		var dataObj = ( (IComObjectRef< IUnknown >?)pUnknown )?.ComObject
+#if DEBUG || DEV_BUILD || DEBUG_COM
+					  ?? throw new NullReferenceException( nameof( pUnknown ) )
 #endif
+					  ;
+		
+		// Set the data: ---------------------------------------------------------------
+		
+		//! Is it a D3D12 object?
+		if ( comObj is ID3D12Object d3d12Object ) {
+			unsafe { hr = d3d12Object.SetPrivateDataInterface( &_name, ( (IUnknown)dataObj! ?? null ) ) ; }
+		}
+		//! Is it a DXGI object?
+		else if ( comObj is IDXGIObject dxgiObject ) {
+			unsafe { hr = dxgiObject.SetPrivateDataInterface( &_name, ( (IUnknown)dataObj! ?? null ) ) ; }
+		}
+		hr.SetAsLastErrorForThread( ) ;
+		return hr ;
 	}
 	
 	//! ---------------------------------------------------------------------------------
-
 	public static Type ComType => typeof(IUnknown) ;
-	
 	public static ref readonly Guid Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -245,7 +151,6 @@ internal abstract class DXComObject: DisposableObject,
 													.GetReference(data) ) ;
 		}
 	}
-	
 	// =================================================================================
 } ;
 

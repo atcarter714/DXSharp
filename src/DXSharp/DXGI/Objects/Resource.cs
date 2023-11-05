@@ -20,8 +20,8 @@ internal class Resource: DeviceSubObject,
 	ComPtr< IDXGIResource >? _comPtr ;
 	public new ComPtr< IDXGIResource >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<IDXGIResource>(  ) ;
-	public new IDXGIResource? COMObject => ComPointer?.Interface ;
-	IDXGIResource _dxgiInterface => COMObject ??
+	public override IDXGIResource? ComObject => ComPointer?.Interface ;
+	IDXGIResource _dxgiInterface => ComObject ??
 		 throw ( ComPointer is not null && ComPointer.Disposed
 					 ? new ObjectDisposedException( nameof(OutputDuplication) )
 					 : new NullReferenceException( $"{nameof(Resource)} :: " +
@@ -99,8 +99,8 @@ internal class Resource1: Resource,
 	ComPtr< IDXGIResource1 >? _comPtr ;
 	public new ComPtr< IDXGIResource1 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<IDXGIResource1>(  ) ;
-	public new IDXGIResource1? COMObject => ComPointer?.Interface ;
-	IDXGIResource1 _dxgiInterface => COMObject ??
+	public new IDXGIResource1? ComObject => ComPointer?.Interface ;
+	IDXGIResource1 _dxgiInterface => ComObject ??
 		 throw ( ComPointer is not null && ComPointer.Disposed
 					 ? new ObjectDisposedException( nameof(OutputDuplication) )
 					 : new NullReferenceException( $"{nameof(Resource1)} :: " +

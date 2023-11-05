@@ -17,7 +17,7 @@ internal class OutputDuplication: Object, IOutputDuplication {
 	ComPtr< IDXGIOutputDuplication >? _comPtr ;
 	public new virtual ComPtr< IDXGIOutputDuplication >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<IDXGIOutputDuplication>(  ) ;
-	public override IDXGIOutputDuplication? COMObject => ComPointer?.Interface ;
+	public override IDXGIOutputDuplication? ComObject => ComPointer?.Interface ;
 	
 	// ----------------------------------------------------------------------------------------------
 	public OutputDuplication( ) {
@@ -39,7 +39,7 @@ internal class OutputDuplication: Object, IOutputDuplication {
 
 	// ----------------------------------------------------------------------------------------------
 	
-	IDXGIOutputDuplication _dxgiInterface => COMObject ??
+	IDXGIOutputDuplication _dxgiInterface => ComObject ??
 											 throw ( ComPointer is not null && ComPointer.Disposed
 														 ? new ObjectDisposedException( nameof(OutputDuplication) )
 														 : new NullReferenceException( $"{nameof(OutputDuplication)} :: " +

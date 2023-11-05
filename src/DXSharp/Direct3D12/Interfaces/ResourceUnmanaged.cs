@@ -1,12 +1,15 @@
-﻿#region Using Directives
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+
+#region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using Windows.Win32.System.Com ;
-using DXSharp.Windows.COM ;
-using WinCom = Windows.Win32.System.Com;
+
+using WinCom = Windows.Win32.System.Com ;
+using static DXSharp.InteropUtils ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
@@ -31,7 +34,7 @@ public unsafe struct ResourceUnmanaged: IComIID {
 		this.lpVtbl = (void **)pVtbl ;
 	}
 	
-	public ResourceUnmanaged( IResource resource ): this( ( (Resource)resource ).COMObject! ) { }
+	public ResourceUnmanaged( IResource resource ): this( ( (Resource)resource ).ComObject! ) { }
 	
 	// ---------------------------------------------------------------------------------------------------
 	
@@ -225,6 +228,19 @@ public unsafe struct ResourceUnmanaged: IComIID {
 	}
 
 	
+	void** lpVtbl ;
+	
+	public ref Vtbl VTable {
+		[MethodImpl(_MAXOPT_)] get {
+			fixed( void* pVtbl = &lpVtbl ) {
+				return ref ( *( (Vtbl*)pVtbl ) ) ;
+			}
+		}
+	}
+	
+	
+	[DXSharp.DirectX( typeof(Vtbl), "V-Table",
+					  nameof(ResourceUnmanaged) )]
 	public struct Vtbl {
 		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, Guid*, void**, HRESULT> QueryInterface_1 ;
 
@@ -262,9 +278,6 @@ public unsafe struct ResourceUnmanaged: IComIID {
 		internal delegate *unmanaged [Stdcall]<ResourceUnmanaged*, HeapProperties*, HeapFlags*,
 			HRESULT> GetHeapProperties_15 ;
 	}
-
-	void** lpVtbl ;
-	
 	
 	// ---------------------------------------------------------------------------------------------------
 	// Static Members:

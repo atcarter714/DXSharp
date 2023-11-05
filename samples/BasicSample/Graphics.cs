@@ -1,5 +1,6 @@
 ﻿#region Using Directives
 using System.Buffers ;
+using System.Drawing ;
 using System.Numerics ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
@@ -58,7 +59,11 @@ public class Graphics: DisposableObject {
 	
 	public float AspectRatio => MainViewport.Width / MainViewport.Height ;
 	ResourceBarrier[ ] transitionBarriers = new ResourceBarrier[ 1 ] ;
+	
 	float[ ] clearColor = new float[ 4 ] { 0.0f, 0.2f, 0.4f, 1.0f } ;
+	protected ColorF bufferColor =>
+		Application.Settings.StyleSettings?.BackBufferColor 
+			?? AppSettings.Style.DEFAULT_BUFFER_COLOR ;
 	
 	
 	public Graphics( IDXApp app ) => Application = app ;
@@ -276,7 +281,7 @@ public class Graphics: DisposableObject {
 		// Describe and create the graphics pipeline state object (PSO).
 		var psoDesc = new GraphicsPipelineStateDescription( ) {
 			InputLayout           = inputLayoutDescription,
-			pRootSignature        = rootSignature.COMObject!,
+			pRootSignature        = rootSignature.ComObject!,
 			VS                    = vertexShader,
 			PS                    = pixelShader,
 			RasterizerState       = RasterizerDescription.Default,
@@ -430,7 +435,7 @@ public class Graphics: DisposableObject {
 									   false, null ) ;
 
 		// Clear the render target:
-		commandList.ClearRenderTargetView( rtvHandle, Application.Settings.StyleSettings.BackBufferColor ) ;
+		commandList.ClearRenderTargetView( rtvHandle, bufferColor ) ;
 
 		// Draw the triangle:
 		commandList.IASetPrimitiveTopology( PrimitiveTopology.D3D_TriangleList ) ;

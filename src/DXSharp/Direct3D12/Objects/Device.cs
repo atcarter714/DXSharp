@@ -27,7 +27,7 @@ internal class Device: Object,
 	ComPtr< ID3D12Device >? _comPtr ;
 	public new ComPtr< ID3D12Device >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device >( ) ;
-	public override ID3D12Device? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -49,12 +49,12 @@ internal class Device: Object,
 	
 	// -------------------------------------------------------------------------------------------------------
 	
-	public uint GetNodeCount( ) => COMObject!.GetNodeCount( ) ;
+	public uint GetNodeCount( ) => ComObject!.GetNodeCount( ) ;
 	
 	public void CreateCommandQueue( in CommandQueueDescription pDesc,
 									in Guid                    riid, out ICommandQueue ppCommandQueue ) {
 		unsafe { fixed ( void* descPtr = &pDesc, riidPtr = &riid ) {
-				COMObject!.CreateCommandQueue( (D3D12_COMMAND_QUEUE_DESC*)descPtr,
+				ComObject!.CreateCommandQueue( (D3D12_COMMAND_QUEUE_DESC*)descPtr,
 											   (Guid *)riidPtr, out var ppvCommandQueue ) ;
 				ppCommandQueue = new CommandQueue( (ID3D12CommandQueue)ppvCommandQueue) ;
 			}
@@ -65,7 +65,7 @@ internal class Device: Object,
 	public void CreateCommandAllocator( CommandListType       type, in Guid riid,
 										out ICommandAllocator ppCommandAllocator ) {
 		unsafe { fixed ( Guid* riidPtr = &riid ) {
-				COMObject!.CreateCommandAllocator( (D3D12_COMMAND_LIST_TYPE)type, riidPtr,
+				ComObject!.CreateCommandAllocator( (D3D12_COMMAND_LIST_TYPE)type, riidPtr,
 														out var ppvCommandAllocator ) ;
 				var _allocator = (ID3D12CommandAllocator)ppvCommandAllocator ;
 				CommandAllocator allocator = new( _allocator ) ;
@@ -78,7 +78,7 @@ internal class Device: Object,
 	public void CreateGraphicsPipelineState( in  GraphicsPipelineStateDescription pDesc, in Guid riid,
 											 out IPipelineState                   ppPipelineState ) {
 		unsafe { fixed ( Guid* riidPtr = &riid ) {
-				COMObject!.CreateGraphicsPipelineState( pDesc, riidPtr, 
+				ComObject!.CreateGraphicsPipelineState( pDesc, riidPtr, 
 														out var ppvPipelineState ) ;
 				ppPipelineState = new PipelineState( (ID3D12PipelineState)ppvPipelineState ) ;
 			}
@@ -88,7 +88,7 @@ internal class Device: Object,
 	
 	public void CreateComputePipelineState( in ComputePipelineStateDescription pDesc,
 											in Guid riid, out IPipelineState ppPipelineState ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		device.CreateComputePipelineState( pDesc, riid, out var ppvPipelineState ) ;
 		ppPipelineState = new PipelineState( (ID3D12PipelineState)ppvPipelineState ) ;
 	}
@@ -100,7 +100,7 @@ internal class Device: Object,
 								   [Optional] IPipelineState? pInitialState,
 								   in Guid riid,
 								   out ICommandList ppCommandList ) {
-		var  device    = COMObject ?? throw new NullReferenceException( ) ;
+		var  device    = ComObject ?? throw new NullReferenceException( ) ;
 		var  allocator    = (IComObjectRef< ID3D12CommandAllocator >)pCommandAllocator ;
 		 var initialState = (IComObjectRef< ID3D12PipelineState >?)pInitialState ;
 		Guid _guid        = riid ;
@@ -108,8 +108,8 @@ internal class Device: Object,
 		unsafe {
 			var hr = device.CreateCommandList(  nodeMask, 
 														(D3D12_COMMAND_LIST_TYPE)type, 
-														allocator.COMObject,
-														initialState?.COMObject,
+														allocator.ComObject,
+														initialState?.ComObject,
 														&_guid,
 														out object _cmdList ) ;
 
@@ -127,7 +127,7 @@ internal class Device: Object,
 
 
 	public void CheckFeatureSupport( D3D12Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			device.CheckFeatureSupport( (D3D12_FEATURE)Feature, (void *)pFeatureSupportData, FeatureSupportDataSize ) ;
 		}
@@ -136,14 +136,14 @@ internal class Device: Object,
 
 	public void CreateDescriptorHeap( in DescriptorHeapDescription pDescriptorHeapDesc,
 									  in Guid                      riid, out IDescriptorHeap ppvHeap ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		device.CreateDescriptorHeap( pDescriptorHeapDesc, riid, out var ppvDescriptorHeap ) ;
 		ppvHeap = new DescriptorHeap( (ID3D12DescriptorHeap)ppvDescriptorHeap ) ;
 	}
 	
 
 	public uint GetDescriptorHandleIncrementSize( DescriptorHeapType DescriptorHeapType ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		return device.GetDescriptorHandleIncrementSize( (D3D12_DESCRIPTOR_HEAP_TYPE)DescriptorHeapType ) ;
 	}
 
@@ -152,7 +152,7 @@ internal class Device: Object,
 									 nint               pBlobWithRootSignature,
 									 nuint              blobLengthInBytes, in Guid riid,
 									 out IRootSignature ppvRootSignature ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			device.CreateRootSignature( nodeMask, (void *)pBlobWithRootSignature,
 										blobLengthInBytes, riid, out var ppvSignature ) ;
@@ -163,7 +163,7 @@ internal class Device: Object,
 
 	public void CreateConstantBufferView( [Optional] in ConstBufferViewDescription pDesc,
 										  in            CPUDescriptorHandle        DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		device.CreateConstantBufferView( pDesc, DestDescriptor ) ;
 	}
 
@@ -171,9 +171,9 @@ internal class Device: Object,
 	public void CreateShaderResourceView( IResource                                   pResource,
 										  [Optional] in ShaderResourceViewDescription pDesc,
 										  CPUDescriptorHandle                         DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		var resource = (Resource)pResource ;
-		device.CreateShaderResourceView( resource.COMObject, pDesc, DestDescriptor ) ;
+		device.CreateShaderResourceView( resource.ComObject, pDesc, DestDescriptor ) ;
 	}
 
 	
@@ -181,33 +181,33 @@ internal class Device: Object,
 										   IResource                         pCounterResource,
 										   in UnorderedAccessViewDescription pDesc,
 										   CPUDescriptorHandle               DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		var resource = (Resource)pResource ;
 		var counterResource = (Resource)pCounterResource ;
-		device.CreateUnorderedAccessView( resource.COMObject, counterResource.COMObject, pDesc, DestDescriptor ) ;
+		device.CreateUnorderedAccessView( resource.ComObject, counterResource.ComObject, pDesc, DestDescriptor ) ;
 	}
 
 
 	public void CreateRenderTargetView( IResource                                 pResource,
 										[Optional] in RenderTargetViewDescription pDescription,
 										CPUDescriptorHandle                       DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		var resource = (Resource)pResource ;
-		device.CreateRenderTargetView( resource.COMObject, pDescription, DestDescriptor ) ;
+		device.CreateRenderTargetView( resource.ComObject, pDescription, DestDescriptor ) ;
 	}
 
 
 	public void CreateDepthStencilView( IResource                          pResource,
 										[Optional] in DepthStencilViewDesc pDesc,
 										CPUDescriptorHandle                DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		var resource = (Resource)pResource ;
-		device.CreateDepthStencilView( resource.COMObject, pDesc, DestDescriptor ) ;
+		device.CreateDepthStencilView( resource.ComObject, pDesc, DestDescriptor ) ;
 	}
 
 
 	public void CreateSampler( in SamplerDescription pDesc, CPUDescriptorHandle DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		device.CreateSampler( pDesc, DestDescriptor ) ;
 	}
 
@@ -219,7 +219,7 @@ internal class Device: Object,
 								 in Span< CPUDescriptorHandle > pSrcDescriptorRangeStarts,
 								 uint[ ]                        pSrcDescriptorRangeSizes,
 								 DescriptorHeapType             DescriptorHeapsType ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed( CPUDescriptorHandle* pDestRangeStart = pDestDescriptorRangeStarts, pSrcRangeStart = pSrcDescriptorRangeStarts ) {
 				device.CopyDescriptors( NumDestDescriptorRanges,
@@ -238,7 +238,7 @@ internal class Device: Object,
 									   CPUDescriptorHandle DestDescriptorRangeStart,
 									   CPUDescriptorHandle SrcDescriptorRangeStart,
 									   DescriptorHeapType  DescriptorHeapsType ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		device.CopyDescriptorsSimple( NumDescriptors,
 									  DestDescriptorRangeStart,
 									  SrcDescriptorRangeStart,
@@ -249,7 +249,7 @@ internal class Device: Object,
 	public ResourceAllocationInfo GetResourceAllocationInfo( uint                        visibleMask,
 															 uint                        numResourceDescs,
 															 Span< ResourceDescription > pResourceDescs ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed( ResourceDescription* pResourceDesc = pResourceDescs ) {
 				var allocInfo = device.GetResourceAllocationInfo( visibleMask, numResourceDescs, (D3D12_RESOURCE_DESC *)pResourceDesc ) ;
@@ -260,7 +260,7 @@ internal class Device: Object,
 
 	
 	public HeapProperties GetCustomHeapProperties( uint nodeMask, HeapType heapType ) => 
-		COMObject!.GetCustomHeapProperties( nodeMask, (D3D12_HEAP_TYPE)heapType ) ;
+		ComObject!.GetCustomHeapProperties( nodeMask, (D3D12_HEAP_TYPE)heapType ) ;
 
 
 	public void CreateCommittedResource( in HeapProperties         pHeapProperties,
@@ -270,7 +270,7 @@ internal class Device: Object,
 										 [Optional] in ClearValue? pOptimizedClearValue,
 										 in            Guid        riidResource,
 										 out           IResource   ppvResource ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe { fixed( void* _pHeapProps = &pHeapProperties, 
 					   _pDesc = &pDesc,
 					   _pClearValue = &pOptimizedClearValue,
@@ -297,7 +297,7 @@ internal class Device: Object,
 		unsafe {
 			HeapDescription _heapDesc = pDesc ;
 			Guid _riid = riid ;
-			COMObject!.CreateHeap( (D3D12_HEAP_DESC *)&_heapDesc, &_riid, out var _heap ) ;
+			ComObject!.CreateHeap( (D3D12_HEAP_DESC *)&_heapDesc, &_riid, out var _heap ) ;
 			ppvHeap = new Heap( (ID3D12Heap)_heap ) ;
 		}
 	}
@@ -320,7 +320,7 @@ internal class Device: Object,
 			}
 			
 			var heap = (IComObjectRef< ID3D12Heap >)pHeap ;
-			COMObject!.CreatePlacedResource( heap.COMObject, HeapOffset,
+			ComObject!.CreatePlacedResource( heap.ComObject, HeapOffset,
 											(D3D12_RESOURCE_DESC*)&_pDesc,
 											(D3D12_RESOURCE_STATES)InitialState,
 											pClearValue,
@@ -344,7 +344,7 @@ internal class Device: Object,
 				pClearValue = (D3D12_CLEAR_VALUE*)&_clrValue ;
 			}
 			
-			COMObject!.CreateReservedResource( (D3D12_RESOURCE_DESC *)&_pDesc, 
+			ComObject!.CreateReservedResource( (D3D12_RESOURCE_DESC *)&_pDesc, 
 											  (D3D12_RESOURCE_STATES)InitialState, 
 											  pClearValue, 
 											  &_riid,
@@ -364,7 +364,7 @@ internal class Device: Object,
 		unsafe {
 			fixed ( SecurityAttributes* _attrPtr = &pAttributes ) {
 				Win32Handle _handle = default ;
-				COMObject!.CreateSharedHandle( deviceChild.COMObject, (SECURITY_ATTRIBUTES *)_attrPtr, 
+				ComObject!.CreateSharedHandle( deviceChild.ComObject, (SECURITY_ATTRIBUTES *)_attrPtr, 
 											   Access, Name, (HANDLE *)&_handle ) ;
 				pHandle = _handle ;
 			}
@@ -374,7 +374,7 @@ internal class Device: Object,
 
 	public void OpenSharedHandle( Win32Handle NTHandle, in Guid riid, out object ppvObj ) {
 		// Get the ID3D12Device
-		var device = this.COMObject
+		var device = this.ComObject
 					 ?? throw new Exception("COMObject is null");
 
 		// Make local (fixed) Guid to easily obtain pointer:
@@ -387,7 +387,7 @@ internal class Device: Object,
 
 	public void OpenSharedHandleByName( string Name, uint Access, ref Win32Handle pNTHandle ) {
 		// Get the ID3D12Device
-		var device = this.COMObject
+		var device = this.ComObject
 							  ?? throw new Exception("COMObject is null");
 
 		// Copy Name to PCWSTR from string (uses implicit op):
@@ -413,11 +413,11 @@ internal class Device: Object,
 																$"Span must not contain null references!" ) ;
 #endif
 
-			pageables[ i ] = next.COMObject ?? throw new ArgumentException( nameof( ppObjects ),
+			pageables[ i ] = next.ComObject ?? throw new ArgumentException( nameof( ppObjects ),
 																			$"{nameof( IDevice )}.{nameof( MakeResident )} :: " +
 																			$"Span must contain only COM objects!" ) ;
 		}
-		COMObject!.MakeResident( NumObjects, pageables ) ;
+		ComObject!.MakeResident( NumObjects, pageables ) ;
 	}
 
 	
@@ -433,16 +433,16 @@ internal class Device: Object,
 			if( next is null ) throw new ArgumentNullException( nameof(ppObjects), 
 																$"{nameof(IDevice)}.{nameof(Evict)} :: " +
 																$"Span must not contain null references!" ) ;
-			if ( next.COMObject is null )
+			if ( next.ComObject is null )
 				throw new ArgumentException( nameof( ppObjects ),
 											 $"{nameof( IDevice )}.{nameof( Evict )} :: " +
 											 $"Span must contain only COM objects!" ) ;
 #endif
 			
-			_pageableSpan[ i ] = next.COMObject! ;
+			_pageableSpan[ i ] = next.ComObject! ;
 		}
 			
-		COMObject!.Evict( NumObjects, pageables ) ;
+		ComObject!.Evict( NumObjects, pageables ) ;
 	}
 
 	
@@ -452,7 +452,7 @@ internal class Device: Object,
 							 out IFence ppFence ) {
 		unsafe { 
 			Guid iid = riid ;
-			COMObject!.CreateFence( InitialValue, 
+			ComObject!.CreateFence( InitialValue, 
 									(D3D12_FENCE_FLAGS)Flags, 
 									&iid, 
 									out var fence ) ;
@@ -462,7 +462,7 @@ internal class Device: Object,
 
 	
 	public HResult GetDeviceRemovedReason( ) => 
-		COMObject!.GetDeviceRemovedReason( ) ;
+		ComObject!.GetDeviceRemovedReason( ) ;
 
 	
 	public nint GetCopyableFootprints( in ResourceDescription                       pResourceDesc, 
@@ -488,7 +488,7 @@ internal class Device: Object,
 										* NumSubresources ) ) ) ;
 
 			fixed ( ResourceDescription* _descPtr = &pResourceDesc ) {
-				COMObject!.GetCopyableFootprints( (D3D12_RESOURCE_DESC*)_descPtr,
+				ComObject!.GetCopyableFootprints( (D3D12_RESOURCE_DESC*)_descPtr,
 												  FirstSubresource,
 												  NumSubresources, BaseOffset,
 												  _pLayouts, _numRows, _rowSizeInBytes,
@@ -506,7 +506,7 @@ internal class Device: Object,
 		unsafe {
 			fixed ( QueryHeapDescription* _pDesc = &pDesc ) {
 				Guid _guid = riid;
-				COMObject!.CreateQueryHeap( (D3D12_QUERY_HEAP_DESC *)_pDesc, 
+				ComObject!.CreateQueryHeap( (D3D12_QUERY_HEAP_DESC *)_pDesc, 
 											&_guid, out var result ) ;
 				ppvHeap = new Heap( (ID3D12Heap)result ) ;
 			}
@@ -514,7 +514,7 @@ internal class Device: Object,
 	}
 	
 	public void SetStablePowerState( bool Enable ) => 
-		COMObject!.SetStablePowerState( Enable ) ;
+		ComObject!.SetStablePowerState( Enable ) ;
 	
 	
 	public void CreateCommandSignature( in CommandSignatureDescription pDesc,
@@ -523,8 +523,8 @@ internal class Device: Object,
 		unsafe {
 			Guid _guid = riid ;
 			fixed ( CommandSignatureDescription* _ppDesc = &pDesc ) {
-				COMObject!.CreateCommandSignature( (D3D12_COMMAND_SIGNATURE_DESC *)_ppDesc, 
-												  pRootSignature.COMObject, &_guid, 
+				ComObject!.CreateCommandSignature( (D3D12_COMMAND_SIGNATURE_DESC *)_ppDesc, 
+												  pRootSignature.ComObject, &_guid, 
 												  out var signature ) ;
 				ppvCommandSignature = new
 					CommandSignature( (ID3D12CommandSignature)signature ) ;
@@ -545,7 +545,7 @@ internal class Device: Object,
 			
 			var resource = (Resource)pTiledResource ;
 			fixed( SubresourceTiling* pSubresourceTiling = &pSubresourceTilingsForNonPackedMips ) {
-				COMObject!.GetResourceTiling( resource.COMObject,
+				ComObject!.GetResourceTiling( resource.ComObject,
 											  out pNumTilesForEntireResource,
 											  _pMipDesc, _ptileShapeForNonPacked,
 											  ref pNumSubresourceTilings, FirstSubresourceTilingToGet,
@@ -557,7 +557,7 @@ internal class Device: Object,
 		}
 	}
 	
-	public Luid GetAdapterLuid( ) => COMObject!.GetAdapterLuid( ) ;
+	public Luid GetAdapterLuid( ) => ComObject!.GetAdapterLuid( ) ;
 	
 	// -------------------------------------------------------------------------------------------------------
 	
@@ -589,7 +589,7 @@ internal class Device1: Device,
 	ComPtr< ID3D12Device1 >? _comPtr ;
 	public new ComPtr< ID3D12Device1 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device1 >( ) ;
-	public override ID3D12Device1? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device1? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -615,7 +615,7 @@ internal class Device1: Device,
 									   nuint BlobLength,
 									   in  Guid riid,
 									   out IPipelineLibrary ppPipelineLibrary ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			device.CreatePipelineLibrary( (void *)pLibraryBlob, BlobLength, &_guid, out var result ) ;
@@ -629,10 +629,10 @@ internal class Device1: Device,
 												   uint NumFences,
 												   MultiFenceWaitFlags Flags,
 												   Win32Handle hEvent ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		ID3D12Fence[ ] _fences = new ID3D12Fence[ NumFences ] ;
 		for ( uint i = 0; i < NumFences; ++i ) {
-			_fences[ i ] = ( (IComObjectRef<ID3D12Fence>)ppFences[ i ] ).COMObject
+			_fences[ i ] = ( (IComObjectRef<ID3D12Fence>)ppFences[ i ] ).ComObject
 #if DEBUG || DEBUG_COM || DEV_BUILD
 						   ?? throw new NullReferenceException( )
 #endif
@@ -648,10 +648,10 @@ internal class Device1: Device,
 	public void SetResidencyPriority( uint NumObjects,
 							   IPageable[ ] ppObjects,
 							   Span< ResidencyPriority > pPriorities ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		ID3D12Pageable[ ] _objects = new ID3D12Pageable[ NumObjects ] ;
 		for ( uint i = 0; i < NumObjects; ++i ) {
-			_objects[ i ] = ( (IComObjectRef< ID3D12Pageable >)ppObjects[ i ] ).COMObject
+			_objects[ i ] = ( (IComObjectRef< ID3D12Pageable >)ppObjects[ i ] ).ComObject
 #if DEBUG || DEBUG_COM || DEV_BUILD
 							?? throw new NullReferenceException( ) 
 #endif
@@ -694,7 +694,7 @@ internal class Device2: Device1,
 	ComPtr< ID3D12Device2 >? _comPtr ;
 	public new ComPtr< ID3D12Device2 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device2 >( ) ;
-	public override ID3D12Device2? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device2? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -721,7 +721,7 @@ internal class Device2: Device1,
 									 out IPipelineState ppPipelineState ) {
 		unsafe {
 			fixed ( void* pGuid = &riid, pPipelineDesc = &pDesc ) {
-				COMObject!.CreatePipelineState( (D3D12_PIPELINE_STATE_STREAM_DESC *)pPipelineDesc, 
+				ComObject!.CreatePipelineState( (D3D12_PIPELINE_STATE_STREAM_DESC *)pPipelineDesc, 
 											   (Guid*)pGuid, 
 											   out var stateObj ) ;
 				
@@ -760,7 +760,7 @@ internal class Device3: Device2,
 	ComPtr< ID3D12Device3 >? _comPtr ;
 	public new ComPtr< ID3D12Device3 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device3 >( ) ;
-	public override ID3D12Device3? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device3? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -785,10 +785,10 @@ internal class Device3: Device2,
 	public void EnqueueMakeResident( ResidencyFlags flags, uint numObjects, 
 									 IPageable[ ] ppObjects, IFence pFenceToSignal,
 									 ulong fenceValueToSignal ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		ID3D12Pageable[ ] _objects = new ID3D12Pageable[ numObjects ] ;
 		for ( uint i = 0; i < numObjects; ++i ) {
-			_objects[ i ] = ( (IComObjectRef< ID3D12Pageable >)ppObjects[ i ] ).COMObject
+			_objects[ i ] = ( (IComObjectRef< ID3D12Pageable >)ppObjects[ i ] ).ComObject
 #if DEBUG || DEBUG_COM || DEV_BUILD
 							?? throw new NullReferenceException( )
 #endif
@@ -796,12 +796,12 @@ internal class Device3: Device2,
 		}
 		var fence = (IComObjectRef< ID3D12Fence >)pFenceToSignal ;
 		device.EnqueueMakeResident( (D3D12_RESIDENCY_FLAGS)flags, numObjects, 
-									_objects, fence.COMObject,
+									_objects, fence.ComObject,
 									fenceValueToSignal ) ;
 	}
 
 	public void OpenExistingHeapFromAddress( nint pAddress, in Guid riid, out IHeap ppvHeap ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			device.OpenExistingHeapFromAddress( (void *)pAddress, &_guid, out var heap ) ;
@@ -810,7 +810,7 @@ internal class Device3: Device2,
 	}
 
 	public void OpenExistingHeapFromFileMapping( Win32Handle hFileMapping, in Guid riid, out IHeap ppvHeap ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			device.OpenExistingHeapFromFileMapping( hFileMapping, &_guid, out var heap ) ;
@@ -848,7 +848,7 @@ internal class Device4: Device3,
 	ComPtr< ID3D12Device4 >? _comPtr ;
 	public new ComPtr< ID3D12Device4 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device4 >( ) ;
-	public override ID3D12Device4? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device4? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -874,13 +874,13 @@ internal class Device4: Device3,
 							 IProtectedResourceSession pProtectedSession, 
 							 in Guid riid,
 							 out IHeap ppvHeap ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			var protectedSession = (IComObjectRef< ID3D12ProtectedResourceSession >)pProtectedSession ;
 			fixed ( HeapDescription* _pDesc = &pDesc ) {
 				device.CreateHeap1( (D3D12_HEAP_DESC *)_pDesc, 
-									protectedSession.COMObject, 
+									protectedSession.ComObject, 
 									&_guid, 
 									out var heap ) ;
 				ppvHeap = new Heap( (ID3D12Heap)heap ) ;
@@ -893,7 +893,7 @@ internal class Device4: Device3,
 										   CommandListFlags flags, 
 										   in Guid riid,
 										   out ICommandList ppCommandList ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		Guid _guid = riid ;
 		device.CreateCommandList1( nodeMask, (D3D12_COMMAND_LIST_TYPE)type, (D3D12_COMMAND_LIST_FLAGS)flags, &_guid, out var list ) ;
 		ppCommandList = new CommandList( (ID3D12CommandList)list ) ;
@@ -907,7 +907,7 @@ internal class Device4: Device3,
 										  IProtectedResourceSession pProtectedSession, 
 										  in Guid riidResource,
 										  out IResource ppvResource ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riidResource ;
 			var protectedSession = (IComObjectRef< ID3D12ProtectedResourceSession >)pProtectedSession ;
@@ -921,7 +921,7 @@ internal class Device4: Device3,
 												 (D3D12_RESOURCE_DESC *)_pDesc, 
 												 (D3D12_RESOURCE_STATES)InitialResourceState, 
 												 (D3D12_CLEAR_VALUE *)pClearValue, 
-												 protectedSession.COMObject, 
+												 protectedSession.ComObject, 
 												 &_guid, 
 												 out var resource ) ;
 				ppvResource = new Resource( (ID3D12Resource)resource ) ;
@@ -934,7 +934,7 @@ internal class Device4: Device3,
 										 in ClearValue? pOptimizedClearValue, 
 										 IProtectedResourceSession pProtectedSession,
 										 in Guid riid, out IResource ppvResource ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			var protectedSession = (IComObjectRef< ID3D12ProtectedResourceSession >)pProtectedSession ;
@@ -946,7 +946,7 @@ internal class Device4: Device3,
 				device.CreateReservedResource1( (D3D12_RESOURCE_DESC *)_pDesc, 
 											   (D3D12_RESOURCE_STATES)InitialState, 
 											   (D3D12_CLEAR_VALUE *)pClearValue, 
-											   protectedSession.COMObject, 
+											   protectedSession.ComObject, 
 											   &_guid, 
 											   out var resource ) ;
 				
@@ -958,7 +958,7 @@ internal class Device4: Device3,
 	
 	public void CreateProtectedResourceSession( in  ProtectedResourceSessionDescription pDesc, in Guid riid,
 												out IProtectedResourceSession           ppSession ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			fixed ( ProtectedResourceSessionDescription* _pDesc = &pDesc ) {
@@ -974,7 +974,7 @@ internal class Device4: Device3,
 	public ResourceAllocationInfo GetResourceAllocationInfo1( uint visibleMask, uint numResourceDescs, 
 															  in Span< ResourceDescription > pResourceDescs,
 															  in Span< ResourceAllocationInfo1 > pResourceAllocationInfo1 = default ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed ( ResourceDescription* _pResourceDescs = pResourceDescs ) {
 				ResourceAllocationInfo1* _pResourceAllocationInfo1 = stackalloc ResourceAllocationInfo1[ pResourceAllocationInfo1.Length ] ;
@@ -1017,7 +1017,7 @@ internal class Device5: Device4,
 	ComPtr< ID3D12Device5 >? _comPtr ;
 	public new ComPtr< ID3D12Device5 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device5 >( ) ;
-	public override ID3D12Device5? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device5? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -1040,17 +1040,17 @@ internal class Device5: Device4,
 	// -------------------------------------------------------------------------------------------------------
 
 	public void RemoveDevice( ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		device.RemoveDevice( ) ;
 	}
 
 	
 	public void CreateLifetimeTracker( ILifetimeOwner pOwner, in Guid riid, out ILifetimeTracker ppvTracker ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			var owner = (IComObjectRef< ID3D12LifetimeOwner >)pOwner ;
-			device.CreateLifetimeTracker( owner.COMObject, &_guid, out var tracker ) ;
+			device.CreateLifetimeTracker( owner.ComObject, &_guid, out var tracker ) ;
 			ppvTracker = new LifetimeTracker( (ID3D12LifetimeTracker)tracker ) ;
 		}
 	}
@@ -1062,7 +1062,7 @@ internal class Device5: Device4,
 								   nuint CreationParametersDataSizeInBytes,
 								   in Guid riid,
 								   out IMetaCommand ppMetaCommand ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed ( Guid* _commandId = &commandId, _guid = &riid ) {
 				device.CreateMetaCommand( _commandId, nodeMask, (void *)pCreationParametersData, 
@@ -1074,7 +1074,7 @@ internal class Device5: Device4,
 
 	
 	public void CreateStateObject( in StateObjectDescription pDesc, in Guid riid, out IStateObject ppStateObject ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			fixed ( StateObjectDescription* _pDesc = &pDesc ) {
@@ -1086,7 +1086,7 @@ internal class Device5: Device4,
 
 	
 	public void EnumerateMetaCommands( ref uint pNumMetaCommands, out Span< MetaCommandDescription > pDescs ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			pDescs = new MetaCommandDescription[ (int)pNumMetaCommands ] ;
 			fixed( MetaCommandDescription* descPtr = pDescs ) {
@@ -1099,7 +1099,7 @@ internal class Device5: Device4,
 	public DriverMatchingIdentifierStatus CheckDriverMatchingIdentifier( SerializedDataType SerializedDataType,
 																		 in SerializedDataDriverMatchingIdentifier
 																			 pIdentifierToCheck ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed ( SerializedDataDriverMatchingIdentifier* _pIdentifierToCheck = &pIdentifierToCheck ) {
 				return (DriverMatchingIdentifierStatus)
@@ -1114,7 +1114,7 @@ internal class Device5: Device4,
 												out uint pTotalStructureSizeInBytes, 
 												ref uint pParameterCount,
 												out Span< MetaCommandParameterDescription > pParameterDescs ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			
 			fixed ( Guid* _commandId = &commandId ) {
@@ -1140,7 +1140,7 @@ internal class Device5: Device4,
 	
 	public void GetRaytracingAccelerationStructurePrebuildInfo( in  BuildRaytracingAccelerationStructureInputs  pDesc,
 																out RaytracingAccelerationStructurePreBuildInfo pInfo ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			pInfo = default ;
 			fixed ( void* _pDesc = &pDesc, _pInfo = &pInfo ) {
@@ -1178,7 +1178,7 @@ internal class Device6: Device5,
 	ComPtr< ID3D12Device6 >? _comPtr ;
 	public new ComPtr< ID3D12Device6 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device6 >( ) ;
-	public override ID3D12Device6? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device6? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -1204,7 +1204,7 @@ internal class Device6: Device5,
 											 MeasurementsAction MeasurementsAction,
 											 Win32Handle hEventToSignalUponCompletion,
 											 ref bool pbFurtherMeasurementsDesired ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			BOOL  _pbFurtherMeasurementsDesired = pbFurtherMeasurementsDesired ;
 			BOOL* furtherMeasurementsDesired    = &_pbFurtherMeasurementsDesired ;
@@ -1243,7 +1243,7 @@ internal class Device7: Device6,
 	ComPtr< ID3D12Device7 >? _comPtr ;
 	public new ComPtr< ID3D12Device7 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device7 >( ) ;
-	public override ID3D12Device7? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device7? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -1269,13 +1269,13 @@ internal class Device7: Device6,
 								  IStateObject pStateObjectToGrowFrom, 
 								  in Guid riid,
 								  out IStateObject ppNewStateObject ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			var stateObject = (IComObjectRef< ID3D12StateObject >)pStateObjectToGrowFrom ;
 			fixed ( StateObjectDescription* _pAddition = &pAddition ) {
 				device.AddToStateObject( (D3D12_STATE_OBJECT_DESC *)_pAddition, 
-										 stateObject.COMObject, 
+										 stateObject.ComObject, 
 										 &_guid, 
 										 out var newStateObject ) ;
 				ppNewStateObject = new StateObject( (ID3D12StateObject)newStateObject ) ;
@@ -1285,7 +1285,7 @@ internal class Device7: Device6,
 
 	public void CreateProtectedResourceSession1( in  ProtectedResourceSessionDescription1 pDesc, in Guid riid,
 												 out IProtectedResourceSession1           ppSession ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			fixed ( ProtectedResourceSessionDescription1* _pDesc = &pDesc ) {
@@ -1325,7 +1325,7 @@ internal class Device8: Device7,
 	ComPtr< ID3D12Device8 >? _comPtr ;
 	public new ComPtr< ID3D12Device8 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device8 >( ) ;
-	public override ID3D12Device8? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device8? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -1355,7 +1355,7 @@ internal class Device8: Device7,
 										  IProtectedResourceSession pProtectedSession, 
 										  in Guid riidResource,
 										  out IResource ppvResource ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riidResource ;
 			var protectedSession = (IComObjectRef< ID3D12ProtectedResourceSession >)pProtectedSession ;
@@ -1369,7 +1369,7 @@ internal class Device8: Device7,
 												 (D3D12_RESOURCE_DESC1 *)_pDesc, 
 												 (D3D12_RESOURCE_STATES)InitialResourceState, 
 												 (D3D12_CLEAR_VALUE *)pClearValue, 
-												 protectedSession.COMObject, 
+												 protectedSession.ComObject, 
 												 &_guid, 
 												 out var resource ) ;
 				ppvResource = new Resource( (ID3D12Resource)resource ) ;
@@ -1383,7 +1383,7 @@ internal class Device8: Device7,
 									   ResourceStates InitialState,
 									   in ClearValue? pOptimizedClearValue,
 									   in Guid riid, out IResource ppvResource ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			var heap = (IComObjectRef< ID3D12Heap >)pHeap ;
@@ -1392,7 +1392,7 @@ internal class Device8: Device7,
 				ClearValue _clrValue = pOptimizedClearValue ?? default ;
 				ClearValue* pClearValue = pOptimizedClearValue.HasValue ? (ClearValue *)&_clrValue : null ;
 				
-				device.CreatePlacedResource1( heap.COMObject, heapOffset, (D3D12_RESOURCE_DESC1 *)_pDesc, 
+				device.CreatePlacedResource1( heap.ComObject, heapOffset, (D3D12_RESOURCE_DESC1 *)_pDesc, 
 											 (D3D12_RESOURCE_STATES)InitialState, 
 											 (D3D12_CLEAR_VALUE *)pClearValue, 
 											 &_guid, 
@@ -1409,7 +1409,7 @@ internal class Device8: Device7,
 										out Span< uint > pNumRows,
 										out Span< ulong > pRowSizeInBytes,
 										out ulong pTotalBytes ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed ( ResourceDescription1* _pResourceDesc = &pResourceDesc ) {
 				fixed ( PlacedSubresourceFootprint* _pLayouts = pLayouts ) {
@@ -1438,7 +1438,7 @@ internal class Device8: Device7,
 	public ResourceAllocationInfo GetResourceAllocationInfo2( uint visibleMask, uint numResourceDescs, 
 															  in Span< ResourceDescription1 > pResourceDescs,
 															  in Span< ResourceAllocationInfo1 > pResourceAllocationInfo1 = default ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			D3D12_RESOURCE_ALLOCATION_INFO1* allocInfo1 = null ;
 			
@@ -1461,11 +1461,11 @@ internal class Device8: Device7,
 	public void CreateSamplerFeedbackUnorderedAccessView( IResource pTargetedResource,
 														  IResource pFeedbackResource,
 														  CPUDescriptorHandle DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		var targetedResource = (IComObjectRef< ID3D12Resource >)pTargetedResource ;
 		var feedbackResource = (IComObjectRef< ID3D12Resource >)pFeedbackResource ;
-		device.CreateSamplerFeedbackUnorderedAccessView( targetedResource.COMObject, 
-														 feedbackResource.COMObject, 
+		device.CreateSamplerFeedbackUnorderedAccessView( targetedResource.ComObject, 
+														 feedbackResource.ComObject, 
 														 DestDescriptor ) ;
 	}
 
@@ -1496,7 +1496,7 @@ internal class Device9: Device8,
 	ComPtr< ID3D12Device9 >? _comPtr ;
 	public new ComPtr< ID3D12Device9 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device9 >( ) ;
-	public override ID3D12Device9? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device9? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -1521,7 +1521,7 @@ internal class Device9: Device8,
 	public void CreateCommandQueue1( in  CommandQueueDescription pDesc, 
 									 in Guid CreatorID, in Guid riid,
 									 out ICommandQueue ppCommandQueue ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			Guid _creatorID = CreatorID ;
@@ -1536,14 +1536,14 @@ internal class Device9: Device8,
 	}
 
 	public void ShaderCacheControl( ShaderCacheKindFlags Kinds, ShaderCacheControlFlags Control ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		device.ShaderCacheControl( (D3D12_SHADER_CACHE_KIND_FLAGS)Kinds,
 								   (D3D12_SHADER_CACHE_CONTROL_FLAGS)Control ) ;
 	}
 
 	public void CreateShaderCacheSession( in  ShaderCacheSessionDescription pDesc, in Guid riid,
 										  out IShaderCacheSession ppvSession ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			fixed ( ShaderCacheSessionDescription* _pDesc = &pDesc ) {
@@ -1583,7 +1583,7 @@ internal class Device10: Device9,
 	ComPtr< ID3D12Device10 >? _comPtr ;
 	public new ComPtr< ID3D12Device10 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device10 >( ) ;
-	public override ID3D12Device10? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device10? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -1614,7 +1614,7 @@ internal class Device10: Device9,
 										  uint NumCastableFormats,
 										  in  Span< Format > pCastableFormats,
 										  in Guid riidResource, out IResource ppvResource ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riidResource ;
 			var protectedSession = (IComObjectRef< ID3D12ProtectedResourceSession >)pProtectedSession ;
@@ -1629,7 +1629,7 @@ internal class Device10: Device9,
 													 (D3D12_RESOURCE_DESC1 *)_pDesc,
 													 (D3D12_BARRIER_LAYOUT)InitialLayout,
 													 (D3D12_CLEAR_VALUE *)pClearValue,
-													 protectedSession.COMObject,
+													 protectedSession.ComObject,
 													 NumCastableFormats,
 													 (DXGI_FORMAT *)_pCastableFormats,
 													 &_guid,
@@ -1648,7 +1648,7 @@ internal class Device10: Device9,
 									   uint NumCastableFormats,
 									   in Span< Format > pCastableFormats, 
 									   in Guid riid, out IResource ppvResource ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			var heap = (IComObjectRef< ID3D12Heap >)pHeap ;
@@ -1658,7 +1658,7 @@ internal class Device10: Device9,
 				ClearValue* pClearValue = pOptimizedClearValue.HasValue ? (ClearValue *)&_clrValue : null ;
 				
 				fixed ( Format* _pCastableFormats = pCastableFormats ) {
-					device.CreatePlacedResource2( heap.COMObject, HeapOffset, (D3D12_RESOURCE_DESC1 *)_pDesc,
+					device.CreatePlacedResource2( heap.ComObject, HeapOffset, (D3D12_RESOURCE_DESC1 *)_pDesc,
 												 (D3D12_BARRIER_LAYOUT)InitialLayout,
 												 (D3D12_CLEAR_VALUE *)pClearValue,
 												 NumCastableFormats,
@@ -1678,7 +1678,7 @@ internal class Device10: Device9,
 										 uint NumCastableFormats,
 										 in Span< Format > pCastableFormats,
 										 in Guid riid, out IResource ppvResource ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			Guid _guid = riid ;
 			var protectedSession = (IComObjectRef< ID3D12ProtectedResourceSession >)pProtectedSession ;
@@ -1691,7 +1691,7 @@ internal class Device10: Device9,
 					device.CreateReservedResource2( (D3D12_RESOURCE_DESC *)_pDesc,
 												   (D3D12_BARRIER_LAYOUT)InitialLayout,
 												   (D3D12_CLEAR_VALUE *)pClearValue,
-												   protectedSession.COMObject,
+												   protectedSession.ComObject,
 												   NumCastableFormats,
 												   (DXGI_FORMAT *)_pCastableFormats,
 												   &_guid,
@@ -1730,7 +1730,7 @@ internal class Device11: Device10,
 	ComPtr< ID3D12Device11 >? _comPtr ;
 	public new ComPtr< ID3D12Device11 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device11 >( ) ;
-	public override ID3D12Device11? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device11? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 
@@ -1753,7 +1753,7 @@ internal class Device11: Device10,
 	// -------------------------------------------------------------------------------------------------------
 
 	public void CreateSampler2( in SamplerDescription2 pDesc, CPUDescriptorHandle DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed ( SamplerDescription2* _pDesc = &pDesc ) {
 				device.CreateSampler2( (D3D12_SAMPLER_DESC2 *)_pDesc, DestDescriptor ) ;
@@ -1788,7 +1788,7 @@ internal class Device12: Device11,
 	ComPtr< ID3D12Device12 >? _comPtr ;
 	public new ComPtr< ID3D12Device12 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Device12 >( ) ;
-	public override ID3D12Device12? COMObject => ComPointer?.Interface ;
+	public override ID3D12Device12? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------------------------
 	
@@ -1815,7 +1815,7 @@ internal class Device12: Device11,
 															  uint[ ] pNumCastableFormats,
 															  in Span< Format > ppCastableFormats = default,
 															  in ResourceAllocationInfo1? pResourceAllocationInfo1 = null ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
+		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 
 			if ( ppCastableFormats is { Length: > 0 } ) {

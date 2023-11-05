@@ -76,7 +76,7 @@ internal class ProtectedResourceSession: ProtectedSession,
 	ComPtr< ID3D12ProtectedResourceSession >? _comPtr ;
 	public new ComPtr< ID3D12ProtectedResourceSession >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12ProtectedResourceSession >( ) ;
-	public override ID3D12ProtectedResourceSession? COMObject => ComPointer?.Interface ;
+	public override ID3D12ProtectedResourceSession? ComObject => ComPointer?.Interface ;
 
 	internal ProtectedResourceSession( ) {
 		_comPtr = ComResources?.GetPointer< ID3D12ProtectedResourceSession >( ) ;
@@ -95,7 +95,7 @@ internal class ProtectedResourceSession: ProtectedSession,
 	}
 
 	
-	public ProtectedResourceSessionDescription GetDesc( ) => COMObject!.GetDesc( ) ;
+	public ProtectedResourceSessionDescription GetDesc( ) => ComObject!.GetDesc( ) ;
 	
 	public new static Type ComType => typeof( ID3D12ProtectedResourceSession ) ;
 	
@@ -118,7 +118,7 @@ internal class ProtectedResourceSession1: ProtectedResourceSession,
 	ComPtr< ID3D12ProtectedResourceSession1 >? _comPtr ;
 	public new ComPtr< ID3D12ProtectedResourceSession1 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12ProtectedResourceSession1 >( ) ;
-	public override ID3D12ProtectedResourceSession1? COMObject => ComPointer?.Interface ;
+	public override ID3D12ProtectedResourceSession1? ComObject => ComPointer?.Interface ;
 
 	internal ProtectedResourceSession1( ) {
 		_comPtr = ComResources?.GetPointer< ID3D12ProtectedResourceSession1 >( ) ;
@@ -137,7 +137,7 @@ internal class ProtectedResourceSession1: ProtectedResourceSession,
 	}
 	
 	
-	public ProtectedResourceSessionDescription1 GetDesc1( ) => COMObject!.GetDesc1( ) ;
+	public ProtectedResourceSessionDescription1 GetDesc1( ) => ComObject!.GetDesc1( ) ;
 	
 	public new static Type ComType => typeof( ID3D12ProtectedResourceSession1 ) ;
 	

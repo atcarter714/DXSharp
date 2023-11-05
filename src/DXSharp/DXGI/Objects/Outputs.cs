@@ -23,7 +23,7 @@ internal class Output: Object,
 	ComPtr< IDXGIOutput >? _comPtr ;
 	public new ComPtr< IDXGIOutput >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< IDXGIOutput >(  ) ;
-	public override IDXGIOutput? COMObject => ComPointer?.Interface ;
+	public override IDXGIOutput? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -46,22 +46,22 @@ internal class Output: Object,
 	// ---------------------------------------------------------------------------------
 
 	public void GetDescription( out OutputDescription pDescription ) {
-		_ = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		pDescription = new OutputDescription( ) ;
 		unsafe {
 			DXGI_OUTPUT_DESC result = default ;
-			COMObject.GetDesc( &result ) ;
+			ComObject.GetDesc( &result ) ;
 			pDescription = new OutputDescription( result ) ;
 		}
 	}
 
 	public uint GetDisplayModeCount( Format enumFormat, uint flags ) {
-		_ = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		uint modeCount = 0U ;
 		unsafe {
-			COMObject.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
+			ComObject.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
 										   flags, ref modeCount ) ;
 		}
 		return modeCount ;
@@ -70,13 +70,13 @@ internal class Output: Object,
 	public void GetDisplayModeList( Format enumFormat,
 									uint flags, out uint pNumModes,
 									out Span< ModeDescription > pDescription ) {
-		_ = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		
 		pDescription = default ; pNumModes = 0U ; uint modeCount = 0U ;
 		unsafe {
 			// First, call the function just to get the count (no pointer for results):
-			COMObject.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
+			ComObject.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
 										   flags, ref modeCount ) ;
 			pNumModes = modeCount ;
 			if ( pNumModes is 0U ) return ;
@@ -85,7 +85,7 @@ internal class Output: Object,
 			var _alloc = stackalloc DXGI_MODE_DESC[ (int)pNumModes ] ;
 			
 			// This time, we have a pointer telling it where to write the results:
-			COMObject.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
+			ComObject.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
 										   flags, ref pNumModes,
 											_alloc ) ; // (ptr to stack allocation)
 			
@@ -104,81 +104,81 @@ internal class Output: Object,
 	public void FindClosestMatchingMode( in ModeDescription pModeToMatch, 
 										 out ModeDescription pClosestMatch,
 										 IUnknownWrapper pConcernedDevice ) {
-		_ = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		pClosestMatch = default ;
 		unsafe {
 			DXGI_MODE_DESC result = default, modeToMatch_ = pModeToMatch ;
-			COMObject.FindClosestMatchingMode( &modeToMatch_, &result,
+			ComObject.FindClosestMatchingMode( &modeToMatch_, &result,
 											   pConcernedDevice ) ;
 			pClosestMatch = new( result ) ;
 		}
 	}
 
-	public void WaitForVBlank( ) => COMObject!.WaitForVBlank( ) ;
+	public void WaitForVBlank( ) => ComObject!.WaitForVBlank( ) ;
 
 	public void TakeOwnership( IUnknownWrapper pDevice, bool exclusive ) {
 		if ( pDevice is null ) throw new ArgumentNullException( nameof(pDevice) ) ;
-		_ = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
-		COMObject.TakeOwnership( pDevice, exclusive ) ;
+		ComObject.TakeOwnership( pDevice, exclusive ) ;
 	}
 
-	public void ReleaseOwnership( ) => COMObject!.ReleaseOwnership( ) ;
+	public void ReleaseOwnership( ) => ComObject!.ReleaseOwnership( ) ;
 
 	public void GetGammaControlCapabilities( out GammaControlCapabilities pGammaCaps ) {
-		_ = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		pGammaCaps = default ;
 		unsafe {
 			DXGI_GAMMA_CONTROL_CAPABILITIES result = default ;
-			COMObject.GetGammaControlCapabilities( &result ) ;
+			ComObject.GetGammaControlCapabilities( &result ) ;
 			pGammaCaps = new( result ) ;
 		}
 	}
 
 	public void SetGammaControl( in GammaControl pGammaData ) {
-		_ = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		unsafe { fixed( GammaControl* pGamma = &pGammaData )
-			COMObject.SetGammaControl( (DXGI_GAMMA_CONTROL *)pGamma ) ; }
+			ComObject.SetGammaControl( (DXGI_GAMMA_CONTROL *)pGamma ) ; }
 	}
 
 	public void GetGammaControl( out GammaControl pGammaData ) {
-		_ = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		pGammaData = default ;
 		unsafe {
 			DXGI_GAMMA_CONTROL result = default ;
-			COMObject.GetGammaControl( &result ) ;
+			ComObject.GetGammaControl( &result ) ;
 			pGammaData = new( result ) ;
 		}
 	}
 
 	public void SetDisplaySurface<T>( T pScanoutSurface ) where T: class, ISurface {
 		ArgumentNullException.ThrowIfNull( pScanoutSurface, nameof(pScanoutSurface) ) ;
-		var output = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		var output = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		var surface = (IComObjectRef< IDXGISurface >)pScanoutSurface ;
-		output.SetDisplaySurface( surface.COMObject ) ;
+		output.SetDisplaySurface( surface.ComObject ) ;
 	}
 
 	public void GetDisplaySurfaceData( ISurface pDestination ) {
-		var output = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		var output = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 																	$"The internal COM interface is destroyed/null." ) ;
 		var dst = (IComObjectRef< IDXGISurface >)pDestination ;
-		output.GetDisplaySurfaceData( dst.COMObject ) ;
+		output.GetDisplaySurfaceData( dst.ComObject ) ;
 	}
 	
 	public void GetFrameStatistics( out FrameStatistics pStats ) {
-		_ = COMObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
+		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		pStats = default ;
 		unsafe {
 			pStats = default ;
 			DXGI_FRAME_STATISTICS result = default ;
 			var pResult = &result ;
-			COMObject.GetFrameStatistics( pResult ) ;
+			ComObject.GetFrameStatistics( pResult ) ;
 			pStats = *( (FrameStatistics *)pResult ) ;
 		}
 	}
@@ -213,7 +213,7 @@ internal class Output1: Output, IOutput1,
 	ComPtr< IDXGIOutput1 >? _comPtr ;
 	public new ComPtr< IDXGIOutput1 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIOutput1 >(  ) ;
-	public override IDXGIOutput1? COMObject => ComPointer?.Interface ;
+	public override IDXGIOutput1? ComObject => ComPointer?.Interface ;
 	
 	// ---------------------------------------------------------------------------------
 	
@@ -243,7 +243,7 @@ internal class Output1: Output, IOutput1,
 		 
 		unsafe {
 			// First, call the function just to get the count (no pointer for results):
-			COMObject!.GetDisplayModeList1( (DXGI_FORMAT)enumFormat,
+			ComObject!.GetDisplayModeList1( (DXGI_FORMAT)enumFormat,
 											flags, ref modeCount ) ;
 			pNumModes = modeCount ;
 			if ( pNumModes is 0U ) return ;
@@ -252,7 +252,7 @@ internal class Output1: Output, IOutput1,
 			var _alloc = stackalloc DXGI_MODE_DESC1[ (int)pNumModes ] ;
 			
 			// This time, we have a pointer telling it where to write the results:
-			COMObject!.GetDisplayModeList1( (DXGI_FORMAT)enumFormat,
+			ComObject!.GetDisplayModeList1( (DXGI_FORMAT)enumFormat,
 											flags, ref pNumModes,
 											_alloc ) ; // (ptr to stack allocation)
 			
@@ -271,21 +271,21 @@ internal class Output1: Output, IOutput1,
 		var device = (IComObjectRef< ID3D12Device >)pConcernedDevice ;
 		unsafe {
 			DXGI_MODE_DESC1 result = default, modeToMatch_ = pModeToMatch ;
-			COMObject!.FindClosestMatchingMode1( &modeToMatch_, &result, device.COMObject ) ;
+			ComObject!.FindClosestMatchingMode1( &modeToMatch_, &result, device.ComObject ) ;
 			pClosestMatch = new( result ) ;
 		}
 	}
 
 	public void GetDisplaySurfaceData1( IResource pDestination ) {
 		var resource = (IComObjectRef< IDXGIResource >)pDestination ;
-		COMObject!.GetDisplaySurfaceData1( resource.COMObject ) ;
+		ComObject!.GetDisplaySurfaceData1( resource.ComObject ) ;
 	}
 
 	public void DuplicateOutput( IDevice pDevice, out IOutputDuplication? ppOutputDuplication ) {
 		
 		ppOutputDuplication = null ;
 		unsafe {
-			COMObject!.DuplicateOutput( pDevice, out var dup ) ;
+			ComObject!.DuplicateOutput( pDevice, out var dup ) ;
 			IDXGIOutputDuplication dxgiDup = ( dup ) ;
 			ppOutputDuplication = new OutputDuplication( dup ) ;
 		}
@@ -319,7 +319,7 @@ internal class Output2: Output1,
 	public new ComPtr< IDXGIOutput2 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIOutput2 >( ) ;
 
-	public override IDXGIOutput2? COMObject => ComPointer?.Interface ;
+	public override IDXGIOutput2? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -342,7 +342,7 @@ internal class Output2: Output1,
 	// ---------------------------------------------------------------------------------
 	
 	public bool SupportsOverlays( ) {
-		var output = COMObject ?? throw new NullReferenceException( $"{nameof(Output2)} :: " +
+		var output = ComObject ?? throw new NullReferenceException( $"{nameof(Output2)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		return output.SupportsOverlays( ) ;
 	}
@@ -375,7 +375,7 @@ internal class Output3: Output2,
 	public new ComPtr< IDXGIOutput3 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIOutput3 >( ) ;
 
-	public override IDXGIOutput3? COMObject => ComPointer?.Interface ;
+	public override IDXGIOutput3? ComObject => ComPointer?.Interface ;
 	
 	// ---------------------------------------------------------------------------------
 
@@ -400,10 +400,10 @@ internal class Output3: Output2,
 	public void CheckOverlaySupport( Format enumFormat, 
 									 Direct3D12.IDevice pConcernedDevice, 
 									 out OverlaySupportFlag pFlags ) {
-		var output = COMObject ?? throw new NullReferenceException( $"{nameof(Output3)} :: " +
+		var output = ComObject ?? throw new NullReferenceException( $"{nameof(Output3)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		var device = (IComObjectRef< ID3D12Device >)pConcernedDevice ;
-		output.CheckOverlaySupport( (DXGI_FORMAT)enumFormat, device.COMObject, out uint _flags ) ;
+		output.CheckOverlaySupport( (DXGI_FORMAT)enumFormat, device.ComObject, out uint _flags ) ;
 		pFlags = (OverlaySupportFlag)_flags ;
 	}
 
@@ -435,7 +435,7 @@ internal class Output4: Output3,
 	public new virtual ComPtr< IDXGIOutput4 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIOutput4 >( ) ;
 	
-	public override IDXGIOutput4? COMObject => ComPointer?.Interface ;
+	public override IDXGIOutput4? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -461,12 +461,12 @@ internal class Output4: Output3,
 											   ColorSpaceType ColorSpace,
 											   Direct3D12.IDevice pConcernedDevice,
 											   out OverlayColorSpaceSupportFlag pFlags ) {
-		var output = COMObject ?? throw new NullReferenceException( $"{nameof(Output4)} :: " +
+		var output = ComObject ?? throw new NullReferenceException( $"{nameof(Output4)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		var device = (IComObjectRef< ID3D12Device >)pConcernedDevice ;
 		output.CheckOverlayColorSpaceSupport( (DXGI_FORMAT)Format, 
 											  (DXGI_COLOR_SPACE_TYPE)ColorSpace,
-											  device.COMObject, 
+											  device.ComObject, 
 											  out uint pflags ) ;
 		pFlags = (OverlayColorSpaceSupportFlag)pflags ;
 	}
@@ -498,7 +498,7 @@ internal class Output5: Output4,
 	public new ComPtr< IDXGIOutput5 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIOutput5 >( ) ;
 
-	public override IDXGIOutput5? COMObject => ComPointer?.Interface ;
+	public override IDXGIOutput5? ComObject => ComPointer?.Interface ;
 	// ---------------------------------------------------------------------------------
 
 	internal Output5( ) {
@@ -526,7 +526,7 @@ internal class Output5: Output4,
 		unsafe {
 			var device = (IComObjectRef< ID3D12Device >)pDevice ;
 			fixed( Format* pFormats = &pSupportedFormats[ 0 ] ) {
-				var hr = (HResult)COMObject!.DuplicateOutput1( device.COMObject, Flags, SupportedFormatsCount,
+				var hr = (HResult)ComObject!.DuplicateOutput1( device.ComObject, Flags, SupportedFormatsCount,
 											 (DXGI_FORMAT*)pFormats,
 											 out var dup ) ;
 				
@@ -564,7 +564,7 @@ internal class Output6: Output5,
 	public new ComPtr< IDXGIOutput6 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIOutput6 >( ) ;
 
-	public override IDXGIOutput6? COMObject => ComPointer?.Interface ;
+	public override IDXGIOutput6? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 

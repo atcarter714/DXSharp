@@ -17,7 +17,7 @@ internal class DescriptorHeap: Pageable,
 	ComPtr< ID3D12DescriptorHeap >? _comPtr ;
 	public new ComPtr< ID3D12DescriptorHeap >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer<ID3D12DescriptorHeap>( ) ;
-	public override ID3D12DescriptorHeap? COMObject => ComPointer?.Interface ;
+	public override ID3D12DescriptorHeap? ComObject => ComPointer?.Interface ;
 	
 	internal DescriptorHeap( ) { }
 	internal DescriptorHeap( ComPtr< ID3D12DescriptorHeap > ptr ) => _comPtr = ptr ;

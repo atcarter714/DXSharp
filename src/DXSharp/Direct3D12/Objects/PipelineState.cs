@@ -18,7 +18,7 @@ internal class PipelineState: Pageable,
 	ComPtr< ID3D12PipelineState >? _comPtr ;
 	public new ComPtr< ID3D12PipelineState >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12PipelineState >( ) ;
-	public override ID3D12PipelineState? COMObject => ComPointer?.Interface ;
+	public override ID3D12PipelineState? ComObject => ComPointer?.Interface ;
 	// ------------------------------------------------------------------------------------------
 	
 	internal PipelineState( ) {
@@ -40,7 +40,7 @@ internal class PipelineState: Pageable,
 	// ------------------------------------------------------------------------------------------
 
 	public IBlob GetCachedBlob( ) {
-		COMObject!.GetCachedBlob( out var _blob ) ;
+		ComObject!.GetCachedBlob( out var _blob ) ;
 		return new Blob( _blob ) ;
 	}
 	

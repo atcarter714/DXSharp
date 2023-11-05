@@ -44,7 +44,7 @@ internal class Factory: Object,
 	public override ComPtr< IDXGIFactory >? ComPointer => 
 		_comPointer ??= ComResources?.GetPointer< IDXGIFactory >( ) ;
 	
-	public override IDXGIFactory? COMObject => ComPointer?.Interface ;
+	public override IDXGIFactory? ComObject => ComPointer?.Interface ;
 	// -----------------------------------------------------------------------------------
 	
 	internal Factory( ) {
@@ -80,7 +80,7 @@ internal class Factory: Object,
 			var descCopy = desc ;
 			var cmdQueue = (IComObjectRef<ID3D12CommandQueue> )pCmdQueue ;
 			
-			var _hr = COMObject!.CreateSwapChain( cmdQueue,
+			var _hr = ComObject!.CreateSwapChain( cmdQueue,
 												(DXGI_SWAP_CHAIN_DESC *)&descCopy, 
 													out IDXGISwapChain? pSwapChain ) ;
 			
@@ -92,14 +92,14 @@ internal class Factory: Object,
 	
 	public void CreateSoftwareAdapter< TAdapter >( HInstance Module, out TAdapter? ppAdapter ) 
 												where TAdapter: class, IAdapter, IInstantiable {
-		_ = COMObject ?? throw new NullReferenceException( ) ;
+		_ = ComObject ?? throw new NullReferenceException( ) ;
 		ppAdapter = default ;
-		COMObject.CreateSoftwareAdapter( Module, out IDXGIAdapter? pAdapter ) ;
+		ComObject.CreateSoftwareAdapter( Module, out IDXGIAdapter? pAdapter ) ;
 		ppAdapter = (TAdapter)TAdapter.Instantiate( pAdapter ) ;
 	}
 
 	public void MakeWindowAssociation( in HWnd WindowHandle, WindowAssociation Flags ) =>
-		( _ = COMObject ?? throw new NullReferenceException() )
+		( _ = ComObject ?? throw new NullReferenceException() )
 			.MakeWindowAssociation( WindowHandle, (uint)Flags ) ;
 
 	
@@ -109,17 +109,17 @@ internal class Factory: Object,
 	}
 	
 	public void GetWindowAssociation( out HWnd pWindowHandle ) {
-		_ = COMObject ?? throw new NullReferenceException( ) ;
+		_ = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			winMD.HWND handle = default ;
-			COMObject.GetWindowAssociation( &handle ) ;
+			ComObject.GetWindowAssociation( &handle ) ;
 			pWindowHandle = new( handle ) ;
 		}
 	}
 	
 	public HResult EnumAdapters< TAdapter >( uint index, out TAdapter? ppAdapter ) 
 												where TAdapter: class, IAdapter {
-		var factory = COMObject ?? throw new NullReferenceException( ) ;
+		var factory = ComObject ?? throw new NullReferenceException( ) ;
 		ppAdapter = default ;
 		
 		var hr = factory.EnumAdapters( index, out IDXGIAdapter? pAdapter ) ;
@@ -182,7 +182,7 @@ internal class Factory1: Factory,
 	// -------------------------------------------------------------------------------------
 
 	ComPtr< IDXGIFactory1 >? _comPointer1 ; 
-	public override IDXGIFactory1? COMObject => ComPointer?.Interface ;
+	public override IDXGIFactory1? ComObject => ComPointer?.Interface ;
 	public new virtual ComPtr< IDXGIFactory1 >? ComPointer =>
 		_comPointer1 ??= ComResources?.GetPointer< IDXGIFactory1 >( ) ;
 	
@@ -204,14 +204,14 @@ internal class Factory1: Factory,
 	}
 
 	
-	public bool IsCurrent( ) => COMObject!.IsCurrent( ) ;
+	public bool IsCurrent( ) => ComObject!.IsCurrent( ) ;
 
 	public HResult EnumAdapters1< TAdapter >( uint index, out TAdapter? ppAdapter )
 												where TAdapter: class, IAdapter1 {
-		if( COMObject is null ) throw new NullReferenceException( ) ;
+		if( ComObject is null ) throw new NullReferenceException( ) ;
 		ppAdapter = default ;
 		
-		var _hr = COMObject.EnumAdapters1( index, out IDXGIAdapter1? pAdapter ) ;
+		var _hr = ComObject.EnumAdapters1( index, out IDXGIAdapter1? pAdapter ) ;
 		if( _hr.Failed ) {
 			ppAdapter = null ;
 			return _hr ;
@@ -236,7 +236,7 @@ internal class Factory2: Factory1,
 	ComPtr< IDXGIFactory2 >? _comPointer2 ;
 	public new virtual ComPtr< IDXGIFactory2 >? ComPointer =>
 		_comPointer2 ??= ComResources?.GetPointer< IDXGIFactory2 >( ) ;
-	public override IDXGIFactory2? COMObject => ComPointer?.Interface ;
+	public override IDXGIFactory2? ComObject => ComPointer?.Interface ;
 	
 	// -------------------------------------------------------------------------------------
 	
@@ -258,13 +258,13 @@ internal class Factory2: Factory1,
 
 	// -------------------------------------------------------------------------------------
 	
-	public bool IsWindowedStereoEnabled( ) => COMObject!.IsWindowedStereoEnabled( ) ;
+	public bool IsWindowedStereoEnabled( ) => ComObject!.IsWindowedStereoEnabled( ) ;
 	
 	public void GetSharedResourceAdapterLuid( Win32Handle hResource, out Luid pLuid ) {
 		unsafe {
 			pLuid = default ;
 			fixed( Luid* pLuidPtr = &pLuid )
-				COMObject!.GetSharedResourceAdapterLuid( hResource, (winMD.LUID *) pLuidPtr ) ;
+				ComObject!.GetSharedResourceAdapterLuid( hResource, (winMD.LUID *) pLuidPtr ) ;
 		}
 	}
 
@@ -276,11 +276,11 @@ internal class Factory2: Factory1,
 		unsafe {
 			var restrictOutput = (IComObjectRef< IDXGIOutput >)pRestrictToOutput ;
 			fixed( void* _fsDesc = &pFullscreenDesc, _desc = &pDesc ) {
-				COMObject!.CreateSwapChainForHwnd( pDevice,
+				ComObject!.CreateSwapChainForHwnd( pDevice,
 												   hWnd,
 												   (DXGI_SWAP_CHAIN_DESC1 *)_desc,
 												   (DXGI_SWAP_CHAIN_FULLSCREEN_DESC *)_fsDesc,
-												   restrictOutput?.COMObject,
+												   restrictOutput?.ComObject,
 												   out var pSwapChain ) ;
 				ppSwapChain = new SwapChain1( pSwapChain ?? throw new NullReferenceException( ) ) ;
 			}
@@ -297,10 +297,10 @@ internal class Factory2: Factory1,
 			var device = (IComObjectRef< ID3D12CommandAllocator >)pDevice ;
 			var restrictOutput = (IComObjectRef< IDXGIOutput >)pRestrictToOutput ;
 			fixed( void *_desc = &pDesc ) {
-				COMObject!.CreateSwapChainForCoreWindow( device.COMObject,
+				ComObject!.CreateSwapChainForCoreWindow( device.ComObject,
 														 pWindow,
 														 (DXGI_SWAP_CHAIN_DESC1 *)_desc,
-														 restrictOutput?.COMObject,
+														 restrictOutput?.ComObject,
 														 out var pSwapChain ) ;
 				ppSwapChain = new SwapChain1( pSwapChain ?? throw new NullReferenceException( ) ) ;
 			}
@@ -309,23 +309,23 @@ internal class Factory2: Factory1,
 
 
 	public void RegisterStereoStatusWindow( HWnd WindowHandle, uint wMsg, out uint pdwCookie ) => 
-		COMObject!.RegisterStereoStatusWindow( WindowHandle, wMsg, out pdwCookie ) ;
+		ComObject!.RegisterStereoStatusWindow( WindowHandle, wMsg, out pdwCookie ) ;
 	
 	public void RegisterStereoStatusEvent( Win32Handle hEvent, out uint pdwCookie ) =>
-		COMObject!.RegisterStereoStatusEvent( hEvent, out pdwCookie ) ;
+		ComObject!.RegisterStereoStatusEvent( hEvent, out pdwCookie ) ;
 
 	
 	public void UnregisterStereoStatus( uint dwCookie ) => 
-		COMObject!.UnregisterStereoStatus( dwCookie ) ;
+		ComObject!.UnregisterStereoStatus( dwCookie ) ;
 
 	public void RegisterOcclusionStatusWindow( HWnd WindowHandle, uint wMsg, out uint pdwCookie ) =>
-		COMObject!.RegisterOcclusionStatusWindow( WindowHandle, wMsg, out pdwCookie ) ;
+		ComObject!.RegisterOcclusionStatusWindow( WindowHandle, wMsg, out pdwCookie ) ;
 	
 	public void RegisterOcclusionStatusEvent( Win32Handle hEvent, out uint pdwCookie ) =>
-		COMObject!.RegisterOcclusionStatusEvent( hEvent, out pdwCookie ) ;
+		ComObject!.RegisterOcclusionStatusEvent( hEvent, out pdwCookie ) ;
 	
 	public void UnregisterOcclusionStatus( uint dwCookie ) => 
-		COMObject!.UnregisterOcclusionStatus( dwCookie ) ;
+		ComObject!.UnregisterOcclusionStatus( dwCookie ) ;
 
 	public unsafe void CreateSwapChainForComposition< TAlloc >( TAlloc pDevice,
 																in SwapChainDescription1 pDesc,
@@ -335,9 +335,9 @@ internal class Factory2: Factory1,
 		var allocator      = (IComObjectRef< ID3D12CommandAllocator >)pDevice ;
 		var restrictOutput = (IComObjectRef< IDXGIOutput >)pRestrictToOutput ;
 		fixed( void* _desc = &pDesc ) {
-			COMObject!.CreateSwapChainForComposition( allocator.COMObject,
+			ComObject!.CreateSwapChainForComposition( allocator.ComObject,
 													  (DXGI_SWAP_CHAIN_DESC1*)_desc,
-													  restrictOutput?.COMObject,
+													  restrictOutput?.ComObject,
 													  out var pSwapChain ) ;
 			ppSwapChain = new SwapChain1( pSwapChain ) ;
 		}
@@ -367,7 +367,7 @@ internal class Factory3: Factory2,
 	ComPtr< IDXGIFactory3 >? _comPointer3 ;
 	public new virtual ComPtr< IDXGIFactory3 >? ComPointer =>
 		_comPointer3 ??= ComResources?.GetPointer< IDXGIFactory3 >( ) ;
-	public override IDXGIFactory3? COMObject => ComPointer?.Interface ;
+	public override IDXGIFactory3? ComObject => ComPointer?.Interface ;
 
 	// -------------------------------------------------------------------------------------
 
@@ -392,7 +392,7 @@ internal class Factory3: Factory2,
 
 	// -------------------------------------------------------------------------------------
 	
-	public uint GetCreationFlags( ) => COMObject!.GetCreationFlags( ) ;
+	public uint GetCreationFlags( ) => ComObject!.GetCreationFlags( ) ;
 	
 	// -------------------------------------------------------------------------------------
 	public new static Type ComType => typeof( IDXGIFactory3 ) ;
@@ -418,7 +418,7 @@ internal class Factory4: Factory3,
 	ComPtr< IDXGIFactory4 >? _comPointer4 ;
 	public new virtual ComPtr< IDXGIFactory4 >? ComPointer =>
 		_comPointer4 ??= ComResources?.GetPointer< IDXGIFactory4 >( ) ;
-	public override IDXGIFactory4? COMObject => ComPointer?.Interface ;
+	public override IDXGIFactory4? ComObject => ComPointer?.Interface ;
 	// -------------------------------------------------------------------------------------
 
 	internal Factory4( ) {
@@ -443,13 +443,13 @@ internal class Factory4: Factory3,
 	// -------------------------------------------------------------------------------------
 
 	public void EnumAdapterByLuid< A >( Luid AdapterLuid, in Guid riid, out A ppvAdapter ) where A: IAdapter {
-		var factory = COMObject ?? throw new NullReferenceException( ) ;
+		var factory = ComObject ?? throw new NullReferenceException( ) ;
 		factory.EnumAdapterByLuid( AdapterLuid, riid, out var pAdapter ) ;
 		ppvAdapter = (A)A.Instantiate( pAdapter as IDXGIAdapter ) ;
 	}
 
 	public void EnumWarpAdapter< A >( in Guid riid, out A ppvAdapter ) where A: IAdapter {
-		var factory = COMObject ?? throw new NullReferenceException( ) ;
+		var factory = ComObject ?? throw new NullReferenceException( ) ;
 		factory.EnumWarpAdapter( riid, out var pAdapter ) ;
 		ppvAdapter = (A)A.Instantiate( pAdapter as IDXGIAdapter ) ;
 	}
@@ -478,7 +478,7 @@ internal class Factory5: Factory4,
 	ComPtr< IDXGIFactory5 >? _comPointer5 ;
 	public new virtual ComPtr< IDXGIFactory5 >? ComPointer =>
 		_comPointer5 ??= ComResources?.GetPointer< IDXGIFactory5 >( ) ;
-	public override IDXGIFactory5? COMObject => ComPointer?.Interface ;
+	public override IDXGIFactory5? ComObject => ComPointer?.Interface ;
 
 	// -------------------------------------------------------------------------------------
 
@@ -505,7 +505,7 @@ internal class Factory5: Factory4,
 	
 	public void CheckFeatureSupport( Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) {
 		unsafe {
-			COMObject!.CheckFeatureSupport( (DXGI_FEATURE)Feature,
+			ComObject!.CheckFeatureSupport( (DXGI_FEATURE)Feature,
 											(void*)pFeatureSupportData,
 											FeatureSupportDataSize ) ;
 		}
@@ -535,7 +535,7 @@ internal class Factory6: Factory5,
 	ComPtr< IDXGIFactory6 >? _comPointer6 ;
 	public new virtual ComPtr< IDXGIFactory6 >? ComPointer =>
 		_comPointer6 ??= ComResources?.GetPointer< IDXGIFactory6 >( ) ;
-	public override IDXGIFactory6? COMObject => ComPointer?.Interface ;
+	public override IDXGIFactory6? ComObject => ComPointer?.Interface ;
 	// -------------------------------------------------------------------------------------
 
 	internal Factory6( ) {
@@ -560,7 +560,7 @@ internal class Factory6: Factory5,
 												 GPUPreference GpuPreference,
 												 in  Guid      riid,
 												 out A         ppvAdapter ) where A: IAdapter {
-		var factory = COMObject ?? throw new NullReferenceException( ) ;
+		var factory = ComObject ?? throw new NullReferenceException( ) ;
 		factory.EnumAdapterByGpuPreference( Adapter, (DXGI_GPU_PREFERENCE)GpuPreference, riid, out var pAdapter ) ;
 		ppvAdapter = (A)A.Instantiate( pAdapter as IDXGIAdapter ) ;
 	}
@@ -589,7 +589,7 @@ internal class Factory7: Factory6,
 	ComPtr< IDXGIFactory7 >? _comPointer7 ;
 	public new virtual ComPtr< IDXGIFactory7 >? ComPointer =>
 		_comPointer7 ??= ComResources?.GetPointer< IDXGIFactory7 >( ) ;
-	public override IDXGIFactory7? COMObject => ComPointer?.Interface ;
+	public override IDXGIFactory7? ComObject => ComPointer?.Interface ;
 	// -------------------------------------------------------------------------------------
 
 	internal Factory7( ) {
@@ -610,10 +610,10 @@ internal class Factory7: Factory6,
 	// -------------------------------------------------------------------------------------
 	
 	public void RegisterAdaptersChangedEvent( Win32Handle hEvent, out uint pdwCookie ) =>
-		COMObject!.RegisterAdaptersChangedEvent( hEvent, out pdwCookie ) ;
+		ComObject!.RegisterAdaptersChangedEvent( hEvent, out pdwCookie ) ;
 
 	public void UnregisterAdaptersChangedEvent( uint dwCookie ) =>
-		COMObject!.UnregisterAdaptersChangedEvent( dwCookie ) ;
+		ComObject!.UnregisterAdaptersChangedEvent( dwCookie ) ;
 	
 	// -------------------------------------------------------------------------------------
 	public new static Type ComType => typeof( IDXGIFactory7 ) ;

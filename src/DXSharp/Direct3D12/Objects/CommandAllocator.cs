@@ -14,7 +14,7 @@ internal class CommandAllocator: Pageable,
 								 IUnknownWrapper< ID3D12CommandAllocator > {
 	// -------------------------------------------------------------------------------------------------------
 	ComPtr< ID3D12CommandAllocator >? _comPtr ;
-	public new ID3D12CommandAllocator? COMObject => ComPointer?.Interface ;
+	public override ID3D12CommandAllocator? ComObject => ComPointer?.Interface ;
 	public new ComPtr< ID3D12CommandAllocator >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12CommandAllocator>(  ) ;
 	// -------------------------------------------------------------------------------------------------------
@@ -34,7 +34,7 @@ internal class CommandAllocator: Pageable,
 	
 	// -------------------------------------------------------------------------------------------------------
 	
-	public void Reset( ) => COMObject!.Reset( ) ;
+	public void Reset( ) => ComObject!.Reset( ) ;
 	
 	// -------------------------------------------------------------------------------------------------------
 	

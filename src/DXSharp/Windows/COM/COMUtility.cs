@@ -31,8 +31,7 @@ public static class COMUtility {
 			Release( pUnknown ) ;
 			return false ;
 		}
-		catch ( COMException comError ) { return true ; }
-		catch ( AccessViolationException e ) { return true ; }
+		catch { return true ; }
 	}
 	
 	[MethodImpl(_MAXOPT_)] public static nint GetIUnknownForObject( [MaybeNull] in object? obj ) {
@@ -174,6 +173,7 @@ public static class COMUtility {
 															out nint pInterface ) {
 		var riid = typeof(TInterface).GUID ;
 		var hr = (HResult)Marshal.QueryInterface( pUnknown, ref riid, out pInterface ) ;
+		hr.SetAsLastErrorForThread( ) ;
 		_lastHResult = hr ;
 		return hr ;
 	}

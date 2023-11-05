@@ -65,7 +65,7 @@ public static class D3D12 {
 		var _adapter = (IComObjectRef< IDXGIAdapter >?)adapter
 					   ?? throw new ArgumentNullException( nameof( adapter ) ) ;
 		
-		var hr = PInvoke.D3D12CreateDevice( _adapter?.COMObject,
+		var hr = PInvoke.D3D12CreateDevice( _adapter?.ComObject,
 											(D3D_FEATURE_LEVEL)featureLevel,
 											guid, out var ppDevice ) ;
 		hr.ThrowOnFailure( ) ;

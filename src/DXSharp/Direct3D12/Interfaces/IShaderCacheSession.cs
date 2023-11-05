@@ -98,8 +98,8 @@ internal class ShaderCacheSession: DeviceChild,
 	ComPtr< ID3D12ShaderCacheSession >? _comPtr ;
 	public new virtual ComPtr< ID3D12ShaderCacheSession >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12ShaderCacheSession >( ) ;
-	public override ID3D12ShaderCacheSession? COMObject => ComPointer?.Interface ;
-	ID3D12ShaderCacheSession _shaderCacheSession => COMObject ?? throw new NullReferenceException( ) ;
+	public override ID3D12ShaderCacheSession? ComObject => ComPointer?.Interface ;
+	ID3D12ShaderCacheSession _shaderCacheSession => ComObject ?? throw new NullReferenceException( ) ;
 	
 	internal ShaderCacheSession( ) {
 		_comPtr = ComResources?.GetPointer< ID3D12ShaderCacheSession >( ) ;

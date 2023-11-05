@@ -16,7 +16,7 @@ internal class Fence: Pageable,
 					  IUnknownWrapper< ID3D12Fence >  {
 	// -----------------------------------------------------------------------------------------------
 	ComPtr< ID3D12Fence >? _comPtr ;
-	public override ID3D12Fence? COMObject => ComPointer?.Interface ;
+	public override ID3D12Fence? ComObject => ComPointer?.Interface ;
 	public new virtual ComPtr< ID3D12Fence >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12Fence>( ) ;
 	// -----------------------------------------------------------------------------------------------
@@ -40,12 +40,12 @@ internal class Fence: Pageable,
 	
 	// -----------------------------------------------------------------------------------------------
 	
-	public ulong GetCompletedValue( ) => COMObject!.GetCompletedValue( ) ;
+	public ulong GetCompletedValue( ) => ComObject!.GetCompletedValue( ) ;
 
 	public void SetEventOnCompletion( ulong Value, Win32Handle hEvent ) => 
-		COMObject!.SetEventOnCompletion( Value, hEvent ) ;
+		ComObject!.SetEventOnCompletion( Value, hEvent ) ;
 
-	public void Signal( ulong Value ) => COMObject!.Signal( Value ) ;
+	public void Signal( ulong Value ) => ComObject!.Signal( Value ) ;
 	
 	// -----------------------------------------------------------------------------------------------
 	public new static Type ComType => typeof(ID3D12Fence) ;
@@ -71,7 +71,7 @@ internal class Fence1: Fence,
 					   IUnknownWrapper< ID3D12Fence1 >  {
 	// -----------------------------------------------------------------------------------------------
 	ComPtr< ID3D12Fence1 >? _comPtr ;
-	public override ID3D12Fence1? COMObject => ComPointer?.Interface ;
+	public override ID3D12Fence1? ComObject => ComPointer?.Interface ;
 	public new virtual ComPtr< ID3D12Fence1 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12Fence1>( ) ;
 
@@ -96,7 +96,7 @@ internal class Fence1: Fence,
 	// -----------------------------------------------------------------------------------------------
 	
 	public FenceFlags GetCreationFlags( ) {
-		var fence = COMObject ?? throw new NullReferenceException( ) ;
+		var fence = ComObject ?? throw new NullReferenceException( ) ;
 		return (FenceFlags)fence.GetCreationFlags( ) ;
 	}
 	

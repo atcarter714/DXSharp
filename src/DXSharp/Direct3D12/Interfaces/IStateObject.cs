@@ -41,7 +41,7 @@ internal class StateObject: Pageable,
 	ComPtr<ID3D12StateObject>? _comPtr ;
 	public new virtual ComPtr< ID3D12StateObject >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12StateObject >( ) ;
-	public override ID3D12StateObject? COMObject => ComPointer?.Interface ;
+	public override ID3D12StateObject? ComObject => ComPointer?.Interface ;
 
 	
 	internal StateObject( ) {

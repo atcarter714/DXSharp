@@ -70,7 +70,7 @@ internal class MetaCommand: Pageable,
 	ComPtr< ID3D12MetaCommand >? _comPtr ;
 	public new ComPtr< ID3D12MetaCommand >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12MetaCommand >( ) ;
-	public override ID3D12MetaCommand? COMObject => ComPointer?.Interface ;
+	public override ID3D12MetaCommand? ComObject => ComPointer?.Interface ;
 	// -----------------------------------------------------------------------------------------------
 	
 	internal MetaCommand( ) {
@@ -92,7 +92,7 @@ internal class MetaCommand: Pageable,
 	// -----------------------------------------------------------------------------------------------
 	
 	public ulong GetRequiredParameterResourceSize( MetaCommandParameterStage stage, uint parameterIndex ) => 
-		COMObject!.GetRequiredParameterResourceSize( (D3D12_META_COMMAND_PARAMETER_STAGE)stage, parameterIndex ) ;
+		ComObject!.GetRequiredParameterResourceSize( (D3D12_META_COMMAND_PARAMETER_STAGE)stage, parameterIndex ) ;
 	
 	// -----------------------------------------------------------------------------------------------
 	

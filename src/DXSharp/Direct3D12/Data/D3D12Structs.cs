@@ -950,7 +950,7 @@ public struct ComputePipelineStateDescription {
 	
 	public static implicit operator D3D12_COMPUTE_PIPELINE_STATE_DESC( in ComputePipelineStateDescription desc ) => 
 		new D3D12_COMPUTE_PIPELINE_STATE_DESC {
-			pRootSignature = desc.pRootSignature.COMObject,
+			pRootSignature = desc.pRootSignature.ComObject,
 			CS             = desc.CS,
 			NodeMask       = desc.NodeMask,
 			CachedPSO      = desc.CachedPSO,
@@ -2031,7 +2031,10 @@ public struct RootSignatureDescription {
 		}
 	}
 	
-	public IBlob Serialize( ) => Serialize( out _ ) ;
+	public IBlob? Serialize( ) {
+		Serialize( out var blob ) ;
+		return blob ;
+	}
 } ;
 
 

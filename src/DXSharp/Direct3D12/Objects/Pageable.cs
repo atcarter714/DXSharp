@@ -17,7 +17,7 @@ internal abstract class Pageable: DeviceChild,
 	public new virtual ComPtr< ID3D12Pageable >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12Pageable>(  ) ;
 	
-	public override ID3D12Pageable? COMObject => ComPointer?.Interface ;
+	public override ID3D12Pageable? ComObject => ComPointer?.Interface ;
 	
 	protected Pageable( ) {
 		_comPtr = ComResources?.GetPointer<ID3D12Pageable>(  ) ;

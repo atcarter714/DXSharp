@@ -1,12 +1,11 @@
-﻿#pragma warning disable CS1591
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+
 #region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
-
-using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.DXGI ;
 
@@ -28,12 +27,11 @@ public interface IObject: IDXCOMObject {
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgiobject-getparent">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void GetParent< T >( out T ppParent ) 
-		where T: IUnknownWrapper< IDXGIObject >, IInstantiable ;
-
+		where T: IObject, IInstantiable ;
+	
 	// ----------------------------------------------------------
-	
 	new static Type ComType => typeof(IDXGIObject) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid  {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -45,6 +43,5 @@ public interface IObject: IDXCOMObject {
 											  .GetReference(data) ) ;
 		}
 	}
-
 	// ==========================================================
 } ;
