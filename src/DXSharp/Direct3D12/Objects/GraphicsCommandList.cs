@@ -9,6 +9,7 @@ using Windows.Win32.Graphics.Dxgi.Common ;
 
 using DXSharp.DXGI ;
 using DXSharp.Windows.COM ;
+#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 #endregion
 namespace DXSharp.Direct3D12 ;
 
@@ -26,7 +27,7 @@ internal class GraphicsCommandList: CommandList,
 	public new ComPtr< ID3D12GraphicsCommandList >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12GraphicsCommandList>( ) ;
 
-	public override ID3D12GraphicsCommandList? COMObject => ComPointer?.Interface ;
+	public override ID3D12GraphicsCommandList? ComObject => ComPointer?.Interface ;
 	
 	
 	internal GraphicsCommandList( ) {
@@ -47,7 +48,7 @@ internal class GraphicsCommandList: CommandList,
 	
 	// ---------------------------------------------------------------------------------
 
-	public void Close( ) => COMObject?.Close( ) ;
+	public void Close( ) => ComObject?.Close( ) ;
 
 
 	public void Reset( ICommandAllocator pAllocator, IPipelineState pInitialState ) {
@@ -55,35 +56,35 @@ internal class GraphicsCommandList: CommandList,
 		var initialState = (IComObjectRef< ID3D12PipelineState >)pInitialState ;
 #if DEBUG || DEBUG_COM || DEV_BUILD
 		ArgumentNullException.ThrowIfNull( pAllocator, nameof(pAllocator) ) ;
-		ArgumentNullException.ThrowIfNull( allocator.COMObject, nameof(allocator.COMObject) ) ;
+		ArgumentNullException.ThrowIfNull( allocator.ComObject, nameof(allocator.ComObject) ) ;
 		ArgumentNullException.ThrowIfNull( initialState, nameof(pInitialState) ) ;
-		ArgumentNullException.ThrowIfNull( initialState.COMObject, nameof(initialState.COMObject) ) ;
+		ArgumentNullException.ThrowIfNull( initialState.ComObject, nameof(initialState.ComObject) ) ;
 #endif
 		
-		var device = COMObject ?? throw new NullReferenceException( nameof( IGraphicsCommandList ) ) ;
-		device.Reset( allocator.COMObject, initialState.COMObject ) ;
+		var device = ComObject ?? throw new NullReferenceException( nameof( IGraphicsCommandList ) ) ;
+		device.Reset( allocator.ComObject, initialState.ComObject ) ;
 	}
 
 	
-	public void ClearState( ID3D12PipelineState pPipelineState ) => COMObject!.ClearState( pPipelineState ) ;
+	public void ClearState( ID3D12PipelineState pPipelineState ) => ComObject!.ClearState( pPipelineState ) ;
 
 	
 	public void DrawInstanced( uint VertexCountPerInstance, uint InstanceCount, 
 							   uint StartVertexLocation,    uint StartInstanceLocation ) => 
-		COMObject!.DrawInstanced( VertexCountPerInstance, InstanceCount, 
+		ComObject!.DrawInstanced( VertexCountPerInstance, InstanceCount, 
 								  StartVertexLocation, StartInstanceLocation ) ;
 	
 
 	public void DrawIndexedInstanced( uint IndexCountPerInstance, uint InstanceCount, 
 									  uint StartIndexLocation,    int  BaseVertexLocation, 
 									  uint StartInstanceLocation ) => 
-		COMObject!.DrawIndexedInstanced( IndexCountPerInstance, InstanceCount,
+		ComObject!.DrawIndexedInstanced( IndexCountPerInstance, InstanceCount,
 										 StartIndexLocation, BaseVertexLocation,
 										 StartInstanceLocation ) ;
 
 	
 	public void Dispatch( uint ThreadGroupCountX, uint ThreadGroupCountY, uint ThreadGroupCountZ ) => 
-		COMObject!.Dispatch( ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ ) ;
+		ComObject!.Dispatch( ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ ) ;
 
 	
 	public void CopyBufferRegion( IResource pDstBuffer, ulong DstOffset, 
@@ -91,8 +92,8 @@ internal class GraphicsCommandList: CommandList,
 								  ulong     NumBytes ) {
 		var src = (Resource)pSrcBuffer ;
 		var dst = (Resource)pDstBuffer ;
-		COMObject!.CopyBufferRegion( dst.COMObject, DstOffset,
-									 src.COMObject, SrcOffset,
+		ComObject!.CopyBufferRegion( dst.ComObject, DstOffset,
+									 src.ComObject, SrcOffset,
 									 NumBytes ) ;
 	}
 	
@@ -102,7 +103,7 @@ internal class GraphicsCommandList: CommandList,
 								   in TextureCopyLocation pSrc,
 								   [Optional] in Box pSrcBox ) {
 		unsafe { fixed ( Box* pBox = &pSrcBox ) {
-				COMObject!.CopyTextureRegion( pDst, DstX, DstY, DstZ, pSrc, (D3D12_BOX *)pBox ) ;
+				ComObject!.CopyTextureRegion( pDst, DstX, DstY, DstZ, pSrc, (D3D12_BOX *)pBox ) ;
 			}
 		}
 	}
@@ -111,7 +112,7 @@ internal class GraphicsCommandList: CommandList,
 	public void CopyResource( IResource pDstResource, IResource pSrcResource ) {
 		var src = (Resource)pSrcResource ;
 		var dst = (Resource)pDstResource ;
-		COMObject!.CopyResource( dst.COMObject, src.COMObject ) ;
+		ComObject!.CopyResource( dst.ComObject, src.ComObject ) ;
 	}
 
 	
@@ -125,10 +126,10 @@ internal class GraphicsCommandList: CommandList,
 			var tiledResource = (Resource)pTiledResource ;
 			var buffer = (Resource)pBuffer ;
 			fixed( void* pTiledResCoord = &pTileRegionStartCoordinate, pRegionSize = &pTileRegionSize) {
-				COMObject!.CopyTiles( tiledResource.COMObject, 
+				ComObject!.CopyTiles( tiledResource.ComObject, 
 									  (D3D12_TILED_RESOURCE_COORDINATE *)pTiledResCoord, 
 									  (D3D12_TILE_REGION_SIZE *)pRegionSize,
-									  buffer.COMObject, 
+									  buffer.ComObject, 
 									  BufferStartOffsetInBytes, 
 									  (D3D12_TILE_COPY_FLAGS)Flags ) ;
 			}
@@ -141,20 +142,20 @@ internal class GraphicsCommandList: CommandList,
 									Format    Format) {
 		var src = (Resource)pSrcResource ;
 		var dst = (Resource)pDstResource ;
-		COMObject!.ResolveSubresource( dst.COMObject, DstSubresource,
-									   src.COMObject, SrcSubresource,
+		ComObject!.ResolveSubresource( dst.ComObject, DstSubresource,
+									   src.ComObject, SrcSubresource,
 									   (DXGI_FORMAT)Format ) ;
 	}
 
 	
 	public void IASetPrimitiveTopology( PrimitiveTopology PrimitiveTopology ) => 
-		COMObject!.IASetPrimitiveTopology( (D3D_PRIMITIVE_TOPOLOGY)PrimitiveTopology ) ;
+		ComObject!.IASetPrimitiveTopology( (D3D_PRIMITIVE_TOPOLOGY)PrimitiveTopology ) ;
 
 	
 	public void RSSetViewports( uint NumViewports, in Span< Viewport > pViewports ) {
 		unsafe {
 			fixed( Viewport* pViewportsPtr = &pViewports[0] ) {
-				COMObject!.RSSetViewports( NumViewports, (D3D12_VIEWPORT *)pViewportsPtr ) ;
+				ComObject!.RSSetViewports( NumViewports, (D3D12_VIEWPORT *)pViewportsPtr ) ;
 			}
 		}
 	}
@@ -162,23 +163,23 @@ internal class GraphicsCommandList: CommandList,
 	
 	public void RSSetScissorRects( uint NumRects, in Span< Rect > pRects ) {
 		unsafe { fixed( Rect* pRectsPtr = &pRects[0] ) {
-				COMObject!.RSSetScissorRects( NumRects, (RECT *)pRectsPtr ) ;
+				ComObject!.RSSetScissorRects( NumRects, (RECT *)pRectsPtr ) ;
 			}
 		}
 	}
 
 	
-	public void OMSetBlendFactor( float[ ] BlendFactor ) => COMObject!.OMSetBlendFactor( BlendFactor ) ;
+	public void OMSetBlendFactor( float[ ] BlendFactor ) => ComObject!.OMSetBlendFactor( BlendFactor ) ;
 
 	
-	public void OMSetStencilRef( uint StencilRef ) => COMObject!.OMSetStencilRef( StencilRef ) ;
+	public void OMSetStencilRef( uint StencilRef ) => ComObject!.OMSetStencilRef( StencilRef ) ;
 
 	public void SetPipelineState( IPipelineState pPipelineState ) => 
-		COMObject!.SetPipelineState( ( (IComObjectRef<ID3D12PipelineState>)pPipelineState ).COMObject ) ;
+		ComObject!.SetPipelineState( ( (IComObjectRef<ID3D12PipelineState>)pPipelineState ).ComObject ) ;
 
 	public void ResourceBarrier( uint NumBarriers,
 								 ResourceBarrier[ ] pBarriers ) {
-		var commandList = COMObject ?? throw new NullReferenceException( ) ;
+		var commandList = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe
 		{
 			var _barriers = new D3D12_RESOURCE_BARRIER[pBarriers.Length];
@@ -202,7 +203,7 @@ internal class GraphicsCommandList: CommandList,
 
 	public void ExecuteBundle( IGraphicsCommandList pCommandList ) {
 		var commandList = (IComObjectRef< ID3D12GraphicsCommandList >)pCommandList ;
-		COMObject!.ExecuteBundle( commandList.COMObject ) ;
+		ComObject!.ExecuteBundle( commandList.ComObject ) ;
 	}
 
 
@@ -210,39 +211,39 @@ internal class GraphicsCommandList: CommandList,
 		ID3D12DescriptorHeap[ ] descriptorHeaps = new ID3D12DescriptorHeap[ NumDescriptorHeaps ] ;
 		
 		for( int i = 0; i < NumDescriptorHeaps; ++i )
-			descriptorHeaps[ i ] = ( (IComObjectRef<ID3D12DescriptorHeap>)ppDescriptorHeaps[ i ] ).COMObject 
+			descriptorHeaps[ i ] = ( (IComObjectRef<ID3D12DescriptorHeap>)ppDescriptorHeaps[ i ] ).ComObject 
 										?? throw new NullReferenceException() ;
 
-		COMObject!.SetDescriptorHeaps( NumDescriptorHeaps, descriptorHeaps ) ;
+		ComObject!.SetDescriptorHeaps( NumDescriptorHeaps, descriptorHeaps ) ;
 	}
 
 	
-	public void SetComputeRootSignature( IRootSignature pRootSignature ) => COMObject!.SetComputeRootSignature( pRootSignature.COMObject ) ;
+	public void SetComputeRootSignature( IRootSignature pRootSignature ) => ComObject!.SetComputeRootSignature( pRootSignature.ComObject ) ;
 
 	
-	public void SetGraphicsRootSignature( IRootSignature pRootSignature ) => COMObject!.SetGraphicsRootSignature( pRootSignature.COMObject ) ;
+	public void SetGraphicsRootSignature( IRootSignature pRootSignature ) => ComObject!.SetGraphicsRootSignature( pRootSignature.ComObject ) ;
 
 	
 	public void SetComputeRootDescriptorTable( uint RootParameterIndex, GPUDescriptorHandle BaseDescriptor ) => 
-		COMObject!.SetComputeRootDescriptorTable( RootParameterIndex, BaseDescriptor ) ;
+		ComObject!.SetComputeRootDescriptorTable( RootParameterIndex, BaseDescriptor ) ;
 
 	
 	public void SetGraphicsRootDescriptorTable( uint RootParameterIndex, GPUDescriptorHandle BaseDescriptor ) => 
-		COMObject!.SetGraphicsRootDescriptorTable( RootParameterIndex, BaseDescriptor ) ;
+		ComObject!.SetGraphicsRootDescriptorTable( RootParameterIndex, BaseDescriptor ) ;
 
 	
 	public void SetComputeRoot32BitConstant( uint RootParameterIndex, uint SrcData, uint DestOffsetIn32BitValues ) => 
-		COMObject!.SetComputeRoot32BitConstant( RootParameterIndex, SrcData, DestOffsetIn32BitValues ) ;
+		ComObject!.SetComputeRoot32BitConstant( RootParameterIndex, SrcData, DestOffsetIn32BitValues ) ;
 
 	
 	public void SetGraphicsRoot32BitConstant( uint RootParameterIndex, uint SrcData, uint DestOffsetIn32BitValues ) => 
-		COMObject!.SetGraphicsRoot32BitConstant( RootParameterIndex, SrcData, DestOffsetIn32BitValues ) ;
+		ComObject!.SetGraphicsRoot32BitConstant( RootParameterIndex, SrcData, DestOffsetIn32BitValues ) ;
 
 	
 	public void SetComputeRoot32BitConstants( uint RootParameterIndex, uint Num32BitValuesToSet, 
 											  nint pSrcData, uint DestOffsetIn32BitValues ) {
 		unsafe {
-			COMObject!.SetComputeRoot32BitConstants( RootParameterIndex, 
+			ComObject!.SetComputeRoot32BitConstants( RootParameterIndex, 
 													 Num32BitValuesToSet, 
 													 (void *)pSrcData,
 													 DestOffsetIn32BitValues ) ;
@@ -253,7 +254,7 @@ internal class GraphicsCommandList: CommandList,
 	public void SetGraphicsRoot32BitConstants( uint RootParameterIndex, uint Num32BitValuesToSet, 
 											   nint pSrcData, uint DestOffsetIn32BitValues ) {
 		unsafe {
-			COMObject!.SetGraphicsRoot32BitConstants( RootParameterIndex, 
+			ComObject!.SetGraphicsRoot32BitConstants( RootParameterIndex, 
 													  Num32BitValuesToSet, 
 													  (void *)pSrcData,
 													  DestOffsetIn32BitValues ) ;
@@ -262,32 +263,32 @@ internal class GraphicsCommandList: CommandList,
 	
 
 	public void SetComputeRootConstantBufferView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetComputeRootConstantBufferView( RootParameterIndex, BufferLocation ) ;
+		ComObject!.SetComputeRootConstantBufferView( RootParameterIndex, BufferLocation ) ;
 
 	
 	public void SetGraphicsRootConstantBufferView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetGraphicsRootConstantBufferView( RootParameterIndex, BufferLocation ) ;
+		ComObject!.SetGraphicsRootConstantBufferView( RootParameterIndex, BufferLocation ) ;
 	
 
 	public void SetComputeRootShaderResourceView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetComputeRootShaderResourceView( RootParameterIndex, BufferLocation ) ;
+		ComObject!.SetComputeRootShaderResourceView( RootParameterIndex, BufferLocation ) ;
 	
 
 	public void SetGraphicsRootShaderResourceView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetGraphicsRootShaderResourceView( RootParameterIndex, BufferLocation ) ;
+		ComObject!.SetGraphicsRootShaderResourceView( RootParameterIndex, BufferLocation ) ;
 	
 	public void SetComputeRootUnorderedAccessView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetComputeRootUnorderedAccessView( RootParameterIndex, BufferLocation ) ;
+		ComObject!.SetComputeRootUnorderedAccessView( RootParameterIndex, BufferLocation ) ;
 	
 
 	public void SetGraphicsRootUnorderedAccessView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetGraphicsRootUnorderedAccessView( RootParameterIndex, BufferLocation ) ;
+		ComObject!.SetGraphicsRootUnorderedAccessView( RootParameterIndex, BufferLocation ) ;
 	
 
 	public void IASetIndexBuffer( [Optional] in IndexBufferView pView ) {
 		unsafe {
 			fixed ( IndexBufferView* viewPtr = &pView )
-				COMObject!.IASetIndexBuffer( (D3D12_INDEX_BUFFER_VIEW*)viewPtr ) ;
+				ComObject!.IASetIndexBuffer( (D3D12_INDEX_BUFFER_VIEW*)viewPtr ) ;
 		}
 	}
 	
@@ -295,7 +296,7 @@ internal class GraphicsCommandList: CommandList,
 	public void IASetVertexBuffers( uint StartSlot, uint NumViews, [Optional] Span< VertexBufferView > pViews ) {
 		unsafe {
 			fixed ( VertexBufferView* pViewsPtr = pViews )
-				COMObject!.IASetVertexBuffers( StartSlot, NumViews, (D3D12_VERTEX_BUFFER_VIEW*)pViewsPtr ) ;
+				ComObject!.IASetVertexBuffers( StartSlot, NumViews, (D3D12_VERTEX_BUFFER_VIEW*)pViewsPtr ) ;
 		}
 	}
 	
@@ -303,7 +304,7 @@ internal class GraphicsCommandList: CommandList,
 	public void SOSetTargets( uint StartSlot, uint NumViews, [Optional] Span< StreamOutputBufferView > pViews ) {
 		unsafe {
 			fixed ( StreamOutputBufferView* pViewsPtr = pViews )
-				COMObject!.SOSetTargets( StartSlot, NumViews, (D3D12_STREAM_OUTPUT_BUFFER_VIEW*)pViewsPtr ) ;
+				ComObject!.SOSetTargets( StartSlot, NumViews, (D3D12_STREAM_OUTPUT_BUFFER_VIEW*)pViewsPtr ) ;
 		}
 	}
 	
@@ -315,7 +316,7 @@ internal class GraphicsCommandList: CommandList,
 		unsafe {
 			fixed ( CPUDescriptorHandle* pRenderTargetDescriptorsPtr = pRenderTargetDescriptors,
 				   pDepthStencilDescriptorPtr = pDepthStencilDescriptor )
-				COMObject!.OMSetRenderTargets( NumRenderTargetDescriptors,
+				ComObject!.OMSetRenderTargets( NumRenderTargetDescriptors,
 											   (D3D12_CPU_DESCRIPTOR_HANDLE*)pRenderTargetDescriptorsPtr,
 											   RTsSingleHandleToDescriptorRange,
 											   (D3D12_CPU_DESCRIPTOR_HANDLE*)pDepthStencilDescriptorPtr ) ;
@@ -331,7 +332,7 @@ internal class GraphicsCommandList: CommandList,
 									   Span< Rect >        pRects ) {
 		unsafe {
 			fixed ( Rect* pRectsPtr = pRects ) {
-				COMObject!.ClearDepthStencilView( DepthStencilView, (D3D12_CLEAR_FLAGS)clearFlags,
+				ComObject!.ClearDepthStencilView( DepthStencilView, (D3D12_CLEAR_FLAGS)clearFlags,
 												  Depth, Stencil, NumRects, (RECT*)pRectsPtr ) ;
 			}
 		}
@@ -347,7 +348,7 @@ internal class GraphicsCommandList: CommandList,
 
 		unsafe {
 			fixed ( Rect* pRectsPtr = ( pRects == default ? null : pRects ) ) {
-				COMObject!.ClearRenderTargetView( RenderTargetView,
+				ComObject!.ClearRenderTargetView( RenderTargetView,
 												  ColorRGBA,
 												  pRectsPtr is null ? 0 : NumRects,
 												  (RECT*)pRectsPtr ) ;
@@ -364,9 +365,9 @@ internal class GraphicsCommandList: CommandList,
 											  in Span< Rect > pRects ) {
 		var resource = (Resource)pResource ;
 		unsafe { fixed ( Rect* pRectsPtr = pRects )
-				COMObject!.ClearUnorderedAccessViewUint( ViewGPUHandleInCurrentHeap,
+				ComObject!.ClearUnorderedAccessViewUint( ViewGPUHandleInCurrentHeap,
 														 ViewCPUHandle,
-														 resource.COMObject,
+														 resource.ComObject,
 														 Values, NumRects, (RECT*)pRectsPtr ) ;
 		}
 	}
@@ -380,8 +381,8 @@ internal class GraphicsCommandList: CommandList,
 											   in Span< Rect > pRects ) {
 		var resource = (Resource)pResource ;
 		unsafe { fixed( Rect* pRectsPtr = pRects )
-				COMObject!.ClearUnorderedAccessViewFloat( ViewGPUHandleInCurrentHeap, 
-														  ViewCPUHandle, resource.COMObject,
+				ComObject!.ClearUnorderedAccessViewFloat( ViewGPUHandleInCurrentHeap, 
+														  ViewCPUHandle, resource.ComObject,
 														  Values, NumRects, (RECT *)pRectsPtr ) ;
 		}
 	}
@@ -391,7 +392,7 @@ internal class GraphicsCommandList: CommandList,
 		var resource = (Resource)pResource ;
 		unsafe {
 			fixed( DiscardRegion* pRegionPtr = pRegion ) {
-				COMObject!.DiscardResource( resource.COMObject, (D3D12_DISCARD_REGION*)pRegionPtr ) ;
+				ComObject!.DiscardResource( resource.ComObject, (D3D12_DISCARD_REGION*)pRegionPtr ) ;
 			}
 		}
 	}
@@ -400,14 +401,14 @@ internal class GraphicsCommandList: CommandList,
 	public void BeginQuery( IQueryHeap pQueryHeap, QueryType Type, uint Index ) {
 		var queryHeap = (IComObjectRef< ID3D12QueryHeap >)pQueryHeap 
 						?? throw new NullReferenceException( ) ;
-		COMObject!.BeginQuery( queryHeap.COMObject, (D3D12_QUERY_TYPE)Type, Index ) ;
+		ComObject!.BeginQuery( queryHeap.ComObject, (D3D12_QUERY_TYPE)Type, Index ) ;
 	}
 	
 	
 	public void EndQuery( IQueryHeap pQueryHeap, QueryType Type, uint Index ) {
 		var queryHeap = (IComObjectRef< ID3D12QueryHeap >)pQueryHeap 
 						?? throw new NullReferenceException( ) ;
-		COMObject!.EndQuery( queryHeap.COMObject, (D3D12_QUERY_TYPE)Type, Index ) ;
+		ComObject!.EndQuery( queryHeap.ComObject, (D3D12_QUERY_TYPE)Type, Index ) ;
 	}
 
 	
@@ -420,30 +421,30 @@ internal class GraphicsCommandList: CommandList,
 		var queryHeap = (IComObjectRef< ID3D12QueryHeap >)pQueryHeap 
 						?? throw new NullReferenceException( ) ;
 		var resource = (Resource)pDestinationBuffer ;
-		COMObject!.ResolveQueryData( queryHeap.COMObject, (D3D12_QUERY_TYPE)Type, 
+		ComObject!.ResolveQueryData( queryHeap.ComObject, (D3D12_QUERY_TYPE)Type, 
 									 StartIndex, NumQueries,
-									 resource.COMObject, AlignedDestinationBufferOffset ) ;
+									 resource.ComObject, AlignedDestinationBufferOffset ) ;
 	}
 
 	
 	public void SetPredication( IResource pBuffer, ulong AlignedBufferOffset, PredicationOp Operation ) {
 		var resource = (Resource)pBuffer ;
-		COMObject!.SetPredication( resource.COMObject, AlignedBufferOffset, (D3D12_PREDICATION_OP)Operation ) ;
+		ComObject!.SetPredication( resource.ComObject, AlignedBufferOffset, (D3D12_PREDICATION_OP)Operation ) ;
 	}
 	
 	public void SetMarker(uint Metadata, [Optional] nint pData, uint Size ) {
 		unsafe {
-			COMObject!.SetMarker( Metadata, (void*)pData, Size ) ;
+			ComObject!.SetMarker( Metadata, (void*)pData, Size ) ;
 		}
 	}
 	
 	public void BeginEvent( uint Metadata, [Optional] nint pData, uint Size ) {
 		unsafe {
-			COMObject!.BeginEvent( Metadata, (void*)pData, Size ) ;
+			ComObject!.BeginEvent( Metadata, (void*)pData, Size ) ;
 		}
 	}
 
-	public void EndEvent( ) => COMObject!.EndEvent( ) ;
+	public void EndEvent( ) => ComObject!.EndEvent( ) ;
 	
 	public void ExecuteIndirect( ICommandSignature pCommandSignature,
 								 uint              MaxCommandCount,
@@ -454,9 +455,9 @@ internal class GraphicsCommandList: CommandList,
 		var commandSignature = (IComObjectRef< ID3D12CommandSignature >)pCommandSignature ;
 		var argumentBuffer = (Resource)pArgumentBuffer ;
 		var countBuffer = (Resource)pCountBuffer ;
-		COMObject!.ExecuteIndirect( commandSignature.COMObject, MaxCommandCount, 
-									argumentBuffer.COMObject, ArgumentBufferOffset, 
-									countBuffer.COMObject, CountBufferOffset ) ;
+		ComObject!.ExecuteIndirect( commandSignature.ComObject, MaxCommandCount, 
+									argumentBuffer.ComObject, ArgumentBufferOffset, 
+									countBuffer.ComObject, CountBufferOffset ) ;
 	}
 	
 	// ---------------------------------------------------------------------------------
@@ -489,7 +490,7 @@ internal class GraphicsCommandList1: GraphicsCommandList,
 	ComPtr< ID3D12GraphicsCommandList1 >? _comPtr ;
 	public new ComPtr< ID3D12GraphicsCommandList1 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12GraphicsCommandList1>( ) ;
-	public override ID3D12GraphicsCommandList1? COMObject => ComPointer?.Interface ;
+	public override ID3D12GraphicsCommandList1? ComObject => ComPointer?.Interface ;
 	
 	
 	internal GraphicsCommandList1( ) {
@@ -517,14 +518,14 @@ internal class GraphicsCommandList1: GraphicsCommandList,
 									  uint                      Dependencies,
 									  IResource[ ]              ppDependentResources,
 									  in SubresourceRangeUInt64 pDependentSubresourceRanges ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		var src = (Resource)pSrcBuffer ;
 		var dst = (Resource)pDstBuffer ;
 		
 		// Copy dependent resources to an array (optimize later):
 		ID3D12Resource[ ] dependentResources = new ID3D12Resource[ ppDependentResources.Length ] ;
 		for ( int i = 0; i < dependentResources.Length; ++i ) {
-			dependentResources[ i ] = ( (Resource)ppDependentResources[ i ] ).COMObject
+			dependentResources[ i ] = ( (Resource)ppDependentResources[ i ] ).ComObject
 #if DEBUG || DEBUG_COM || DEV_BUILD
 									  ?? throw new ArgumentException( $"{nameof(IGraphicsCommandList1)}.{nameof(AtomicCopyBufferUINT)} :: " +
 																	  $"Collection of dependent resources cannot contain null values!" )
@@ -534,8 +535,8 @@ internal class GraphicsCommandList1: GraphicsCommandList,
 		
 		unsafe {
 			fixed(SubresourceRangeUInt64* pDependentRanges = &pDependentSubresourceRanges)
-				cmdList.AtomicCopyBufferUINT( dst.COMObject, DstOffset,
-											  src.COMObject, SrcOffset,
+				cmdList.AtomicCopyBufferUINT( dst.ComObject, DstOffset,
+											  src.ComObject, SrcOffset,
 											  Dependencies, dependentResources,
 											  (D3D12_SUBRESOURCE_RANGE_UINT64 *)pDependentRanges ) ;
 		}
@@ -549,14 +550,14 @@ internal class GraphicsCommandList1: GraphicsCommandList,
 										uint                      Dependencies,
 										IResource[ ]              ppDependentResources,
 										in SubresourceRangeUInt64 pDependentSubresourceRanges ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		var src = (Resource)pSrcBuffer ;
 		var dst = (Resource)pDstBuffer ;
 		
 		// Copy dependent resources to an array (optimize later):
 		ID3D12Resource[ ] dependentResources = new ID3D12Resource[ ppDependentResources.Length ] ;
 		for ( int i = 0; i < dependentResources.Length; ++i ) {
-			dependentResources[ i ] = ( (Resource)ppDependentResources[ i ] ).COMObject
+			dependentResources[ i ] = ( (Resource)ppDependentResources[ i ] ).ComObject
 #if DEBUG || DEBUG_COM || DEV_BUILD
 									  ?? throw new ArgumentException( $"{nameof(IGraphicsCommandList1)}.{nameof(AtomicCopyBufferUINT)} :: " +
 																	  $"Collection of dependent resources cannot contain null values!" )
@@ -566,19 +567,19 @@ internal class GraphicsCommandList1: GraphicsCommandList,
 		
 		unsafe {
 			fixed(SubresourceRangeUInt64* pDependentRanges = &pDependentSubresourceRanges)
-				cmdList.AtomicCopyBufferUINT64( dst.COMObject, DstOffset,
-												src.COMObject, SrcOffset,
+				cmdList.AtomicCopyBufferUINT64( dst.ComObject, DstOffset,
+												src.ComObject, SrcOffset,
 												Dependencies, dependentResources,
 												(D3D12_SUBRESOURCE_RANGE_UINT64 *)pDependentRanges ) ;
 		}
 	}
 	
 
-	public void OMSetDepthBounds( float Min, float Max ) => COMObject!.OMSetDepthBounds( Min, Max ) ;
+	public void OMSetDepthBounds( float Min, float Max ) => ComObject!.OMSetDepthBounds( Min, Max ) ;
 	
 
 	public void SetSamplePositions( uint NumSamplesPerPixel, uint NumPixels, in SamplePosition pSamplePositions ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		
 		unsafe {
 			fixed( SamplePosition* pSamplePos = &pSamplePositions )
@@ -596,7 +597,7 @@ internal class GraphicsCommandList1: GraphicsCommandList,
 										  [Optional] in Rect? pSrcRect,
 										  Format              format,
 										  ResolveMode         resolveMode ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		var src = (Resource)pSrcResource ;
 		var dst = (Resource)pDstResource ;
 		
@@ -608,14 +609,14 @@ internal class GraphicsCommandList1: GraphicsCommandList,
 				srcRectPtr = &srcRect ;
 			}
 			
-			cmdList.ResolveSubresourceRegion( dst.COMObject, DstSubresource, DstX, DstY,
-											  src.COMObject, SrcSubresource, srcRectPtr,
+			cmdList.ResolveSubresourceRegion( dst.ComObject, DstSubresource, DstX, DstY,
+											  src.ComObject, SrcSubresource, srcRectPtr,
 											  (DXGI_FORMAT)format, (D3D12_RESOLVE_MODE)resolveMode ) ;
 		}
 	}
 
 	
-	public void SetViewInstanceMask( uint Mask ) => COMObject!.SetViewInstanceMask( Mask ) ;
+	public void SetViewInstanceMask( uint Mask ) => ComObject!.SetViewInstanceMask( Mask ) ;
 	
 	// ---------------------------------------------------------------------------------
 	// Static Interface Members:
@@ -649,7 +650,7 @@ internal class GraphicsCommandList2: GraphicsCommandList1,
 	ComPtr< ID3D12GraphicsCommandList2 >? _comPtr ;
 	public new ComPtr< ID3D12GraphicsCommandList2 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12GraphicsCommandList2>( ) ;
-	public override ID3D12GraphicsCommandList2? COMObject => ComPointer?.Interface ;
+	public override ID3D12GraphicsCommandList2? ComObject => ComPointer?.Interface ;
 	
 	// ---------------------------------------------------------------------------------
 	
@@ -673,7 +674,7 @@ internal class GraphicsCommandList2: GraphicsCommandList1,
 
 	public void WriteBufferImmediate( uint Count, in Span< WriteBufferImmediateParameter > pParams,
 									  Span< WriteBufferImmediateMode > pModes = default ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			D3D12_WRITEBUFFERIMMEDIATE_MODE* modesPtr = null ;
 			fixed ( void* _params = &pParams[ 0 ], modes = &pModes[ 0 ] ) {
@@ -715,7 +716,7 @@ internal class GraphicsCommandList3: GraphicsCommandList2,
 	public new ComPtr< ID3D12GraphicsCommandList3 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12GraphicsCommandList3>( ) ;
 
-	public override ID3D12GraphicsCommandList3? COMObject => ComPointer?.Interface ;
+	public override ID3D12GraphicsCommandList3? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -739,7 +740,7 @@ internal class GraphicsCommandList3: GraphicsCommandList2,
 	
 	public void SetProtectedResourceSession( IProtectedResourceSession pProtectedResourceSession ) {
 		var protectedResourceSession = (IComObjectRef< ID3D12ProtectedResourceSession >)pProtectedResourceSession ;
-		COMObject!.SetProtectedResourceSession( protectedResourceSession.COMObject ) ;
+		ComObject!.SetProtectedResourceSession( protectedResourceSession.ComObject ) ;
 	}
 	
 	// ---------------------------------------------------------------------------------
@@ -774,7 +775,7 @@ internal class GraphicsCommandList4: GraphicsCommandList3,
 	public new ComPtr< ID3D12GraphicsCommandList4 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12GraphicsCommandList4>( ) ;
 
-	public override ID3D12GraphicsCommandList4? COMObject => ComPointer?.Interface ;
+	public override ID3D12GraphicsCommandList4? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -803,7 +804,7 @@ internal class GraphicsCommandList4: GraphicsCommandList3,
 #if DEBUG || DEBUG_COM || DEV_BUILD
 		ArgumentNullException.ThrowIfNull( pRenderTargets, nameof(pRenderTargets) ) ;
 #endif
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		var descArray = Unsafe.As< D3D12_RENDER_PASS_RENDER_TARGET_DESC[ ] >( pRenderTargets ) ;
 		cmdList.BeginRenderPass( NumRenderTargets, descArray,
 								 (pDepthStencil ?? default ),
@@ -811,7 +812,7 @@ internal class GraphicsCommandList4: GraphicsCommandList3,
 	}
 
 	
-	public void EndRenderPass( ) => COMObject!.EndRenderPass( ) ;
+	public void EndRenderPass( ) => ComObject!.EndRenderPass( ) ;
 	
 
 	public void InitializeMetaCommand( IMetaCommand    pMetaCommand,
@@ -819,7 +820,7 @@ internal class GraphicsCommandList4: GraphicsCommandList3,
 									   nuint           InitializationParametersDataSizeInBytes = 0x00U ) {
 		unsafe {
 			var metaCommand = (IComObjectRef< ID3D12MetaCommand >)pMetaCommand ;
-			COMObject!.InitializeMetaCommand( metaCommand.COMObject, (void*)pInitializationParametersData,
+			ComObject!.InitializeMetaCommand( metaCommand.ComObject, (void*)pInitializationParametersData,
 											  InitializationParametersDataSizeInBytes ) ;
 		}
 	}
@@ -830,7 +831,7 @@ internal class GraphicsCommandList4: GraphicsCommandList3,
 									nuint           ExecutionParametersDataSizeInBytes = 0x00U ) {
 		unsafe {
 			var metaCommand = (IComObjectRef< ID3D12MetaCommand >)pMetaCommand ;
-			COMObject!.ExecuteMetaCommand( metaCommand.COMObject, (void *)pExecutionParametersData,
+			ComObject!.ExecuteMetaCommand( metaCommand.ComObject, (void *)pExecutionParametersData,
 										   ExecutionParametersDataSizeInBytes ) ;
 		}
 	}
@@ -841,7 +842,7 @@ internal class GraphicsCommandList4: GraphicsCommandList3,
 													  [Optional] Span< RaytracingAccelerationStructurePostBuildInfoDescription > 
 														  pPostbuildInfoDescs ) {
 		
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		
 		unsafe {
 			fixed( BuildRaytracingAccelerationStructureDescription* pDescPtr = &pDesc ) {
@@ -861,7 +862,7 @@ internal class GraphicsCommandList4: GraphicsCommandList3,
 	public void EmitRaytracingAccelerationStructurePostbuildInfo( in RaytracingAccelerationStructurePostBuildInfoDescription pDesc,
 																  uint NumSourceAccelerationStructures,
 																  ulong[ ] pSourceAccelerationStructureData ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed ( RaytracingAccelerationStructurePostBuildInfoDescription* descPtr = &pDesc ) {
 				cmdList.EmitRaytracingAccelerationStructurePostbuildInfo( (D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC *) descPtr, 
@@ -874,7 +875,7 @@ internal class GraphicsCommandList4: GraphicsCommandList3,
 	public void CopyRaytracingAccelerationStructure( ulong DestAccelerationStructureData,
 													 ulong SourceAccelerationStructureData,
 													 RaytracingAccelerationStructureCopyMode Mode ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		cmdList.CopyRaytracingAccelerationStructure( DestAccelerationStructureData, SourceAccelerationStructureData,
 													 ( D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE ) Mode ) ;
 	}
@@ -882,12 +883,12 @@ internal class GraphicsCommandList4: GraphicsCommandList3,
 	
 	public void SetPipelineState1( IStateObject pStateObject ) {
 		var stateObject = (IComObjectRef< ID3D12StateObject >)pStateObject ;
-		COMObject!.SetPipelineState1( stateObject.COMObject ) ;
+		ComObject!.SetPipelineState1( stateObject.ComObject ) ;
 	}
 
 
 	public void DispatchRays( in DispatchRaysDescription pDesc ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed ( DispatchRaysDescription* descPtr = &pDesc ) {
 				cmdList.DispatchRays( (D3D12_DISPATCH_RAYS_DESC *)descPtr ) ;
@@ -928,7 +929,7 @@ internal class GraphicsCommandList5: GraphicsCommandList4,
 	public new ComPtr< ID3D12GraphicsCommandList5 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12GraphicsCommandList5>( ) ;
 
-	public override ID3D12GraphicsCommandList5? COMObject => ComPointer?.Interface ;
+	public override ID3D12GraphicsCommandList5? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -952,7 +953,7 @@ internal class GraphicsCommandList5: GraphicsCommandList4,
 	
 	public void RSSetShadingRate( ShadingRate baseShadingRate, 
 								  [Optional] Span< ShadingRateCombiner > combiners ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			if( combiners is { Length: > 0 } ) {
 				D3D12_SHADING_RATE_COMBINER* combinersPtr = null ;
@@ -969,7 +970,7 @@ internal class GraphicsCommandList5: GraphicsCommandList4,
 	
 	public void RSSetShadingRateImage( IResource shadingRateImage ) {
 		var resource = (IComObjectRef< ID3D12Resource >)shadingRateImage ;
-		COMObject!.RSSetShadingRateImage( resource.COMObject ) ;
+		ComObject!.RSSetShadingRateImage( resource.ComObject ) ;
 	}
 	
 	// ---------------------------------------------------------------------------------
@@ -1004,7 +1005,7 @@ internal class GraphicsCommandList6: GraphicsCommandList5,
 	public new ComPtr< ID3D12GraphicsCommandList6 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12GraphicsCommandList6>( ) ;
 
-	public override ID3D12GraphicsCommandList6? COMObject => ComPointer?.Interface ;
+	public override ID3D12GraphicsCommandList6? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -1027,7 +1028,7 @@ internal class GraphicsCommandList6: GraphicsCommandList5,
 	// ---------------------------------------------------------------------------------
 	
 	public void DispatchMesh( uint ThreadGroupCountX, uint ThreadGroupCountY, uint ThreadGroupCountZ ) =>
-		COMObject!.DispatchMesh( ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ ) ;
+		ComObject!.DispatchMesh( ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ ) ;
 	
 	// ---------------------------------------------------------------------------------
 	
@@ -1062,7 +1063,7 @@ internal class GraphicsCommandList7: GraphicsCommandList6,
 	public new ComPtr< ID3D12GraphicsCommandList7 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12GraphicsCommandList7 >( ) ;
 
-	public override ID3D12GraphicsCommandList7? COMObject => ComPointer?.Interface ;
+	public override ID3D12GraphicsCommandList7? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -1088,7 +1089,7 @@ internal class GraphicsCommandList7: GraphicsCommandList6,
 	// ---------------------------------------------------------------------------------
 
 	public void Barrier( uint NumBarrierGroups, BarrierGroup[ ] pBarrierGroups ) {
-		var cmdList       = COMObject ?? throw new NullReferenceException( ) ;
+		var cmdList       = ComObject ?? throw new NullReferenceException( ) ;
 		var barrierGroups = Unsafe.As< D3D12_BARRIER_GROUP[ ] >( pBarrierGroups ) ;
 		cmdList.Barrier( NumBarrierGroups, barrierGroups ) ;
 	}
@@ -1127,7 +1128,7 @@ internal class GraphicsCommandList8: GraphicsCommandList7,
 	public new ComPtr< ID3D12GraphicsCommandList8 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12GraphicsCommandList8 >( ) ;
 
-	public override ID3D12GraphicsCommandList8? COMObject => ComPointer?.Interface ;
+	public override ID3D12GraphicsCommandList8? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -1150,7 +1151,7 @@ internal class GraphicsCommandList8: GraphicsCommandList7,
 	// ---------------------------------------------------------------------------------
 
 	public void OMSetFrontAndBackStencilRef( uint FrontStencilRef, uint BackStencilRef ) => 
-		COMObject!.OMSetFrontAndBackStencilRef( FrontStencilRef, BackStencilRef ) ;
+		ComObject!.OMSetFrontAndBackStencilRef( FrontStencilRef, BackStencilRef ) ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -1185,7 +1186,7 @@ internal class GraphicsCommandList9: GraphicsCommandList8,
 	public new ComPtr< ID3D12GraphicsCommandList9 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12GraphicsCommandList9 >( ) ;
 
-	public override ID3D12GraphicsCommandList9? COMObject => ComPointer?.Interface ;
+	public override ID3D12GraphicsCommandList9? ComObject => ComPointer?.Interface ;
 
 	// ---------------------------------------------------------------------------------
 
@@ -1208,10 +1209,10 @@ internal class GraphicsCommandList9: GraphicsCommandList8,
 	// ---------------------------------------------------------------------------------
 
 	public void RSSetDepthBias( float DepthBias, float DepthBiasClamp, float SlopeScaledDepthBias ) =>
-		COMObject!.RSSetDepthBias( DepthBias, DepthBiasClamp, SlopeScaledDepthBias ) ;
+		ComObject!.RSSetDepthBias( DepthBias, DepthBiasClamp, SlopeScaledDepthBias ) ;
 
 	public void IASetIndexBufferStripCutValue( IndexBufferStripCutValue IBStripCutValue ) =>
-		COMObject!.IASetIndexBufferStripCutValue( ( D3D12_INDEX_BUFFER_STRIP_CUT_VALUE ) IBStripCutValue ) ;
+		ComObject!.IASetIndexBufferStripCutValue( ( D3D12_INDEX_BUFFER_STRIP_CUT_VALUE ) IBStripCutValue ) ;
 
 	// ---------------------------------------------------------------------------------
 	

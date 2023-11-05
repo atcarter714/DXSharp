@@ -16,7 +16,7 @@ internal class Heap: Pageable,
 				   IUnknownWrapper< ID3D12Heap > {
 	// ------------------------------------------------------------------------------------------
 	ComPtr< ID3D12Heap >? _comPtr ;
-	public override ID3D12Heap? COMObject => ComPointer?.Interface ;
+	public override ID3D12Heap? ComObject => ComPointer?.Interface ;
 	public new ComPtr< ID3D12Heap >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12Heap>( ) ;
 	// ------------------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ internal class Heap: Pageable,
 	
 	// ------------------------------------------------------------------------------------------
 	
-	public HeapDescription GetDesc( ) => COMObject!.GetDesc( ) ;
+	public HeapDescription GetDesc( ) => ComObject!.GetDesc( ) ;
 	
 	// ------------------------------------------------------------------------------------------
 	
@@ -72,7 +72,7 @@ internal class Heap1: Heap,
 	ComPtr<ID3D12Heap1>? _comPtr ;
 	public new virtual ComPtr<ID3D12Heap1>? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12Heap1 >( ) ;
-	public override ID3D12Heap1? COMObject => ComPointer?.Interface ;
+	public override ID3D12Heap1? ComObject => ComPointer?.Interface ;
 	
 	// ------------------------------------------------------------------------------------------
 	
@@ -95,7 +95,7 @@ internal class Heap1: Heap,
 	// ------------------------------------------------------------------------------------------
 
 	public void GetProtectedResourceSession( in Guid riid, out IProtectedResourceSession ppProtectedSession ) {
-		var heap = COMObject ?? throw new NullReferenceException( ) ;
+		var heap = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed ( Guid* pRiid = &riid ) {
 				heap.GetProtectedResourceSession( pRiid, out var ppv ) ;

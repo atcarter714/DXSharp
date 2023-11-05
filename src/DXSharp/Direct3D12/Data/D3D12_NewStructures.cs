@@ -1,4 +1,5 @@
-﻿#region Using Directives
+﻿#pragma warning disable CS8629 // Nullable value type may be null.
+#region Using Directives
 using System.Buffers ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
@@ -281,11 +282,20 @@ public partial struct RenderPassEndingAccess {
 			RenderPassEndingAccessResolveSubresourceParameters* pSubresourceParametersPtr = pSubresourceParametersHandle is null ? null :
 				(RenderPassEndingAccessResolveSubresourceParameters *)pSubresourceParametersHandle.Value.Pointer ;
 
-			var src = (Resource)pSrcResource ;
-			var dst = (Resource)pDstResource ;
+			var src = (Resource)pSrcResource 
+#if DEBUG || DEBUG_COM || DEV_BUILD
+					  ?? throw new ArgumentNullException( nameof(pSrcResource) )
+#endif
+				;
+			var dst = (Resource)pDstResource
+#if DEBUG || DEBUG_COM || DEV_BUILD
+					  ?? throw new ArgumentNullException( nameof(pDstResource) )
+#endif
+				;
+			
 			var resolve =
-				new RenderPassEndingAccessResolveParametersUnmanaged( (ResourceUnmanaged*)src?.ComPointer?.InterfaceVPtr,
-																	  (ResourceUnmanaged*)dst?.ComPointer?.InterfaceVPtr,
+				new RenderPassEndingAccessResolveParametersUnmanaged( (ResourceUnmanaged*)( src?.ComPointer?.InterfaceVPtr ),
+																	  (ResourceUnmanaged*)( dst?.ComPointer?.InterfaceVPtr ),
 																	  subresourceCount, 
 																	  pSubresourceParametersPtr,
 																	  format, resolveMode, 
@@ -359,12 +369,21 @@ public unsafe partial struct RenderPassEndingAccessResolveParametersUnmanaged {
 															 Format format = Format.UNKNOWN,
 															 ResolveMode resolveMode = default,
 															 bool preserveResolveSource = default ) {
-		Resource src = (Resource)pSrcResource ;
-		Resource dst = (Resource)pDstResource ;
-		this.pSrcResource = (ResourceUnmanaged *)src?.ComPointer?.InterfaceVPtr ;
-		this.pDstResource = (ResourceUnmanaged *)dst?.ComPointer?.InterfaceVPtr ;
-		SubresourceCount = subresourceCount ; this.pSubresourceParameters = null ;
-		Format = format ; ResolveMode = resolveMode ; PreserveResolveSource = preserveResolveSource ;
+		Resource src = (Resource)pSrcResource
+#if DEBUG || DEBUG_COM || DEV_BUILD
+					   ?? throw new ArgumentNullException( nameof(pSrcResource) )
+#endif
+					   ;
+		Resource dst = (Resource)pDstResource 
+#if DEBUG || DEBUG_COM || DEV_BUILD
+					   ?? throw new ArgumentNullException( nameof(pDstResource) ) 
+#endif
+					   ;
+		
+		this.pSrcResource = (ResourceUnmanaged *)( src?.ComPointer?.InterfaceVPtr ) ;
+		this.pDstResource = (ResourceUnmanaged *)( dst?.ComPointer?.InterfaceVPtr ) ;
+		SubresourceCount  = subresourceCount ; this.pSubresourceParameters = null ;
+		Format            = format ; ResolveMode = resolveMode ; PreserveResolveSource = preserveResolveSource ;
 		
 		if( pSubresourceParameters is not null ) {
 			Memory< RenderPassEndingAccessResolveSubresourceParameters > mem = new( pSubresourceParameters ) ;
@@ -718,14 +737,14 @@ public struct TextureCopyLocation {
 	public TextureCopyLocation( IResource pResource, in PlacedSubresourceFootprint placedFootprint ) {
 		ArgumentNullException.ThrowIfNull( pResource, nameof(pResource) ) ;
 		var resource = (IComObjectRef< ID3D12Resource >)pResource ;
-		this.pResource = resource.COMObject! ; 
+		this.pResource = resource.ComObject! ; 
 		Type = TextureCopyType.PlacedFootprint ; 
 		Location = new( placedFootprint ) ;
 	}
 	public TextureCopyLocation( IResource pResource, uint subresourceIndex ) {
 		ArgumentNullException.ThrowIfNull( pResource, nameof(pResource) ) ;
 		var resource = (IComObjectRef< ID3D12Resource >)pResource ;
-		this.pResource = resource.COMObject! ; 
+		this.pResource = resource.ComObject! ; 
 		Type = TextureCopyType.Index ; 
 		Location = new( subresourceIndex ) ;
 	}

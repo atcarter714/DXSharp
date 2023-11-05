@@ -34,7 +34,7 @@ internal class Adapter: Object,
 	public override ComPtr< IDXGIAdapter >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter >( )! ;
 	
-	public override IDXGIAdapter? COMObject => ComPointer?.Interface ;
+	public override IDXGIAdapter? ComObject => ComPointer?.Interface ;
 	// ---------------------------------------------------------------------------------
 	
 	protected AdapterDescription      _descCached = default ;
@@ -79,7 +79,7 @@ internal class Adapter: Object,
 	public void GetDesc( out AdapterDescription pDesc ) {
 		unsafe {
 			DXGI_ADAPTER_DESC desc = default ;
-			COMObject!.GetDesc( &desc ) ;
+			ComObject!.GetDesc( &desc ) ;
 			pDesc = desc ;
 		}
 	}
@@ -87,7 +87,7 @@ internal class Adapter: Object,
 	
 	public HResult EnumOutputs( uint index, out IOutput? ppOutput ) {
 		ppOutput = default ; HResult hr = default ;
-		hr = COMObject!.EnumOutputs( index, out IDXGIOutput? pOutput ) ;
+		hr = ComObject!.EnumOutputs( index, out IDXGIOutput? pOutput ) ;
 		ppOutput = pOutput is null ? null : new Output( pOutput ) ;
 		return hr ;
 	}
@@ -101,7 +101,7 @@ internal class Adapter: Object,
 		pUMDVersion = 0 ;
 		unsafe {
 			Guid name = InterfaceName ;
-			COMObject!.CheckInterfaceSupport( &name, out pUMDVersion ) ;
+			ComObject!.CheckInterfaceSupport( &name, out pUMDVersion ) ;
 		}
 	}
 
@@ -128,7 +128,7 @@ internal class Adapter1: Adapter,
 						 IComObjectRef< IDXGIAdapter1 >,
 						 IUnknownWrapper< IDXGIAdapter1 > {
 	// ---------------------------------------------------------------------------------
-	public override IDXGIAdapter1? COMObject => ComPointer?.Interface ;
+	public override IDXGIAdapter1? ComObject => ComPointer?.Interface ;
 	
 	public new ComPtr< IDXGIAdapter1 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter1 >( )! ;
@@ -180,7 +180,7 @@ internal class Adapter1: Adapter,
 	public void GetDesc1( out AdapterDescription1 pDesc ) {
 		unsafe {
 			DXGI_ADAPTER_DESC1 desc = default ;
-			COMObject!.GetDesc1( &desc ) ;
+			ComObject!.GetDesc1( &desc ) ;
 			pDesc = desc ;
 		}
 	}
@@ -215,7 +215,7 @@ internal class Adapter1: Adapter,
 /// A display subsystem is often referred to as a video card; however, on some computers, the display subsystem is part of the motherboard.
 /// <para>To enumerate the display subsystems, use IDXGIFactory1::EnumAdapters1.</para>
 /// <para>To get an interface to the adapter for a particular device, use
-/// <see cref="Device.GetAdapter{T}"/>.</para>
+/// <see cref="Device.GetAdapter"/>.</para>
 /// <para>To create a software adapter, use IDXGIFactory::CreateSoftwareAdapter.</para><para/>
 /// Go to Microsoft documentation for
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_2/nn-dxgi1_2-idxgiadapter2">IDXGIAdapter2</a>
@@ -234,7 +234,7 @@ internal class Adapter2: Adapter1, IAdapter2,
 	ComPtr< IDXGIAdapter2 >? _comPtr ;
 	public new ComPtr< IDXGIAdapter2 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter2 >( )! ;
-	public override IDXGIAdapter2? COMObject => ComPointer?.Interface ;
+	public override IDXGIAdapter2? ComObject => ComPointer?.Interface ;
 	
 	protected AdapterDescription2 _desc2Cached = default ;
 	public AdapterDescription2 Description2 {
@@ -286,7 +286,7 @@ internal class Adapter2: Adapter1, IAdapter2,
 	public AdapterDescription2 GetDesc2( ) {
 		unsafe {
 			DXGI_ADAPTER_DESC2 desc = default ;
-			COMObject!.GetDesc2( &desc ) ;
+			ComObject!.GetDesc2( &desc ) ;
 			return desc ;
 		}
 	}
@@ -294,7 +294,7 @@ internal class Adapter2: Adapter1, IAdapter2,
 	public void GetDesc2( out AdapterDescription2 pDesc ) { 
 		unsafe {
 			DXGI_ADAPTER_DESC2 desc = default ;
-			COMObject!.GetDesc2( &desc ) ;
+			ComObject!.GetDesc2( &desc ) ;
 			pDesc = desc ;
 		}
 	}
@@ -334,7 +334,7 @@ internal class Adapter3: Adapter2,
 	public new ComPtr< IDXGIAdapter3 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter3 >( )! ;
 
-	public override IDXGIAdapter3? COMObject => ComPointer?.Interface ;
+	public override IDXGIAdapter3? ComObject => ComPointer?.Interface ;
 	
 	// --------------------------------------------------------------
 	
@@ -360,7 +360,7 @@ internal class Adapter3: Adapter2,
 											 MemorySegmentGroup memorySegmentGroup,
 											 in QueryVideoMemoryInfo pVideoMemoryInfo ) {
 		fixed ( QueryVideoMemoryInfo* p = &pVideoMemoryInfo ) {
-			COMObject!.QueryVideoMemoryInfo( NodeIndex, 
+			ComObject!.QueryVideoMemoryInfo( NodeIndex, 
 											 (DXGI_MEMORY_SEGMENT_GROUP)memorySegmentGroup, 
 											 (DXGI_QUERY_VIDEO_MEMORY_INFO *)p ) ;
 		}
@@ -369,22 +369,22 @@ internal class Adapter3: Adapter2,
 	public void SetVideoMemoryReservation( uint NodeIndex, 
 										   MemorySegmentGroup memorySegmentGroup, 
 										   ulong Reservation ) {
-		COMObject!.SetVideoMemoryReservation( NodeIndex,
+		ComObject!.SetVideoMemoryReservation( NodeIndex,
 											  (DXGI_MEMORY_SEGMENT_GROUP)memorySegmentGroup,
 											  Reservation ) ;
 	}
 
 	public void UnregisterHardwareContentProtectionTeardownStatus( uint dwCookie ) => 
-		COMObject!.UnregisterHardwareContentProtectionTeardownStatus( dwCookie ) ;
+		ComObject!.UnregisterHardwareContentProtectionTeardownStatus( dwCookie ) ;
 
 	public void UnregisterVideoMemoryBudgetChangeNotification( uint dwCookie ) => 
-		COMObject!.UnregisterVideoMemoryBudgetChangeNotification( dwCookie ) ;
+		ComObject!.UnregisterVideoMemoryBudgetChangeNotification( dwCookie ) ;
 
 	public void RegisterHardwareContentProtectionTeardownStatusEvent( Win32Handle hEvent, out uint pdwCookie ) => 
-		COMObject!.RegisterHardwareContentProtectionTeardownStatusEvent( hEvent, out pdwCookie ) ;
+		ComObject!.RegisterHardwareContentProtectionTeardownStatusEvent( hEvent, out pdwCookie ) ;
 
 	public void RegisterVideoMemoryBudgetChangeNotificationEvent( Win32Handle hEvent, out uint pdwCookie ) => 
-		COMObject!.RegisterVideoMemoryBudgetChangeNotificationEvent( hEvent, out pdwCookie ) ;
+		ComObject!.RegisterVideoMemoryBudgetChangeNotificationEvent( hEvent, out pdwCookie ) ;
 	
 	// --------------------------------------------------------------
 
@@ -415,7 +415,7 @@ internal class Adapter4: Adapter3,
 	ComPtr< IDXGIAdapter4 >? _comPtr ;
 	public new ComPtr< IDXGIAdapter4 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter4 >( )! ;
-	public override IDXGIAdapter4? COMObject => ComPointer?.Interface ;
+	public override IDXGIAdapter4? ComObject => ComPointer?.Interface ;
 
 	protected AdapterDescription3 _desc3Cached = default ;
 
@@ -458,7 +458,7 @@ internal class Adapter4: Adapter3,
 	public void GetDesc3( out AdapterDescription3 pDesc ) {
 		unsafe {
 			DXGI_ADAPTER_DESC3 desc = default ;
-			COMObject!.GetDesc3( &desc ) ;
+			ComObject!.GetDesc3( &desc ) ;
 			pDesc = desc ;
 		}
 	}

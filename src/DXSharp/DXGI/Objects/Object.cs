@@ -20,7 +20,7 @@ internal abstract class Object: DXComObject,
 	public override ComPtr? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIObject >( )! ;
 	
-	public virtual IDXGIObject? COMObject => (IDXGIObject)ComPointer?.InterfaceObjectRef! ;
+	public virtual IDXGIObject? ComObject => (IDXGIObject)ComPointer?.InterfaceObjectRef! ;
 	
 	//! ---------------------------------------------------------------------------------
 	
@@ -38,10 +38,10 @@ internal abstract class Object: DXComObject,
 		}
 	}
 	
-	public void GetParent< T >( out T ppParent ) where T: IUnknownWrapper< IDXGIObject >, IInstantiable {
+	public void GetParent< T >( out T ppParent ) where T: IObject, IInstantiable {
 		unsafe {
 			var riid = T.Guid ;
-			COMObject!.GetParent( &riid, out var _parent ) ;
+			ComObject!.GetParent( &riid, out var _parent ) ;
 			ppParent = (T) T.Instantiate( _parent ) ;
 		}
 	}

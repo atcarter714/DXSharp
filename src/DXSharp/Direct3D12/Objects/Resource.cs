@@ -19,7 +19,7 @@ internal class Resource: Pageable,
 	ComPtr< ID3D12Resource >? _comPtr ;
 	public new virtual ComPtr< ID3D12Resource >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Resource >( ) ;
-	public override ID3D12Resource? COMObject => ComPointer?.Interface ;
+	public override ID3D12Resource? ComObject => ComPointer?.Interface ;
 	
 	// -----------------------------------------------------------------------------------------------------------------
 	
@@ -44,7 +44,7 @@ internal class Resource: Pageable,
 	public void Map( uint Subresource, [Optional] in Range pReadRange, out nint ppData ) {
 		unsafe { fixed( Range* pReadRangePtr = &pReadRange ) {
 				void* pData = default ;
-				COMObject!.Map( Subresource, (D3D12_RANGE *)pReadRangePtr, &pData ) ;
+				ComObject!.Map( Subresource, (D3D12_RANGE *)pReadRangePtr, &pData ) ;
 				ppData = (nint)pData! ;
 			}
 		}
@@ -52,18 +52,18 @@ internal class Resource: Pageable,
 	
 	public void Unmap( uint Subresource, [Optional] in Range pWrittenRange ) {
 		unsafe { fixed( Range* pWrittenRangePtr = &pWrittenRange )
-				COMObject!.Unmap( Subresource, (D3D12_RANGE *)pWrittenRangePtr ) ;
+				ComObject!.Unmap( Subresource, (D3D12_RANGE *)pWrittenRangePtr ) ;
 		}
 	}
 	
-	public ResourceDescription GetDesc( ) => COMObject!.GetDesc( ) ;
+	public ResourceDescription GetDesc( ) => ComObject!.GetDesc( ) ;
 
-	public ulong GetGPUVirtualAddress( ) => COMObject!.GetGPUVirtualAddress( ) ;
+	public ulong GetGPUVirtualAddress( ) => ComObject!.GetGPUVirtualAddress( ) ;
 	
 	public void WriteToSubresource( uint DstSubresource, out Box pDstBox, 
 									nint pSrcData,       uint    SrcRowPitch, uint SrcDepthPitch ) {
 		unsafe { fixed( Box* pDstBoxPtr = &pDstBox )
-				COMObject!.WriteToSubresource( DstSubresource, (D3D12_BOX *)pDstBoxPtr,
+				ComObject!.WriteToSubresource( DstSubresource, (D3D12_BOX *)pDstBoxPtr,
 											   (void *)pSrcData, SrcRowPitch, SrcDepthPitch ) ;
 		}
 	}
@@ -74,7 +74,7 @@ internal class Resource: Pageable,
 		Box _box = pSrcBox ?? default ;
 		unsafe {
 			Box* pSrcBoxPtr = &_box ;
-			COMObject!.ReadFromSubresource( (void *)pDstData, DstRowPitch, DstDepthPitch,
+			ComObject!.ReadFromSubresource( (void *)pDstData, DstRowPitch, DstDepthPitch,
 										   SrcSubresource, (D3D12_BOX *)pSrcBoxPtr ) ;
 		}
 	}
@@ -83,7 +83,7 @@ internal class Resource: Pageable,
 		unsafe {
 			D3D12_HEAP_FLAGS _flags = 0 ;
 			D3D12_HEAP_PROPERTIES _props = default ;
-			COMObject!.GetHeapProperties( &_props, &_flags ) ;
+			ComObject!.GetHeapProperties( &_props, &_flags ) ;
 			pHeapFlags = (HeapFlags)_flags ;
 			pHeapProperties = _props ;
 		}
@@ -119,7 +119,7 @@ internal class Resource1: Resource,
 	ComPtr< ID3D12Resource1 >? _comPtr ;
 	public new virtual ComPtr< ID3D12Resource1 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Resource1 >( ) ;
-	public override ID3D12Resource1? COMObject => ComPointer?.Interface ;
+	public override ID3D12Resource1? ComObject => ComPointer?.Interface ;
 	
 	// -----------------------------------------------------------------------------------------------------------------
 	
@@ -144,7 +144,7 @@ internal class Resource1: Resource,
 	public void GetProtectedResourceSession( in Guid riid, out IProtectedSession ppProtectedSession ) {
 		unsafe {
 			var guid = riid ;
-			COMObject!.GetProtectedResourceSession( &guid, out var _session ) ;
+			ComObject!.GetProtectedResourceSession( &guid, out var _session ) ;
 #if DEBUG || DEBUG_COM || DEV_BUILD
 			if( _session is null ) throw new NullReferenceException( ) ;
 #endif
@@ -182,7 +182,7 @@ internal class Resource2: Resource1,
 	ComPtr< ID3D12Resource2 >? _comPtr ;
 	public new virtual ComPtr< ID3D12Resource2 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12Resource2 >( ) ;
-	public override ID3D12Resource2? COMObject => ComPointer?.Interface ;
+	public override ID3D12Resource2? ComObject => ComPointer?.Interface ;
 	
 	// -----------------------------------------------------------------------------------------------------------------
 	
@@ -204,7 +204,7 @@ internal class Resource2: Resource1,
 	
 	// -----------------------------------------------------------------------------------------------------------------
 	
-	public ResourceDescription1 GetDesc1( ) => COMObject!.GetDesc1( ) ;
+	public ResourceDescription1 GetDesc1( ) => ComObject!.GetDesc1( ) ;
 	
 	// -----------------------------------------------------------------------------------------------------------------
 	public new static Type ComType => typeof(ID3D12Resource2) ;

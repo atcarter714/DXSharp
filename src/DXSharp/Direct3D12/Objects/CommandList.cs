@@ -19,7 +19,7 @@ internal class CommandList: DeviceChild,
 	public new ComPtr< ID3D12CommandList >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12CommandList>(  ) ;
 
-	public override ID3D12CommandList? COMObject => ComPointer?.Interface ;
+	public override ID3D12CommandList? ComObject => ComPointer?.Interface ;
 	// ------------------------------------------------------------------------------------------
 	
 	internal CommandList( ) {
@@ -36,7 +36,7 @@ internal class CommandList: DeviceChild,
 	
 	// ------------------------------------------------------------------------------------------
 
-	public CommandListType GetListType( ) => (CommandListType)COMObject!.GetType( ) ;
+	public CommandListType GetListType( ) => (CommandListType)ComObject!.GetType( ) ;
 
 	// ------------------------------------------------------------------------------------------
 	

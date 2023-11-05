@@ -166,7 +166,7 @@ internal class KeyedMutex: DeviceSubObject,
 	ComPtr< IDXGIKeyedMutex >? _comPtr ;
 	public new ComPtr< IDXGIKeyedMutex >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer<IDXGIKeyedMutex>( ) ;
-	public override IDXGIKeyedMutex? COMObject => ComPointer?.Interface ;
+	public override IDXGIKeyedMutex? ComObject => ComPointer?.Interface ;
 	
 	
 	// ----------------------------------------------------------
@@ -174,10 +174,10 @@ internal class KeyedMutex: DeviceSubObject,
 	// ----------------------------------------------------------
 	
 	public void AcquireSync( ulong Key, uint dwMilliseconds ) =>
-		COMObject?.AcquireSync( Key, dwMilliseconds ) ;
+		ComObject?.AcquireSync( Key, dwMilliseconds ) ;
 	
 	public void ReleaseSync( ulong Key ) =>
-		COMObject?.ReleaseSync( Key ) ;
+		ComObject?.ReleaseSync( Key ) ;
 	
 	// ----------------------------------------------------------
 	// IDisposable:

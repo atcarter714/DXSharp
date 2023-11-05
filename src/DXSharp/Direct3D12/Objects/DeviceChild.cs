@@ -15,7 +15,7 @@ internal abstract class DeviceChild: Object,
 									 IComObjectRef< ID3D12DeviceChild >,
 									 IUnknownWrapper< ID3D12DeviceChild > {
 	// ---------------------------------------------------------------------------------
-	public override ID3D12DeviceChild? COMObject => ComPointer?.Interface ;
+	public override ID3D12DeviceChild? ComObject => ComPointer?.Interface ;
 
 	ComPtr< ID3D12DeviceChild >? _comPtr ;
 	public new virtual ComPtr< ID3D12DeviceChild >? ComPointer => 
@@ -42,7 +42,7 @@ internal abstract class DeviceChild: Object,
 	public void GetDevice( in Guid riid, out IDevice ppvDevice ) {
 		unsafe {
 			Guid _riid = riid ;
-			COMObject!.GetDevice( &_riid, out var _ppvDevice ) ;
+			ComObject!.GetDevice( &_riid, out var _ppvDevice ) ;
 			ppvDevice = (IDevice)_ppvDevice ;
 		}
 	}

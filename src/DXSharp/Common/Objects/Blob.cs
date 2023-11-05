@@ -9,14 +9,14 @@ internal class Blob: DisposableObject,
 					 IBlob,
 					 IComObjectRef< ID3DBlob >, 
 					 IUnknownWrapper< ID3DBlob > {
-	protected ComObject? ComResources { get ; set ; }
+	protected COMResource? ComResources { get ; set ; }
 	ComPtr< ID3DBlob >? _comPtr ;
 	
 	public ComPtr? ComPtrBase => ComPointer ;
 	public virtual ComPtr? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3DBlob >( ) ;
 	
-	public virtual ID3DBlob? COMObject => ( (ComPtr<ID3DBlob>)ComPointer! )?.Interface ;
+	public virtual ID3DBlob? ComObject => ( (ComPtr<ID3DBlob>)ComPointer! )?.Interface ;
 	public int RefCount => (int)( ComPointer?.RefCount ?? 0 ) ;
 	public nint PointerToIUnknown => ComPointer?.BaseAddress ?? 0x0000 ;
 	
@@ -58,7 +58,7 @@ internal class Blob: DisposableObject,
 		}
 	}
 	
-	public unsafe void* GetBufferPointer( ) => COMObject!.GetBufferPointer( ) ;
+	public unsafe void* GetBufferPointer( ) => ComObject!.GetBufferPointer( ) ;
 	
-	public nuint GetBufferSize( ) => COMObject!.GetBufferSize( ) ;
+	public nuint GetBufferSize( ) => ComObject!.GetBufferSize( ) ;
 } ;

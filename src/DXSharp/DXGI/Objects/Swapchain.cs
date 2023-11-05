@@ -26,7 +26,7 @@ internal class SwapChain: DeviceSubObject,
 	ComPtr< IDXGISwapChain >? _comPtr ;
 	public new virtual ComPtr< IDXGISwapChain >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain >(  ) ;
-	public override IDXGISwapChain? COMObject => ComPointer?.Interface ;
+	public override IDXGISwapChain? ComObject => ComPointer?.Interface ;
 	
 	// -----------------------------------------------------------------
 	// Constructors:
@@ -59,12 +59,12 @@ internal class SwapChain: DeviceSubObject,
 	// -----------------------------------------------------------------
 
 	public void Present( uint syncInterval, PresentFlags flags ) => 
-						COMObject!.Present( syncInterval, (uint)flags ) ;
+						ComObject!.Present( syncInterval, (uint)flags ) ;
 	
 	public void GetBuffer< TResource >( uint buffer, out TResource pSurface ) where TResource: IDXCOMObject, IInstantiable {
 		unsafe {
 			Guid guid = TResource.Guid ;
-			COMObject!.GetBuffer( buffer, &guid, out var comObj ) ;
+			ComObject!.GetBuffer( buffer, &guid, out var comObj ) ;
 			
 #if DEBUG || DEBUG_COM || DEV_BUILD
 			if( comObj is null ) throw new DirectXComError( $"{nameof(SwapChain)}.{nameof(GetBuffer)} :: " +
@@ -79,14 +79,14 @@ internal class SwapChain: DeviceSubObject,
 	public void SetFullscreenState( bool fullscreen, in IOutput? pTarget ) {
 		var output = (IComObjectRef< IDXGIOutput >?)pTarget 
 					 ?? throw new NullReferenceException( nameof(pTarget) ) ;
-		COMObject!.SetFullscreenState( fullscreen, output.COMObject ) ;
+		ComObject!.SetFullscreenState( fullscreen, output.ComObject ) ;
 	}
 	
 	public void GetFullscreenState( out bool pFullscreen, out IOutput? ppTarget ) {
 		ppTarget = null ;
 		unsafe {
 			BOOL fullscreen = false ;
-			COMObject!.GetFullscreenState( &fullscreen, out var output ) ;
+			ComObject!.GetFullscreenState( &fullscreen, out var output ) ;
 			ppTarget = (IOutput)new Output( output ) ;
 			pFullscreen = fullscreen ;
 		}
@@ -95,14 +95,14 @@ internal class SwapChain: DeviceSubObject,
 	public void GetDesc( out SwapChainDescription pDesc ) {
 		unsafe {
 			DXGI_SWAP_CHAIN_DESC result = default ;
-			COMObject!.GetDesc( &result ) ;
+			ComObject!.GetDesc( &result ) ;
 			pDesc = result ;
 		}
 	}
 	
 	public void ResizeBuffers( uint bufferCount, uint width, uint height,
 							   Format newFormat, SwapChainFlags swapChainFlags ) {
-		COMObject!.ResizeBuffers( bufferCount, width, height,
+		ComObject!.ResizeBuffers( bufferCount, width, height,
 									  (DXGI_FORMAT)newFormat,
 										(uint)swapChainFlags ) ;
 	}
@@ -110,18 +110,18 @@ internal class SwapChain: DeviceSubObject,
 	public void ResizeTarget( in ModeDescription newTargetParameters ) {
 		unsafe {
 			DXGI_MODE_DESC result = newTargetParameters ;
-			COMObject!.ResizeTarget( &result ) ;
+			ComObject!.ResizeTarget( &result ) ;
 		}
 	}
 	
 	public TOutput? GetContainingOutput< TOutput >( ) where TOutput: class, IOutput {
-		COMObject!.GetContainingOutput( out var output ) ;
+		ComObject!.GetContainingOutput( out var output ) ;
 		if( output is null ) return null ;
 		return (TOutput)((IOutput) new Output(output)) ;
 	}
 	
 	public void GetContainingOutput( out IOutput? containingOutput ) {
-		var swapchain = COMObject ?? throw new NullReferenceException( ) ;
+		var swapchain = ComObject ?? throw new NullReferenceException( ) ;
 		swapchain.GetContainingOutput( out var output ) ;
 		containingOutput = new Output( output ) ;
 	}
@@ -129,13 +129,13 @@ internal class SwapChain: DeviceSubObject,
 	public void GetFrameStatistics( out FrameStatistics pStats ) {
 		unsafe {
 			DXGI_FRAME_STATISTICS result = default ;
-			COMObject!.GetFrameStatistics( &result ) ;
+			ComObject!.GetFrameStatistics( &result ) ;
 			pStats = result ;
 		}
 	}
 	
 	public uint GetLastPresentCount( ) {
-		COMObject!.GetLastPresentCount( out var count ) ;
+		ComObject!.GetLastPresentCount( out var count ) ;
 		return count ;
 	}
 
@@ -163,7 +163,7 @@ internal class SwapChain1: SwapChain,
 	ComPtr< IDXGISwapChain1 >? _comPtr ;
 	public new virtual ComPtr< IDXGISwapChain1 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain1 >(  ) ;
-	public override IDXGISwapChain1? COMObject => ComPointer?.Interface ;
+	public override IDXGISwapChain1? ComObject => ComPointer?.Interface ;
 
 	internal SwapChain1( ) {
 		_comPtr = ComResources?.GetPointer< IDXGISwapChain1 >( ) ;
@@ -197,7 +197,7 @@ internal class SwapChain1: SwapChain,
 	public void GetDesc1( out SwapChainDescription1 pDesc ) {
 		unsafe {
 			DXGI_SWAP_CHAIN_DESC1 result = default ;
-			COMObject!.GetDesc1( &result ) ;
+			ComObject!.GetDesc1( &result ) ;
 			pDesc = result ;
 		}
 	}
@@ -206,7 +206,7 @@ internal class SwapChain1: SwapChain,
 		
 		unsafe {
 			DXGI_SWAP_CHAIN_FULLSCREEN_DESC result = default ;
-			COMObject!.GetFullscreenDesc( &result ) ;
+			ComObject!.GetFullscreenDesc( &result ) ;
 			pDesc = new( result ) ;
 		}
 	}
@@ -215,7 +215,7 @@ internal class SwapChain1: SwapChain,
 		
 		unsafe {
 			HWND result = default ;
-			COMObject!.GetHwnd( &result ) ;
+			ComObject!.GetHwnd( &result ) ;
 			pHwnd = result ;
 		}
 	}
@@ -224,7 +224,7 @@ internal class SwapChain1: SwapChain,
 	[SupportedOSPlatform("windows10.0.10240.0")]
 	public void GetCoreWindow( Guid riid, out CoreWindow? ppUnk ) {
 		unsafe {
-			COMObject!.GetCoreWindow( &riid, out var unk ) ;
+			ComObject!.GetCoreWindow( &riid, out var unk ) ;
 			var u = unk.As<CoreWindow>(  ) ;
 			ppUnk = u ;
 		}
@@ -234,14 +234,14 @@ internal class SwapChain1: SwapChain,
 		
 		unsafe {
 			DXGI_PRESENT_PARAMETERS desc = pPresentParameters ;
-			COMObject!.Present1( syncInterval, (uint)flags, &desc ) ;
+			ComObject!.Present1( syncInterval, (uint)flags, &desc ) ;
 		}
 	}
 
-	public bool IsTemporaryMonoSupported( ) => COMObject!.IsTemporaryMonoSupported( ) ;
+	public bool IsTemporaryMonoSupported( ) => ComObject!.IsTemporaryMonoSupported( ) ;
 	
 	public void GetRestrictToOutput( out IOutput ppRestrictToOutput ) {
-		COMObject!.GetRestrictToOutput( out var output ) ;
+		ComObject!.GetRestrictToOutput( out var output ) ;
 		ppRestrictToOutput = new Output( output ) ;
 	}
 
@@ -249,7 +249,7 @@ internal class SwapChain1: SwapChain,
 		
 		unsafe {
 			fixed( RGBA* p = &pColor ) {
-				COMObject!.SetBackgroundColor( (DXGI_RGBA *)p ) ;
+				ComObject!.SetBackgroundColor( (DXGI_RGBA *)p ) ;
 			}
 		}
 	}
@@ -259,21 +259,21 @@ internal class SwapChain1: SwapChain,
 		pColor = default ;
 		unsafe {
 			DXGI_RGBA result = default ;
-			COMObject!.GetBackgroundColor( &result ) ;
+			ComObject!.GetBackgroundColor( &result ) ;
 			pColor = result ;
 		}
 	}
 
 	public void SetRotation( ModeRotation rotation ) {
 		
-		COMObject!.SetRotation( (DXGI_MODE_ROTATION)rotation ) ;
+		ComObject!.SetRotation( (DXGI_MODE_ROTATION)rotation ) ;
 	}
 
 	public void GetRotation( out ModeRotation pRotation ) {
 		
 		unsafe {
 			DXGI_MODE_ROTATION result = default ;
-			COMObject!.GetRotation( &result ) ;
+			ComObject!.GetRotation( &result ) ;
 			pRotation = (ModeRotation)result ;
 		}
 	}
@@ -307,7 +307,7 @@ internal class SwapChain2: SwapChain1,
 	public new ComPtr< IDXGISwapChain2 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain2 >( ) ;
 
-	public override IDXGISwapChain2? COMObject => ComPointer?.Interface ;
+	public override IDXGISwapChain2? ComObject => ComPointer?.Interface ;
 
 	// -----------------------------------------------------------------------------------------------------------------
 
@@ -338,26 +338,26 @@ internal class SwapChain2: SwapChain1,
 	// -----------------------------------------------------------------------------------------------------------------
 
 	public void SetSourceSize( USize size ) =>
-		COMObject!.SetSourceSize( size.Width, size.Height ) ;
+		ComObject!.SetSourceSize( size.Width, size.Height ) ;
 
 	public void GetSourceSize( out USize size ) {
-		COMObject!.GetSourceSize( out uint pWidth, out uint pHeight ) ;
+		ComObject!.GetSourceSize( out uint pWidth, out uint pHeight ) ;
 		size = new( pWidth, pHeight ) ;
 	}
 
 	public void SetMaximumFrameLatency( uint maxLatency ) => 
-		COMObject!.SetMaximumFrameLatency( maxLatency ) ;
+		ComObject!.SetMaximumFrameLatency( maxLatency ) ;
 
 	public void GetMaximumFrameLatency( out uint pMaxLatency ) => 
-		COMObject!.GetMaximumFrameLatency( out pMaxLatency ) ;
+		ComObject!.GetMaximumFrameLatency( out pMaxLatency ) ;
 
 	public Win32Handle GetFrameLatencyWaitableObject( ) => 
-		COMObject!.GetFrameLatencyWaitableObject( ) ;
+		ComObject!.GetFrameLatencyWaitableObject( ) ;
 
 	public void SetMatrixTransform( in Matrix3x2F pMatrix ) {
 		unsafe {
 			fixed ( Matrix3x2F* p = &pMatrix ) {
-				COMObject!.SetMatrixTransform( (DXGI_MATRIX_3X2_F*)p ) ;
+				ComObject!.SetMatrixTransform( (DXGI_MATRIX_3X2_F*)p ) ;
 			}
 		}
 	}
@@ -366,7 +366,7 @@ internal class SwapChain2: SwapChain1,
 		pMatrix = default ;
 		unsafe {
 			fixed ( Matrix3x2F* p = &pMatrix ) {
-				COMObject!.GetMatrixTransform( (DXGI_MATRIX_3X2_F *)p ) ;
+				ComObject!.GetMatrixTransform( (DXGI_MATRIX_3X2_F *)p ) ;
 			}
 		}
 	}
@@ -398,7 +398,7 @@ internal class SwapChain3: SwapChain2,
 	ComPtr< IDXGISwapChain3 >? _comPtr ;
 	public new virtual ComPtr< IDXGISwapChain3 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain3 >(  ) ;
-	public override IDXGISwapChain3? COMObject => ComPointer?.Interface ;
+	public override IDXGISwapChain3? ComObject => ComPointer?.Interface ;
 
 	// -----------------------------------------------------------------------------------------------------------------
 	
@@ -429,13 +429,13 @@ internal class SwapChain3: SwapChain2,
 	// -----------------------------------------------------------------------------------------------------------------
 
 	[SupportedOSPlatform("windows10.0.10240")]
-	public uint GetCurrentBackBufferIndex( ) => COMObject!.GetCurrentBackBufferIndex( ) ;
+	public uint GetCurrentBackBufferIndex( ) => ComObject!.GetCurrentBackBufferIndex( ) ;
 
 	
 	[SupportedOSPlatform("windows10.0.10240")]
 	public void CheckColorSpaceSupport( ColorSpaceType colorSpace, out ISwapChain.ColorSpaceSupportFlags pColorSpaceSupport ) {
 		unsafe {
-			COMObject!.CheckColorSpaceSupport( (DXGI_COLOR_SPACE_TYPE)colorSpace, out var support ) ;
+			ComObject!.CheckColorSpaceSupport( (DXGI_COLOR_SPACE_TYPE)colorSpace, out var support ) ;
 			pColorSpaceSupport = (ISwapChain.ColorSpaceSupportFlags)support ;
 		}
 	}
@@ -444,7 +444,7 @@ internal class SwapChain3: SwapChain2,
 	[SupportedOSPlatform("windows10.0.10240")]
 	public void SetColorSpace1( ColorSpaceType colorSpace ) {
 		
-		COMObject!.SetColorSpace1( (DXGI_COLOR_SPACE_TYPE)colorSpace ) ;
+		ComObject!.SetColorSpace1( (DXGI_COLOR_SPACE_TYPE)colorSpace ) ;
 	}
 
 	
@@ -463,11 +463,11 @@ internal class SwapChain3: SwapChain2,
 			pCreationNodeMask = Enumerable.Repeat( 0U, (int)bufferCount )
 											.ToArray( ) ;
 		}
-		var swapchain = COMObject ?? throw new NullReferenceException( ) ;
+		var swapchain = ComObject ?? throw new NullReferenceException( ) ;
 		var presentQueue = new object[ bufferCount ] ;
 		
 		for( int i = 0; i < bufferCount; ++i ) {
-			presentQueue[ i ] = ( (IComObjectRef<ID3D12CommandQueue>?)ppPresentQueue[ i ] )!.COMObject
+			presentQueue[ i ] = ( (IComObjectRef<ID3D12CommandQueue>?)ppPresentQueue[ i ] )!.ComObject
 #if DEBUG || DEBUG_COM || DEV_BUILD
 								?? throw new NullReferenceException( ) 
 #endif
@@ -515,7 +515,7 @@ internal class SwapChain4: SwapChain3,
 	public new virtual ComPtr< IDXGISwapChain4 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain4 >( ) ;
 
-	public override IDXGISwapChain4? COMObject => ComPointer?.Interface ;
+	public override IDXGISwapChain4? ComObject => ComPointer?.Interface ;
 
 	// -----------------------------------------------------------------------------------------------------------------
 
@@ -547,7 +547,7 @@ internal class SwapChain4: SwapChain3,
 
 	public void SetHDRMetaData( HDRMetaDataType Type, uint Size,
 								in HDRMetaDataHDR10? pMetaData = default ) {
-		var swapchain = COMObject ?? throw new NullReferenceException( ) ;
+		var swapchain = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			if ( pMetaData is null ) {
 				swapchain.SetHDRMetaData( (DXGI_HDR_METADATA_TYPE)Type, Size, null ) ;

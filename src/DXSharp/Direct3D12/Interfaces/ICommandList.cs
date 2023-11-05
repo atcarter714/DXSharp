@@ -41,6 +41,6 @@ public interface ICommandList: IDeviceChild,
 	
 	static IInstantiable IInstantiable. Instantiate( ) => new CommandList( ) ;
 	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new CommandList( pComObj ) ;
-	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new CommandList( (ID3D12CommandList?)pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new CommandList( (ID3D12CommandList?)pComObj! ) ;
 	// ==================================================================================
 } ;

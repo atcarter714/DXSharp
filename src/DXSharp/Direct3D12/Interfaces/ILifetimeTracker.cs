@@ -52,7 +52,7 @@ internal class LifetimeTracker: DeviceChild,
 	ComPtr< ID3D12LifetimeTracker >? _comPtr ;
 	public new ComPtr< ID3D12LifetimeTracker >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12LifetimeTracker >( ) ;
-	public new ID3D12LifetimeTracker? COMObject => ComPointer?.Interface ;
+	public new ID3D12LifetimeTracker? ComObject => ComPointer?.Interface ;
 
 	
 	internal LifetimeTracker( ) {
@@ -74,7 +74,7 @@ internal class LifetimeTracker: DeviceChild,
 	
 	public void DestroyOwnedObject( IDeviceChild pObject ) {
 		var deviceChild = pObject as IComObjectRef< ID3D12DeviceChild > ;
-		COMObject!.DestroyOwnedObject( deviceChild!.COMObject ) ;
+		ComObject!.DestroyOwnedObject( deviceChild!.ComObject ) ;
 	}
 
 	

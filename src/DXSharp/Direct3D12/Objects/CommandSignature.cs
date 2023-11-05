@@ -15,7 +15,7 @@ internal class CommandSignature: Pageable,
 								 IUnknownWrapper< ID3D12CommandSignature > {
 	// -------------------------------------------------------------------------------------------------------
 	ComPtr< ID3D12CommandSignature >? _comPtr ;
-	public override ID3D12CommandSignature? COMObject => ComPointer?.Interface ;
+	public override ID3D12CommandSignature? ComObject => ComPointer?.Interface ;
 	public new ComPtr< ID3D12CommandSignature >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer<ID3D12CommandSignature>( ) ;
 	// -------------------------------------------------------------------------------------------------------

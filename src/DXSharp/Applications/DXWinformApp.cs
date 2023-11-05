@@ -184,8 +184,7 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 			( (ID3D12Debug)debugController.Interface! )
 				.EnableDebugLayer( ) ;
 		}
-		catch ( COMException ex ) { return null ; }
-		catch ( Exception ex ) { return null ; }
+		catch { return null ; }
 		finally {  }
 		return debugController ;
 	}

@@ -28,7 +28,7 @@ internal class Surface: DeviceSubObject,
 	ComPtr< IDXGISurface >? _comPtr ;
 	public new ComPtr< IDXGISurface >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGISurface >(  ) ;
-	public override IDXGISurface? COMObject => ComPointer?.Interface as IDXGISurface ;
+	public override IDXGISurface? ComObject => ComPointer?.Interface as IDXGISurface ;
 	
 	// --------------------------------------------------------------------------------------------
 	
@@ -54,7 +54,7 @@ internal class Surface: DeviceSubObject,
 	
 	// -------------------------------------------------------------------------------------------
 	public void GetDesc( out SurfaceDescription pDesc ) {
-		var surface = COMObject ?? throw new NullReferenceException( ) ;
+		var surface = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			DXGI_SURFACE_DESC desc ;
 			surface.GetDesc( &desc ) ;
@@ -63,7 +63,7 @@ internal class Surface: DeviceSubObject,
 	}
 	
 	public void Map( ref MappedRect pLockedRect, MapFlags mapFlags ) {
-		var surface = COMObject ?? throw new NullReferenceException( ) ;
+		var surface = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed( MappedRect* pRect = &pLockedRect ) {
 				surface.Map( (DXGI_MAPPED_RECT *)pRect, (uint)mapFlags ) ;
@@ -73,7 +73,7 @@ internal class Surface: DeviceSubObject,
 	}
 	
 	public void Unmap( ) {
-		var surface = COMObject ?? throw new NullReferenceException( ) ;
+		var surface = ComObject ?? throw new NullReferenceException( ) ;
 		surface.Unmap( ) ;
 	}
 	
@@ -108,7 +108,7 @@ internal class Surface1: Surface,
 	ComPtr< IDXGISurface1 >? _comPtr ;
 	public new ComPtr< IDXGISurface1 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGISurface1 >(  ) ;
-	public override IDXGISurface1? COMObject => ComPointer?.Interface as IDXGISurface1 ;
+	public override IDXGISurface1? ComObject => ComPointer?.Interface as IDXGISurface1 ;
 	
 	// --------------------------------------------------------------------------------------------
 	
@@ -141,7 +141,7 @@ internal class Surface1: Surface,
 	
 	/// <inheritdoc cref="ISurface1.GetDC"/>
 	public void GetDC( bool Discard, ref HDC phdc ) {
-		var surface1 = COMObject ?? throw new NullReferenceException( ) ;
+		var surface1 = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe { 
 			fixed( HDC* pHdc = &phdc ) {
 				surface1.GetDC( Discard, pHdc ) ;
@@ -152,7 +152,7 @@ internal class Surface1: Surface,
 
 	/// <inheritdoc cref="ISurface1.ReleaseDC"/>
 	public void ReleaseDC( in Rect? pDirtyRect = default ) {
-		var surface1 = COMObject ?? throw new NullReferenceException( ) ;
+		var surface1 = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			if( pDirtyRect is null )
 				surface1.ReleaseDC( null ) ;
@@ -186,7 +186,7 @@ internal class Surface2: Surface1, ISurface2 {
 	ComPtr< IDXGISurface2 >? _comPtr ;
 	public new ComPtr< IDXGISurface2 >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGISurface2 >(  ) ;
-	public override IDXGISurface2? COMObject => ComPointer?.Interface as IDXGISurface2 ;
+	public override IDXGISurface2? ComObject => ComPointer?.Interface as IDXGISurface2 ;
 	
 	// --------------------------------------------------------------------------------------------
 	 
@@ -222,7 +222,7 @@ internal class Surface2: Surface1, ISurface2 {
 																				where TRes: IUnknownWrapper, 
 																							IInstantiable {
 		unsafe {
-			var surface2 = COMObject ?? throw new NullReferenceException( ) ;
+			var surface2 = ComObject ?? throw new NullReferenceException( ) ;
 			fixed( Guid* pRiid = &riid ) {
 				surface2.GetResource( pRiid, out var parentResource, out pSubresourceIndex) ;
 				ppParentResource = (TRes)TRes.Instantiate( (parentResource as IDXGIResource)! ) ;

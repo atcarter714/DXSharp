@@ -406,7 +406,10 @@ public partial struct FeatureDataSerialization {
 } ;
 
 
-/// <summary>Indicates the level of support for the sharing of resources between different adapters&mdash;for example, multiple GPUs.</summary>
+/// <summary>
+/// Indicates the level of support for the sharing of resources between different adapters;
+/// for example, multiple GPUs.
+/// </summary>
 [EquivalentOf( typeof( D3D12_FEATURE_DATA_CROSS_NODE ) )]
 public partial struct FeatureDataCrossNode {
 	/// <summary>

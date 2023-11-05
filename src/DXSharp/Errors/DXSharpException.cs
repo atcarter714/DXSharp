@@ -21,12 +21,13 @@ public class DirectXComError: DXSharpException {
 	public COMException? COMError { get ; init ; }
 	public HResult? APICallReturnValue { get ; init ; }
 
-	public DirectXComError( HResult hResult, string? message = null ): base( message ) {
+	public DirectXComError( HResult hResult, string? message = null ): 
+									base( message ?? hResult.ToString() ) {
 		APICallReturnValue = hResult ;
 		if ( message is not null )
 			base.Data.Add( "Message", message ) ;
 	}
-	public DirectXComError( HResult hResult, string? message = null, COMException? comError = null ): base( message ) {
+	public DirectXComError( HResult hResult, string? message = null, COMException? comError = null ): base( message ?? hResult.ToString() ) {
 		APICallReturnValue = hResult ;
 		COMError           = comError ;
 		if ( message is not null )

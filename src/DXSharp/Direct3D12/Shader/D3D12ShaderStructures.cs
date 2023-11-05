@@ -1,14 +1,15 @@
-﻿#region Using Directives
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+#region Using Directives
 using System.Runtime.CompilerServices ;
-using System.Runtime.InteropServices ;
+
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D ;
-using Windows.Win32.Graphics.Direct3D12 ;
+
 using DXSharp.Direct3D12.Shader ;
-using DXSharp.DXGI ;
 using DXSharp.Windows ;
 
+using static DXSharp.InteropUtils ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
@@ -86,11 +87,19 @@ public struct Include {
 																				(Include*)Unsafe.AsPointer(ref this), pData 
 																			).ThrowOnFailure( ) ;
 	}
-
+	
 	public unsafe struct Vtbl {
 		internal delegate *unmanaged [Stdcall]<Include*, IncludeType, PCSTR, void*, void**, ref uint, HResult> Open_1 ;
 
 		internal delegate *unmanaged [Stdcall]<Include*, void*, HResult> Close_2 ;
 	} ;
 	unsafe void** lpVtbl ;
-}
+	
+	public unsafe ref Vtbl VTable {
+		[MethodImpl(_MAXOPT_)] get {
+			fixed( void* pVtbl = &lpVtbl ) {
+				return ref ( *( (Vtbl*)pVtbl ) ) ;
+			}
+		}
+	}
+} ;

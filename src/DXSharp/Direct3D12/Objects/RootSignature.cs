@@ -16,7 +16,7 @@ internal class RootSignature: DeviceChild,
 	ComPtr< ID3D12RootSignature >? _comPtr ;
 	public new ComPtr< ID3D12RootSignature >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12RootSignature >( ) ;
-	public override ID3D12RootSignature? COMObject => ComPointer?.Interface ;
+	public override ID3D12RootSignature? ComObject => ComPointer?.Interface ;
 	
 	// ------------------------------------------------------------------------------------------
 

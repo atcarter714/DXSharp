@@ -61,7 +61,7 @@ internal class ProtectedSession: DeviceChild,
 	ComPtr< ID3D12ProtectedSession >? _comPtr ;
 	public new ComPtr< ID3D12ProtectedSession >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer<ID3D12ProtectedSession>( ) ;
-	public override ID3D12ProtectedSession? COMObject => ComPointer?.Interface ;
+	public override ID3D12ProtectedSession? ComObject => ComPointer?.Interface ;
 	
 	internal ProtectedSession( ) {
 		 _comPtr = ComResources?.GetPointer< ID3D12ProtectedSession >( ) ;
@@ -80,12 +80,12 @@ internal class ProtectedSession: DeviceChild,
 	}
 	
 	public ProtectedSessionStatus GetSessionStatus( ) =>
-		(ProtectedSessionStatus)COMObject!.GetSessionStatus( ) ;
+		(ProtectedSessionStatus)ComObject!.GetSessionStatus( ) ;
 	
 	public void GetStatusFence< TFence >( in Guid riid, out TFence ppFence ) where TFence: IFence, IInstantiable {
 		unsafe {
 			fixed ( Guid* pRiid = &riid ) {
-				COMObject!.GetStatusFence( pRiid, out var fenceObj ) ;
+				ComObject!.GetStatusFence( pRiid, out var fenceObj ) ;
 				
 				ppFence = (TFence)TFence.Instantiate( (ID3D12Fence)fenceObj ) ;
 			}

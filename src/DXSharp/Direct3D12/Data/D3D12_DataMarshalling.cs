@@ -1,4 +1,6 @@
-﻿#region Using Directives
+﻿#pragma warning disable CS8629 // Nullable value type may be null.
+
+#region Using Directives
 
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
@@ -128,9 +130,9 @@ public struct ResourceBarrier {
 #endif
    
    resBarrier.Anonymous.AliasingBarrier.pResourceBefore =
-    (ResourceUnmanaged *)(before?.ComPointer?.InterfaceVPtr) ;
+    (ResourceUnmanaged *)(before?.ComPointer?.InterfaceVPtr ) ;
    resBarrier.Anonymous.AliasingBarrier.pResourceAfter =
-    (ResourceUnmanaged *)(after?.ComPointer?.InterfaceVPtr) ;
+    (ResourceUnmanaged *)(after?.ComPointer?.InterfaceVPtr ) ;
   }
   
   return resBarrier ;

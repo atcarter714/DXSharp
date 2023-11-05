@@ -18,11 +18,11 @@ internal abstract class Object: DXComObject,
 	public override ComPtr? ComPointer =>
 		_comPointer ??= ComResources?.GetPointer< ID3D12Object >( )! ;
 	
-	public override ID3D12Object? COMObject => (ID3D12Object)ComPointer?.InterfaceObjectRef! ;
+	public override ID3D12Object? ComObject => (ID3D12Object)ComPointer?.InterfaceObjectRef! ;
 
 	public void SetName( string Name ) {
 		using PCWSTR name = Name ;
-		COMObject?.SetName( Name ) ;
+		ComObject?.SetName( Name ) ;
 	}
 
 	

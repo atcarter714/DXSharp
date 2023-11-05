@@ -39,8 +39,8 @@ public interface ITimeProvider: ITimeSnapshot {
 public class Time: ITimeProvider {
 	object _lock = new( ) ;
 	Stopwatch _stopwatch = new( ) ;
-	CancellationTokenSource _tokenSource = new( );
-
+	CancellationTokenSource _tokenSource ;
+	
 	ulong _frameCount         = 0x0000L ;
 	long  _frameTimestamp     = 0x00000000L,
 		  _lastFrameTimestamp = Stopwatch.GetTimestamp( ) ;
@@ -52,6 +52,7 @@ public class Time: ITimeProvider {
 	DateTime _startTime = DateTime.MinValue ;
 	float[ ] _frameTimes = new float[ _AVG_FRAMES ] ;
 	TimeSpan _deltaTime, _lastFrame, _averageFrameTimeCache ;
+	
 	
 	public TimeSpan DeltaTime {
 		get { lock(_lock) return _deltaTime ; }
@@ -180,7 +181,6 @@ public class Time: ITimeProvider {
 		TotalTime        = this.TotalTime,
 		AverageFrameTime = _getAverageFrameTime( ),
 	} ;
-	
 } ;
 
 // ------------------------------------------------------------

@@ -23,7 +23,7 @@ internal class DeviceSubObject: Object,
 	ComPtr< IDXGIDeviceSubObject >? _comPtr ;
 	public new ComPtr< IDXGIDeviceSubObject >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIDeviceSubObject >( ) ;
-	public override IDXGIDeviceSubObject? COMObject => ComPointer?.Interface ;
+	public override IDXGIDeviceSubObject? ComObject => ComPointer?.Interface ;
 	
 	
 	public DeviceSubObject( ) {
@@ -43,7 +43,7 @@ internal class DeviceSubObject: Object,
 	public T GetDevice< T >( ) where T: IDevice {
 		unsafe {
 			var riid = typeof( T ).GUID ;
-			this.COMObject!.GetDevice( &riid, out var ppDevice ) ;
+			this.ComObject!.GetDevice( &riid, out var ppDevice ) ;
 			return (T)( T.Instantiate( ( ppDevice as IDXGIDevice )! ) ) ;
 		}
 	}

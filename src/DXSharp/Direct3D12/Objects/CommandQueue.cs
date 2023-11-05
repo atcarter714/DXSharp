@@ -20,8 +20,8 @@ internal class CommandQueue: Pageable,
 	public new virtual ComPtr< ID3D12CommandQueue >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3D12CommandQueue >( ) ;
 	
-	public override ID3D12CommandQueue? COMObject => ComPointer?.Interface ;
-	ID3D12CommandQueue cmdQueue => COMObject ?? throw new NullReferenceException( ) ;
+	public override ID3D12CommandQueue? ComObject => ComPointer?.Interface ;
+	ID3D12CommandQueue cmdQueue => ComObject ?? throw new NullReferenceException( ) ;
 
 	// ------------------------------------------------------------------------------------------
 	
@@ -62,8 +62,8 @@ internal class CommandQueue: Pageable,
 								  in TileRegionSize pRegionSize, TileMappingFlags Flags ) {
 		var src = (Resource) pSrcResource ;
 		var dst = (Resource) pDstResource ;
-		cmdQueue.CopyTileMappings( dst.COMObject, pDstRegionStartCoordinate, 
-								   src.COMObject, pSrcRegionStartCoordinate, 
+		cmdQueue.CopyTileMappings( dst.ComObject, pDstRegionStartCoordinate, 
+								   src.ComObject, pSrcRegionStartCoordinate, 
 								   pRegionSize, (D3D12_TILE_MAPPING_FLAGS)Flags ) ;
 	}
 
@@ -83,11 +83,11 @@ internal class CommandQueue: Pageable,
 			var resource = (Resource) pResource ;
 			fixed ( void* pRegionStartCoords = &pResourceRegionStartCoordinates[0],
 						  pRegionSizes = &pResourceRegionSizes[0], pFlags = &pRangeFlags[0] ) {
-				cmdQueue.UpdateTileMappings( resource.COMObject,
+				cmdQueue.UpdateTileMappings( resource.ComObject,
 											 NumResourceRegions,
 											 (D3D12_TILED_RESOURCE_COORDINATE *)pRegionStartCoords,
 											 (D3D12_TILE_REGION_SIZE *)pRegionSizes,
-											 heap.COMObject,
+											 heap.ComObject,
 											 NumRanges, 
 											 (D3D12_TILE_RANGE_FLAGS *)pFlags,
 											 pHeapRangeStartOffsets, 
@@ -102,7 +102,7 @@ internal class CommandQueue: Pageable,
 		var pCommandLists = new ID3D12CommandList[ NumCommandLists ] ;
 		
 		for ( int i = 0; i < ppCommandLists.Length; ++i ) {
-			pCommandLists[ i ] = ( (IComObjectRef<ID3D12CommandList>)ppCommandLists[ i ] ).COMObject
+			pCommandLists[ i ] = ( (IComObjectRef<ID3D12CommandList>)ppCommandLists[ i ] ).ComObject
 #if DEBUG || DEBUG_COM || DEV_BUILD
 								 ?? throw new NullReferenceException( )
 #endif
@@ -126,13 +126,13 @@ internal class CommandQueue: Pageable,
 	
 	public void Signal( IFence pFence, ulong Value ) {
 		var fence = (IComObjectRef< ID3D12Fence >) pFence ;
-		cmdQueue.Signal( fence.COMObject, Value ) ;
+		cmdQueue.Signal( fence.ComObject, Value ) ;
 	}
 
 	
 	public void Wait( IFence pFence, ulong Value ) {
 		var fence = (IComObjectRef< ID3D12Fence >) pFence ;
-		cmdQueue.Wait( fence.COMObject, Value ) ;
+		cmdQueue.Wait( fence.ComObject, Value ) ;
 	}
 
 
