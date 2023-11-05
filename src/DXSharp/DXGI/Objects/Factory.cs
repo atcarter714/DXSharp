@@ -80,7 +80,7 @@ internal class Factory: Object,
 			var descCopy = desc ;
 			var cmdQueue = (IComObjectRef<ID3D12CommandQueue> )pCmdQueue ;
 			
-			var _hr = ComObject!.CreateSwapChain( cmdQueue,
+			var _hr = ComObject!.CreateSwapChain( cmdQueue.ComObject,
 												(DXGI_SWAP_CHAIN_DESC *)&descCopy, 
 													out IDXGISwapChain? pSwapChain ) ;
 			

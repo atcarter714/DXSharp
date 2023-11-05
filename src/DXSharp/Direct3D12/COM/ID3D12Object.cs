@@ -12,7 +12,7 @@ namespace Windows.Win32.Graphics.Direct3D12 ;
 
 /// <summary>Base COM interface for all Direct3D 12 objects.</summary>
 [ComImport, Guid("C4FEC28F-7966-4E95-9F94-F431CB56C3B8"),
- InterfaceType(ComInterfaceType.InterfaceIsIUnknown),]
+ InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 public interface ID3D12Object: IUnknown {
 	
 	/// <summary>Gets application-defined data from a device object.</summary>

@@ -224,10 +224,6 @@ internal class COMResource: DisposableObject {
 	/// </exception>
 	internal ComPtr< T > GetPointer< T >( ) where T: IUnknown {
 #if DEBUG || DEBUG_COM || DEV_BUILD
-		if( !typeof(T).IsCOMObject ) throw new TypeInitializationException(nameof(T),
-			new DirectXComError( HResult.E_FAIL,
-								 $"The type \"{typeof(T).Name}\" is not a COM interface type." ) ) ;
-
 		ObjectDisposedException.ThrowIf( ( !IsAlive || Disposed ), typeof(COMResource) ) ;
 #endif
 		
@@ -277,10 +273,6 @@ internal class COMResource: DisposableObject {
 	/// </exception>
 	internal TInterface? GetReferenceTo< TInterface >( ) where TInterface: IUnknown {
 #if DEBUG || DEBUG_COM || DEV_BUILD
-		if( !typeof(TInterface).IsCOMObject ) throw new TypeInitializationException(nameof(TInterface),
-			new DirectXComError( HResult.E_FAIL,
-								 $"The type \"{typeof(TInterface).Name}\" is not a COM interface type." ) ) ;
-		
 		ObjectDisposedException.ThrowIf( ( !IsAlive || Disposed ), typeof(COMResource) ) ;
 #endif
 		

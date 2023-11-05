@@ -10,6 +10,7 @@ using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi.Common ;
 using DXSharp.DXGI ;
+using DXSharp.Windows ;
 using static DXSharp.InteropUtils ;
 
 #endregion
@@ -2016,13 +2017,15 @@ public struct RootSignatureDescription {
 		}
 	}
 	
+	
 	public IBlob? Serialize( out IBlob? errorBlob ) {
 		unsafe {
 			fixed( RootSignatureDescription* thisPtr = &this ) {
-				PInvoke.D3D12SerializeRootSignature( (D3D12_ROOT_SIGNATURE_DESC*)thisPtr,
+				HResult hr = PInvoke.D3D12SerializeRootSignature( (D3D12_ROOT_SIGNATURE_DESC*)thisPtr,
 													 D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1,
 													 out var signature,
 													 out var errors ) ;
+				hr.SetAsLastErrorForThread( ) ;
 
 				IBlob? result = signature is null ? default : new Blob( signature ) ;
 				errorBlob = errors is null ? default : new Blob( errors ) ;
@@ -2032,8 +2035,8 @@ public struct RootSignatureDescription {
 	}
 	
 	public IBlob? Serialize( ) {
-		Serialize( out var blob ) ;
-		return blob ;
+		var serialized = Serialize( out var blob ) ;
+		return serialized ;
 	}
 } ;
 
