@@ -1,50 +1,69 @@
 ﻿#region Using Directives
-using System.Numerics ;
 using System.Runtime.Versioning ;
 using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
 
+using WinRT ;
+using Windows.UI.Core ;
 using Windows.Win32.Foundation ;
+using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Dxgi.Common ;
-
+using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
 #endregion
 namespace DXSharp.DXGI ;
 
 
+//public enum ColorSpaceSupportFlags: uint { Present = 0x1, OverlayPresent = 0x2, } ;
+
 [Wrapper(typeof(IDXGISwapChain))]
-public class SwapChain: DeviceSubObject, ISwapChain {
-	public enum ColorSpaceSupportFlags: uint { Present = 0x1, OverlayPresent = 0x2, } ;
-	
-	public new static Type ComType => typeof( IDXGISwapChain ) ;
-	public new static Guid InterfaceGUID => ComType.GUID ;
-	
-	
-	public new ComPtr< IDXGISwapChain >? ComPointer { get ; protected set; }
-	public new IDXGISwapChain? COMObject => ComPointer?.Interface ;
+internal class SwapChain: DeviceSubObject,
+						  ISwapChain,
+						  IComObjectRef< IDXGISwapChain >,
+						  IUnknownWrapper< IDXGISwapChain > {
+	ComPtr< IDXGISwapChain >? _comPtr ;
+	public new virtual ComPtr< IDXGISwapChain >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain >(  ) ;
+	public override IDXGISwapChain? COMObject => ComPointer?.Interface ;
 	
 	// -----------------------------------------------------------------
 	// Constructors:
 	// -----------------------------------------------------------------
 	
-	internal SwapChain( ) { }
-	internal SwapChain( nint comObject ) => 
-		ComPointer = new( comObject ) ;
-	internal SwapChain( in IDXGISwapChain comObject ) => 
-		ComPointer = new( comObject ) ;
-	internal SwapChain( ComPtr<IDXGISwapChain> otherPtr ) => 
-		this.ComPointer = otherPtr ;
+	internal SwapChain( ) {
+		_comPtr = ComResources?.GetPointer< IDXGISwapChain >( ) ;
+		if( _comPtr is not null )
+			_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain( nint ptr ) {
+		if ( !ptr.IsValid() )
+			throw new NullReferenceException( $"{nameof( SwapChain )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain( in IDXGISwapChain dxgiObj ) {
+		if ( dxgiObj is null )
+			throw new NullReferenceException( $"{nameof( SwapChain )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		_comPtr = new( dxgiObj ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain( ComPtr< IDXGISwapChain > otherPtr ) {
+		_comPtr = otherPtr ;
+		_initOrAdd( _comPtr ) ;
+	}
 	
 	// -----------------------------------------------------------------
 
 	public void Present( uint syncInterval, PresentFlags flags ) => 
 						COMObject!.Present( syncInterval, (uint)flags ) ;
-
-	//public void GetBuffer( uint buffer, out Direct3D12.IResource pSurface ) {
+	
 	public void GetBuffer< TResource >( uint buffer, out TResource pSurface ) where TResource: IDXCOMObject, IInstantiable {
 		unsafe {
-			Guid guid = TResource.InterfaceGUID ;
+			Guid guid = TResource.Guid ;
 			COMObject!.GetBuffer( buffer, &guid, out var comObj ) ;
 			
 #if DEBUG || DEBUG_COM || DEV_BUILD
@@ -57,9 +76,12 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 		}
 	}
 
-	public void SetFullscreenState( bool fullscreen, in IOutput? pTarget ) => 
-		COMObject!.SetFullscreenState( fullscreen, pTarget?.COMObject ) ;
-
+	public void SetFullscreenState( bool fullscreen, in IOutput? pTarget ) {
+		var output = (IComObjectRef< IDXGIOutput >?)pTarget 
+					 ?? throw new NullReferenceException( nameof(pTarget) ) ;
+		COMObject!.SetFullscreenState( fullscreen, output.COMObject ) ;
+	}
+	
 	public void GetFullscreenState( out bool pFullscreen, out IOutput? ppTarget ) {
 		ppTarget = null ;
 		unsafe {
@@ -97,13 +119,13 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 		if( output is null ) return null ;
 		return (TOutput)((IOutput) new Output(output)) ;
 	}
-
-	public IOutput? GetContainingOutput( ) {
-		COMObject!.GetContainingOutput( out var output ) ;
-		if( output is null ) return null ;
-		return (IOutput) new Output(output) ;
+	
+	public void GetContainingOutput( out IOutput? containingOutput ) {
+		var swapchain = COMObject ?? throw new NullReferenceException( ) ;
+		swapchain.GetContainingOutput( out var output ) ;
+		containingOutput = new Output( output ) ;
 	}
-
+	
 	public void GetFrameStatistics( out FrameStatistics pStats ) {
 		unsafe {
 			DXGI_FRAME_STATISTICS result = default ;
@@ -117,33 +139,62 @@ public class SwapChain: DeviceSubObject, ISwapChain {
 		return count ;
 	}
 
+	// -----------------------------------------------------------------------------------------------------------------
+	public new static Type ComType => typeof( IDXGISwapChain ) ;
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISwapChain ).GUID
+																.ToByteArray( ) ;
+
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+	// =================================================================================================================
 } ;
 
 
 [Wrapper(typeof(IDXGISwapChain1))]
-public class SwapChain1: SwapChain, ISwapChain1 {
-	public new static Type ComType => typeof( IDXGISwapChain1 ) ;
-	public new static Guid InterfaceGUID => ComType.GUID ;
-	/*public new static IInstantiable Instantiate( ) => new( ) ;
-	public static IInstantiable Instantiate( IntPtr address ) => new SwapChain1( address ) ;
-	public static IInstantiable Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
-		new SwapChain1( (IDXGISwapChain1)obj! ) ;*/
+internal class SwapChain1: SwapChain,
+						   ISwapChain1,
+						   IComObjectRef< IDXGISwapChain1 >,
+						   IUnknownWrapper< IDXGISwapChain1 > {
+	ComPtr< IDXGISwapChain1 >? _comPtr ;
+	public new virtual ComPtr< IDXGISwapChain1 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain1 >(  ) ;
+	public override IDXGISwapChain1? COMObject => ComPointer?.Interface ;
 
-	public new IDXGISwapChain1? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGISwapChain1 >? ComPointer { get ; protected set ; }
-	
-	internal SwapChain1( ) { }
-	internal SwapChain1( nint ptr ) => ComPointer = new( ptr ) ;
-	internal SwapChain1( in IDXGISwapChain1? comObject ) => ComPointer = new( comObject! ) ;
-	internal SwapChain1( ComPtr< IDXGISwapChain1 > otherPtr ) => ComPointer = otherPtr ;
-
+	internal SwapChain1( ) {
+		_comPtr = ComResources?.GetPointer< IDXGISwapChain1 >( ) ;
+		if( _comPtr is not null )
+			_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain1( nint ptr ) {
+		if ( !ptr.IsValid() )
+			throw new NullReferenceException( $"{nameof( SwapChain1 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain1( in IDXGISwapChain1 dxgiObj ) {
+		if ( dxgiObj is null )
+			throw new NullReferenceException( $"{nameof( SwapChain1 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		_comPtr = new( dxgiObj ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain1( ComPtr< IDXGISwapChain1 > otherPtr ) {
+		_comPtr = otherPtr ;
+		_initOrAdd( _comPtr ) ;
+	}
 
 	public SwapChainDescription1 GetDesc1( ) {
 		GetDesc1( out var desc ) ;
 		return desc ;
 	}
+	
 	public void GetDesc1( out SwapChainDescription1 pDesc ) {
-		
 		unsafe {
 			DXGI_SWAP_CHAIN_DESC1 result = default ;
 			COMObject!.GetDesc1( &result ) ;
@@ -169,16 +220,14 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 		}
 	}
 
-	public void GetCoreWindow( Guid riid, out IUnknown? ppUnk ) {
-		
+	
+	[SupportedOSPlatform("windows10.0.10240.0")]
+	public void GetCoreWindow( Guid riid, out CoreWindow? ppUnk ) {
 		unsafe {
 			COMObject!.GetCoreWindow( &riid, out var unk ) ;
-			ppUnk = unk as IUnknown ;
+			var u = unk.As<CoreWindow>(  ) ;
+			ppUnk = u ;
 		}
-	}
-	public void GetCoreWindowAs< T >( out T? ppUnk ) where T: IUnknown {
-		GetCoreWindow( typeof(T).GUID, out var unk ) ;
-		ppUnk = (T)unk! ;
 	}
 	
 	public void Present1( uint syncInterval, PresentFlags flags, in PresentParameters pPresentParameters ) {
@@ -192,11 +241,8 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 	public bool IsTemporaryMonoSupported( ) => COMObject!.IsTemporaryMonoSupported( ) ;
 	
 	public void GetRestrictToOutput( out IOutput ppRestrictToOutput ) {
-		
-		unsafe {
-			COMObject!.GetRestrictToOutput( out var output ) ;
-			ppRestrictToOutput = new Output( output ) ;
-		}
+		COMObject!.GetRestrictToOutput( out var output ) ;
+		ppRestrictToOutput = new Output( output ) ;
 	}
 
 	public void SetBackgroundColor( in RGBA pColor ) {
@@ -231,90 +277,166 @@ public class SwapChain1: SwapChain, ISwapChain1 {
 			pRotation = (ModeRotation)result ;
 		}
 	}
+	
+	// -----------------------------------------------------------------------------------------------------------------
+	public new static Type ComType => typeof( IDXGISwapChain1 ) ;
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISwapChain1 ).GUID
+																 .ToByteArray( ) ;
+
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+	// =================================================================================================================
 } ;
 
 
-[Wrapper(typeof(IDXGISwapChain2))]
-public class SwapChain2: SwapChain1, ISwapChain2 {
-	public new static Type ComType => typeof( IDXGISwapChain2 ) ;
-	public new static Guid InterfaceGUID => ComType.GUID ;
-	/*public new static IInstantiable   Instantiate( )                => new( ) ;
-	public new static IInstantiable Instantiate( IntPtr address ) => new SwapChain2( address ) ;
-	public new static IInstantiable Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
-		new SwapChain2( (IDXGISwapChain2)obj! ) ;*/
+[Wrapper( typeof( IDXGISwapChain2 ) )]
+internal class SwapChain2: SwapChain1,
+						   ISwapChain2,
+						   IComObjectRef< IDXGISwapChain2 >,
+						   IUnknownWrapper< IDXGISwapChain2 > {
 
-	public new IDXGISwapChain2? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGISwapChain2 >? ComPointer { get ; protected set ; }
-	
-	internal SwapChain2( ) { }
-	internal SwapChain2( nint ptr ) => ComPointer = new( ptr ) ;
-	internal SwapChain2( in IDXGISwapChain2? comObject ) => ComPointer = new( comObject! ) ;
-	internal SwapChain2( ComPtr< IDXGISwapChain2 > otherPtr ) => ComPointer = otherPtr ;
+	// -----------------------------------------------------------------------------------------------------------------
 
-	
-	
-	public void SetSourceSize( uint width, uint height ) {
-		
-		COMObject!.SetSourceSize( width, height ) ;
+	ComPtr< IDXGISwapChain2 >? _comPtr ;
+
+	public new ComPtr< IDXGISwapChain2 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain2 >( ) ;
+
+	public override IDXGISwapChain2? COMObject => ComPointer?.Interface ;
+
+	// -----------------------------------------------------------------------------------------------------------------
+
+	internal SwapChain2( ) {
+		_comPtr = ComResources?.GetPointer< IDXGISwapChain2 >( ) ;
+		if ( _comPtr is not null )
+			_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain2( nint ptr ) {
+		if ( !ptr.IsValid( ) )
+			throw new NullReferenceException( $"{nameof( SwapChain2 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain2( in IDXGISwapChain2 dxgiObj ) {
+		if ( dxgiObj is null )
+			throw new NullReferenceException( $"{nameof( SwapChain2 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		_comPtr = new( dxgiObj ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain2( ComPtr< IDXGISwapChain2 > otherPtr ) {
+		_comPtr = otherPtr ;
+		_initOrAdd( _comPtr ) ;
 	}
 
-	public void GetSourceSize( out uint pWidth, out uint pHeight ) => 
-		COMObject!.GetSourceSize( out pWidth, out pHeight ) ;
+	// -----------------------------------------------------------------------------------------------------------------
 
-	public void SetMaximumFrameLatency( uint maxLatency ) {
-		
+	public void SetSourceSize( USize size ) =>
+		COMObject!.SetSourceSize( size.Width, size.Height ) ;
+
+	public void GetSourceSize( out USize size ) {
+		COMObject!.GetSourceSize( out uint pWidth, out uint pHeight ) ;
+		size = new( pWidth, pHeight ) ;
+	}
+
+	public void SetMaximumFrameLatency( uint maxLatency ) => 
 		COMObject!.SetMaximumFrameLatency( maxLatency ) ;
-	}
 
-	public void GetMaximumFrameLatency( out uint pMaxLatency ) {
-		
+	public void GetMaximumFrameLatency( out uint pMaxLatency ) => 
 		COMObject!.GetMaximumFrameLatency( out pMaxLatency ) ;
-	}
 
-	public Win32Handle GetFrameLatencyWaitableObject( ) => COMObject!.GetFrameLatencyWaitableObject( ) ;
+	public Win32Handle GetFrameLatencyWaitableObject( ) => 
+		COMObject!.GetFrameLatencyWaitableObject( ) ;
 
-	public void SetMatrixTransform( in Matrix3x2 pMatrix ) {
-		
+	public void SetMatrixTransform( in Matrix3x2F pMatrix ) {
 		unsafe {
-			fixed ( Matrix3x2* p = &pMatrix ) {
+			fixed ( Matrix3x2F* p = &pMatrix ) {
 				COMObject!.SetMatrixTransform( (DXGI_MATRIX_3X2_F*)p ) ;
 			}
 		}
 	}
-}
+
+	public void GetMatrixTransform( out Matrix3x2F pMatrix ) {
+		pMatrix = default ;
+		unsafe {
+			fixed ( Matrix3x2F* p = &pMatrix ) {
+				COMObject!.GetMatrixTransform( (DXGI_MATRIX_3X2_F *)p ) ;
+			}
+		}
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------
+	public new static Type ComType => typeof( IDXGISwapChain2 ) ;
+
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISwapChain2 ).GUID
+																 .ToByteArray( ) ;
+
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+	// =================================================================================================================
+} ;
 
 
 [Wrapper(typeof(IDXGISwapChain3))]
 [SupportedOSPlatform("windows10.0.10240")]
-public class SwapChain3: SwapChain2, ISwapChain3 {
-	public new static Guid InterfaceGUID => ComType.GUID ;
-	public new static Type ComType => typeof( IDXGISwapChain3 ) ;
-	public new static SwapChain3? Instantiate( ) => new( ) ;
-	public new static ISwapChain? Instantiate( nint address ) => new SwapChain3( address ) ;
-	public new static ISwapChain? Instantiate< ICom >( ICom obj ) where ICom: IUnknown? =>
-		new SwapChain3( (IDXGISwapChain3)obj! ) ;
+internal class SwapChain3: SwapChain2, 
+						   ISwapChain3,
+						   IComObjectRef< IDXGISwapChain3 >,
+						   IUnknownWrapper< IDXGISwapChain3 > {
+	// -----------------------------------------------------------------------------------------------------------------
+	ComPtr< IDXGISwapChain3 >? _comPtr ;
+	public new virtual ComPtr< IDXGISwapChain3 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain3 >(  ) ;
+	public override IDXGISwapChain3? COMObject => ComPointer?.Interface ;
 
+	// -----------------------------------------------------------------------------------------------------------------
 	
-	public new IDXGISwapChain3? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGISwapChain3 >? ComPointer { get ; protected set ; }
+	internal SwapChain3( ) {
+		_comPtr = ComResources?.GetPointer< IDXGISwapChain3 >( ) ;
+		if( _comPtr is not null )
+			_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain3( nint ptr ) {
+		if ( !ptr.IsValid() )
+			throw new NullReferenceException( $"{nameof( SwapChain3 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain3( in IDXGISwapChain3 dxgiObj ) {
+		if ( dxgiObj is null )
+			throw new NullReferenceException( $"{nameof( SwapChain3 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		_comPtr = new( dxgiObj ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain3( ComPtr< IDXGISwapChain3 > otherPtr ) {
+		_comPtr = otherPtr ;
+		_initOrAdd( _comPtr ) ;
+	}
 
-	
-	internal SwapChain3( ) { }
-	internal SwapChain3( nint ptr ) => ComPointer = new( ptr ) ;
-	internal SwapChain3( in IDXGISwapChain3? comObject ) => ComPointer = new( comObject! ) ;
-	internal SwapChain3( ComPtr< IDXGISwapChain3 > otherPtr ) => ComPointer = otherPtr ;
-
-
+	// -----------------------------------------------------------------------------------------------------------------
 
 	[SupportedOSPlatform("windows10.0.10240")]
 	public uint GetCurrentBackBufferIndex( ) => COMObject!.GetCurrentBackBufferIndex( ) ;
 
 	
 	[SupportedOSPlatform("windows10.0.10240")]
-	public void CheckColorSpaceSupport( ColorSpaceType colorSpace, out ColorSpaceSupportFlags pColorSpaceSupport ) {
+	public void CheckColorSpaceSupport( ColorSpaceType colorSpace, out ISwapChain.ColorSpaceSupportFlags pColorSpaceSupport ) {
 		unsafe {
 			COMObject!.CheckColorSpaceSupport( (DXGI_COLOR_SPACE_TYPE)colorSpace, out var support ) ;
-			pColorSpaceSupport = (ColorSpaceSupportFlags)support ;
+			pColorSpaceSupport = (ISwapChain.ColorSpaceSupportFlags)support ;
 		}
 	}
 	
@@ -327,23 +449,131 @@ public class SwapChain3: SwapChain2, ISwapChain3 {
 
 	
 	[SupportedOSPlatform("windows10.0.10240")]
-	public void ResizeBuffers1( uint bufferCount, 
-								uint width, uint height, 
-								Format newFormat,
-								SwapChainFlags swapChainFlags,
-								in uint[ ] pCreationNodeMask,
-								in IUnknown[ ] ppPresentQueue ) {
+	public HResult ResizeBuffers1( uint bufferCount = 0U,
+								   uint width = 0U, uint height = 0U,
+								   Format format = Format.UNKNOWN,
+								   SwapChainFlags swapChainFlags = SwapChainFlags.None,
+								   uint[ ]? pCreationNodeMask = null,
+								   Direct3D12.ICommandQueue[ ]? ppPresentQueue = null  ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		ArgumentNullException.ThrowIfNull( ppPresentQueue, nameof( ppPresentQueue ) ) ;
+#endif
+		
+		if( pCreationNodeMask is null ) {
+			pCreationNodeMask = Enumerable.Repeat( 0U, (int)bufferCount )
+											.ToArray( ) ;
+		}
+		var swapchain = COMObject ?? throw new NullReferenceException( ) ;
+		var presentQueue = new object[ bufferCount ] ;
+		
+		for( int i = 0; i < bufferCount; ++i ) {
+			presentQueue[ i ] = ( (IComObjectRef<ID3D12CommandQueue>?)ppPresentQueue[ i ] )!.COMObject
+#if DEBUG || DEBUG_COM || DEV_BUILD
+								?? throw new NullReferenceException( ) 
+#endif
+				;
+		}
+		
 		unsafe { fixed ( uint* pMask = pCreationNodeMask ) {
-				var presentQueue = Unsafe.As< object[] >( ppPresentQueue ) ;
-				COMObject!.ResizeBuffers1( bufferCount, width, height, (DXGI_FORMAT)newFormat,
-											   (uint)swapChainFlags, pCreationNodeMask, presentQueue ) ;
+				var hr = swapchain.ResizeBuffers1( bufferCount,
+										  width, height,
+										  (DXGI_FORMAT)format,
+										  (uint)swapChainFlags,
+										  pCreationNodeMask,
+										  presentQueue ) ;
+				return hr ;
 			}
 		}
 	}
 	
+	// -----------------------------------------------------------------------------------------------------------------
+	public new static Type ComType => typeof( IDXGISwapChain3 ) ;
+	
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISwapChain3 ).GUID
+																 .ToByteArray( ) ;
+
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+	// =================================================================================================================
 }
 
 
+[Wrapper( typeof( IDXGISwapChain4 ) )]
+[SupportedOSPlatform( "windows10.0.10240" )]
+internal class SwapChain4: SwapChain3,
+						   ISwapChain4,
+						   IComObjectRef< IDXGISwapChain4 >,
+						   IUnknownWrapper< IDXGISwapChain4 > {
+	// -----------------------------------------------------------------------------------------------------------------
+	ComPtr< IDXGISwapChain4 >? _comPtr ;
+
+	public new virtual ComPtr< IDXGISwapChain4 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain4 >( ) ;
+
+	public override IDXGISwapChain4? COMObject => ComPointer?.Interface ;
+
+	// -----------------------------------------------------------------------------------------------------------------
+
+	internal SwapChain4( ) {
+		_comPtr = ComResources?.GetPointer< IDXGISwapChain4 >( ) ;
+		if ( _comPtr is not null )
+			_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain4( nint ptr ) {
+		if ( !ptr.IsValid( ) )
+			throw new NullReferenceException( $"{nameof( SwapChain4 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain4( in IDXGISwapChain4 dxgiObj ) {
+		if ( dxgiObj is null )
+			throw new NullReferenceException( $"{nameof( SwapChain4 )} :: " +
+											  $"The internal COM interface is destroyed/null." ) ;
+		_comPtr = new( dxgiObj ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal SwapChain4( ComPtr< IDXGISwapChain4 > otherPtr ) {
+		_comPtr = otherPtr ;
+		_initOrAdd( _comPtr ) ;
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------
+
+	public void SetHDRMetaData( HDRMetaDataType Type, uint Size,
+								in HDRMetaDataHDR10? pMetaData = default ) {
+		var swapchain = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			if ( pMetaData is null ) {
+				swapchain.SetHDRMetaData( (DXGI_HDR_METADATA_TYPE)Type, Size, null ) ;
+			}
+			else {
+				HDRMetaDataHDR10 data = pMetaData.Value ;
+				swapchain.SetHDRMetaData( (DXGI_HDR_METADATA_TYPE)Type, Size, (DXGI_HDR_METADATA_HDR10 *)&data ) ;
+			}
+		}
+	}
+
+	// -----------------------------------------------------------------------------------------------------------------
+	public new static Type ComType => typeof( IDXGISwapChain4 ) ;
+
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISwapChain4 ).GUID
+																 .ToByteArray( ) ;
+
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+	// =================================================================================================================
+} ;
 
 
 

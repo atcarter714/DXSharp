@@ -14,28 +14,23 @@ using DXSharp.Windows.Win32 ;
 using DXSharp.Direct3D12.Shader ;
 using DXSharp.Direct3D12.XTensions ;
 
-using Device = DXSharp.Direct3D12.Device ;
 using IDevice = DXSharp.Direct3D12.IDevice ;
 using IResource = DXSharp.Direct3D12.IResource ;
-using Resource = DXSharp.Direct3D12.Resource ;
 using Vector3 = DXSharp.Vector3 ;
 #endregion
 namespace BasicSample ;
 
 
 public class Graphics: DisposableObject {
+	const string shaderFilePath = @"shader1.hlsl" ;
 	public const int FrameCount = 2 ;
-	const string shaderFilePath =
-		@"shader1.hlsl" ;
-
 	
 	HWnd                          hwnd ;
 	IResource                     vertexBuffer ;
 	VertexBufferView              vertexBufferView ;
 	readonly List< MemoryHandle > cleanupList   = new( ) ;
 	readonly List< IDisposable >  _disposables  = new( ) ;
-	readonly Resource[ ]          renderTargets = new Resource[ FrameCount ] ;
-	
+	readonly IResource[ ]         renderTargets = new IResource[ FrameCount ] ;
 	
 	uint              rtvDescriptorSize ;
 	IDescriptorHeap   rtvHeap ;
@@ -71,8 +66,9 @@ public class Graphics: DisposableObject {
 
 	protected override ValueTask DisposeUnmanaged( ) {
 		WaitForPreviousFrame( ) ;
-		foreach ( var target in renderTargets )
+		foreach ( var target in renderTargets ) {
 			target?.Dispose( ) ;
+		}
 
 		try {
 			foreach ( var handle in cleanupList )
@@ -116,16 +112,15 @@ public class Graphics: DisposableObject {
 		clearColor4 = settings?.StyleSettings?.BackBufferColor 
 					  ?? AppSettings.Style.DEFAULT_BUFFER_COLOR ;
 		
-		
 		// Create DXGI factory:
-		using var factory = Factory1.Create< Factory1 >( ) ;
+		using var factory = IFactory1.Create1< IFactory1 >( ) ;
 		
 		// Find best adapter (uses DXGI.XTensions):
-		using Adapter1? adapter = (Adapter1)factory.FindBestAdapter< Adapter1 >( )! ;
+		using IAdapter1? adapter = (IAdapter1)factory.FindBestAdapter< IAdapter1 >( )! ;
 		adapter.GetDesc1( out var _adapterDesc) ;
 		
 		// Create device (default is FeatureLevel.D3D_12_0):
-		IDevice device = Device.CreateDevice< IDevice >( adapter, FeatureLevel.D3D12_0 ) ;
+		IDevice device = D3D12.CreateDevice< IDevice >( adapter, FeatureLevel.D3D12_0 ) ;
 		this.GraphicsDevice = device ;
 		
 		// Create command queue:
@@ -135,12 +130,11 @@ public class Graphics: DisposableObject {
 			NodeMask = 0,
 			Priority = 0,
 		} ;
-		device.CreateCommandQueue( cmdQDesc, ICommandQueue.InterfaceGUID, out var cmdQ ) ;
-		this.commandQueue = cmdQ ;
+		device.CreateCommandQueue( cmdQDesc, ICommandQueue.IID, out commandQueue ) ;
 		
 		// Create swapchain:
 		var bufferDesc = new ModeDescription {
-			Width            = settings.WindowSize.Width,
+			Width            = settings!.WindowSize.Width,
 			Height           = settings.WindowSize.Height,
 			Format           = Format.R8G8B8A8_UNORM,
 			RefreshRate      = new Rational( 60, 1 ),
@@ -157,7 +151,7 @@ public class Graphics: DisposableObject {
 			BufferDesc   = bufferDesc,
 			Windowed     = true,
 		} ;
-		var hr = factory.CreateSwapChain< ICommandQueue, SwapChain >( cmdQ, swapChainDescription, out var swapChain ) ;
+		var hr = factory.CreateSwapChain< ICommandQueue, ISwapChain >( commandQueue, swapChainDescription, out var swapChain ) ;
 		if( hr.Failed || swapChain is null ) throw new DirectXComError( hr, "Failed to create SwapChain!" ) ;
 		this.SwapChain = swapChain ;
 		
@@ -173,7 +167,7 @@ public class Graphics: DisposableObject {
 			Flags          = DescriptorHeapFlags.None,
 		} ;
 		device.CreateDescriptorHeap( rtvHeapDesc,
-									 IDescriptorHeap.InterfaceGUID,
+									 IDescriptorHeap.IID,
 									 out rtvHeap ) ;
 		
 		rtvDescriptorSize = device.GetDescriptorHandleIncrementSize( DescriptorHeapType.RTV ) ;
@@ -183,7 +177,7 @@ public class Graphics: DisposableObject {
 		
 		// Create command allocator:
 		GraphicsDevice.CreateCommandAllocator( CommandListType.Direct, 
-											   CommandAllocator.InterfaceGUID, 
+											   ICommandAllocator.IID, 
 											   out commandAllocator ) ;
 		
 		void _createRenderTargetViews( ) {
@@ -194,7 +188,7 @@ public class Graphics: DisposableObject {
 			} ;
 			
 			for ( uint i = 0 ; i < FrameCount ; ++i ) {
-				swapChain!.GetBuffer< Resource >( i, out var renderTarget ) ;
+				swapChain!.GetBuffer< IResource >( i, out var renderTarget ) ;
 				GraphicsDevice.CreateRenderTargetView( renderTarget, rtvDesc, rtvHandle ) ;
 				renderTargets[ i ] = renderTarget ;
 				rtvHandle.ptr += rtvDescriptorSize ;
@@ -212,7 +206,7 @@ public class Graphics: DisposableObject {
 		GraphicsDevice.CreateRootSignature( 0,
 											serializedRootSig.Pointer, 
 											serializedRootSig.GetBufferSize( ),
-											IRootSignature.InterfaceGUID, out rootSignature ) ;
+											IRootSignature.IID, out rootSignature ) ;
 		
 		
 		// Create the pipeline state, which includes compiling and loading shaders.
@@ -299,7 +293,7 @@ public class Graphics: DisposableObject {
 		} ;
 		
 		GraphicsDevice.CreateGraphicsPipelineState( psoDesc,
-													PipelineState.InterfaceGUID, 
+													IPipelineState.IID, 
 													out pipelineState ) ;
 		
 		// Create the command list.
@@ -307,11 +301,9 @@ public class Graphics: DisposableObject {
 										  CommandListType.Direct,
 										  commandAllocator, 
 										  pipelineState,
-										  IGraphicsCommandList.InterfaceGUID,
+										  IGraphicsCommandList.IID,
 										  out var cmdList ) ;
-		commandList = (IGraphicsCommandList)cmdList ;
-		
-		
+		this.commandList = (IGraphicsCommandList)cmdList ;
 		
 		// Create the vertex buffer & define geometry of a triangle:
 		var triangleVertices = new[ ] {
@@ -341,7 +333,7 @@ public class Graphics: DisposableObject {
 												ResourceDescription.Buffer( (ulong)vertexBufferSize ),
 									  ResourceStates.GenericRead,
 												null,
-												IResource.InterfaceGUID,
+												IResource.IID,
 												out vertexBuffer ) ;
 
 		// Copy the triangle data to the vertex buffer.
@@ -367,7 +359,7 @@ public class Graphics: DisposableObject {
 		
 		// Create synchronization objects.
 		GraphicsDevice.CreateFence(0, FenceFlags.None,
-								   IFence.InterfaceGUID, out fence ) ;
+								   IFence.IID, out fence ) ;
 		fenceValue = 1 ;
 		
 		// Create an event handle to use for frame synchronization.
@@ -383,9 +375,9 @@ public class Graphics: DisposableObject {
 		
 		// Execute the command list:
 		//! What is this crap ???? ...
-		commandQueue.ExecuteCommandLists< GraphicsCommandList >( 1, 
-										  new GraphicsCommandList[ ] {
-											  (GraphicsCommandList)commandList
+		commandQueue.ExecuteCommandLists< IGraphicsCommandList >( 1, 
+										  new IGraphicsCommandList[ ] {
+											  (IGraphicsCommandList)commandList
 										  } ) ;
 		
 		// Present the frame:

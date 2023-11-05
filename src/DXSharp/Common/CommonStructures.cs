@@ -5,6 +5,8 @@ using System.Numerics ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
+using Windows.Win32.Graphics.Dxgi ;
+
 #endregion
 namespace DXSharp ;
 
@@ -99,3 +101,18 @@ public struct ColorF {
 	public static implicit operator ColorF( Color color ) => new( color ) ;
 	public static implicit operator Color( ColorF color ) => color.Color ;
 } ;
+
+
+
+[StructLayout(LayoutKind.Explicit, Size = 8)]
+public struct LargeInteger {
+	[FieldOffset(0)]
+	public uint LowPart ;
+	
+	[FieldOffset(4)]
+	public int HighPart ;
+
+	// This is the 64-bit integer representation of the LARGE_INTEGER.
+	[FieldOffset(0)]
+	public long QuadPart ;
+}

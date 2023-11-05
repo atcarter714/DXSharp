@@ -1,24 +1,16 @@
 ﻿#region Using Directives
-
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
 [ProxyFor( typeof(ID3D12Heap) )]
-public interface IHeap: IPageable,
-						IComObjectRef< ID3D12Heap >,
-						IUnknownWrapper< ID3D12Heap > {
+public interface IHeap: IPageable {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Heap >? ComPointer { get ; }
-	new ID3D12Heap? COMObject => ComPointer?.Interface ;
-	ID3D12Heap? IComObjectRef< ID3D12Heap >.COMObject => COMObject ;
-	ComPtr< ID3D12Heap >? IUnknownWrapper< ID3D12Heap >.ComPointer => ComPointer ;
-	// ==================================================================================
 	
 	/// <summary>Gets the properties of a heap.</summary>
 	/// <returns>
@@ -39,13 +31,12 @@ public interface IHeap: IPageable,
 	/// </remarks>
 	/// <seealso href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12heap-getdesc">ID3D12Heap::GetDesc method</seealso>
 	/// <seealso href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_desc">D3D12_HEAP_DESC structure</seealso>
-	HeapDescription GetDesc( ) => COMObject!.GetDesc( ) ;
-	
+	HeapDescription GetDesc( ) ;
 	
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Heap) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Heap).GUID ;
-
+	
+	new static Type ComType => typeof(ID3D12Heap) ;
+	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -62,7 +53,28 @@ public interface IHeap: IPageable,
 } ;
 
 
-/*[Wrapper( typeof( ID3D12Heap ) )]
-public interface IHeap< ID3D12 >: IHeap
-	where ID3D12: ID3D12Heap, ID3D12Pageable, ID3D12HeapChild, IUnknown { } ;*/
+[Wrapper( typeof( ID3D12Heap1 ) )]
+public interface IHeap1: IHeap {
+	// ---------------------------------------------------------------------------------
+	
+	void GetProtectedResourceSession( in Guid riid, out IProtectedResourceSession ppProtectedSession ) ;
+	
+	// ---------------------------------------------------------------------------------
+	
+	new static Type ComType => typeof(ID3D12Heap1) ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12Heap1).GUID
+																	 .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
+	// ==================================================================================
+} ;
 

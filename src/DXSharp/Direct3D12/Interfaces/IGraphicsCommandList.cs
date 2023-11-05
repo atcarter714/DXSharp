@@ -1,16 +1,13 @@
 ﻿#region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+
 using Windows.Win32 ;
-using Windows.Win32.Foundation ;
-using Windows.Win32.Graphics.Direct3D ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using Windows.Win32.Graphics.Dxgi.Common ;
+
 using DXSharp.DXGI ;
-using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.Direct3D12 ;
-
 
 
 // ===================================================================================
@@ -18,24 +15,9 @@ namespace DXSharp.Direct3D12 ;
 // ===================================================================================
 
 [ProxyFor(typeof(ID3D12GraphicsCommandList))]
-public unsafe interface IGraphicsCommandList: ICommandList,
-											  IComObjectRef< ID3D12GraphicsCommandList >,
-											  IUnknownWrapper< ID3D12GraphicsCommandList > {
-	public new static Guid InterfaceGUID => typeof(ID3D12GraphicsCommandList).GUID ;
-	public new static Type ComType => typeof( ID3D12GraphicsCommandList ) ;
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12GraphicsCommandList >? ComPointer { get ; }
-	new ID3D12GraphicsCommandList? COMObject => ComPointer?.Interface ;
-	ID3D12GraphicsCommandList? IComObjectRef< ID3D12GraphicsCommandList >.COMObject => COMObject ;
-	ComPtr< ID3D12GraphicsCommandList >? IUnknownWrapper< ID3D12GraphicsCommandList >.ComPointer => ComPointer ;
-	ComPtr< ID3D12CommandList >? ICommandList.ComPointer => new(COMObject!) ;
-	
-	ID3D12CommandList? ICommandList.COMObject => COMObject ;
-	ID3D12CommandList? IComObjectRef< ID3D12CommandList >.COMObject => COMObject ;
-
+public interface IGraphicsCommandList: ICommandList {
 	
 	// ---------------------------------------------------------------------------------
-
 
 	/// <summary>Indicates that recording to the command list has finished. (ID3D12GraphicsCommandList.Close)</summary>
 	/// <returns>
@@ -44,9 +26,9 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>This doc was truncated.</para>
 	/// </returns>
 	/// <remarks>The runtime will validate that the command list has not previously been closed.  If an error was encountered during recording, the error code is returned here.  The runtime won't call the close device driver interface (DDI) in this case.</remarks>
-	void Close( ) => COMObject?.Close( ) ;
-
-
+	void Close( ) ;
+	
+	
 	/// <summary>Resets a command list back to its initial state as if a new command list was just created. (ID3D12GraphicsCommandList.Reset)</summary>
 	/// <param name="pAllocator">
 	/// <para>Type: <b>ID3D12CommandAllocator*</b> A pointer to the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12commandallocator">ID3D12CommandAllocator</a> object that the device creates command lists from.</para>
@@ -72,17 +54,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para><h3><a id="Debug_layer"></a><a id="debug_layer"></a><a id="DEBUG_LAYER"></a>Debug layer</h3> The debug layer will also track graphics processing unit (GPU) progress and issue an error if it can't prove that there are no outstanding executions of the command list.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-reset#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void Reset( ICommandAllocator pAllocator, IPipelineState pInitialState ) {
-#if DEBUG || DEBUG_COM || DEV_BUILD
-		ArgumentNullException.ThrowIfNull( pAllocator, nameof(pAllocator) ) ;
-		ArgumentNullException.ThrowIfNull( pAllocator.COMObject, nameof(pAllocator.COMObject) ) ;
-		ArgumentNullException.ThrowIfNull( pInitialState, nameof(pInitialState) ) ;
-		ArgumentNullException.ThrowIfNull( pInitialState.COMObject, nameof(pInitialState.COMObject) ) ;
-#endif
-		
-		var device = COMObject ?? throw new NullReferenceException( nameof( IGraphicsCommandList ) ) ;
-		device.Reset( pAllocator.COMObject, pInitialState.COMObject ) ;
-	}
+	void Reset( ICommandAllocator pAllocator, IPipelineState pInitialState ) ;
 
 	
 	/// <summary>Resets the state of a direct command list back to the state it was in when the command list was created. (ID3D12GraphicsCommandList.ClearState)</summary>
@@ -96,9 +68,9 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>The app-provided pipeline state object becomes bound as the currently set pipeline state object.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearstate#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void ClearState( ID3D12PipelineState pPipelineState ) => COMObject!.ClearState( pPipelineState ) ;
+	void ClearState( ID3D12PipelineState pPipelineState ) ;
 
-	
+
 	/// <summary>Draws non-indexed, instanced primitives.</summary>
 	/// <param name="VertexCountPerInstance">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> Number of vertices to draw.</para>
@@ -122,10 +94,8 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>The vertex data for an instanced draw call typically comes from a vertex buffer that is bound to the pipeline. But, you could also provide the vertex data from a shader that has instanced data identified with a system-value semantic (SV_InstanceID).</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-drawinstanced#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void DrawInstanced( uint VertexCountPerInstance, uint InstanceCount, 
-						uint StartVertexLocation, uint StartInstanceLocation ) => 
-		COMObject!.DrawInstanced( VertexCountPerInstance, InstanceCount, 
-								  StartVertexLocation, StartInstanceLocation ) ;
+	void DrawInstanced( uint VertexCountPerInstance, uint InstanceCount,
+						uint StartVertexLocation,    uint StartInstanceLocation ) ;
 	
 
 	/// <summary>Draws indexed, instanced primitives.</summary>
@@ -155,10 +125,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// </remarks>
 	void DrawIndexedInstanced( uint IndexCountPerInstance, uint InstanceCount, 
 							   uint StartIndexLocation, int BaseVertexLocation, 
-							   uint StartInstanceLocation ) => 
-		COMObject!.DrawIndexedInstanced( IndexCountPerInstance, InstanceCount,
-										 StartIndexLocation, BaseVertexLocation,
-										 StartInstanceLocation ) ;
+							   uint StartInstanceLocation ) ;
 
 	
 	/// <summary>Executes a compute shader on a thread group.</summary>
@@ -178,8 +145,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>You call the <b>Dispatch</b> method to execute commands in a compute shader. A compute shader can be run on many threads in parallel, within a thread group. Index a particular thread, within a thread group using a 3D vector given by (x,y,z).</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-dispatch#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void Dispatch( uint ThreadGroupCountX, uint ThreadGroupCountY, uint ThreadGroupCountZ ) => 
-		COMObject!.Dispatch( ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ ) ;
+	void Dispatch( uint ThreadGroupCountX, uint ThreadGroupCountY, uint ThreadGroupCountZ ) ;
 
 	
 	/// <summary>Copies a region of a buffer from one resource to another.</summary>
@@ -210,10 +176,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// </remarks>
 	void CopyBufferRegion( IResource pDstBuffer, ulong DstOffset, 
 						   IResource pSrcBuffer, ulong SrcOffset, 
-						   ulong NumBytes ) => 
-		COMObject!.CopyBufferRegion( pDstBuffer.COMObject, DstOffset, 
-									 pSrcBuffer.COMObject, SrcOffset, 
-									 NumBytes ) ;
+						   ulong NumBytes ) ;
 	
 
 	/// <summary>This method uses the GPU to copy texture data between two locations. Both the source and the destination may reference texture data located within either a buffer resource or a texture resource.</summary>
@@ -248,11 +211,10 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>This doc was truncated.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copytextureregion#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CopyTextureRegion( in D3D12_TEXTURE_COPY_LOCATION pDst, 
+	void CopyTextureRegion( in TextureCopyLocation pDst, 
 							uint DstX, uint DstY, uint DstZ, 
-							in D3D12_TEXTURE_COPY_LOCATION pSrc, 
-							[Optional] D3D12_BOX* pSrcBox ) => 
-		COMObject!.CopyTextureRegion( pDst, DstX, DstY, DstZ, pSrc, pSrcBox ) ;
+							in TextureCopyLocation pSrc,
+							[Optional] in Box pSrcBox ) ;
 	
 
 	/// <summary>Copies the entire contents of the source resource to the destination resource.</summary>
@@ -268,8 +230,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para><b>CopyResource</b> operations are performed on the GPU, and do not incur a significant CPU workload linearly dependent on the size of the data to copy. <b>CopyResource</b> can be used to initialize resources that alias the same heap memory. See <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource">CreatePlacedResource</a> for more details.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copyresource#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CopyResource( IResource pDstResource, IResource pSrcResource ) =>
-		COMObject!.CopyResource( pDstResource.COMObject, pSrcResource.COMObject ) ;
+	void CopyResource( IResource pDstResource, IResource pSrcResource ) ;
 
 	
 	/// <summary>Copies tiles from buffer to tiled resource or vice versa. (ID3D12GraphicsCommandList.CopyTiles)</summary>
@@ -307,18 +268,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 					in TileRegionSize pTileRegionSize,
 					IResource pBuffer,
 					ulong BufferStartOffsetInBytes,
-					TileCopyFlags Flags ) {
-		unsafe {
-			fixed( void* pTiledResCoord = &pTileRegionStartCoordinate, pRegionSize = &pTileRegionSize) {
-				COMObject!.CopyTiles( pTiledResource.COMObject, 
-									  (D3D12_TILED_RESOURCE_COORDINATE *)pTiledResCoord, 
-									  (D3D12_TILE_REGION_SIZE *)pRegionSize,
-									  pBuffer.COMObject, 
-									  BufferStartOffsetInBytes, 
-									  (D3D12_TILE_COPY_FLAGS)Flags ) ;
-			}
-		}
-	}
+					TileCopyFlags Flags ) ;
 
 	
 	/// <summary>Copy a multi-sampled resource into a non-multi-sampled resource.</summary>
@@ -349,9 +299,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// </remarks>
 	void ResolveSubresource( IResource pDstResource, uint DstSubresource, 
 							 IResource pSrcResource, uint SrcSubresource, 
-							 Format Format) => COMObject!.ResolveSubresource( pDstResource.COMObject, DstSubresource, 
-																			  pSrcResource.COMObject, SrcSubresource, 
-																			  (DXGI_FORMAT)Format ) ;
+							 Format Format) ;
 
 	
 	/// <summary>Bind information about the primitive type, and data order that describes input data for the input assembler stage. (ID3D12GraphicsCommandList.IASetPrimitiveTopology)</summary>
@@ -362,8 +310,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-iasetprimitivetopology">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void IASetPrimitiveTopology( PrimitiveTopology PrimitiveTopology ) => 
-		COMObject!.IASetPrimitiveTopology( (D3D_PRIMITIVE_TOPOLOGY)PrimitiveTopology ) ;
+	void IASetPrimitiveTopology( PrimitiveTopology PrimitiveTopology ) ;
 
 	
 	/// <summary>Bind an array of viewports to the rasterizer stage of the pipeline. (ID3D12GraphicsCommandList.RSSetViewports)</summary>
@@ -380,13 +327,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>Which viewport to use is determined by the <a href="https://docs.microsoft.com/windows/desktop/direct3dhlsl/dx-graphics-hlsl-semantics">SV_ViewportArrayIndex</a> semantic output by a geometry shader; if a geometry shader does not specify the semantic, Direct3D will use the first viewport in the array.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-rssetviewports#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void RSSetViewports( uint NumViewports, in Span< Viewport > pViewports ) {
-		unsafe {
-			fixed( Viewport* pViewportsPtr = &pViewports[0] ) {
-				COMObject!.RSSetViewports( NumViewports, (D3D12_VIEWPORT *)pViewportsPtr ) ;
-			}
-		}
-	}
+	void RSSetViewports( uint NumViewports, in Span< Viewport > pViewports ) ;
 
 	
 	/// <summary>Binds an array of scissor rectangles to the rasterizer stage.</summary>
@@ -407,12 +348,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// (see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-rssetviewports">RSSetViewports</a>).</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-rssetscissorrects#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void RSSetScissorRects( uint NumRects, in Span< Rect > pRects ) {
-		unsafe { fixed( Rect* pRectsPtr = &pRects[0] ) {
-				COMObject!.RSSetScissorRects( NumRects, (RECT *)pRectsPtr ) ;
-			}
-		}
-	}
+	void RSSetScissorRects( uint NumRects, in Span< Rect > pRects ) ;
 
 	
 	/// <summary>Sets the blend factor that modulate values for a pixel shader, render target, or both.</summary>
@@ -424,7 +360,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>If you created the blend-state object with [D3D12_BLEND_BLEND_FACTOR](./ne-d3d12-d3d12_blend.md) or **D3D12_BLEND_INV_BLEND_FACTOR**, then the blending stage uses the non-NULL array of blend factors. Otherwise,the blending stage doesn't use the non-NULL array of blend factors; the runtime stores the blend factors. If you pass NULL, then the runtime uses or stores a blend factor equal to `{ 1, 1, 1, 1 }`.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetblendfactor#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void OMSetBlendFactor( float[ ] BlendFactor ) => COMObject!.OMSetBlendFactor( BlendFactor ) ;
+	void OMSetBlendFactor( float[ ] BlendFactor ) ;
 
 	
 	/// <summary>Sets the reference value for depth stencil tests.</summary>
@@ -435,7 +371,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetstencilref">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void OMSetStencilRef( uint StencilRef ) => COMObject!.OMSetStencilRef( StencilRef ) ;
+	void OMSetStencilRef( uint StencilRef ) ;
 
 	/// <summary>Sets all shaders and programs most of the fixed-function state of the graphics processing unit (GPU) pipeline.</summary>
 	/// <param name="pPipelineState">
@@ -445,7 +381,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setpipelinestate">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetPipelineState( IPipelineState pPipelineState ) => COMObject!.SetPipelineState( pPipelineState.COMObject ) ;
+	void SetPipelineState( IPipelineState pPipelineState ) ;
 
 	/// <summary>Notifies the driver that it needs to synchronize multiple accesses to resources. (ID3D12GraphicsCommandList.ResourceBarrier)</summary>
 	/// <param name="NumBarriers">
@@ -462,31 +398,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-resourcebarrier#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void ResourceBarrier( uint NumBarriers,
-						  ResourceBarrier[ ] pBarriers ) {
-		var commandList = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe
-		{
-			var _barriers = new D3D12_RESOURCE_BARRIER[pBarriers.Length];
-			for (int i = 0; i < pBarriers.Length; ++i)
-			{
-				_barriers[i] = pBarriers[i] ;
-			}
-			var _barriers2 = Unsafe.As< D3D12_RESOURCE_BARRIER[ ] >( pBarriers ) ;
-			var cmdList = (ID3D12GraphicsCommandList *) ComPointer!.InterfaceVPtr ;
-
-
-			var vtable = *( nint**)ComPointer.InterfaceVPtr ;
-			var getDescriptor = (delegate* unmanaged[ Stdcall, MemberFunction ]
-				< ID3D12GraphicsCommandList*, uint, D3D12_RESOURCE_BARRIER*, void >)( vtable[ 26 ] ) ;
-
-			fixed( D3D12_RESOURCE_BARRIER* barriersPtr = &_barriers2[ 0] )
-				getDescriptor( cmdList, NumBarriers, barriersPtr ) ;
-		}
-
-
-		//COMObject!.ResourceBarrier( NumBarriers, _barriers ) ;
-
-	}
+						  ResourceBarrier[ ] pBarriers ) ;
 
 
 	/// <summary>Executes a bundle.</summary>
@@ -501,7 +413,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>The debug layer will also validate that the command allocator associated with the bundle has not been reset since <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-close">Close</a> was called on the command list.  This validation occurs at <b>ExecuteBundle</b> time, and when the parent command list is executed on a command queue.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-executebundle#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void ExecuteBundle( IGraphicsCommandList pCommandList ) => COMObject!.ExecuteBundle( pCommandList.COMObject ) ;
+	void ExecuteBundle( IGraphicsCommandList pCommandList ) ;
 
 
 	/// <summary>Changes the currently bound descriptor heaps that are associated with a command list.</summary>
@@ -518,13 +430,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setdescriptorheaps#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void SetDescriptorHeaps( uint NumDescriptorHeaps,
-							 IDescriptorHeap[ ] ppDescriptorHeaps ) {
-		ID3D12DescriptorHeap[ ] descriptorHeaps = new ID3D12DescriptorHeap[ NumDescriptorHeaps ] ;
-		for( int i = 0; i < NumDescriptorHeaps; ++i )
-			descriptorHeaps[ i ] = ppDescriptorHeaps[ i ].COMObject ?? throw new NullReferenceException() ;
-
-		COMObject!.SetDescriptorHeaps( NumDescriptorHeaps, descriptorHeaps ) ;
-	}
+							 IDescriptorHeap[ ] ppDescriptorHeaps ) ;
 
 	
 	/// <summary>Sets the layout of the compute root signature.</summary>
@@ -535,7 +441,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setcomputerootsignature">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetComputeRootSignature( IRootSignature pRootSignature ) => COMObject!.SetComputeRootSignature( pRootSignature.COMObject ) ;
+	void SetComputeRootSignature( IRootSignature pRootSignature ) ;
 
 	
 	/// <summary>Sets the layout of the graphics root signature.</summary>
@@ -546,7 +452,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setgraphicsrootsignature">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetGraphicsRootSignature( IRootSignature pRootSignature ) => COMObject!.SetGraphicsRootSignature( pRootSignature.COMObject ) ;
+	void SetGraphicsRootSignature( IRootSignature pRootSignature ) ;
 
 	
 	/// <summary>Sets a descriptor table into the compute root signature.</summary>
@@ -561,8 +467,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setcomputerootdescriptortable">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetComputeRootDescriptorTable( uint RootParameterIndex, GPUDescriptorHandle BaseDescriptor ) => 
-		COMObject!.SetComputeRootDescriptorTable( RootParameterIndex, BaseDescriptor ) ;
+	void SetComputeRootDescriptorTable( uint RootParameterIndex, GPUDescriptorHandle BaseDescriptor ) ;
 
 	
 	/// <summary>Sets a descriptor table into the graphics root signature.</summary>
@@ -577,8 +482,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setgraphicsrootdescriptortable">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetGraphicsRootDescriptorTable( uint RootParameterIndex, GPUDescriptorHandle BaseDescriptor ) => 
-		COMObject!.SetGraphicsRootDescriptorTable( RootParameterIndex, BaseDescriptor ) ;
+	void SetGraphicsRootDescriptorTable( uint RootParameterIndex, GPUDescriptorHandle BaseDescriptor ) ;
 
 	
 	/// <summary>Sets a constant in the compute root signature.</summary>
@@ -597,8 +501,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setcomputeroot32bitconstant">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetComputeRoot32BitConstant( uint RootParameterIndex, uint SrcData, uint DestOffsetIn32BitValues ) => 
-		COMObject!.SetComputeRoot32BitConstant( RootParameterIndex, SrcData, DestOffsetIn32BitValues ) ;
+	void SetComputeRoot32BitConstant( uint RootParameterIndex, uint SrcData, uint DestOffsetIn32BitValues ) ;
 
 	
 	/// <summary>Sets a constant in the graphics root signature.</summary>
@@ -617,8 +520,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setgraphicsroot32bitconstant">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetGraphicsRoot32BitConstant( uint RootParameterIndex, uint SrcData, uint DestOffsetIn32BitValues ) => 
-		COMObject!.SetGraphicsRoot32BitConstant( RootParameterIndex, SrcData, DestOffsetIn32BitValues ) ;
+	void SetGraphicsRoot32BitConstant( uint RootParameterIndex, uint SrcData, uint DestOffsetIn32BitValues ) ;
 
 	
 	/// <summary>Sets a group of constants in the compute root signature.</summary>
@@ -641,8 +543,8 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setcomputeroot32bitconstants">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetComputeRoot32BitConstants( uint RootParameterIndex, uint Num32BitValuesToSet, void* pSrcData, uint DestOffsetIn32BitValues ) => 
-		COMObject!.SetComputeRoot32BitConstants( RootParameterIndex, Num32BitValuesToSet, pSrcData, DestOffsetIn32BitValues ) ;
+	void SetComputeRoot32BitConstants( uint RootParameterIndex, uint Num32BitValuesToSet, 
+									   nint pSrcData, uint DestOffsetIn32BitValues ) ;
 	
 
 	/// <summary>Sets a group of constants in the graphics root signature.</summary>
@@ -665,8 +567,8 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setgraphicsroot32bitconstants">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetGraphicsRoot32BitConstants( uint RootParameterIndex, uint Num32BitValuesToSet, void* pSrcData, uint DestOffsetIn32BitValues ) => 
-		COMObject!.SetGraphicsRoot32BitConstants( RootParameterIndex, Num32BitValuesToSet, pSrcData, DestOffsetIn32BitValues ) ;
+	void SetGraphicsRoot32BitConstants( uint RootParameterIndex, uint Num32BitValuesToSet, 
+										nint pSrcData, uint DestOffsetIn32BitValues ) ;
 	
 
 	/// <summary>Sets a CPU descriptor handle for the constant buffer in the compute root signature.</summary>
@@ -681,8 +583,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setcomputerootconstantbufferview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetComputeRootConstantBufferView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetComputeRootConstantBufferView( RootParameterIndex, BufferLocation ) ;
+	void SetComputeRootConstantBufferView( uint RootParameterIndex, ulong BufferLocation ) ;
 
 	
 	/// <summary>Sets a CPU descriptor handle for the constant buffer in the graphics root signature.</summary>
@@ -697,8 +598,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setgraphicsrootconstantbufferview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetGraphicsRootConstantBufferView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetGraphicsRootConstantBufferView( RootParameterIndex, BufferLocation ) ;
+	void SetGraphicsRootConstantBufferView( uint RootParameterIndex, ulong BufferLocation ) ;
 	
 
 	/// <summary>Sets a CPU descriptor handle for the shader resource in the compute root signature.</summary>
@@ -713,8 +613,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setcomputerootshaderresourceview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetComputeRootShaderResourceView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetComputeRootShaderResourceView( RootParameterIndex, BufferLocation ) ;
+	void SetComputeRootShaderResourceView( uint RootParameterIndex, ulong BufferLocation ) ;
 	
 
 	/// <summary>Sets a CPU descriptor handle for the shader resource in the graphics root signature.</summary>
@@ -729,8 +628,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setgraphicsrootshaderresourceview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetGraphicsRootShaderResourceView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetGraphicsRootShaderResourceView( RootParameterIndex, BufferLocation ) ;
+	void SetGraphicsRootShaderResourceView( uint RootParameterIndex, ulong BufferLocation ) ;
 	
 
 	/// <summary>Sets a CPU descriptor handle for the unordered-access-view resource in the compute root signature.</summary>
@@ -745,8 +643,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setcomputerootunorderedaccessview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetComputeRootUnorderedAccessView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetComputeRootUnorderedAccessView( RootParameterIndex, BufferLocation ) ;
+	void SetComputeRootUnorderedAccessView( uint RootParameterIndex, ulong BufferLocation ) ;
 	
 
 	/// <summary>Sets a CPU descriptor handle for the unordered-access-view resource in the graphics root signature.</summary>
@@ -761,8 +658,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setgraphicsrootunorderedaccessview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetGraphicsRootUnorderedAccessView( uint RootParameterIndex, ulong BufferLocation ) => 
-		COMObject!.SetGraphicsRootUnorderedAccessView( RootParameterIndex, BufferLocation ) ;
+	void SetGraphicsRootUnorderedAccessView( uint RootParameterIndex, ulong BufferLocation ) ;
 	
 
 	/// <summary>Sets the view for the index buffer.</summary>
@@ -771,10 +667,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-iasetindexbuffer#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>Only one index buffer can be bound to the graphics pipeline at any one time.</remarks>
-	void IASetIndexBuffer( [Optional] in IndexBufferView pView ) {
-		fixed( IndexBufferView* viewPtr = &pView )
-			COMObject!.IASetIndexBuffer( (D3D12_INDEX_BUFFER_VIEW *)viewPtr ) ;
-	}
+	void IASetIndexBuffer( [Optional] in IndexBufferView pView ) ;
 	
 	
 	/// <summary>Sets a CPU descriptor handle for the vertex buffers.</summary>
@@ -793,10 +686,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-iasetvertexbuffers">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void IASetVertexBuffers( uint StartSlot, uint NumViews, [Optional] Span< VertexBufferView > pViews ) {
-		fixed ( VertexBufferView* pViewsPtr = pViews )
-			COMObject!.IASetVertexBuffers( StartSlot, NumViews, (D3D12_VERTEX_BUFFER_VIEW*) pViewsPtr ) ;
-	}
+	void IASetVertexBuffers( uint StartSlot, uint NumViews, [Optional] Span< VertexBufferView > pViews ) ;
 	
 	
 	/// <summary>Sets the stream output buffer views.</summary>
@@ -815,10 +705,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-sosettargets">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SOSetTargets( uint StartSlot, uint NumViews, [Optional] Span< StreamOutputBufferView > pViews ) {
-		fixed ( StreamOutputBufferView* pViewsPtr = pViews )
-			COMObject!.SOSetTargets( StartSlot, NumViews, (D3D12_STREAM_OUTPUT_BUFFER_VIEW*) pViewsPtr ) ;
-	}
+	void SOSetTargets( uint StartSlot, uint NumViews, [Optional] Span< StreamOutputBufferView > pViews ) ;
 	
 	
 	/// <summary>Sets CPU descriptor handles for the render targets and depth stencil.</summary>
@@ -845,14 +732,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	void OMSetRenderTargets( uint NumRenderTargetDescriptors,
 							 [Optional] Span< CPUDescriptorHandle > pRenderTargetDescriptors,
 							 bool RTsSingleHandleToDescriptorRange,
-							 [Optional] Span< CPUDescriptorHandle > pDepthStencilDescriptor ) {
-		fixed( CPUDescriptorHandle* pRenderTargetDescriptorsPtr = pRenderTargetDescriptors, 
-			   pDepthStencilDescriptorPtr = pDepthStencilDescriptor )
-			COMObject!.OMSetRenderTargets( NumRenderTargetDescriptors,
-										   (D3D12_CPU_DESCRIPTOR_HANDLE *)pRenderTargetDescriptorsPtr,
-										   RTsSingleHandleToDescriptorRange,
-										   (D3D12_CPU_DESCRIPTOR_HANDLE *)pDepthStencilDescriptorPtr ) ;
-	}
+							 [Optional] Span< CPUDescriptorHandle > pDepthStencilDescriptor ) ;
 
 
 	/// <summary>Clears the depth-stencil resource. (ID3D12GraphicsCommandList.ClearDepthStencilView)</summary>
@@ -889,12 +769,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 								float Depth, 
 								byte Stencil,
 								uint NumRects,
-								Span< Rect > pRects ) {
-		fixed( Rect* pRectsPtr = pRects ) {
-			COMObject!.ClearDepthStencilView( DepthStencilView, (D3D12_CLEAR_FLAGS)clearFlags, 
-											  Depth, Stencil, NumRects, (RECT*)pRectsPtr ) ;
-		}
-	}
+								Span< Rect > pRects ) ;
 
 
 	/// <summary>Sets all the elements in a render target to one value.</summary>
@@ -922,17 +797,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	void ClearRenderTargetView( CPUDescriptorHandle RenderTargetView, 
 								float[ ] ColorRGBA,
 								uint NumRects,
-								Span< Rect > pRects = default ) {
-		if( pRects is not { Length: > 0 } )
-			pRects = default ;
-		
-		fixed( Rect* pRectsPtr = (pRects == default ? null : pRects) ) {
-			COMObject!.ClearRenderTargetView( RenderTargetView,
-											  ColorRGBA,
-											  pRectsPtr is null ? 0 : NumRects, 
-											  (RECT *)pRectsPtr ) ;
-		}
-	}
+								Span< Rect > pRects = default ) ;
 
 
 	/// <summary>Sets all the elements in a unordered-access view (UAV) to the specified integer values.</summary>
@@ -964,13 +829,10 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	void ClearUnorderedAccessViewUint( GPUDescriptorHandle ViewGPUHandleInCurrentHeap,
 									   CPUDescriptorHandle ViewCPUHandle,
 									   IResource           pResource,
-									   uint[ ]             Values, uint NumRects, Rect* pRects ) {
-		COMObject!.ClearUnorderedAccessViewUint( ViewGPUHandleInCurrentHeap, 
-												 ViewCPUHandle, 
-												 pResource.COMObject,
-												 Values, NumRects, (RECT *)pRects ) ;
-	}
-
+									   uint[ ]             Values, 
+									   uint                NumRects, 
+									   in Span< Rect >     pRects ) ;
+	
 	
 	/// <summary>Sets all the elements in a unordered access view to the specified float values.</summary>
 	/// <param name="ViewGPUHandleInCurrentHeap">
@@ -1000,11 +862,10 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <remarks></remarks>
 	void ClearUnorderedAccessViewFloat( GPUDescriptorHandle ViewGPUHandleInCurrentHeap,
 										CPUDescriptorHandle ViewCPUHandle,
-										IResource pResource,
-										float[ ] Values, uint NumRects, Rect* pRects) {
-			COMObject!.ClearUnorderedAccessViewFloat( ViewGPUHandleInCurrentHeap, ViewCPUHandle, pResource.COMObject,
-													 Values, NumRects, (RECT *)pRects ) ;
-	}
+										IResource           pResource,
+										float[ ]            Values, 
+										uint                NumRects, 
+										in Span< Rect >     pRects ) ;
 
 
 	/// <summary>Discards a resource.</summary>
@@ -1021,13 +882,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>This doc was truncated.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-discardresource#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void DiscardResource( IResource pResource, [Optional] in Span< DiscardRegion > pRegion ) {
-		unsafe {
-			fixed( DiscardRegion* pRegionPtr = pRegion ) {
-				COMObject!.DiscardResource( pResource.COMObject, (D3D12_DISCARD_REGION*)pRegionPtr ) ;
-			}
-		}
-	}
+	void DiscardResource( IResource pResource, [Optional] in Span< DiscardRegion > pRegion ) ;
 	
 	
 	/// <summary>Starts a query running. (ID3D12GraphicsCommandList.BeginQuery)</summary>
@@ -1044,8 +899,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-beginquery#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/queries">Queries</a> for more information about D3D12 queries.</remarks>
-	void BeginQuery( IQueryHeap pQueryHeap, QueryType Type, uint Index ) => 
-		COMObject!.BeginQuery( pQueryHeap.COMObject, (D3D12_QUERY_TYPE)Type, Index) ;
+	void BeginQuery( IQueryHeap pQueryHeap, QueryType Type, uint Index ) ;
 	
 
 	/// <summary>Ends a running query.</summary>
@@ -1062,8 +916,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-endquery#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/queries">Queries</a> for more information about D3D12 queries.</remarks>
-	void EndQuery( IQueryHeap pQueryHeap, QueryType Type, uint Index ) => 
-		COMObject!.EndQuery( pQueryHeap.COMObject, (D3D12_QUERY_TYPE)Type, Index );
+	void EndQuery( IQueryHeap pQueryHeap, QueryType Type, uint Index ) ;
 
 	
 	/// <summary>Extracts data from a query. ResolveQueryData works with all heap types (default, upload, and readback).  ResolveQueryData works with all heap types (default, upload, and readback). .</summary>
@@ -1097,9 +950,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-resolvequerydata#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void ResolveQueryData( IQueryHeap pQueryHeap, QueryType Type, uint StartIndex, uint NumQueries, 
-						   IResource pDestinationBuffer, ulong AlignedDestinationBufferOffset ) =>
-	 		COMObject!.ResolveQueryData( pQueryHeap.COMObject, (D3D12_QUERY_TYPE)Type, StartIndex, NumQueries, 
-									 pDestinationBuffer.COMObject, AlignedDestinationBufferOffset ) ;
+						   IResource pDestinationBuffer, ulong AlignedDestinationBufferOffset ) ;
 
 	
 	/// <summary>Sets a rendering predicate.</summary>
@@ -1123,8 +974,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>Refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/predication">Predication</a> for more information.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setpredication#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetPredication( IResource pBuffer, ulong AlignedBufferOffset, PredicationOp Operation ) => 
-		COMObject!.SetPredication( pBuffer.COMObject, AlignedBufferOffset, (D3D12_PREDICATION_OP)Operation ) ;
+	void SetPredication( IResource pBuffer, ulong AlignedBufferOffset, PredicationOp Operation ) ;
 	
 
 	/// <summary>Not intended to be called directly.  Use the PIX event runtime to insert events into a command list. (ID3D12GraphicsCommandList.SetMarker)</summary>
@@ -1144,7 +994,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>This is a support method used internally by the PIX event runtime.  It is not intended to be called directly. To insert instrumentation markers at the current location within a D3D12 command list, use the <b>PIXSetMarker</b> function.  This is provided by the <a href="https://devblogs.microsoft.com/pix/winpixeventruntime/">WinPixEventRuntime</a> NuGet package.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setmarker#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetMarker(uint Metadata, [Optional] nint pData, uint Size ) => COMObject!.SetMarker( Metadata, (void *)pData, Size ) ;
+	void SetMarker(uint Metadata, [Optional] nint pData, uint Size ) ;
 	
 
 	/// <summary>Not intended to be called directly.  Use the PIX event runtime to insert events into a command list. (ID3D12GraphicsCommandList.BeginEvent)</summary>
@@ -1164,7 +1014,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>This is a support method used internally by the PIX event runtime.  It is not intended to be called directly. To mark the start of an instrumentation region at the current location within a D3D12 command list, use the <b>PIXBeginEvent</b> function or <b>PIXScopedEvent</b> macro.  These are provided by the <a href="https://devblogs.microsoft.com/pix/winpixeventruntime/">WinPixEventRuntime</a> NuGet package.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-beginevent#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void BeginEvent( uint Metadata, [Optional] nint pData, uint Size ) => COMObject!.BeginEvent( Metadata, (void *)pData, Size ) ;
+	void BeginEvent( uint Metadata, [Optional] nint pData, uint Size ) ;
 
 	
 	/// <summary>Not intended to be called directly.  Use the PIX event runtime to insert events into a command list. (ID3D12GraphicsCommandList.EndEvent)</summary>
@@ -1172,7 +1022,7 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 	/// <para>This is a support method used internally by the PIX event runtime.  It is not intended to be called directly. To mark the end of an instrumentation region at the current location within a D3D12 command list, use the <b>PIXEndEvent</b> function or <b>PIXScopedEvent</b> macro.  These are provided by the <a href="https://devblogs.microsoft.com/pix/winpixeventruntime/">WinPixEventRuntime</a> NuGet package.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-endevent#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void EndEvent( ) => COMObject!.EndEvent( ) ;
+	void EndEvent( ) ;
 
 
 	/// <summary>Apps perform indirect draws/dispatches using the ExecuteIndirect method.</summary>
@@ -1212,16 +1062,11 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 						  IResource pArgumentBuffer,
 						  ulong ArgumentBufferOffset,
 						  IResource pCountBuffer,
-						  ulong CountBufferOffset ) {
-		COMObject!.ExecuteIndirect( pCommandSignature.COMObject, MaxCommandCount, pArgumentBuffer.COMObject, 
-									ArgumentBufferOffset, pCountBuffer.COMObject, CountBufferOffset ) ;
-	}
-
+						  ulong CountBufferOffset ) ;
 	
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof(ID3D12GraphicsCommandList) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12GraphicsCommandList).GUID ;
-	
+	new static Type ComType => typeof( ID3D12GraphicsCommandList ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -1234,11 +1079,10 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 		}
 	}
 	
-	static IInstantiable IInstantiable. Instantiate()                 => new GraphicsCommandList( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new GraphicsCommandList( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate( ) => new GraphicsCommandList( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new GraphicsCommandList( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
 		new GraphicsCommandList( (ID3D12GraphicsCommandList?)pComObj! ) ;
-	
 	// ==================================================================================
 } ;
 
@@ -1248,25 +1092,9 @@ public unsafe interface IGraphicsCommandList: ICommandList,
 // ===================================================================================
 
 [ProxyFor(typeof(ID3D12GraphicsCommandList1))]
-public interface IGraphicsCommandList1 : IGraphicsCommandList,
-										 IComObjectRef< ID3D12GraphicsCommandList1 >,
-										 IUnknownWrapper< ID3D12GraphicsCommandList1 > {
-	// ---------------------------------------------------------------------------------
-	public new static Guid InterfaceGUID => typeof(ID3D12GraphicsCommandList1).GUID ;
-	public new static Type ComType => typeof( ID3D12GraphicsCommandList1 ) ;
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12GraphicsCommandList1 >? ComPointer { get ; }
-	new ID3D12GraphicsCommandList1? COMObject => ComPointer?.Interface ;
-	ID3D12GraphicsCommandList1? IComObjectRef< ID3D12GraphicsCommandList1 >.COMObject => COMObject ;
-	ComPtr< ID3D12GraphicsCommandList1 >? IUnknownWrapper< ID3D12GraphicsCommandList1 >.ComPointer => ComPointer ;
-	ComPtr< ID3D12GraphicsCommandList >? IGraphicsCommandList.ComPointer => new(COMObject!) ;
-	
-	ID3D12GraphicsCommandList? IGraphicsCommandList.COMObject => COMObject ;
-	ID3D12GraphicsCommandList? IComObjectRef< ID3D12GraphicsCommandList >.COMObject => COMObject ;
-
+public interface IGraphicsCommandList1 : IGraphicsCommandList {
 	
 	// ---------------------------------------------------------------------------------
-
 
 	/// <summary>Atomically copies a primary data element of type UINT from one resource to another, along with optional dependent resources.</summary>
 	/// <param name="pDstBuffer">
@@ -1298,34 +1126,13 @@ public interface IGraphicsCommandList1 : IGraphicsCommandList,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>This method is typically used to update resources for which normal rendering pipeline latency can be detrimental to user experience. For example, an application can compute a view matrix from the latest user input (such as from the sensors of a head-mounted display), and use this function to update and activate this matrix in command lists already dispatched to the GPU to reduce perceived latency between input and rendering.</remarks>
-	void AtomicCopyBufferUINT( IResource               pDstBuffer,
-							   ulong                   DstOffset,
-							   IResource               pSrcBuffer,
-							   ulong                   SrcOffset,
-							   uint                    Dependencies,
-							   IResource[ ]            ppDependentResources,
-							   in SubresourceRangeUInt64 pDependentSubresourceRanges ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
-		
-		// Copy dependent resources to an array (optimize later):
-		ID3D12Resource[ ] dependentResources = new ID3D12Resource[ ppDependentResources.Length ] ;
-		for ( int i = 0; i < dependentResources.Length; ++i ) {
-			dependentResources[ i ] = ppDependentResources[ i ].COMObject
-#if DEBUG || DEBUG_COM || DEV_BUILD
-				?? throw new ArgumentException( $"{nameof(IGraphicsCommandList1)}.{nameof(AtomicCopyBufferUINT)} :: " +
-											 $"Collection of dependent resources cannot contain null values!" )
-#endif
-				;
-		}
-		
-		unsafe {
-			fixed(SubresourceRangeUInt64* pDependentRanges = &pDependentSubresourceRanges)
-				cmdList.AtomicCopyBufferUINT( pDstBuffer.COMObject, DstOffset,
-											  pSrcBuffer.COMObject, SrcOffset,
-											  Dependencies, dependentResources,
-											  (D3D12_SUBRESOURCE_RANGE_UINT64 *)pDependentRanges ) ;
-		}
-	}
+	void AtomicCopyBufferUINT( IResource                 pDstBuffer,
+							   ulong                     DstOffset,
+							   IResource                 pSrcBuffer,
+							   ulong                     SrcOffset,
+							   uint                      Dependencies,
+							   IResource[]               ppDependentResources,
+							   in SubresourceRangeUInt64 pDependentSubresourceRanges ) ;
 
 
 	/// <summary>Atomically copies a primary data element of type UINT64 from one resource to another, along with optional dependent resources.</summary>
@@ -1358,34 +1165,13 @@ public interface IGraphicsCommandList1 : IGraphicsCommandList,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-atomiccopybufferuint64#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>This method is typically used to update resources for which normal rendering pipeline latency can be detrimental to user experience. For example, an application can compute a view matrix from the latest user input (such as from the sensors of a head-mounted display), and use this function to update and activate this matrix in command lists already dispatched to the GPU to reduce perceived latency between input and rendering.</remarks>
-	void AtomicCopyBufferUINT64( IResource pDstBuffer,
-										ulong DstOffset,
-										IResource pSrcBuffer,
-										ulong SrcOffset,
-										uint Dependencies,
-										IResource[ ] ppDependentResources,
-										in SubresourceRangeUInt64 pDependentSubresourceRanges ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
-		
-		// Copy dependent resources to an array (optimize later):
-		ID3D12Resource[ ] dependentResources = new ID3D12Resource[ ppDependentResources.Length ] ;
-		for ( int i = 0; i < dependentResources.Length; ++i ) {
-			dependentResources[ i ] = ppDependentResources[ i ].COMObject
-#if DEBUG || DEBUG_COM || DEV_BUILD
-									  ?? throw new ArgumentException( $"{nameof(IGraphicsCommandList1)}.{nameof(AtomicCopyBufferUINT)} :: " +
-																	  $"Collection of dependent resources cannot contain null values!" )
-#endif
-				;
-		}
-		
-		unsafe {
-			fixed(SubresourceRangeUInt64* pDependentRanges = &pDependentSubresourceRanges)
-				cmdList.AtomicCopyBufferUINT64( pDstBuffer.COMObject, DstOffset,
-												pSrcBuffer.COMObject, SrcOffset,
-												Dependencies, dependentResources,
-												(D3D12_SUBRESOURCE_RANGE_UINT64 *)pDependentRanges ) ;
-		}
-	}
+	void AtomicCopyBufferUINT64( IResource                 pDstBuffer,
+								 ulong                     DstOffset,
+								 IResource                 pSrcBuffer,
+								 ulong                     SrcOffset,
+								 uint                      Dependencies,
+								 IResource[]               ppDependentResources,
+								 in SubresourceRangeUInt64 pDependentSubresourceRanges ) ;
 	
 
 	/// <summary>This method enables you to change the depth bounds dynamically.</summary>
@@ -1401,8 +1187,8 @@ public interface IGraphicsCommandList1 : IGraphicsCommandList,
 	/// <para>Depth-bounds testing allows pixels and samples to be discarded if the currently-stored depth value is outside the range specified by <i>Min</i> and <i>Max</i>, inclusive. If the currently-stored depth value of the pixel or sample is inside this range, then the depth-bounds test passes and it is rendered; otherwise, the depth-bounds test fails and the pixel or sample is discarded. Note that the depth-bounds test considers the currently-stored depth value, not the depth value generated by the executing pixel shader. To use depth-bounds testing, the application must use the new <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device2-createpipelinestate">CreatePipelineState</a> method to enable depth-bounds testing on the PSO and then can use this command list method to change the depth-bounds dynamically. OMSetDepthBounds is an optional feature. Use the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-checkfeaturesupport">CheckFeatureSupport</a> method to determine whether or not this feature is supported by the user-mode driver. Support for this feature is reported through the [D3D12_FEATURE_D3D12_OPTIONS2](./ne-d3d12-d3d12_feature.md) structure.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-omsetdepthbounds#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void OMSetDepthBounds( float Min, float Max ) => COMObject!.OMSetDepthBounds( Min, Max ) ;
-	
+	void OMSetDepthBounds( float Min, float Max ) ;
+
 
 	/// <summary>This method configures the sample positions used by subsequent draw, copy, resolve, and similar operations.</summary>
 	/// <param name="NumSamplesPerPixel">
@@ -1421,16 +1207,9 @@ public interface IGraphicsCommandList1 : IGraphicsCommandList,
 	/// <para>The operational semantics of sample positions are determined by the various draw, copy, resolve, and other operations that can occur. <b>CommandList:</b> In the absence of any prior calls to SetSamplePositions in a CommandList, samples assume the default position based on the Pipeline State Object (PSO). The default positions are determined either by the SAMPLE_DESC portion of the PSO if it is present, or by the standard sample positions if the RASTERIZER_DESC portion of the PSO has ForcedSampleCount set to a value greater than 0. After SetSamplePosition has been called, subsequent draw calls must use a PSO that specifies a matching sample count either using the SAMPLE_DESC portion of the PSO, or ForcedSampleCount in the RASTERIZER_DESC portion of the PSO. SetSamplePositions can only be called on a graphics CommandList. It can't be called in a bundle; bundles inherit sample position state from the calling CommandList and don't modify it. Calling SetSamplePositions(0, 0, NULL) reverts the sample positions to their default values. <b>Clear RenderTarget:</b> Sample positions are ignored when clearing a render target. <b>Clear DepthStencil:</b> When clearing the depth portion of a depth-stencil surface or any region of it, the sample positions must be set to match those of future rendering to the cleared surface or region; the contents of any uncleared regions produced using different sample positions become undefined. When clearing the stencil portion of a depth-stencil surface or any region of it, the sample positions are ignored. <b>Draw to RenderTarget:</b> When drawing to a render target the sample positions can be changed for each draw call, even when drawing to a region that overlaps previous draw calls. The current sample positions determine the operational semantics of each draw call and samples are taken from taken from the stored contents of the render target, even if the contents were produced using different sample positions. <b>Draw using DepthStencil:</b> When drawing to a depth-stencil surface (read or write) or any region of it, the sample positions must be set to match those used to clear the affected region previously. To use a different sample position, the target region must be cleared first. The pixels outside the clear region are unaffected. Hardware may store the depth portion or a depth-stencil surface as plane equations, and evaluate them to produce depth values when the application issues a read. Only the rasterizer and output-merger are required to support programmable sample positions of the depth portion of a depth-stencil surface. Any other read or write of the depth portion that has been rendered with sample positions set may ignore them and instead sample at the standard positions. <b>Resolve RenderTarget:</b> When resolving a render target or any region of it, the sample positions are ignored; these APIs operate only on stored color values. <b>Resolve DepthStencil:</b> When resolving the depth portion of a depth-stencil surface or any region of it, the sample positions must be set to match those of past rendering to the resolved surface or region. To use a different sample position, the target region must be cleared first. When resolving the stencil portion of a depth-stencil surface or any region of it, the sample positions are ignored; stencil resolves operate only on stored stencil values. <b>Copy RenderTarget:</b> When copying from a render target, the sample positions are ignored regardless of whether it is a full or partial copy. <b>Copy DepthStencil (Full Subresource):</b> When copying a full subresource from a depth-stencil surface, the sample positions must be set to match the sample positions used to generate the source surface. To use a different sample position, the target region must be cleared first. On some hardware properties of the source surface (such as stored plane equations for depth values) transfer to the destination. Therefore, if the destination surface is subsequently drawn to, the sample positions originally used to generate the source content need to be used with the destination surface. The API requires this on all hardware for consistency even if it may only apply to some. <b>Copy DepthStencil (Partial Subresource):</b> When copying a partial subresource from a depth-stencil surface, the sample positions must be set to match the sample positions used to generate the source surface, similarly to copying a full subresource. However, if the content of an affected destination subresources is only partially covered by the copy, the contents of the uncovered portion within those subresources becomes undefined unless all of it was generated using the same sample positions as the copy source. To use a different sample position, the target region must be cleared first. When copying a partial subresource from the stencil portion of a depth-stencil surface, the sample postions are ignored. It doesn’t matter what sample positions were used to generate content for any other areas of the destination buffer not covered by the copy – those contents remain valid. <b>Shader SamplePos:</b> The HLSL SamplePos intrinsic is not aware of programmable sample positions and results returned to shaders calling this on a surface rendered with programmable positions is undefined. Applications must pass coordinates into their shader manually if needed. Similarly evaluating attributes by sample index is undefined with programmable sample positions. <b>Transitioning out of DEPTH_READ or DEPTH_WRITE state:</b> If a subresource in DEPTH_READ or DEPTH_WRITE state is transitioned to any other state, including COPY_SOURCE or RESOLVE_SOURCE, some hardware might need to decompress the surface. Therefore, the sample positions must be set on the command list to match those used to generate the content in the source surface. Furthermore, for any subsequent transitions of the surface while the same depth data remains in it, the sample positions must continue to match those set on the command list. To use a different sample position, the target region must be cleared first. If an application wants to minimize the decompressed area when only a portion needs to be used, or just to preserve compression, ResolveSubresourceRegion() can be called in DECOMPRESS mode with a rect specified.  This will decompress just the relevant area to a separate resource leaving the source intact on some hardware, though on other hardware even the source area is decompressed. The separate explicitly decompressed resource can then be transitioned to the desired state (such as SHADER_RESOURCE). <b>Transitioning out of RENDER_TARGET state:</b> If a subresource in RENDER_TARGET state is transitioned to anything other than COPY_SOURCE or RESOLVE_SOURCE, some implementations may need to decompress the surface. This decompression is agnostic to sample positions. If an application wants to minimize the decompressed area when only a portion needs to be used, or just to preserve compression, ResolveSubresourceRegion() can be called in DECOMPRESS mode with a rect specified.  This will decompress just the relevant area to a separate resource leaving the source intact on some hardware, though on other hardware even the source area is decompressed. The separate explicitly decompressed resource can then be transitioned to the desired state (such as SHADER_RESOURCE).</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-setsamplepositions#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetSamplePositions( uint NumSamplesPerPixel, uint NumPixels, in SamplePosition pSamplePositions ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
-		
-		unsafe {
-			fixed( SamplePosition* pSamplePos = &pSamplePositions )
-				cmdList.SetSamplePositions( NumSamplesPerPixel, NumPixels, (D3D12_SAMPLE_POSITION *)pSamplePos ) ;
-		}
-	}
+	void SetSamplePositions( uint NumSamplesPerPixel, uint NumPixels, in SamplePosition pSamplePositions ) ;
 
-	
+
 	/// <summary>Copy a region of a multisampled or compressed resource into a non-multisampled or non-compressed resource.</summary>
 	/// <param name="pDstResource">
 	/// <para>Type: <b>ID3D12Resource*</b> <a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> Destination resource. Must be created with the <b>D3D11_USAGE_DEFAULT</b> flag and must be single-sampled unless its to be resolved from a compressed resource (<b>D3D12_RESOLVE_MODE_DECOMPRESS</b>); in this case it must have the same sample count as the compressed source.</para>
@@ -1477,21 +1256,7 @@ public interface IGraphicsCommandList1 : IGraphicsCommandList,
 								   uint                SrcSubresource,
 								   [Optional] in Rect? pSrcRect,
 								   Format              format,
-								   ResolveMode         resolveMode ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe {
-			Unsafe.SkipInit( out RECT srcRect ) ;
-			RECT* srcRectPtr = null ;
-			if ( pSrcRect.HasValue ) {
-				srcRect = pSrcRect.Value ;
-				srcRectPtr = &srcRect ;
-			}
-			
-			cmdList.ResolveSubresourceRegion( pDstResource.COMObject, DstSubresource, DstX, DstY,
-											  pSrcResource.COMObject, SrcSubresource, srcRectPtr,
-											  (DXGI_FORMAT)format, (D3D12_RESOLVE_MODE)resolveMode ) ;
-		}
-	}
+								   ResolveMode         resolveMode ) ;
 
 	
 	/// <summary>Set a mask that controls which view instances are enabled for subsequent draws.</summary>
@@ -1503,26 +1268,24 @@ public interface IGraphicsCommandList1 : IGraphicsCommandList,
 	/// <para>The view instance mask only affects PSOs that declare view instance masking by specifying the D3D12_VIEW_INSTANCING_FLAG_ENABLE_VIEW_INSTANCE_MASKING flag during their creation. Attempting to create a PSO that declares view instance masking will fail on adapters that don't support view instancing. The view instance mask defaults to 0 which disables all views. This forces applications that declare view instance masking to explicitly choose the views to enable, otherwise nothing will be rendered. If the view instance mask enabled all views by default the application might not remember to disable unused views, resulting in lost performance due to wasted work. Bundles don't inherit their view instance mask from their caller, defaulting to 0 instead. This is because the mask setting must be known when the bundle is recorded if it affects how an implementation records draws. The view instance mask set by a bundle does persist to the caller after the bundle completes, however. These inheritance semantics are similar to those of PSOs. No shader code paths that are dependent on SV_ViewID are executed at any shader stage for view instances that are masked off and no clipping, viewport processing, or rasterization is performed. Implementations that inspect the mask during rendering can incur a small performance penalty over PSOs that don't declare view instance masking at all, but usually the penalty can be overcome by the performance savings that result from skipping the work associated with the masked off views. Depending on the frequency and amount of skipped work, the performance gains can be significant.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-setviewinstancemask#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetViewInstanceMask( uint Mask ) => COMObject!.SetViewInstanceMask( Mask ) ;
+	void SetViewInstanceMask( uint Mask ) ;
 	
 	// ---------------------------------------------------------------------------------
 	// Static Interface Members:
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof(ID3D12GraphicsCommandList1) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12GraphicsCommandList1).GUID ;
-	
+	new static Type ComType => typeof( ID3D12GraphicsCommandList1 ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )] get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(ID3D12GraphicsCommandList1).GUID.ToByteArray( ) ;
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal.GetReference(data) ) ;
 		}
 	}
 	
-	static IInstantiable IInstantiable. Instantiate( )                => new GraphicsCommandList( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new GraphicsCommandList( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate( ) => new GraphicsCommandList( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new GraphicsCommandList( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
 		new GraphicsCommandList( (ID3D12GraphicsCommandList?)pComObj! ) ;
-	
 	// ==================================================================================
 } ;
 
@@ -1532,25 +1295,8 @@ public interface IGraphicsCommandList1 : IGraphicsCommandList,
 // ===================================================================================
 
 [ProxyFor( typeof( ID3D12GraphicsCommandList2 ) )]
-public interface IGraphicsCommandList2: IGraphicsCommandList1,
-										IComObjectRef< ID3D12GraphicsCommandList2 >,
-										IUnknownWrapper< ID3D12GraphicsCommandList2 > {
-	// ---------------------------------------------------------------------------------
-	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList2 ).GUID ;
-
-	public new static Type ComType => typeof( ID3D12GraphicsCommandList2 ) ;
-
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12GraphicsCommandList2 >? ComPointer { get ; }
-	new ID3D12GraphicsCommandList2? COMObject => ComPointer?.Interface ;
-	ID3D12GraphicsCommandList2? IComObjectRef< ID3D12GraphicsCommandList2 >.COMObject => COMObject ;
-	ComPtr< ID3D12GraphicsCommandList2 >? IUnknownWrapper< ID3D12GraphicsCommandList2 >.ComPointer => ComPointer ;
-	ComPtr< ID3D12GraphicsCommandList1 >? IGraphicsCommandList1.ComPointer => new( COMObject! ) ;
-
-	ID3D12GraphicsCommandList1? IGraphicsCommandList1.COMObject => COMObject ;
-	ID3D12GraphicsCommandList1? IComObjectRef< ID3D12GraphicsCommandList1 >.COMObject => COMObject ;
-
-
+public interface IGraphicsCommandList2: IGraphicsCommandList1 {
+	
 	// ---------------------------------------------------------------------------------
 
 	/// <summary>Writes a number of 32-bit immediate values to the specified buffer locations directly from the command stream. (ID3D12GraphicsCommandList2.WriteBufferImmediate)</summary>
@@ -1561,24 +1307,25 @@ public interface IGraphicsCommandList2: IGraphicsCommandList1,
 	/// <para><b>WriteBufferImmediate</b> performs <i>Count</i> number of 32-bit writes: one for each value and destination specified in <i>pParams</i>. The receiving buffer (resource) must be in the <b>D3D12_RESOURCE_STATE_COPY_DEST</b> state to be a valid destination for <b>WriteBufferImmediate</b>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist2-writebufferimmediate#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void WriteBufferImmediate( uint Count, in Span< WriteBufferImmediateParameter > pParams,
-							   Span< WriteBufferImmediateMode > pModes = default ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe {
-			D3D12_WRITEBUFFERIMMEDIATE_MODE* modesPtr = null ;
-			fixed ( void* _params = &pParams[ 0 ], modes = &pModes[ 0 ] ) {
-				if ( pModes is { Length: > 0 } ) modesPtr = (D3D12_WRITEBUFFERIMMEDIATE_MODE*)modes ;
-				cmdList.WriteBufferImmediate( Count, (D3D12_WRITEBUFFERIMMEDIATE_PARAMETER*)_params, modesPtr ) ;
-			}
-		}
-	}
+	void WriteBufferImmediate( uint Count, 
+							   in Span< WriteBufferImmediateParameter > pParams,
+							   Span< WriteBufferImmediateMode > pModes = default ) ;
 	
 	// ---------------------------------------------------------------------------------
+	new static Type ComType => typeof( ID3D12GraphicsCommandList2 ) ;
+	public new static Guid IID => (ComType.GUID) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )] get {
+			ReadOnlySpan< byte > data = typeof(ID3D12GraphicsCommandList2).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal.GetReference(data) ) ;
+		}
+	}
 
-	static IInstantiable IInstantiable. Instantiate( )            => new GraphicsCommandList2( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr ptr ) => new GraphicsCommandList2( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate( ) => new GraphicsCommandList2( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList2( ptr ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
 		new GraphicsCommandList2( (ID3D12GraphicsCommandList3?)pComObj! ) ;
+	// ===================================================================================
 } ;
 
 
@@ -1587,24 +1334,7 @@ public interface IGraphicsCommandList2: IGraphicsCommandList1,
 // ===================================================================================
 
 [ProxyFor( typeof( ID3D12GraphicsCommandList3 ) )]
-public interface IGraphicsCommandList3: IGraphicsCommandList2,
-										IComObjectRef< ID3D12GraphicsCommandList3 >,
-										IUnknownWrapper< ID3D12GraphicsCommandList3 > {
-	// ---------------------------------------------------------------------------------
-	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList3 ).GUID ;
-
-	public new static Type ComType => typeof( ID3D12GraphicsCommandList3 ) ;
-
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12GraphicsCommandList3 >? ComPointer { get ; }
-	new ID3D12GraphicsCommandList3? COMObject => ComPointer?.Interface ;
-	ID3D12GraphicsCommandList3? IComObjectRef< ID3D12GraphicsCommandList3 >.COMObject => COMObject ;
-	ComPtr< ID3D12GraphicsCommandList3 >? IUnknownWrapper< ID3D12GraphicsCommandList3 >.ComPointer => ComPointer ;
-	ComPtr< ID3D12GraphicsCommandList2 >? IGraphicsCommandList2.ComPointer => new( COMObject! ) ;
-
-	ID3D12GraphicsCommandList2? IGraphicsCommandList2.COMObject => COMObject ;
-	ID3D12GraphicsCommandList2? IComObjectRef< ID3D12GraphicsCommandList2 >.COMObject => COMObject ;
-
+public interface IGraphicsCommandList3: IGraphicsCommandList2 {
 	// ---------------------------------------------------------------------------------
 
 	/// <summary>Specifies whether or not protected resources can be accessed by subsequent commands in the command list.</summary>
@@ -1616,14 +1346,16 @@ public interface IGraphicsCommandList3: IGraphicsCommandList2,
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist3-setprotectedresourcesession">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void SetProtectedResourceSession( IProtectedResourceSession pProtectedResourceSession ) => 
-		COMObject!.SetProtectedResourceSession( pProtectedResourceSession.COMObject ) ;
-
+	void SetProtectedResourceSession( IProtectedResourceSession pProtectedResourceSession ) ;
+	
 	// ---------------------------------------------------------------------------------
-
-	static IInstantiable IInstantiable. Instantiate( )                      => new GraphicsCommandList3( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       ptr )     => new GraphicsCommandList3( ptr ) ;
-	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new GraphicsCommandList3( (ID3D12GraphicsCommandList3?)pComObj! ) ;
+	public new static Type ComType => typeof( ID3D12GraphicsCommandList3 ) ;
+	public new static Guid IID => (ComType.GUID) ;
+	static IInstantiable IInstantiable. Instantiate( ) => new GraphicsCommandList3( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList3( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new GraphicsCommandList3( (ID3D12GraphicsCommandList3?)pComObj! ) ;
+	// ===================================================================================
 } ;
 
 
@@ -1632,27 +1364,9 @@ public interface IGraphicsCommandList3: IGraphicsCommandList2,
 // ===================================================================================
 
 [ProxyFor( typeof( ID3D12GraphicsCommandList4 ) )]
-public interface IGraphicsCommandList4: IGraphicsCommandList3,
-										IComObjectRef< ID3D12GraphicsCommandList4 >,
-										IUnknownWrapper< ID3D12GraphicsCommandList4 > {
+public interface IGraphicsCommandList4: IGraphicsCommandList3 {
 	// ---------------------------------------------------------------------------------
-	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList4 ).GUID ;
-
-	public new static Type ComType => typeof( ID3D12GraphicsCommandList4 ) ;
-
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12GraphicsCommandList4 >? ComPointer { get ; }
-	new ID3D12GraphicsCommandList4? COMObject => ComPointer?.Interface ;
-	ID3D12GraphicsCommandList4? IComObjectRef< ID3D12GraphicsCommandList4 >.COMObject => COMObject ;
-	ComPtr< ID3D12GraphicsCommandList4 >? IUnknownWrapper< ID3D12GraphicsCommandList4 >.ComPointer => ComPointer ;
-	ComPtr< ID3D12GraphicsCommandList3 >? IGraphicsCommandList3.ComPointer => new( COMObject! ) ;
-
-	ID3D12GraphicsCommandList3? IGraphicsCommandList3.COMObject => COMObject ;
-	ID3D12GraphicsCommandList3? IComObjectRef< ID3D12GraphicsCommandList3 >.COMObject => COMObject ;
-
-	// ---------------------------------------------------------------------------------
-
-
+	
 	/// <summary>Marks the beginning of a render pass by binding a set of output resources for the duration of the render pass. These bindings are to one or more render target views (RTVs), and/or to a depth stencil view (DSV).</summary>
 	/// <param name="NumRenderTargets">A <b>UINT</b>. The number of render targets being bound.</param>
 	/// <param name="pRenderTargets">A pointer to a constant <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_pass_render_target_desc">D3D12_RENDER_PASS_RENDER_TARGET_DESC</a>, which describes bindings (fixed for the duration of the render pass) to one or more render target views (RTVs), as well as their beginning and ending access characteristics.</param>
@@ -1662,24 +1376,17 @@ public interface IGraphicsCommandList4: IGraphicsCommandList3,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-beginrenderpass">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void BeginRenderPass( uint NumRenderTargets,
-						  RenderPassRenderTargetDescription[ ] pRenderTargets,
-						  in RenderPassDepthStencilDescription? pDepthStencil  = null,
-						  RenderPassFlags Flags = RenderPassFlags.None ) {
-#if DEBUG || DEBUG_COM || DEV_BUILD
-		ArgumentNullException.ThrowIfNull( pRenderTargets, nameof(pRenderTargets) ) ;
-#endif
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
-		var descArray = Unsafe.As< D3D12_RENDER_PASS_RENDER_TARGET_DESC[ ] >( pRenderTargets ) ;
-		cmdList.BeginRenderPass( descArray, pDepthStencil, (D3D12_RENDER_PASS_FLAGS)Flags ) ;
-	}
+						  RenderPassRenderTargetDescription[]   pRenderTargets,
+						  in RenderPassDepthStencilDescription? pDepthStencil = null,
+						  RenderPassFlags Flags = RenderPassFlags.None ) ;
 
 	
 	/// <summary>Marks the ending of a render pass.</summary>
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-endrenderpass">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void EndRenderPass( ) => COMObject!.EndRenderPass( ) ;
-	
+	void EndRenderPass( ) ;
+
 
 	/// <summary>Initializes the specified meta command.</summary>
 	/// <param name="pMetaCommand">A pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12metacommand">ID3D12MetaCommand</a> representing the meta command to initialize.</param>
@@ -1691,12 +1398,7 @@ public interface IGraphicsCommandList4: IGraphicsCommandList3,
 	/// </remarks>
 	void InitializeMetaCommand( IMetaCommand    pMetaCommand,
 								[Optional] nint pInitializationParametersData,
-								nuint           InitializationParametersDataSizeInBytes = 0x00U ) {
-		unsafe {
-			COMObject!.InitializeMetaCommand( pMetaCommand.COMObject, (void*)pInitializationParametersData,
-											  InitializationParametersDataSizeInBytes ) ;
-		}
-	}
+								nuint           InitializationParametersDataSizeInBytes = 0x00U ) ;
 
 
 	/// <summary>Records the execution (or invocation) of the specified meta command into a graphics command list.</summary>
@@ -1710,12 +1412,7 @@ public interface IGraphicsCommandList4: IGraphicsCommandList3,
 	/// </remarks>
 	void ExecuteMetaCommand( IMetaCommand    pMetaCommand,
 							 [Optional] nint pExecutionParametersData,
-							 nuint           ExecutionParametersDataSizeInBytes = 0x00U ) {
-		unsafe {
-			COMObject!.ExecuteMetaCommand( pMetaCommand.COMObject, (void *)pExecutionParametersData,
-										   ExecutionParametersDataSizeInBytes ) ;
-		}
-	}
+							 nuint           ExecutionParametersDataSizeInBytes = 0x00U ) ;
 	
 
 	/// <summary>Performs a raytracing acceleration structure build on the GPU and optionally outputs post-build information immediately after the build.</summary>
@@ -1749,17 +1446,10 @@ public interface IGraphicsCommandList4: IGraphicsCommandList3,
 	/// Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>This method can be called from graphics or compute command lists but not from bundles.</remarks>
-	void EmitRaytracingAccelerationStructurePostbuildInfo( in RaytracingAccelerationStructurePostBuildInfoDescription pDesc,
-														   uint NumSourceAccelerationStructures,
-														   ulong[ ] pSourceAccelerationStructureData ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe {
-			fixed ( RaytracingAccelerationStructurePostBuildInfoDescription* descPtr = &pDesc ) {
-				cmdList.EmitRaytracingAccelerationStructurePostbuildInfo( (D3D12_RAYTRACING_ACCELERATION_STRUCTURE_POSTBUILD_INFO_DESC *) descPtr, 
-																		  NumSourceAccelerationStructures, pSourceAccelerationStructureData ) ;
-			}
-		}
-	}
+	void EmitRaytracingAccelerationStructurePostbuildInfo(
+		in RaytracingAccelerationStructurePostBuildInfoDescription pDesc,
+		uint NumSourceAccelerationStructures,
+		ulong[ ] pSourceAccelerationStructureData ) ;
 
 
 	/// <summary>Copies a source acceleration structure to destination memory while applying the specified transformation.</summary>
@@ -1778,12 +1468,8 @@ public interface IGraphicsCommandList4: IGraphicsCommandList3,
 	/// </remarks>
 	void CopyRaytracingAccelerationStructure( ulong DestAccelerationStructureData,
 											  ulong SourceAccelerationStructureData,
-											  RaytracingAccelerationStructureCopyMode Mode ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
-		cmdList.CopyRaytracingAccelerationStructure( DestAccelerationStructureData, SourceAccelerationStructureData,
-													 ( D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE ) Mode ) ;
-	}
-
+											  RaytracingAccelerationStructureCopyMode Mode ) ;
+	
 	
 	/// <summary>Sets a state object on the command list.</summary>
 	/// <param name="pStateObject">The state object to set on the command list. In the current release, this can only be of type <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_state_object_type">D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE</a>.</param>
@@ -1791,8 +1477,7 @@ public interface IGraphicsCommandList4: IGraphicsCommandList3,
 	/// <para>This method can be called from graphics or compute command lists and bundles. This method is an alternative to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setpipelinestate">ID3D12GraphicsCommandList::SetPipelineState</a>, which is only defined for graphics and compute shaders.  There is only one pipeline state active on a command list at a time, so either call sets the current pipeline state.  The distinction between the calls is that each sets particular types of pipeline state only.  In the current release, <b>SetPipelineState1</b> is only used for setting raytracing pipeline state.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-setpipelinestate1#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetPipelineState1( IStateObject pStateObject ) => 
-		COMObject!.SetPipelineState1( pStateObject.COMObject ) ;
+	void SetPipelineState1( IStateObject pStateObject ) ;
 
 	
 	/// <summary>Launch the threads of a ray generation shader.</summary>
@@ -1805,33 +1490,32 @@ public interface IGraphicsCommandList4: IGraphicsCommandList3,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-dispatchrays#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void DispatchRays( in DispatchRaysDescription pDesc ) ;
-};
+	
+	// ---------------------------------------------------------------------------------
+	new static Type ComType => typeof( ID3D12GraphicsCommandList4 ) ;
+	public new static Guid IID => (ComType.GUID) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )] get {
+			ReadOnlySpan< byte > data = typeof(ID3D12GraphicsCommandList4).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal.GetReference(data) ) ;
+		}
+	}
+	
+	static IInstantiable IInstantiable.Instantiate( ) => new GraphicsCommandList4( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList4( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new GraphicsCommandList4( (ID3D12GraphicsCommandList4?)pComObj! ) ;
+	// ===================================================================================
+} ;
+
 
 // ===================================================================================
 // ID3D12GraphicsCommandList5 interface ::
 // ===================================================================================
 
 [ProxyFor( typeof( ID3D12GraphicsCommandList5 ) )]
-public interface IGraphicsCommandList5: IGraphicsCommandList4,
-										IComObjectRef< ID3D12GraphicsCommandList5 >,
-										IUnknownWrapper< ID3D12GraphicsCommandList5 > {
+public interface IGraphicsCommandList5: IGraphicsCommandList4 {
 	// ---------------------------------------------------------------------------------
-	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList5 ).GUID ;
-
-	public new static Type ComType => typeof( ID3D12GraphicsCommandList5 ) ;
-
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12GraphicsCommandList5 >? ComPointer { get ; }
-	new ID3D12GraphicsCommandList5? COMObject => ComPointer?.Interface ;
-	ID3D12GraphicsCommandList5? IComObjectRef< ID3D12GraphicsCommandList5 >.COMObject => COMObject ;
-	ComPtr< ID3D12GraphicsCommandList5 >? IUnknownWrapper< ID3D12GraphicsCommandList5 >.ComPointer => ComPointer ;
-	ComPtr< ID3D12GraphicsCommandList4 >? IGraphicsCommandList4.ComPointer => new( COMObject! ) ;
-
-	ID3D12GraphicsCommandList4? IGraphicsCommandList4.COMObject => COMObject ;
-	ID3D12GraphicsCommandList4? IComObjectRef< ID3D12GraphicsCommandList4 >.COMObject => COMObject ;
-
-	// ---------------------------------------------------------------------------------
-
 	
 	/// <summary>The ID3D12GraphicsCommandList5::RSSetShadingRate method (d3d12.h) sets the base shading rate, and combiners, for variable-rate shading (VRS).</summary>
 	/// <param name="baseShadingRate">
@@ -1849,20 +1533,7 @@ public interface IGraphicsCommandList5: IGraphicsCommandList4,
 	/// The algorithm for final shading-rate is determined by the following.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist5-rssetshadingrate#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
-	void RSSetShadingRate( ShadingRate baseShadingRate, [Optional] Span< ShadingRateCombiner > combiners ) {
-		var cmdList = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe {
-			if( combiners is { Length: > 0 } ) {
-				D3D12_SHADING_RATE_COMBINER* combinersPtr = null ;
-				fixed ( ShadingRateCombiner* combinerSpanPtr = combiners ) {
-					combinersPtr = (D3D12_SHADING_RATE_COMBINER*)combinerSpanPtr ;
-					cmdList.RSSetShadingRate( (D3D12_SHADING_RATE)baseShadingRate,
-											  combinersPtr ) ;
-				}
-			}
-			else cmdList.RSSetShadingRate( (D3D12_SHADING_RATE)baseShadingRate, null ) ;
-		}
-	}
+	void RSSetShadingRate( ShadingRate baseShadingRate, [Optional] Span< ShadingRateCombiner > combiners ) ;
 
 	
 	/// <summary>The ID3D12GraphicsCommandList5::RSSetShadingRateImage method (d3d12.h) sets the screen-space shading-rate image for variable-rate shading (VRS).</summary>
@@ -1876,9 +1547,23 @@ public interface IGraphicsCommandList5: IGraphicsCommandList4,
 	/// <para>This doc was truncated.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist5-rssetshadingrateimage#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void RSSetShadingRateImage( IResource shadingRateImage ) =>
-		COMObject!.RSSetShadingRateImage( shadingRateImage.COMObject ) ;
+	void RSSetShadingRateImage( IResource shadingRateImage ) ;
 	
+	
+	// ---------------------------------------------------------------------------------
+	new static Type ComType => typeof( ID3D12GraphicsCommandList5 ) ;
+	public new static Guid IID => (ComType.GUID) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )] get {
+			ReadOnlySpan< byte > data = typeof(ID3D12GraphicsCommandList5).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal.GetReference(data) ) ;
+		}
+	}
+
+	static IInstantiable IInstantiable.Instantiate( ) => new GraphicsCommandList5( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList5( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new GraphicsCommandList5( (ID3D12GraphicsCommandList5?)pComObj! ) ;
 	// ===================================================================================
 } ;
 
@@ -1888,63 +1573,110 @@ public interface IGraphicsCommandList5: IGraphicsCommandList4,
 // ===================================================================================
 
 [ProxyFor( typeof( ID3D12GraphicsCommandList6 ) )]
-public interface IGraphicsCommandList6: IGraphicsCommandList5,
-										IComObjectRef< ID3D12GraphicsCommandList6 >,
-										IUnknownWrapper< ID3D12GraphicsCommandList6 > {
-	// ---------------------------------------------------------------------------------
-	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList6 ).GUID ;
-	public new static Type ComType => typeof( ID3D12GraphicsCommandList6 ) ;
-
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12GraphicsCommandList6 >? ComPointer { get ; }
-	new ID3D12GraphicsCommandList6? COMObject => ComPointer?.Interface ;
-	ID3D12GraphicsCommandList6? IComObjectRef< ID3D12GraphicsCommandList6 >.COMObject => COMObject ;
-	ComPtr< ID3D12GraphicsCommandList6 >? IUnknownWrapper< ID3D12GraphicsCommandList6 >.ComPointer => ComPointer ;
-	ComPtr< ID3D12GraphicsCommandList5 >? IGraphicsCommandList5.ComPointer => new( COMObject! ) ;
-
-	ID3D12GraphicsCommandList5? IGraphicsCommandList5.COMObject => COMObject ;
-	ID3D12GraphicsCommandList5? IComObjectRef< ID3D12GraphicsCommandList5 >.COMObject => COMObject ;
-
+public interface IGraphicsCommandList6: IGraphicsCommandList5 {
 	// ---------------------------------------------------------------------------------
 
-	void DispatchMesh( uint ThreadGroupCountX, uint ThreadGroupCountY, uint ThreadGroupCountZ ) =>
-		COMObject!.DispatchMesh( ThreadGroupCountX, ThreadGroupCountY, ThreadGroupCountZ ) ;
-
+	void DispatchMesh( uint ThreadGroupCountX, uint ThreadGroupCountY, uint ThreadGroupCountZ ) ;
+	
+	// ---------------------------------------------------------------------------------
+	new static Type ComType => typeof( ID3D12GraphicsCommandList6 ) ;
+	public new static Guid IID => (ComType.GUID) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )] get {
+			ReadOnlySpan< byte > data = typeof(ID3D12GraphicsCommandList6).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal.GetReference(data) ) ;
+		}
+	}
+	
+	static IInstantiable IInstantiable.Instantiate( ) => new GraphicsCommandList6( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList6( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new GraphicsCommandList6( (ID3D12GraphicsCommandList6?)pComObj! ) ;
 	// ===================================================================================
 } ;
+
 
 // ===================================================================================
 // ID3D12GraphicsCommandList7 interface ::
 // ===================================================================================
 [ProxyFor( typeof( ID3D12GraphicsCommandList7 ) )]
-public interface IGraphicsCommandList7: IGraphicsCommandList6,
-										IComObjectRef< ID3D12GraphicsCommandList7 >,
-										IUnknownWrapper< ID3D12GraphicsCommandList7 > {
+public interface IGraphicsCommandList7: IGraphicsCommandList6 {
 	// ---------------------------------------------------------------------------------
-	public new static Guid InterfaceGUID => typeof( ID3D12GraphicsCommandList7 ).GUID ;
-	public new static Type ComType => typeof( ID3D12GraphicsCommandList7 ) ;
-
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12GraphicsCommandList7 >? ComPointer { get ; }
-	new ID3D12GraphicsCommandList7? COMObject => ComPointer?.Interface ;
-	ID3D12GraphicsCommandList7? IComObjectRef< ID3D12GraphicsCommandList7 >.COMObject => COMObject ;
-	ComPtr< ID3D12GraphicsCommandList7 >? IUnknownWrapper< ID3D12GraphicsCommandList7 >.ComPointer => ComPointer ;
-	ComPtr< ID3D12GraphicsCommandList6 >? IGraphicsCommandList6.ComPointer => new( COMObject! ) ;
-
-	ID3D12GraphicsCommandList6? IGraphicsCommandList6.COMObject => COMObject ;
-	ID3D12GraphicsCommandList6? IComObjectRef< ID3D12GraphicsCommandList6 >.COMObject => COMObject ;
-
-	// ---------------------------------------------------------------------------------
-	
 	
 	/// <summary>Adds a collection of barriers into a graphics command list recording.</summary>
 	/// <param name="NumBarrierGroups">Number of barrier groups pointed to by *pBarrierGroups*.</param>
 	/// <param name="pBarrierGroups">Pointer to an array of [D3D12_BARRIER_GROUP](/windows/win32/api/d3d12/ns-d3d12-d3d12_barrier_group) objects.</param>
-	void Barrier( uint NumBarrierGroups, BarrierGroup[ ] pBarrierGroups ) {
-		var cmdList       = COMObject ?? throw new NullReferenceException( ) ;
-		var barrierGroups = Unsafe.As< D3D12_BARRIER_GROUP[ ] >( pBarrierGroups ) ;
-		cmdList.Barrier( NumBarrierGroups, barrierGroups ) ;
+	void Barrier( uint NumBarrierGroups, BarrierGroup[] pBarrierGroups ) ;
+
+	// ---------------------------------------------------------------------------------
+	new static Type ComType => typeof( ID3D12GraphicsCommandList7 ) ;
+	public new static Guid IID => (ComType.GUID) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )] get {
+			ReadOnlySpan< byte > data = typeof(ID3D12GraphicsCommandList7).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal.GetReference(data) ) ;
+		}
 	}
+
+	static IInstantiable IInstantiable.Instantiate( ) => new GraphicsCommandList7( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList7( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new GraphicsCommandList7( (ID3D12GraphicsCommandList7?)pComObj! ) ;
+	
+	// ===================================================================================
+} ;
+
+[ProxyFor( typeof( ID3D12GraphicsCommandList8 ) )]
+public interface IGraphicsCommandList8: IGraphicsCommandList7 {
+	// ---------------------------------------------------------------------------------
+
+	void OMSetFrontAndBackStencilRef( uint FrontStencilRef, uint BackStencilRef ) ;
+
+	// ---------------------------------------------------------------------------------
+
+	new static Type ComType => typeof( ID3D12GraphicsCommandList8 ) ;
+	public new static Guid IID => (ComType.GUID) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( ID3D12GraphicsCommandList8 ).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal.GetReference( data ) ) ;
+		}
+	}
+
+	static IInstantiable IInstantiable.Instantiate( ) => new GraphicsCommandList8( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList8( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+		new GraphicsCommandList8( (ID3D12GraphicsCommandList8?)pComObj! ) ;
 
 	// ===================================================================================
 } ;
+
+[ProxyFor(typeof(ID3D12GraphicsCommandList9))]
+public interface IGraphicsCommandList9: IGraphicsCommandList8 {
+	// ---------------------------------------------------------------------------------
+
+	void RSSetDepthBias( float DepthBias, float DepthBiasClamp, float SlopeScaledDepthBias ) ;
+
+	void IASetIndexBufferStripCutValue( IndexBufferStripCutValue IBStripCutValue ) ;
+	
+	// ---------------------------------------------------------------------------------
+
+	new static Type ComType => typeof( ID3D12GraphicsCommandList8 ) ;
+	public new static Guid IID => (ComType.GUID) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( ID3D12GraphicsCommandList9 ).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal.GetReference( data ) ) ;
+		}
+	}
+
+	static IInstantiable IInstantiable.Instantiate( ) => new GraphicsCommandList9( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new GraphicsCommandList9( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) =>
+		new GraphicsCommandList9( (ID3D12GraphicsCommandList9?)pComObj! ) ;
+
+	// ===================================================================================
+} ;
+

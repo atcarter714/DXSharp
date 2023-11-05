@@ -17,16 +17,8 @@ namespace DXSharp.Direct3D12 ;
 /// <summary>Proxy interface for the native ID3D12Device COM interface</summary>
 [ProxyFor( typeof(ID3D12Device) )]
 public interface IDevice: IObject,
-						  IComObjectRef< ID3D12Device >,
-						  IUnknownWrapper< ID3D12Device >,
 						  IInstantiable {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device >? ComPointer { get ; }
-	new ID3D12Device? COMObject => ComPointer?.Interface ;
-	ID3D12Device? IComObjectRef< ID3D12Device >.COMObject => COMObject ;
-	ComPtr< ID3D12Device >? IUnknownWrapper< ID3D12Device >.ComPointer => ComPointer ;
-	// ==================================================================================
-	
 	
 	/// <summary>Reports the number of physical adapters (nodes) that are associated with this device.</summary>
 	/// <returns>
@@ -35,8 +27,8 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getnodecount">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	uint GetNodeCount( ) => COMObject!.GetNodeCount( ) ;
-	
+	uint GetNodeCount( ) ;
+
 	/// <summary>Creates a command queue.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: [in] <b>const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_command_queue_desc">D3D12_COMMAND_QUEUE_DESC</a>*</b> Specifies a **D3D12_COMMAND_QUEUE_DESC** that describes the command queue.</para>
@@ -56,14 +48,8 @@ public interface IDevice: IObject,
 	/// <remarks>The <b>REFIID</b>, or <b>GUID</b>, of the interface to the command queue can be obtained by using the __uuidof() macro. For example, __uuidof(ID3D12CommandQueue) will get the <b>GUID</b> of the interface to a command queue.</remarks>
 	/// void CreateCommandQueue( D3D12_COMMAND_QUEUE_DESC* pDesc, Guid* riid, out object ppCommandQueue ) ;
 	void CreateCommandQueue( in CommandQueueDescription pDesc,
-								in Guid riid, out ICommandQueue ppCommandQueue ) {
-		unsafe { fixed ( void* descPtr = &pDesc, riidPtr = &riid ) {
-				COMObject!.CreateCommandQueue( (D3D12_COMMAND_QUEUE_DESC*)descPtr,
-											   (Guid *)riidPtr, out var ppvCommandQueue ) ;
-				ppCommandQueue = new CommandQueue( (ID3D12CommandQueue)ppvCommandQueue) ;
-			}
-		}
-	}
+							 in Guid riid, 
+							 out ICommandQueue ppCommandQueue ) ;
 
 
 	/// <summary>Creates a command allocator object.</summary>
@@ -83,19 +69,11 @@ public interface IDevice: IObject,
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns <b>E_OUTOFMEMORY</b> if there is insufficient memory to create the command allocator. See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> for other possible return values.</para>
 	/// </returns>
 	/// <remarks>The device creates command lists from the command allocator.</remarks>
-	void CreateCommandAllocator( CommandListType type, in Guid riid,
-									out ICommandAllocator ppCommandAllocator ) {
-		unsafe { fixed ( Guid* riidPtr = &riid ) {
-				COMObject!.CreateCommandAllocator( (D3D12_COMMAND_LIST_TYPE)type, riidPtr,
-														out var ppvCommandAllocator ) ;
-				var _allocator = (ID3D12CommandAllocator)ppvCommandAllocator ;
-				CommandAllocator allocator = new( _allocator ) ;
-				ppCommandAllocator = allocator ;
-			}
-		}
-	}
+	void CreateCommandAllocator( CommandListType type, 
+								 in Guid riid,
+								 out ICommandAllocator ppCommandAllocator ) ;
 
-	
+
 	/// <summary>Creates a graphics pipeline state object.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_graphics_pipeline_state_desc">D3D12_GRAPHICS_PIPELINE_STATE_DESC</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_graphics_pipeline_state_desc">D3D12_GRAPHICS_PIPELINE_STATE_DESC</a> structure that describes graphics pipeline state.</para>
@@ -115,17 +93,11 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-creategraphicspipelinestate">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateGraphicsPipelineState( in GraphicsPipelineStateDescription pDesc, in Guid riid,
-									  out IPipelineState ppPipelineState ) {
-		unsafe { fixed ( Guid* riidPtr = &riid ) {
-				COMObject!.CreateGraphicsPipelineState( pDesc, riidPtr, 
-														out var ppvPipelineState ) ;
-				ppPipelineState = new PipelineState( (ID3D12PipelineState)ppvPipelineState ) ;
-			}
-		}
-	}
+	void CreateGraphicsPipelineState( in  GraphicsPipelineStateDescription pDesc, 
+									  in Guid riid,
+									  out IPipelineState ppPipelineState ) ;
 
-	
+
 	/// <summary>Creates a compute pipeline state object.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_compute_pipeline_state_desc">D3D12_COMPUTE_PIPELINE_STATE_DESC</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_compute_pipeline_state_desc">D3D12_COMPUTE_PIPELINE_STATE_DESC</a> structure that describes compute pipeline state.</para>
@@ -146,12 +118,8 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcomputepipelinestate">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateComputePipelineState( in ComputePipelineStateDescription pDesc,
-									 in Guid riid, out IPipelineState ppPipelineState ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		device.CreateComputePipelineState( pDesc, riid, out var ppvPipelineState ) ;
-		ppPipelineState = new PipelineState( (ID3D12PipelineState)ppvPipelineState ) ;
-	}
-
+									 in Guid riid, 
+									 out IPipelineState ppPipelineState ) ;
 
 	/// <summary>Creates a command list.</summary>
 	/// <param name="nodeMask">
@@ -182,36 +150,14 @@ public interface IDevice: IObject,
 	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/desktop/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10). |Return value|Description| |-|-| |E_OUTOFMEMORY|There is insufficient memory to create the command list.| See [Direct3D 12 return codes](/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues) for other possible return values.</para>
 	/// </returns>
 	/// <remarks>The device creates command lists from the command allocator.</remarks>
-	void CreateCommandList( uint nodeMask,
-							CommandListType type,
-							ICommandAllocator pCommandAllocator,
+	void CreateCommandList( uint                       nodeMask,
+							CommandListType            type,
+							ICommandAllocator          pCommandAllocator,
 							[Optional] IPipelineState? pInitialState,
-							in Guid riid,
-							out ICommandList ppCommandList ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		Guid _guid = riid ;
-		unsafe {
-			var hr = device.CreateCommandList( nodeMask, 
-									(D3D12_COMMAND_LIST_TYPE)type, 
-									pCommandAllocator.COMObject,
-									pInitialState?.COMObject,
-									&_guid,
-									out object _cmdList 
-									) ;
-
-#if DEBUG || DEBUG_COM || DEV_BUILD
-			hr.ThrowOnFailure( ) ;
-#endif
-			
-			if ( _guid == IGraphicsCommandList.InterfaceGUID )
-				ppCommandList = new GraphicsCommandList( (ID3D12GraphicsCommandList)_cmdList ) ;
-			else
-				ppCommandList = new CommandList( (ID3D12CommandList)_cmdList ) ;
-		}
-	}
-
-
-
+							in         Guid            riid,
+							out        ICommandList    ppCommandList ) ;
+	
+	
 	/// <summary>
 	/// Gets information about the features that are supported by the current graphics driver. (ID3D12Device.CheckFeatureSupport)
 	/// </summary>
@@ -235,12 +181,7 @@ public interface IDevice: IObject,
 	/// <para>This doc was truncated.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-checkfeaturesupport#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CheckFeatureSupport( D3D12Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe {
-			device.CheckFeatureSupport( (D3D12_FEATURE)Feature, (void *)pFeatureSupportData, FeatureSupportDataSize ) ;
-		}
-	}
+	void CheckFeatureSupport( D3D12Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) ;
 
 
 	/// <summary>Creates a descriptor heap object.</summary>
@@ -261,24 +202,18 @@ public interface IDevice: IObject,
 	/// </returns>
 	/// <remarks>The <b>REFIID</b>, or <b>GUID</b>, of the interface to the descriptor heap can be obtained by using the __uuidof() macro. For example, __uuidof(<a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12descriptorheap">ID3D12DescriptorHeap</a>) will get the <b>GUID</b> of the interface to a descriptor heap.</remarks>
 	void CreateDescriptorHeap( in DescriptorHeapDescription pDescriptorHeapDesc,
-							   in Guid riid, out IDescriptorHeap ppvHeap ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		device.CreateDescriptorHeap( pDescriptorHeapDesc, riid, out var ppvDescriptorHeap ) ;
-		ppvHeap = new DescriptorHeap( (ID3D12DescriptorHeap)ppvDescriptorHeap ) ;
-	}
-	
+							   in Guid riid, 
+							   out IDescriptorHeap ppvHeap ) ;
+
 
 	/// <summary>Gets the size of the handle increment for the given type of descriptor heap. This value is typically used to increment a handle into a descriptor array by the correct amount.</summary>
 	/// <param name="DescriptorHeapType">The <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_descriptor_heap_type">D3D12_DESCRIPTOR_HEAP_TYPE</a>-typed value that specifies the type of descriptor heap to get the size of the handle increment for.</param>
 	/// <returns>Returns the size of the handle increment for the given type of descriptor heap, including any necessary padding.</returns>
 	/// <remarks>The descriptor size returned by this method is used as one input to the helper structures <a href="https://docs.microsoft.com/windows/desktop/direct3d12/cd3dx12-cpu-descriptor-handle">CD3DX12_CPU_DESCRIPTOR_HANDLE</a> and <a href="https://docs.microsoft.com/windows/desktop/direct3d12/cd3dx12-gpu-descriptor-handle">CD3DX12_GPU_DESCRIPTOR_HANDLE</a>.</remarks>
-	uint GetDescriptorHandleIncrementSize( DescriptorHeapType DescriptorHeapType ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		return device.GetDescriptorHandleIncrementSize( (D3D12_DESCRIPTOR_HEAP_TYPE)DescriptorHeapType ) ;
-	}
+	uint GetDescriptorHandleIncrementSize( DescriptorHeapType DescriptorHeapType ) ;
 
 
-	
+
 	/// <summary>Creates a root signature layout.</summary>
 	/// <param name="nodeMask">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/WinProg/windows-data-types">UINT</a></b> For single GPU operation, set this to zero. If there are multiple GPU nodes, set bits to identify the nodes (the  device's physical adapters) to which the root signature is to apply. Each bit in the mask corresponds to a single node. Refer to <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
@@ -311,15 +246,9 @@ public interface IDevice: IObject,
 	/// </remarks>
 	void CreateRootSignature( uint nodeMask,
 							  nint pBlobWithRootSignature,
-							  nuint blobLengthInBytes, in Guid riid,
-							  out IRootSignature ppvRootSignature ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe {
-			device.CreateRootSignature( nodeMask, (void *)pBlobWithRootSignature,
-										blobLengthInBytes, riid, out var ppvSignature ) ;
-			ppvRootSignature = new RootSignature( (ID3D12RootSignature)ppvSignature ) ;
-		}
-	}
+							  nuint blobLengthInBytes, 
+							  in Guid riid,
+							  out IRootSignature ppvRootSignature ) ;
 
 
 	/// <summary>Creates a constant-buffer view for accessing resource data.</summary>
@@ -335,10 +264,7 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createconstantbufferview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateConstantBufferView( [Optional] in ConstBufferViewDescription pDesc,
-								   in CPUDescriptorHandle DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		device.CreateConstantBufferView( pDesc, DestDescriptor ) ;
-	}
+								   in CPUDescriptorHandle DestDescriptor ) ;
 
 
 	/// <summary>Creates a shader-resource view for accessing data in a resource. (ID3D12Device.CreateShaderResourceView)</summary>
@@ -360,12 +286,9 @@ public interface IDevice: IObject,
 	/// </remarks>
 	void CreateShaderResourceView( IResource pResource,
 								   [Optional] in ShaderResourceViewDescription pDesc,
-								   CPUDescriptorHandle DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		device.CreateShaderResourceView( pResource.COMObject, pDesc, DestDescriptor ) ;
-	}
+								   CPUDescriptorHandle DestDescriptor ) ;
 
-	
+
 	/// <summary>Creates a view for unordered accessing.</summary>
 	/// <param name="pResource">
 	/// <para>Type: [in, optional] <b><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12resource">ID3D12Resource</a>*</b> A pointer to the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12resource">ID3D12Resource</a> object that represents the unordered access. At least one of <i>pResource</i> or <i>pDesc</i> must be provided. A null <i>pResource</i> is used to initialize a null descriptor, which guarantees Direct3D 11-like null binding behavior (reading 0s, writes are discarded), but must have a valid <i>pDesc</i> in order to determine the descriptor type.</para>
@@ -387,13 +310,10 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createunorderedaccessview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateUnorderedAccessView( IResource pResource,
-									IResource pCounterResource,
+	void CreateUnorderedAccessView( IResource                         pResource,
+									IResource                         pCounterResource,
 									in UnorderedAccessViewDescription pDesc,
-									CPUDescriptorHandle DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		device.CreateUnorderedAccessView( pResource.COMObject, pCounterResource.COMObject, pDesc, DestDescriptor ) ;
-	}
+									CPUDescriptorHandle               DestDescriptor ) ;
 
 
 	/// <summary>Creates a render-target view for accessing resource data. (ID3D12Device.CreateRenderTargetView)</summary>
@@ -413,12 +333,9 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrendertargetview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateRenderTargetView( IResource pResource,
+	void CreateRenderTargetView( IResource                                 pResource,
 								 [Optional] in RenderTargetViewDescription pDescription,
-								 CPUDescriptorHandle DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		device.CreateRenderTargetView( pResource.COMObject, pDescription, DestDescriptor ) ;
-	}
+								 CPUDescriptorHandle                       DestDescriptor ) ;
 
 
 	/// <summary>Creates a depth-stencil view for accessing resource data.</summary>
@@ -439,12 +356,9 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createdepthstencilview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateDepthStencilView( IResource pResource,
+	void CreateDepthStencilView( IResource                          pResource,
 								 [Optional] in DepthStencilViewDesc pDesc,
-								 CPUDescriptorHandle DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		device.CreateDepthStencilView( pResource.COMObject, pDesc, DestDescriptor ) ;
-	}
+								 CPUDescriptorHandle                DestDescriptor ) ;
 
 
 	/// <summary>Create a sampler object that encapsulates sampling information for a texture.</summary>
@@ -459,10 +373,7 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createsampler">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateSampler( in SamplerDescription pDesc, CPUDescriptorHandle DestDescriptor ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		device.CreateSampler( pDesc, DestDescriptor ) ;
-	}
+	void CreateSampler( in SamplerDescription pDesc, CPUDescriptorHandle DestDescriptor ) ;
 
 
 	/// <summary>Copies descriptors from a source to a destination. (ID3D12Device.CopyDescriptors)</summary>
@@ -495,26 +406,13 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptors#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>Where applicable, prefer [**ID3D12Device::CopyDescriptorsSimple**](/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptorssimple) to this method. It can have a better CPU cache miss rate due to the linear nature of the copy.</remarks>
-	void CopyDescriptors( uint NumDestDescriptorRanges,
+	void CopyDescriptors( uint                           NumDestDescriptorRanges,
 						  in Span< CPUDescriptorHandle > pDestDescriptorRangeStarts,
-						  uint[ ] pDestDescriptorRangeSizes,
-						  uint NumSrcDescriptorRanges,
-						  in Span< CPUDescriptorHandle >  pSrcDescriptorRangeStarts,
-						  uint[ ] pSrcDescriptorRangeSizes,
-						  DescriptorHeapType DescriptorHeapsType ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe {
-			fixed( CPUDescriptorHandle* pDestRangeStart = pDestDescriptorRangeStarts, pSrcRangeStart = pSrcDescriptorRangeStarts ) {
-				device.CopyDescriptors( NumDestDescriptorRanges,
-										(D3D12_CPU_DESCRIPTOR_HANDLE *)pDestRangeStart,
-										pDestDescriptorRangeSizes,
-										NumSrcDescriptorRanges,
-										(D3D12_CPU_DESCRIPTOR_HANDLE *)pSrcRangeStart,
-										pSrcDescriptorRangeSizes,
-										( D3D12_DESCRIPTOR_HEAP_TYPE )DescriptorHeapsType ) ;
-			}
-		}
-	}
+						  uint[]                         pDestDescriptorRangeSizes,
+						  uint                           NumSrcDescriptorRanges,
+						  in Span< CPUDescriptorHandle > pSrcDescriptorRangeStarts,
+						  uint[]                         pSrcDescriptorRangeSizes,
+						  DescriptorHeapType             DescriptorHeapsType ) ;
 
 
 	/// <summary>Copies descriptors from a source to a destination. (ID3D12Device.CopyDescriptorsSimple)</summary>
@@ -535,16 +433,10 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptorssimple#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>Where applicable, prefer this method to [**ID3D12Device::CopyDescriptors**](/windows/win32/api/d3d12/nf-d3d12-id3d12device-copydescriptors). It can have a better CPU cache miss rate due to the linear nature of the copy.</remarks>
-	void CopyDescriptorsSimple( uint NumDescriptors,
+	void CopyDescriptorsSimple( uint                NumDescriptors,
 								CPUDescriptorHandle DestDescriptorRangeStart,
 								CPUDescriptorHandle SrcDescriptorRangeStart,
-								DescriptorHeapType  DescriptorHeapsType ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		device.CopyDescriptorsSimple( NumDescriptors,
-									  DestDescriptorRangeStart,
-									  SrcDescriptorRangeStart,
-									  ( D3D12_DESCRIPTOR_HEAP_TYPE )DescriptorHeapsType ) ;
-	}
+								DescriptorHeapType  DescriptorHeapsType ) ;
 
 
 	/// <summary>Gets the size and alignment of memory required for a collection of resources on this adapter.</summary>
@@ -567,20 +459,12 @@ public interface IDevice: IObject,
 	/// <para>When you're using [CreatePlacedResource](./nf-d3d12-id3d12device-createplacedresource.md), your application must use **GetResourceAllocationInfo** in order to understand the size and alignment characteristics of texture resources. The results of this method vary depending on the particular adapter, and must be treated as unique to this adapter and driver version. Your application can't use the output of **GetResourceAllocationInfo** to understand packed mip properties of textures. To understand packed mip properties of textures, your application must use [GetResourceTiling](./nf-d3d12-id3d12device-getresourcetiling.md). Texture resource sizes significantly differ from the information returned by **GetResourceTiling**, because some adapter architectures allocate extra memory for textures to reduce the effective bandwidth during common rendering scenarios. This even includes textures that have constraints on their texture layouts, or have standardized texture layouts. That extra memory can't be sparsely mapped nor remapped by an application using [CreateReservedResource](./nf-d3d12-id3d12device-createreservedresource.md) and [UpdateTileMappings](./nf-d3d12-id3d12commandqueue-updatetilemappings.md), so it isn't reported by **GetResourceTiling**. Your application can forgo using **GetResourceAllocationInfo** for buffer resources ([D3D12_RESOURCE_DIMENSION_BUFFER](./ne-d3d12-d3d12_resource_dimension.md)). Buffers have the same size on all adapters, which is merely the smallest multiple of 64KB that's greater or equal to [ResourceDescription::Width](./ns-d3d12-d3d12_resource_desc.md). When multiple resource descriptions are passed in, the C++ algorithm for calculating a structure size and alignment are used. For example, a three-element array with two tiny 64KB-aligned resources and a tiny 4MB-aligned resource, reports differing sizes based on the order of the array. If the 4MB aligned resource is in the middle, then the resulting **Size** is 12MB. Otherwise, the resulting **Size** is 8MB. The **Alignment** returned would always be 4MB, because it's the superset of all alignments in the resource array.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourceallocationinfo#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	ResourceAllocationInfo GetResourceAllocationInfo( uint visibleMask,
-													  uint numResourceDescs,
-													  Span< ResourceDescription > pResourceDescs ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe {
-			fixed( ResourceDescription* pResourceDesc = pResourceDescs ) {
-				var allocInfo = device.GetResourceAllocationInfo( visibleMask, numResourceDescs, (D3D12_RESOURCE_DESC *)pResourceDesc ) ;
-				return allocInfo ;
-			}
-		}
-	}
+	ResourceAllocationInfo GetResourceAllocationInfo( uint                        visibleMask,
+													  uint                        numResourceDescs,
+													  Span< ResourceDescription > pResourceDescs ) ;
 
-	
-	
+
+
 	/// <summary>Divulges the equivalent custom heap properties that are used for non-custom heap types, based on the adapter's architectural properties.</summary>
 	/// <param name="nodeMask">
 	/// <para>Type: <b>UINT</b> For single-GPU operation, set this to zero. If there are multiple GPU nodes, set a bit to identify the node (the  device's physical adapter). Each bit in the mask corresponds to a single node. Only 1 bit must be set. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
@@ -599,8 +483,7 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcustomheapproperties">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	HeapProperties GetCustomHeapProperties( uint nodeMask, HeapType heapType ) => 
-		COMObject!.GetCustomHeapProperties( nodeMask, (D3D12_HEAP_TYPE)heapType ) ;
+	HeapProperties GetCustomHeapProperties( uint nodeMask, HeapType heapType ) ;
 
 
 	/// <summary>Creates both a resource and an implicit heap, such that the heap is big enough to contain the entire resource, and the resource is mapped to the heap.</summary>
@@ -639,34 +522,13 @@ public interface IDevice: IObject,
 	/// <para>This method creates both a resource and a heap, such that the heap is big enough to contain the entire resource, and the resource is mapped to the heap. The created heap is known as an implicit heap, because the heap object can't be obtained by the application. Before releasing the final reference on the resource, your application must ensure that the GPU will no longer read nor write to this resource. The implicit heap is made resident for GPU access before the method returns control to your application. Also see [Residency](/windows/win32/direct3d12/residency). The resource GPU VA mapping can't be changed. See [ID3D12CommandQueue::UpdateTileMappings](./nf-d3d12-id3d12commandqueue-updatetilemappings.md) and [Volume tiled resources](/windows/win32/direct3d12/volume-tiled-resources). This method may be called by multiple threads concurrently.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommittedresource#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateCommittedResource( in HeapProperties pHeapProperties,
-								  HeapFlags HeapFlags,
-								  in ResourceDescription pDesc,
-								  ResourceStates InitialResourceState,
+	void CreateCommittedResource( in HeapProperties         pHeapProperties,
+								  HeapFlags                 HeapFlags,
+								  in ResourceDescription    pDesc,
+								  ResourceStates            InitialResourceState,
 								  [Optional] in ClearValue? pOptimizedClearValue,
-								  in Guid riidResource,
-								  out IResource ppvResource ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe { fixed( void* _pHeapProps = &pHeapProperties, 
-					   _pDesc = &pDesc,
-					   _pClearValue = &pOptimizedClearValue,
-					   _riidResource = &riidResource ) {
-
-				D3D12_CLEAR_VALUE* pD3D12ClearValue =
-					pOptimizedClearValue is null ? null 
-						: (D3D12_CLEAR_VALUE*)_pClearValue ;
-
-				device.CreateCommittedResource( (D3D12_HEAP_PROPERTIES *)_pHeapProps, 
-												(D3D12_HEAP_FLAGS)HeapFlags,
-											   (D3D12_RESOURCE_DESC*)_pDesc, 
-											   (D3D12_RESOURCE_STATES)InitialResourceState,
-												pD3D12ClearValue,
-											   (Guid *)_riidResource, out var _resource ) ;
-				
-				ppvResource = new Resource( (ID3D12Resource)_resource ) ;
-			}
-		}
-	}
+								  in            Guid        riidResource,
+								  out           IResource   ppvResource ) ;
 
 
 	/// <summary>Creates a heap that can be used with placed resources and reserved resources.</summary>
@@ -689,14 +551,7 @@ public interface IDevice: IObject,
 	/// <para>**CreateHeap** creates a heap that can be used with placed resources and reserved resources. Before releasing the final reference on the heap, your application must ensure that the GPU will no longer read or write to this heap. A placed resource object holds a reference on the heap it is created on; but a reserved resource doesn't hold a reference for each mapping made to a heap.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createheap#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateHeap( in HeapDescription pDesc, in Guid riid, out IHeap ppvHeap ) {
-		unsafe {
-			HeapDescription _heapDesc = pDesc ;
-			Guid _riid = riid ;
-			COMObject!.CreateHeap( (D3D12_HEAP_DESC *)&_heapDesc, &_riid, out var _heap ) ;
-			ppvHeap = new Heap( (ID3D12Heap)_heap ) ;
-		}
-	}
+	void CreateHeap( in HeapDescription pDesc, in Guid riid, out IHeap ppvHeap ) ;
 
 
 	/// <summary>
@@ -785,32 +640,13 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource#">
 	/// Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreatePlacedResource( IHeap pHeap, ulong HeapOffset,
-							   in ResourceDescription pDesc,
-							   ResourceStates InitialState,
+	void CreatePlacedResource( IHeap                     pHeap, ulong HeapOffset,
+							   in ResourceDescription    pDesc,
+							   ResourceStates            InitialState,
 							   [Optional] in ClearValue? pOptimizedClearValue,
-							   in Guid riid, out IResource ppvResource ) { unsafe {
-			Guid _riid = riid ;
-			var _pDesc = pDesc ;
-			D3D12_CLEAR_VALUE* pClearValue = null ;
+							   in            Guid        riid, out IResource ppvResource ) ;
 
-			if ( pOptimizedClearValue.HasValue ) {
-				ClearValue _clrValue = pOptimizedClearValue.Value ;
-				pClearValue = (D3D12_CLEAR_VALUE *)&_clrValue ;
-			}
 
-			COMObject!.CreatePlacedResource( pHeap.COMObject, HeapOffset,
-											(D3D12_RESOURCE_DESC*)&_pDesc,
-											(D3D12_RESOURCE_STATES)InitialState,
-											pClearValue,
-											&_riid,
-											out var _res ) ;
-
-			ppvResource = new Resource( (ID3D12Resource)_res ) ;
-		}
-	}
-
-	
 	/// <summary>Creates a resource that is reserved, and not yet mapped to any pages in a heap.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: **const [ResourceDescription](./ns-d3d12-d3d12_resource_desc.md)\*** A pointer to a **ResourceDescription** structure that describes the resource.</para>
@@ -839,28 +675,10 @@ public interface IDevice: IObject,
 	/// <para>**CreateReservedResource** is equivalent to [D3D11_RESOURCE_MISC_TILED](../d3d11/ne-d3d11-d3d11_resource_misc_flag.md) in Direct3D 11. It creates a resource with virtual memory only, no backing store. You need to map the resource to physical memory (that is, to a heap) using <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-copytilemappings">CopyTileMappings</a> and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-updatetilemappings">UpdateTileMappings</a>. These resource types can only be created when the adapter supports tiled resource tier 1 or greater. The tiled resource tier defines the behavior of accessing a resource that is not mapped to a heap.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createreservedresource#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateReservedResource( in ResourceDescription   pDesc,
-								 ResourceStates InitialState,
+	void CreateReservedResource( in ResourceDescription    pDesc,
+								 ResourceStates            InitialState,
 								 [Optional] in ClearValue? pOptimizedClearValue,
-								 in Guid riid, out IResource ppvResource ) { unsafe {
-			Guid _riid = riid ;
-			var _pDesc = pDesc ;
-			D3D12_CLEAR_VALUE* pClearValue = null ;
-			
-			if ( pOptimizedClearValue.HasValue ) {
-				ClearValue _clrValue = pOptimizedClearValue.Value ;
-				pClearValue = (D3D12_CLEAR_VALUE*)&_clrValue ;
-			}
-			
-			COMObject!.CreateReservedResource( (D3D12_RESOURCE_DESC *)&_pDesc, 
-											  (D3D12_RESOURCE_STATES)InitialState, 
-											  pClearValue, 
-											  &_riid,
-											  out var _res ) ;
-			
-			ppvResource = new Resource( (ID3D12Resource)_res ) ;
-		}
-	}
+								 in            Guid        riid, out IResource ppvResource ) ;
 
 
 	/// <summary>Creates a shared handle to a heap, resource, or fence object.</summary>
@@ -900,18 +718,9 @@ public interface IDevice: IObject,
 	/// <para>Both heaps and committed resources can be shared. Sharing a committed resource shares the implicit heap along with the committed resource description, such that a compatible resource description can be mapped to the heap from another device. For Direct3D 11 and Direct3D 12 interop scenarios, a shared fence is opened in DirectX 11 with the <a href="https://docs.microsoft.com/windows/win32/api/d3d11_4/nf-d3d11_4-id3d11device5-opensharedfence">ID3D11Device5::OpenSharedFence</a> method, and a shared resource is opened with the <a href="https://docs.microsoft.com/windows/win32/api/d3d11_1/nf-d3d11_1-id3d11device1-opensharedresource1">ID3D11Device::OpenSharedResource1</a> method. For Direct3D 12, a shared handle is opened with the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-opensharedhandle">ID3D12Device::OpenSharedHandle</a> or the ID3D12Device::OpenSharedHandleByName method.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createsharedhandle#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateSharedHandle( IDeviceChild pObject,
+	void CreateSharedHandle( IDeviceChild                     pObject,
 							 [Optional] in SecurityAttributes pAttributes,
-							 uint Access, string Name, out Win32Handle pHandle ) {
-		unsafe {
-			fixed ( SecurityAttributes* _attrPtr = &pAttributes ) {
-				Win32Handle _handle = default ;
-				COMObject!.CreateSharedHandle( pObject.COMObject, (SECURITY_ATTRIBUTES *)_attrPtr, 
-											  Access, Name, (HANDLE *)&_handle ) ;
-				pHandle = _handle ;
-			}
-		}
-	}
+							 uint                             Access, string Name, out Win32Handle pHandle ) ;
 
 
 	/// <summary>Opens a handle for shared resources, shared heaps, and shared fences, by using HANDLE and REFIID.</summary>
@@ -937,18 +746,7 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-opensharedhandle">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void OpenSharedHandle( Win32Handle NTHandle, in Guid riid, out object ppvObj ) {
-		// Get the ID3D12Device
-		var device = this.COMObject
-					 ?? throw new Exception("COMObject is null");
-
-		// Make local (fixed) Guid to easily obtain pointer:
-		Guid _riid = riid ;
-		unsafe {
-			device.OpenSharedHandle( NTHandle, &_riid, out var ppv ) ;
-			ppvObj = ppv ;
-		}
-	}
+	void OpenSharedHandle( Win32Handle NTHandle, in Guid riid, out object ppvObj ) ;
 
 	/// <summary>Opens a handle for shared resources, shared heaps, and shared fences, by using Name and Access.</summary>
 	/// <param name="Name">
@@ -969,23 +767,9 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-opensharedhandlebyname">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void OpenSharedHandleByName( string Name, uint Access, ref Win32Handle pNTHandle ) {
-		// Get the ID3D12Device
-		var device = this.COMObject
-							  ?? throw new Exception("COMObject is null");
+	void OpenSharedHandleByName( string Name, uint Access, ref Win32Handle pNTHandle ) ;
 
-		// Copy Name to PCWSTR from string (uses implicit op):
-		PCWSTR name   = Name ;
-		HANDLE handle = pNTHandle ;
-		
-		// Call the OpenSharedHandleByName method 
-		unsafe { device.OpenSharedHandleByName( name, Access, &handle ) ; }
-		
-		// Set the HANDLE
-		pNTHandle = handle ;
-	}
 
-	
 
 	/// <summary>Makes objects resident for the device.</summary>
 	/// <param name="NumObjects">
@@ -1007,26 +791,9 @@ public interface IDevice: IObject,
 	/// <para><b>MakeResident</b> is ref-counted, such that <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-evict">Evict</a> must be called the same amount of times as <b>MakeResident</b> before <b>Evict</b> takes effect. Objects that support residency are made resident during creation, so a single <b>Evict</b> call will actually evict the object. Applications must use fences to ensure the GPU doesn't use non-resident objects. <b>MakeResident</b> must return before the GPU executes a command list that references the object. <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-evict">Evict</a> must be called after the GPU finishes executing a command list that references the object. Evicted objects still consume the same GPU virtual address and same amount of GPU virtual address space. Therefore, resource descriptors and other GPU virtual address references are not invalidated after <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-evict">Evict</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-makeresident#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void MakeResident< P >( uint NumObjects, Span< P > ppObjects ) where P: IPageable {
-		var pageables = new ID3D12Pageable[ NumObjects ] ;
-		for ( int i = 0; i < NumObjects; ++i ) {
-			var next = ppObjects[i] ;
-#if DEBUG || DEV_BUILD
-			if( next is null ) throw new ArgumentNullException( nameof(ppObjects), 
-																$"{nameof(IDevice)}.{nameof(MakeResident)} :: " +
-																$"Span must not contain null references!" ) ;
-			if ( next.COMObject is null || ( next.ComPointer?.Disposed ?? true ) )
-				throw new ArgumentException( nameof( ppObjects ),
-											 $"{nameof( IDevice )}.{nameof( MakeResident )} :: " +
-											 $"Span must contain only COM objects!" ) ;
-#endif
+	void MakeResident< P >( uint NumObjects, Span< P > ppObjects ) where P: IPageable ;
 
-			pageables[ i ] = next.COMObject ;
-		}
-		COMObject!.MakeResident( NumObjects, pageables ) ;
-	}
 
-	
 	/// <summary>Enables the page-out of data, which precludes GPU access of that data.</summary>
 	/// <param name="NumObjects">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of objects in the <i>ppObjects</i> array to evict from the device.</para>
@@ -1045,28 +812,7 @@ public interface IDevice: IObject,
 	/// <para>Refer to the remarks for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-makeresident">MakeResident</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-evict#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void Evict< P >( uint NumObjects, Span<P> ppObjects ) where P: IPageable {
-		// Extract the COM interface refs from the span of objects:
-		// A more efficient unsafe overload taking a raw ID3D12Pageable** should be written ...
-		var pageables     = new ID3D12Pageable[ ppObjects.Length ] ;
-		var _pageableSpan = pageables.AsSpan( ) ;
-			
-		for( int i = 0; i < ppObjects.Length; i++ ) {
-			var next = ppObjects[ i ] ;
-#if DEBUG || DEV_BUILD
-			if( next is null ) throw new ArgumentNullException( nameof(ppObjects), 
-																$"{nameof(IDevice)}.{nameof(Evict)} :: " +
-																$"Span must not contain null references!" ) ;
-			if ( next.COMObject is null || ( next.ComPointer?.Disposed ?? true ) )
-				throw new ArgumentException( nameof( ppObjects ),
-											 $"{nameof( IDevice )}.{nameof( Evict )} :: " +
-											 $"Span must contain only COM objects!" ) ;
-#endif
-			_pageableSpan[ i ] = ppObjects[ i ].COMObject! ;
-		}
-			
-		COMObject!.Evict( NumObjects, pageables ) ;
-	}
+	void Evict< P >( uint NumObjects, Span< P > ppObjects ) where P: IPageable ;
 
 
 	/// <summary>Creates a fence object. (ID3D12Device.CreateFence)</summary>
@@ -1092,19 +838,12 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createfence">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateFence( ulong InitialValue, FenceFlags Flags,
-					  in Guid riid, out IFence ppFence ) {
-		unsafe { 
-			Guid iid = riid ;
-			COMObject!.CreateFence( InitialValue, 
-									(D3D12_FENCE_FLAGS)Flags, 
-									&iid, 
-									out var fence ) ;
-			ppFence = new Fence( (ID3D12Fence)fence ) ;
-		}
-	}
+	void CreateFence( ulong InitialValue, 
+					  FenceFlags Flags,
+					  in Guid riid,
+					  out IFence ppFence ) ;
 
-	
+
 	/// <summary>Gets the reason that the device was removed.</summary>
 	/// <returns>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns the reason that the device was removed.</para>
@@ -1112,9 +851,9 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getdeviceremovedreason">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	HResult GetDeviceRemovedReason( ) => COMObject!.GetDeviceRemovedReason( ) ;
+	HResult GetDeviceRemovedReason( ) ;
 
-	
+
 	/// <summary>
 	/// Gets a resource layout that can be copied. Helps the app fill-in
 	/// D3D12_PLACED_SUBRESOURCE_FOOTPRINT and D3D12_SUBRESOURCE_FOOTPRINT
@@ -1163,44 +902,16 @@ public interface IDevice: IObject,
 	/// <para>This routine assists the application in filling out <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint">D3D12_PLACED_SUBRESOURCE_FOOTPRINT</a> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_subresource_footprint">D3D12_SUBRESOURCE_FOOTPRINT</a> structures, when suballocating space in upload heaps. The resulting structures are GPU adapter-agnostic, meaning that the values will not vary from one GPU adapter to the next. <b>GetCopyableFootprints</b> uses specified details about resource formats, texture layouts, and alignment requirements (from the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_resource_desc">ResourceDescription</a> structure)  to fill out the subresource structures. Applications have access to all these details, so this method, or a variation of it, could be  written as part of the app.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getcopyablefootprints#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	nint GetCopyableFootprints( in ResourceDescription                       pResourceDesc, 
-									   uint                                         FirstSubresource, 
-									   uint                                         NumSubresources, 
-									   ulong                                        BaseOffset,
-									   [Out] out Span< PlacedSubresourceFootprint > pLayouts,
-									   [Out] out Span< uint >                       pNumRows,
-									   [Out] out Span< ulong >                      pRowSizeInBytes,
-									   out       ulong                              pTotalBytes ) {
-		//! pLayouts: to be filled with the description and placement of each subresource
-		//! pNumRows: to be filled with the number of rows for each subresource
-		//! pRowSizeInBytes: to be filled with the unpadded size in bytes of a row, of each subresource
+	nint GetCopyableFootprints( in ResourceDescription                       pResourceDesc,
+								uint                                         FirstSubresource,
+								uint                                         NumSubresources,
+								ulong                                        BaseOffset,
+								[Out] out Span< PlacedSubresourceFootprint > pLayouts,
+								[Out] out Span< uint >                       pNumRows,
+								[Out] out Span< ulong >                      pRowSizeInBytes,
+								[Out] out ulong                              pTotalBytes ) ;
 
-		uint[ ]?  _numRows        = default ;
-		ulong[ ]? _rowSizeInBytes = default ;
-			
-		// allocate memory for the layouts:
-		unsafe {
-			var _pLayouts = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)
-				( NativeMemory.Alloc( (nuint)
-									  ( sizeof( PlacedSubresourceFootprint )
-										* NumSubresources ) ) ) ;
 
-			fixed ( ResourceDescription* _descPtr = &pResourceDesc ) {
-				COMObject!.GetCopyableFootprints( (D3D12_RESOURCE_DESC*)_descPtr,
-												  FirstSubresource,
-												  NumSubresources, BaseOffset,
-												  _pLayouts, _numRows, _rowSizeInBytes,
-												  out pTotalBytes ) ;
-
-				pLayouts        = new( _pLayouts, (int)NumSubresources ) ;
-				pNumRows        = _numRows ;
-				pRowSizeInBytes = _rowSizeInBytes ;
-				return (nint)_pLayouts ;
-			}
-		}
-	}
-	
-	
 	/// <summary>Creates a query heap. A query heap contains an array of queries.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_query_heap_desc">D3D12_QUERY_HEAP_DESC</a>*</b> Specifies the query heap in a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_query_heap_desc">D3D12_QUERY_HEAP_DESC</a> structure.</para>
@@ -1218,19 +929,10 @@ public interface IDevice: IObject,
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
 	/// </returns>
 	/// <remarks>Refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/queries">Queries</a> for more information.</remarks>
-	void CreateQueryHeap( in QueryHeapDescription pDesc, in Guid riid, out IHeap ppvHeap ) {
-		unsafe {
-			fixed ( QueryHeapDescription* _pDesc = &pDesc ) {
-				Guid _guid = riid;
-				COMObject!.CreateQueryHeap( (D3D12_QUERY_HEAP_DESC *)_pDesc, 
-											&_guid, out var result ) ;
-				ppvHeap = new Heap( (ID3D12Heap)result ) ;
-			}
-		}
-	}
-	
-	
-	
+	void CreateQueryHeap( in QueryHeapDescription pDesc, in Guid riid, out IHeap ppvHeap ) ;
+
+
+
 	/// <summary>A development-time aid for certain types of profiling and experimental prototyping.</summary>
 	/// <param name="Enable">
 	/// <para>Type: <b>BOOL</b> Specifies a BOOL that turns the stable power state on or off.</para>
@@ -1243,10 +945,10 @@ public interface IDevice: IObject,
 	/// <para>This method is only useful during the development of applications. It enables developers to profile GPU usage of multiple algorithms without experiencing artifacts from <a href="https://en.wikipedia.org/wiki/Dynamic_frequency_scaling">dynamic frequency scaling</a>. Do not call this method in normal execution for a shipped application. This method only works while the machine is in <a href="https://docs.microsoft.com/windows/uwp/get-started/enable-your-device-for-development">developer mode</a>. If developer mode is not enabled, then device removal will occur. Instead, call this method in response to an off-by-default, developer-facing switch. Calling it in response to command line parameters, config files, registry keys, and developer console commands are reasonable usage scenarios. A stable power state typically fixes GPU clock rates at a slower setting that is significantly lower than that experienced by users under normal application load. This reduction in clock rate affects the entire system. Slow clock rates are required to ensure processors don’t exhaust power, current, and thermal limits. Normal usage scenarios commonly leverage a processors ability to dynamically over-clock. Any conclusions made by comparing two designs under a stable power state should be double-checked with supporting results from real usage scenarios.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-setstablepowerstate#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetStablePowerState( bool Enable ) => COMObject!.SetStablePowerState( Enable ) ;
-	
-	
-	
+	void SetStablePowerState( bool Enable ) ;
+
+
+
 	/// <summary>This method creates a command signature.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_command_signature_desc">D3D12_COMMAND_SIGNATURE_DESC</a>*</b> Describes the command signature to be created with the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_command_signature_desc">D3D12_COMMAND_SIGNATURE_DESC</a> structure.</para>
@@ -1272,20 +974,10 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createcommandsignature">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateCommandSignature( in CommandSignatureDescription pDesc,
-								 IRootSignature pRootSignature, in Guid riid,
-								 out ICommandSignature ppvCommandSignature ) {
-		unsafe {
-			Guid _guid = riid ;
-			fixed ( CommandSignatureDescription* _ppDesc = &pDesc ) {
-				COMObject!.CreateCommandSignature( (D3D12_COMMAND_SIGNATURE_DESC *)_ppDesc, 
-												  pRootSignature.COMObject, &_guid, 
-												  out var signature ) ;
-				ppvCommandSignature = new
-					CommandSignature( (ID3D12CommandSignature)signature ) ;
-			}
-		}
-	}
-	
+								 IRootSignature pRootSignature, 
+								 in Guid riid,
+								 out ICommandSignature ppvCommandSignature ) ;
+
 
 	/// <summary>
 	/// Gets info about how a tiled resource is broken into tiles.
@@ -1324,29 +1016,13 @@ public interface IDevice: IObject,
 	/// <para>For more information on tiled resources, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/volume-tiled-resources">Volume Tiled Resources</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourcetiling#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void GetResourceTiling( in IResource pTiledResource,
-							out uint pNumTilesForEntireResource,
-							out PackedMipInfo pPackedMipDesc,
-							out TileShape pStandardTileShapeForNonPackedMips,
-							ref uint pNumSubresourceTilings, 
-							uint FirstSubresourceTilingToGet,
-							ref SubresourceTiling pSubresourceTilingsForNonPackedMips ) {
-		unsafe {
-			var _pMipDesc = stackalloc D3D12_PACKED_MIP_INFO[ 1 ] ;
-			var _ptileShapeForNonPacked = stackalloc D3D12_TILE_SHAPE[ 1 ] ;
-			
-			fixed( SubresourceTiling* pSubresourceTiling = &pSubresourceTilingsForNonPackedMips ) {
-				COMObject!.GetResourceTiling( pTiledResource.COMObject,
-											  out pNumTilesForEntireResource,
-											  _pMipDesc, _ptileShapeForNonPacked,
-											  ref pNumSubresourceTilings, FirstSubresourceTilingToGet,
-											  (D3D12_SUBRESOURCE_TILING*)pSubresourceTiling ) ;
-			}
-			
-			pPackedMipDesc = *(PackedMipInfo *)_pMipDesc ;
-			pStandardTileShapeForNonPackedMips = *(TileShape *)_ptileShapeForNonPacked ;
-		}
-	}
+	void GetResourceTiling( in  IResource         pTiledResource,
+							out uint              pNumTilesForEntireResource,
+							out PackedMipInfo     pPackedMipDesc,
+							out TileShape         pStandardTileShapeForNonPackedMips,
+							ref uint              pNumSubresourceTilings,
+							uint                  FirstSubresourceTilingToGet,
+							ref SubresourceTiling pSubresourceTilingsForNonPackedMips ) ;
 	
 	
 	
@@ -1359,16 +1035,12 @@ public interface IDevice: IObject,
 	/// <para>A locally unique identifier (LUID) is a 64-bit value that is guaranteed to be unique only on the system on which it was generated. The uniqueness of a locally unique identifier (LUID) is guaranteed only until the system is restarted.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getadapterluid#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	Luid GetAdapterLuid( ) => COMObject!.GetAdapterLuid( ) ;
+	Luid GetAdapterLuid( ) ;
 	
 	
 	// ---------------------------------------------------------------------------------
-	public new static Type ComType => typeof(ID3D12Device) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device).GUID ;
-	
-	
+	new static Type ComType => typeof(ID3D12Device) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -1381,9 +1053,8 @@ public interface IDevice: IObject,
 		}
 	}
 	// ---------------------------------------------------------------------------------
-	static IInstantiable IInstantiable. Instantiate( )                => new Device( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device( pComObj ) ;
-	
+	static IInstantiable IInstantiable. Instantiate( ) => new Device( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
 		new Device( (ID3D12Device)pComObj! ) ;
 	// ==================================================================================
@@ -1391,268 +1062,535 @@ public interface IDevice: IObject,
 
 
 [ProxyFor( typeof( ID3D12Device1 ) )]
-public interface IDevice1: IDevice,
-						   IComObjectRef< ID3D12Device1 >,
-						   IUnknownWrapper< ID3D12Device1 > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device1 >? ComPointer { get ; }
-	new ID3D12Device1? COMObject => ComPointer?.Interface ;
-	ID3D12Device1? IComObjectRef< ID3D12Device1 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device1 >? IUnknownWrapper< ID3D12Device1 >.ComPointer => ComPointer ;
-	// ==================================================================================
-
+public interface IDevice1: IDevice {
 
 	/// <summary>Creates a cached pipeline library.</summary>
 	/// <param name="pLibraryBlob">
 	/// <para>Type: [in] **const void\*** If the input library blob is empty, then the initial content of the library is empty. If the input library blob is not empty, then it is validated for integrity, parsed, and the pointer is stored. The pointer provided as input to this method must remain valid for the lifetime of the object returned. For efficiency reasons, the data is not copied.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <param name="BlobLength">
 	/// <para>Type: **[SIZE_T](/windows/win32/winprog/windows-data-types)** Specifies the length of *pLibraryBlob* in bytes.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <param name="riid">
 	/// <para>Type: **REFIID** Specifies a unique REFIID for the [ID3D12PipelineLibrary](./nn-d3d12-id3d12pipelinelibrary.md) object.
 	/// Typically set this and the following parameter with the macro `IID_PPV_ARGS`, where **Library** is the name of the object.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <param name="ppPipelineLibrary">
 	/// <para>Type: [out] **void\*\*** Returns a pointer to the created library.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <returns>
 	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/win32/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10), including **E_INVALIDARG** if the blob is corrupted or unrecognized, **D3D12_ERROR_DRIVER_VERSION_MISMATCH** if the provided data came from an old driver or runtime, and **D3D12_ERROR_ADAPTER_NOT_FOUND** if the data came from different hardware. If you pass `nullptr` for *pPipelineLibrary* then the runtime still performs the validation of the blob but avoid creating the actual library and returns S_FALSE if the library would have been created. Also, the feature requires an updated driver, and attempting to use it on old drivers will return DXGI_ERROR_UNSUPPORTED.</para>
 	/// </returns>
 	/// <remarks>
 	/// <para>A pipeline library enables the following operations. - Adding pipeline state objects (PSOs) to an existing library object (refer to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12pipelinelibrary-storepipeline">StorePipeline</a>). - Serializing a PSO library into a contiguous block of memory for disk storage (refer to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12pipelinelibrary-serialize">Serialize</a>). - De-serializing a PSO library from persistent storage (this is handled by <b>CreatePipelineLibrary</b>). - Retrieving individual PSOs from the library (refer to <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12pipelinelibrary-loadcomputepipeline">LoadComputePipeline</a> and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12pipelinelibrary-loadgraphicspipeline">LoadGraphicsPipeline</a>). At no point in the lifecycle of a pipeline library is there duplication between PSOs with identical sub-components. A recommended solution for managing the lifetime of the provided pointer while only having to ref-count the returned interface is to leverage <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setprivatedatainterface">ID3D12Object::SetPrivateDataInterface</a>, and use an object which implements <b>IUnknown</b>, and frees the memory when the ref-count reaches 0.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-createpipelinelibrary#">Read more on docs.microsoft.com </a>.</para>
 	/// </remarks>
-	void CreatePipelineLibrary( nint pLibraryBlob,
-								nuint BlobLength,
-								in Guid riid,
-								out IPipelineLibrary ppPipelineLibrary ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		unsafe {
-			Guid _guid = riid ;
-			device.CreatePipelineLibrary( (void *)pLibraryBlob, BlobLength, &_guid, out var result ) ;
-			ppPipelineLibrary = new PipelineLibrary( (ID3D12PipelineLibrary)result ) ;
-		}
-	}
+	void CreatePipelineLibrary( nint                 pLibraryBlob,
+								nuint                BlobLength,
+								in  Guid             riid,
+								out IPipelineLibrary ppPipelineLibrary ) ;
 
 
 	/// <summary>Specifies an event that should be fired when one or more of a collection of fences reach specific values.</summary>
 	/// <param name="ppFences">
 	/// <para>Type: <b>ID3D12Fence*</b> An array of length <i>NumFences</i> that specifies the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12fence">ID3D12Fence</a> objects.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <param name="pFenceValues">
 	/// <para>Type: <b>const UINT64*</b> An array of length <i>NumFences</i> that specifies the fence values required for the event is to be signaled.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <param name="NumFences">
 	/// <para>Type: <b>UINT</b> Specifies the number of fences to be included.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <param name="Flags">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_multiple_fence_wait_flags">D3D12_MULTIPLE_FENCE_WAIT_FLAGS</a></b> Specifies one  of the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_multiple_fence_wait_flags">D3D12_MULTIPLE_FENCE_WAIT_FLAGS</a> that determines how to proceed.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <param name="hEvent">
 	/// <para>Type: <b>HANDLE</b> A handle to the event object.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <returns>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns an HRESULT success or error code.</para>
 	/// </returns>
 	/// <remarks>
 	/// <para>To specify a single fence refer to the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12fence-seteventoncompletion">SetEventOnCompletion</a> method. If *hEvent* is a null handle, then this API will not return until the specified fence value(s) have been reached.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-seteventonmultiplefencecompletion#">Read more on docs.microsoft.com </a>.</para>
 	/// </remarks>
-	void SetEventOnMultipleFenceCompletion( IFence[ ]           ppFences,
-											ulong[ ]            pFenceValues,
+	void SetEventOnMultipleFenceCompletion( IFence[]            ppFences,
+											ulong[]             pFenceValues,
 											uint                NumFences,
 											MultiFenceWaitFlags Flags,
-											Win32Handle         hEvent ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		ID3D12Fence[ ] _fences = new ID3D12Fence[ NumFences ] ;
-		for ( uint i = 0; i < NumFences; ++i ) {
-			_fences[ i ] = ppFences[ i ].COMObject
-#if DEBUG || DEBUG_COM || DEV_BUILD
-						   ?? throw new NullReferenceException( )
-#endif
-			 						   ;
-		}
-		device.SetEventOnMultipleFenceCompletion( _fences,
-												  pFenceValues,
-												  NumFences,(D3D12_MULTIPLE_FENCE_WAIT_FLAGS)Flags,
-												  hEvent ) ;
-	}
+											Win32Handle         hEvent ) ;
 
 
 	/// <summary>This method sets residency priorities of a specified list of objects.</summary>
 	/// <param name="NumObjects">
 	/// <para>Type: <b>UINT</b> Specifies the number of objects in the <i>ppObjects</i> and <i>pPriorities</i> arrays.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <param name="ppObjects">
 	/// <para>Type: <b>ID3D12Pageable*</b> Specifies an array, of length <i>NumObjects</i>, containing references to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12pageable">ID3D12Pageable</a> objects.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <param name="pPriorities">
 	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_residency_priority">D3D12_RESIDENCY_PRIORITY</a>*</b> Specifies an array, of length <i>NumObjects</i>, of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_residency_priority">D3D12_RESIDENCY_PRIORITY</a> values for the list of objects.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device1-setresidencypriority#parameters">Read more on docs.microsoft.com </a>.</para>
 	/// </param>
 	/// <returns>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns an HRESULT success or error code.</para>
 	/// </returns>
 	/// <remarks>For more information, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/residency">Residency</a>.</remarks>
-	void SetResidencyPriority( uint NumObjects,
-							   IPageable[ ] ppObjects,
-							   Span< ResidencyPriority > pPriorities ) {
-		var device = COMObject ?? throw new NullReferenceException( ) ;
-		ID3D12Pageable[ ] _objects = new ID3D12Pageable[ NumObjects ] ;
-		for ( uint i = 0; i < NumObjects; ++i ) {
-			_objects[ i ] = ppObjects[ i ].COMObject
-#if DEBUG || DEBUG_COM || DEV_BUILD
-							?? throw new NullReferenceException( ) 
-#endif
-							;
-		}
-		unsafe {
-			fixed ( ResidencyPriority* pPriorities_ = pPriorities ) {
-				device.SetResidencyPriority( NumObjects, _objects, (D3D12_RESIDENCY_PRIORITY *)pPriorities_ ) ;
-			}
-		}
-	}
+	void SetResidencyPriority( uint                      NumObjects,
+							   IPageable[]               ppObjects,
+							   Span< ResidencyPriority > pPriorities ) ;
 
-	
+
 	// ---------------------------------------------------------------------------------
-	new static Type ComType => typeof(ID3D12Device1) ;
-	new static Guid InterfaceGUID => typeof(ID3D12Device1).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device1) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device1).GUID ;
-	
-	
+	new static Type ComType => typeof( ID3D12Device1 ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
-			
+			ReadOnlySpan< byte > data = typeof( ID3D12Device1 ).GUID.ToByteArray( ) ;
+
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
-													.GetReference(data) ) ;
+													.GetReference( data ) ) ;
 		}
 	}
-	
 	// ---------------------------------------------------------------------------------
 	static IInstantiable IInstantiable.Instantiate( ) => new Device1( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device1( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device1( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device1( (ID3D12Device1)pComObj! ) ;
 	// ==================================================================================
-}
+} ;
 
 
 [ProxyFor( typeof( ID3D12Device2 ) )]
-public interface IDevice2: IDevice1,
-						   IComObjectRef< ID3D12Device2 >,
-						   IUnknownWrapper< ID3D12Device2 > {
+public interface IDevice2: IDevice1 {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device2 >? ComPointer { get ; }
-	new ID3D12Device2? COMObject => ComPointer?.Interface ;
-	ID3D12Device2? IComObjectRef< ID3D12Device2 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device2 >? IUnknownWrapper< ID3D12Device2 >.ComPointer => ComPointer ;
-	// ==================================================================================
+	
+	/// <summary>Creates a pipeline state object from a pipeline state stream description.</summary>
+	/// <param name="pDesc">
+	/// <para>Type: <b>const <a href="../d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc.md">D3D12_PIPELINE_STATE_STREAM_DESC</a>*</b> The address of a <a href="../d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc.md">D3D12_PIPELINE_STATE_STREAM_DESC</a> structure that describes the pipeline state.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device2-createpipelinestate#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: <b>REFIID</b> The globally unique identifier (<b>GUID</b>) for the pipeline state interface (<a href="../d3d12/nn-d3d12-id3d12pipelinestate.md">ID3D12PipelineState</a>). The <b>REFIID</b>, or <b>GUID</b>, of the interface to the pipeline state can be obtained by using the __uuidof() macro. For example, __uuidof(ID3D12PipelineState) will get the <b>GUID</b> of the interface to a pipeline state.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device2-createpipelinestate#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <param name="ppPipelineState">
+	/// <para>Type: <b>void**</b> <a href="https://docs.microsoft.com/cpp/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_COM_Outptr_</c> A pointer to a memory block that receives a pointer to the <a href="../d3d12/nn-d3d12-id3d12pipelinestate.md">ID3D12PipelineState</a> interface for the pipeline state object. The pipeline state object is an immutable state object. It contains no methods.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device2-createpipelinestate#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns <b>E_OUTOFMEMORY</b> if there is insufficient memory to create the pipeline state object. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> for other possible return values.</para>
+	/// </returns>
+	/// <remarks>This function takes the pipeline description as a <a href="../d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc.md">D3D12_PIPELINE_STATE_STREAM_DESC</a> and combines the functionality of the <a href="../d3d12/nf-d3d12-id3d12device-creategraphicspipelinestate.md">ID3D12Device::CreateGraphicsPipelineState</a> and <a href="../d3d12/nf-d3d12-id3d12device-createcomputepipelinestate.md">ID3D12Device::CreateComputePipelineState</a> functions, which take their pipeline description as the less-flexible <a href="../d3d12/ns-d3d12-d3d12_graphics_pipeline_state_desc.md">D3D12_GRAPHICS_PIPELINE_STATE_DESC</a> and <a href="../d3d12/ns-d3d12-d3d12_compute_pipeline_state_desc.md">D3D12_COMPUTE_PIPELINE_STATE_DESC</a> structs, respectively.</remarks>
+	void CreatePipelineState( in PipelineStateStreamDescription pDesc,
+							  in Guid riid,
+							  out IPipelineState ppPipelineState ) ;
 
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof(ID3D12Device2) ;
-	new static Guid InterfaceGUID => typeof(ID3D12Device2).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device2) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device2).GUID ;
-	
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(ID3D12Device2).GUID.ToByteArray( ) ;
 			
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
 													.GetReference(data) ) ;
 		}
 	}
 	
-	// ---------------------------------------------------------------------------------
-	static IInstantiable IInstantiable.Instantiate( )                      => new Device2( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device2( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate( ) => new Device2( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device2( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device2( (ID3D12Device2)pComObj! ) ;
 	// ==================================================================================
 }
 
 
 [ProxyFor( typeof( ID3D12Device3 ) )]
-public interface IDevice3: IDevice2,
-						   IComObjectRef< ID3D12Device3 >,
-						   IUnknownWrapper< ID3D12Device3 > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device3 >? ComPointer { get ; }
-	new ID3D12Device3? COMObject => ComPointer?.Interface ;
-	ID3D12Device3? IComObjectRef< ID3D12Device3 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device3 >? IUnknownWrapper< ID3D12Device3 >.ComPointer => ComPointer ;
-	// ==================================================================================
+public interface IDevice3: IDevice2 {
+	
+	/// <summary>
+	/// Creates a special-purpose diagnostic heap in system memory from an address.
+	/// The created heap can persist even in the event of a GPU-fault or device-removed scenario.
+	/// </summary>
+	/// <param name="pAddress">
+	/// <para>The address used to create the heap.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-openexistingheapfromaddress#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>The globally unique identifier (<see cref="Guid"/>) for the heap interface
+	/// (<a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12heap">ID3D12Heap</a>).
+	/// The <b>REFIID</b>, or <b><see cref="Guid"/></b>, of the interface to the heap can be obtained by using the
+	/// <b>__uuidof()</b> macro. For example, <b>__uuidof(ID3D12Heap)</b> will retrieve the <b>GUID</b> of the interface to a heap.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-openexistingheapfromaddress#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <param name="ppvHeap">
+	/// <para>A pointer to a memory block.
+	/// On success, the D3D12 runtime will write a pointer to the newly-opened heap into the memory block.
+	/// The type of the pointer depends on the provided <b>riid</b> parameter.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-openexistingheapfromaddress#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns <b>E_OUTOFMEMORY</b> if there is insufficient memory to open the existing heap.
+	/// See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> for other possible return values.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>The heap is created in system memory and permits CPU access. It wraps the entire VirtualAlloc region.
+	/// Heaps can be used for placed and reserved resources, as orthogonally as other heaps.
+	/// Restrictions may still exist based on the flags that cannot be app-chosen.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-openexistingheapfromaddress#">Read more on docs.microsoft.com </a>.</para>
+	/// </remarks>
+	void OpenExistingHeapFromAddress( nint pAddress, in Guid riid, out IHeap ppvHeap ) ;
 
 	
+	/// <summary>
+	/// Creates a special-purpose diagnostic heap in system memory from a file mapping object.
+	/// The created heap can persist even in the event of a GPU-fault or device-removed scenario.
+	/// </summary>
+	/// <param name="hFileMapping">
+	/// <para>The handle to the file mapping object to use to create the heap.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-openexistingheapfromfilemapping#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>The globally unique identifier (<see cref="Guid"/>) for the heap interface
+	/// (<a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12heap">ID3D12Heap</a>).
+	/// The <b>REFIID</b>, or <see cref="Guid"/>, of the interface to the heap can be obtained by using the **__uuidof()** macro.
+	/// For example, **__uuidof(ID3D12Heap)** will retrieve the **GUID** of the interface to a heap.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-openexistingheapfromfilemapping#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <param name="ppvHeap">
+	/// <para>A pointer to a memory block. On success, the D3D12 runtime will write a pointer to the newly-opened heap into the memory block.
+	/// The type of the pointer depends on the provided <i>riid</i> parameter.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-openexistingheapfromfilemapping#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>This method returns <b>E_OUTOFMEMORY</b> if there is insufficient memory to open the existing heap.
+	/// See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>
+	/// for other possible return values.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>The heap is created in system memory, and it permits CPU access. It wraps the entire VirtualAlloc region.
+	/// Heaps can be used for placed and reserved resources, as orthogonally as other heaps.
+	/// Restrictions may still exist based on the flags that cannot be app-chosen.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-openexistingheapfromfilemapping#">Read more on docs.microsoft.com </a>.</para>
+	/// </remarks>
+	void OpenExistingHeapFromFileMapping( Win32Handle hFileMapping, in Guid riid, out IHeap ppvHeap ) ;
+
+	
+	/// <summary>Asynchronously makes objects resident for the device.</summary>
+	/// <param name="flags">
+	/// <para><b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_residency_flags">D3D12_RESIDENCY_FLAGS</a></b>
+	/// Controls whether the objects should be made resident if the application is over its memory budget.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-enqueuemakeresident#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <param name="NumObjects">
+	/// <para>The number of objects in the <i>ppObjects</i> array to make resident for the device.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-enqueuemakeresident#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <param name="ppObjects">
+	/// <para><b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12pageable">ID3D12Pageable</a>*</b>
+	/// A pointer to a memory block; contains an array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12pageable">ID3D12Pageable</a>
+	/// interface pointers for the objects.</para>
+	/// <para>Even though most D3D12 objects inherit from <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12pageable">ID3D12Pageable</a>,
+	/// residency changes are only supported on the following: </para>
+	/// <para>This doc was truncated.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-enqueuemakeresident#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <param name="pFenceToSignal">
+	/// <para><b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12fence">ID3D12Fence</a>*</b>
+	/// A pointer to the fence used to signal when the work is done.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-enqueuemakeresident#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <param name="FenceValueToSignal">
+	/// <para>An unsigned 64-bit value signaled to the fence when the work is done.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-enqueuemakeresident#parameters">Read more on docs.microsoft.com </a>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b>
+	/// This method returns one of the <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para><b>EnqueueMakeResident</b> performs the same actions as <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-makeresident">MakeResident</a>,
+	/// but does not wait for the resources to be made resident. Instead, <b>EnqueueMakeResident</b> signals a fence when the work is done.
+	/// The system will not allow work that references the resources that are being made resident by using <b>EnqueueMakeResident</b> before
+	/// its fence is signaled. Instead, calls to this API are guaranteed to signal their corresponding fence in order, so the same fence can
+	/// be used from call to call.</para>
+	/// <para> <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device3-enqueuemakeresident#">Read more on docs.microsoft.com </a>.</para>
+	/// </remarks>
+	void EnqueueMakeResident( ResidencyFlags flags,
+							  uint NumObjects,
+							  IPageable[ ] ppObjects,
+							  IFence pFenceToSignal,
+							  ulong FenceValueToSignal ) ;
+
 	// ---------------------------------------------------------------------------------
-	public new static Type ComType => typeof(ID3D12Device3) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device3).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device3) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device3).GUID ;
-	
-	
+	public new static Type ComType => typeof( ID3D12Device3 ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
-			
+			ReadOnlySpan< byte > data = typeof( ID3D12Device3 ).GUID.ToByteArray( ) ;
+
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
-													.GetReference(data) ) ;
+													.GetReference( data ) ) ;
 		}
 	}
 	
-	// ---------------------------------------------------------------------------------
-	static IInstantiable IInstantiable.Instantiate( )                      => new Device3( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device3( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate( ) => new Device3( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device3( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device3( (ID3D12Device3)pComObj! ) ;
 	// ==================================================================================
-}
+} ;
 
 
 [ProxyFor( typeof( ID3D12Device4 ) )]
-public interface IDevice4: IDevice3,
-						   IComObjectRef< ID3D12Device4 >,
-						   IUnknownWrapper< ID3D12Device4 > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device4 >? ComPointer { get ; }
-	new ID3D12Device4? COMObject => ComPointer?.Interface ;
-	ID3D12Device4? IComObjectRef< ID3D12Device4 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device4 >? IUnknownWrapper< ID3D12Device4 >.ComPointer => ComPointer ;
-	// ==================================================================================
+public interface IDevice4: IDevice3 {
+	
+	/// <summary>Creates a command list in the closed state.</summary>
+	/// <param name="nodeMask">
+	/// <para>Type: **[UINT](/windows/win32/WinProg/windows-data-types)** For single-GPU operation, set this to zero. If there are multiple GPU nodes, then set a bit to identify the node (the device's physical adapter) for which to create the command list. Each bit in the mask corresponds to a single node. Only one bit must be set. Also see [Multi-adapter systems](/windows/win32/direct3d12/multi-engine).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommandlist1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="type">
+	/// <para>Type: **[D3D12_COMMAND_LIST_TYPE](./ne-d3d12-d3d12_command_list_type.md)** Specifies the type of command list to create.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommandlist1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="flags">
+	/// <para>Type: **[D3D12_COMMAND_LIST_FLAGS](./ne-d3d12-d3d12_command_list_flags.md)** Specifies creation flags.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommandlist1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: **REFIID** A reference to the globally unique identifier (**GUID**) of the command list interface to return in *ppCommandList*.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommandlist1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppCommandList">
+	/// <para>Type: **void\*\*** A pointer to a memory block that receives a pointer to the [ID3D12CommandList](./nn-d3d12-id3d12commandlist.md) or [ID3D12GraphicsCommandList](./nn-d3d12-id3d12graphicscommandlist.md) interface for the command list.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommandlist1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/desktop/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10). |Return value|Description| |-|-| |E_OUTOFMEMORY|There is insufficient memory to create the command list.| See [Direct3D 12 return codes](/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues) for other possible return values.</para>
+	/// </returns>
+	/// <remarks></remarks>
+	unsafe void CreateCommandList1( uint nodeMask,
+									CommandListType type, 
+									CommandListFlags flags,
+									in Guid riid, 
+									out ICommandList ppCommandList ) ;
 
 	
+	/// <summary>Creates an object that represents a session for content protection.</summary>
+	/// <param name="pDesc">
+	/// <para>Type: **const [D3D12_PROTECTED_RESOURCE_SESSION_DESC](./ns-d3d12-d3d12_protected_resource_session_desc.md)\*** A pointer to a constant **D3D12_PROTECTED_RESOURCE_SESSION_DESC** structure, describing the session to create.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createprotectedresourcesession#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: **REFIID** A reference to the globally unique identifier (**GUID**) of the [ID3D12ProtectedResourceSession](./nn-d3d12-id3d12protectedresourcesession.md) interface.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createprotectedresourcesession#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppSession">
+	/// <para>Type: **void\*\*** A pointer to a memory block that receives an [ID3D12ProtectedResourceSession](./nn-d3d12-id3d12protectedresourcesession.md) interface pointer to the created session object.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createprotectedresourcesession#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns></returns>
+	/// <remarks></remarks>
+	void CreateProtectedResourceSession( in ProtectedResourceSessionDescription pDesc,
+										 in Guid riid,
+										 out IProtectedResourceSession ppSession ) ;
+
+	
+	/// <summary>Creates both a resource and an implicit heap (optionally for a protected session), such that the heap is big enough to contain the entire resource, and the resource is mapped to the heap. (ID3D12Device4::CreateCommittedResource1)</summary>
+	/// <param name="pHeapProperties">
+	/// <para>Type: **const [D3D12_HEAP_PROPERTIES](./ns-d3d12-d3d12_heap_properties.md)\*** A pointer to a **D3D12_HEAP_PROPERTIES** structure that provides properties for the resource's heap.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommittedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="HeapFlags">
+	/// <para>Type: **[D3D12_HEAP_FLAGS](./ne-d3d12-d3d12_heap_flags.md)** Heap options, as a bitwise-OR'd combination of **D3D12_HEAP_FLAGS** enumeration constants.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommittedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pDesc">
+	/// <para>Type: **const [D3D12_RESOURCE_DESC](./ns-d3d12-d3d12_resource_desc.md)\*** A pointer to a **D3D12_RESOURCE_DESC** structure that describes the resource.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommittedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="InitialResourceState">
+	/// <para>Type: **[D3D12_RESOURCE_STATES](./ne-d3d12-d3d12_resource_states.md)** The initial state of the resource, as a bitwise-OR'd combination of **D3D12_RESOURCE_STATES** enumeration constants. When you create a resource together with a [D3D12_HEAP_TYPE_UPLOAD](./ne-d3d12-d3d12_heap_type.md) heap, you must set *InitialResourceState* to [D3D12_RESOURCE_STATE_GENERIC_READ](./ne-d3d12-d3d12_resource_states.md). When you create a resource together with a [D3D12_HEAP_TYPE_READBACK](./ne-d3d12-d3d12_heap_type.md) heap, you must set *InitialResourceState* to [D3D12_RESOURCE_STATE_COPY_DEST](./ne-d3d12-d3d12_resource_states.md).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommittedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pOptimizedClearValue">
+	/// <para>Type: **const [D3D12_CLEAR_VALUE](./ns-d3d12-d3d12_clear_value.md)\*** Specifies a **D3D12_CLEAR_VALUE** structure that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the [D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET](./ne-d3d12-d3d12_resource_flags.md) or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, you should choose the value with which the clear operation will most commonly be called. You can call the clear operation with other values, but those operations won't be as efficient as when the value matches the one passed in to resource creation. When you use [D3D12_RESOURCE_DIMENSION_BUFFER](./ne-d3d12-d3d12_resource_dimension.md), you must set *pOptimizedClearValue* to `nullptr`.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommittedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pProtectedSession">
+	/// <para>Type: **[ID3D12ProtectedResourceSession](./nn-d3d12-id3d12protectedresourcesession.md)\*** An optional pointer to an object that represents a session for content protection. If provided, this session indicates that the resource should be protected. You can obtain an **ID3D12ProtectedResourceSession** by calling [ID3D12Device4::CreateProtectedResourceSession](./nf-d3d12-id3d12device4-createprotectedresourcesession.md).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommittedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riidResource">
+	/// <para>Type: **REFIID** A reference to the globally unique identifier (**GUID**) of the resource interface to return in *ppvResource*. While *riidResource* is most commonly the **GUID** of [ID3D12Resource](./nn-d3d12-id3d12resource.md), it may be the **GUID** of any interface. If the resource object doesn't support the interface for this **GUID**, then creation fails with **E_NOINTERFACE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommittedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppvResource">
+	/// <para>Type: **void\*\*** An optional pointer to a memory block that receives the requested interface pointer to the created resource object. *ppvResource* can be `nullptr`, to enable capability testing. When *ppvResource* is `nullptr`, no object is created, and **S_FALSE** is returned when *pDesc* is valid.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommittedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/desktop/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10). |Return value|Description| |-|-| |E_OUTOFMEMORY|There is insufficient memory to create the resource.| See [Direct3D 12 return codes](/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues) for other possible return values.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>This method creates both a resource and a heap, such that the heap is big enough to contain the entire resource, and the resource is mapped to the heap. The created heap is known as an implicit heap, because the heap object can't be obtained by the application. Before releasing the final reference on the resource, your application must ensure that the GPU will no longer read nor write to this resource. The implicit heap is made resident for GPU access before the method returns control to your application. Also see [Residency](/windows/win32/direct3d12/residency). The resource GPU VA mapping can't be changed. See [ID3D12CommandQueue::UpdateTileMappings](./nf-d3d12-id3d12commandqueue-updatetilemappings.md) and [Volume tiled resources](/windows/win32/direct3d12/volume-tiled-resources). This method may be called by multiple threads concurrently.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createcommittedresource1#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void CreateCommittedResource1( in HeapProperties pHeapProperties,
+								   HeapFlags HeapFlags,
+								   in ResourceDescription pDesc,
+								   ResourceStates InitialResourceState,
+								   [Optional] in ClearValue? pOptimizedClearValue,
+								   IProtectedResourceSession pProtectedSession,
+								   in Guid riidResource,
+								   out IResource ppvResource ) ;
+
+	
+	/// <summary>Creates a heap (optionally for a protected session) that can be used with placed resources and reserved resources.</summary>
+	/// <param name="pDesc">
+	/// <para>Type: **const [D3D12_HEAP_DESC](./ns-d3d12-d3d12_heap_desc.md)\*** A pointer to a constant **D3D12_HEAP_DESC** structure that describes the heap.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createheap1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pProtectedSession">
+	/// <para>Type: **[ID3D12ProtectedResourceSession](./nn-d3d12-id3d12protectedresourcesession.md)\*** An optional pointer to an object that represents a session for content protection. If provided, this session indicates that the heap should be protected. You can obtain an **ID3D12ProtectedResourceSession** by calling [ID3D12Device4::CreateProtectedResourceSession](./nf-d3d12-id3d12device4-createprotectedresourcesession.md). A heap with a protected session can't be created with the [D3D12_HEAP_FLAG_SHARED_CROSS_ADAPTER](/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_flags) flag.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createheap1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: **REFIID** A reference to the globally unique identifier (**GUID**) of the heap interface to return in *ppvHeap*. While *riidResource* is most commonly the **GUID** of [ID3D12Heap](./nn-d3d12-id3d12heap.md), it may be the **GUID** of any interface. If the resource object doesn't support the interface for this **GUID**, then creation fails with **E_NOINTERFACE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createheap1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppvHeap">
+	/// <para>Type: **void\*\*** An optional pointer to a memory block that receives the requested interface pointer to the created heap object. *ppvHeap* can be `nullptr`, to enable capability testing. When *ppvHeap* is `nullptr`, no object is created, and **S_FALSE** is returned when *pDesc* is valid.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createheap1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/desktop/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10). |Return value|Description| |-|-| |E_OUTOFMEMORY|There is insufficient memory to create the heap.| See [Direct3D 12 return codes](/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues) for other possible return values.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>**CreateHeap1** creates a heap that can be used with placed resources and reserved resources. Before releasing the final reference on the heap, your application must ensure that the GPU will no longer read or write to this heap. A placed resource object holds a reference on the heap it is created on; but a reserved resource doesn't hold a reference for each mapping made to a heap.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createheap1#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void CreateHeap1( in HeapDescription pDesc,
+					  IProtectedResourceSession pProtectedSession,
+					  in Guid riid,
+					  out IHeap ppvHeap ) ;
+	
+
+	/// <summary>Creates a resource (optionally for a protected session) that is reserved, and not yet mapped to any pages in a heap.</summary>
+	/// <param name="pDesc">
+	/// <para>A pointer to a <see cref="ResourceDescription"/> structure that describes the resource.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createreservedresource1#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="InitialState">
+	/// <para>The initial state of the resource, as a bitwise-OR'd combination of **D3D12_RESOURCE_STATES** enumeration constants.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createreservedresource1#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pOptimizedClearValue">
+	/// <para>Specifies a <see cref="ClearValue"/> structure that describes the default value for a clear color.
+	/// <i>pOptimizedClearValue</i> specifies a value for which clear operations are most optimal.
+	/// When the created resource is a texture with either the <see cref="ResourceFlags.AllowRenderTarget"/> or
+	/// <see cref="ResourceFlags.AllowDepthStencil"/> flags, you should choose the value with which the clear operation will most commonly be called.
+	/// You can call the clear operation with other values, but those operations won't be as efficient as when the value matches the one passed in
+	/// to resource creation. When you use <see cref="ResourceDimension.Buffer"/>, you must set <i>pOptimizedClearValue</i> to `nullptr`.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createreservedresource1#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pProtectedSession">
+	/// <para>An optional pointer to an object that represents a session for content protection.
+	/// If provided, this session indicates that the resource should be protected.
+	/// You can obtain an **ID3D12ProtectedResourceSession** by calling <see cref="IDevice4.CreateProtectedResourceSession"/>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createreservedresource1#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>A reference to the globally unique identifier (<see cref="Guid"/>) of the resource interface to return in <i>ppvResource</i>.
+	/// (See Remarks). While *riidResource* is most commonly the <see cref="Guid"/> of <see cref="IResource"/>, it may be the <see cref="Guid"/>
+	/// of any interface. If the resource object doesn't support the interface for this <see cref="Guid"/>, then creation fails with <b>E_NOINTERFACE</b>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createreservedresource1#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="ppvResource">
+	/// <para>An optional pointer to a memory block that receives the requested interface pointer to the created resource object.
+	/// <i>ppvResource</i> can be `nullptr`, to enable capability testing. When <i>ppvResource</i> is `nullptr`,
+	/// no object is created, and <b>S_FALSE</b> is returned when <i>pDesc</i> is valid.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createreservedresource1#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>If the function succeeds, it returns <b>S_OK</b>.
+	/// Otherwise, it returns an <see cref="HResult"/> [error code]:<para/>
+	/// <b>E_OUTOFMEMORY</b> Returned when there is insufficient memory to create the resource.|</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>**CreateReservedResource** is equivalent to <b>D3D11_RESOURCE_MISC_TILED</b> in Direct3D 11.
+	/// It creates a resource with virtual memory only, no backing store.
+	/// You need to map the resource to physical memory (that is, to a heap) using
+	/// <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-copytilemappings">CopyTileMappings</a>
+	/// and <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-updatetilemappings">UpdateTileMappings</a>.
+	/// These resource types can only be created when the adapter supports tiled resource tier 1 or greater.
+	/// The tiled resource tier defines the behavior of accessing a resource that is not mapped to a heap.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createreservedresource1#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	void CreateReservedResource1( in ResourceDescription pDesc,
+								  ResourceStates InitialState,
+								  [Optional] in ClearValue? pOptimizedClearValue,
+								  IProtectedResourceSession pProtectedSession,
+								  in Guid riid,
+								  out IResource ppvResource ) ;
+
+	
+	/// <summary>
+	/// Gets rich info about the size and alignment of memory required for a collection of resources on this adapter.
+	/// </summary>
+	/// <param name="visibleMask">
+	/// <para>For single-GPU operation, set this to zero. If there are multiple GPU nodes, then set bits to identify the nodes (the device's physical adapters). Each bit in the mask corresponds to a single node. Also see [Multi-adapter systems](/windows/win32/direct3d12/multi-engine).</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-getresourceallocationinfo1#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="numResourceDescs">
+	/// <para>The number of resource descriptors in the *pResourceDescs* array. This is also the size (the number of elements in) *pResourceAllocationInfo1*.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-getresourceallocationinfo1#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pResourceDescs">
+	/// <para>Type: **const [D3D12_RESOURCE_DESC](./ns-d3d12-d3d12_resource_desc.md)\*** An array of **D3D12_RESOURCE_DESC** structures that described the resources to get info about.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-getresourceallocationinfo1#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="pResourceAllocationInfo1">
+	/// <para>Type: **[D3D12_RESOURCE_ALLOCATION_INFO1](./ns-d3d12-d3d12_resource_allocation_info1.md)\*** An array of [D3D12_RESOURCE_ALLOCATION_INFO1](./ns-d3d12-d3d12_resource_allocation_info1.md) structures, containing additional details for each resource description passed as input. This makes it simpler for your application to allocate a heap for multiple resources, and without manually computing offsets for where each resource should be placed.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-getresourceallocationinfo1#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[D3D12_RESOURCE_ALLOCATION_INFO](./ns-d3d12-d3d12_resource_allocation_info.md)** A [D3D12_RESOURCE_ALLOCATION_INFO](./ns-d3d12-d3d12_resource_allocation_info.md) structure that provides info about video memory allocated for the specified array of resources.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>When you're using [CreatePlacedResource](./nf-d3d12-id3d12device-createplacedresource.md), your application must use **GetResourceAllocationInfo** in order to understand the size and alignment characteristics of texture resources. The results of this method vary depending on the particular adapter, and must be treated as unique to this adapter and driver version. Your application can't use the output of **GetResourceAllocationInfo** to understand packed mip properties of textures. To understand packed mip properties of textures, your application must use [GetResourceTiling](./nf-d3d12-id3d12device-getresourcetiling.md). Texture resource sizes significantly differ from the information returned by **GetResourceTiling**, because some adapter architectures allocate extra memory for textures to reduce the effective bandwidth during common rendering scenarios. This even includes textures that have constraints on their texture layouts, or have standardized texture layouts. That extra memory can't be sparsely mapped nor remapped by an application using [CreateReservedResource](./nf-d3d12-id3d12device-createreservedresource.md) and [UpdateTileMappings](./nf-d3d12-id3d12commandqueue-updatetilemappings.md), so it isn't reported by **GetResourceTiling**. Your application can forgo using **GetResourceAllocationInfo** for buffer resources ([D3D12_RESOURCE_DIMENSION_BUFFER](./ne-d3d12-d3d12_resource_dimension.md)). Buffers have the same size on all adapters, which is merely the smallest multiple of 64KB that's greater or equal to [D3D12_RESOURCE_DESC::Width](./ns-d3d12-d3d12_resource_desc.md). When multiple resource descriptions are passed in, the C++ algorithm for calculating a structure size and alignment are used. For example, a three-element array with two tiny 64KB-aligned resources and a tiny 4MB-aligned resource, reports differing sizes based on the order of the array. If the 4MB aligned resource is in the middle, then the resulting **Size** is 12MB. Otherwise, the resulting **Size** is 8MB. The **Alignment** returned would always be 4MB, because it's the superset of all alignments in the resource array.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device4-getresourceallocationinfo1#">Read more on docs.microsoft.com</a>.</para>
+	/// </remarks>
+	ResourceAllocationInfo GetResourceAllocationInfo1( uint visibleMask,
+													   uint numResourceDescs,
+													   in Span< ResourceDescription > pResourceDescs,
+													   [Optional] in Span< ResourceAllocationInfo1 > pResourceAllocationInfo1 ) ;
+
 	// ---------------------------------------------------------------------------------
 	public new static Type ComType => typeof(ID3D12Device4) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device4).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device4) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device4).GUID ;
-	
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(ID3D12Device4).GUID.ToByteArray( ) ;
 			
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
 													.GetReference(data) ) ;
 		}
 	}
-	
 	// ---------------------------------------------------------------------------------
 	static IInstantiable IInstantiable.Instantiate( ) => new Device4( ) ;
 	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device4( pComObj ) ;
@@ -1661,141 +1599,499 @@ public interface IDevice4: IDevice3,
 }
 
 
-[SupportedOSPlatform("windows10.0.17763")]
+[SupportedOSPlatform( "windows10.0.17763" )]
 [ProxyFor( typeof( ID3D12Device5 ) )]
-public interface IDevice5: IDevice4,
-						   IComObjectRef< ID3D12Device5 >,
-						   IUnknownWrapper< ID3D12Device5 > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device5 >? ComPointer { get ; }
-	new ID3D12Device5? COMObject => ComPointer?.Interface ;
-	ID3D12Device5? IComObjectRef< ID3D12Device5 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device5 >? IUnknownWrapper< ID3D12Device5 >.ComPointer => ComPointer ;
-	// ==================================================================================
+public interface IDevice5: IDevice4 {
 
-	
+	/// <summary>Creates a lifetime tracker associated with an application-defined callback; the callback receives notifications when the lifetime of a tracked object is changed.</summary>
+	/// <param name="pOwner">
+	/// <para>A pointer to an **ID3D12LifetimeOwner** interface representing the application-defined callback.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createlifetimetracker#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>A reference to the interface identifier (IID) of the interface to return in *ppvTracker*.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createlifetimetracker#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	/// <param name="ppvTracker">
+	/// <para>A pointer to a memory block that receives the requested interface pointer to the created object.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createlifetimetracker#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// </param>
+	void CreateLifetimeTracker( ILifetimeOwner pOwner, in Guid riid, out ILifetimeTracker ppvTracker ) ;
+
+	/// <summary>You can call **RemoveDevice** to indicate to the Direct3D 12 runtime that the GPU device encountered a problem, and can no longer be used.</summary>
+	/// <remarks>
+	/// <para>Because device removal triggers all fences to be signaled to `UINT64_MAX`, you can create a callback for device removal using an event. </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-removedevice#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void RemoveDevice( ) ;
+
+	/// <summary>Queries reflection metadata about available meta commands.</summary>
+	/// <param name="pNumMetaCommands">
+	/// <para>Type: [in, out] <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a> containing the number of meta commands to query for. This field determines the size of the <i>pDescs</i> array, unless <i>pDescs</i> is <b>nullptr</b>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-enumeratemetacommands#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pDescs">
+	/// <para>Type: [out, optional] **[D3D12_META_COMMAND_DESC](./ns-d3d12-d3d12_meta_command_desc.md)\*** An optional pointer to an array of [D3D12_META_COMMAND_DESC](./ns-d3d12-d3d12_meta_command_desc.md) containing the descriptions of the available meta commands. Pass `nullptr` to have the number of available meta commands returned in <i>pNumMetaCommands</i>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-enumeratemetacommands#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If this method succeeds, it returns <b>S_OK</b>. Otherwise, it returns an [HRESULT](/windows/win32/com/structure-of-com-error-codes) error code.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-enumeratemetacommands">Learn more about this API from docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void EnumerateMetaCommands( ref uint pNumMetaCommands, out Span< MetaCommandDescription > pDescs ) ;
+
+
+	/// <summary>Queries reflection metadata about the parameters of the specified meta command.</summary>
+	/// <param name="commandId">
+	/// <para>Type: <b>REFIID</b> A reference to the globally unique identifier (GUID) of the meta command whose parameters you wish to be returned in <i>pParameterDescs</i>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-enumeratemetacommandparameters#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="Stage">
+	/// <para>Type: <b>D3D12_META_COMMAND_PARAMETER_STAGE</b> A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_meta_command_parameter_stage">D3D12_META_COMMAND_PARAMETER_STAGE</a> specifying the stage of the parameters that you wish to be included in the query.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-enumeratemetacommandparameters#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pTotalStructureSizeInBytes">
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a>*</b> An optional pointer to a <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a> containing the size of the structure containing the parameter values, which you pass when creating/initializing/executing the meta command, as appropriate.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-enumeratemetacommandparameters#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pParameterCount">
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a> containing the number of parameters to query for. This field determines the size of the <i>pParameterDescs</i> array, unless <i>pParameterDescs</i> is <b>nullptr</b>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-enumeratemetacommandparameters#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pParameterDescs">
+	/// <para>Type: <b>D3D12_META_COMMAND_PARAMETER_DESC*</b> An optional pointer to an array of  <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_parameter_desc">D3D12_META_COMMAND_PARAMETER_DESC</a> containing the descriptions of the parameters. Pass <b>nullptr</b> to have the parameter count returned in <i>pParameterCount</i>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-enumeratemetacommandparameters#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b>HRESULT</b> If this method succeeds, it returns <b>S_OK</b>. Otherwise, it returns an <b>HRESULT</b> error code.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-enumeratemetacommandparameters">Learn more about this API from docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void EnumerateMetaCommandParameters( in Guid                                     commandId,
+										 MetaCommandParameterStage                   Stage,
+										 out uint                                    pTotalStructureSizeInBytes,
+										 ref uint                                    pParameterCount,
+										 out Span< MetaCommandParameterDescription > pParameterDescs ) ;
+
+
+	/// <summary>Creates an instance of the specified meta command.</summary>
+	/// <param name="commandId">
+	/// <para>Type: <b>REFIID</b> A reference to the globally unique identifier (GUID) of the meta command that you wish to instantiate.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createmetacommand#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="nodeMask">
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/WinProg/windows-data-types">UINT</a></b> For single-adapter operation, set this to zero. If there are multiple adapter nodes, set a bit to identify the node (one of the device's physical adapters) to which the meta command applies. Each bit in the mask corresponds to a single node. Only one bit must be set. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createmetacommand#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pCreationParametersData">
+	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/win32/WinProg/windows-data-types">void</a>*</b> An optional pointer to a constant structure containing the values of the parameters for creating the meta command.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createmetacommand#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="CreationParametersDataSizeInBytes">
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/WinProg/windows-data-types">SIZE_T</a></b> A <a href="https://docs.microsoft.com/windows/win32/WinProg/windows-data-types">SIZE_T</a> containing the size of the structure pointed to by <i>pCreationParametersData</i>, if set, otherwise 0.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createmetacommand#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: <b>REFIID</b> A reference to the globally unique identifier (GUID) of the interface that you wish to be returned in <i>ppMetaCommand</i>. This is expected to be the GUID of <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12metacommand">ID3D12MetaCommand</a>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createmetacommand#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppMetaCommand">
+	/// <para>Type: <b>void**</b> A pointer to a memory block that receives a pointer to the meta command. This is the address of a pointer to an <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12metacommand">ID3D12MetaCommand</a>, representing  the meta command created.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createmetacommand#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b>HRESULT</b> If this method succeeds, it returns <b>S_OK</b>. Otherwise, it returns an <b>HRESULT</b> error code. </para>
+	/// <para>This doc was truncated.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createmetacommand">Learn more about this API from docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void CreateMetaCommand( in Guid          commandId,
+							uint             nodeMask,
+							[Optional] nint  pCreationParametersData,
+							nuint            CreationParametersDataSizeInBytes,
+							in  Guid         riid,
+							out IMetaCommand ppMetaCommand ) ;
+
+
+	/// <summary>Creates an [ID3D12StateObject](/windows/win32/api/d3d12/nn-d3d12-id3d12stateobject).</summary>
+	/// <param name="pDesc">The description of the state object to create.</param>
+	/// <param name="riid">The GUID of the interface to create. Use <i>__uuidof(ID3D12StateObject)</i>.</param>
+	/// <param name="ppStateObject">The returned state object.</param>
+	/// <returns>
+	/// <para>Returns S_OK if successful; otherwise, returns one of the following values: </para>
+	/// <para>This doc was truncated.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-createstateobject">Learn more about this API from docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void CreateStateObject( in StateObjectDescription pDesc, in Guid riid, out IStateObject ppStateObject ) ;
+
+
+	/// <summary>Query the driver for resource requirements to build an acceleration structure.</summary>
+	/// <param name="pDesc">
+	/// <para>Description of the acceleration structure build. This structure is shared with <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-buildraytracingaccelerationstructure">BuildRaytracingAccelerationStructure</a>.  For more information, see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_build_raytracing_acceleration_structure_inputs">D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS</a>. The implementation is allowed to look at all the CPU parameters in this struct and nested structs.  It may not inspect/dereference any GPU virtual addresses, other than to check to see if a pointer is NULL or not, such as the optional transform in <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_raytracing_geometry_triangles_desc">D3D12_RAYTRACING_GEOMETRY_TRIANGLES_DESC</a>, without dereferencing it. In other words, the calculation of resource requirements for the acceleration structure does not depend on the actual geometry data (such as vertex positions), rather it can only depend on overall properties, such as the number of triangles, number of instances etc.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-getraytracingaccelerationstructureprebuildinfo#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pInfo">The result of the query.</param>
+	/// <remarks>
+	/// <para>The input acceleration structure description is the same as what goes into <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist4-buildraytracingaccelerationstructure">BuildRaytracingAccelerationStructure</a>. The result of this function lets the application provide the correct amount of output storage and scratch storage to <b>BuildRaytracingAccelerationStructure</b> given the same geometry. Builds can also be done with the same configuration passed to <b>GetAccelerationStructurePrebuildInfo</b> overall except equal or smaller counts for the number of geometries/instances or the  number of vertices/indices/AABBs in any given geometry.  In this case the storage requirements reported with the original sizes passed to <b>GetRaytracingAccelerationStructurePrebuildInfo</b> will be valid – the build may actually consume less space but not more.  This is handy for app scenarios where having conservatively large storage allocated for acceleration structures is fine. This method is on the device interface as opposed to command list on the assumption that drivers must be able to calculate resource requirements for an acceleration structure build from only looking at the CPU-visible portions of the call, without having to dereference any pointers to GPU memory containing actual vertex data, index data, etc.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-getraytracingaccelerationstructureprebuildinfo#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void GetRaytracingAccelerationStructurePrebuildInfo( in  BuildRaytracingAccelerationStructureInputs  pDesc,
+														 out RaytracingAccelerationStructurePreBuildInfo pInfo ) ;
+
+	/// <summary>Reports the compatibility of serialized data, such as a serialized raytracing acceleration structure resulting from a call to CopyRaytracingAccelerationStructure with mode D3D12_RAYTRACING_ACCELERATION_STRUCTURE_COPY_MODE_SERIALIZE, with the current device/driver.</summary>
+	/// <param name="SerializedDataType">The type of the serialized data. For more information, see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_serialized_data_type">D3D12_SERIALIZED_DATA_TYPE</a>.</param>
+	/// <param name="pIdentifierToCheck">Identifier from the header of the serialized data to check with the driver. For more information, see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_serialized_data_driver_matching_identifier">D3D12_SERIALIZED_DATA_DRIVER_MATCHING_IDENTIFIER</a>.</param>
+	/// <returns>The returned compatibility status. For more information, see <a href="../d3d12/ne-d3d12-d3d12_driver_matching_identifier_status.md">D3D12_DRIVER_MATCHING_IDENTIFIER_STATUS</a>.</returns>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device5-checkdrivermatchingidentifier">Learn more about this API from docs.microsoft.com</see>.</para>
+	/// </remarks>
+	DriverMatchingIdentifierStatus CheckDriverMatchingIdentifier( SerializedDataType SerializedDataType,
+																  in SerializedDataDriverMatchingIdentifier
+																	  pIdentifierToCheck ) ;
+
+
 	// ---------------------------------------------------------------------------------
-	public new static Type ComType => typeof(ID3D12Device5) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device5).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device5) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device5).GUID ;
-	
-	
+	public new static Type ComType => typeof( ID3D12Device5 ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
-			
+			ReadOnlySpan< byte > data = typeof( ID3D12Device5 ).GUID.ToByteArray( ) ;
+
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
-													.GetReference(data) ) ;
+													.GetReference( data ) ) ;
 		}
 	}
-	
 	// ---------------------------------------------------------------------------------
 	static IInstantiable IInstantiable.Instantiate( ) => new Device5( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device5( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device5( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device5( (ID3D12Device5)pComObj! ) ;
 	// ==================================================================================
-}
+} ;
 
 
+/// <summary>
+/// Represents a virtual adapter and extends the
+/// <a href="https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nn-d3d12-id3d12device5">ID3D12Device5</a> interface.
+/// </summary>
+/// <remarks>Defines the <see cref="SetBackgroundProcessingMode"/> method.</remarks>
 [ProxyFor( typeof( ID3D12Device6 ) )]
 public interface IDevice6: IDevice5,
 						   IComObjectRef< ID3D12Device6 >,
 						   IUnknownWrapper< ID3D12Device6 > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device6 >? ComPointer { get ; }
-	new ID3D12Device6? COMObject => ComPointer?.Interface ;
-	ID3D12Device6? IComObjectRef< ID3D12Device6 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device6 >? IUnknownWrapper< ID3D12Device6 >.ComPointer => ComPointer ;
-	// ==================================================================================
-
+	
+	/// <summary>Sets the mode for driver background processing optimizations.</summary>
+	/// <param name="Mode">
+	/// <para>Type: **[D3D12_BACKGROUND_PROCESSING_MODE](./ne-d3d12-d3d12_background_processing_mode.md)** The level of dynamic optimization to apply to GPU work that's subsequently submitted.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device6-setbackgroundprocessingmode#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="MeasurementsAction">
+	/// <para>Type: **[D3D12_MEASUREMENTS_ACTION](./ne-d3d12-d3d12_measurements_action.md)** The action to take with the results of earlier workload instrumentation.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device6-setbackgroundprocessingmode#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="hEventToSignalUponCompletion">
+	/// <para>Type: **[HANDLE](/windows/win32/winprog/windows-data-types)** An optional handle to signal when the function is complete. For example, if *MeasurementsAction* is set to [D3D12_MEASUREMENTS_ACTION_COMMIT_RESULTS](./ne-d3d12-d3d12_measurements_action.md), then *hEventToSignalUponCompletion* is signaled when all resulting compilations have finished.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device6-setbackgroundprocessingmode#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pbFurtherMeasurementsDesired">
+	/// <para>Type: **[BOOL](/windows/win32/winprog/windows-data-types)\*** An optional pointer to a Boolean value. The function sets the value to `true` to indicate that you should continue profiling, otherwise, `false`.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device6-setbackgroundprocessingmode#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns></returns>
+	/// <remarks>
+	/// <para>A graphics driver can use idle-priority background CPU threads to dynamically recompile shader programs. That can improve GPU performance by specializing shader code to better match details of the hardware that it's running on, and/or the context in which it's being used. As a developer, you don't have to do anything to benefit from this feature (over time, as drivers adopt background processing optimizations, existing shaders will automatically be tuned more efficiently). But, when you're profiling your code, you'll probably want to call **SetBackgroundProcessingMode** to make sure that any driver background processing optimizations have taken place before you take timing measurements. Here's an example. </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device6-setbackgroundprocessingmode#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void SetBackgroundProcessingMode( BackgroundProcessingMode Mode, 
+									  MeasurementsAction       MeasurementsAction,
+									  Win32Handle              hEventToSignalUponCompletion,
+									  ref bool                 pbFurtherMeasurementsDesired ) ;
 	
 	// ---------------------------------------------------------------------------------
 	public new static Type ComType => typeof(ID3D12Device6) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device6).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device6) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device6).GUID ;
-	
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
-			
+			ReadOnlySpan< byte > data = typeof(ID3D12Device6).GUID.ToByteArray( ) ;
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
 													.GetReference(data) ) ;
 		}
 	}
-	
 	// ---------------------------------------------------------------------------------
 	static IInstantiable IInstantiable.Instantiate( ) => new Device6( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Device6( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device6( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device6( (ID3D12Device6)pComObj! ) ;
 	// ==================================================================================
 }
 
 
 [ProxyFor( typeof( ID3D12Device7 ) )]
-public interface IDevice7: IDevice6,
-						   IComObjectRef< ID3D12Device7 >,
-						   IUnknownWrapper< ID3D12Device7 > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device7 >? ComPointer { get ; }
-	new ID3D12Device7? COMObject => ComPointer?.Interface ;
-	ID3D12Device7? IComObjectRef< ID3D12Device7 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device7 >? IUnknownWrapper< ID3D12Device7 >.ComPointer => ComPointer ;
-	// ==================================================================================
+public interface IDevice7: IDevice6 {
+	
+	/// <summary>Incrementally add to an existing state object. This incurs lower CPU overhead than creating a state object from scratch that is a superset of an existing one.</summary>
+	/// <param name="pAddition">
+	/// <para>Type: \_In\_ **const [D3D12_STATE_OBJECT_DESC](./ns-d3d12-d3d12_state_object_desc.md)\*** Description of state object contents to add to existing state object. To help generate this see the **CD3D12_STATE_OBJECT_DESC** helper in class in `d3dx12.h`.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device7-addtostateobject#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pStateObjectToGrowFrom">
+	/// <para>Type: \_In\_ **[ID3D12StateObject](./nn-d3d12-id3d12stateobject.md)\*** Existing state object, which can be in use (for example, active raytracing) during this operation. The existing state object must not be of type **Collection**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device7-addtostateobject#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: \_In\_ **REFIID** Must be the IID of the [ID3D12StateObject](./nn-d3d12-id3d12stateobject.md) interface.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device7-addtostateobject#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppNewStateObject">
+	/// <para>Type: \_COM\_Outptr\_ **void\*\*** Returned state object. Behavior is undefined if shader identifiers are retrieved for new shaders from this call and they are accessed via shader tables by any already existing or in-flight command list that references some older state object. Use of the new shaders added to the state object can occur only from commands (such as **DispatchRays** or **ExecuteIndirect** calls) recorded in a command list after the call to **AddToStateObject**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device7-addtostateobject#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>**S_OK** for success. **E_INVALIDARG**, **E_OUTOFMEMORY** on failure. The debug layer provides detailed status information.</returns>
+	/// <remarks>For more info, see [AddToStateObject](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#addtostateobject).</remarks>
+	void AddToStateObject( in StateObjectDescription pAddition,
+						   IStateObject              pStateObjectToGrowFrom,
+						   in  Guid                  riid,
+						   out IStateObject          ppNewStateObject ) ;
+	
+	/// <summary>Revises the [**ID3D12Device4::CreateProtectedResourceSession**](../d3d12/nf-d3d12-id3d12device4-createprotectedresourcesession.md) method with provision **GUID** that indicates the type of protected resource session.</summary>
+	/// <param name="pDesc">
+	/// <para>Type: \_In\_ **const [D3D12_PROTECTED_RESOURCE_SESSION_DESC1](./ns-d3d12-d3d12_protected_resource_session_desc1.md)\*** A pointer to a constant **D3D12_PROTECTED_RESOURCE_SESSION_DESC1** structure, describing the session to create.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device7-createprotectedresourcesession1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: \_In\_ **REFIID** The GUID of the interface to a protected session. Most commonly, [ID3D12ProtectedResourceSession1](./nn-d3d12-id3d12protectedresourcesession1.md), although it may be any **GUID** for any interface. If the protected session object doesn't support the interface for this **GUID**, the getter will return **E_NOINTERFACE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device7-createprotectedresourcesession1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppSession">
+	/// <para>Type: \_COM\_Outptr\_ **void\*\*** A pointer to a memory block that receives a pointer to the session for the given protected session (the specific interface type returned depends on *riid*).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device7-createprotectedresourcesession1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	void CreateProtectedResourceSession1( in  ProtectedResourceSessionDescription1 pDesc,
+										  in  Guid riid,
+										  out IProtectedResourceSession1 ppSession ) ;
 
 	
 	// ---------------------------------------------------------------------------------
 	public new static Type ComType => typeof(ID3D12Device7) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device7).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device7) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device7).GUID ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(ID3D12Device7).GUID.ToByteArray( ) ;
 			
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
 													.GetReference(data) ) ;
 		}
 	}
-	
 	// ---------------------------------------------------------------------------------
-	static IInstantiable IInstantiable. Instantiate( )                      => new Device7( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device7( pComObj ) ;
+	static IInstantiable IInstantiable. Instantiate( ) => new Device7( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device7( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device7( (ID3D12Device7)pComObj! ) ;
 	// ==================================================================================
 }
 
 
 [ProxyFor( typeof( ID3D12Device8 ) )]
-public interface IDevice8: IDevice7,
-						   IComObjectRef< ID3D12Device8 >,
-						   IUnknownWrapper< ID3D12Device8 > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device8 >? ComPointer { get ; }
-	new ID3D12Device8? COMObject => ComPointer?.Interface ;
-	ID3D12Device8? IComObjectRef< ID3D12Device8 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device8 >? IUnknownWrapper< ID3D12Device8 >.ComPointer => ComPointer ;
-	// ==================================================================================
+public interface IDevice8: IDevice7 {
 
+	/// <summary>Gets rich info about the size and alignment of memory required for a collection of resources on this adapter. (ID3D12Device8::GetResourceAllocationInfo2)</summary>
+	/// <param name="visibleMask">
+	/// <para>Type: **[UINT](/windows/win32/WinProg/windows-data-types)** For single-GPU operation, set this to zero. If there are multiple GPU nodes, then set bits to identify the nodes (the device's physical adapters). Each bit in the mask corresponds to a single node. Also see [Multi-adapter systems](/windows/win32/direct3d12/multi-engine).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getresourceallocationinfo2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="numResourceDescs">
+	/// <para>Type: **[UINT](/windows/win32/WinProg/windows-data-types)** The number of resource descriptors in the *pResourceDescs* array. This is also the size (the number of elements in) *pResourceAllocationInfo1*.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getresourceallocationinfo2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pResourceDescs">
+	/// <para>Type: **const [D3D12_RESOURCE_DESC1](./ns-d3d12-d3d12_resource_desc1.md)\*** An array of **D3D12_RESOURCE_DESC1** structures that described the resources to get info about.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getresourceallocationinfo2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pResourceAllocationInfo1">
+	/// <para>Type: **[D3D12_RESOURCE_ALLOCATION_INFO1](./ns-d3d12-d3d12_resource_allocation_info1.md)\*** An array of [D3D12_RESOURCE_ALLOCATION_INFO1](./ns-d3d12-d3d12_resource_allocation_info1.md) structures, containing additional details for each resource description passed as input. This makes it simpler for your application to allocate a heap for multiple resources, and without manually computing offsets for where each resource should be placed.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getresourceallocationinfo2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[D3D12_RESOURCE_ALLOCATION_INFO](./ns-d3d12-d3d12_resource_allocation_info.md)** A [D3D12_RESOURCE_ALLOCATION_INFO](./ns-d3d12-d3d12_resource_allocation_info.md) structure that provides info about video memory allocated for the specified array of resources.</para>
+	/// </returns>
+	/// <remarks>For remarks, see [ID3D12Device4::GetResourceAllocationInfo1](./nf-d3d12-id3d12device4-getresourceallocationinfo1.md).</remarks>
+	ResourceAllocationInfo GetResourceAllocationInfo2( uint visibleMask, 
+													   uint numResourceDescs, 
+													   in Span< ResourceDescription1 > pResourceDescs,
+													   [Optional] in Span< ResourceAllocationInfo1 > pResourceAllocationInfo1 ) ;
+
+	
+	/// <summary>Creates both a resource and an implicit heap (optionally for a protected session), such that the heap is big enough to contain the entire resource, and the resource is mapped to the heap.</summary>
+	/// <param name="pHeapProperties">
+	/// <para>Type: \_In\_ **const [D3D12_HEAP_PROPERTIES](/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_properties)\*** A pointer to a **D3D12_HEAP_PROPERTIES** structure that provides properties for the resource's heap.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createcommittedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="HeapFlags">
+	/// <para>Type: **[D3D12_HEAP_FLAGS](/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_flags)** Heap options, as a bitwise-OR'd combination of **D3D12_HEAP_FLAGS** enumeration constants.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createcommittedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pDesc">
+	/// <para>Type: **const [D3D12_RESOURCE_DESC1](/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_desc1)\*** A pointer to a **D3D12_RESOURCE_DESC1** structure that describes the resource, including a mip region.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createcommittedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="InitialResourceState">
+	/// <para>Type: **[D3D12_RESOURCE_STATES](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states)** The initial state of the resource, as a bitwise-OR'd combination of **D3D12_RESOURCE_STATES** enumeration constants. When you create a resource together with a [D3D12_HEAP_TYPE_UPLOAD](/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type) heap, you must set *InitialResourceState* to [D3D12_RESOURCE_STATE_GENERIC_READ](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states). When you create a resource together with a [D3D12_HEAP_TYPE_READBACK](/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type) heap, you must set *InitialResourceState* to [D3D12_RESOURCE_STATE_COPY_DEST](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createcommittedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pOptimizedClearValue">
+	/// <para>Type: **const [D3D12_CLEAR_VALUE](/windows/win32/api/d3d12/ns-d3d12-d3d12_clear_value)\*** Specifies a **D3D12_CLEAR_VALUE** structure that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the [D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags) or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, you should choose the value with which the clear operation will most commonly be called. You can call the clear operation with other values, but those operations won't be as efficient as when the value matches the one passed in to resource creation. When you use [D3D12_RESOURCE_DIMENSION_BUFFER](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_dimension), you must set *pOptimizedClearValue* to `nullptr`.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createcommittedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pProtectedSession">
+	/// <para>Type: **[ID3D12ProtectedResourceSession](/windows/win32/api/d3d12/nn-d3d12-id3d12protectedresourcesession)\*** An optional pointer to an object that represents a session for content protection. If provided, this session indicates that the resource should be protected. You can obtain an **ID3D12ProtectedResourceSession** by calling [ID3D12Device4::CreateProtectedResourceSession](/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createprotectedresourcesession).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createcommittedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riidResource">
+	/// <para>Type: **REFIID** A reference to the globally unique identifier (**GUID**) of the resource interface to return in *ppvResource*. While *riidResource* is most commonly the **GUID** of [ID3D12Resource](/windows/win32/api/d3d12/nn-d3d12-id3d12resource), it may be the **GUID** of any interface. If the resource object doesn't support the interface for this **GUID**, then creation fails with **E_NOINTERFACE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createcommittedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppvResource">
+	/// <para>Type: **void\*\*** An optional pointer to a memory block that receives the requested interface pointer to the created resource object. *ppvResource* can be `nullptr`, to enable capability testing. When *ppvResource* is `nullptr`, no object is created, and **S_FALSE** is returned when *pDesc* is valid.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createcommittedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/desktop/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10). |Return value|Description| |-|-| |E_OUTOFMEMORY|There is insufficient memory to create the resource.| See [Direct3D 12 return codes](/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues) for other possible return values.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>This method creates both a resource and a heap, such that the heap is big enough to contain the entire resource, and the resource is mapped to the heap. The created heap is known as an implicit heap, because the heap object can't be obtained by the application. Before releasing the final reference on the resource, your application must ensure that the GPU will no longer read nor write to this resource. The implicit heap is made resident for GPU access before the method returns control to your application. Also see [Residency](/windows/win32/direct3d12/residency). The resource GPU VA mapping can't be changed. See [ID3D12CommandQueue::UpdateTileMappings](/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-updatetilemappings) and [Volume tiled resources](/windows/win32/direct3d12/volume-tiled-resources). This method may be called by multiple threads concurrently.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createcommittedresource2#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void CreateCommittedResource2( in HeapProperties pHeapProperties,
+								   HeapFlags HeapFlags,
+								   in ResourceDescription1 pDesc, 
+								   ResourceStates InitialResourceState,
+								   [Optional] in ClearValue? pOptimizedClearValue,
+								   IProtectedResourceSession pProtectedSession,
+								   in Guid riidResource,
+								   out IResource ppvResource ) ;
+	
+
+	/// <summary>Creates a resource that is placed in a specific heap. Placed resources are the lightest weight resource objects available, and are the fastest to create and destroy.</summary>
+	/// <param name="pHeap">
+	/// <para>Type: [in] **<a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12heap">ID3D12Heap</a>*** A pointer to the **ID3D12Heap** interface that represents the heap in which the resource is placed.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createplacedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="HeapOffset">
+	/// <para>Type: **<a href="https://docs.microsoft.com/windows/win32/WinProg/windows-data-types">UINT64</a>** The offset, in bytes, to the resource. The *HeapOffset* must be a multiple of the resource's alignment, and *HeapOffset* plus the resource size must be smaller than or equal to the heap size. <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourceallocationinfo">**GetResourceAllocationInfo**</a> must be used to understand the sizes of texture resources.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createplacedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pDesc">
+	/// <para>Type: [in] **const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_desc1">D3D12_RESOURCE_DESC1</a>*** A pointer to a **D3D12_RESOURCE_DESC1** structure that describes the resource, including a mip region.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createplacedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="InitialState">
+	/// <para>Type: **<a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATES</a>** The initial state of the resource, as a bitwise-OR'd combination of **D3D12_RESOURCE_STATES** enumeration constants. When a resource is created together with a **D3D12_HEAP_TYPE_UPLOAD** heap, *InitialState* must be **D3D12_RESOURCE_STATE_GENERIC_READ**. When a resource is created together with a **D3D12_HEAP_TYPE_READBACK** heap, *InitialState* must be **D3D12_RESOURCE_STATE_COPY_DEST**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createplacedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pOptimizedClearValue">
+	/// <para>Type: [in, optional] **const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_clear_value">D3D12_CLEAR_VALUE</a>*** Specifies a **D3D12_CLEAR_VALUE** that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the **D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET** or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, your application should choose the value that the clear operation will most commonly be called with. Clear operations can be called with other values, but those operations will not be as efficient as when the value matches the one passed into resource creation. *pOptimizedClearValue* must be NULL when used with **D3D12_RESOURCE_DIMENSION_BUFFER**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createplacedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: **REFIID** The globally unique identifier (**GUID**) for the resource interface. This is an input parameter. The **REFIID**, or **GUID**, of the interface to the resource can be obtained by using the `__uuidof` macro. For example, `__uuidof(ID3D12Resource)` gets the **GUID** of the interface to a resource. Although **riid** is, most commonly, the GUID for <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12resource">**ID3D12Resource**</a>, it may be any **GUID** for any interface. If the resource object doesn't support the interface for this **GUID**, then creation fails with **E_NOINTERFACE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createplacedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppvResource">
+	/// <para>Type: [out, optional] **void**** A pointer to a memory block that receives a pointer to the resource. *ppvResource* can be NULL, to enable capability testing. When *ppvResource* is NULL, no object will be created and S_FALSE will be returned when *pResourceDesc* and other parameters are valid.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createplacedresource1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **<a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a>** This method returns **E_OUTOFMEMORY** if there is insufficient memory to create the resource. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> for other possible return values.</para>
+	/// </returns>
+	/// <remarks>See [ID3D12Device::CreatePlacedResource](./nf-d3d12-id3d12device-createplacedresource.md).</remarks>
+	void CreatePlacedResource1( IHeap pHeap, 
+								ulong HeapOffset,
+								in ResourceDescription1 pDesc, 
+								ResourceStates InitialState, 
+								[Optional] in ClearValue? pOptimizedClearValue, 
+								in Guid riid, 
+								out IResource ppvResource ) ;
+
+
+	/// <summary>For purposes of sampler feedback, creates a descriptor suitable for binding.</summary>
+	/// <param name="pTargetedResource">
+	/// <para>Type: \_In\_opt\_ **[ID3D12Resource](./nn-d3d12-id3d12heap.md)\*** The targeted resource, such as a texture, to create a descriptor for.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createsamplerfeedbackunorderedaccessview#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pFeedbackResource">
+	/// <para>Type: \_In\_opt\_ **[ID3D12Resource](./nn-d3d12-id3d12heap.md)\*** The feedback resource, such as a texture, to create a descriptor for.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createsamplerfeedbackunorderedaccessview#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="DestDescriptor">
+	/// <para>Type: \_In\_ **[D3D12_CPU_DESCRIPTOR_HANDLE](./ns-d3d12-d3d12_cpu_descriptor_handle.md)** The CPU descriptor handle.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createsamplerfeedbackunorderedaccessview#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-createsamplerfeedbackunorderedaccessview">Learn more about this API from docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void CreateSamplerFeedbackUnorderedAccessView( IResource pTargetedResource,
+												   IResource pFeedbackResource,
+												   CPUDescriptorHandle DestDescriptor ) ;
+
+	/// <summary>Gets a resource layout that can be copied. Helps your app fill in [D3D12_PLACED_SUBRESOURCE_FOOTPRINT](../d3d12/ns-d3d12-d3d12_placed_subresource_footprint.md) and [D3D12_SUBRESOURCE_FOOTPRINT](../d3d12/ns-d3d12-d3d12_subresource_footprint.md) when suballocating space in upload heaps.</summary>
+	/// <param name="pResourceDesc">
+	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_desc1">D3D12_RESOURCE_DESC1</a>*</b> A description of the resource, as a pointer to a **D3D12_RESOURCE_DESC1** structure.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getcopyablefootprints1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="FirstSubresource">
+	/// <para>Type: [in] <b>UINT</b> Index of the first subresource in the resource. The range of valid values is 0 to D3D12_REQ_SUBRESOURCES.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getcopyablefootprints1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="NumSubresources">
+	/// <para>Type: [in] <b>UINT</b> The number of subresources in the resource. The range of valid values is 0 to (D3D12_REQ_SUBRESOURCES - <i>FirstSubresource</i>).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getcopyablefootprints1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="BaseOffset">
+	/// <para>Type: <b>UINT64</b> The offset, in bytes, to the resource.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getcopyablefootprints1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pLayouts">
+	/// <para>Type: [out, optional] <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint">D3D12_PLACED_SUBRESOURCE_FOOTPRINT</a>*</b> A pointer to an array (of length <i>NumSubresources</i>) of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint">D3D12_PLACED_SUBRESOURCE_FOOTPRINT</a> structures, to be filled with the description and placement of each subresource.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getcopyablefootprints1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pNumRows">
+	/// <para>Type: [out, optional] <b>UINT*</b> A pointer to an array (of length <i>NumSubresources</i>) of integer  variables, to be filled with the number of rows for each subresource.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getcopyablefootprints1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pRowSizeInBytes">
+	/// <para>Type: [out, optional] <b>UINT64*</b> A pointer to an array (of length <i>NumSubresources</i>) of integer variables, each entry to be filled with the unpadded size in bytes of a row, of each subresource. For example, if a Texture2D resource has a width of 32 and bytes per pixel of 4, then <i>pRowSizeInBytes</i> returns 128. <i>pRowSizeInBytes</i> should not be confused with <b>row pitch</b>, as examining <i>pLayouts</i> and getting the row pitch from that will give you 256 as it is aligned to D3D12_TEXTURE_DATA_PITCH_ALIGNMENT.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getcopyablefootprints1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pTotalBytes">
+	/// <para>Type: [out, optional] <b>UINT64*</b> A pointer to an integer variable, to be filled with the total size, in bytes.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device8-getcopyablefootprints1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <remarks>For remarks and examples, see [ID3D12Device::GetCopyableFootprints](./nf-d3d12-id3d12device-getcopyablefootprints.md).</remarks>
+	void GetCopyableFootprints1( in ResourceDescription1 pResourceDesc,
+								 uint FirstSubresource,
+								 uint NumSubresources,
+								 ulong BaseOffset,
+								 [Optional] Span< PlacedSubresourceFootprint > pLayouts,
+								 out Span< uint > pNumRows,
+								 out Span< ulong > pRowSizeInBytes, 
+								 out ulong pTotalBytes ) ;
 	
 	// ---------------------------------------------------------------------------------
 	public new static Type ComType => typeof(ID3D12Device8) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device8).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device8) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device8).GUID ;
-	
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(ID3D12Device8).GUID.ToByteArray( ) ;
 			
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
 													.GetReference(data) ) ;
@@ -1803,36 +2099,83 @@ public interface IDevice8: IDevice7,
 	}
 	
 	// ---------------------------------------------------------------------------------
-	static IInstantiable IInstantiable. Instantiate( )                      => new Device8( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device8( pComObj ) ;
+	static IInstantiable IInstantiable. Instantiate( ) => new Device8( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device8( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device8( (ID3D12Device8)pComObj! ) ;
 	// ==================================================================================
 }
 
 
 [ProxyFor( typeof( ID3D12Device9 ) )]
-public interface IDevice9: IDevice8,
-						   IComObjectRef< ID3D12Device9 >,
-						   IUnknownWrapper< ID3D12Device9 > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device9 >? ComPointer { get ; }
-	new ID3D12Device9? COMObject => ComPointer?.Interface ;
-	ID3D12Device9? IComObjectRef< ID3D12Device9 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device9 >? IUnknownWrapper< ID3D12Device9 >.ComPointer => ComPointer ;
-	// ==================================================================================
+public interface IDevice9: IDevice8 {
+	
+	/// <summary>Creates an object that grants access to a shader cache, potentially opening an existing cache or creating a new one.</summary>
+	/// <param name="pDesc">
+	/// <para>Type: \_In\_ **const [D3D12_SHADER_CACHE_SESSION_DESC](ns-d3d12-d3d12_shader_cache_session_desc.md)\*** A **D3D12_SHADER_CACHE_SESSION_DESC** structure describing the shader cache session to create.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device9-createshadercachesession#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: **[REFIID](/openspecs/windows_protocols/ms-oaut/bbde795f-5398-42d8-9f59-3613da03c318)** The globally unique identifier (GUID) for the shader cache session interface.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device9-createshadercachesession#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppvSession">
+	/// <para>Type: \_COM\_Outptr\_opt\_ **void\*\*** A pointer to a memory block that receives a pointer to the [ID3D12ShaderCacheSession](nn-d3d12-id3d12shadercachesession.md) interface for the shader cache session.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device9-createshadercachesession#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/desktop/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10). |Return value|Description| |-|-| | DXGI_ERROR_ALREADY_EXISTS | You tried to create a cache with an existing identifier. See [D3D12_SHADER_CACHE_SESSION_DESC::Identifier](ns-d3d12-d3d12_shader_cache_session_desc.md). |</para>
+	/// </returns>
+	/// <remarks></remarks>
+	void CreateShaderCacheSession( in ShaderCacheSessionDescription pDesc, in Guid riid, out IShaderCacheSession ppvSession ) ;
 
+	/// <summary>Modifies the behavior of caches used internally by Direct3D or by the driver.</summary>
+	/// <param name="Kinds">
+	/// <para>Type: **[D3D12_SHADER_CACHE_KIND_FLAGS](ne-d3d12-d3d12_shader_cache_kind_flags.md)** The caches to modify. Any one of these caches may or may not exist.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device9-shadercachecontrol#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="Control">
+	/// <para>Type: **[D3D12_SHADER_CACHE_CONTROL_FLAGS](ne-d3d12-d3d12_shader_cache_control_flags.md)** The way in which to modify the caches. You can't pass both **DISABLE** and **ENABLE** at the same time; and you must pass at least one flag.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device9-shadercachecontrol#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns></returns>
+	/// <remarks></remarks>
+	void ShaderCacheControl( ShaderCacheKindFlags Kinds, ShaderCacheControlFlags Control ) ;
+
+	/// <summary>Creates a command queue with a creator ID.</summary>
+	/// <param name="pDesc">
+	/// <para>Type: \_In\_ **const [D3D12_COMMAND_QUEUE_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_command_queue_desc)\*** Specifies a **D3D12_COMMAND_QUEUE_DESC** that describes the command queue.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device9-createcommandqueue1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="CreatorID">
+	/// <para>Type: **[REFIID](/openspecs/windows_protocols/ms-oaut/bbde795f-5398-42d8-9f59-3613da03c318)** A creator ID. See **Remarks**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device9-createcommandqueue1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: **[REFIID](/openspecs/windows_protocols/ms-oaut/bbde795f-5398-42d8-9f59-3613da03c318)** The globally unique identifier (GUID) for the command queue interface.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device9-createcommandqueue1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppCommandQueue">
+	/// <para>Type: \_COM\_Outptr\_ **void\*\*** A pointer to a memory block that receives a pointer to the [ID3D12CommandQueue](/windows/win32/api/d3d12/nn-d3d12-id3d12commandqueue) interface for the command queue.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device9-createcommandqueue1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** Returns **E_OUTOFMEMORY** if there's insufficient memory to create the command queue; otherwise **S_OK**. See [Direct3D 12 return codes](/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues) for other possible return values.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>When multiple components in the same process are sharing a single Direct3D 12 device, often they will end up with separate workloads on independent command queues. In some hardware implementations, independent queues can run in parallel only with specific other command queues. Direct3D 12 applies a first-come, first-serve grouping for queues, which might not work well for all application or component designs. To help inform Direct3D 12's grouping of queues, you can specify a *creator ID* (which is unique per component) that restricts the grouping to other queues with the same ID. When possible, a component should choose the same unique ID for all of its queues. Microsoft has reserved a few well-known creator IDs for use by Microsoft-developed implementations of APIs on top of Direct3D 12.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device9-createcommandqueue1#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void CreateCommandQueue1( in CommandQueueDescription pDesc,
+							  in Guid CreatorID, in Guid riid,
+							  out ICommandQueue ppCommandQueue ) ;
 	
 	// ---------------------------------------------------------------------------------
 	public new static Type ComType => typeof(ID3D12Device9) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device9).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device9) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device9).GUID ;
-	
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(ID3D12Device9).GUID.ToByteArray( ) ;
 			
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
 													.GetReference(data) ) ;
@@ -1840,36 +2183,149 @@ public interface IDevice9: IDevice8,
 	}
 	
 	// ---------------------------------------------------------------------------------
-	static IInstantiable IInstantiable. Instantiate( )                      => new Device9( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device9( pComObj ) ;
+	static IInstantiable IInstantiable. Instantiate( ) => new Device9( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device9( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device9( (ID3D12Device9)pComObj! ) ;
 	// ==================================================================================
 }
 
 
-
 [ProxyFor( typeof( ID3D12Device10 ) )]
-public interface IDevice10: IDevice9,
-						   IComObjectRef< ID3D12Device10 >,
-						   IUnknownWrapper< ID3D12Device10 > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device10 >? ComPointer { get ; }
-	new ID3D12Device10? COMObject => ComPointer?.Interface ;
-	ID3D12Device10? IComObjectRef< ID3D12Device10 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device10 >? IUnknownWrapper< ID3D12Device10 >.ComPointer => ComPointer ;
-	// ==================================================================================
+public interface IDevice10: IDevice9 {
+
+	/// <summary>Creates a committed resource with an initial layout rather than an initial state.</summary>
+	/// <param name="pHeapProperties">
+	/// <para>Type: \_In\_ **const [D3D12_HEAP_PROPERTIES](/windows/win32/api/d3d12/ns-d3d12-d3d12_heap_properties)\*** A pointer to a **D3D12_HEAP_PROPERTIES** structure that provides properties for the resource's heap.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createcommittedresource3#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="HeapFlags">
+	/// <para>Type: **[D3D12_HEAP_FLAGS](/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_flags)** Heap options, as a bitwise-OR'd combination of **D3D12_HEAP_FLAGS** enumeration constants.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createcommittedresource3#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pDesc">
+	/// <para>Type: **const [D3D12_RESOURCE_DESC1](/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_desc1)\*** A pointer to a **D3D12_RESOURCE_DESC1** structure that describes the resource, including a mip region.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createcommittedresource3#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="InitialLayout">The initial layout of the texture resource; **D3D12_BARRIER_LAYOUT::D3D12_BARRIER_LAYOUT_UNDEFINED** for buffers.</param>
+	/// <param name="pOptimizedClearValue">
+	/// <para>Type: **const [D3D12_CLEAR_VALUE](/windows/win32/api/d3d12/ns-d3d12-d3d12_clear_value)\*** Specifies a **D3D12_CLEAR_VALUE** structure that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the [D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags) or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, you should choose the value with which the clear operation will most commonly be called. You can call the clear operation with other values, but those operations won't be as efficient as when the value matches the one passed in to resource creation. When you use [D3D12_RESOURCE_DIMENSION_BUFFER](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_dimension), you must set *pOptimizedClearValue* to `nullptr`.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createcommittedresource3#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pProtectedSession">
+	/// <para>Type: **[ID3D12ProtectedResourceSession](/windows/win32/api/d3d12/nn-d3d12-id3d12protectedresourcesession)\*** An optional pointer to an object that represents a session for content protection. If provided, this session indicates that the resource should be protected. You can obtain an **ID3D12ProtectedResourceSession** by calling [ID3D12Device4::CreateProtectedResourceSession](/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createprotectedresourcesession).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createcommittedresource3#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="NumCastableFormats">The number of elements in *pCastableFormats*.</param>
+	/// <param name="pCastableFormats">A contiguous array of [DXGI_FORMAT](/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format) structures that this resource can be cast to.</param>
+	/// <param name="riidResource">
+	/// <para>Type: **REFIID** A reference to the globally unique identifier (**GUID**) of the resource interface to return in *ppvResource*. While *riidResource* is most commonly the **GUID** of [ID3D12Resource](/windows/win32/api/d3d12/nn-d3d12-id3d12resource), it may be the **GUID** of any interface. If the resource object doesn't support the interface for this **GUID**, then creation fails with **E_NOINTERFACE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createcommittedresource3#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppvResource">
+	/// <para>Type: **void\*\*** An optional pointer to a memory block that receives the requested interface pointer to the created resource object. *ppvResource* can be `nullptr`, to enable capability testing. When *ppvResource* is `nullptr`, no object is created, and **S_FALSE** is returned when *pDesc* is valid.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createcommittedresource3#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/desktop/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10). |Return value|Description| |-|-| |E_OUTOFMEMORY|There is insufficient memory to create the resource.| See [Direct3D 12 return codes](/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues) for other possible return values.</para>
+	/// </returns>
+	/// <remarks></remarks>
+	void CreateCommittedResource3( in HeapProperties pHeapProperties,
+								   HeapFlags HeapFlags,
+								   in ResourceDescription1 pDesc,
+								   BarrierLayout InitialLayout,
+								   [Optional] in ClearValue? pOptimizedClearValue,
+								   IProtectedResourceSession pProtectedSession,
+								   uint NumCastableFormats,
+								   [Optional] in Span< Format > pCastableFormats,
+								   in Guid riidResource,
+								   out IResource ppvResource ) ;
+	
+
+	/// <summary>Creates a resource that is placed in a specific heap. Placed resources are the lightest weight resource objects available, and are the fastest to create and destroy.</summary>
+	/// <param name="pHeap">
+	/// <para>Type: [in] **<a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12heap">ID3D12Heap</a>*** A pointer to the **ID3D12Heap** interface that represents the heap in which the resource is placed.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createplacedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="HeapOffset">
+	/// <para>Type: **<a href="https://docs.microsoft.com/windows/win32/WinProg/windows-data-types">UINT64</a>** The offset, in bytes, to the resource. The *HeapOffset* must be a multiple of the resource's alignment, and *HeapOffset* plus the resource size must be smaller than or equal to the heap size. <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-getresourceallocationinfo">**GetResourceAllocationInfo**</a> must be used to understand the sizes of texture resources.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createplacedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pDesc">
+	/// <para>Type: [in] **const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_desc">D3D12_RESOURCE_DESC</a>*** A pointer to a **D3D12_RESOURCE_DESC** structure that describes the resource.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createplacedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="InitialLayout">The initial layout of the texture resource; **D3D12_BARRIER_LAYOUT::D3D12_BARRIER_LAYOUT_UNDEFINED** for buffers.</param>
+	/// <param name="pOptimizedClearValue">
+	/// <para>Type: [in, optional] **const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_clear_value">D3D12_CLEAR_VALUE</a>*** Specifies a **D3D12_CLEAR_VALUE** that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the **D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET** or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, your application should choose the value that the clear operation will most commonly be called with. Clear operations can be called with other values, but those operations will not be as efficient as when the value matches the one passed into resource creation. *pOptimizedClearValue* must be NULL when used with **D3D12_RESOURCE_DIMENSION_BUFFER**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createplacedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="NumCastableFormats">The number of elements in *pCastableFormats*.</param>
+	/// <param name="pCastableFormats">A contiguous array of [DXGI_FORMAT](/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format) structures that this resource can be cast to.</param>
+	/// <param name="riid">
+	/// <para>Type: **REFIID** The globally unique identifier (**GUID**) for the resource interface. This is an input parameter. The **REFIID**, or **GUID**, of the interface to the resource can be obtained by using the `__uuidof` macro. For example, `__uuidof(ID3D12Resource)` gets the **GUID** of the interface to a resource. Although **riid** is, most commonly, the GUID for <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12resource">**ID3D12Resource**</a>, it may be any **GUID** for any interface. If the resource object doesn't support the interface for this **GUID**, then creation fails with **E_NOINTERFACE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createplacedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppvResource">
+	/// <para>Type: [out, optional] **void**** A pointer to a memory block that receives a pointer to the resource. *ppvResource* can be NULL, to enable capability testing. When *ppvResource* is NULL, no object will be created and S_FALSE will be returned when *pResourceDesc* and other parameters are valid.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createplacedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **<a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a>** This method returns **E_OUTOFMEMORY** if there is insufficient memory to create the resource. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> for other possible return values.</para>
+	/// </returns>
+	/// <remarks>See **Remarks** for [ID3D12Device::CreatePlacedResource](nf-d3d12-id3d12device-createplacedresource.md).</remarks>
+	void CreatePlacedResource2( IHeap pHeap, ulong HeapOffset, 
+								in ResourceDescription1 pDesc, 
+								BarrierLayout InitialLayout, 
+								[Optional] in ClearValue? pOptimizedClearValue, 
+								uint NumCastableFormats, 
+								[Optional] in Span< Format > pCastableFormats, 
+								in Guid riid,
+								out IResource ppvResource ) ;
+
+	/// <summary>Creates a resource that is reserved, and not yet mapped to any pages in a heap.</summary>
+	/// <param name="pDesc">
+	/// <para>Type: **const [D3D12_RESOURCE_DESC](./ns-d3d12-d3d12_resource_desc.md)\*** A pointer to a **D3D12_RESOURCE_DESC** structure that describes the resource.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createreservedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="InitialLayout">The initial layout of the texture resource; **D3D12_BARRIER_LAYOUT::D3D12_BARRIER_LAYOUT_UNDEFINED** for buffers.</param>
+	/// <param name="pOptimizedClearValue">
+	/// <para>Type: **const [D3D12_CLEAR_VALUE](./ns-d3d12-d3d12_clear_value.md)\*** Specifies a **D3D12_CLEAR_VALUE** structure that describes the default value for a clear color. *pOptimizedClearValue* specifies a value for which clear operations are most optimal. When the created resource is a texture with either the [D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET](./ne-d3d12-d3d12_resource_flags.md) or **D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL** flags, you should choose the value with which the clear operation will most commonly be called. You can call the clear operation with other values, but those operations won't be as efficient as when the value matches the one passed in to resource creation. When you use [D3D12_RESOURCE_DIMENSION_BUFFER](./ne-d3d12-d3d12_resource_dimension.md), you must set *pOptimizedClearValue* to `nullptr`.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createreservedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pProtectedSession">
+	/// <para>Type: **[ID3D12ProtectedResourceSession](/windows/win32/api/d3d12/nn-d3d12-id3d12protectedresourcesession)\*** An optional pointer to an object that represents a session for content protection. If provided, this session indicates that the resource should be protected. You can obtain an **ID3D12ProtectedResourceSession** by calling [ID3D12Device4::CreateProtectedResourceSession](/windows/win32/api/d3d12/nf-d3d12-id3d12device4-createprotectedresourcesession).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createreservedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="NumCastableFormats">The number of elements in *pCastableFormats*.</param>
+	/// <param name="pCastableFormats">A contiguous array of [DXGI_FORMAT](/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format) structures that this resource can be cast to.</param>
+	/// <param name="riid">
+	/// <para>Type: **REFIID** A reference to the globally unique identifier (**GUID**) of the resource interface to return in *ppvResource*. See **Remarks**. While *riidResource* is most commonly the **GUID** of [ID3D12Resource](./nn-d3d12-id3d12resource.md), it may be the **GUID** of any interface. If the resource object doesn't support the interface for this **GUID**, then creation fails with **E_NOINTERFACE**.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createreservedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppvResource">
+	/// <para>Type: **void\*\*** An optional pointer to a memory block that receives the requested interface pointer to the created resource object. *ppvResource* can be `nullptr`, to enable capability testing. When *ppvResource* is `nullptr`, no object is created, and **S_FALSE** is returned when *pDesc* is valid.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device10-createreservedresource2#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: **[HRESULT](/windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**](/windows/win32/com/structure-of-com-error-codes) [error code](/windows/win32/com/com-error-codes-10). |Return value|Description| |-|-| |E_OUTOFMEMORY|There is insufficient memory to create the resource.| See [Direct3D 12 return codes](/windows/win32/direct3d12/d3d12-graphics-reference-returnvalues) for other possible return values.</para>
+	/// </returns>
+	/// <remarks>See **Remarks** for [ID3D12Device.CreateReservedResource](nf-d3d12-id3d12device-createreservedresource.md).</remarks>
+	void CreateReservedResource2( in ResourceDescription pDesc,
+								  BarrierLayout InitialLayout,
+								  [Optional] in ClearValue? pOptimizedClearValue,
+								  IProtectedResourceSession pProtectedSession,
+								  uint NumCastableFormats,
+								  [Optional] in Span< Format > pCastableFormats,
+								  in Guid riid,
+								  out IResource ppvResource ) ;
 	
 	// ---------------------------------------------------------------------------------
-	public new static Type ComType => typeof(ID3D12Device10) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device10).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device10) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device10).GUID ;
-	
-	
+	new static Type ComType => typeof(ID3D12Device10) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(ID3D12Device10).GUID.ToByteArray( ) ;
 			
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
 													.GetReference(data) ) ;
@@ -1877,71 +2333,58 @@ public interface IDevice10: IDevice9,
 	}
 	
 	// ---------------------------------------------------------------------------------
-	static IInstantiable IInstantiable. Instantiate( )                      => new Device10( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device10( pComObj ) ;
+	static IInstantiable IInstantiable. Instantiate( ) => new Device10( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device10( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device10( (ID3D12Device10)pComObj! ) ;
 	// ==================================================================================
 }
 
 
 [ProxyFor( typeof( ID3D12Device11 ) )]
-public interface IDevice11: IDevice10,
-							IComObjectRef< ID3D12Device11 >,
-							IUnknownWrapper< ID3D12Device11 > {
+public interface IDevice11: IDevice10 {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device11 >? ComPointer { get ; }
-	new ID3D12Device11? COMObject => ComPointer?.Interface ;
-	ID3D12Device11? IComObjectRef< ID3D12Device11 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device11 >? IUnknownWrapper< ID3D12Device11 >.ComPointer => ComPointer ;
-	// ==================================================================================
-	
+
+	void CreateSampler2( in SamplerDescription2 pDesc, CPUDescriptorHandle DestDescriptor ) ;
+
 	// ---------------------------------------------------------------------------------
-	public new static Type ComType => typeof(ID3D12Device11) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device11).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device11) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device11).GUID ;
-	
-	
+	new static Type ComType => typeof( ID3D12Device11 ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
+
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
-			
+			ReadOnlySpan< byte > data = typeof( ID3D12Device11 ).GUID.ToByteArray( ) ;
+
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
-													.GetReference(data) ) ;
+													.GetReference( data ) ) ;
 		}
 	}
-	
+
 	// ---------------------------------------------------------------------------------
-	static IInstantiable IInstantiable. Instantiate( )                      => new Device11( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device11( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate( ) => new Device11( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device11( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device11( (ID3D12Device11)pComObj! ) ;
 	// ==================================================================================
-}
+} ;
 
 
 [ProxyFor( typeof( ID3D12Device12 ) )]
-public interface IDevice12: IDevice11,
-							IComObjectRef< ID3D12Device12 >,
-							IUnknownWrapper< ID3D12Device12 > {
+public interface IDevice12: IDevice11 {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Device12 >? ComPointer { get ; }
-	new ID3D12Device12? COMObject => ComPointer?.Interface ;
-	ID3D12Device12? IComObjectRef< ID3D12Device12 >.COMObject => COMObject ;
-	ComPtr< ID3D12Device12 >? IUnknownWrapper< ID3D12Device12 >.ComPointer => ComPointer ;
-	// ==================================================================================
 	
+	ResourceAllocationInfo GetResourceAllocationInfo3( uint visibleMask, uint numResourceDescs,
+													   in ResourceDescription1 pResourceDescs,
+													   uint[ ] pNumCastableFormats,
+													   [Optional] in Span< Format > ppCastableFormats,
+													   [Optional] in ResourceAllocationInfo1? pResourceAllocationInfo1 ) ;
+
 	// ---------------------------------------------------------------------------------
-	public new static Type ComType => typeof(ID3D12Device12) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Device12).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Device12) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Device12).GUID ;
-	
-	
+	new static Type ComType => typeof(ID3D12Device12) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = InterfaceGUID.ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(ID3D12Device12).GUID.ToByteArray( ) ;
 			
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
 													.GetReference(data) ) ;
@@ -1949,8 +2392,8 @@ public interface IDevice12: IDevice11,
 	}
 	
 	// ---------------------------------------------------------------------------------
-	static IInstantiable IInstantiable. Instantiate( )                      => new Device12( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Device12( pComObj ) ;
+	static IInstantiable IInstantiable. Instantiate( ) => new Device12( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device12( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Device12( (ID3D12Device12)pComObj! ) ;
 	// ==================================================================================
 }

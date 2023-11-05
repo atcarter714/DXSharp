@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
 #endregion
@@ -6,12 +9,15 @@ namespace DXSharp.Direct3D12 ;
 
 
 [Wrapper(typeof(ID3D12CommandSignature))]
-public class CommandSignature: Pageable, 
-							   ICommandSignature,
-							   IInstantiable< CommandSignature > {
+internal class CommandSignature: Pageable,
+								 ICommandSignature,
+								 IComObjectRef< ID3D12CommandSignature >,
+								 IUnknownWrapper< ID3D12CommandSignature > {
 	// -------------------------------------------------------------------------------------------------------
-	public new ID3D12CommandSignature? COMObject => ComPointer?.Interface ;
-	public new ComPtr< ID3D12CommandSignature >? ComPointer { get ; protected set ; }
+	ComPtr< ID3D12CommandSignature >? _comPtr ;
+	public override ID3D12CommandSignature? COMObject => ComPointer?.Interface ;
+	public new ComPtr< ID3D12CommandSignature >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer<ID3D12CommandSignature>( ) ;
 	// -------------------------------------------------------------------------------------------------------
 	
 	
@@ -22,10 +28,17 @@ public class CommandSignature: Pageable,
 	
 	
 	// -------------------------------------------------------------------------------------------------------
-	static IInstantiable IInstantiable.                         Instantiate( )                => new CommandSignature( ) ;
-	static CommandSignature? IInstantiable< CommandSignature >.Instantiate( IntPtr ptr )     => new( ptr ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new CommandSignature( pComObj ) ;
-	public static IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
-		new CommandSignature( (ID3D12CommandSignature)pComObj! ) ;
+	
+	public new static ref readonly Guid Guid {
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12CommandSignature).GUID
+															  .ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+
+	public new static Type ComType => typeof(ID3D12CommandSignature) ;
 	// =======================================================================================================
 } ;

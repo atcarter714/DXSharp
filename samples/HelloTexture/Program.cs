@@ -1,4 +1,6 @@
 ﻿using System.Drawing ;
+using System.Runtime.InteropServices ;
+using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Applications ;
 using DXSharp.Direct3D12 ;
 using DXSharp.Direct3D12.Debug ;
@@ -32,8 +34,7 @@ app.Run( ) ;
 
 #if DEBUG || DEBUG_COM
 //debug3.DisposeAsync( ) ;
-debug3.Dispose( ) ;
-System.Diagnostics.Debug.Write($"Marshal: {debug6.ComPointer.MarshalRefCount}");
-System.Diagnostics.Debug.Write($"Disposed") ;
+debug3?.Dispose( ) ;
+System.Diagnostics.Debug.WriteLine( $"Disposed" ) ;
 #endif
 

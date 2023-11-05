@@ -481,25 +481,25 @@ public partial struct D3D12_RESOURCE_BARRIER {
 				case D3D12_RESOURCE_BARRIER_TYPE.D3D12_RESOURCE_BARRIER_TYPE_TRANSITION:
 					dst.Anonymous.Transition = new( )
 					{
-						pResource = (ID3D12Resource_unmanaged*)o.Anonymous.Transition.pResource,
-						StateBefore = (D3D12_RESOURCE_STATES)o.Anonymous.Transition.StateBefore,
-						StateAfter = (D3D12_RESOURCE_STATES)o.Anonymous.Transition.StateAfter,
-						Subresource = o.Anonymous.Transition.Subresource,
+						pResource = (ID3D12Resource_unmanaged*)o.Anonymous.TransitionBarrier.pResource,
+						StateBefore = (D3D12_RESOURCE_STATES)o.Anonymous.TransitionBarrier.StateBefore,
+						StateAfter = (D3D12_RESOURCE_STATES)o.Anonymous.TransitionBarrier.StateAfter,
+						Subresource = o.Anonymous.TransitionBarrier.Subresource,
 					} ;
 					break;
 
 				case D3D12_RESOURCE_BARRIER_TYPE.D3D12_RESOURCE_BARRIER_TYPE_ALIASING:
 					dst.Anonymous.Aliasing = new()
 					{
-						pResourceAfter = (ID3D12Resource_unmanaged*)o.Anonymous.Aliasing.pResourceAfter,
-						pResourceBefore = (ID3D12Resource_unmanaged*)o.Anonymous.Aliasing.pResourceBefore,
+						pResourceAfter = (ID3D12Resource_unmanaged*)o.Anonymous.AliasingBarrier.pResourceAfter,
+						pResourceBefore = (ID3D12Resource_unmanaged*)o.Anonymous.AliasingBarrier.pResourceBefore,
 					};
 					break;
 
 				case D3D12_RESOURCE_BARRIER_TYPE.D3D12_RESOURCE_BARRIER_TYPE_UAV:
 					dst.Anonymous.UAV = new()
 					{
-						pResource = (ID3D12Resource_unmanaged*)o.Anonymous.UAV.pResource,
+						pResource = (ID3D12Resource_unmanaged*)o.Anonymous.UAVBarrier.pResource,
 					};
 					break;
 
@@ -524,7 +524,7 @@ public partial struct D3D12_RESOURCE_BARRIER {
 			dst.Type = (ResourceBarrierType)o.Type;
 			switch( dst.Type ) {
 				case ResourceBarrierType.Transition:
-					dst.Anonymous.Transition = new()
+					dst.Anonymous.TransitionBarrier = new()
 					{
 						pResource = (ResourceUnmanaged*)o.Anonymous.Transition.pResource,
 						StateBefore = (ResourceStates)o.Anonymous.Transition.StateBefore,
@@ -534,7 +534,7 @@ public partial struct D3D12_RESOURCE_BARRIER {
 					break;
 
 				case ResourceBarrierType.Aliasing:
-					dst.Anonymous.Aliasing = new()
+					dst.Anonymous.AliasingBarrier = new()
 					{
 						pResourceAfter = (ResourceUnmanaged*)o.Anonymous.Aliasing.pResourceAfter,
 						pResourceBefore = (ResourceUnmanaged*)o.Anonymous.Aliasing.pResourceBefore,
@@ -542,7 +542,7 @@ public partial struct D3D12_RESOURCE_BARRIER {
 					break;
 
 				case ResourceBarrierType.UAV:
-					dst.Anonymous.UAV = new()
+					dst.Anonymous.UAVBarrier = new()
 					{
 						pResource = (ResourceUnmanaged*)o.Anonymous.UAV.pResource,
 					};
@@ -716,4 +716,88 @@ public partial struct D3D12_RENDER_PASS_DEPTH_STENCIL_DESC {
 		DepthEndingAccess      = desc.DepthEndingAccess,
 		StencilEndingAccess    = desc.StencilEndingAccess,
 	} ;
+} ;
+
+
+[CsWin32, EquivalentOf( typeof(TextureCopyLocation) )]
+public partial struct D3D12_TEXTURE_COPY_LOCATION {
+	public static implicit operator D3D12_TEXTURE_COPY_LOCATION( in TextureCopyLocation location ) {
+		return new D3D12_TEXTURE_COPY_LOCATION {
+			Anonymous = location.Type switch {
+							TextureCopyType.PlacedFootprint => new() {
+								PlacedFootprint = location.Location.PlacedFootprint,
+							},
+							TextureCopyType.Index => new() {
+								SubresourceIndex = location.Location.SubresourceIndex
+							},
+							_ => throw new ArgumentOutOfRangeException( )
+						}
+		} ;
+	}
+
+	public static implicit operator TextureCopyLocation( in D3D12_TEXTURE_COPY_LOCATION o ) {
+		return new TextureCopyLocation {
+			Type = (TextureCopyType)o.Type,
+			Location = o.Type is D3D12_TEXTURE_COPY_TYPE.D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT ?
+						   new( o.Anonymous.PlacedFootprint ) 
+						   : new( o.Anonymous.SubresourceIndex ),
+		} ;
+	}
+} ;
+
+
+[CsWin32, EquivalentOf( typeof(ResourceAllocationInfo1) )]
+public partial struct D3D12_RESOURCE_ALLOCATION_INFO1 {
+	public static implicit operator D3D12_RESOURCE_ALLOCATION_INFO1( in ResourceAllocationInfo1 o ) {
+		unsafe {
+			fixed ( ResourceAllocationInfo1* ptr = &o ) {
+				return *(D3D12_RESOURCE_ALLOCATION_INFO1*)ptr ;
+			}
+		}
+	}
+	public static implicit operator ResourceAllocationInfo1( in D3D12_RESOURCE_ALLOCATION_INFO1 o ) {
+		unsafe {
+			fixed ( D3D12_RESOURCE_ALLOCATION_INFO1* ptr = &o ) {
+				return *(ResourceAllocationInfo1*)ptr ;
+			}
+		}
+	}
+} ;
+
+
+[CsWin32, EquivalentOf( typeof(ShaderCacheSessionDescription ))]
+public partial struct D3D12_SHADER_CACHE_SESSION_DESC {
+	public static implicit operator D3D12_SHADER_CACHE_SESSION_DESC( in ShaderCacheSessionDescription o ) {
+		unsafe {
+			fixed ( ShaderCacheSessionDescription* ptr = &o ) {
+				return *(D3D12_SHADER_CACHE_SESSION_DESC*)ptr ;
+			}
+		}
+	}
+	public static implicit operator ShaderCacheSessionDescription( in D3D12_SHADER_CACHE_SESSION_DESC o ) {
+		unsafe {
+			fixed ( D3D12_SHADER_CACHE_SESSION_DESC* ptr = &o ) {
+				return *(ShaderCacheSessionDescription*)ptr ;
+			}
+		}
+	}
+} ;
+
+
+public partial struct D3D12_RESOURCE_DESC1
+{
+	public static implicit operator D3D12_RESOURCE_DESC1( in ResourceDescription1 desc1 ) {
+		unsafe {
+			fixed ( ResourceDescription1* ptr = &desc1 ) {
+				return *(D3D12_RESOURCE_DESC1*)ptr ;
+			}
+		}
+	}
+	public static implicit operator ResourceDescription1( in D3D12_RESOURCE_DESC1 desc1 ) {
+		unsafe {
+			fixed ( D3D12_RESOURCE_DESC1* ptr = &desc1 ) {
+				return *(ResourceDescription1*)ptr ;
+			}
+		}
+	}
 } ;

@@ -25,8 +25,7 @@ public unsafe partial struct ID3D12Resource_unmanaged: IComIID {
 		new( (nint)pResource.lpVtbl ) ;
 
 	
-	
-	public static implicit operator ID3D12Resource_unmanaged( in Resource pResource ) {
+	/*public static implicit operator ID3D12Resource_unmanaged( in Resource pResource ) {
 		var hr = COMUtility.QueryInterface< ID3D12Resource >( pResource.PointerToIUnknown, out nint pInterface ) ;
 		var result = new ID3D12Resource_unmanaged( pInterface ) ;
 		COMUtility.Release( ref pInterface ) ;
@@ -37,7 +36,7 @@ public unsafe partial struct ID3D12Resource_unmanaged: IComIID {
 		ComPtr< ID3D12Resource > ptr    = GetComPtr( pResource ) ;
 		var                      result = new Resource( ptr ) ;
 		return result ;
-	}
+	}*/
 	
 	
 	public static implicit operator ResourceUnmanaged( in ID3D12Resource_unmanaged pResource ) => 

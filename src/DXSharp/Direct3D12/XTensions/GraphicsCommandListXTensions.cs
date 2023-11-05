@@ -30,13 +30,14 @@ public static class GraphicsCommandListXTensions {
 	}
 
 	public static void RSSetScissorRects( this IGraphicsCommandList graphicsCommandList, in Rect rect ) {
+		var commandList = (IComObjectRef< ID3D12GraphicsCommandList >)graphicsCommandList ;
 		ArgumentNullException.ThrowIfNull( graphicsCommandList, nameof(graphicsCommandList) ) ;
-		ObjectDisposedException.ThrowIf( graphicsCommandList.COMObject is null, typeof(ID3D12GraphicsCommandList) ) ;
+		ObjectDisposedException.ThrowIf( commandList.COMObject is null, typeof(ID3D12GraphicsCommandList) ) ;
 		
 		_scissorRectCache[ 0 ] = rect ;
 		unsafe {
 			fixed( Rect* pScissorRects = &_scissorRectCache[ 0 ] )
-				graphicsCommandList.COMObject.RSSetScissorRects( 1, (RECT *)pScissorRects ) ;
+				commandList.COMObject.RSSetScissorRects( 1, (RECT *)pScissorRects ) ;
 		}
 	}
 } ;

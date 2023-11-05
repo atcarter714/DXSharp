@@ -42,13 +42,10 @@ public static partial class DXGIXTensions {
 	// -----------------------------------------------------------------------------------------------
 	
 	
-	public static IAdapter? FindBestAdapter< A >( this IFactory factory )
-													where A: class, IAdapter {
+	public static IAdapter? FindBestAdapter< A >( this IFactory factory ) where A: class, IAdapter {
 		ArgumentNullException.ThrowIfNull( factory, nameof(factory) ) ;
 		const int MAX = IFactory.MAX_ADAPTER_COUNT ;
 		
-		//! TODO: Decide if we keep or ditch generic versions of these methods ...
-		// Maybe we can keep generic version and route calls like this:
 		if( factory is IFactory1 factory1 ) {
 			if ( typeof(A).IsAssignableTo( typeof(IAdapter1 ) ) ) {
 				return factory1.FindBestAdapter1( ) ;

@@ -31,7 +31,7 @@ public static class TextureUtils {
 		var bitmap = image as Bitmap ;
 		return bitmap ;
 	}
-
+	
 
 	/// <summary>
 	/// Creates a D3D12 texture Resource for a Bitmap.
@@ -39,7 +39,8 @@ public static class TextureUtils {
 	/// <param name="device">Graphics device interface</param>
 	/// <param name="bitmap">Bitmap to create resource from</param>
 	/// <param name="commandList">An (optional) existing command list to use (one is created if argument is null).</param>
-	/// <param name="allocator">An (optional) comand allocator to use (a temporary one is created if argument is null).</param>
+	/// <param name="allocator">An (optional) command allocator to use (a temporary one is created if argument is null).</param>
+	/// <param name="commandQueue">An (optional) command queue to use</param>
 	/// <param name="flags">Special <see cref="ResourceFlags"/> value to set for the resource.</param>
 	/// <returns></returns>
 	public static IResource CreateTexture( IDevice device,
@@ -62,27 +63,27 @@ public static class TextureUtils {
 
 		device.CreateCommittedResource( new( HeapType.Default ), HeapFlags.None,
 										desc, ResourceStates.CopyDest, null,
-										IResource.InterfaceGUID,
+										Resource.Guid,
 										out var resrc ) ;
 
 		device.CreateCommittedResource( new( HeapType.Upload ), HeapFlags.None,
 										desc, ResourceStates.GenericRead, null,
-										IResource.InterfaceGUID,
+										Resource.Guid,
 										out var textureUploadHeap ) ;
 
 		if ( allocator is null )
 			device.CreateCommandAllocator( CommandListType.Direct,
-										   CommandAllocator.InterfaceGUID,
+										   CommandAllocator.Guid,
 										   out allocator ) ;
 
 		if ( commandList is null ) {
-			device.CreateCommandList( 0, CommandListType.Direct, allocator, null, IGraphicsCommandList.InterfaceGUID,
+			device.CreateCommandList( 0, CommandListType.Direct, allocator, null, GraphicsCommandList.Guid,
 									  out var list ) ;
 			commandList = (IGraphicsCommandList)list ;
 		}
 
 		if ( commandQueue is null ) {
-			device.CreateCommandQueue( new( ), ICommandQueue.InterfaceGUID, out commandQueue ) ;
+			device.CreateCommandQueue( new( ), CommandQueue.Guid, out commandQueue ) ;
 		}
 
 		// Assuming you have a method to update the resource from a byte array.
@@ -94,8 +95,8 @@ public static class TextureUtils {
 		BitmapData bmpData = bitmap.LockBits( new( 0, 0, bitmap.Width, bitmap.Height ),
 											  ImageLockMode.ReadOnly,
 											  PixelFormat.Format32bppArgb ) ;
-		IntPtr srcDataPtr = bmpData.Scan0 ;
-		int    dataSize   = bmpData.Stride * bitmap.Height ;
+		nint srcDataPtr = bmpData.Scan0 ;
+		int dataSize    = bmpData.Stride * bitmap.Height ;
 
 		// Map upload heap and copy data
 		textureUploadHeap.Map( 0, default, out var mappedData ) ;
@@ -120,27 +121,3 @@ public static class TextureUtils {
 	}
 
 } ;
-
-
-		
-// Lock the bitmap and get the pixel data
-/*BitmapData bmpData = bitmap.LockBits( new( 0, 0, bitmap.Width, bitmap.Height ),
-									  ImageLockMode.ReadOnly,
-									  PixelFormat.Format32bppArgb ) ;
-
-// Prepare the data to copy
-IntPtr pSrcData = bmpData.Scan0 ;
-int    stride   = bmpData.Stride ;
-int    dataSize = stride * bitmap.Height ;
-
-// Map the upload heap and copy the pixel data
-Box mappedData ;
-textureUploadHeap.Map(0, default, out nint dataPtr ) ;
-unsafe {
-	Vertex*          pVertexDataBegin = (Vertex *)mappedResource ;
-	Memory< byte > pixels         = new( new Span<byte>(pSrcData) ) ;
-	using var        hVertices        = pixels.Pin( ) ;
-	Unsafe.CopyBlock( pVertexDataBegin, hVertices.Pointer, (uint)vertexBufferSize ) ;
-}
-textureUploadHeap.Unmap( 0 ) ;
-*/

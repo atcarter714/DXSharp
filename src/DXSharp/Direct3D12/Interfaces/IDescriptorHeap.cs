@@ -23,16 +23,7 @@ namespace DXSharp.Direct3D12 ;
 /// </a>.
 /// </remarks>
 [ProxyFor(typeof(ID3D12DescriptorHeap))]
-public interface IDescriptorHeap: IPageable,
-								  IComObjectRef< ID3D12DescriptorHeap >, 
-								  IUnknownWrapper< ID3D12DescriptorHeap > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12DescriptorHeap >? ComPointer { get ; }
-	new ID3D12DescriptorHeap? COMObject => ComPointer?.Interface ;
-	ID3D12DescriptorHeap? IComObjectRef< ID3D12DescriptorHeap >.COMObject => COMObject ;
-	ComPtr< ID3D12DescriptorHeap >? IUnknownWrapper< ID3D12DescriptorHeap >.ComPointer => ComPointer ;
-	// ==================================================================================
-	
+public interface IDescriptorHeap: IPageable {
 	
 	/// <summary>Gets the descriptor heap description.</summary>
 	/// <returns>
@@ -41,21 +32,7 @@ public interface IDescriptorHeap: IPageable,
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12descriptorheap-getdesc">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	DescriptorHeapDescription GetDesc( ) {
-		unsafe {
-			DescriptorHeapDescription description = default ;
-			var pDescHeap = ComPointer 
-							?? throw new NullReferenceException( ) ;
-			
-			var fnPtr = pDescHeap.GetVTableMethod< ID3D12DescriptorHeap >( 8 ) ;
-			var getDescription = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, DescriptorHeapDescription >)( fnPtr ) ;
-			var heap = (ID3D12DescriptorHeap *)pDescHeap.InterfaceVPtr ;
-			
-			description = getDescription( heap ) ;
-			return description ;
-		}
-	}
-	
+	DescriptorHeapDescription GetDesc( ) ;
 	
 	/// <summary>Gets the CPU descriptor handle that represents the start of the heap.</summary>
 	/// <returns>
@@ -64,23 +41,7 @@ public interface IDescriptorHeap: IPageable,
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12descriptorheap-getcpudescriptorhandleforheapstart">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	CPUDescriptorHandle GetCPUDescriptorHandleForHeapStart( ) {
-		unsafe {
-			D3D12_CPU_DESCRIPTOR_HANDLE handle = default ;
-			var pDescHeap = ComPointer 
-							?? throw new NullReferenceException( ) ;
-
-			var fnPtr = pDescHeap.GetVTableMethod< ID3D12DescriptorHeap >( 9 ) ;
-			var getDescriptor = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, D3D12_CPU_DESCRIPTOR_HANDLE >)( fnPtr ) ;
-
-			var heap = (ID3D12DescriptorHeap*)ComPointer.InterfaceVPtr ;
-			handle = getDescriptor( heap ) ;
-			return handle ;
-		}
-	}
-
-
-
+	CPUDescriptorHandle GetCPUDescriptorHandleForHeapStart( ) ;
 
 	/// <summary>Gets the GPU descriptor handle that represents the start of the heap.</summary>
 	/// <returns>
@@ -89,27 +50,12 @@ public interface IDescriptorHeap: IPageable,
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12descriptorheap-getgpudescriptorhandleforheapstart">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	GPUDescriptorHandle GetGPUDescriptorHandleForHeapStart( ) {
-		unsafe {
-			D3D12_GPU_DESCRIPTOR_HANDLE handle = default ;
-			var pDescHeap = ComPointer ?? throw new NullReferenceException( ) ;
-
-			var fnPtr = pDescHeap.GetVTableMethod<ID3D12DescriptorHeap>( 10 ) ;
-			var getDescriptor = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, D3D12_GPU_DESCRIPTOR_HANDLE >)( fnPtr ) ;
-			
-			var heap = (ID3D12DescriptorHeap *)ComPointer.InterfaceVPtr ;
-			handle = getDescriptor( heap ) ;
-
-			return handle ;
-		}
-	}
+	GPUDescriptorHandle GetGPUDescriptorHandleForHeapStart( ) ;
 	
 
 	// ---------------------------------------------------------------------------------
 	public new static Type ComType => typeof(ID3D12DescriptorHeap) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12DescriptorHeap).GUID ;
-	static Type IUnknownWrapper.ComType => typeof(ID3D12DescriptorHeap) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12DescriptorHeap).GUID ;
+	public new static Guid IID => (ComType.GUID) ;
 	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]

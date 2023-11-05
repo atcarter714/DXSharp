@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows.COM ;
 #endregion
@@ -6,29 +8,49 @@ namespace DXSharp.Direct3D12 ;
 
 
 [Wrapper(typeof(ID3D12CommandAllocator))]
-public class CommandAllocator: Pageable,
-							   ICommandAllocator,
-							   IInstantiable< CommandAllocator > {
-	
+internal class CommandAllocator: Pageable,
+								 ICommandAllocator,
+								 IComObjectRef< ID3D12CommandAllocator >,
+								 IUnknownWrapper< ID3D12CommandAllocator > {
+	// -------------------------------------------------------------------------------------------------------
+	ComPtr< ID3D12CommandAllocator >? _comPtr ;
 	public new ID3D12CommandAllocator? COMObject => ComPointer?.Interface ;
-	public new ComPtr< ID3D12CommandAllocator >? ComPointer { get ; protected set ; }
+	public new ComPtr< ID3D12CommandAllocator >? ComPointer => 
+		_comPtr ??= ComResources?.GetPointer<ID3D12CommandAllocator>(  ) ;
+	// -------------------------------------------------------------------------------------------------------
 	
-	internal CommandAllocator( ) { }
-	internal CommandAllocator( ComPtr< ID3D12CommandAllocator > comPtr ) => ComPointer = comPtr ;
-	internal CommandAllocator( nint address ) => ComPointer = new( address ) ;
-	internal CommandAllocator( ID3D12CommandAllocator comObject ) => ComPointer = new( comObject ) ;
-
-
+	internal CommandAllocator( ) {
+		_comPtr = ComResources?.GetPointer<ID3D12CommandAllocator>(  ) ;
+	}
+	internal CommandAllocator( nint childAddr ) {
+		_comPtr = new( childAddr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal CommandAllocator( ID3D12CommandAllocator child ) {
+		_comPtr = new( child ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal CommandAllocator( ComPtr< IUnknown > childPtr ) => _initOrAdd( _comPtr! ) ;
+	
 	// -------------------------------------------------------------------------------------------------------
-	public new static Guid InterfaceGUID => typeof(ID3D12CommandAllocator).GUID ;
+	
+	public void Reset( ) => COMObject!.Reset( ) ;
+	
+	// -------------------------------------------------------------------------------------------------------
+	
 	public new static Type ComType => typeof(ID3D12CommandAllocator) ;
-	// -------------------------------------------------------------------------------------------------------
-
-	public static CommandAllocator                                    Instantiate( )                => new( ) ;
-	static        IInstantiable IInstantiable.                         Instantiate( )                => new CommandAllocator( ) ;
-	static        CommandAllocator? IInstantiable< CommandAllocator >.Instantiate( IntPtr ptr )     => new( ptr ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new CommandAllocator( pComObj ) ;
-	public static IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
-		new CommandAllocator( (ID3D12CommandAllocator)pComObj! ) ;
+	
+	public new static ref readonly Guid Guid {
+    	[MethodImpl( MethodImplOptions.AggressiveInlining )]
+    	get {
+    		ReadOnlySpan< byte > data = typeof(ID3D12CommandAllocator).GUID
+    																	   .ToByteArray( ) ;
+    		
+    		return ref Unsafe
+    				   .As< byte, Guid >( ref MemoryMarshal
+    										  .GetReference(data) ) ;
+    	}
+    }
+		
 	// =======================================================================================================
 } ;

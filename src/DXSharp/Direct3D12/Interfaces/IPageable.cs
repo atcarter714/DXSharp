@@ -1,10 +1,8 @@
 ﻿#region Using Directives
-
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
@@ -19,22 +17,10 @@ namespace DXSharp.Direct3D12 ;
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/d3d12/nn-d3d12-id3d12pageable">ID3D12Pageable</a>.
 /// </remarks>
 [ProxyFor( typeof( ID3D12Pageable ) )]
-public interface IPageable: IDeviceChild,
-							IComObjectRef< ID3D12Pageable >, 
-							IUnknownWrapper< ID3D12Pageable > {
+public interface IPageable: IDeviceChild {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Pageable >? ComPointer { get ; }
-	new ID3D12Pageable? COMObject => ComPointer?.Interface ;
-	ID3D12Pageable? IComObjectRef< ID3D12Pageable >.COMObject => COMObject ;
-	ComPtr< ID3D12Pageable >? IUnknownWrapper< ID3D12Pageable >.ComPointer => ComPointer ;
-	
-	ID3D12DeviceChild? IDeviceChild.COMObject => COMObject ;
-	// ---------------------------------------------------------------------------------
-	
-	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Pageable) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Pageable).GUID ;
-	
+	new static Type ComType => typeof(ID3D12Pageable) ;
+	public new static Guid IID => (ComType.GUID) ;
 	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]

@@ -1,20 +1,54 @@
-﻿using Windows.Win32.Graphics.Direct3D12 ;
-using DXSharp.Windows.COM ;
+﻿#region Using Directives
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
 
+using Windows.Win32.Graphics.Direct3D12 ;
+
+using DXSharp.Windows.COM ;
+#endregion
 namespace DXSharp.Direct3D12 ;
 
-public class RootSignature: DeviceChild, IRootSignature {
+
+[Wrapper(typeof(ID3D12RootSignature))]
+internal class RootSignature: DeviceChild,
+							  IRootSignature {
+	// ------------------------------------------------------------------------------------------
+	ComPtr< ID3D12RootSignature >? _comPtr ;
+	public new ComPtr< ID3D12RootSignature >? ComPointer => 
+		_comPtr ??= ComResources?.GetPointer< ID3D12RootSignature >( ) ;
+	public override ID3D12RootSignature? COMObject => ComPointer?.Interface ;
+	
+	// ------------------------------------------------------------------------------------------
+
+	internal RootSignature( ) {
+		_comPtr = ComResources?.GetPointer< ID3D12RootSignature >( ) ;
+		_initOrAdd( _comPtr! ) ;
+	}
+	internal RootSignature( nint childAddr ) {
+		_comPtr = new( childAddr ) ;
+		_initOrAdd( _comPtr! ) ;
+	}
+	internal RootSignature( ID3D12RootSignature child ) {
+		_comPtr = new( child ) ;
+		_initOrAdd( _comPtr! ) ;
+	}
+	internal RootSignature( ComPtr< ID3D12RootSignature > childPtr ) => _initOrAdd( _comPtr = childPtr ) ;
+	
+	// ------------------------------------------------------------------------------------------
+	
 	public new static Type ComType => typeof( ID3D12RootSignature ) ;
-	public new static Guid InterfaceGUID => typeof( ID3D12RootSignature ).GUID ;
 	
-	// ------------------------------------------------------------------------------------------
-	public new ID3D12RootSignature? COMObject => ComPointer?.Interface ;
-	public new ComPtr< ID3D12RootSignature >? ComPointer { get ; protected set ; }
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12RootSignature).GUID
+																 .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
 	
-	// ------------------------------------------------------------------------------------------
-	
-	internal RootSignature( ) { }
-	internal RootSignature( nint ptr ) => ComPointer = new( ptr ) ;
-	internal RootSignature( ComPtr< ID3D12RootSignature > comObject ) => ComPointer = comObject ;
-	internal RootSignature( ID3D12RootSignature? comObject ) => ComPointer = new( comObject! ) ;
+	// ==========================================================================================
 } ;

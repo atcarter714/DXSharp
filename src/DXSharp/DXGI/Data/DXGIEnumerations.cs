@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Dxgi.Common ;
@@ -430,11 +432,11 @@ public enum Residency {
 /// </remarks>
 [EquivalentOf(typeof(DXGI_GRAPHICS_PREEMPTION_GRANULARITY))]
 public enum GraphicsPreemptionGranularity {
-	DMA_BUFFER_BOUNDARY  = 0,
-	PRIMITIVE_BOUNDARY   = 1,
-	TRIANGLE_BOUNDARY    = 2,
-	PIXEL_BOUNDARY       = 3,
-	INSTRUCTION_BOUNDARY = 4,
+	DMABufferBoundary  = 0,
+	PrimitiveBoundary   = 1,
+	TriangleBoundary    = 2,
+	PixelBoundary       = 3,
+	InstructionBoundary = 4,
 } ;
 
 
@@ -447,11 +449,11 @@ public enum GraphicsPreemptionGranularity {
 /// </remarks>
 [EquivalentOf(typeof(DXGI_COMPUTE_PREEMPTION_GRANULARITY))]
 public enum ComputePreemptionGranularity {
-	DMA_BUFFER_BOUNDARY   = 0,
-	DISPATCH_BOUNDARY     = 1,
-	THREAD_GROUP_BOUNDARY = 2,
-	THREAD_BOUNDARY       = 3,
-	INSTRUCTION_BOUNDARY  = 4,
+	DMABufferBoundary   = 0,
+	DispatchBoundary     = 1,
+	ThreadGroupBoundary = 2,
+	ThreadBoundary       = 3,
+	InstructionBoundary  = 4,
 } ;
 
 
@@ -464,87 +466,87 @@ public enum ComputePreemptionGranularity {
 [EquivalentOf(typeof(D3D12_FEATURE))]
 public enum D3D12Feature {
 	/// <summary>Indicates a query for the level of support for basic Direct3D 12 feature options. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a>.</summary>
-	D3D12_FEATURE_D3D12_OPTIONS = 0,
+	D3D12Options = 0,
 	/// <summary>
 	/// <para>Indicates a query for the adapter's architectural details, so that your application can better optimize for certain adapter properties. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture">D3D12_FEATURE_DATA_ARCHITECTURE</a>. <div class="alert"><b>Note</b>  This value has been superseded by the <b>D3D_FEATURE_DATA_ARCHITECTURE1</b> value. If your application targets Windows 10, version 1703 (Creators' Update) or higher, then use the <b>D3D_FEATURE_DATA_ARCHITECTURE1</b> value instead.</div> <div> </div></para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_feature#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
-	D3D12_FEATURE_ARCHITECTURE = 1,
+	Architecture = 1,
 	/// <summary>Indicates a query for info about the <a href="https://docs.microsoft.com/windows/win32/direct3d11/overviews-direct3d-11-devices-downlevel-intro">feature levels</a> supported. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_feature_levels">D3D12_FEATURE_DATA_FEATURE_LEVELS</a>.</summary>
-	D3D12_FEATURE_FEATURE_LEVELS = 2,
+	FeatureLevels = 2,
 	/// <summary>Indicates a query for the resources supported by the current graphics driver for a given format. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_format_support">D3D12_FEATURE_DATA_FORMAT_SUPPORT</a>.</summary>
-	D3D12_FEATURE_FORMAT_SUPPORT = 3,
+	FormatSupport = 3,
 	/// <summary>Indicates a query for the image quality levels for a given format and sample count. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_multisample_quality_levels">D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS</a>.</summary>
-	D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS = 4,
+	MultisampleQualityLevels = 4,
 	/// <summary>Indicates a query for the DXGI data format. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_format_info">D3D12_FEATURE_DATA_FORMAT_INFO</a>.</summary>
-	D3D12_FEATURE_FORMAT_INFO = 5,
+	FormatInfo = 5,
 	/// <summary>Indicates a query for the GPU's virtual address space limitations. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_gpu_virtual_address_support">D3D12_FEATURE_DATA_GPU_VIRTUAL_ADDRESS_SUPPORT</a>.</summary>
-	D3D12_FEATURE_GPU_VIRTUAL_ADDRESS_SUPPORT = 6,
+	GPUVirtualAddressSupport = 6,
 	/// <summary>Indicates a query for the supported shader model. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_shader_model">D3D12_FEATURE_DATA_SHADER_MODEL</a>.</summary>
-	D3D12_FEATURE_SHADER_MODEL = 7,
+	ShaderModel = 7,
 	/// <summary>Indicates a query for the level of support for HLSL 6.0 wave operations. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options1">D3D12_FEATURE_DATA_D3D12_OPTIONS1</a>.</summary>
-	D3D12_FEATURE_D3D12_OPTIONS1 = 8,
+	D3D12Options1 = 8,
 	/// <summary>Indicates a query for the level of support for protected resource sessions. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_protected_resource_session_support">D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_SUPPORT</a>.</summary>
-	D3D12_FEATURE_PROTECTED_RESOURCE_SESSION_SUPPORT = 10,
+	ProtectedResourceSessionSupport = 10,
 	/// <summary>Indicates a query for root signature version support. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_root_signature">D3D12_FEATURE_DATA_ROOT_SIGNATURE</a>.</summary>
-	D3D12_FEATURE_ROOT_SIGNATURE = 12,
+	RootSignature = 12,
 	/// <summary>
 	/// <para>Indicates a query for each adapter's architectural details, so that your application can better optimize for certain adapter properties. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture1">D3D12_FEATURE_DATA_ARCHITECTURE1</a>. <div class="alert"><b>Note</b>  This value supersedes the <b>D3D_FEATURE_DATA_ARCHITECTURE</b> value. If your application targets Windows 10, version 1703 (Creators' Update) or higher, then use <b>D3D_FEATURE_DATA_ARCHITECTURE1</b>.</div> <div> </div></para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_feature#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
-	D3D12_FEATURE_ARCHITECTURE1 = 16,
+	Architecture1 = 16,
 	/// <summary>Indicates a query for the level of support for depth-bounds tests and programmable sample positions. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options2">D3D12_FEATURE_DATA_D3D12_OPTIONS2</a>.</summary>
-	D3D12_FEATURE_D3D12_OPTIONS2 = 18,
+	D3D12Options2 = 18,
 	/// <summary>Indicates a query for the level of support for shader caching. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_shader_cache">D3D12_FEATURE_DATA_SHADER_CACHE</a>.</summary>
-	D3D12_FEATURE_SHADER_CACHE = 19,
+	ShaderCache = 19,
 	/// <summary>Indicates a query for the adapter's support for prioritization of different command queue types. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_command_queue_priority">D3D12_FEATURE_DATA_COMMAND_QUEUE_PRIORITY</a>.</summary>
-	D3D12_FEATURE_COMMAND_QUEUE_PRIORITY = 20,
+	CommandQueuePriority = 20,
 	/// <summary>Indicates a query for the level of support for timestamp queries, format-casting, immediate write, view instancing, and barycentrics. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options3">D3D12_FEATURE_DATA_D3D12_OPTIONS3</a>.</summary>
-	D3D12_FEATURE_D3D12_OPTIONS3 = 21,
+	D3D12Options3 = 21,
 	/// <summary>Indicates a query for whether or not the adapter supports creating heaps from existing system memory. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_existing_heaps">D3D12_FEATURE_DATA_EXISTING_HEAPS</a>.</summary>
-	D3D12_FEATURE_EXISTING_HEAPS = 22,
+	ExistingHeaps = 22,
 	/// <summary>Indicates a query for the level of support for 64KB-aligned MSAA textures, cross-API sharing, and native 16-bit shader operations. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options4">D3D12_FEATURE_DATA_D3D12_OPTIONS4</a>.</summary>
-	D3D12_FEATURE_D3D12_OPTIONS4 = 23,
+	D3D12Options4 = 23,
 	/// <summary>Indicates a query for the level of support for heap serialization. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_serialization">D3D12_FEATURE_DATA_SERIALIZATION</a>.</summary>
-	D3D12_FEATURE_SERIALIZATION = 24,
+	Serialization = 24,
 	/// <summary>Indicates a query for the level of support for the sharing of resources between different adapters; for example, multiple GPUs. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_cross_node">D3D12_FEATURE_DATA_CROSS_NODE</a>.</summary>
-	D3D12_FEATURE_CROSS_NODE = 25,
+	CrossNode = 25,
 	/// <summary>Starting with Windows 10, version 1809 (10.0; Build 17763), indicates a query for the level of support for render passes, ray tracing, and shader-resource view tier 3 tiled resources. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options5">D3D12_FEATURE_DATA_D3D12_OPTIONS5</a>.</summary>
-	D3D12_FEATURE_D3D12_OPTIONS5 = 27,
+	D3D12Options5 = 27,
 	/// <summary>Starting with Windows 11 (Build 10.0.22000.194). The corresponding data structure for this value is [D3D12_FEATURE_DATA_DISPLAYABLE](/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_displayable).</summary>
-	D3D12_FEATURE_DISPLAYABLE = 28,
+	Displayable = 28,
 	/// <summary>
 	/// <para>Starting with Windows 10, version 1903 (10.0; Build 18362), indicates a query for the level of support for variable-rate shading (VRS), and indicates whether or not background processing is supported. The corresponding data structure for this value is [D3D12_FEATURE_DATA_D3D12_OPTIONS6](/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options6). For more info, see <a href="https://docs.microsoft.com/windows/win32/direct3d12/vrs">Variable-rate shading (VRS)</a>, and the <a href="https://microsoft.github.io/DirectX-Specs/d3d/BackgroundProcessing.html">Direct3D 12 background processing spec</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_feature#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
-	D3D12_FEATURE_D3D12_OPTIONS6 = 30,
+	D3D12Options6 = 30,
 	/// <summary>Indicates a query for the level of support for metacommands. The corresponding data structure for this value is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_query_meta_command">D3D12_FEATURE_DATA_QUERY_META_COMMAND</a>.</summary>
-	D3D12_FEATURE_QUERY_META_COMMAND = 31,
+	QueryMetaCommand = 31,
 	/// <summary>
 	/// <para>Starting with Windows 10, version 2004 (10.0; Build 19041), indicates a query for the level of support for mesh and amplification shaders, and for sampler feedback. The corresponding data structure for this value is [D3D12_FEATURE_DATA_D3D12_OPTIONS7](/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options7). For more info, see the [Mesh shader](https://microsoft.github.io/DirectX-Specs/d3d/MeshShader.html) and [Sampler feedback](https://microsoft.github.io/DirectX-Specs/d3d/SamplerFeedback.html) specs.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_feature#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
-	D3D12_FEATURE_D3D12_OPTIONS7 = 32,
+	D3D12Options7 = 32,
 	/// <summary>Starting with Windows 10, version 2004 (10.0; Build 19041), indicates a query to retrieve the count of protected resource session types. The corresponding data structure for this value is [D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPE_COUNT](/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_protected_resource_session_type_count).</summary>
-	D3D12_FEATURE_PROTECTED_RESOURCE_SESSION_TYPE_COUNT = 33,
+	ResourceSessionTypeCount = 33,
 	/// <summary>Starting with Windows 10, version 2004 (10.0; Build 19041), indicates a query to retrieve the list of protected resource session types. The corresponding data structure for this value is [D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPES](/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_protected_resource_session_types).</summary>
-	D3D12_FEATURE_PROTECTED_RESOURCE_SESSION_TYPES = 34,
+	ProtectedResourceSessionTypes = 34,
 	/// <summary>Starting with Windows 11 (Build 10.0.22000.194), indicates whether or not unaligned block-compressed textures are supported. The corresponding data structure for this value is [D3D12_FEATURE_DATA_D3D12_OPTIONS8](/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options8).</summary>
-	D3D12_FEATURE_D3D12_OPTIONS8 = 36,
+	D3D12Options8 = 36,
 	/// <summary>Starting with Windows 11 (Build 10.0.22000.194), indicates whether or not support exists for mesh shaders, values of *SV_RenderTargetArrayIndex* that are 8 or greater, typed resource 64-bit integer atomics, derivative and derivative-dependent texture sample operations, and the level of support for WaveMMA (wave_matrix) operations. The corresponding data structure for this value is [D3D12_FEATURE_DATA_D3D12_OPTIONS9](/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options9).</summary>
-	D3D12_FEATURE_D3D12_OPTIONS9 = 37,
+	D3D12Options9 = 37,
 	/// <summary>Starting with Windows 11 (Build 10.0.22000.194), indicates whether or not the SUM combiner can be used, and whether or not *SV_ShadingRate* can be set from a mesh shader. The corresponding data structure for this value is [D3D12_FEATURE_DATA_D3D12_OPTIONS10](/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options10).</summary>
-	D3D12_FEATURE_D3D12_OPTIONS10 = 39,
+	D3D12Options10 = 39,
 	/// <summary>Starting with Windows 11 (Build 10.0.22000.194), indicates whether or not 64-bit integer atomics on resources in descriptor heaps are supported. The corresponding data structure for this value is [D3D12_FEATURE_DATA_D3D12_OPTIONS11](/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options11).</summary>
-	D3D12_FEATURE_D3D12_OPTIONS11 = 40,
-	D3D12_FEATURE_D3D12_OPTIONS12 = 41,
-	D3D12_FEATURE_D3D12_OPTIONS13 = 42,
-	D3D12_FEATURE_D3D12_OPTIONS14 = 43,
-	D3D12_FEATURE_D3D12_OPTIONS15 = 44,
-	D3D12_FEATURE_D3D12_OPTIONS16 = 45,
-	D3D12_FEATURE_D3D12_OPTIONS17 = 46,
-	D3D12_FEATURE_D3D12_OPTIONS18 = 47,
-	D3D12_FEATURE_D3D12_OPTIONS19 = 48,
+	D3D12Options11 = 40,
+	D3D12Options12 = 41,
+	D3D12Options13 = 42,
+	D3D12Options14 = 43,
+	D3D12Options15 = 44,
+	D3D12Options16 = 45,
+	D3D12Options17 = 46,
+	D3D12Options18 = 47,
+	D3D12Options19 = 48,
 } ;
 
 
@@ -585,3 +587,233 @@ public enum OutputDuplicationPointerShapeType {
 	MaskedColor = 4,
 } ;
 
+
+[EquivalentOf( typeof( DXGI_RECLAIM_RESOURCE_RESULTS ) )]
+public enum ReclaimResourceResults {
+	/// <summary>The surface was successfully reclaimed and has valid content. This result is identical to the <i>false</i> value returned by the older <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgidevice2-reclaimresources">ReclaimResources</a> API.</summary>
+	OK = 0,
+
+	/// <summary>The surface was reclaimed, but the old content was lost and must be regenerated. This result is identical to the <i>true</i> value returned by the older <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgidevice2-reclaimresources">ReclaimResources</a> API.</summary>
+	Discarded = 1,
+
+	/// <summary>
+	/// <para>Both the surface and its contents are lost and invalid. The surface must be recreated and the content regenerated in order to be used. All future use of that resource is invalid. Attempts to bind it to the pipeline or map a resource which returns this value will never succeed, and the resource cannot be reclaimed again.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_5/ne-dxgi1_5-dxgi_reclaim_resource_results#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	NotCommitted = 2,
+} ;
+
+
+/// <summary>Specifies flags for the OfferResources1 method.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_5/ne-dxgi1_5-dxgi_offer_resource_flags">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf( typeof( DXGI_OFFER_RESOURCE_FLAGS ) )]
+public enum OfferResourceFlags: uint {
+	/// <summary>Indicates the ability to allow memory de-commit by the DirectX Graphics Kernel.</summary>
+	AllowDecommit = 1,
+} ;
+
+
+/// <summary>Specifies the memory segment group to use.</summary>
+/// <remarks>
+/// <para>This enum is used by <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_4/nf-dxgi1_4-idxgiadapter3-queryvideomemoryinfo">QueryVideoMemoryInfo</a> and <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_4/nf-dxgi1_4-idxgiadapter3-setvideomemoryreservation">SetVideoMemoryReservation</a>. Refer to the remarks for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_memory_pool">D3D12_MEMORY_POOL</a>.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/ne-dxgi1_4-dxgi_memory_segment_group#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(DXGI_MEMORY_SEGMENT_GROUP))]
+public enum MemorySegmentGroup {
+	/// <summary>The grouping of segments which is considered local to the video adapter, and represents the fastest available memory to the GPU. Applications should target the local segment group as the target size for their working set.</summary>
+	Local = 0,
+	/// <summary>The grouping of segments which is considered non-local to the video adapter, and may have slower performance than the local segment group.</summary>
+	NonLocal = 1,
+} ;
+
+
+/// <summary>Options for swap-chain color space.</summary>
+/// <remarks>This enum is used by <see cref="IDecodeSwapChain.SetColorSpace"/>.</remarks>
+[EquivalentOf(typeof(DXGI_MULTIPLANE_OVERLAY_YCbCr_FLAGS))]
+public enum MultiplaneOverlayYCbCrFlags {
+	/// <summary>Specifies nominal range YCbCr, which isn't an absolute color space, but a way of encoding RGB info.</summary>
+	NominalRange = 1,
+	/// <summary>Specifies BT.709, which standardizes the format of high-definition television and has 16:9 (widescreen) aspect ratio.</summary>
+	BT709 = 2,
+	/// <summary>Specifies xvYCC or extended-gamut YCC (also x.v.Color) color space that can be used in the video electronics of television sets to support a gamut 1.8 times as large as that of the sRGB color space.</summary>
+	xvYCC = 4,
+} ;
+
+
+/// <summary>Specifies a range of hardware features, to be used when checking for feature support.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_5/nf-dxgi1_5-idxgifactory5-checkfeaturesupport">CheckFeatureSupport</a> method.</remarks>
+[EquivalentOf( typeof( DXGI_FEATURE ) )]
+public enum Feature {
+	/// <summary>The display supports tearing, a requirement of variable refresh rate displays.</summary>
+	AllowTearing = 0,
+} ;
+
+
+/// <summary>
+/// The preference of GPU for the app to run on.
+/// <para>Can be used in <see cref="IFactory6.EnumAdapterByGPUPreference{A}"/></para>
+/// </summary>
+/// <remarks>This enumeration is used in the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_6/nf-dxgi1_6-idxgifactory6-enumadapterbygpupreference">IDXGIFactory6::EnumAdapterByGpuPreference</a> method.</remarks>
+[EquivalentOf( typeof( DXGI_GPU_PREFERENCE ) )]
+public enum GPUPreference {
+	/// <summary>No preference of GPU.</summary>
+	Unspecified = 0,
+
+	/// <summary>Preference for the minimum-powered GPU (such as an integrated graphics processor, or iGPU).</summary>
+	MinimumPower = 1,
+
+	/// <summary>Preference for the highest performing GPU, such as a discrete graphics processor (dGPU) or external graphics processor (xGPU).</summary>
+	HighPerformance = 2,
+} ;
+
+
+/// <summary>Specifies support for overlay color space.</summary>
+/// <remarks>
+/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/ne-dxgi1_4-dxgi_overlay_color_space_support_flag">Learn more about this API from docs.microsoft.com</see>.</para>
+/// </remarks>
+[Flags, EquivalentOf(typeof(DXGI_OVERLAY_COLOR_SPACE_SUPPORT_FLAG))]
+public enum OverlayColorSpaceSupportFlag: uint {
+	/// <summary>Overlay color space support is not present.</summary>
+	Unavailable = 0,
+	/// <summary>Overlay color space support is present.</summary>
+	Present = 1,
+} ;
+
+
+/// <summary>Specifies overlay support to check for in a call to <see cref="IOutput3.CheckOverlaySupport"/>.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_3/ne-dxgi1_3-dxgi_overlay_support_flag">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[Flags, EquivalentOf(typeof(DXGI_OVERLAY_SUPPORT_FLAG))]
+public enum OverlaySupportFlag: uint {
+	/// <summary>No overlay support.</summary>
+	None = 0,
+	/// <summary>Direct overlay support.</summary>
+	Direct = 1,
+	/// <summary>Scaling overlay support.</summary>
+	Scaling = 2,
+} ;
+
+
+/* From dxgi.h:
+	#define	DXGI_MAP_READ	( 1UL )
+	#define	DXGI_MAP_WRITE	( 2UL )
+	#define	DXGI_MAP_DISCARD	( 4UL )
+ */
+
+/// <summary>CPU read-write flags. These flags can be combined with a logical OR.</summary>
+[NativeLibrary("dxgi.dll")]
+[Flags] public enum MapFlags: uint {
+	None = 0,
+	/// <summary>Allow CPU read access.</summary>
+	Read = 1,
+	/// <summary>Allow CPU write access.</summary>
+	Write = 2,
+	/// <summary>Discard the previous contents of a resource when it is mapped.</summary>
+	Discard = 4,
+} ;
+
+
+
+/// <summary>Specifies the header metadata type.</summary>
+/// <remarks>
+/// This enum is used by the
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_5/nf-dxgi1_5-idxgiswapchain4-sethdrmetadata">SetHDRMetaData</a> method.
+/// </remarks>
+[EquivalentOf( typeof( DXGI_HDR_METADATA_TYPE ) )]
+public enum HDRMetaDataType {
+	/// <summary>Indicates there is no header metadata.</summary>
+	None = 0,
+
+	/// <summary>Indicates the header metadata is held by a  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_5/ns-dxgi1_5-dxgi_hdr_metadata_hdr10">DXGI_HDR_METADATA_HDR10</a> structure.</summary>
+	HDR10 = 1,
+
+	HDR10Plus = 2,
+} ;
+
+
+/// <summary>Specifies color space support for the swap chain.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/ne-dxgi1_4-dxgi_swap_chain_color_space_support_flag">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG))]
+public enum SwapChainColorSpaceSupportFlag: uint {
+	/// <summary>Color space support is not present.</summary>
+	Unavailable = 0,
+	/// <summary>Color space support is present.</summary>
+	Present = 1,
+	/// <summary>Overlay color space support is present.</summary>
+	OverlayPresent = 2,
+} ;
+
+
+/// <summary>An eviction priority value of a <see cref="IResource"/> object.</summary>
+public enum ResourcePriority: uint {
+	/// <summary>The resource is unused and can be evicted as soon as another resource requires the memory that the resource occupies.</summary>
+	Minimum = 0x28000000,
+	/// <summary>
+	/// The eviction priority of the resource is low. The placement of the resource is not critical, and minimal work is performed to
+	/// find a location for the resource.<para/>
+	/// For example, if a GPU can render with a vertex buffer from either local or non-local memory
+	/// with little difference in performance, that vertex buffer is low priority.<para/>
+	/// Other more critical resources (for example, a render target or texture) can then occupy the faster memory.
+	/// </summary>
+	Low = 0x50000000,
+	/// <summary>
+	/// The eviction priority of the resource is normal. The placement of the resource is important, but not critical, for performance.
+	/// The resource is placed in its preferred location instead of a low-priority resource.
+	/// </summary>
+	Normal = 0x78000000,
+	/// <summary>
+	/// The eviction priority of the resource is high.
+	/// The resource is placed in its preferred location instead of a low-priority or normal-priority resource.
+	/// </summary>
+	High = 0xA0000000,
+	/// <summary>The resource is evicted from memory only if there is no other way of resolving the memory requirement.</summary>
+	Maximum = 0xC8000000,
+} ;
+
+
+[Flags, EquivalentOf( typeof( DXGI_DEBUG_RLO_FLAGS ) )]
+public enum DebugRLOFlags {
+	/// <summary>A flag that specifies to obtain a summary about an object's lifetime.</summary>
+	Summary = 0x00000001,
+	/// <summary>A flag that specifies to obtain detailed info about an object's lifetime.</summary>
+	Detail = 0x00000002,
+	/// <summary>
+	/// <para>This flag indicates to ignore objects which have no external refcounts keeping them alive. D3D objects are printed using an external refcount and an internal refcount. Typically, all objects are printed. This flag means ignore the objects whose external refcount is 0, because the application is not responsible for keeping them alive.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgidebug/ne-dxgidebug-dxgi_debug_rlo_flags#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	IgnoreInternal = 0x00000004,
+	/// <summary>A flag that specifies to obtain both a summary and detailed info about an object's lifetime.</summary>
+	All = 0x00000007,
+}
+
+
+[EquivalentOf( typeof( DXGI_INFO_QUEUE_MESSAGE_CATEGORY ) )]
+public enum InfoQueueMessageCateogry {
+	/// <summary>Unknown category.</summary>
+	Unknown = 0,
+	/// <summary>Miscellaneous category.</summary>
+	Miscellaneous = 1,
+	/// <summary>Initialization category.</summary>
+	Initialization = 2,
+	/// <summary>Cleanup category.</summary>
+	Cleanup = 3,
+	/// <summary>Compilation category.</summary>
+	Compilation = 4,
+	/// <summary>State creation category.</summary>
+	StateCreation = 5,
+	/// <summary>State setting category.</summary>
+	StateSetting = 6,
+	/// <summary>State getting category.</summary>
+	StateGetting = 7,
+	/// <summary>Resource manipulation category.</summary>
+	ResourceManipulation = 8,
+	/// <summary>Execution category.</summary>
+	Execution = 9,
+	/// <summary>Shader category.</summary>
+	Shader = 10,
+} ;

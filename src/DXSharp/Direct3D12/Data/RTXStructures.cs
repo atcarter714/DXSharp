@@ -493,3 +493,34 @@ public partial struct GPUVirtualAddressRangeAndStride {
 	public static implicit operator GPUVirtualAddressRangeAndStride( in (ulong startAddress, ulong sizeInBytes, ulong strideInBytes) tuple ) =>
 		new( tuple.startAddress, tuple.sizeInBytes, tuple.strideInBytes ) ;
 } ;
+
+
+/// <summary>
+/// Represents prebuild information about a raytracing acceleration structure.
+/// Get an instance of this structure by calling GetRaytracingAccelerationStructurePrebuildInfo.
+/// </summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_raytracing_acceleration_structure_prebuild_info">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO))]
+public partial struct RaytracingAccelerationStructurePreBuildInfo {
+	/// <summary>Size required to hold the result of an acceleration structure build based on the specified inputs.</summary>
+	public ulong ResultDataMaxSizeInBytes ;
+
+	/// <summary>Scratch storage on the GPU required during acceleration structure build based on the specified inputs.</summary>
+	public ulong ScratchDataSizeInBytes ;
+	
+	public ulong UpdateScratchDataSizeInBytes ;
+	
+	
+	public RaytracingAccelerationStructurePreBuildInfo( ulong resultDataMaxSizeInBytes     = 0UL, 
+														ulong scratchDataSizeInBytes       = 0UL, 
+														ulong updateScratchDataSizeInBytes = 0UL ) {
+		ResultDataMaxSizeInBytes   = resultDataMaxSizeInBytes ;
+		ScratchDataSizeInBytes     = scratchDataSizeInBytes ;
+		UpdateScratchDataSizeInBytes = updateScratchDataSizeInBytes ;
+	}
+	
+	public static implicit operator RaytracingAccelerationStructurePreBuildInfo( in (ulong resultDataMaxSizeInBytes, ulong scratchDataSizeInBytes, ulong updateScratchDataSizeInBytes) tuple ) =>
+		new( tuple.resultDataMaxSizeInBytes, tuple.scratchDataSizeInBytes, tuple.updateScratchDataSizeInBytes ) ;
+} ;

@@ -31,20 +31,6 @@ public enum FactoryCreateFlags: uint {
 } ;
 
 
-// Native Interop Signatures: -----------------------------------------------------------------------------------------
-//HRESULT CreateDXGIFactory( in global::System.Guid riid, out object ppFactory );
-//HRESULT CreateDXGIFactory( global::System.Guid* riid, [MarshalAs( UnmanagedType.IUnknown )] out object ppFactory );
-//HRESULT CreateDXGIFactory1( in global::System.Guid riid, out object ppFactory );
-//HRESULT CreateDXGIFactory1( global::System.Guid* riid, [MarshalAs( UnmanagedType.IUnknown )] out object ppFactory );
-//HRESULT CreateDXGIFactory2( uint Flags, in global::System.Guid riid, out object ppFactory );
-//HRESULT CreateDXGIFactory2( uint Flags, global::System.Guid* riid, [MarshalAs( UnmanagedType.IUnknown )] out object ppFactory );
-
-//HRESULT DXGIGetDebugInterface1( uint Flags, in global::System.Guid riid, out object pDebug );
-//HRESULT DXGIGetDebugInterface1( uint Flags, global::System.Guid* riid, [MarshalAs( UnmanagedType.IUnknown )] out object pDebug );
-//HRESULT DXGIDeclareAdapterRemovalSupport();
-// ---------------------------------------------------------------------------------------------------------------------
-
-
 
 /// <summary>
 /// Defines the DXGI-related functions of the Windows SDK
@@ -54,7 +40,7 @@ public enum FactoryCreateFlags: uint {
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/d3d10-graphics-reference-dxgi-functions">DXGI functions</a> 
 /// for a complete list with additional information
 /// </remarks>
-internal static partial class DXGIFunctions {
+public static partial class DXGIFunctions {
 
 	internal static unsafe TFactory? CreateDXGIFactory< TFactory >( Guid riid, out HRESULT hr ) 
 																	where TFactory: IDXGIFactory {
@@ -100,7 +86,7 @@ internal static partial class DXGIFunctions {
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	/// <exception cref="COMException">Thrown if the call fails and contains detailed error information</exception>
 	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory< T >( ) where T : IDXGIFactory {
-		var factory = DXGIFunctions.CreateDXGIFactory<T>( typeof(T).GUID, out var hr ) ;
+		var factory = DXGIFunctions.CreateDXGIFactory< T >( typeof(T).GUID, out var hr ) ;
 		_ = hr.ThrowOnFailure( ) ;
 		return factory ;
 	}
@@ -109,16 +95,16 @@ internal static partial class DXGIFunctions {
 	/// <summary>
 	/// Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
 	/// </summary>
-	/// <typeparam name="T">Type of DXGIFactoryX</typeparam>
+	/// <typeparam name="TFactory">Type of DXGIFactoryX</typeparam>
 	/// <param name="hr">HRESULT to capture the result and indicate success/failure</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	[MethodImpl(_MAXOPT_)]
-	internal static T? CreateDXGIFactory1<T>( out HRESULT hr ) where T : IDXGIFactory1 {
-		hr = PInvoke.CreateDXGIFactory1( typeof( T ).GUID, out var factory ) ;
+	internal static TFactory? CreateDXGIFactory1< TFactory >( out HRESULT hr ) where TFactory : IDXGIFactory1 {
+		hr = PInvoke.CreateDXGIFactory1( typeof( TFactory ).GUID, out var factory ) ;
 		_ = hr.ThrowOnFailure( ) ;
-		return (T)factory ;
+		return (TFactory)factory ;
 	}
-
+	
 	/// <summary>
 	/// Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
 	/// </summary>
@@ -141,7 +127,7 @@ internal static partial class DXGIFunctions {
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory2< T >( FactoryCreateFlags Flags, out HRESULT hr ) 
 																							where T : IDXGIFactory2 {
-		var factory2 = DXGIFunctions.CreateDXGIFactory2< T >( Flags, typeof(T).GUID, out hr ) ;
+		var factory2 = CreateDXGIFactory2< T >( Flags, typeof(T).GUID, out hr ) ;
 		return (T)factory2! ;
 	}
 
@@ -152,7 +138,7 @@ internal static partial class DXGIFunctions {
 	/// <param name="Flags">Creation flags</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory2< T >( FactoryCreateFlags Flags ) where T : IDXGIFactory2 {
-		var factory = CreateDXGIFactory2<T>( Flags, out var hr ) ;
+		var factory = CreateDXGIFactory2< T >( Flags, out var hr ) ;
 		_ = hr.ThrowOnFailure( ) ;
 		return factory ;
 	}

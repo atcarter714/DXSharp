@@ -1,36 +1,47 @@
 ﻿#region Using Directives
-
 using System.Diagnostics ;
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using Windows.Win32 ;
+using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
-
+using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
+using DXSharp.Windows.Win32 ;
 #endregion
 namespace DXSharp.DXGI ;
 
 
 /// <summary>Represents a DXGI Device object.</summary>
 [DebuggerDisplay($"{nameof(Device)}: {nameof(ComPointer)} = ComPointer")]
-public class Device: Object,
-					 IDevice {
-	public new static Type ComType => typeof(IDXGIDevice) ;
-	public new static Guid InterfaceGUID => typeof(IDXGIDevice).GUID ;
-	static IInstantiable IInstantiable. Instantiate( )            => new Device( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr ptr ) => new Device( ptr ) ;
-	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => 
-		new Device( ( obj as IDXGIDevice )! ) ;
-	
-	public new IDXGIDevice? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGIDevice >? ComPointer { get ; protected set ; }
+[Wrapper(typeof(IDXGIDevice))]
+internal class Device: Object,
+					   IDevice,
+					   IComObjectRef< IDXGIDevice >,
+					   IUnknownWrapper< IDXGIDevice > {
+	// ----------------------------------------------------------
+	ComPtr< IDXGIDevice >? _comPtr ;
+	public new ComPtr< IDXGIDevice >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGIDevice >( ) ;
+	public override IDXGIDevice? COMObject => ComPointer?.Interface ;
+	// ----------------------------------------------------------
 
+	public Device( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIDevice >( ) ;
+	}
+	public Device( nint ptr ) {
+		_comPtr = new ComPtr< IDXGIDevice >( ptr ) ;
+	}
+	public Device( ComPtr< IDXGIDevice > ptr ) {
+		_comPtr = ptr ;
+	}
+	public Device( IDXGIDevice ptr ) {
+		_comPtr = new ComPtr< IDXGIDevice >( ptr ) ;
+	}
 	
-	internal Device( ) { }
-	internal Device( nint ptr ) => ComPointer = new( ptr ) ;
-	internal Device( in ComPtr< IDXGIDevice > dxgiObj ) => this.ComPointer = dxgiObj ;
-	internal Device( in IDXGIDevice dxgiObj ) => ComPointer = new( dxgiObj ) ;
-
+	// ----------------------------------------------------------
 	
-	public IAdapter GetAdapter< T >( ) where T: class, IAdapter, IInstantiable {
+	public HResult GetAdapter( out IAdapter adapter ) {
 		var device = this.COMObject
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
@@ -38,10 +49,10 @@ public class Device: Object,
 #endif
 			;
 
-		device.GetAdapter( out var ppAdapter ) ;
-		return (T)T.Instantiate( ppAdapter ) ;
+		var hr = device.GetAdapter( out var ppAdapter ) ;
+		adapter = new Adapter( ppAdapter ) ;
+		return hr ;
 	}
-	
 	
 	/* NOTE: -----------------------------------
 		 The CreateSurface method creates a buffer to exchange data between one or more devices. 
@@ -50,34 +61,6 @@ public class Device: Object,
 		 resource object that represents a surface. 
 		 ---------------------------------------------------------------------------------------- */
 	
-	/// <summary>Returns a surface. This method is used internally and you should not call it directly in your application.</summary>
-	/// <param name="pDesc">
-	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_surface_desc">DXGI_SURFACE_DESC</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_surface_desc">DXGI_SURFACE_DESC</a> structure that describes the surface.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgidevice-createsurface#parameters">Read more on docs.microsoft.com</a>.</para>
-	/// </param>
-	/// <param name="numSurfaces">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of surfaces to create.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgidevice-createsurface#parameters">Read more on docs.microsoft.com</a>.</para>
-	/// </param>
-	/// <param name="usage">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a></b> A <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-usage">DXGI_USAGE</a> flag that specifies how the surface is expected to be used.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgidevice-createsurface#parameters">Read more on docs.microsoft.com</a>.</para>
-	/// </param>
-	/// <param name="pSharedResource">
-	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_shared_resource">DXGI_SHARED_RESOURCE</a>*</b> An optional pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_shared_resource">DXGI_SHARED_RESOURCE</a> structure that contains shared resource information for opening views of such resources.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgidevice-createsurface#parameters">Read more on docs.microsoft.com</a>.</para>
-	/// </param>
-	/// <param name="ppSurface">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgisurface">IDXGISurface</a>**</b> The address of an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgisurface">IDXGISurface</a> interface pointer to the first created surface.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgidevice-createsurface#parameters">Read more on docs.microsoft.com</a>.</para>
-	/// </param>
-	/// <returns>
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; an error code otherwise.  For a list of error codes, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
-	/// </returns>
-	/// <remarks>
-	/// <para>The <b>CreateSurface</b> method creates a buffer to exchange data between one or more devices. It is used internally, and you should not directly call it. The runtime automatically creates an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgisurface">IDXGISurface</a> interface when it creates a Direct3D resource object that represents a surface. For example, the runtime creates an <b>IDXGISurface</b> interface when it calls <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nf-d3d11-id3d11device-createtexture2d">ID3D11Device::CreateTexture2D</a> or <a href="https://docs.microsoft.com/windows/desktop/api/d3d10/nf-d3d10-id3d10device-createtexture2d">ID3D10Device::CreateTexture2D</a> to create a 2D texture. To retrieve the <b>IDXGISurface</b> interface that represents the 2D texture surface, call <a href="https://docs.microsoft.com/windows/desktop/api/unknwn/nf-unknwn-iunknown-queryinterface(q)">ID3D11Texture2D::QueryInterface</a> or <b>ID3D10Texture2D::QueryInterface</b>. In this call, you must pass the identifier of <b>IDXGISurface</b>. If the 2D texture has only a single MIP-map level and does not consist of an array of textures, <b>QueryInterface</b> succeeds and returns a pointer to the <b>IDXGISurface</b> interface pointer. Otherwise, <b>QueryInterface</b> fails and does not return the pointer to <b>IDXGISurface</b>.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgidevice-createsurface#">Read more on docs.microsoft.com</a>.</para>
-	/// </remarks>
 	public void CreateSurface( in SurfaceDescription pDesc,
 							   uint numSurfaces, uint usage,
 							   ref SharedResource? pSharedResource,
@@ -118,8 +101,9 @@ public class Device: Object,
 		}
 	}
 
-	public void QueryResourceResidency( in Resource?[ ] ppResources, 
-										out Span< Residency > statusSpan, 
+	
+	public void QueryResourceResidency( in IResource?[ ] ppResources, 
+										out Span< Residency > pResidencyStatus, 
 										uint numResources ) {
 		var device = this.COMObject
 #if DEBUG
@@ -129,21 +113,19 @@ public class Device: Object,
 			;
 
 		unsafe {
-			Residency* stackPtr = stackalloc Residency[ ppResources.Length ] ;
-			
-			var array = ppResources
-						.Select< Resource?, object >( p => p?.COMObject! )?
-								.ToArray( ) ;
-			
-			device.QueryResourceResidency( array, (DXGI_RESIDENCY *)stackPtr, numResources ) ;
-			
-			statusSpan = new Residency[ ppResources.Length ] ;
+			var array = new object[ ppResources.Length ] ;
 			for ( var i = 0; i < ppResources.Length; ++i )
-				statusSpan[ i ] = stackPtr[ i ] ;
+				array[ i ] = ( (IComObjectRef< IDXGIResource >?)ppResources[ i ] )!
+								.COMObject! ;
+			
+			var _residencies = new Residency[ ppResources.Length ] ;
+			fixed( Residency* pResidencies = _residencies )
+				device.QueryResourceResidency( array, (DXGI_RESIDENCY *)pResidencies, numResources ) ;
+			
+			pResidencyStatus = _residencies ;
 		}
 	}
 
-	
 	
 	public void SetGPUThreadPriority( int priority ) {
 		var device = this.COMObject
@@ -167,12 +149,307 @@ public class Device: Object,
 		device.GetGPUThreadPriority( out pPriority ) ;
 	}
 	
+	// ----------------------------------------------------------
 	
+	public new static Type ComType => typeof(IDXGIDevice) ;
+
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIDevice).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+
+	static IInstantiable IInstantiable.Instantiate( ) => new Device( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new Device( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => 
+		new Device( ( obj as IDXGIDevice )! ) ;
 	
-	/*
-	protected virtual void _throwIfNull( ) {
-		if ( this.ComPointer?.Disposed ?? true )
-			throw new NullReferenceException( $"{nameof( Device )} :: " +
-											  $"The internal COM interface is destroyed/null." ) ;
-	}*/
+	// ============================================================
+} ;
+
+
+[Wrapper(typeof(IDXGIDevice1))]
+internal class Device1: Device,
+						IDevice1,
+						IComObjectRef< IDXGIDevice1 >,
+						IUnknownWrapper< IDXGIDevice1 > {
+	// ----------------------------------------------------------
+	ComPtr< IDXGIDevice1 >? _comPtr ;
+	public new virtual ComPtr< IDXGIDevice1 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGIDevice1 >( ) ;
+	public override IDXGIDevice1? COMObject => ComPointer?.Interface ;
+	// ----------------------------------------------------------
+	
+	public Device1( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIDevice1 >( ) ;
+	}
+	public Device1( nint ptr ) {
+		_comPtr = new ComPtr< IDXGIDevice1 >( ptr ) ;
+	}
+	public Device1( ComPtr< IDXGIDevice1 > ptr ) {
+		_comPtr = ptr ;
+	}
+	public Device1( IDXGIDevice1 ptr ) {
+		_comPtr = new ComPtr< IDXGIDevice1 >( ptr ) ;
+	}
+	
+	// ----------------------------------------------------------
+
+	public void SetMaximumFrameLatency( uint maxLatency ) =>
+		this.COMObject!.SetMaximumFrameLatency( maxLatency ) ;
+	
+	public void GetMaximumFrameLatency( out uint pMaxLatency ) =>
+		this.COMObject!.GetMaximumFrameLatency( out pMaxLatency ) ;
+	
+	// ----------------------------------------------------------
+	
+	public new static Type ComType => typeof(IDXGIDevice1) ;
+	 
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIDevice1).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ============================================================
+} ;
+
+
+[Wrapper(typeof(IDXGIDevice2))]
+internal class Device2: Device1,
+						IDevice2,
+						IComObjectRef< IDXGIDevice2 >,
+						IUnknownWrapper< IDXGIDevice2 > {
+	// ----------------------------------------------------------
+	ComPtr< IDXGIDevice2 >? _comPtr ;
+	public new virtual ComPtr< IDXGIDevice2 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGIDevice2 >( ) ;
+	public override IDXGIDevice2? COMObject => ComPointer?.Interface ;
+	// ----------------------------------------------------------
+	
+	public Device2( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIDevice2 >( ) ;
+	}
+	public Device2( nint ptr ) {
+		_comPtr = new ComPtr< IDXGIDevice2 >( ptr ) ;
+	}
+	public Device2( ComPtr< IDXGIDevice2 > ptr ) {
+		_comPtr = ptr ;
+	}
+	public Device2( IDXGIDevice2 ptr ) {
+		_comPtr = new ComPtr< IDXGIDevice2 >( ptr ) ;
+	}
+	
+	// ----------------------------------------------------------
+
+	public void OfferResources( uint NumResources, IResource[ ] ppResources, OfferResourcePriority Priority ) {
+		var device = this.COMObject
+#if DEBUG
+					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
+														  $"The internal COM interface is destroyed/null." )
+#endif
+		 			;
+
+		var array = new IDXGIResource[ NumResources ] ;
+		for ( var i = 0; i < NumResources; ++i )
+			array[ i ] = ( (IComObjectRef< IDXGIResource >)ppResources[ i ] )
+								.COMObject! ;
+		
+		device.OfferResources( NumResources, array, (DXGI_OFFER_RESOURCE_PRIORITY)Priority ) ;
+	}
+
+	public void ReclaimResources( uint NumResources, IResource[ ] ppResources, out Span< BOOL > pDiscarded ) {
+		var device = this.COMObject
+#if DEBUG
+					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
+														  $"The internal COM interface is destroyed/null." )
+#endif
+		 			;
+
+		var array = new IDXGIResource[ NumResources ] ;
+		for ( var i = 0; i < NumResources; ++i )
+			array[ i ] = ( (IComObjectRef< IDXGIResource >)ppResources[ i ] )
+								.COMObject! ;
+		
+		unsafe {
+			var discarded = new BOOL[ (int)NumResources ] ;
+			fixed( BOOL* stackPtr = discarded )
+				device.ReclaimResources( NumResources, array, stackPtr ) ;
+			
+			pDiscarded = discarded ;
+		}
+	}
+
+	public void EnqueueSetEvent( Win32Handle hEvent ) {
+		var device = this.COMObject
+#if DEBUG
+					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
+														  $"The internal COM interface is destroyed/null." )
+#endif
+		 			;
+
+		device.EnqueueSetEvent( hEvent ) ;
+	}
+	
+	// ----------------------------------------------------------
+	public new static Type ComType => typeof(IDXGIDevice2) ;
+	 
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIDevice2).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	// ============================================================
+} ;
+
+
+[Wrapper(typeof(IDXGIDevice3))]
+internal class Device3: Device2,
+						IDevice3,
+						IComObjectRef< IDXGIDevice3 >,
+						IUnknownWrapper< IDXGIDevice3 > {
+	// ----------------------------------------------------------
+	ComPtr< IDXGIDevice3 >? _comPtr ;
+	public new virtual ComPtr< IDXGIDevice3 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGIDevice3 >( ) ;
+	public override IDXGIDevice3? COMObject => ComPointer?.Interface ;
+	// ----------------------------------------------------------
+	
+	public Device3( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIDevice3 >( ) ;
+	}
+	public Device3( nint ptr ) {
+		_comPtr = new ComPtr< IDXGIDevice3 >( ptr ) ;
+	}
+	public Device3( ComPtr< IDXGIDevice3 > ptr ) {
+		_comPtr = ptr ;
+	}
+	public Device3( IDXGIDevice3 ptr ) {
+		_comPtr = new ComPtr< IDXGIDevice3 >( ptr ) ;
+	}
+	
+	// ----------------------------------------------------------
+	
+	public void Trim( ) {
+		var device = this.COMObject
+#if DEBUG
+					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
+														  $"The internal COM interface is destroyed/null." )
+#endif
+		 			;
+
+		device.Trim( ) ;
+	}
+
+	// ----------------------------------------------------------
+
+	public new static Type ComType => typeof(IDXGIDevice3) ;
+	 
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIDevice3).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ============================================================
+} ;
+
+
+[Wrapper(typeof(IDXGIDevice4))]
+internal class Device4: Device3,
+						IDevice4,
+						IComObjectRef< IDXGIDevice4 >,
+						IUnknownWrapper< IDXGIDevice4 > {
+	// ----------------------------------------------------------
+	ComPtr< IDXGIDevice4 >? _comPtr ;
+	public new virtual ComPtr< IDXGIDevice4 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGIDevice4 >( ) ;
+	public override IDXGIDevice4? COMObject => ComPointer?.Interface ;
+	// ----------------------------------------------------------
+	
+	public Device4( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIDevice4 >( ) ;
+	}
+	public Device4( nint ptr ) {
+		_comPtr = new ComPtr< IDXGIDevice4 >( ptr ) ;
+	}
+	public Device4( ComPtr< IDXGIDevice4 > ptr ) {
+		_comPtr = ptr ;
+	}
+	public Device4( IDXGIDevice4 ptr ) {
+		_comPtr = new ComPtr< IDXGIDevice4 >( ptr ) ;
+	}
+	
+	// ----------------------------------------------------------
+
+	public void OfferResources1( uint                  NumResources,
+								 IResource[ ]          ppResources,
+								 OfferResourcePriority Priority = OfferResourcePriority.Normal, 
+								 OfferResourceFlags    Flags    = OfferResourceFlags.AllowDecommit ) {
+		var device = this.COMObject
+#if DEBUG
+					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
+														  $"The internal COM interface is destroyed/null." )
+#endif
+		 					 			;
+		
+		var array = new IDXGIResource[ NumResources ] ;
+		for ( var i = 0; i < NumResources; ++i )
+			array[ i ] = ( (IComObjectRef< IDXGIResource >)ppResources[ i ] )
+								.COMObject! ;
+		
+		device.OfferResources1( NumResources, array, (DXGI_OFFER_RESOURCE_PRIORITY)Priority, (uint)Flags ) ;
+	}
+
+	public void ReclaimResources1( uint NumResources, 
+								   IResource[ ] ppResources, 
+								   out Span< ReclaimResourceResults > pResults ) {
+		var device = this.COMObject
+#if DEBUG
+					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
+														  $"The internal COM interface is destroyed/null." )
+#endif
+					 			;
+		
+		var array = new IDXGIResource[ NumResources ] ;
+		for ( var i = 0; i < NumResources; ++i )
+			array[ i ] = ( (IComObjectRef< IDXGIResource >)ppResources[ i ] )
+								.COMObject! ;
+		
+		unsafe {
+			var reclaimResults = new ReclaimResourceResults[ (int)NumResources ] ;
+			fixed ( ReclaimResourceResults* stackPtr = reclaimResults ) {
+				device.ReclaimResources1( NumResources, array, (DXGI_RECLAIM_RESOURCE_RESULTS *)stackPtr ) ;
+			}
+			
+			pResults = reclaimResults ;
+		}
+	}
+
+	// ----------------------------------------------------------
+	
+	public new static Type ComType => typeof(IDXGIDevice4) ;
+	
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIDevice4).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	// ============================================================
 } ;

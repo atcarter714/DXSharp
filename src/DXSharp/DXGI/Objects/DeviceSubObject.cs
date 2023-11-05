@@ -1,4 +1,8 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows.COM ;
 #endregion
@@ -11,33 +15,52 @@ namespace DXSharp.DXGI ;
 /// IDXGIDeviceSubObject interface
 /// </a>.
 /// </remarks>
-public class DeviceSubObject: Object,
-							  IDeviceSubObject {
-	internal new IDXGIDeviceSubObject? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGIDeviceSubObject >? ComPointer { get ; protected set ; }
+[Wrapper(typeof(IDXGIDeviceSubObject))]
+internal class DeviceSubObject: Object,
+								IDeviceSubObject,
+								IComObjectRef< IDXGIDeviceSubObject >,
+								IUnknownWrapper< IDXGIDeviceSubObject > {
+	ComPtr< IDXGIDeviceSubObject >? _comPtr ;
+	public new ComPtr< IDXGIDeviceSubObject >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGIDeviceSubObject >( ) ;
+	public override IDXGIDeviceSubObject? COMObject => ComPointer?.Interface ;
 	
 	
-	internal DeviceSubObject( ) { }
-	internal DeviceSubObject( nint ptr ) {
-		ComPointer      = new( ptr ) ;
-		base.ComPointer = (ComPtr< IDXGIObject >)ComPointer ;
+	public DeviceSubObject( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIDeviceSubObject >( ) ;
 	}
-	internal DeviceSubObject( in IDXGIDeviceSubObject dxgiObj ) {
-		ComPointer      = new( dxgiObj ) ;
-		base.ComPointer = (ComPtr< IDXGIObject >)ComPointer ;
+	public DeviceSubObject( nint ptr ) {
+		_comPtr = new ComPtr< IDXGIDeviceSubObject >( ptr ) ;
 	}
-	internal DeviceSubObject( in ComPtr< IDXGIDeviceSubObject > dxgiObj ) {
-		ComPointer      = dxgiObj ;
-		base.ComPointer = (ComPtr< IDXGIObject >)ComPointer ;
+	public DeviceSubObject( ComPtr< IDXGIDeviceSubObject > ptr ) {
+		_comPtr = ptr ;
 	}
-
+	public DeviceSubObject( IDXGIDeviceSubObject ptr ) {
+		_comPtr = new ComPtr< IDXGIDeviceSubObject >( ptr ) ;
+	}
 	
-	public T GetDevice< T >( ) where T: Device {
-		
+	
+	public T GetDevice< T >( ) where T: IDevice {
 		unsafe {
 			var riid = typeof( T ).GUID ;
 			this.COMObject!.GetDevice( &riid, out var ppDevice ) ;
-			return (T)( new Device( ( ppDevice as IDXGIDevice )! ) ) ;
+			return (T)( T.Instantiate( ( ppDevice as IDXGIDevice )! ) ) ;
 		}
 	}
+	
+	// ----------------------------------------------------------
+	public new static Type ComType => typeof( IDXGIDeviceSubObject ) ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIDeviceSubObject).GUID
+																		.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	// ==========================================================
 } ;

@@ -1,73 +1,122 @@
-﻿using System.Collections.Concurrent ;
-using DXSharp ;
-using DXSharp.Windows.COM ;
+﻿
+#region Using Directives
+using System.Collections.Concurrent ;
+using System.Diagnostics ;
+using static DXSharp.Windows.COM.COMUtility ;
+#endregion
+namespace DXSharp.Windows.COM ;
 
-namespace Windows.Win32.Graphics.Direct3D12 ;
 
-internal class COMResourceManager: DisposableObject
-{
-	internal COMPointerCollection _pointers = new( ) ;
+internal record ComInterfaceRef( Type InterfaceType,
+								 nint VTablePtr,
+								 IUnknown InterfaceRCW ) ;
 
-	internal bool Disposed => _pointers.Pointers.IsEmpty ;
-	internal bool IsObjectAlive( ) => !Disposed ;
+internal record ComInterfaceRef< T >( nint VTablePtr,
+									  T    InterfaceObject ):
+	ComInterfaceRef( typeof(T), VTablePtr, InterfaceObject ) where T: IUnknown {
+	public T InterfaceObject { get ; init ; } = InterfaceObject ;
+} ;
 
-	public void Add( Type getType, ComPtr< ID3D12Debug > comPointer ) => 
-		_pointers.Add( comPointer ) ;
-	
-	protected override ValueTask DisposeUnmanaged( ) {
-		
-		
-		return ValueTask.CompletedTask ;
-	}
-}
 
-internal class COMPointerCollection
-{
-	internal ConcurrentDictionary< nint, Type > UniqueObjects { get ; } = new( ) ;
-	internal ConcurrentDictionary< UID32, ComPtr > Pointers { get ; } = new( ) ;
-	
-	
-	public bool Add( ComPtr ptr ) {
-		UniqueObjects.TryAdd( ptr.BaseAddress, ptr.ComType ) ;
-		var id = UID32.CreateInstanceIDFrom( ptr ) ;
-		return Pointers.TryAdd( id, ptr ) ;
-	}
-}
+internal class ComObject: DisposableObject {
+	nint _pUnknown ;
+	Type _initialType ;
+	ConcurrentDictionary< nint, int > _refCounts = new( ) ;
+	ConcurrentDictionary< ComInterfaceRef, ComPtr > _pointers  = new( ) ;
+	public bool IsAlive => _pointers.Count > 0 ;
+	public override bool Disposed { get ; protected set ; }
 
-internal class ComRef: DisposableObject {
-	public Type ComBaseType { get ; }
-	public nint UnknownPointer { get ; }
-	public int TotalRefCount { get ; private set ; }
-	public List< ComPtr > ComPointers { get ; } = new( ) ;
-	public Dictionary< Type, nint > InterfacePtrs { get ; } = new( ) ;
-	
-	protected override ValueTask DisposeUnmanaged( ) {
-		return ValueTask.CompletedTask;
+	public ComObject( ComPtr ptr ) {
+		ComInterfaceRef ptrRef = new( ptr.ComType,
+									  ptr.BaseAddress,
+									  (IUnknown)ptr.InterfaceObjectRef ) ;
+
+		//_interfaces.Add( ptrRef ) ;
+		_pointers.TryAdd( ptrRef, ptr ) ;
+
+		_initialType = ptr.ComType ;
+		_pUnknown    = ptr.BaseAddress ;
 	}
 
-	protected ComPtr< T > GetInterface< T >( ) where T: IUnknown => null ;
-}
 
-internal class ComRefEntry: DisposableObject
-{
-	public nint InterfaceVTable { get ; }
-	public List< ComPtr > ComPointers { get ; } = new( ) ;
+	public void AddPointer< T >( ComPtr< T > ptr ) where T: IUnknown {
+		ComInterfaceRef<T> ptrRef = new( ptr.InterfaceVPtr, ptr.Interface! ) ;
 
+		//_interfaces.Add( ptrRef ) ;
+		_pointers.TryAdd( ptrRef, ptr ) ;
+		_refCounts.AddOrUpdate( ptr.InterfaceVPtr,
+								( n ) => 1, ( n, c ) => c + 1 ) ;
+	}
 
 	public ComPtr< T > GetPointer< T >( ) where T: IUnknown {
-		
-	}
-	
-	protected override ValueTask DisposeUnmanaged( ) {
-		int length = ComPointers.Count ;
-		for ( int i = 0; i < length; ++i ) {
-			if( ComPointers[ i ]?.Disposed ?? true ) continue ;
-			ComPointers[ i ].Dispose( ) ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		if ( !IsAlive ) throw new ObjectDisposedException( nameof( ComObject ) ) ;
+#endif
+		foreach ( var entry in _pointers ) {
+			if ( entry.Value.ComType == typeof( T ) )
+				return (ComPtr< T >)entry.Value ;
 		}
-		return ValueTask.CompletedTask ;
+
+		var newPtr = _initNewPointer< T >( ) ;
+		if ( newPtr is not null ) return newPtr ;
+
+		// At this point, we must query the COM object for the interface:
+		var hr = QueryInterface< T >( _pUnknown, out nint pInterface ) ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		hr.ThrowOnFailure( ) ;
+		if ( !pInterface.IsValid( ) )
+			throw new DirectXComError( $"No such COM interface \"{typeof( T ).Name}\" " +
+									   $"supported by this object!" ) ;
+#endif
+		ComPtr< T >          ptr    = new( pInterface ) ;
+		ComInterfaceRef< T > ptrRef = new( pInterface, ptr.Interface! ) ;
+
+		//_interfaces.Add( ptrRef ) ;
+		_pointers.TryAdd( ptrRef, ptr ) ;
+		_refCounts.AddOrUpdate( ptr.InterfaceVPtr,
+								( n ) => 1, ( n, c ) => c + 1 ) ;
+		return ptr ;
 	}
 
-	public override async ValueTask DisposeAsync( ) {
-		await Task.Run( Dispose ) ;
+	ComPtr< T >? _initNewPointer< T >( ) where T: IUnknown {
+		var _ptrType = typeof( T ) ;
+		foreach ( var entry in _pointers ) {
+			if ( _ptrType.IsAssignableFrom( entry.Value.ComType ) ) {
+				if ( entry.Value.InterfaceObjectRef is T _interface ) {
+					ComPtr< T >          newPtr = new( _interface ) ;
+					ComInterfaceRef< T > newRef = new( entry.Key.VTablePtr, _interface ) ;
+					_pointers.TryAdd( newRef, newPtr ) ;
+
+					_refCounts.AddOrUpdate( newPtr.InterfaceVPtr,
+											( n ) => 1, ( n, c ) => c + 1 ) ;
+					return newPtr ;
+				}
+			}
+		}
+
+		return null ;
 	}
-}
+	
+	public void Destroy( ) {
+		foreach ( var entry in _pointers ) {
+			if ( entry.Value is not { Disposed: false } ) continue ;
+			entry.Value.Dispose( ) ;
+		}
+		
+		_pointers.Clear( ) ;
+		Disposed = true ;
+
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		Debug.Write( "ComObject Destroyed: " ) ;
+		foreach ( var counter in _refCounts ) {
+			Debug.Write( $" {counter.Key:X} - {counter.Value}\n" ) ;
+		}
+#endif
+	}
+
+	protected override ValueTask DisposeUnmanaged( ) {
+		Destroy( ) ;
+		return ValueTask.CompletedTask ;
+	}
+} ;
+
