@@ -14,16 +14,9 @@ namespace DXSharp.Direct3D12 ;
 /// as certain fixed function state objects.
 /// </summary>
 [ProxyFor(typeof(ID3D12PipelineState))]
-public interface IPipelineState: IPageable,
-								 IComObjectRef< ID3D12PipelineState >,
-								 IUnknownWrapper< ID3D12PipelineState > {
+public interface IPipelineState: IPageable {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12PipelineState >? ComPointer { get ; }
-	new ID3D12PipelineState? COMObject => ComPointer?.Interface ;
-	ID3D12PipelineState? IComObjectRef< ID3D12PipelineState >.COMObject => COMObject ;
-	ComPtr< ID3D12PipelineState >? IUnknownWrapper< ID3D12PipelineState >.ComPointer => ComPointer ;
-	// ---------------------------------------------------------------------------------
-	
+
 	/// <summary>Gets the cached blob representing the pipeline state.</summary>
 	/// <returns>
 	/// Type: <b>ID3DBlob**</b> After this method returns, points to the cached blob representing the pipeline state.
@@ -34,27 +27,21 @@ public interface IPipelineState: IPageable,
 	/// Refer to the remarks for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cached_pipeline_state">
 	/// D3D12_CACHED_PIPELINE_STATE</a>.
 	/// </remarks>
-	IBlob GetCachedBlob( ) {
-		COMObject!.GetCachedBlob( out var _blob ) ;
-		return new Blob( _blob ) ;
-	}
+	IBlob GetCachedBlob( ) ;
 	
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof(ID3D12PipelineState) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12PipelineState).GUID ;
-	
-	
+	new static Type ComType => typeof(ID3D12PipelineState) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = typeof(ID3D12Heap).GUID
-														  .ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(ID3D12PipelineState).GUID
+																   .ToByteArray( ) ;
 			
 			return ref Unsafe
 					   .As< byte, Guid >( ref MemoryMarshal
 											  .GetReference(data) ) ;
 		}
 	}
-
 	// ==================================================================================
 } ;

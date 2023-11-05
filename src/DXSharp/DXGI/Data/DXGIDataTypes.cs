@@ -7,8 +7,9 @@ using System.Diagnostics.Contracts ;
 using System.Numerics ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices;
-
+using Windows.Win32 ;
 using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi;
 using Windows.Win32.Graphics.Dxgi.Common;
 using DXSharp.Windows.Win32 ;
@@ -623,6 +624,7 @@ public struct SwapChainDescription {
 /// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi/ns-dxgi-dxgi_swap_chain_desc#">Read more on docs.microsoft.com</a>.</para>
 /// </remarks>
 [DebuggerDisplay("{this.ToString()}")]
+[StructLayout(LayoutKind.Sequential)]
 public struct SwapChainDescription1 {
 	internal SwapChainDescription1( in DXGI_SWAP_CHAIN_DESC1 desc ) => this.desc = desc ;
 	internal unsafe SwapChainDescription1( DXGI_SWAP_CHAIN_DESC1* pDesc ) => desc = *pDesc;
@@ -713,9 +715,9 @@ public struct SwapChainDescription1 {
 	
 	//! simply wrap up the internal struct type:
 	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
-	DXGI_SWAP_CHAIN_DESC1 desc;
+	DXGI_SWAP_CHAIN_DESC1 desc ;
 	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
-	internal DXGI_SWAP_CHAIN_DESC1 _InternalValue => desc;
+	internal DXGI_SWAP_CHAIN_DESC1 _InternalValue => desc ;
 
 
 	/// <summary>
@@ -812,6 +814,7 @@ public struct SwapChainDescription1 {
 	/// <param name="desc">A SwapChainDescription strcuture</param>
 	public static explicit operator SwapChainDescription1( SwapChainDescription desc ) => new( desc );
 
+	
 } ;
 
 
@@ -1970,3 +1973,264 @@ public struct AdapterDescription2: IEquatable< AdapterDescription2 > {
 		a._description1 != b._description1 || a.GraphicsPreemptionGranularity != b.GraphicsPreemptionGranularity 
 										 || a.ComputePreemptionGranularity != b.ComputePreemptionGranularity ;
 } ;
+
+
+/// <summary>Describes an adapter (or video card) that uses Microsoft DirectX Graphics Infrastructure (DXGI) 1.6.</summary>
+/// <remarks>
+/// The <b>DXGI_ADAPTER_DESC3</b> structure provides a DXGI 1.6 description of an adapter.
+/// This structure is initialized by using the <see cref="IAdapter4.GetDesc3"/> method.<para/>
+/// 
+/// <para>Learn more about:</para>
+/// The native 
+/// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_adapter_desc3">DXGI_ADAPTER_DESC3</a> structure and the
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_6/nf-dxgi1_6-idxgiadapter4-getdesc3">IDXGIAdapter4::GetDesc3</a> method.
+/// </remarks>
+[ProxyFor(typeof(DXGI_ADAPTER_DESC3))]
+public partial struct AdapterDescription3
+{
+	AdapterDescription2 _description2 ;
+	
+	/// <summary>A string that contains the adapter description.</summary>
+	public FixedStr128 Description {
+		get => _description2.Description ;
+		set => _description2.Description = value ;
+	}
+
+	/// <summary>The PCI ID of the hardware vendor.</summary>
+	public uint VendorId {
+		get => _description2.VendorId ;
+		set => _description2.VendorId = value ;
+	}
+
+	/// <summary>The PCI ID of the hardware device.</summary>
+	public uint DeviceId {
+		get => _description2.DeviceId ;
+		set => _description2.DeviceId = value ;
+	}
+
+	/// <summary>The PCI ID of the sub system.</summary>
+	public uint SubSysId {
+		get => _description2.SubSysId ;
+		set => _description2.SubSysId = value ;
+	}
+
+	/// <summary>The PCI ID of the revision number of the adapter.</summary>
+	public uint Revision {
+		get => _description2.Revision ;
+		set => _description2.Revision = value ;
+	}
+
+	/// <summary>The number of bytes of dedicated video memory that are not shared with the CPU.</summary>
+	public nuint DedicatedVideoMemory {
+		get => _description2.DedicatedVideoMemory ;
+		set => _description2.DedicatedVideoMemory = value ;
+	}
+
+	/// <summary>The number of bytes of dedicated system memory that are not shared with the CPU. This memory is allocated from available system memory at boot time.</summary>
+	public nuint DedicatedSystemMemory {
+		get => _description2.DedicatedSystemMemory ;
+		set => _description2.DedicatedSystemMemory = value ;
+	}
+
+	/// <summary>The number of bytes of shared system memory. This is the maximum value of system memory that may be consumed by the adapter during operation. Any incidental memory consumed by the driver as it manages and uses video memory is additional.</summary>
+	public nuint SharedSystemMemory {
+		get => _description2.SharedSystemMemory ;
+		set => _description2.SharedSystemMemory = value ;
+	}
+
+	/// <summary>A unique value that identifies the adapter. See <a href="https://docs.microsoft.com/previous-versions/windows/hardware/drivers/ff549708(v=vs.85)">LUID</a> for a definition of the structure. <b>LUID</b> is defined in dxgi.h.</summary>
+	public Luid AdapterLuid {
+		get => _description2.AdapterLuid ;
+		set => _description2.AdapterLuid = value ;
+	}
+
+	/// <summary>A value of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_6/ne-dxgi1_6-dxgi_adapter_flag3">DXGI_ADAPTER_FLAG3</a> enumeration that describes the adapter type.  The <b>DXGI_ADAPTER_FLAG_REMOTE</b> flag is reserved.</summary>
+	public AdapterFlag3 Flags {
+		get => (AdapterFlag3)_description2.Flags ;
+		set => _description2.Flags = (AdapterFlag)value ;
+	}
+
+	/// <summary>A value of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ne-dxgi1_2-dxgi_graphics_preemption_granularity">DXGI_GRAPHICS_PREEMPTION_GRANULARITY</a> enumerated type that describes the granularity level at which the GPU can be preempted from performing its current graphics rendering task.</summary>
+	public GraphicsPreemptionGranularity GraphicsPreemptionGranularity {
+		get => _description2.GraphicsPreemptionGranularity ;
+		set => _description2.GraphicsPreemptionGranularity = value ;
+	}
+
+	/// <summary>A value of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ne-dxgi1_2-dxgi_compute_preemption_granularity">DXGI_COMPUTE_PREEMPTION_GRANULARITY</a> enumerated type that describes the granularity level at which the GPU can be preempted from performing its current compute task.</summary>
+	public ComputePreemptionGranularity ComputePreemptionGranularity {
+		get => _description2.ComputePreemptionGranularity ;
+		set => _description2.ComputePreemptionGranularity = value ;
+	}
+	
+	public AdapterDescription3( FixedStr128 description,
+								uint vendorId, uint deviceId, uint subSysId, uint revision, 
+								nuint dedicatedVideoMemory, nuint dedicatedSystemMemory, nuint sharedSystemMemory,
+								Luid adapterLuid, AdapterFlag3 flags,
+								GraphicsPreemptionGranularity graphicsPreemptionGranularity, 
+								ComputePreemptionGranularity computePreemptionGranularity ) {
+		this._description2 = new AdapterDescription2( ) {
+			Description           = description,
+			VendorId              = vendorId,
+			DeviceId              = deviceId,
+			SubSysId              = subSysId,
+			Revision              = revision,
+			DedicatedVideoMemory  = dedicatedVideoMemory,
+			DedicatedSystemMemory = dedicatedSystemMemory,
+			SharedSystemMemory    = sharedSystemMemory,
+			AdapterLuid           = adapterLuid,
+			Flags                 = (AdapterFlag)flags,
+			GraphicsPreemptionGranularity = graphicsPreemptionGranularity,
+			ComputePreemptionGranularity  = computePreemptionGranularity
+		} ;
+	}
+	
+}
+
+
+/// <summary>Describes the current video memory budgeting parameters.</summary>
+/// <remarks>
+/// <para>Use this structure with <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_4/nf-dxgi1_4-idxgiadapter3-queryvideomemoryinfo">QueryVideoMemoryInfo</a>. Refer to the remarks for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_memory_pool">D3D12_MEMORY_POOL</a>.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/ns-dxgi1_4-dxgi_query_video_memory_info#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(DXGI_QUERY_VIDEO_MEMORY_INFO))]
+public partial struct QueryVideoMemoryInfo {
+	/// <summary>Specifies the OS-provided video memory budget, in bytes, that the application should target. If <i>CurrentUsage</i> is greater than <i>Budget</i>, the application may incur stuttering or performance penalties due to background activity by the OS to provide other applications with a fair usage of video memory.</summary>
+	public ulong Budget ;
+
+	/// <summary>Specifies the application’s current video memory usage, in bytes.</summary>
+	public ulong CurrentUsage ;
+
+	/// <summary>The amount of video memory, in bytes, that the application has available for reservation. To reserve this video memory, the application should call <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_4/nf-dxgi1_4-idxgiadapter3-setvideomemoryreservation">IDXGIAdapter3::SetVideoMemoryReservation</a>.</summary>
+	public ulong AvailableForReservation ;
+
+	/// <summary>The amount of video memory, in bytes, that is reserved by the application. The OS uses the reservation as a hint to determine the application’s minimum working set. Applications should attempt to ensure that their video memory usage can be trimmed to meet this requirement.</summary>
+	public ulong CurrentReservation ;
+	
+	
+	public QueryVideoMemoryInfo( ulong budget = 0UL, 
+								 ulong currentUsage = 0UL, 
+								 ulong availableForReservation = 0UL, 
+								 ulong currentReservation = 0UL ) {
+		this.Budget = budget ;
+		this.CurrentUsage = currentUsage ;
+		this.AvailableForReservation = availableForReservation ;
+		this.CurrentReservation = currentReservation ;
+	}
+}
+
+
+/// <summary>Used with IDXGIFactoryMedia::CreateDecodeSwapChainForCompositionSurfaceHandle to describe a decode swap chain.</summary>
+/// <remarks>
+/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_3/ns-dxgi1_3-dxgi_decode_swap_chain_desc">Learn more about this API from docs.microsoft.com</see>.</para>
+/// </remarks>
+[EquivalentOf(typeof(DXGI_DECODE_SWAP_CHAIN_DESC))]
+public partial struct DecodeSwapChainDescription {
+	public const SwapChainFlags DecodeSwapChainFlags = SwapChainFlags.FullscreenVideo | SwapChainFlags.YUVVideo ;
+	public static readonly DecodeSwapChainDescription Default = new( DecodeSwapChainFlags ) ;
+	
+	/// <summary>
+	/// <para>Can be 0, or a combination of **DXGI_SWAP_CHAIN_FLAG_FULLSCREEN_VIDEO** and/or **DXGI_SWAP_CHAIN_FLAG_YUV_VIDEO**.
+	/// Those named values are members of the <a href="https://docs.microsoft.com/windows/win32/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG</a> enumerated type, and you can combine them by using a bitwise OR operation. The resulting value specifies options for decode swap-chain behavior.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_3/ns-dxgi1_3-dxgi_decode_swap_chain_desc#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public uint flags ;
+	
+	/// <summary>Gets or sets the underlying flags value.</summary>
+	public SwapChainFlags Flags {
+		get => (SwapChainFlags)flags ;
+		set => flags = (uint)value ;
+	}
+	
+	public DecodeSwapChainDescription( uint flags = (uint)DecodeSwapChainFlags ) {
+		this.flags = flags ;
+	}
+	public DecodeSwapChainDescription( SwapChainFlags flags = DecodeSwapChainFlags ) {
+		this.flags = (uint)flags ;
+	}
+	
+	public static implicit operator SwapChainFlags( DecodeSwapChainDescription desc ) => (SwapChainFlags)desc.flags ;
+	public static implicit operator DecodeSwapChainDescription( SwapChainFlags flags ) => new( (uint)flags ) ;
+	public static implicit operator DecodeSwapChainDescription( uint flags ) => new( flags ) ;
+	public static implicit operator uint( DecodeSwapChainDescription desc ) => desc.flags ;
+} ;
+
+
+/// <summary>
+/// Describes the metadata for HDR10, used when video is compressed using High Efficiency Video Coding (HEVC).
+/// This is used to describe the capabilities of the display used to master the content and the luminance values of the content.
+/// </summary>
+/// <remarks>
+/// <para>
+/// This structure represents the definition of HDR10 metadata used with HEVC, not HDR10 metadata for ST.2086.
+/// These are closely related but defined differently. Example: Mastering display with DCI-P3 color primaries and D65
+/// white point, maximum luminance of 1000 nits and minimum luminance of 0.001 nits; content has maximum luminance of
+/// 2000 nits and maximum frame average light level (MaxFALL) of 500 nits.
+/// </para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_5/ns-dxgi1_5-dxgi_hdr_metadata_hdr10#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(DXGI_HDR_METADATA_HDR10))]
+public struct HDRMetaDataHDR10: IEquatable<HDRMetaDataHDR10> {
+	public static readonly HDRMetaDataHDR10 Default = new( ) ;
+	
+	/// <summary>The chromaticity coordinates of the red value in the CIE1931 color space. Index 0 contains the X coordinate and index 1 contains the Y coordinate. The values are normalized to 50,000.</summary>
+	public ushort2 RedPrimary ;
+
+	/// <summary>The chromaticity coordinates of the green value in the CIE1931 color space. Index 0 contains the X coordinate and index 1 contains the Y coordinate. The values are normalized to 50,000.</summary>
+	public ushort2 GreenPrimary ;
+
+	/// <summary>The chromaticity coordinates of the blue value in the CIE1931 color space. Index 0 contains the X coordinate and index 1 contains the Y coordinate. The values are normalized to 50,000.</summary>
+	public ushort2 BluePrimary ;
+
+	/// <summary>The chromaticity coordinates of the white point in the CIE1931 color space. Index 0 contains the X coordinate and index 1 contains the Y coordinate. The values are normalized to 50,000.</summary>
+	public ushort2 WhitePoint ;
+
+	/// <summary>The maximum number of nits of the display used to master the content. Values are in whole nits.</summary>
+	public uint MaxMasteringLuminance ;
+
+	/// <summary>The minimum number of nits of the display used to master the content. Values are 1/10000th of a nit (0.0001 nit).</summary>
+	public uint MinMasteringLuminance ;
+
+	/// <summary>The maximum content light level (MaxCLL). This is the nit value corresponding to the brightest pixel used anywhere in the content.</summary>
+	public ushort MaxContentLightLevel ;
+
+	/// <summary>The maximum frame average light level (MaxFALL). This is the nit value corresponding to the average luminance of the frame which has the brightest average luminance anywhere in the content.</summary>
+	public ushort MaxFrameAverageLightLevel ;
+	
+	
+	public HDRMetaDataHDR10( ushort2 redPrimary, 
+							 ushort2 greenPrimary, 
+							 ushort2 bluePrimary, 
+							 ushort2 whitePoint, 
+							 uint maxMasteringLuminance, 
+							 uint minMasteringLuminance, 
+							 ushort maxContentLightLevel, 
+							 ushort maxFrameAverageLightLevel ) {
+		this.RedPrimary = redPrimary ;
+		this.GreenPrimary = greenPrimary ;
+		this.BluePrimary = bluePrimary ;
+		this.WhitePoint = whitePoint ;
+		this.MaxMasteringLuminance = maxMasteringLuminance ;
+		this.MinMasteringLuminance = minMasteringLuminance ;
+		this.MaxContentLightLevel = maxContentLightLevel ;
+		this.MaxFrameAverageLightLevel = maxFrameAverageLightLevel ;
+	}
+	
+	public static bool operator==( in HDRMetaDataHDR10 a, in HDRMetaDataHDR10 b ) =>
+		a.RedPrimary == b.RedPrimary && a.GreenPrimary == b.GreenPrimary && a.BluePrimary == b.BluePrimary && a.WhitePoint == b.WhitePoint &&
+		a.MaxMasteringLuminance == b.MaxMasteringLuminance && a.MinMasteringLuminance == b.MinMasteringLuminance &&
+		a.MaxContentLightLevel == b.MaxContentLightLevel && a.MaxFrameAverageLightLevel == b.MaxFrameAverageLightLevel ;
+	public static bool operator!=( in HDRMetaDataHDR10 a, in HDRMetaDataHDR10 b ) =>
+	 		a.RedPrimary != b.RedPrimary || a.GreenPrimary != b.GreenPrimary || a.BluePrimary != b.BluePrimary || a.WhitePoint != b.WhitePoint ||
+		a.MaxMasteringLuminance != b.MaxMasteringLuminance || a.MinMasteringLuminance != b.MinMasteringLuminance ||
+		a.MaxContentLightLevel != b.MaxContentLightLevel || a.MaxFrameAverageLightLevel != b.MaxFrameAverageLightLevel ;
+
+	public bool Equals( HDRMetaDataHDR10 other ) => other == this ;
+	
+	public override bool Equals( object? obj ) => obj is HDRMetaDataHDR10 other && Equals( other ) ;
+
+	public override int GetHashCode( ) => HashCode.Combine( RedPrimary, GreenPrimary, BluePrimary, 
+															WhitePoint, MaxMasteringLuminance, MinMasteringLuminance, 
+															MaxContentLightLevel, MaxFrameAverageLightLevel ) ;
+
+} ;
+

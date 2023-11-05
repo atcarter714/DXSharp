@@ -1,10 +1,13 @@
 ﻿#region Using Directives
 using Windows.Win32.Graphics.Direct3D ;
 using Windows.Win32.Graphics.Direct3D12 ;
+using DXSharp.DXGI ;
+
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
+//! TODO: Find out why we have duplicate "FeatureLevel" enums (FeatureLevel and D3DFeatureLevel)
 [EquivalentOf(typeof(D3D_FEATURE_LEVEL))]
 public enum FeatureLevel {
 	/// <summary>Allows Microsoft Compute Driver Model (MCDM) devices to be used, or more feature-rich devices (such as traditional GPUs) that support a superset of the functionality. MCDM is the overall driver model for compute-only; it's a scaled-down peer of the larger scoped Windows Device Driver Model (WDDM).</summary>
@@ -39,6 +42,48 @@ public enum FeatureLevel {
 
 	/// <summary>Targets features supported by Direct3D 12.2, including shader model 6.5. For more information about feature level 12_2, see its [specification page](https://microsoft.github.io/DirectX-Specs/d3d/D3D12_FeatureLevel12_2.html). Feature level 12_2 is available in Windows SDK builds 20170 and later.</summary>
 	D3D12_2 = 49664,
+} ;
+
+
+/// <summary>Describes the set of features targeted by a Direct3D device.</summary>
+/// <remarks>
+/// <para>For an overview of the capabilities of each feature level, see [Direct3D feature levels](/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro). For information about limitations creating non-hardware-type devices on certain feature levels, see [Limitations creating WARP and reference devices](/windows/desktop/direct3d11/overviews-direct3d-11-devices-limitations).</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3dcommon/ne-d3dcommon-d3d_feature_level#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf( typeof( D3D_FEATURE_LEVEL ) )]
+public enum D3DFeatureLevel {
+	/// <summary>Allows Microsoft Compute Driver Model (MCDM) devices to be used, or more feature-rich devices (such as traditional GPUs) that support a superset of the functionality. MCDM is the overall driver model for compute-only; it's a scaled-down peer of the larger scoped Windows Device Driver Model (WDDM).</summary>
+	Level1_0_Core = 4096,
+
+	/// <summary>Targets features supported by [feature level](/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro) 9.1, including shader model 2.</summary>
+	Level9_1 = 37120,
+
+	/// <summary>Targets features supported by [feature level](/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro) 9.2, including shader model 2.</summary>
+	Level9_2 = 37376,
+
+	/// <summary>Targets features supported by [feature level](/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro) 9.3, including shader model 2.0b.</summary>
+	Level9_3 = 37632,
+
+	/// <summary>Targets features supported by Direct3D 10.0, including shader model 4.</summary>
+	Level10_0 = 40960,
+
+	/// <summary>Targets features supported by Direct3D 10.1, including shader model 4.</summary>
+	Level10_1 = 41216,
+
+	/// <summary>Targets features supported by Direct3D 11.0, including shader model 5.</summary>
+	Level11_0 = 45056,
+
+	/// <summary>Targets features supported by Direct3D 11.1, including shader model 5 and logical blend operations. This feature level requires a display driver that is at least implemented to WDDM for Windows 8 (WDDM 1.2).</summary>
+	Level11_1 = 45312,
+
+	/// <summary>Targets features supported by Direct3D 12.0, including shader model 5.</summary>
+	Level12_0 = 49152,
+
+	/// <summary>Targets features supported by Direct3D 12.1, including shader model 5.</summary>
+	Level12_1 = 49408,
+
+	/// <summary>Targets features supported by Direct3D 12.2, including shader model 6.5. For more information about feature level 12_2, see its [specification page](https://microsoft.github.io/DirectX-Specs/d3d/D3D12_FeatureLevel12_2.html). Feature level 12_2 is available in Windows SDK builds 20170 and later.</summary>
+	Level12_2 = 49664,
 } ;
 
 
@@ -1054,11 +1099,40 @@ public enum IndirectArgumentType {
 /// <remarks>For more information, see:
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_tiled_resources_tier">
 /// <b>D3D12_TILED_RESOURCES_TIER</b> enumeration (<i>d3d12.h</i>)</a>.</remarks>
-[EquivalentOf( typeof(D3D12_TILED_RESOURCES_TIER) )]
-public enum TiledResourcesTier { NotSupported = 0, Tier1 = 1, Tier2 = 2, Tier3 = 3, Tier4 = 4 } ;
+[EquivalentOf( typeof( D3D12_TILED_RESOURCES_TIER ) )]
+public enum TiledResourcesTier {
+	/// <summary>
+	/// <para>Indicates that textures cannot be created with the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_layout">D3D12_TEXTURE_LAYOUT_64KB_UNDEFINED_SWIZZLE</a> layout.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-createreservedresource">ID3D12Device::CreateReservedResource</a> cannot be used, not even for buffers.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_tiled_resources_tier#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	NotSupported = 0,
+	/// <summary>
+	/// <para>Indicates that 2D textures can be created with the D3D12_TEXTURE_LAYOUT_64KB_UNDEFINED_SWIZZLE layout. Limitations exist for certain resource formats and properties. For more details, see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_layout">D3D12_TEXTURE_LAYOUT_64KB_UNDEFINED_SWIZZLE</a>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-createreservedresource">ID3D12Device::CreateReservedResource</a> can be used.</para>
+	/// <para>GPU reads or writes to NULL mappings are undefined. Applications are encouraged to workaround this limitation by repeatedly mapping the same page to everywhere a NULL mapping would've been used.</para>
+	/// <para>When the size of a texture mipmap level is an integer multiple of the standard tile shape for its format, it is guaranteed to be nonpacked.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_tiled_resources_tier#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	Tier1 = 1,
+	/// <summary>
+	/// <para>Indicates that a superset of Tier_1 functionality is supported, including this additional support:</para>
+	/// <para></para>
+	/// <para>This doc was truncated.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_tiled_resources_tier#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	Tier2 = 2,
+	/// <summary>Indicates that a superset of Tier 2 is supported, with the addition that 3D textures (<a href="https://docs.microsoft.com/windows/desktop/direct3d12/volume-tiled-resources">Volume Tiled Resources</a>) are supported.</summary>
+	Tier3 = 3,
+	/// <summary></summary>
+	Tier4 = 4,
+} ;
 
 //!!! ------------------------------------------------------------------------------------------------ !!!//
 
+
+/// <summary>Specifies how to copy a tile.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copytiles">CopyTiles</a> method.</remarks>
 [Flags, EquivalentOf( typeof( D3D12_TILE_COPY_FLAGS ) )]
 public enum TileCopyFlags {
 	/// <summary>No tile-copy flags are specified.</summary>
@@ -1084,6 +1158,12 @@ public enum TileCopyFlags {
 } ;
 
 
+/// <summary>Specifies options for root signature layout.</summary>
+/// <remarks>
+/// <para>This enum is used in the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_root_signature_desc">D3D12_ROOT_SIGNATURE_DESC</a> structure.</para>
+/// <para>The value in denying access to shader stages is a minor optimization on some hardware. If, for example, the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_shader_visibility">D3D12_SHADER_VISIBILITY_ALL</a> flag has been set to broadcast the root signature to all shader stages, then denying access can overrule this and save the hardware some work. Alternatively if the shader is so simple that no root signature resources are needed, then denying access could be used here too.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_root_signature_flags#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
 [Flags, EquivalentOf(typeof(D3D12_ROOT_SIGNATURE_FLAGS))]
 public enum RootSignatureFlags {
 	/// <summary>Indicates default behavior.</summary>
@@ -1115,6 +1195,11 @@ public enum RootSignatureFlags {
 } ;
 
 
+/// <summary>Specifies the shaders that can access the contents of a given root signature slot.</summary>
+/// <remarks>
+/// <para>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_root_parameter">D3D12_ROOT_PARAMETER</a> structure. The compute queue always uses <b>D3D12_SHADER_VISIBILITY_ALL</b> because it has only one active stage. The 3D queue can choose values, but if it uses <b>D3D12_SHADER_VISIBILITY_ALL</b>, all shader stages can access whatever is bound at the root signature slot.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_shader_visibility#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
 [EquivalentOf(typeof(D3D12_SHADER_VISIBILITY))]
 public enum ShaderVisibility {
 	/// <summary>Specifies that all shader stages can access whatever is bound at the root signature slot.</summary>
@@ -1136,6 +1221,8 @@ public enum ShaderVisibility {
 } ;
 
 
+/// <summary>Specifies the border color for a static sampler.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_static_sampler_desc">D3D12_STATIC_SAMPLER_DESC</a> structure.</remarks>
 [Flags, EquivalentOf(typeof(D3D12_STATIC_BORDER_COLOR))]
 public enum StaticBorderColor {
 	/// <summary>Indicates black, with the alpha component as fully transparent.</summary>
@@ -1149,6 +1236,8 @@ public enum StaticBorderColor {
 } ;
 
 
+/// <summary>Specifies the type of root signature slot.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_root_parameter">D3D12_ROOT_PARAMETER</a> structure.</remarks>
 [Flags, EquivalentOf(typeof(D3D12_ROOT_PARAMETER_TYPE))]
 public enum RootParameterType {
 	/// <summary>The slot is for a descriptor table.</summary>
@@ -1164,6 +1253,8 @@ public enum RootParameterType {
 } ;
 
 
+/// <summary>Specifies a range so that, for example, if part of a descriptor table has 100 shader-resource views (SRVs) that range can be declared in one entry rather than 100.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_descriptor_range">D3D12_DESCRIPTOR_RANGE</a> structure.</remarks>
 [EquivalentOf(typeof(D3D12_DESCRIPTOR_RANGE_TYPE))]
 public enum DescriptorRangeType {
 	/// <summary>Specifies a range of SRVs.</summary>
@@ -1177,6 +1268,10 @@ public enum DescriptorRangeType {
 } ;
 
 
+/// <summary>Specifies the version of root signature layout.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d_root_signature_version#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
 [EquivalentOf(typeof(D3D_ROOT_SIGNATURE_VERSION))]
 public enum RootSignatureVersion {
 	/// <summary>Version one of root signature layout.</summary>
@@ -1185,9 +1280,11 @@ public enum RootSignatureVersion {
 	Version1_0 = 1,
 	/// <summary>Version 1.1  of root signature layout. Refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/root-signature-version-1-1">Root Signature Version 1.1</a>.</summary>
 	Version1_1 = 2,
+	/// <summary>
+	/// Version 1.2 of root signature layout. Refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/root-signature-version-1-2">Root Signature Version 1.2</a>.
+	/// </summary>
 	Version1_2 = 3,
 } ;
-
 
 
 /// <summary>Identifies which components of each pixel of a render target are writable during blending.</summary>
@@ -1566,6 +1663,7 @@ public enum ResidencyPriority {
 	Maximum = -939524096,
 } ;
 
+
 /// <summary>Specifies the type of a sub-object in a pipeline state stream description.</summary>
 /// <remarks>
 /// This enum is used in the creation of pipeline state objects using the ID3D12Device1::CreatePipelineState method.
@@ -1580,91 +1678,91 @@ public enum PipelineStateSubObjectType
 {
 	/// <summary>
 	/// <para>Indicates a root signature subobject type. The corresponding subobject type is **[ID3D12RootSignature](/windows/win32/api/d3d12/nn-d3d12-id3d12rootsignature)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	RootSignature = 0,
 
 	/// <summary>
 	/// <para>Indicates a vertex shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	VS = 1,
 
 	/// <summary>
 	/// <para>Indicates a pixel shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	PS = 2,
 
 	/// <summary>
 	/// <para>Indicates a domain shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	DS = 3,
 
 	/// <summary>
 	/// <para>Indicates a hull shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	HS = 4,
 
 	/// <summary>
 	/// <para>Indicates a geometry shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	GS = 5,
 
 	/// <summary>
 	/// <para>Indicates a compute shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	CS = 6,
 
 	/// <summary>
 	/// <para>Indicates a stream-output subobject type. The corresponding subobject type is **[D3D12_STREAM_OUTPUT_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_stream_output_desc)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	StreamOutput = 7,
 
 	/// <summary>
 	/// <para>Indicates a blend subobject type. The corresponding subobject type is **[D3D12_BLEND_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_blend_desc)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	Blend = 8,
 
 	/// <summary>
 	/// <para>Indicates a sample mask subobject type. The corresponding subobject type is **UINT**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	SampleMask = 9,
 
 	/// <summary>
 	/// <para>Indicates indicates a rasterizer subobject type. The corresponding subobject type is **[D3D12_RASTERIZER_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_rasterizer_desc)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	Rasterizer = 10,
 
 	/// <summary>
 	/// <para>Indicates a depth stencil subobject type. The corresponding subobject type is **[D3D12_DEPTH_STENCIL_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	DepthStencil = 11,
 
 	/// <summary>
 	/// <para>Indicates an input layout subobject type. The corresponding subobject type is **[D3D12_INPUT_LAYOUT_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_input_layout_desc)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	InputLayout = 12,
 
 	/// <summary>
 	/// <para>Indicates an index buffer strip cut value subobject type. The corresponding subobject type is **[D3D12_INDEX_BUFFER_STRIP_CUT_VALUE](/windows/win32/api/d3d12/ne-d3d12-d3d12_index_buffer_strip_cut_value)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	IBStripCutValue = 13,
 
 	/// <summary>
 	/// <para>Indicates a primitive topology subobject type. The corresponding subobject type is **[D3D12_PRIMITIVE_TOPOLOGY_TYPE](/windows/win32/api/d3d12/ne-d3d12-d3d12_primitive_topology_type)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	PrimitiveTopology = 14,
 
@@ -1673,55 +1771,55 @@ public enum PipelineStateSubObjectType
 
 	/// <summary>
 	/// <para>Indicates a depth stencil format subobject. The corresponding subobject type is **[DXGI_FORMAT](/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	DepthStencilFormat = 16,
 
 	/// <summary>
 	/// <para>Indicates a sample description subobject type. The corresponding subobject type is **[DXGI_SAMPLE_DESC](/windows/win32/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	SampleDesc = 17,
 
 	/// <summary>
 	/// <para>Indicates a node mask subobject type. The corresponding subobject type is **[D3D12_NODE_MASK](/windows/win32/api/d3d12/ns-d3d12-d3d12_node_mask)** or **UINT**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	NodeMask = 18,
 
 	/// <summary>
 	/// <para>Indicates a cached pipeline state object subobject type. The corresponding subobject type is **[D3D12_CACHED_PIPELINE_STATE](/windows/win32/api/d3d12/ns-d3d12-d3d12_cached_pipeline_state)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	CachedPSO = 19,
 
 	/// <summary>
 	/// <para>Indicates a flags subobject type. The corresponding subobject type is **[D3D12_PIPELINE_STATE_FLAGS](/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_flags)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	Flags = 20,
 
 	/// <summary>
 	/// <para>Indicates an expanded depth stencil subobject type. This expansion of the depth stencil subobject supports optional depth bounds checking. The corresponding subobject type is **[D3D12_DEPTH_STENCIL_DESC1](/windows/win32/api/d3d12/ns-d3d12-d3d12_depth_stencil_desc1)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	DepthStencil1 = 21,
 
 	/// <summary>
 	/// <para>Indicates a view instancing subobject type. The corresponding subobject type is **[D3D12_VIEW_INSTANCING_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_view_instancing_desc)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	ViewInstancing = 22,
 
 	/// <summary>
 	/// <para>Indicates an amplification shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	AS = 24,
 
 	/// <summary>
 	/// <para>Indicates a mesh shader subobject type. The corresponding subobject type is **[D3D12_SHADER_BYTECODE](/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode)**.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_pipeline_state_subobject_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	MS = 25,
 	DepthStencil2 = 26,
@@ -1730,4 +1828,732 @@ public enum PipelineStateSubObjectType
 
 	/// <summary>A sentinel value that marks the exclusive upper-bound of valid values this enumeration represents.</summary>
 	MaxValid = 29,
+} ;
+
+
+/// <summary>Specifies what type of texture copy is to take place.</summary>
+/// <remarks>This enum is used by the <see cref="TextureCopyLocation"/> structure.</remarks>
+[EquivalentOf(typeof(D3D12_TEXTURE_COPY_TYPE))]
+public enum TextureCopyType {
+	/// <summary>Indicates a subresource, identified by an index, is to be copied.</summary>
+	Index = 0,
+	
+	/// <summary>
+	/// Indicates a place footprint, identified by a
+	/// <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_placed_subresource_footprint">D3D12_PLACED_SUBRESOURCE_FOOTPRINT</a>
+	/// structure, is to be copied.
+	/// </summary>
+	PlacedFootprint = 1,
+} ;
+
+
+/// <summary>Specifies which resource heap tier the hardware and driver support.</summary>
+/// <remarks>
+/// <para>This enum is used by the <b>ResourceHeapTier</b> member of the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a> structure.</para>
+/// <para>This enum specifies which resource heap tier the hardware and driver support. Lower tiers require more heap attribution than greater tiers.</para>
+/// <para>Resources can be categorized into the following types:</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_heap_tier#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_RESOURCE_HEAP_TIER))]
+public enum ResourceHeapTier {
+	/// <summary>
+	/// <para>Indicates that heaps can only support resources from a single resource category. For the list of resource categories, see Remarks. In tier 1, these resource categories are mutually exclusive and cannot be used with the same heap. The resource category must be declared when creating a heap, using the correct <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_heap_flags">D3D12_HEAP_FLAGS</a> enumeration constant. Applications cannot create heaps with flags that allow all three categories.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_heap_tier#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Tier1 = 1,
+	/// <summary>
+	/// <para>Indicates that heaps can support resources from all three categories. For the list of resource categories, see Remarks. In tier 2, these resource categories can be mixed within the same heap. Applications may create heaps with flags that allow all three categories; but are not required to do so. Applications may be written to support tier 1 and seamlessly run on tier 2.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_heap_tier#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Tier2 = 2,
+} ;
+
+
+/// <summary>Describes minimum precision support options for shaders in the current graphics driver.</summary>
+/// <remarks>
+/// <para>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a> structure.</para>
+/// <para>The returned info just indicates that the graphics hardware can perform HLSL operations at a lower precision than the standard 32-bit float precision, but doesn’t guarantee that the graphics hardware will actually run at a lower precision.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_shader_min_precision_support#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[Flags, EquivalentOf(typeof(D3D12_SHADER_MIN_PRECISION_SUPPORT))]
+public enum ShaderMinPrecisionSupport {
+	/// <summary>The driver supports only full 32-bit precision for all shader stages.</summary>
+	None = 0x00000000,
+	/// <summary>The driver supports 10-bit precision.</summary>
+	_10Bit = 0x00000001,
+	/// <summary>The driver supports 16-bit precision.</summary>
+	_16Bit = 0x00000002,
+}
+
+
+/// <summary>Specifies the level of sharing across nodes of an adapter, such as Tier 1 Emulated, Tier 1, or Tier 2.</summary>
+/// <remarks>This enum is used by the <b>CrossNodeSharingTier</b> member of the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a> structure.</remarks>
+[EquivalentOf(typeof(D3D12_CROSS_NODE_SHARING_TIER))]
+public enum CrossNodeSharingTier {
+	/// <summary>
+	/// If an adapter has only 1 node, then cross-node sharing doesn't apply, so the <b>CrossNodeSharingTier</b> member of the
+	/// <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a>
+	/// structure is set to D3D12_CROSS_NODE_SHARING_NOT_SUPPORTED.
+	/// </summary>
+	NotSupported = 0,
+	/// <summary>
+	/// <para>Tier 1 Emulated. Devices that set the <b>CrossNodeSharingTier</b> member of the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a> structure to D3D12_CROSS_NODE_SHARING_TIER_1_EMULATED have Tier 1 support. However, drivers stage these copy operations through a driver-internal system memory allocation. This will cause these copy operations to consume time on the destination GPU as well as the source.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_cross_node_sharing_tier#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Tier1Emulated = 1,
+	/// <summary>
+	/// <para>Tier 1. Devices that set the <b>CrossNodeSharingTier</b> member of the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a> structure to D3D12_CROSS_NODE_SHARING_TIER_1 only support the following cross-node copy operations: </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_cross_node_sharing_tier#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Tier1 = 2,
+	/// <summary>
+	/// <para>Tier 2. Devices that set the <b>CrossNodeSharingTier</b> member of the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a> structure to D3D12_CROSS_NODE_SHARING_TIER_2 support all operations across nodes, except for the following: </para>
+	/// <para>This doc was truncated.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_cross_node_sharing_tier#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Tier2 = 3,
+	/// <summary>Indicates support for D3D12_HEAP_FLAG_ALLOW_SHADER_ATOMICS on heaps that are visible to multiple nodes.</summary>
+	Tier3 = 4,
+} ;
+
+
+/// <summary>Identifies the tier level of conservative rasterization.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a> structure.</remarks>
+[EquivalentOf( typeof( D3D12_CONSERVATIVE_RASTERIZATION_TIER ) )]
+public enum ConservativeRasterizationTier {
+	/// <summary>Conservative rasterization is not supported.</summary>
+	TierNotSupported = 0,
+	/// <summary>Tier 1 enforces a maximum 1/2 pixel uncertainty region and does not support post-snap degenerates. This is good for tiled rendering, a texture atlas, light map generation and sub-pixel shadow maps.</summary>
+	Tier1 = 1,
+	/// <summary>Tier 2 reduces the maximum uncertainty region to 1/256 and requires post-snap degenerates not be culled. This tier is helpful for CPU-based algorithm acceleration (such as voxelization).</summary>
+	Tier2 = 2,
+	/// <summary>Tier 3 maintains a maximum 1/256 uncertainty region and adds support for inner input coverage. Inner input coverage adds the new value <c>SV_InnerCoverage</c> to High Level Shading Language (HLSL). This is a 32-bit scalar integer that can be specified on input to a pixel shader, and represents the underestimated conservative rasterization information (that is, whether a pixel is guaranteed-to-be-fully covered). This tier is helpful for occlusion culling.</summary>
+	Tier3 = 3,
+} ;
+
+
+/// <summary>Identifies the tier of resource binding being used.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_d3d12_options">D3D12_FEATURE_DATA_D3D12_OPTIONS</a> structure.</remarks>
+[EquivalentOf(typeof(D3D12_RESOURCE_BINDING_TIER))]
+public enum ResourceBindingTier {
+	/// <summary>
+	/// <para>Tier 1. See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/hardware-support">Hardware Tiers</a>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_binding_tier#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Tier1 = 1,
+	/// <summary>
+	/// <para>Tier 2. See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/hardware-support">Hardware Tiers</a>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_binding_tier#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Tier2 = 2,
+	/// <summary>
+	/// <para>Tier 3. See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/hardware-support">Hardware Tiers</a>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_binding_tier#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Tier3 = 3,
+} ;
+
+
+[EquivalentOf(typeof(D3D12_PROGRAMMABLE_SAMPLE_POSITIONS_TIER))]
+public enum ProgrammableSamplePositionsTier {
+	/// <summary>Indicates that there's no support for programmable sample positions.</summary>
+	NotSupported = 0,
+	/// <summary>Indicates that there's tier 1 support for programmable sample positions. In tier 1, a single sample pattern can be specified to repeat for every pixel (<a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-setsamplepositions">SetSamplePosition</a> parameter <i>NumPixels</i> = 1) and ResolveSubResource is supported.</summary>
+	Tier1 = 1,
+	/// <summary>Indicates that there's tier 2 support for programmable sample positions. In tier 2, four separate sample patterns can be specified for each pixel in a 2x2 grid (<a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist1-setsamplepositions">SetSamplePosition</a> parameter <i>NumPixels</i> = 1) that repeats over the render-target or viewport, aligned on even coordinates .</summary>
+	Tier2 = 2,
+} ;
+
+
+/// <summary>Used to determine which kinds of command lists are capable of supporting various operations.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_command_list_support_flags">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[Flags, EquivalentOf(typeof(D3D12_COMMAND_LIST_SUPPORT_FLAGS))]
+public enum CommandListSupportFlags {
+	/// <summary>No support.</summary>
+	None = 0x00000000,
+	/// <summary>Specifies that direct command lists can support direct mode.</summary>
+	Direct = 0x00000001,
+	/// <summary>Specifies that command list bundles can support bundle operations.</summary>
+	Bundle = 0x00000002,
+	/// <summary>Specifies that compute command lists can support compute operations in question.</summary>
+	Compute = 0x00000004,
+	/// <summary>Specifies that copy command lists can support the copy operation in question.</summary>
+	Copy = 0x00000008,
+	/// <summary>Specifies that video-decode command lists can support the video decode operation in question.</summary>
+	VideoDecode = 0x00000010,
+	/// <summary>Specifies that video-processing command lists can support the video processing operation is question.</summary>
+	VideoProcess = 0x00000020,
+	VideoEncode = 0x00000040,
+} ;
+
+
+/// <summary>Indicates the tier level at which view instancing is supported.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_view_instancing_tier">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_VIEW_INSTANCING_TIER))]
+public enum ViewInstancingTier {
+	/// <summary>View instancing is not supported.</summary>
+	NotSupported = 0,
+	/// <summary>View instancing is supported by draw-call level looping only.</summary>
+	Tier1 = 1,
+	/// <summary>View instancing is supported by draw-call level looping at worst, but the GPU can perform view instancing more efficiently in certain circumstances which are architecture-dependent.</summary>
+	Tier2 = 2,
+	/// <summary>
+	/// <para>View instancing is supported and instancing begins with the first shader stage that references SV_ViewID or with rasterization if no shader stage references SV_ViewID. This means that redundant work is eliminated across view instances when it's not dependent on SV_ViewID. Before rasterization, work that doesn't directly depend on SV_ViewID is shared across all views; only work that depends on SV_ViewID is repeated for each view. <div class="alert"><b>Note</b>  If a hull shader produces tessellation factors that are dependent on SV_ViewID, then tessellation and all subsequent work must be repeated per-view. Similarly, if the amount of geometry produced by the geometry shader depends on SV_ViewID, then the geometry shader must be repeated per-view before proceeding to rasterization.</div> <div> </div> View instance masking only effects whether work that directly depends on SV_ViewID is performed, not the entire loop iteration (per-view). If the view instance mask is non-0, some work that depends on SV_ViewID might still be performed on masked-off pixels but will have no externally-visible effect; for example, no UAV writes are performed and clipping/rasterization is not invoked. If the view instance mask is 0 no work is performed, including work that's not dependent on SV_ViewID.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_view_instancing_tier#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	Tier3 = 3,
+} ;
+
+
+/// <summary>Defines constants that specify a cross-API sharing support tier.</summary>
+[EquivalentOf(typeof(D3D12_SHARED_RESOURCE_COMPATIBILITY_TIER))]
+public enum SharedResourceCompatibilityTier {
+	/// <summary>
+	/// <para>Related to [D3D11_SHARED_RESOURCE_TIER::D3D11_SHARED_RESOURCE_TIER_1](/windows/win32/api/d3d11/ne-d3d11-d3d11_shared_resource_tier). Specifies that the most basic level of cross-API sharing is supported, including the following resource data formats. * DXGI_FORMAT_R8G8B8A8_UNORM * DXGI_FORMAT_R8G8B8A8_UNORM_SRGB * DXGI_FORMAT_B8G8R8A8_UNORM * DXGI_FORMAT_B8G8R8A8_UNORM_SRGB * DXGI_FORMAT_B8G8R8X8_UNORM * DXGI_FORMAT_B8G8R8X8_UNORM_SRGB * DXGI_FORMAT_R10G10B10A2_UNORM * DXGI_FORMAT_R16G16B16A16_FLOAT</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_shared_resource_compatibility_tier#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	Tier0 = 0,
+	/// <summary>
+	/// <para>Related to [D3D11_SHARED_RESOURCE_TIER::D3D11_SHARED_RESOURCE_TIER_2](/windows/win32/api/d3d11/ne-d3d11-d3d11_shared_resource_tier). Specifies that cross-API sharing functionality of **D3D12_SHARED_RESOURCE_COMPATIBILITY_TIER_0** is supported, plus the following formats. * DXGI_FORMAT_R16G16B16A16_TYPELESS * DXGI_FORMAT_R10G10B10A2_TYPELESS * DXGI_FORMAT_R8G8B8A8_TYPELESS * DXGI_FORMAT_R8G8B8X8_TYPELESS * DXGI_FORMAT_R16G16_TYPELESS * DXGI_FORMAT_R8G8_TYPELESS * DXGI_FORMAT_R32_TYPELESS * DXGI_FORMAT_R16_TYPELESS * DXGI_FORMAT_R8_TYPELESS This level support is built into WDDM 2.4. Also see [Extended support for shared Texture2D resources](/windows/win32/direct3d11/direct3d-11-1-features#extended-support-for-shared-texture2d-resources).</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_shared_resource_compatibility_tier#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	Tier1 = 1,
+	/// <summary>
+	/// <para>Related to [D3D11_SHARED_RESOURCE_TIER::D3D11_SHARED_RESOURCE_TIER_3](/windows/win32/api/d3d11/ne-d3d11-d3d11_shared_resource_tier). Specifies that cross-API sharing functionality of **D3D12_SHARED_RESOURCE_COMPATIBILITY_TIER_1** is supported, plus the following formats. * DXGI_FORMAT_NV12 (also see [Extended NV12 texture support](/windows/win32/direct3d11/direct3d-11-4-features#extended-nv12-texture-support))</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_shared_resource_compatibility_tier#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	Tier2 = 2,
+} ;
+
+
+/// <summary>Specifies the level of support for render passes on a graphics device.</summary>
+/// <remarks>To determine the level of support for render passes for a graphics device, pass <see cref="D3D12Options5"/> struct.</remarks>
+[EquivalentOf( typeof( D3D12_RENDER_PASS_TIER ) )]
+public enum RenderPassTier {
+	/// <summary>The user-mode display driver hasn't implemented render passes, and so the feature is provided only via software emulation. Render passes might not provide a performance advantage at this level of support.</summary>
+	Tier0 = 0,
+	/// <summary>The render passes feature is implemented by the user-mode display driver, and render target/depth buffer writes may be accelerated. Unordered access view (UAV) writes are not efficiently supported within the render pass.</summary>
+	Tier1 = 1,
+	/// <summary>The render passes feature is implemented by the user-mode display driver, render target/depth buffer writes may be accelerated, and unordered access view (UAV) writes (provided that writes in a render pass are not read until a subsequent render pass) are likely to be more efficient than issuing the same work without using a render pass.</summary>
+	Tier2 = 2,
+} ;
+
+
+/// <summary>Specifies the level of ray tracing support on the graphics device.</summary>
+/// <remarks>To determine the supported ray tracing tier for a graphics device, pass <see cref="D3D12Options5"/> struct.</remarks>
+[EquivalentOf(typeof(D3D12_RAYTRACING_TIER))]
+public enum RaytracingTier {
+	/// <summary>No support for ray tracing on the device.  Attempts to create any ray tracing-related object will fail, and using ray tracing-related APIs on command lists results in undefined behavior.</summary>
+	NotSupported = 0,
+	/// <summary>The device supports tier 1 ray tracing functionality. In the current release, this tier represents all available ray tracing features.</summary>
+	Tier1_0 = 10,
+	/// <summary>The device supports tier 1.1 ray tracing functionality.</summary>
+	Tier1_1 = 11,
+} ;
+
+
+/// <summary>Defines constants that specify a shading rate tier (for variable-rate shading, or VRS).</summary>
+[EquivalentOf(typeof(D3D12_VARIABLE_SHADING_RATE_TIER))]
+public enum VariableShadingRateTier {
+	/// <summary>Specifies that variable-rate shading is not supported.</summary>
+	NotSupported = 0,
+	/// <summary>Specifies that variable-rate shading tier 1 is supported.</summary>
+	Tier1 = 1,
+	/// <summary>Specifies that variable-rate shading tier 2 is supported.</summary>
+	Tier2 = 2,
+} ;
+
+
+/// <summary>Defines constants that specify mesh and amplification shader support.</summary>
+[EquivalentOf(typeof(D3D12_MESH_SHADER_TIER))]
+public enum MeshShaderTier {
+	/// <summary>Specifies that mesh and amplification shaders are not supported.</summary>
+	NotSupported = 0,
+	/// <summary>Specifies that mesh and amplification shaders are supported.</summary>
+	Tier1 = 10,
+} ;
+
+
+/// <summary>Defines constants that specify sampler feedback support.</summary>
+[EquivalentOf(typeof(D3D12_SAMPLER_FEEDBACK_TIER))]
+public enum SamplerFeedbackTier {
+	/// <summary>Specifies that sampler feedback is not supported. Attempts at calling sampler feedback APIs represent an error.</summary>
+	NotSupported = 0,
+	/// <summary>
+	/// <para>Specifies that sampler feedback is supported to tier 0.9. This indicates the following: Sampler feedback is supported for samplers with these texture addressing modes: * D3D12_TEXTURE_ADDRESS_MODE_WRAP * D3D12_TEXTURE_ADDRESS_MODE_CLAMP The Texture2D shader resource view passed in to feedback-writing HLSL methods has these restrictions: * The MostDetailedMip field must be 0. * The MipLevels count must span the full mip count of the resource. * The PlaneSlice field must be 0. * The ResourceMinLODClamp field must be 0. The Texture2DArray shader resource view passed in to feedback-writing HLSL methods has these restrictions: * All the limitations as in Texture2D above, and * The FirstArraySlice field must be 0. * The ArraySize field must span the full array element count of the resource.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_sampler_feedback_tier#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	Tier0_9 = 90,
+	/// <summary>Specifies sample feedback is supported to tier 1.0. This indicates that sampler feedback is supported for all texture addressing modes, and feedback-writing methods are supported irrespective of the passed-in shader resource view.</summary>
+	Tier1_0 = 100,
+} ;
+
+
+/// <summary>Defines constants that specify a level of support for WaveMMA (wave_matrix) operations.</summary>
+[EquivalentOf(typeof(D3D12_WAVE_MMA_TIER))]
+public enum WaveMMATier {
+	/// <summary>Specifies that WaveMMA (wave_matrix) operations are not supported.</summary>
+	NotSupported = 0,
+	/// <summary>Specifies that WaveMMA (wave_matrix) operations are supported.</summary>
+	Tier1_0 = 10,
+} ;
+
+
+/// <summary>Specifies resources that are supported for a provided format.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_format_support">D3D12_FEATURE_DATA_FORMAT_SUPPORT</a> structure.</remarks>
+[Flags, EquivalentOf(typeof(D3D12_FORMAT_SUPPORT1))]
+public enum FormatSupport1 {
+	/// <summary>No resources are supported.</summary>
+	None = 0x00000000,
+	/// <summary>Buffer resources supported.</summary>
+	Buffer = 0x00000001,
+	/// <summary>Vertex buffers supported.</summary>
+	IAVertexBuffer = 0x00000002,
+	/// <summary>Index buffers supported.</summary>
+	IAIndexBuffer = 0x00000004,
+	/// <summary>Streaming output buffers supported.</summary>
+	SOBuffer = 0x00000008,
+	/// <summary>1D texture resources supported.</summary>
+	Texture1D = 0x00000010,
+	/// <summary>2D texture resources supported.</summary>
+	Texture2D = 0x00000020,
+	/// <summary>3D texture resources supported.</summary>
+	Texture3D = 0x00000040,
+	/// <summary>Cube texture resources supported.</summary>
+	TextureCube = 0x00000080,
+	/// <summary>The HLSL <a href="https://docs.microsoft.com/windows/desktop/direct3dhlsl/dx-graphics-hlsl-to-load">Load</a> function for texture objects is supported.</summary>
+	ShaderLoad = 0x00000100,
+	/// <summary>
+	/// <para>The HLSL <a href="https://docs.microsoft.com/windows/desktop/direct3dhlsl/dx-graphics-hlsl-to-sample">Sample</a> function for texture objects is supported. <div class="alert"><b>Note</b>  If the device supports the format as a resource (1D, 2D, 3D, or cube map) but doesn't support this option, the resource can still use the <a href="https://docs.microsoft.com/windows/desktop/direct3dhlsl/dx-graphics-hlsl-to-sample">Sample</a> method but must use only the point filtering sampler state to perform the sample.</div> <div> </div></para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_format_support1#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	ShaderSample = 0x00000200,
+	/// <summary>
+	/// <para>The HLSL <a href="https://docs.microsoft.com/windows/desktop/direct3dhlsl/dx-graphics-hlsl-to-samplecmp">SampleCmp</a> and <a href="https://docs.microsoft.com/windows/desktop/direct3dhlsl/dx-graphics-hlsl-to-samplecmplevelzero">SampleCmpLevelZero</a> functions for texture objects are supported. <div class="alert"><b>Note</b>  Windows 8 and later might provide limited support for these functions on Direct3D <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro">feature levels</a> 9_1, 9_2, and 9_3. For more info, see <a href="https://docs.microsoft.com/previous-versions/windows/apps/jj262110(v=win.10)">Implementing shadow buffers for Direct3D feature level 9</a>. </div> <div> </div></para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_format_support1#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	ShaderSampleComparison = 0x00000400,
+	/// <summary>Reserved.</summary>
+	ShaderSampleMonoText = 0x00000800,
+	/// <summary>Mipmaps are supported.</summary>
+	Mip = 0x00001000,
+	/// <summary>Render targets are supported.</summary>
+	RenderTarget = 0x00004000,
+	/// <summary>Blend operations supported.</summary>
+	Blendable = 0x00008000,
+	/// <summary>Depth stencils supported.</summary>
+	DepthStencil = 0x00010000,
+	/// <summary>Multisample antialiasing (MSAA) resolve operations are supported. For more info, see <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-resolvesubresource">ID3D12GraphicsCommandList::ResolveSubresource</a>.</summary>
+	MultisampleResolve = 0x00040000,
+	/// <summary>Format can be displayed on screen.</summary>
+	Display = 0x00080000,
+	/// <summary>Format can't be cast to another format.</summary>
+	CastWithinBitLayout = 0x00100000,
+	/// <summary>Format can be used as a multi-sampled render target.</summary>
+	MultisampleRendertarget = 0x00200000,
+	/// <summary>Format can be used as a multi-sampled texture and read into a shader with the HLSL <a href="https://docs.microsoft.com/windows/desktop/direct3dhlsl/dx-graphics-hlsl-to-load">Load</a> function.</summary>
+	MultisampleLoad = 0x00400000,
+	/// <summary>Format can be used with the HLSL gather function. This value is available in DirectX 10.1 or higher.</summary>
+	ShaderGather = 0x00800000,
+	/// <summary>Format supports casting when the resource is a back buffer.</summary>
+	BackBufferCast = 0x01000000,
+	/// <summary>Format can be used for an unordered access view.</summary>
+	TypedUnorderedAccessView = 0x02000000,
+	/// <summary>Format can be used with the HLSL gather with comparison function.</summary>
+	ShaderGatherComparison = 0x04000000,
+	/// <summary>Format can be used with the decoder output.</summary>
+	DecoderOutput = 0x08000000,
+	/// <summary>Format can be used with the video processor output.</summary>
+	VideoProcessorOutput = 0x10000000,
+	/// <summary>Format can be used with the video processor input.</summary>
+	VideoProcessorInput = 0x20000000,
+	/// <summary>Format can be used with the video encoder.</summary>
+	VideoEncoder = 0x40000000,
+}
+
+
+/// <summary>Specifies which unordered resource options are supported for a provided format.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_format_support">D3D12_FEATURE_DATA_FORMAT_SUPPORT</a> structure.</remarks>
+[Flags, EquivalentOf(typeof(D3D12_FORMAT_SUPPORT2))]
+public enum FormatSupport2 {
+	/// <summary>No unordered resource options are supported.</summary>
+	None = 0x00000000,
+	/// <summary>Format supports atomic add.</summary>
+	UAVAtomicAdd = 0x00000001,
+	/// <summary>Format supports atomic bitwise operations.</summary>
+	UAVAtomicBitwiseOps = 0x00000002,
+	/// <summary>Format supports atomic compare with store or exchange.</summary>
+	UAVAtomicCompareStoreOrCompareExchange = 0x00000004,
+	/// <summary>Format supports atomic exchange.</summary>
+	UAVAtomicExchange = 0x00000008,
+	/// <summary>Format supports atomic min and max.</summary>
+	UAVAtomicSignedMinOrMax = 0x00000010,
+	/// <summary>Format supports atomic unsigned min and max.</summary>
+	UAVAtomicUnsignedMinOrMax = 0x00000020,
+	/// <summary>Format supports a typed load.</summary>
+	UAVTypedLoad = 0x00000040,
+	/// <summary>Format supports a typed store.</summary>
+	UAVTypedStore = 0x00000080,
+	/// <summary>Format supports logic operations in blend state.</summary>
+	LogicOp = 0x00000100,
+	/// <summary>Format supports tiled resources. Refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/volume-tiled-resources">Volume Tiled Resources</a>.</summary>
+	Tiled = 0x00000200,
+	/// <summary>Format supports multi-plane overlays.</summary>
+	MultiplaneOverlay = 0x00004000,
+	SamplerFeedback = 0x00008000,
+} ;
+
+
+/// <summary>Specifies options for determining quality levels.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_multisample_quality_levels">D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS</a> structure.</remarks>
+[Flags, EquivalentOf(typeof(D3D12_MULTISAMPLE_QUALITY_LEVEL_FLAGS))]
+public enum MultisampleQualityLevelFlags {
+	/// <summary>No options are supported.</summary>
+	None = 0x00000000,
+	/// <summary>The number of quality levels can be determined for tiled resources.</summary>
+	TiledResource = 0x00000001,
+} ;
+
+
+/// <summary>Specifies a shader model.</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_shader_model">D3D12_FEATURE_DATA_SHADER_MODEL</a> structure.</remarks>
+[EquivalentOf(typeof(D3D_SHADER_MODEL))]
+public enum ShaderModel {
+	/// <summary>Indicates shader model 5.1.</summary>
+	Model5_1 = 81,
+	/// <summary>Indicates shader model 6.0. Compiling a shader model 6.0 shader requires using the DXC compiler (see [DirectX Shader Compiler](https://github.com/Microsoft/DirectXShaderCompiler)), and is not supported by legacy **FXC**.</summary>
+	Model6_0 = 96,
+	/// <summary>Indicates shader model 6.1.</summary>
+	Model6_1 = 97,
+	/// <summary></summary>
+	Model6_2 = 98,
+	/// <summary></summary>
+	Model6_3 = 99,
+	/// <summary>Shader model 6.4 support was added in Windows 10, Version 1903, and is required for DirectX Raytracing (DXR).</summary>
+	Model6_4 = 100,
+	/// <summary>Shader model 6.5 support was added in Windows 10, Version 2004, and is required for Direct Machine Learning.</summary>
+	Model6_5 = 101,
+	/// <summary>Shader model 6.6 support was added in Windows 11 and the DirectX 12 Agility SDK.</summary>
+	Model6_6 = 102,
+	/// <summary>Shader model 6.7 support was added in the DirectX 12 Agility SDK v1.6. See [Agility SDK 1.606.3: Shader Model 6.7 is now publicly available!](https://devblogs.microsoft.com/directx/shader-model-6-7/) on the DirectX developer blog.</summary>
+	Model6_7 = 103,
+	Model6_8 = 104,
+	D3DHighestShaderModel = 104,
+} ;
+
+
+/// <summary>Defines constants that specify protected resource session support.</summary>
+[Flags, EquivalentOf(typeof(D3D12_PROTECTED_RESOURCE_SESSION_SUPPORT_FLAGS))]
+public enum ProtectedResourceSessionSupportFlags {
+	/// <summary>Indicates that protected resource sessions are not supported.</summary>
+	None = 0x00000000,
+	/// <summary>Indicates that protected resource sessions are supported.</summary>
+	Supported = 0x00000001,
+} ;
+
+
+/// <summary>Describes the level of support for shader caching in the current graphics driver. (D3D12_SHADER_CACHE_SUPPORT_FLAGS)</summary>
+/// <remarks>This enum is used by the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_shader_cache">D3D_FEATURE_DATA_SHADER_CACHE</a> structure.</remarks>
+[Flags, EquivalentOf(typeof(D3D12_SHADER_CACHE_SUPPORT_FLAGS))]
+public enum ShaderCacheSupportFlags {
+	/// <summary>Indicates that the driver does not support shader caching.</summary>
+	None = 0x00000000,
+	/// <summary>Indicates that the driver supports the CachedPSO member of the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_graphics_pipeline_state_desc">D3D12_GRAPHICS_PIPELINE_STATE_DESC</a> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_compute_pipeline_state_desc">D3D12_COMPUTE_PIPELINE_STATE_DESC</a> structures. This is always supported.</summary>
+	SinglePSO = 0x00000001,
+	/// <summary>Indicates that the driver supports the ID3D12PipelineLibrary interface, which provides application-controlled PSO grouping and caching. This is supported by drivers targetting the Windows 10 Anniversary Update.</summary>
+	Library = 0x00000002,
+	/// <summary>Indicates that the driver supports an OS-managed shader cache that stores compiled shaders in memory during the current run of the application.</summary>
+	AutomaticInProcCache = 0x00000004,
+	/// <summary>Indicates that the driver supports an OS-managed shader cache that stores compiled shaders on disk to accelerate future runs of the application.</summary>
+	AutomaticDiskCache = 0x00000008,
+	DriverManagedCache = 0x00000010,
+	ShaderControlClear = 0x00000020,
+	ShaderSessionDelete = 0x00000040,
+} ;
+
+
+/// <summary>Defines constants that specify heap serialization support.</summary>
+[EquivalentOf(typeof(D3D12_HEAP_SERIALIZATION_TIER))]
+public enum HeapSerializationTier {
+	/// <summary>Indicates that heap serialization is not supported.</summary>
+	Tier0 = 0,
+	/// <summary>
+	/// Indicates that heap serialization is supported.
+	/// Your application can serialize resource data in heaps through copying APIs such as <see cref="IGraphicsCommandList.CopyResource"/>,
+	/// without necessarily requiring an explicit <a href="https://learn.microsoft.com/en-us/windows/win32/direct3d12/using-resource-barriers-to-synchronize-resource-states-in-direct3d-12">state transition</a> of resources on those heaps.</summary>
+	Tier1_0 = 10,
+} ;
+
+
+/// <summary>
+/// Used with the EnqueuMakeResident function to choose how residency
+/// operations proceed when the memory budget is exceeded.
+/// </summary>
+[Flags, EquivalentOf(typeof(D3D12_RESIDENCY_FLAGS))]
+public enum ResidencyFlags {
+	/// <summary>Specifies the default residency policy, which allows residency operations to succeed regardless of the application's current memory budget. EnqueueMakeResident returns E_OUTOFMEMORY only when there is no memory available.</summary>
+	None = 0x00000000,
+	/// <summary>Specifies that the EnqueueMakeResident function should return E_OUTOFMEMORY when the residency operation would exceed the application's current memory budget.</summary>
+	DenyOverbudget = 0x00000001,
+} ;
+
+
+/// <summary>The D3D12_COMMAND_LIST_FLAGS enumeration specifies flags to be used when creating a command list.</summary>
+[Flags, EquivalentOf(typeof(D3D12_COMMAND_LIST_FLAGS))]
+public enum CommandListFlags {
+	/// <summary>No flags specified.</summary>
+	None = 0x00000000,
+} ;
+
+
+/// <summary>Defines flags that specify states related to a graphics command list. Values can be bitwise OR'd together.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_graphics_states">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[Flags, EquivalentOf(typeof(D3D12_GRAPHICS_STATES))]
+public enum GraphicsStates {
+	/// <summary>Specifies no state.</summary>
+	None = 0x00000000,
+	/// <summary>Specifies the state of the vertex buffer bindings on the input assembler stage.</summary>
+	IAVertexBuffers = 0x00000001,
+	/// <summary>Specifies the state of the index buffer binding on the input assembler stage.</summary>
+	IAIndexBuffer = 0x00000002,
+	/// <summary>Specifies the state of the primitive topology value set on the input assembler stage.</summary>
+	IAPrimitiveTopology = 0x00000004,
+	/// <summary>Specifies the state of the currently bound descriptor heaps.</summary>
+	DescriptorHeap = 0x00000008,
+	/// <summary>Specifies the state of the currently set graphics root signature.</summary>
+	RootSignature = 0x00000010,
+	/// <summary>Specifies the state of the currently set compute root signature.</summary>
+	ComputeRootSignature = 0x00000020,
+	/// <summary>Specifies the state of the viewports bound to the rasterizer stage.</summary>
+	RSViewports = 0x00000040,
+	/// <summary>Specifies the state of the scissor rectangles bound to the rasterizer stage.</summary>
+	RSScissorRects = 0x00000080,
+	/// <summary>Specifies the predicate state.</summary>
+	Predication = 0x00000100,
+	/// <summary>Specifies the state of the render targets bound to the output merger stage.</summary>
+	OMRenderTargets = 0x00000200,
+	/// <summary>Specifies the state of the reference value for depth stencil tests set on the output merger stage.</summary>
+	OMStencilRef = 0x00000400,
+	/// <summary>Specifies the state of the blend factor set on the output merger stage.</summary>
+	OMBlendFactor = 0x00000800,
+	/// <summary>Specifies the state of the pipeline state object.</summary>
+	PipelineState = 0x00001000,
+	/// <summary>Specifies the state of the buffer views bound to the stream output stage.</summary>
+	SOTargets = 0x00002000,
+	/// <summary>Specifies the state of the depth bounds set on the output merger stage.</summary>
+	OMDepthBounds = 0x00004000,
+	/// <summary>Specifies the state of the sample positions.</summary>
+	SamplePositions = 0x00008000,
+	/// <summary>Specifies the state of the view instances mask.</summary>
+	ViewInstanceMask = 0x00010000,
+} ;
+
+
+/// <summary>Defines constants that specify the data type of a parameter to a meta command.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_meta_command_parameter_type">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_META_COMMAND_PARAMETER_TYPE))]
+public enum MetaCommandParameterType {
+	/// <summary>Specifies that the parameter is of type <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">FLOAT</a>.</summary>
+	Float = 0,
+	/// <summary>Specifies that the parameter is of type <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT64</a>.</summary>
+	UInt64 = 1,
+	/// <summary>Specifies that the parameter is a GPU virtual address.</summary>
+	GPUVirtualAddress = 2,
+	/// <summary>Specifies that the parameter is a CPU descriptor handle to a heap containing either constant buffer views, shader resource views, or unordered access views.</summary>
+	CPUDescriptorHandleHeapType_CBV_SRV_UAV = 3,
+	/// <summary>Specifies that the parameter is a GPU descriptor handle to a heap containing either constant buffer views, shader resource views, or unordered access views.</summary>
+	GPUCPUDescriptorHandleHeapType_CBV_SRV_UAV = 4,
+} ;
+
+
+/// <summary>Specifies the type of a state object. Use with D3D12_STATE_OBJECT_DESC.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_state_object_type">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_STATE_OBJECT_TYPE))]
+public enum StateObjectType {
+	/// <summary>Collection state object.</summary>
+	Collection = 0,
+	/// <summary>Raytracing pipeline state object.</summary>
+	RaytracingPipeline = 3,
+} ;
+
+
+/// <summary>The type of a state subobject. Use with D3D12_STATE_SUBOBJECT.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_state_subobject_type">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_STATE_SUBOBJECT_TYPE))]
+public enum StateSubObjectType {
+	/// <summary>Subobject type is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_state_object_config">D3D12_STATE_OBJECT_CONFIG</a>.</summary>
+	StateObjectConfig = 0,
+	/// <summary>Subobject type is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_global_root_signature">D3D12_GLOBAL_ROOT_SIGNATURE</a>.</summary>
+	GlobalRootSignature = 1,
+	/// <summary>Subobject type is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_local_root_signature">D3D12_LOCAL_ROOT_SIGNATURE</a>.</summary>
+	LocalRootSignature = 2,
+	/// <summary>
+	/// <para>Subobject type is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_node_mask">D3D12_NODE_MASK</a>. > [!IMPORTANT] > On some versions of the DirectX Runtime, specifying a node via [**D3D12_NODE_MASK**](/windows/win32/api/d3d12/ns-d3d12-d3d12_node_mask) in a [**D3D12_STATE_SUBOBJECT**](/windows/win32/api/d3d12/ns-d3d12-d3d12_state_subobject) with type **D3D12_STATE_SUBOBJECT_TYPE_NODE_MASK**, the runtime will incorrectly handle a node mask value of `0`, which should use node #1, which will lead to errors when attempting to use the state object later. Specify an explicit node value of 1, or omit the [**D3D12_NODE_MASK**](/windows/win32/api/d3d12/ns-d3d12-d3d12_node_mask) subobject to avoid this issue.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_state_subobject_type#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	NodeMask = 3,
+	/// <summary>Subobject type is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_dxil_library_desc">D3D12_DXIL_LIBRARY_DESC</a>.</summary>
+	DXILLibrary = 5,
+	/// <summary>Subobject type is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_existing_collection_desc">D3D12_EXISTING_COLLECTION_DESC</a>.</summary>
+	ExistingCollection = 6,
+	/// <summary>Subobject type is <a href="../d3d12/ns-d3d12-d3d12_subobject_to_exports_association.md">D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION</a>.</summary>
+	SubObjectToExportsAssociation = 7,
+	/// <summary>Subobject type is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_dxil_subobject_to_exports_association">D3D12_DXIL_SUBOBJECT_TO_EXPORTS_ASSOCIATION</a>.</summary>
+	DXILSubObjectToExportsAssociation = 8,
+	/// <summary>Subobject type is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_raytracing_shader_config">D3D12_RAYTRACING_SHADER_CONFIG</a>.</summary>
+	RaytracingShaderConfig = 9,
+	/// <summary>Subobject type is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_raytracing_pipeline_config">D3D12_RAYTRACING_PIPELINE_CONFIG</a>.</summary>
+	RaytracingPipelineConfig = 10,
+	/// <summary>Subobject type is <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_hit_group_desc">D3D12_HIT_GROUP_DESC</a></summary>
+	HitGroup = 11,
+	RaytracingPipelineConfig1 = 12,
+	/// <summary>The maximum valid subobject type value.</summary>
+	MaxValid = 13,
+} ;
+
+
+/// <summary>
+/// Specifies the result of a call to <see cref="IDevice5.CheckDriverMatchingIdentifier"/> which queries whether
+/// serialized data is compatible with the current device and driver version.
+/// </summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_driver_matching_identifier_status">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_DRIVER_MATCHING_IDENTIFIER_STATUS))]
+public enum DriverMatchingIdentifierStatus {
+	/// <summary>Serialized data is compatible with the current device/driver.</summary>
+	CompatibleWithDevice = 0,
+	/// <summary>The specified <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_serialized_data_type">D3D12_SERIALIZED_DATA_TYPE</a> specified is unknown or unsupported.</summary>
+	UnsupportedType = 1,
+	/// <summary>Format of the data in <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_serialized_data_driver_matching_identifier">D3D12_SERIALIZED_DATA_DRIVER_MATCHING_IDENTIFIER</a> is unrecognized.  This could indicate either corrupt data or the identifier was produced by a different hardware vendor.</summary>
+	Unrecognized = 2,
+	/// <summary>Serialized data is recognized, but its version is not compatible with the current driver. This result may indicate that the device is from the same hardware vendor but is an incompatible version.</summary>
+	IncompatibleVersion = 3,
+	/// <summary><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_serialized_data_type">D3D12_SERIALIZED_DATA_TYPE</a> specifies a data type that is not compatible with the type of serialized data.  As long as there is only a single defined serialized data type this error cannot not be produced.</summary>
+	IncompatibleType = 4,
+} ;
+
+
+/// <summary>Defines constants that specify a shader cache's mode.</summary>
+[EquivalentOf(typeof(D3D12_SHADER_CACHE_MODE))]
+public enum ShaderCacheMode {
+	/// <summary>Specifies that there's no backing file for this cache. All stores are discarded when the session object is destroyed.</summary>
+	Memory = 0,
+	/// <summary>Specifies that the session is backed by files on disk that persist from run to run unless cleared. For ways to clear a disk cache, see [ID3D12ShaderCacheSession::SetDeleteOnDestroy](nf-d3d12-id3d12shadercachesession-setdeleteondestroy.md).</summary>
+	Disk = 1,
+} ;
+
+
+/// <summary>Defines constants that specify shader cache flags.</summary>
+[EquivalentOf(typeof(D3D12_SHADER_CACHE_FLAGS))]
+public enum ShaderCacheFlags {
+	/// <summary>Specifies no flag.</summary>
+	None = 0x00000000,
+	/// <summary>Specifies that the cache is implicitly versioned by the driver being used. For multi-GPU systems, a cache created this way is stored side by side for each adapter on which the application runs. The *Version* field in the [D3D12_SHADER_CACHE_SESSION_DESC](ns-d3d12-d3d12_shader_cache_session_desc.md) struct (the cache description) is used as an additional constraint.</summary>
+	DriverVersioned = 0x00000001,
+	/// <summary>By default, caches are stored in temporary storage, and can be cleared by disk cleanup. This constant (not valid for UWP apps) specifies that the cache is instead stored in the current working directory.</summary>
+	UseWorkingDir = 0x00000002,
+} ;
+
+
+/// <summary>Defines constants that specify a kind of shader cache.</summary>
+[Flags, EquivalentOf(typeof(D3D12_SHADER_CACHE_KIND_FLAGS))]
+public enum ShaderCacheKindFlags {
+	/// <summary>Specifies a cache that's managed by Direct3D 12 to store driver compilations of application shaders.</summary>
+	ImplicitD3DCacheForDriver = 0x00000001,
+	/// <summary>Specifies a cache that's used to store Direct3D 12's conversions of one shader type to another (for example, DXBC shaders to DXIL shaders).</summary>
+	ImplicitD3DConversions = 0x00000002,
+	/// <summary>Specifies a cache that's managed by the driver. Operations for this cache are hints.</summary>
+	ImplicitDriverManaged = 0x00000004,
+	/// <summary>Specifies all shader cache sessions created by the [ID3D12Device9::CreateShaderCacheSession](nf-d3d12-id3d12device9-createshadercachesession.md) method. Requests to **CLEAR** with this flag apply to all currently active application cache sessions, as well as on-disk caches created without [D3D12_SHADER_CACHE_FLAG_USE_WORKING_DIR](ne-d3d12-d3d12_shader_cache_flags.md).</summary>
+	ApplicationManaged = 0x00000008,
+} ;
+
+
+
+/// <summary>Defines constants that specify shader cache control options.</summary>
+[Flags, EquivalentOf(typeof(D3D12_SHADER_CACHE_CONTROL_FLAGS))]
+public enum ShaderCacheControlFlags {
+	/// <summary>Specifies that the cache shouldn't be used to look up data, and shouldn't have new data stored in it. Attempts to use/create a cache while it's disabled result in **DXGI_ERROR_NOT_CURRENTLY_AVAILABLE**.</summary>
+	Disable = 0x00000001,
+	/// <summary>Specfies that use of the cache should be resumed.</summary>
+	Enable = 0x00000002,
+	/// <summary>Specfies that any existing contents of the cache should be deleted.</summary>
+	Clear = 0x00000004,
+} ;
+
+
+[Flags, EquivalentOf(typeof(D3D12_SAMPLER_FLAGS))]
+public enum SamplerFlags {
+	None = 0x00000000,
+	UIntBorderColor = 0x00000001,
+	NonNormalizedCoordinates = 0x00000002,
+} ;
+
+
+/// <summary>Defines constants that specify a level of dynamic optimization to apply to GPU work that's subsequently submitted.</summary>
+[EquivalentOf(typeof(D3D12_BACKGROUND_PROCESSING_MODE))]
+public enum BackgroundProcessingMode {
+	/// <summary>
+	/// The default setting. Specifies that the driver may instrument workloads, and dynamically recompile shaders, in a low overhead,
+	/// non-intrusive manner that avoids glitching the foreground workload.
+	/// </summary>
+	Allowed = 0,
+	/// <summary>
+	/// Specifies that the driver may instrument as aggressively as possible.
+	/// The understanding is that causing glitches is fine while in this mode, because the current work is being submitted specifically to train the system.
+	/// </summary>
+	AllowIntrusiveMeasurements = 1,
+	/// <summary>
+	/// Specifies that background work should stop. This ensures that background shader recompilation won't consume CPU cycles.
+	/// Available only in <b>Developer mode</b>.
+	/// </summary>
+	DisableBackgroundWork = 2,
+	/// <summary>
+	/// Specifies that all dynamic optimization should be disabled.
+	/// For example, if you're doing an A/B performance comparison, then using this constant ensures that the driver doesn't change anything
+	/// that might interfere with your results. Available only in <b>Developer mode</b>.
+	/// </summary>
+	DisableProfilingBySystem = 3,
+} ;
+
+
+/// <summary>
+/// Specifies the type of serialized data.
+/// Use a value from this enumeration when calling <see cref="IDevice5.CheckDriverMatchingIdentifier"/>
+/// </summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_serialized_data_type">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_SERIALIZED_DATA_TYPE))]
+public enum SerializedDataType {
+	/// <summary>The serialized data is a raytracing acceleration structure.</summary>
+	RaytracingAccelerationStructure = 0,
+} ;
+
+
+/// <summary>Defines constants that specify what should be done with the results of earlier workload instrumentation.</summary>
+[EquivalentOf(typeof(D3D12_MEASUREMENTS_ACTION))]
+public enum MeasurementsAction {
+	/// <summary>The default setting. Specifies that all results should be kept.</summary>
+	KeepAll = 0,
+	/// <summary>Specifies that the driver has seen all the data that it's ever going to, so it should stop waiting for more and go ahead compiling optimized shaders.</summary>
+	CommitResults = 1,
+	/// <summary>Like <b>D3D12_MEASUREMENTS_ACTION_COMMIT_RESULTS</b>, but also specifies that your application doesn't care about glitches, so the runtime should ignore the usual idle priority rules and go ahead using as many threads as possible to get shader recompiles done fast. Available only in <b>Developer mode</b>.</summary>
+	CommitResultsHighPriority = 2,
+	/// <summary>Specifies that the optimization state should be reset; hinting that whatever has previously been measured no longer applies.</summary>
+	DiscardPrevious = 3,
 } ;

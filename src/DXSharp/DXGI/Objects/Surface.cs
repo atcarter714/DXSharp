@@ -19,61 +19,125 @@ namespace DXSharp.DXGI ;
 
 
 //! Concrete Implementation of an IDXGISurface wrapper/proxy ::
-public class Surface: DeviceSubObject, ISurface {
-
-	public static IInstantiable  Instantiate( )            => new Surface( ) ;
-	public static IInstantiable Instantiate( IntPtr ptr ) => new Surface( ptr ) ;
-	public static IInstantiable Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
-		new Surface( (IDXGISurface)dxgiObj! ) ;
-
-	public new ComPtr< IDXGISurface >? ComPointer { get ; protected set ; }
-	public new IDXGISurface? COMObject => ComPointer?.Interface as IDXGISurface ;
-
+[Wrapper(typeof(IDXGISurface))]
+internal class Surface: DeviceSubObject,
+						ISurface,
+						IComObjectRef< IDXGISurface >,
+						IUnknownWrapper< IDXGISurface > {
+	// --------------------------------------------------------------------------------------------
+	ComPtr< IDXGISurface >? _comPtr ;
+	public new ComPtr< IDXGISurface >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGISurface >(  ) ;
+	public override IDXGISurface? COMObject => ComPointer?.Interface as IDXGISurface ;
 	
-	internal Surface( ) { }
+	// --------------------------------------------------------------------------------------------
+	
+	internal Surface( ) {
+		_comPtr = ComResources?.GetPointer< IDXGISurface >( ) ;
+		if( _comPtr is not null )
+			_initOrAdd( _comPtr ) ;
+	}
 	internal Surface( nint ptr ) {
 		if ( !ptr.IsValid() )
 			throw new NullReferenceException( $"{nameof( Surface )} :: " +
 											  $"The internal COM interface is destroyed/null." ) ;
-		ComPointer = new( ptr ) ;
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
 	}
 	internal Surface( in IDXGISurface dxgiObj ) {
 		if ( dxgiObj is null )
 			throw new NullReferenceException( $"{nameof( Surface )} :: " +
 											  $"The internal COM interface is destroyed/null." ) ;
-		ComPointer = new( dxgiObj ) ;
+		_comPtr = new( dxgiObj ) ;
+		_initOrAdd( _comPtr ) ;
 	}
 	
+	// -------------------------------------------------------------------------------------------
+	public void GetDesc( out SurfaceDescription pDesc ) {
+		var surface = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			DXGI_SURFACE_DESC desc ;
+			surface.GetDesc( &desc ) ;
+			pDesc = desc ;
+		}
+	}
 	
-	public void GetDesc( out SurfaceDescription pDesc ) { pDesc = default ; }
-	public void Map( ref MappedRect pLockedRect, uint MapFlags ) { }
-	public void Unmap( ) { }
+	public void Map( ref MappedRect pLockedRect, MapFlags mapFlags ) {
+		var surface = COMObject ?? throw new NullReferenceException( ) ;
+		unsafe {
+			fixed( MappedRect* pRect = &pLockedRect ) {
+				surface.Map( (DXGI_MAPPED_RECT *)pRect, (uint)mapFlags ) ;
+				pLockedRect = *pRect ;
+			}
+		}
+	}
+	
+	public void Unmap( ) {
+		var surface = COMObject ?? throw new NullReferenceException( ) ;
+		surface.Unmap( ) ;
+	}
+	
+	// --------------------------------------------------------------------------------------------
+	public new static Type ComType => typeof( IDXGISurface ) ;
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISurface ).GUID
+															  .ToByteArray( ) ;
+
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+
+	public static IInstantiable  Instantiate( ) => new Surface( ) ;
+	public static IInstantiable Instantiate( IntPtr ptr ) => new Surface( ptr ) ;
+	public static IInstantiable Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
+		new Surface( (IDXGISurface)dxgiObj! ) ;
+	// ============================================================================================
 } ;
 
 
-public class Surface1: Surface, ISurface1 {
-	public new ComPtr< IDXGISurface1 >? ComPointer { get ; protected set ; }
-	public new IDXGISurface1? COMObject => ComPointer?.Interface as IDXGISurface1 ;
-
-	public static IInstantiable  Instantiate( )            => new Surface1( ) ;
-	public static IInstantiable Instantiate( IntPtr ptr ) => new Surface1( ptr ) ;
-	public new static IInstantiable Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
-		new Surface1( (IDXGISurface1)dxgiObj! ) ;
+[Wrapper(typeof(IDXGISurface1))]
+internal class Surface1: Surface, 
+						 ISurface1,
+						 IComObjectRef< IDXGISurface1 >,
+						 IUnknownWrapper< IDXGISurface1 > {
+	// --------------------------------------------------------------------------------------------
 	
-	internal Surface1( ) { }
+	ComPtr< IDXGISurface1 >? _comPtr ;
+	public new ComPtr< IDXGISurface1 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGISurface1 >(  ) ;
+	public override IDXGISurface1? COMObject => ComPointer?.Interface as IDXGISurface1 ;
+	
+	// --------------------------------------------------------------------------------------------
+	
+	internal Surface1( ) {
+		_comPtr = ComResources?.GetPointer< IDXGISurface1 >( ) ;
+		if( _comPtr is not null )
+			_initOrAdd( _comPtr ) ;
+	}
 	internal Surface1( nint ptr ) {
 		if ( !ptr.IsValid() )
 			throw new NullReferenceException( $"{nameof( Surface1 )} :: " +
 											  $"The internal COM interface is destroyed/null." ) ;
-		ComPointer = new( ptr ) ;
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
 	}
 	internal Surface1( in IDXGISurface1 dxgiObj ) {
 		if ( dxgiObj is null )
 			throw new NullReferenceException( $"{nameof( Surface1 )} :: " +
 											  $"The internal COM interface is destroyed/null." ) ;
-		ComPointer = new( dxgiObj ) ;
+		_comPtr = new( dxgiObj ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Surface1( ComPtr< IDXGISurface1 > ptr ) {
+		ArgumentNullException.ThrowIfNull( ptr, nameof( ptr ) ) ;
+		_comPtr = ptr ;
+		_initOrAdd( _comPtr ) ;
 	}
 	
+	// --------------------------------------------------------------------------------------------
 	
 	/// <inheritdoc cref="ISurface1.GetDC"/>
 	public void GetDC( bool Discard, ref HDC phdc ) {
@@ -99,32 +163,59 @@ public class Surface1: Surface, ISurface1 {
 		}
 	}
 	
+	// --------------------------------------------------------------------------------------------
+	public new static Type ComType => typeof( IDXGISurface1 ) ;
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISurface1 ).GUID
+															  .ToByteArray( ) ;
+
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+	// ============================================================================================
 } ;
 
 
-public class Surface2: Surface1, ISurface2 {
-	public new ComPtr< IDXGISurface2 >? ComPointer { get ; protected set ; }
-	public new IDXGISurface2? COMObject => ComPointer?.Interface as IDXGISurface2 ;
 
-	public static IInstantiable  Instantiate( )            => new Surface2( ) ;
-	public static IInstantiable Instantiate( IntPtr ptr ) => new Surface2( ptr ) ;
-	public new static IInstantiable Instantiate< ICom >( ICom dxgiObj ) where ICom: IUnknown? => 
-		new Surface2( (IDXGISurface2)dxgiObj! ) ;
+[Wrapper(typeof(IDXGISurface2))]
+internal class Surface2: Surface1, ISurface2 {
+	// --------------------------------------------------------------------------------------------
+	ComPtr< IDXGISurface2 >? _comPtr ;
+	public new ComPtr< IDXGISurface2 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGISurface2 >(  ) ;
+	public override IDXGISurface2? COMObject => ComPointer?.Interface as IDXGISurface2 ;
 	
-	internal Surface2( ) { }
+	// --------------------------------------------------------------------------------------------
+	 
+	internal Surface2( ) {
+		_comPtr = ComResources?.GetPointer< IDXGISurface2 >( ) ;
+		if( _comPtr is not null )
+			_initOrAdd( _comPtr ) ;
+	}
 	internal Surface2( nint ptr ) {
 		if ( !ptr.IsValid() )
 			throw new NullReferenceException( $"{nameof( Surface2 )} :: " +
 											  $"The internal COM interface is destroyed/null." ) ;
-		ComPointer = new( ptr ) ;
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
 	}
 	internal Surface2( in IDXGISurface2 dxgiObj ) {
 		if ( dxgiObj is null )
 			throw new NullReferenceException( $"{nameof( Surface2 )} :: " +
 											  $"The internal COM interface is destroyed/null." ) ;
-		ComPointer = new( dxgiObj ) ;
+		_comPtr = new( dxgiObj ) ;
+		_initOrAdd( _comPtr ) ;
 	}
-
+	internal Surface2( ComPtr< IDXGISurface2 > ptr ) {
+		ArgumentNullException.ThrowIfNull( ptr, nameof( ptr ) ) ;
+		_comPtr = ptr ;
+		_initOrAdd( _comPtr ) ;
+	}
+	
+	// --------------------------------------------------------------------------------------------
 	
 	/// <inheritdoc cref="ISurface2.GetResource{ TRes }"/>
 	public void GetResource< TRes >( in Guid riid, out TRes ppParentResource, out uint pSubresourceIndex )
@@ -139,4 +230,17 @@ public class Surface2: Surface1, ISurface2 {
 		}
 	}
 	
+	// --------------------------------------------------------------------------------------------
+	public new static Type ComType => typeof( IDXGISurface2 ) ;
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGISurface2 ).GUID
+															  .ToByteArray( ) ;
+
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+	// ============================================================================================
 } ;

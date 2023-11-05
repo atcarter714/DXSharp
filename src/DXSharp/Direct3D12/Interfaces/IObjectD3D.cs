@@ -1,25 +1,14 @@
 ﻿#region Using Directives
-
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
-// ----------------------------------------------------------
-
 [ProxyFor( typeof(ID3D12Object) )]
-public interface IObject: IDXCOMObject,
-						  IComObjectRef< ID3D12Object >,
-						  IUnknownWrapper< ID3D12Object > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Object >? ComPointer { get ; }
-	new ID3D12Object? COMObject => ComPointer?.Interface ;
-	ID3D12Object? IComObjectRef< ID3D12Object >.COMObject => COMObject ;
-	ComPtr< ID3D12Object >? IUnknownWrapper< ID3D12Object >.ComPointer => ComPointer;
+public interface IObject: IDXCOMObject {
 	// ---------------------------------------------------------------------------------
 	
 	/// <summary>Associates a name with the device object. This name is for use in debug diagnostics and tools.</summary>
@@ -34,15 +23,11 @@ public interface IObject: IDXCOMObject,
 	/// <para>This method takes UNICODE names. Note that this is simply a convenience wrapper around [ID3D12Object::SetPrivateData](nf-d3d12-id3d12object-setprivatedata.md) with **WKPDID_D3DDebugObjectNameW**. Therefore names which are set with `SetName` can be retrieved with [ID3D12Object::GetPrivateData](nf-d3d12-id3d12object-getprivatedata.md) with the same GUID. Additionally, D3D12 supports narrow strings for names, using the **WKPDID_D3DDebugObjectName** GUID directly instead.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setname#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetName( string Name ) =>
-			((ID3D12Object)ComPtrBase?.InterfaceObjectRef!)
-				.SetName( Name ) ;
-	
+	void SetName( string Name ) ;
 	
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Object) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Object).GUID ;
-
+	new static Type ComType => typeof(ID3D12Object) ;
+	public new static Guid IID => (ComType.GUID) ;
 	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
@@ -55,7 +40,6 @@ public interface IObject: IDXCOMObject,
 											  .GetReference(data) ) ;
 		}
 	}
-	
 	// ==================================================================================
 } ;
 

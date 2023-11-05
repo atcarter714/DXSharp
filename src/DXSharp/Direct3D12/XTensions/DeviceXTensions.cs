@@ -1,9 +1,13 @@
-﻿using System.Runtime.CompilerServices ;
+﻿#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
+#region Using Directives
+using System.Runtime.CompilerServices ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows ;
-
+using DXSharp.Windows.COM ;
+#endregion
 namespace DXSharp.Direct3D12.XTensions ;
+
 
 public static class DeviceXTensions
 {
@@ -51,7 +55,7 @@ public static class DeviceXTensions
 														out TRsrc? ppvResource ) where TRsrc : IResource {
 		
 		device.CreateCommittedResource( heapProperties, HeapFlags.None, desc, initialState,
-										optimizedClearValue, TRsrc.InterfaceGUID, out var resource ) ;
+										optimizedClearValue, TRsrc.Guid, out var resource ) ;
 		
 		ppvResource = (TRsrc )resource ;
 	}
@@ -78,11 +82,12 @@ public static class DeviceXTensions
 												   in ResourceDescription desc,
 												   ResourceStates initialState = ResourceStates.Common ) {
 		unsafe {
-			var comPtr = device.ComPointer ?? throw new NullReferenceException( ) ;
+			var _device = ( Device )device ;
+			var comPtr = _device.ComPointer ?? throw new NullReferenceException( ) ;
 			var method =
 				(delegate* unmanaged[Stdcall, MemberFunction]< ID3D12Device*, HeapProperties*, HeapFlags, ResourceDescription*,
 					ResourceStates, ClearValue*, Guid*, ResourceUnmanaged*, HResult >)comPtr.GetVTableMethod< ID3D12Device >( 27 ) ;
-
+			
 			var devicePtr = (ID3D12Device *)comPtr.InterfaceVPtr ;
 			var guid      = typeof( ID3D12Resource ).GUID ;
 			fixed( void* pHeapProps = &heapProperties, pResDesc = &desc ) {
@@ -94,4 +99,5 @@ public static class DeviceXTensions
 			}
 		}
 	}
-}
+	
+} ;

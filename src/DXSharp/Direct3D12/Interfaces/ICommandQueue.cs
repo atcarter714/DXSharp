@@ -1,5 +1,4 @@
 ﻿#region Using Directives
-
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
@@ -14,34 +13,8 @@ namespace DXSharp.Direct3D12 ;
 /// instrumenting the command queue, and updating resource tile mappings.
 /// </summary>
 [ProxyFor(typeof(ID3D12CommandQueue))]
-public interface ICommandQueue: IPageable,
-								IComObjectRef< ID3D12CommandQueue >,
-								IUnknownWrapper< ID3D12CommandQueue > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12CommandQueue > ComPointer { get ; }
-	new ID3D12CommandQueue? COMObject => ComPointer?.Interface ;
-	ID3D12CommandQueue? IComObjectRef< ID3D12CommandQueue >.COMObject => COMObject ;
-	ComPtr< ID3D12CommandQueue >? IUnknownWrapper< ID3D12CommandQueue >.ComPointer => ComPointer ;
-
-	public new static Type ComType => typeof( ID3D12CommandQueue );
-	public new static Guid InterfaceGUID => typeof( ID3D12CommandQueue ).GUID;
-
-	static ref readonly Guid IComIID.Guid {
-		[MethodImpl( MethodImplOptions.AggressiveInlining )]
-		get {
-			ReadOnlySpan< byte > data = typeof( ID3D12CommandQueue ).GUID
-																	 .ToByteArray( ) ;
-
-			return ref Unsafe
-					   .As< byte, Guid >( ref MemoryMarshal
-											  .GetReference( data ) );
-		}
-	}
+public interface ICommandQueue: IPageable {
 	
-	// ==================================================================================
-
-
-
 	/// <summary>Copies mappings from a source reserved resource to a destination reserved resource.</summary>
 	/// <param name="pDstResource">A pointer to the destination reserved resource.</param>
 	/// <param name="pDstRegionStartCoordinate">
@@ -234,12 +207,27 @@ public interface ICommandQueue: IPageable,
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-endevent#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
 	void EndEvent( ) ;
-
-	// ---------------------------------------
-	
 	
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof(ID3D12CommandQueue) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12CommandQueue).GUID ;
+	new static Type ComType => typeof( ID3D12CommandQueue ) ;
+	public new static Guid IID => (ComType.GUID) ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( ID3D12CommandQueue ).GUID
+																	 .ToByteArray( ) ;
+
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference( data ) );
+		}
+	}
+	
+	public static IDXCOMObject Instantiate( ) => new CommandQueue( ) ;
+	public static IDXCOMObject Instantiate( IntPtr pComObj ) => new CommandQueue( pComObj ) ;
+	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
+		new CommandQueue( ( pComObj as ID3D12CommandQueue )! ) ;
+	
 	// ==================================================================================
 } ;

@@ -1,11 +1,16 @@
 ﻿// Implements an idiomatic C# version of IDXGIAdapter interface:
 // https://docs.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter
 #region Using Directives
+
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
 using System.Runtime.Versioning ;
 using Windows.Win32.Graphics.Dxgi ;
 
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
+using DXSharp.Windows.Win32 ;
+
 #endregion
 namespace DXSharp.DXGI ;
 
@@ -18,19 +23,22 @@ namespace DXSharp.DXGI ;
 /// Go to <a href="https://learn.microsoft.com">Microsoft Learn</a> to learn more about
 /// the native <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> interface.
 /// </remarks>
-public class Adapter: Object, IAdapter {
-	// -------------------------------------------------------------------------------------
+[Wrapper(typeof(IDXGIAdapter))]
+internal class Adapter: Object,
+						IAdapter,
+						IComObjectRef< IDXGIAdapter >,
+						IUnknownWrapper< IDXGIAdapter > {
+	// ---------------------------------------------------------------------------------
+
+	ComPtr< IDXGIAdapter >? _comPtr ;
+	public override ComPtr< IDXGIAdapter >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter >( )! ;
 	
-	static IInstantiable IInstantiable. Instantiate( )            => new Adapter( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr ptr ) => new Adapter( ptr ) ;
-	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => 
-		new Adapter( ( obj as IDXGIAdapter )! ) ;
+	public override IDXGIAdapter? COMObject => ComPointer?.Interface ;
+	// ---------------------------------------------------------------------------------
 	
-	public new ComPtr< IDXGIAdapter >? ComPointer { get ; protected set ; }
-	public new IDXGIAdapter? COMObject => ComPointer?.Interface ;
+	protected AdapterDescription      _descCached = default ;
 	
-	
-	protected AdapterDescription _descCached = default ;
 	public virtual AdapterDescription Description {
 		get {
 			if( _descCached.DeviceId is 0 )
@@ -49,13 +57,23 @@ public class Adapter: Object, IAdapter {
 	
 	// -------------------------------------------------------------------------------------
 	
+	internal Adapter( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIAdapter >( ) ;
+	}
+	internal Adapter( nint ptr ) {
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Adapter( IDXGIAdapter adapter ) {
+		_comPtr = new( adapter ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Adapter( ComPtr< IDXGIAdapter > ptr ) {
+		_comPtr = ptr ;
+		_initOrAdd( _comPtr ) ;
+	}
 	
-	//! Constructors:
-	internal Adapter( ) { }
-	internal Adapter( ComPtr< IDXGIAdapter > comPtr ) => this.ComPointer = comPtr ;
-	internal Adapter( nint address ) => ComPointer = new( address ) ;
-	internal Adapter( IDXGIAdapter dxObject ) => ComPointer = new( dxObject ) ;
-
+	// -------------------------------------------------------------------------------------
 	
 	//! IAdapter (base) Interface:
 	public void GetDesc( out AdapterDescription pDesc ) {
@@ -66,34 +84,11 @@ public class Adapter: Object, IAdapter {
 		}
 	}
 
-
-	/// <summary>
-	/// Enumerate adapter (video card) outputs.
-	/// </summary>
-	/// <param name="index">The index of the output.</param>
-	/// <param name="ppOutput"><typeparam name="TOutput"/> interface at the position specified by the Output parameter.</param>
-	/// <typeparam name="TOutput">The type of <see cref="IOutput"/> elements to enumerate through.</typeparam>
-	/// <returns>
-	/// A code that indicates success or failure (see DXGI_ERROR ).
-	/// DXGI_ERROR_NOT_FOUND is returned if the index is greater than the number of outputs.
-	/// If the adapter came from a device created using D3D_DRIVER_TYPE_WARP, then the
-	/// adapter has no outputs, so DXGI_ERROR_NOT_FOUND is returned.
-	/// </returns>
-	/// <remarks>
-	/// To know when you've reached the end of the collection of outputs, simply check for either
-	/// a null value or HResult code DXGI_ERROR_NOT_FOUND.<para/>
-	/// For additional technical details on this, see the
-	/// <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR documentation</a>.
-	/// </remarks>
-	public HResult EnumOutputs< TOutput >( uint index, out TOutput? ppOutput )
-													where TOutput: class, IOutput, IInstantiable {
+	
+	public HResult EnumOutputs( uint index, out IOutput? ppOutput ) {
 		ppOutput = default ; HResult hr = default ;
 		hr = COMObject!.EnumOutputs( index, out IDXGIOutput? pOutput ) ;
-		if ( hr.Failed ) { ppOutput = default ; return hr ; }
-		
-		( ppOutput = (TOutput)TOutput.Instantiate(pOutput) )
-			.SetComPointer( new ComPtr< IDXGIOutput >(pOutput) ) ;
-	
+		ppOutput = pOutput is null ? null : new Output( pOutput ) ;
 		return hr ;
 	}
 	
@@ -109,21 +104,37 @@ public class Adapter: Object, IAdapter {
 			COMObject!.CheckInterfaceSupport( &name, out pUMDVersion ) ;
 		}
 	}
+
+	// -------------------------------------------------------------------------------------
 	
+	public new static Type ComType => typeof( IDXGIAdapter ) ;
+	public new static ref readonly Guid Guid {
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIAdapter).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+	
+	// ======================================================================================
 } ;
 
 
 
-public class Adapter1: Adapter, IAdapter1 {
-	public static IInstantiable  Instantiate( )            => new Adapter1( ) ;
-	public static IInstantiable Instantiate( IntPtr ptr ) => new Adapter1( ptr ) ;
-	public static IInstantiable Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
-		new Adapter1( ( obj as IDXGIAdapter1 )! ) ;
+[Wrapper(typeof(IDXGIAdapter1))]
+internal class Adapter1: Adapter, 
+						 IAdapter1,
+						 IComObjectRef< IDXGIAdapter1 >,
+						 IUnknownWrapper< IDXGIAdapter1 > {
+	// ---------------------------------------------------------------------------------
+	public override IDXGIAdapter1? COMObject => ComPointer?.Interface ;
 	
+	public new ComPtr< IDXGIAdapter1 >? ComPointer => 
+		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter1 >( )! ;
+	ComPtr< IDXGIAdapter1 >? _comPtr ;
 	
-	public new IDXGIAdapter1? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGIAdapter1 >? ComPointer { get ; protected set ; }
-	
+	// ---------------------------------------------------------------------------------
 	
 	protected AdapterDescription1 _desc1Cached = default ;
 	public AdapterDescription1 Description1 {
@@ -146,12 +157,26 @@ public class Adapter1: Adapter, IAdapter1 {
 		}
 	}
 	
+	// -------------------------------------------------------------------------------------
 	
-	internal Adapter1( ) { }
-	internal Adapter1( nint address ) => ComPointer = new( address ) ;
-	internal Adapter1( IDXGIAdapter1 dxObject ) => ComPointer = new( dxObject ) ;
-	
-	
+	internal Adapter1( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIAdapter1 >( ) ;
+	}
+	internal Adapter1( nint ptr ) {
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Adapter1( IDXGIAdapter1 adapter ) {
+		_comPtr = new( adapter ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Adapter1( ComPtr< IDXGIAdapter1 > ptr ) {
+		_comPtr = ptr ;
+		_initOrAdd( _comPtr ) ;
+	}
+
+	// -------------------------------------------------------------------------------------
+
 	public void GetDesc1( out AdapterDescription1 pDesc ) {
 		unsafe {
 			DXGI_ADAPTER_DESC1 desc = default ;
@@ -160,6 +185,19 @@ public class Adapter1: Adapter, IAdapter1 {
 		}
 	}
 	
+	// -------------------------------------------------------------------------------------
+
+	public new static Type ComType => typeof( IDXGIAdapter1 ) ;
+	public new static ref readonly Guid Guid {
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIAdapter1).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+	
+	// ======================================================================================
 } ;
 
 
@@ -190,11 +228,13 @@ public class Adapter1: Adapter, IAdapter1 {
  Wrapper(typeof(IDXGIAdapter2)),
  NativeLibrary( "dxgi.dll", "IDXGIAdapter2",
 				"dxgi1_2.h", "Adapter2" )]
-public class Adapter2: Adapter1, IAdapter2,
-					   IInstantiable< Adapter2 > {
-	
-	public new IDXGIAdapter2? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGIAdapter2 >? ComPointer { get ; protected set ; }
+internal class Adapter2: Adapter1, IAdapter2,
+					   IComObjectRef< IDXGIAdapter2 >,
+					   IUnknownWrapper< IDXGIAdapter2 > {
+	ComPtr< IDXGIAdapter2 >? _comPtr ;
+	public new ComPtr< IDXGIAdapter2 >? ComPointer => 
+		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter2 >( )! ;
+	public override IDXGIAdapter2? COMObject => ComPointer?.Interface ;
 	
 	protected AdapterDescription2 _desc2Cached = default ;
 	public AdapterDescription2 Description2 {
@@ -223,18 +263,27 @@ public class Adapter2: Adapter1, IAdapter2,
 	// Internal Constructors:
 	// --------------------------------------------------------------
 	
-	internal Adapter2( ) { }
-	internal Adapter2( nint address ) => ComPointer = new( address ) ;
-	internal Adapter2( IDXGIAdapter2 dxObject ) => ComPointer = new( dxObject ) ;
-	internal Adapter2( ComPtr< IDXGIAdapter2 > comPtr ) => this.ComPointer = comPtr ;
-	
+	internal Adapter2( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIAdapter2 >( ) ;
+	}
+	internal Adapter2( nint ptr ) {
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Adapter2( IDXGIAdapter2 adapter ) {
+		_comPtr = new( adapter ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Adapter2( ComPtr< IDXGIAdapter2 > ptr ) {
+		_comPtr = ptr ;
+		_initOrAdd( _comPtr ) ;
+	}
 	
 	// --------------------------------------------------------------
 	// Interface Instance Methods:
 	// --------------------------------------------------------------
 	
 	public AdapterDescription2 GetDesc2( ) {
-		
 		unsafe {
 			DXGI_ADAPTER_DESC2 desc = default ;
 			COMObject!.GetDesc2( &desc ) ;
@@ -243,7 +292,6 @@ public class Adapter2: Adapter1, IAdapter2,
 	}
 	
 	public void GetDesc2( out AdapterDescription2 pDesc ) { 
-		
 		unsafe {
 			DXGI_ADAPTER_DESC2 desc = default ;
 			COMObject!.GetDesc2( &desc ) ;
@@ -253,16 +301,193 @@ public class Adapter2: Adapter1, IAdapter2,
 	
 	
 	// --------------------------------------------------------------
-	// Static Methods:
+	// Static Members:
 	// --------------------------------------------------------------
 	
-	#region IInstantiable Implementation:
-	static            Adapter2 IInstantiable< Adapter2 >.Instantiate( nint ptr )   => new( ptr ) ;
-	public new static IInstantiable                       Instantiate( )            => new Adapter2( ) ;
-	public new static IInstantiable                      Instantiate( IntPtr ptr ) => new Adapter2( ptr ) ;
-	public new static IInstantiable Instantiate< ICom >( ICom obj ) where ICom: IUnknown? => 
-		new Adapter2( ( obj as IDXGIAdapter2 )! ) ;
-	#endregion
+	public new static Type ComType => typeof( IDXGIAdapter2 ) ;
+	
+	public new static ref readonly Guid Guid {
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIAdapter2).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+
+	// ==============================================================
+} ;
+
+
+// --------------------------------------------------------------------------------------------
+// DXGI.Adapter3 Wrapper :: IDXGIAdapter3
+// --------------------------------------------------------------------------------------------
+
+[Wrapper( typeof( IDXGIAdapter3 ) )]
+internal class Adapter3: Adapter2,
+						 IAdapter3,
+						 IComObjectRef< IDXGIAdapter3 >,
+						 IUnknownWrapper< IDXGIAdapter3 > {
+	// --------------------------------------------------------------
+
+	ComPtr< IDXGIAdapter3 >? _comPtr ;
+	public new ComPtr< IDXGIAdapter3 >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter3 >( )! ;
+
+	public override IDXGIAdapter3? COMObject => ComPointer?.Interface ;
+	
+	// --------------------------------------------------------------
+	
+	internal Adapter3( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIAdapter3 >( ) ;
+	}
+	internal Adapter3( nint ptr ) {
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Adapter3( IDXGIAdapter3 adapter ) {
+		_comPtr = new( adapter ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Adapter3( ComPtr< IDXGIAdapter3 > ptr ) {
+		_comPtr = ptr ;
+		_initOrAdd( _comPtr ) ;
+	}
+
+	// --------------------------------------------------------------
+
+	public unsafe void QueryVideoMemoryInfo( uint NodeIndex, 
+											 MemorySegmentGroup memorySegmentGroup,
+											 in QueryVideoMemoryInfo pVideoMemoryInfo ) {
+		fixed ( QueryVideoMemoryInfo* p = &pVideoMemoryInfo ) {
+			COMObject!.QueryVideoMemoryInfo( NodeIndex, 
+											 (DXGI_MEMORY_SEGMENT_GROUP)memorySegmentGroup, 
+											 (DXGI_QUERY_VIDEO_MEMORY_INFO *)p ) ;
+		}
+	}
+
+	public void SetVideoMemoryReservation( uint NodeIndex, 
+										   MemorySegmentGroup memorySegmentGroup, 
+										   ulong Reservation ) {
+		COMObject!.SetVideoMemoryReservation( NodeIndex,
+											  (DXGI_MEMORY_SEGMENT_GROUP)memorySegmentGroup,
+											  Reservation ) ;
+	}
+
+	public void UnregisterHardwareContentProtectionTeardownStatus( uint dwCookie ) => 
+		COMObject!.UnregisterHardwareContentProtectionTeardownStatus( dwCookie ) ;
+
+	public void UnregisterVideoMemoryBudgetChangeNotification( uint dwCookie ) => 
+		COMObject!.UnregisterVideoMemoryBudgetChangeNotification( dwCookie ) ;
+
+	public void RegisterHardwareContentProtectionTeardownStatusEvent( Win32Handle hEvent, out uint pdwCookie ) => 
+		COMObject!.RegisterHardwareContentProtectionTeardownStatusEvent( hEvent, out pdwCookie ) ;
+
+	public void RegisterVideoMemoryBudgetChangeNotificationEvent( Win32Handle hEvent, out uint pdwCookie ) => 
+		COMObject!.RegisterVideoMemoryBudgetChangeNotificationEvent( hEvent, out pdwCookie ) ;
+	
+	// --------------------------------------------------------------
+
+	public new static Type ComType => typeof( IDXGIAdapter3 ) ;
+
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGIAdapter3 ).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
 	
 	// ==============================================================
 } ;
+
+
+// --------------------------------------------------------------------------------------------
+// DXGI.Adapter4 Wrapper :: IDXGIAdapter4
+// --------------------------------------------------------------------------------------------
+
+[Wrapper( typeof( IDXGIAdapter4 ) )]
+internal class Adapter4: Adapter3, 
+						 IAdapter4,
+						 IComObjectRef< IDXGIAdapter4 >,
+						 IUnknownWrapper< IDXGIAdapter4 > {
+	ComPtr< IDXGIAdapter4 >? _comPtr ;
+	public new ComPtr< IDXGIAdapter4 >? ComPointer => 
+		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter4 >( )! ;
+	public override IDXGIAdapter4? COMObject => ComPointer?.Interface ;
+
+	protected AdapterDescription3 _desc3Cached = default ;
+
+	public AdapterDescription3 Description3 {
+		get {
+			if ( _desc3Cached.DeviceId is 0 ) {
+				GetDesc3( out _desc3Cached ) ;
+				_desc2Cached = new AdapterDescription2 {
+					VendorId              = _desc3Cached.VendorId,
+					DeviceId              = _desc3Cached.DeviceId,
+					SubSysId              = _desc3Cached.SubSysId,
+					Revision              = _desc3Cached.Revision,
+					DedicatedVideoMemory  = _desc3Cached.DedicatedVideoMemory,
+					DedicatedSystemMemory = _desc3Cached.DedicatedSystemMemory,
+					SharedSystemMemory    = _desc3Cached.SharedSystemMemory,
+					AdapterLuid           = _desc3Cached.AdapterLuid,
+					Description           = _desc3Cached.Description,
+					Flags                 = (AdapterFlag)_desc3Cached.Flags,
+					ComputePreemptionGranularity = _desc3Cached.ComputePreemptionGranularity,
+					GraphicsPreemptionGranularity = _desc3Cached.GraphicsPreemptionGranularity,
+				} ;
+				_desc1Cached = _desc2Cached.Description1 ;
+				_descCached = new AdapterDescription {
+					VendorId              = _desc3Cached.VendorId,
+					DeviceId              = _desc3Cached.DeviceId,
+					SubSysId              = _desc3Cached.SubSysId,
+					Revision              = _desc3Cached.Revision,
+					DedicatedVideoMemory  = _desc3Cached.DedicatedVideoMemory,
+					DedicatedSystemMemory = _desc3Cached.DedicatedSystemMemory,
+					SharedSystemMemory    = _desc3Cached.SharedSystemMemory,
+					AdapterLuid           = _desc3Cached.AdapterLuid,
+					Description           = _desc3Cached.Description,
+				} ;
+			}
+
+			return _desc3Cached ;
+		}
+	}
+
+	public void GetDesc3( out AdapterDescription3 pDesc ) {
+		unsafe {
+			DXGI_ADAPTER_DESC3 desc = default ;
+			COMObject!.GetDesc3( &desc ) ;
+			pDesc = desc ;
+		}
+	}
+	
+	internal Adapter4( ) {
+		_comPtr = ComResources?.GetPointer< IDXGIAdapter4 >( ) ;
+	}
+	internal Adapter4( nint ptr ) {
+		_comPtr = new( ptr ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Adapter4( IDXGIAdapter4 adapter ) {
+		_comPtr = new( adapter ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	internal Adapter4( ComPtr< IDXGIAdapter4 > ptr ) {
+		_comPtr = ptr ;
+		_initOrAdd( _comPtr ) ;
+	}
+	
+	public new static Type ComType => typeof( IDXGIAdapter4 ) ;
+	
+	public new static ref readonly Guid Guid {
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIAdapter4).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+} ;
+

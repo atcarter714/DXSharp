@@ -1,24 +1,64 @@
-﻿using Windows.Win32.Graphics.Direct3D ;
+﻿#region Using Directives
+using Windows.Win32.Graphics.Direct3D ;
 using DXSharp.Windows.COM ;
-
+#endregion
 namespace DXSharp ;
 
-public class Blob: DisposableObject, IBlob {
-	public ComPtr? ComPtrBase => ComPointer ;
-	public ComPtr< ID3DBlob >? ComPointer { get ; protected set ; }
+
+internal class Blob: DisposableObject,
+					 IBlob,
+					 IComObjectRef< ID3DBlob >, 
+					 IUnknownWrapper< ID3DBlob > {
+	protected ComObject? ComResources { get ; set ; }
+	ComPtr< ID3DBlob >? _comPtr ;
 	
-	public ID3DBlob? COMObject => ComPointer?.Interface ;
+	public ComPtr? ComPtrBase => ComPointer ;
+	public virtual ComPtr? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< ID3DBlob >( ) ;
+	
+	public virtual ID3DBlob? COMObject => ( (ComPtr<ID3DBlob>)ComPointer! )?.Interface ;
 	public int RefCount => (int)( ComPointer?.RefCount ?? 0 ) ;
 	public nint PointerToIUnknown => ComPointer?.BaseAddress ?? 0x0000 ;
 	
-	public Blob( ) { }
-	public Blob( nint address ) => ComPointer = new( address ) ;
-	public Blob( ID3DBlob blob ) => ComPointer = new( blob ) ;
-	public Blob( ComPtr< ID3DBlob > blobPtr ) => ComPointer = blobPtr 
-				?? throw new ArgumentNullException( nameof(blobPtr) ) ;
+	
+	public Blob( ) {
+		_comPtr = ComResources?.GetPointer< ID3DBlob >( ) ;
+	}
+	public Blob( ComPtr< ID3DBlob > comPtr ) {
+		_comPtr = comPtr ;
+		_initOrAdd( _comPtr ) ;
+	}
+	public Blob( nint address ) {
+		_comPtr = new( address ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	public Blob( ID3DBlob comObject ) {
+		_comPtr = new( comObject ) ;
+		_initOrAdd( _comPtr ) ;
+	}
+	void _initOrAdd( ComPtr< ID3DBlob > comPtr ) {
+		ArgumentNullException.ThrowIfNull( comPtr, nameof(comPtr) ) ;
+		
+		if ( ComResources is null ) {
+			ComResources ??= new( comPtr ) ;
+		}
+		else {
+			ComResources.AddPointer( comPtr ) ;
+		}
+	}
+
 	
 	//! IDisposable:
 	public override bool Disposed => ComPointer?.Disposed ?? true ;
-	protected override async ValueTask DisposeUnmanaged( ) =>
-		await Task.Run( ( ) => ComPointer?.Dispose() ) ;
+	
+	protected override async ValueTask DisposeUnmanaged( ) {
+		if( ComPointer is not null && !ComPointer.Disposed ) {
+			await ComPointer.DisposeAsync( ) ;
+			_comPtr = null ;
+		}
+	}
+	
+	public unsafe void* GetBufferPointer( ) => COMObject!.GetBufferPointer( ) ;
+	
+	public nuint GetBufferSize( ) => COMObject!.GetBufferSize( ) ;
 } ;

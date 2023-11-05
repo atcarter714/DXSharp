@@ -1,8 +1,10 @@
 ﻿#region Using Directives
 using System.Collections ;
+using System.Collections.Specialized ;
 using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi.Common ;
 using static DXSharp.InteropUtils ;
 #endregion
@@ -103,4 +105,67 @@ public struct Format8: IEnumerable< Format > {
 		_0 = (DXGI_FORMAT)data._f0, _1 = (DXGI_FORMAT)data._f1, _2 = (DXGI_FORMAT)data._f2, _3 = (DXGI_FORMAT)data._f3,
 		_4 = (DXGI_FORMAT)data._f4, _5 = (DXGI_FORMAT)data._f5, _6 = (DXGI_FORMAT)data._f6, _7 = (DXGI_FORMAT)data._f7,
 	} ;
+} ;
+
+/// <summary>A simple fixed data structure consisting of two <b>ushort</b> values.</summary>
+[EquivalentOf(typeof(__ushort_2))]
+[StructLayout(LayoutKind.Explicit)]
+public struct ushort2: IEquatable< ushort2 > {
+	/// <summary>A ushort2 value of 0 for both X and Y.</summary>
+	public static readonly ushort2 Zero = default ;
+	
+	[FieldOffset(0)] internal unsafe fixed ushort data[ 2 ] ;
+	
+	/// <summary>The X-component value</summary>
+	[FieldOffset( 0 )] public ushort x ;
+	/// <summary>The Y-component value</summary>
+	[FieldOffset( sizeof(ushort)) ] public ushort y ;
+	
+	/// <summary>Reference to the X-component value</summary>
+	public unsafe ref ushort X => ref data[ 0 ] ;
+	/// <summary>Reference to the Y-component value</summary>
+	public unsafe ref ushort Y => ref data[ 0 ] ;
+
+	public ushort2( ushort x = 0, ushort y = 0 ) {
+		unsafe {
+			data[ 0 ] = x ;
+			data[ 1 ] = y ;
+		}
+	}
+	
+	public ushort2( BitVector32 bv ) {
+		unsafe {
+			fixed( ushort* p = data ) {
+				BitVector32* dst = (BitVector32*)p ;
+				*dst = bv ;
+			}
+		}
+	}
+	
+	public bool Equals( ushort2 other ) {
+		unsafe {
+			return data[ 0 ] == other.data[ 0 ] 
+				   && data[ 1 ] == other.data[ 1 ] ;
+		}
+	}
+
+	public override bool Equals( object? obj ) {
+		return obj is ushort2 other && Equals( other ) ;
+	}
+
+	public override int GetHashCode( ) {
+		unsafe {
+			return HashCode.Combine( data[ 0 ], data[ 1 ] ) ;
+		}
+	}
+	
+	public static bool operator ==( ushort2 left, ushort2 right ) {
+		return left.Equals( right ) ;
+	}
+	public static bool operator !=( ushort2 left, ushort2 right ) {
+		return !left.Equals( right ) ;
+	}
+	
+	public static implicit operator ushort2( in (ushort x, ushort y) values ) => new( values.x, values.y ) ;
+	public static implicit operator (ushort x, ushort y)( in ushort2 values ) => ( values.x, values.y ) ;
 } ;

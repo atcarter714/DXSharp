@@ -1,52 +1,20 @@
-﻿using System.Runtime.CompilerServices ;
+﻿#region Using Directives
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
-using Windows.Win32 ;
-using Windows.Win32.Graphics.Dxgi ;
-using Windows.Win32.Graphics.Gdi ;
-using DXSharp.Windows.COM ;
 
+using Windows.Win32 ;
+using Windows.Win32.Graphics.Gdi ;
+using Windows.Win32.Graphics.Dxgi ;
+
+using DXSharp.Windows.COM ;
+#endregion
 namespace DXSharp.DXGI ;
 
 
 [ProxyFor(typeof(IDXGISurface))]
 public interface ISurface:  IDeviceSubObject,
-							IComObjectRef< IDXGISurface >,
-							IUnknownWrapper< IDXGISurface >,
 							IInstantiable {
-	new ComPtr< IDXGISurface >? ComPointer { get ; }
-	new IDXGISurface? COMObject { get ; }
-
 	
-	// ----------------------------------------------------------
-	// Explicit Interface Implementations / Disambiguation ::
-	// ----------------------------------------------------------
-	IDXGISurface? IComObjectRef< IDXGISurface >.COMObject => COMObject ;
-	IDXGIObject? IComObjectRef< IDXGIObject >.COMObject => COMObject ;
-	IDXGIObject? IObject.COMObject => COMObject ;
-	
-	ComPtr< IDXGIObject >? IUnknownWrapper< IDXGIObject >.ComPointer => new( COMObject! ) ;
-	ComPtr< IDXGISurface >? IUnknownWrapper< IDXGISurface >.ComPointer => ComPointer ;
-	ComPtr< IDXGIObject >? IObject.ComPointer => new( COMObject! ) ;
-	
-	new static Type ComType => typeof( IDXGISurface ) ;
-	new static Guid InterfaceGUID => typeof( IDXGISurface ).GUID ;
-	
-	static Guid IUnknownWrapper.InterfaceGUID => InterfaceGUID ;
-	static Type IUnknownWrapper.ComType => ComType ;
-
-	static ref readonly Guid IComIID.Guid {
-		[MethodImpl( MethodImplOptions.AggressiveInlining )]
-		get {
-			ReadOnlySpan< byte > data = typeof(IDXGISurface).GUID
-														   .ToByteArray( ) ;
-			
-			return ref Unsafe
-					   .As< byte, Guid >( ref MemoryMarshal
-											  .GetReference(data) ) ;
-		}
-	}
-
-
 	/// <summary>Get a description of the surface.</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_surface_desc">DXGI_SURFACE_DESC</a>*</b> A pointer to the surface description (see <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_surface_desc">DXGI_SURFACE_DESC</a>).</para>
@@ -75,7 +43,7 @@ public interface ISurface:  IDeviceSubObject,
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; otherwise, returns one of the error codes that are described in the <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a> topic.</para>
 	/// </returns>
 	/// <remarks>Use <b>IDXGISurface::Map</b> to access a surface from the CPU. To release a mapped surface (and allow GPU access) call <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgisurface-unmap">IDXGISurface::Unmap</a>.</remarks>
-	void Map( ref MappedRect pLockedRect, uint MapFlags ) ;
+	void Map( ref MappedRect pLockedRect, MapFlags MapFlags ) ;
 	
 	/// <summary>Invalidate the pointer to the surface retrieved by IDXGISurface::Map and re-enable GPU access to the resource.</summary>
 	/// <returns>
@@ -85,57 +53,31 @@ public interface ISurface:  IDeviceSubObject,
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgisurface-unmap">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	void Unmap( ) ;
-} ;
-
-
-
-[ProxyFor(typeof(IDXGISurface1))]
-public interface ISurface1: ISurface,
-							IComObjectRef< IDXGISurface1 >,
-							IUnknownWrapper< IDXGISurface1 >  {
 	
-	new ComPtr< IDXGISurface1 >? ComPointer { get ; }
-	new IDXGISurface1? COMObject { get ; }
-	
-	// ----------------------------------------------------------
-	// Explicit Interface Implementations / Disambiguation ::
-	// ----------------------------------------------------------
-	IDXGIObject? IObject.COMObject => COMObject ;
-	IDXGISurface? ISurface.COMObject => COMObject ;
-	IDXGIObject? IComObjectRef< IDXGIObject >.COMObject => COMObject ;
-	IDXGISurface? IComObjectRef< IDXGISurface >.COMObject => COMObject ;
-	IDXGISurface1? IComObjectRef< IDXGISurface1 >.COMObject => COMObject ;
-	
-	ComPtr< IDXGISurface1 >? IUnknownWrapper< IDXGISurface1 >.ComPointer => ComPointer ;
-	ComPtr< IDXGIObject >? IObject.ComPointer => new( COMObject! ) ;
-	ComPtr< IDXGISurface >? ISurface.ComPointer => new( COMObject! ) ;
-	ComPtr< IDXGIObject >? IUnknownWrapper< IDXGIObject >.ComPointer => new( COMObject! ) ;
-	ComPtr< IDXGISurface >? IUnknownWrapper< IDXGISurface >.ComPointer => new( COMObject! ) ;
-	
-	new static Type ComType => typeof( IDXGISurface1 ) ;
-	static Type IUnknownWrapper.ComType => typeof(IDXGISurface1) ;
-	
-	new static Guid InterfaceGUID => typeof( IDXGISurface1 ).GUID ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(IDXGISurface1).GUID ;
-
-	void IDisposable.Dispose( ) => ComPointer?.Dispose( ) ;
-
-	static IInstantiable IInstantiable. Instantiate( )                      => new Surface1( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Surface1( pComObj ) ;
-	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Surface1( (pComObj as IDXGISurface1)! ) ;
-
+	// --------------------------------------------------------------------------------------------
+	new static Type ComType => typeof( IDXGISurface ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = typeof(IDXGISurface1).GUID
-															 .ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(IDXGISurface).GUID
+														   .ToByteArray( ) ;
 			
 			return ref Unsafe
 					   .As< byte, Guid >( ref MemoryMarshal
 											  .GetReference(data) ) ;
 		}
 	}
-	
+	// =================================================================================================
+} ;
+
+ 
+/// <summary>
+/// The <a href="https://learn.microsoft.com/en-us/windows/win32/api/DXGI/nn-dxgi-idxgisurface1">IDXGISurface1</a> interface
+/// extends the <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgisurface">IDXGISurface</a> by adding support for using Windows Graphics Device Interface (GDI) to render to a Microsoft
+/// DirectX Graphics Infrastructure (DXGI) surface.
+/// </summary>
+[ProxyFor(typeof(IDXGISurface1))]
+public interface ISurface1: ISurface  {
 	
 	/// <summary>Returns a device context (DC) that allows you to render to a Microsoft DirectX Graphics Infrastructure (DXGI) surface using Windows Graphics Device Interface (GDI).</summary>
 	/// <param name="Discard">
@@ -169,30 +111,14 @@ public interface ISurface1: ISurface,
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgisurface1-releasedc#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
 	void ReleaseDC( in Rect? pDirtyRect = default ) ;
-} ;
-
-
-[ProxyFor( typeof( IDXGISurface2 ) )]
-public interface ISurface2: ISurface1,
-							IComObjectRef< IDXGISurface2 >,
-							IUnknownWrapper< IDXGISurface2 > {
-	new ComPtr< IDXGISurface2 >? ComPointer { get ; }
-	new IDXGISurface2? COMObject { get ; }
-
-	// ----------------------------------------------------------
-	// Explicit Interface Implementations / Disambiguation ::
-	// ----------------------------------------------------------
-
-	new static Type ComType => typeof( IDXGISurface2 ) ;
-	new static Guid InterfaceGUID => typeof( IDXGISurface2 ).GUID ;
-	static Type IUnknownWrapper.ComType => typeof( IDXGISurface2 ) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof( IDXGISurface2 ).GUID ;
-
+	
+	
+	new static Type ComType => typeof( IDXGISurface1 ) ;
 	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = typeof(IDXGISurface2).GUID
+			ReadOnlySpan< byte > data = typeof(IDXGISurface1).GUID
 															 .ToByteArray( ) ;
 			
 			return ref Unsafe
@@ -201,27 +127,18 @@ public interface ISurface2: ISurface1,
 		}
 	}
 	
-	static IInstantiable IInstantiable. Instantiate( )                => new Surface2( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Surface2( pComObj ) ;
-	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
-		new Surface2( (pComObj as IDXGISurface2)! ) ;
+	static IInstantiable IInstantiable. Instantiate( ) => new Surface1( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Surface1( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Surface1( (pComObj as IDXGISurface1)! ) ;
 
-	IDXGIObject? IObject.COMObject => COMObject ;
-	IDXGISurface? ISurface.COMObject => COMObject ;
-	IDXGISurface1? ISurface1.COMObject => COMObject ;
-	IDXGIObject? IComObjectRef< IDXGIObject >.COMObject => COMObject ;
-	IDXGISurface? IComObjectRef< IDXGISurface >.COMObject => COMObject ;
-	IDXGISurface1? IComObjectRef< IDXGISurface1 >.COMObject => COMObject ;
-	IDXGISurface2? IComObjectRef< IDXGISurface2 >.COMObject => COMObject ;
+} ;
 
-	ComPtr< IDXGISurface2 >? IUnknownWrapper< IDXGISurface2 >.ComPointer => ComPointer ;
-	ComPtr< IDXGIObject >? IObject.ComPointer => new( COMObject! ) ;
-	ComPtr< IDXGISurface >? ISurface.ComPointer => new( COMObject! ) ;
-	ComPtr< IDXGISurface1 >? ISurface1.ComPointer => new( COMObject! ) ;
-	ComPtr< IDXGIObject >? IUnknownWrapper< IDXGIObject >.ComPointer => new( COMObject! ) ;
-	ComPtr< IDXGISurface >? IUnknownWrapper< IDXGISurface >.ComPointer => new( COMObject! ) ;
-	ComPtr< IDXGISurface1 >? IUnknownWrapper< IDXGISurface1 >.ComPointer => new( COMObject! ) ;
 
+[ProxyFor( typeof( IDXGISurface2 ) )]
+public interface ISurface2: ISurface1,
+							IComObjectRef< IDXGISurface2 >,
+							IUnknownWrapper< IDXGISurface2 > {
+	// --------------------------------------------------------------------------------------------
 	
 	/// <summary>Gets the parent resource and subresource index that support a subresource surface.</summary>
 	/// <param name="riid">The globally unique identifier (GUID)  of the requested interface type.</param>
@@ -238,5 +155,27 @@ public interface ISurface2: ISurface1,
 	void GetResource< TRes >( in Guid riid, out TRes ppParentResource, out uint pSubresourceIndex )
 																		where TRes: IUnknownWrapper, 
 																					IInstantiable ;
+	
+	// --------------------------------------------------------------------------------------------
+	new static Type ComType => typeof( IDXGISurface2 ) ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGISurface2).GUID
+															 .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
+	static IInstantiable IInstantiable. Instantiate( ) => new Surface2( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Surface2( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new Surface2( (pComObj as IDXGISurface2)! ) ;
+	// =================================================================================================
 } ;
 	  
+

@@ -1,33 +1,51 @@
 ﻿#region Using Directives
+
 using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
+using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.DXGI ;
 
 
-public class OutputDuplication: Object, IOutputDuplication {
-	public new static Type ComType => typeof( IDXGIOutputDuplication ) ;
-	public new static Guid InterfaceGUID => typeof( IDXGIOutputDuplication ).GUID ;
+[Wrapper(typeof(IDXGIOutputDuplication))]
+internal class OutputDuplication: Object, IOutputDuplication {
+	// ----------------------------------------------------------------------------------------------
+	ComPtr< IDXGIOutputDuplication >? _comPtr ;
+	public new virtual ComPtr< IDXGIOutputDuplication >? ComPointer => 
+		_comPtr ??= ComResources?.GetPointer<IDXGIOutputDuplication>(  ) ;
+	public override IDXGIOutputDuplication? COMObject => ComPointer?.Interface ;
 	
-	
-	public new IDXGIOutputDuplication? COMObject => ComPointer?.Interface ;
-	public new ComPtr< IDXGIOutputDuplication >? ComPointer { get ; protected set ; }
-	
-	
-	internal OutputDuplication( ) { }
-	internal OutputDuplication( nint ptr ) => ComPointer = new( ptr ) ;
-	internal OutputDuplication( IDXGIOutputDuplication dxgiObj ) => ComPointer = new( dxgiObj ) ;
-	internal OutputDuplication( ComPtr< IDXGIOutputDuplication >? comPtr ) => ComPointer = comPtr ;
+	// ----------------------------------------------------------------------------------------------
+	public OutputDuplication( ) {
+		_comPtr = ComResources?.GetPointer<IDXGIOutputDuplication>(  ) ;
+		if ( _comPtr is not null ) _initOrAdd( _comPtr ) ;
+	}
+	public OutputDuplication( nint pComObj ) {
+		_comPtr = new( pComObj ) ;
+		if ( _comPtr is not null ) _initOrAdd( _comPtr ) ;
+	}
+	public OutputDuplication( IDXGIOutputDuplication pComObj ) {
+		_comPtr = new( pComObj ) ;
+		if ( _comPtr is not null ) _initOrAdd( _comPtr ) ;
+	}
+	public OutputDuplication( ComPtr< IDXGIOutputDuplication > ptr ) {
+		_comPtr = ptr ;
+		if ( _comPtr is not null ) _initOrAdd( _comPtr ) ;
+	}
 
+	// ----------------------------------------------------------------------------------------------
+	
 	IDXGIOutputDuplication _dxgiInterface => COMObject ??
 											 throw ( ComPointer is not null && ComPointer.Disposed
 														 ? new ObjectDisposedException( nameof(OutputDuplication) )
 														 : new NullReferenceException( $"{nameof(OutputDuplication)} :: " +
 																					   $"internal {nameof(IDXGIOutputDuplication)} null reference." ) ) ;
 	
-	
+	// ----------------------------------------------------------------------------------------------
 	
 	public void GetDesc( out OutputDuplicationDescription pDesc ) {
 		
@@ -39,101 +57,64 @@ public class OutputDuplication: Object, IOutputDuplication {
 		}
 	}
 
-	public void AcquireNextFrame( uint TimeoutInMilliseconds, 
+	public void AcquireNextFrame( uint timeoutInMilliseconds, 
 								  out OutputDuplicationFrameInfo pFrameInfo,
 								  out IResource? ppDesktopResource ) {
 		pFrameInfo = default ;
 		ppDesktopResource = default ;
 		unsafe {
 			DXGI_OUTDUPL_FRAME_INFO frameInfo = default ;
-			_dxgiInterface.AcquireNextFrame( TimeoutInMilliseconds, &frameInfo, out var resource ) ;
+			_dxgiInterface.AcquireNextFrame( timeoutInMilliseconds, &frameInfo, out var resource ) ;
 			pFrameInfo = frameInfo ;
 			ppDesktopResource = new Resource( resource ) ;
 		}
 	}
 
 	
-	const int MAX_RECTS = 0x100 ;
-	public void GetFrameDirtyRects( uint DirtyRectsBufferSize,
-									out Span<Rect> pDirtyRectsBuffer,
-									out uint pDirtyRectsBufferSizeRequired ) {
-		if( DirtyRectsBufferSize > MAX_RECTS )
-			throw new ArgumentOutOfRangeException( nameof(DirtyRectsBufferSize), DirtyRectsBufferSize,
+	const int MAX_RECTS = 0x400 ;
+	public HResult GetFrameDirtyRects( uint dirtyRectsBufferSize,
+									   out Span< Rect > pDirtyRectsBuffer,
+									   out uint pDirtyRectsBufferSizeRequired ) {
+		if( dirtyRectsBufferSize > MAX_RECTS )
+			throw new ArgumentOutOfRangeException( nameof(dirtyRectsBufferSize), dirtyRectsBufferSize,
 												   $"{nameof(GetFrameDirtyRects)} :: " +
 												   $"The maximum number of dirty rects is {MAX_RECTS}." ) ;
 		
+		pDirtyRectsBuffer = new Rect[ dirtyRectsBufferSize ] ;
 		
-		pDirtyRectsBuffer = default ;
-		pDirtyRectsBufferSizeRequired = default ;
 		unsafe {
-			RECT* src = null ;
-			var pBuffer = stackalloc RECT[ (int)DirtyRectsBufferSize ] ;
-			_dxgiInterface.GetFrameDirtyRects( DirtyRectsBufferSize, pBuffer, 
-												out pDirtyRectsBufferSizeRequired ) ;
-
-			src = pBuffer ;
-			if ( pDirtyRectsBufferSizeRequired > DirtyRectsBufferSize ) {
-				//! Resize the buffer and try again
-				var retryBuffer = stackalloc RECT[ (int)pDirtyRectsBufferSizeRequired ] ;
-				_dxgiInterface.GetFrameDirtyRects( pDirtyRectsBufferSizeRequired, retryBuffer, 
-												   out uint sizeRequired2 ) ;
-				pDirtyRectsBufferSizeRequired = sizeRequired2 ;
-				src = retryBuffer ;
+			HResult hr = default ;
+			fixed( Rect* rects = &pDirtyRectsBuffer[ 0x00 ] ) {
+				hr = _dxgiInterface.GetFrameDirtyRects( dirtyRectsBufferSize, (RECT *)rects,
+															out pDirtyRectsBufferSizeRequired ) ;
 			}
-			
-			// Convert the RECT* to a Span< Rect > in managed heap memory for safe use:
-			Span< Rect > dst = ( new Rect[ pDirtyRectsBufferSizeRequired ] ).AsSpan( ) ;
-			fixed( Rect* dstSpanPtr = &dst[ 0x00 ] ) {
-				RECT* srcPtr = src, dstPtr = (RECT *)dstSpanPtr ;
-				for ( int i = 0; i < pDirtyRectsBufferSizeRequired; ++i ) {
-					*( dstPtr++ ) = *( srcPtr++ ) ;
-				}
-			}
-			pDirtyRectsBuffer = dst ;
+			return hr ;
 		}
 	}
 
-	const int MAX_MOVE_RECTS = 0x100 ;
-	public void GetFrameMoveRects( uint MoveRectsBufferSize, 
-								   out Span< OutputDuplicationMoveRect > pMoveRectBuffer, 
-								   out uint pMoveRectsBufferSizeRequired ) {
-		if( MoveRectsBufferSize > MAX_MOVE_RECTS )
-			throw new ArgumentOutOfRangeException( nameof(MoveRectsBufferSize), MoveRectsBufferSize,
+	const int MAX_MOVE_RECTS = 0x400 ;
+	public HResult GetFrameMoveRects( uint moveRectsBufferSize, 
+									  out Span< OutputDuplicationMoveRect > pMoveRectBuffer, 
+									  out uint pMoveRectsBufferSizeRequired ) {
+		if( moveRectsBufferSize > MAX_MOVE_RECTS )
+			throw new ArgumentOutOfRangeException( nameof(moveRectsBufferSize), moveRectsBufferSize,
 												   $"{nameof(GetFrameMoveRects)} :: " +
 												   $"The maximum number of move rects is {MAX_MOVE_RECTS}." ) ;
 		
-		 
-		pMoveRectBuffer = default ;
-		pMoveRectsBufferSizeRequired = default ;
+		pMoveRectBuffer = new OutputDuplicationMoveRect[ moveRectsBufferSize ] ;
+		HResult hr = default ;
+		
 		unsafe {
-			DXGI_OUTDUPL_MOVE_RECT* src = null ;
-			var pBuffer = stackalloc DXGI_OUTDUPL_MOVE_RECT[ (int)MoveRectsBufferSize ] ;
-			_dxgiInterface.GetFrameMoveRects( MoveRectsBufferSize, pBuffer, 
-											  out pMoveRectsBufferSizeRequired ) ;
-
-			src = pBuffer ;
-			if ( pMoveRectsBufferSizeRequired > MoveRectsBufferSize ) {
-				//! Resize the buffer and try again
-				var retryBuffer = stackalloc DXGI_OUTDUPL_MOVE_RECT[ (int)pMoveRectsBufferSizeRequired ] ;
-				_dxgiInterface.GetFrameMoveRects( pMoveRectsBufferSizeRequired, retryBuffer, 
-												 out uint sizeRequired2 ) ;
-				pMoveRectsBufferSizeRequired = sizeRequired2 ;
-				src = retryBuffer ;
+			fixed ( OutputDuplicationMoveRect* src = &pMoveRectBuffer[ 0x00 ] ) {
+				hr = _dxgiInterface.GetFrameMoveRects( moveRectsBufferSize, 
+												  (DXGI_OUTDUPL_MOVE_RECT *)src,
+												  out pMoveRectsBufferSizeRequired ) ;
+				return hr ;
 			}
-			
-			// Convert the RECT* to a Span< Rect > in managed heap memory for safe use:
-			Span< OutputDuplicationMoveRect > dst = ( new OutputDuplicationMoveRect[ pMoveRectsBufferSizeRequired ] ).AsSpan( ) ;
-			fixed( OutputDuplicationMoveRect* dstSpanPtr = &dst[ 0x00 ] ) {
-				DXGI_OUTDUPL_MOVE_RECT* srcPtr = src, dstPtr = (DXGI_OUTDUPL_MOVE_RECT *)dstSpanPtr ;
-				for ( int i = 0; i < pMoveRectsBufferSizeRequired; ++i ) {
-					*( dstPtr++ ) = *( srcPtr++ ) ;
-				}
-			}
-			pMoveRectBuffer = dst ;
 		}
 	}
 
-	const int MAX_POINTER_SHAPE_BUFFER = 0x100 ;
+	const int MAX_POINTER_SHAPE_BUFFER = 0x400 ;
 	public void GetFramePointerShape( uint PointerShapeBufferSize, 
 									  nint pPointerShapeBuffer,
 									  out uint pPointerShapeBufferSizeRequired,
@@ -196,9 +177,23 @@ public class OutputDuplication: Object, IOutputDuplication {
 		
 		_dxgiInterface.ReleaseFrame( ) ;
 	}
-
-	public static IInstantiable  Instantiate( )                => new OutputDuplication( ) ;
-	public static IInstantiable Instantiate( IntPtr pComObj ) => new OutputDuplication( pComObj ) ;
+	
+	// ----------------------------------------------------------------------------------------------
+	public new static Type ComType => typeof( IDXGIOutputDuplication ) ;
+	public new static ref readonly Guid Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( IDXGIOutputDuplication ).GUID
+															  .ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+	
+	public static IInstantiable  Instantiate( ) => new OutputDuplication( ) ;
+	public static IInstantiable Instantiate( nint pComObj ) => new OutputDuplication( pComObj ) ;
 	public static IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => 
 		new OutputDuplication( ( pComObj as IDXGIOutputDuplication )! ) ;
+	// ==============================================================================================
 } ;

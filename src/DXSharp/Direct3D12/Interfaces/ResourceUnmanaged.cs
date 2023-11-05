@@ -31,7 +31,7 @@ public unsafe struct ResourceUnmanaged: IComIID {
 		this.lpVtbl = (void **)pVtbl ;
 	}
 	
-	public ResourceUnmanaged( IResource resource ): this( resource.COMObject! ) { }
+	public ResourceUnmanaged( IResource resource ): this( ( (Resource)resource ).COMObject! ) { }
 	
 	// ---------------------------------------------------------------------------------------------------
 	
@@ -297,15 +297,10 @@ public unsafe struct ResourceUnmanaged: IComIID {
 	public static ResourceUnmanaged GetUnmanaged( IResource resource ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 		ArgumentNullException.ThrowIfNull( resource, nameof(resource) ) ;
-		ObjectDisposedException.ThrowIf( resource.COMObject is null, nameof(resource) ) ;
 #endif
-
-		/*var d3d12Resource = resource.COMObject ;
-		Guid iid = typeof( ID3D12Resource ).GUID ;
-		d3d12Resource.QueryInterface( ref iid, out nint pInterface ) ;
-		var unmanaged = new ResourceUnmanaged( pInterface ) ;
-		d3d12Resource.Release( ) ;*/
-		ResourceUnmanaged unmanaged = new( resource.ComPointer.InterfaceVPtr) ;
+		
+		ResourceUnmanaged unmanaged = new( ( (Resource)resource )
+												.ComPointer!.InterfaceVPtr) ;
 		
 		return unmanaged ;
 	}

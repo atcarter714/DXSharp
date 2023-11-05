@@ -254,7 +254,7 @@ namespace DXSharp.Windows {
 		/// and did not execute or schedule the operation.
 		/// </summary>
 		public static readonly HResult DXGI_ERROR_WAS_STILL_DRAWING = (HResult)( -2005270518 ) ;
-
+		
 		#endregion
 	} ;
 }

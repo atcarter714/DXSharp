@@ -1,13 +1,14 @@
 ﻿#region Using Directives
-
-using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using System.Runtime.CompilerServices ;
+using System.Runtime.Versioning ;
 using Windows.Win32 ;
-using Windows.Win32.Foundation ;
-using Windows.Win32.Graphics.Direct3D12 ;
+using Windows.UI.Core ;
 using Windows.Win32.Graphics.Dxgi ;
+using Windows.Win32.Graphics.Direct3D12 ;
 
 using DXSharp.Windows ;
+using DXSharp.Direct3D12 ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
 #endregion
@@ -24,46 +25,10 @@ namespace DXSharp.DXGI ;
 /// </summary>
 [ProxyFor(typeof(IDXGIFactory))]
 public interface IFactory: IObject,
-						   IComObjectRef< IDXGIFactory >,
-						   IUnknownWrapper< IDXGIFactory >,
 						   IInstantiable {
+	// -----------------------------------------------------------------------------------------------
 	public const int MAX_ADAPTER_COUNT = 0x0F ;
-	new static Type ComType => typeof( IDXGIFactory ) ;
-	new static Guid InterfaceGUID => typeof( IDXGIFactory ).GUID ;
-	
-	new ComPtr< IDXGIFactory >? ComPointer { get ; }
-	new IDXGIFactory? COMObject => ComPointer?.Interface ;
-	IDXGIFactory? IComObjectRef< IDXGIFactory >.COMObject => COMObject ;
-	
-	
-	static ref readonly Guid IComIID.Guid {
-		[MethodImpl( MethodImplOptions.AggressiveInlining )]
-		get {
-			ReadOnlySpan< byte > data = typeof(IDXGIFactory).GUID
-																	.ToByteArray( ) ;
-			
-			return ref Unsafe
-					   .As< byte, Guid >( ref MemoryMarshal
-											  .GetReference(data) ) ;
-		}
-	}
-
-	static IInstantiable IInstantiable. Instantiate( )                      => new Factory( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr       pComObj ) => new Factory( pComObj ) ;
-	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory( pComObj! ) ;
-
-	internal static virtual IFactory Create< TFactory >( ) 
-		where TFactory: class, IFactory, IInstantiable {
-		var factory = DXGIFunctions.CreateDXGIFactory< IDXGIFactory >( out var hr ) ;
-		
-		return ( (IFactory)TFactory.Instantiate(factory) ) 
-			   ?? throw new DirectXComError( hr, $"{nameof(TFactory)} -> Create :: " +
-												 $"Failed to create DXGI Factory interface with " +
-												 $"GUID: {TFactory.InterfaceGUID}! HRESULT: {hr.Value}",
-											 new($"{nameof(PInvoke.CreateDXGIFactory)} :: " +
-												 $"Failed to create DXGI Factory interface! HRESULT: {hr.Value}") ) ;
-	}
-	
+	// -----------------------------------------------------------------------------------------------
 	
 	/// <summary>Enumerates the adapters (video cards).</summary>
 	/// <param name="index">
@@ -135,8 +100,8 @@ public interface IFactory: IObject,
 	HResult CreateSwapChain< TCmdObj, TSwapChain >( in  TCmdObj pCmdQueue,
 													in  SwapChainDescription desc,
 													out TSwapChain? ppSwapChain )
-														where TCmdObj: class, IUnknownWrapper< ID3D12CommandQueue >
-														where TSwapChain: class, ISwapChain ;
+														where TCmdObj: ICommandQueue
+														where TSwapChain: ISwapChain ;
 
 	
 	/// <summary>Create an adapter interface that represents a software adapter.</summary>
@@ -155,8 +120,39 @@ public interface IFactory: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createsoftwareadapter">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateSoftwareAdapter< TAdapter >( HInstance Module, out TAdapter? ppAdapter ) 
-		where TAdapter: class, IAdapter, IInstantiable<TAdapter> ;
+		where TAdapter: class, IAdapter, IInstantiable ;
 	
+	// -----------------------------------------------------------------------------------------------
+	new static Type ComType => typeof( IDXGIFactory ) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
+	static IInstantiable IInstantiable.Instantiate( ) => new Factory( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Factory( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory(( pComObj as IDXGIFactory )!) ;
+	// -----------------------------------------------------------------------------------------------
+	
+	internal static virtual TFactory Create< TFactory >( ) where TFactory: IFactory, IInstantiable {
+		var factory = DXGIFunctions.CreateDXGIFactory< IDXGIFactory >( out var hr ) ;
+		
+		return ( (TFactory)TFactory.Instantiate(factory) ) 
+			   ?? throw new DirectXComError( hr, $"{nameof(TFactory)} -> Create :: " +
+												 $"Failed to create DXGI Factory interface with " +
+												 $"GUID: {TFactory.Guid}! HRESULT: {hr.Value}",
+											 new($"{nameof(PInvoke.CreateDXGIFactory)} :: " +
+												 $"Failed to create DXGI Factory interface! HRESULT: {hr.Value}") ) ;
+	}
+	
+	// =====================================================================================
 } ;
 
 
@@ -165,32 +161,7 @@ public interface IFactory: IObject,
 // -------------------------------------------------------------------------------------
 
 [ProxyFor(typeof(IDXGIFactory1))]
-public interface IFactory1: IFactory, 
-							IComObjectRef< IDXGIFactory1 >,
-							IUnknownWrapper< IDXGIFactory1 > {
-	new IDXGIFactory1? COMObject => ComPointer?.Interface ;
-	IDXGIFactory? IComObjectRef< IDXGIFactory >.COMObject => COMObject ;
-	
-	new ComPtr< IDXGIFactory1 >? ComPointer { get ; }
-
-	ComPtr< IDXGIFactory >? IFactory.ComPointer =>
-		ComPtr.Convert< IDXGIFactory1, IDXGIFactory >( ComPointer ) ;
-	
-
-
-	static ref readonly Guid IComIID.Guid {
-		[MethodImpl( MethodImplOptions.AggressiveInlining )]
-		get {
-			ReadOnlySpan< byte > data = typeof(IDXGIFactory1).GUID
-															.ToByteArray( ) ;
-			
-			return ref Unsafe
-					   .As< byte, Guid >( ref MemoryMarshal
-											  .GetReference(data) ) ;
-		}
-	}
-
-	
+public interface IFactory1: IFactory {
 	
 	/// <summary>Enumerates both adapters (video cards) with or without outputs.</summary>
 	/// <param name="index">
@@ -219,47 +190,14 @@ public interface IFactory1: IFactory,
 	/// <para>This method is not supported by DXGI 1.0, which shipped in WindowsVista and Windows Server2008. DXGI 1.1 support is required, which is available on Windows7, Windows Server2008R2, and as an update to WindowsVista with Service Pack2 (SP2) (<a href="https://support.microsoft.com/topic/application-compatibility-update-for-windows-vista-windows-server-2008-windows-7-and-windows-server-2008-r2-february-2010-3eb7848b-9a76-85fe-98d0-729e3827ea60">KB 971644</a>) and Windows Server2008 (<a href="https://support.microsoft.com/kb/971512/">KB 971512</a>).</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgifactory1-iscurrent#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	bool IsCurrent( ) => COMObject!.IsCurrent( ) ;
+	bool IsCurrent( ) ;
 	
-
-	
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Factory1( pComObj ) ;
-
-	static IFactory IFactory.Create< TFactory >( ) {
-		var factory = DXGIFunctions.CreateDXGIFactory1< IDXGIFactory1 >( out var hr ) ;
-		
-		return ( (IFactory)TFactory.Instantiate(factory) ) 
-			   ?? throw new DirectXComError( hr, $"{nameof(TFactory)} -> Create :: " +
-												 $"Failed to create DXGI Factory interface with " +
-												 $"GUID: {TFactory.InterfaceGUID}! HRESULT: {hr.Value}",
-											 new($"{nameof(PInvoke.CreateDXGIFactory)} :: " +
-												 $"Failed to create DXGI Factory interface! HRESULT: {hr.Value}") ) ;
-	}
-} ;
-
-
-// -------------------------------------------------------------------------------------
-// Interface Version: IDXGIFactory2 ::
-// -------------------------------------------------------------------------------------
-
-[ProxyFor(typeof(IDXGIFactory2))]
-public interface IFactory2: IFactory1,
-							IComObjectRef< IDXGIFactory2 >,
-							IUnknownWrapper< IDXGIFactory2 > {
-	new IDXGIFactory2? COMObject => ComPointer?.Interface ;
-	IDXGIFactory? IComObjectRef< IDXGIFactory >.COMObject => COMObject ;
-
-	new ComPtr< IDXGIFactory2 > ComPointer { get ; }
-	
-	ComPtr< IDXGIFactory1 > IFactory1.ComPointer =>
-		ComPtr.Convert< IDXGIFactory2, IDXGIFactory1 >( ComPointer ) ;
-
-	
-	
+	// -----------------------------------------------------------------------------------------------
+	new static Type ComType => typeof( IDXGIFactory1 ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = typeof(IDXGIFactory2).GUID
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory1).GUID
 															.ToByteArray( ) ;
 			
 			return ref Unsafe
@@ -268,7 +206,34 @@ public interface IFactory2: IFactory1,
 		}
 	}
 
+	static IInstantiable IInstantiable.Instantiate( ) => new Factory1( ) ;
+	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Factory1( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory1( ( pComObj as IDXGIFactory1 )! ) ;
+	// -----------------------------------------------------------------------------------------------
 	
+	
+	public static TFactory Create1< TFactory >( ) where TFactory: IFactory1, IInstantiable {
+		var factory = DXGIFunctions.CreateDXGIFactory1< IDXGIFactory1 >( out var hr ) ;
+		
+		return ( (TFactory)TFactory.Instantiate(factory) ) 
+			   ?? throw new DirectXComError( hr, $"{nameof(TFactory)} -> Create :: " +
+												 $"Failed to create DXGI Factory interface with " +
+												 $"GUID: {TFactory.Guid}! HRESULT: {hr.Value}",
+											 new($"{nameof(PInvoke.CreateDXGIFactory1)} :: " +
+												 $"Failed to create DXGI Factory interface! HRESULT: {hr.Value}") ) ;
+	}
+	
+	// -----------------------------------------------------------------------------------------------
+} ;
+
+
+// -------------------------------------------------------------------------------------
+// Interface Version: IDXGIFactory2 ::
+// -------------------------------------------------------------------------------------
+
+[ProxyFor(typeof(IDXGIFactory2))]
+public interface IFactory2: IFactory1 {
+	// ----------------------------------------------------------------------------------------------------
 
 	/// <summary>Determines whether to use stereo mode.</summary>
 	/// <returns>
@@ -301,12 +266,13 @@ public interface IFactory2: IFactory1,
 	/// <para><div class="alert"><b>Note</b>Do not use this method in Windows Store apps. Instead, use <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforcorewindow">IDXGIFactory2::CreateSwapChainForCoreWindow</a>.</div> <div></div> If you specify the width, height, or both (<b>Width</b> and <b>Height</b> members of <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_swap_chain_desc1">SwapChainDescription1</a> that <i>pDesc</i> points to) of the swap chain as zero, the runtime obtains the size from the output window that the <i>hWnd</i> parameter specifies. You can subsequently call the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-getdesc1">IDXGISwapChain1::GetDesc1</a> method to retrieve the assigned width or height value. Because you can associate only one flip presentation model swap chain at a time with an <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a>, the Microsoft Direct3D11 policy of deferring the destruction of objects can cause problems if you attempt to destroy a flip presentation model swap chain and replace it with another swap chain. For more info about this situation, see <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nf-d3d11-id3d11devicecontext-flush">Deferred Destruction Issues with Flip Presentation Swap Chains</a>. For info about how to choose a format for the swap chain's back buffer, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/converting-data-color-space">Converting data for the color space</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforhwnd#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	unsafe void CreateSwapChainForHwnd( object pDevice,  HWnd hWnd, 
-										SwapChainDescription1* pDesc, 
-										[Optional] SwapChainFullscreenDescription* pFullscreenDesc, 
-										IDXGIOutput pRestrictToOutput, 
-										out IDXGISwapChain1 ppSwapChain ) ;
-
+	void CreateSwapChainForHwnd( ICommandAllocator pDevice,
+								 HWnd hWnd,
+								 in SwapChainDescription1 pDesc,
+								 [Optional] in SwapChainFullscreenDescription pFullscreenDesc,
+								 IOutput pRestrictToOutput,
+								 out ISwapChain1 ppSwapChain ) ;
+	
 	
 	/// <summary>Creates a swap chain that is associated with the CoreWindow object for the output window for the swap chain.</summary>
 	/// <param name="pDevice">For Direct3D 11, and earlier versions of Direct3D, this is a pointer to the Direct3D device for the swap chain. For Direct3D 12 this is a pointer to a direct command queue (refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12commandqueue">ID3D12CommandQueue</a>). This parameter cannot be <b>NULL</b>.</param>
@@ -324,10 +290,11 @@ public interface IFactory2: IFactory1,
 	/// <para>This doc was truncated.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforcorewindow#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	unsafe void CreateSwapChainForCoreWindow( object pDevice,  object pWindow, 
-											  SwapChainDescription1* pDesc, 
-											  IDXGIOutput pRestrictToOutput, 
-											  out IDXGISwapChain1 ppSwapChain ) ;
+	void CreateSwapChainForCoreWindow< TAlloc >( TAlloc pDevice, 
+												  CoreWindow pWindow,
+												  in SwapChainDescription1 pDesc,
+												  IOutput pRestrictToOutput,
+												  out ISwapChain1 ppSwapChain ) where TAlloc: class, ICommandAllocator ;
 
 	
 	/// <summary>Identifies the adapter on which a shared resource object was created.</summary>
@@ -338,7 +305,7 @@ public interface IFactory2: IFactory1,
 	/// <para>This doc was truncated.</para>
 	/// </returns>
 	/// <remarks>You cannot share resources across adapters. Therefore, you cannot open a shared resource on an adapter other than the adapter on which the resource was created.  Call <b>GetSharedResourceAdapterLuid</b> before you open a shared resource to ensure that the resource was created on the appropriate adapter. To open a shared resource, call the <a href="https://docs.microsoft.com/windows/desktop/api/d3d11_1/nf-d3d11_1-id3d11device1-opensharedresource1">ID3D11Device1::OpenSharedResource1</a> or <a href="https://docs.microsoft.com/windows/desktop/api/d3d11_1/nf-d3d11_1-id3d11device1-opensharedresourcebyname">ID3D11Device1::OpenSharedResourceByName</a> method.</remarks>
-	unsafe void GetSharedResourceAdapterLuid( HANDLE hResource, LUID* pLuid ) ;
+	void GetSharedResourceAdapterLuid( Win32Handle hResource, out Luid pLuid ) ;
 
 	
 	/// <summary>Registers an application window to receive notification messages of changes of stereo status.</summary>
@@ -365,7 +332,7 @@ public interface IFactory2: IFactory1,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-registerstereostatusevent">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void RegisterStereoStatusEvent( HANDLE hEvent, out uint pdwCookie ) ;
+	void RegisterStereoStatusEvent( Win32Handle hEvent, out uint pdwCookie ) ;
 
 	
 	/// <summary>Unregisters a window or an event to stop it from receiving notification when stereo status changes.</summary>
@@ -397,7 +364,7 @@ public interface IFactory2: IFactory1,
 	/// <para>If you call <b>RegisterOcclusionStatusEvent</b> multiple times with the same event handle, <b>RegisterOcclusionStatusEvent</b> fails with <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a>. If you call <b>RegisterOcclusionStatusEvent</b> multiple times with the different event handles, <b>RegisterOcclusionStatusEvent</b> properly registers the events.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-registerocclusionstatusevent#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void RegisterOcclusionStatusEvent( HANDLE hEvent, out uint pdwCookie ) ;
+	void RegisterOcclusionStatusEvent( Win32Handle hEvent, out uint pdwCookie ) ;
 
 	
 	/// <summary>Unregisters a window or an event to stop it from receiving notification when occlusion status changes.</summary>
@@ -425,13 +392,275 @@ public interface IFactory2: IFactory1,
 	/// <para>You can use composition swap chains with either: * <a href="https://docs.microsoft.com/windows/win32/directcomp/directcomposition-portal">DirectComposition</a>'s <a href="https://docs.microsoft.com/windows/win32/api/dcomp/nn-dcomp-idcompositionvisual">IDCompositionVisual</a> interface, * System XAML's [SwapChainPanel](/uwp/api/windows.ui.xaml.controls.swapchainpanel) or [SwapChainBackgroundPanel](/uwp/api/windows.ui.xaml.controls.swapchainbackgroundpanel) classes. * [Windows UI Library (WinUI) 3](https://docs.microsoft.com/windows/apps/winui/) XAML's [SwapChainPanel](/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.swapchainpanel) or [SwapChainBackgroundPanel](/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.swapchainbackgroundpanel) classes. For DirectComposition, you can call the <a href="https://docs.microsoft.com/windows/win32/api/dcomp/nf-dcomp-idcompositionvisual-setcontent">IDCompositionVisual::SetContent</a> method to set the swap chain as the content of a <a href="https://docs.microsoft.com/windows/win32/directcomp/basic-concepts">visual object</a>, which then allows you to bind the swap chain to the visual tree. For XAML, the <b>SwapChainBackgroundPanel</b> class exposes a classic COM interface <b>ISwapChainBackgroundPanelNative</b>. You can use the <a href="https://docs.microsoft.com/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainbackgroundpanelnative-setswapchain">ISwapChainBackgroundPanelNative::SetSwapChain</a> method to bind to the XAML UI graph. For info about how to use composition swap chains with XAML’s <b>SwapChainBackgroundPanel</b> class, see <a href="https://docs.microsoft.com/windows/uwp/gaming/directx-and-xaml-interop">DirectX and XAML interop</a>. The <a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-setfullscreenstate">IDXGISwapChain::SetFullscreenState</a>, <a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-resizetarget">IDXGISwapChain::ResizeTarget</a>, <a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-getcontainingoutput">IDXGISwapChain::GetContainingOutput</a>, <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-gethwnd">IDXGISwapChain1::GetHwnd</a>, and <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-getcorewindow">IDXGISwapChain::GetCoreWindow</a> methods aren't valid on this type of swap chain. If you call any of these methods on this type of swap chain, they fail. For info about how to choose a format for the swap chain's back buffer, see <a href="https://docs.microsoft.com/windows/win32/direct3ddxgi/converting-data-color-space">Converting data for the color space</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforcomposition#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	unsafe void CreateSwapChainForComposition( object pDevice, 
-											   SwapChainDescription1* pDesc, 
-											   IDXGIOutput pRestrictToOutput, 
-											   out IDXGISwapChain1 ppSwapChain ) ;
+	void CreateSwapChainForComposition< TAlloc >( TAlloc pDevice,
+												  in SwapChainDescription1 pDesc,
+												  IOutput pRestrictToOutput,
+												  out ISwapChain1 ppSwapChain ) 
+														where TAlloc: class, ICommandAllocator ;
 
+	// ----------------------------------------------------------------------------------------------------
+	new static Type ComType => typeof(IDXGIFactory2) ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory2).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	static IInstantiable IInstantiable.Instantiate( ) => new Factory2( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Factory2( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory2( (pComObj as IDXGIFactory2)! ) ;
+	// ====================================================================================================
 } ;
 
+
+// -------------------------------------------------------------------------------------
+// Interface Version: IDXGIFactory3 ::
+// -------------------------------------------------------------------------------------
+
+[ProxyFor( typeof( IDXGIFactory3 ) )]
+public interface IFactory3: IFactory2 {
+	/// <summary>Gets the flags that were used when a Microsoft DirectX Graphics Infrastructure (DXGI) object was created.</summary>
+	/// <returns>The creation flags.</returns>
+	/// <remarks>The <b>GetCreationFlags</b> method returns flags that were passed to the  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_3/nf-dxgi1_3-createdxgifactory2">CreateDXGIFactory2</a> function, or were implicitly constructed by <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-createdxgifactory">CreateDXGIFactory</a>, <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-createdxgifactory1">CreateDXGIFactory1</a>,  <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nf-d3d11-d3d11createdevice">D3D11CreateDevice</a>, or <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nf-d3d11-d3d11createdeviceandswapchain">D3D11CreateDeviceAndSwapChain</a>.</remarks>
+	uint GetCreationFlags( ) ;
+	
+	new static Type ComType => typeof(IDXGIFactory3) ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory3).GUID
+															 .ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	static IInstantiable IInstantiable.Instantiate( ) => new Factory3( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Factory3( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory3( (pComObj as IDXGIFactory3)! ) ;
+} ;
+
+
+ 
+// -------------------------------------------------------------------------------------
+// Interface Version: IDXGIFactory4 ::
+// -------------------------------------------------------------------------------------
+
+[ProxyFor( typeof( IDXGIFactory4 ) )]
+public interface IFactory4: IFactory3 {
+	
+	/// <summary>Outputs the IDXGIAdapter for the specified LUID.</summary>
+	/// <param name="AdapterLuid">
+	/// <para>Type: <b><a href="https://docs.microsoft.com/previous-versions/windows/hardware/drivers/ff549708(v=vs.85)">LUID</a></b> A unique value that identifies the adapter. See <a href="https://docs.microsoft.com/previous-versions/windows/hardware/drivers/ff549708(v=vs.85)">LUID</a> for a definition of the structure. <b>LUID</b> is defined in dxgi.h.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/nf-dxgi1_4-idxgifactory4-enumadapterbyluid#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="riid">
+	/// <para>Type: <b>REFIID</b> The globally unique identifier (GUID) of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> object referenced by the <i>ppvAdapter</i> parameter.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/nf-dxgi1_4-idxgifactory4-enumadapterbyluid#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppvAdapter">
+	/// <para>Type: <b>void**</b> The address of an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> interface pointer to the adapter. This parameter must not be NULL.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/nf-dxgi1_4-idxgifactory4-enumadapterbyluid#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; an error code otherwise. For a list of error codes, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>. See also Direct3D 12 Return Codes.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>For Direct3D 12, it's no longer possible to backtrack from a device to the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> that was used to create it. <b>IDXGIFactory4::EnumAdapterByLuid</b> enables an app to retrieve information about the adapter where a D3D12 device was created. <b>IDXGIFactory4::EnumAdapterByLuid</b> is designed to be paired with <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-getadapterluid">ID3D12Device::GetAdapterLuid</a>. For more information, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-1-4-improvements">DXGI 1.4 Improvements</a>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/nf-dxgi1_4-idxgifactory4-enumadapterbyluid#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void EnumAdapterByLuid< A >( Luid AdapterLuid, in Guid riid, out A ppvAdapter ) where A: IAdapter ;
+	
+	/// <summary>Provides an adapter which can be provided to D3D12CreateDevice to use the WARP renderer.</summary>
+	/// <param name="riid">
+	/// <para>Type: <b>REFIID</b> The globally unique identifier (GUID) of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> object referenced by the <i>ppvAdapter</i> parameter.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/nf-dxgi1_4-idxgifactory4-enumwarpadapter#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="ppvAdapter">
+	/// <para>Type: <b>void**</b> The address of an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> interface pointer to the adapter. This parameter must not be NULL.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/nf-dxgi1_4-idxgifactory4-enumwarpadapter#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; an error code otherwise. For a list of error codes, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>. See also Direct3D 12 Return Codes.</para>
+	/// </returns>
+	/// <remarks>For more information, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-1-4-improvements">DXGI 1.4 Improvements</a>.</remarks>
+	void EnumWarpAdapter< A >( in Guid riid, out A ppvAdapter ) where A: IAdapter ;
+	
+	
+	new static Type ComType => typeof(IDXGIFactory4) ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory4).GUID
+															 .ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	static IInstantiable IInstantiable.Instantiate( ) => new Factory4( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Factory4( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory4( (pComObj as IDXGIFactory4)! ) ;
+} ;
+
+
+// -------------------------------------------------------------------------------------
+// Interface Version: IDXGIFactory5 ::
+// -------------------------------------------------------------------------------------
+
+[ProxyFor( typeof( IDXGIFactory5 ) )]
+public interface IFactory5: IFactory4 {
+	
+	/// <summary>Used to check for hardware feature support.</summary>
+	/// <param name="Feature">
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_5/ne-dxgi1_5-dxgi_feature">DXGI_FEATURE</a></b> Specifies one member of  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_5/ne-dxgi1_5-dxgi_feature">DXGI_FEATURE</a> to query support for.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_5/nf-dxgi1_5-idxgifactory5-checkfeaturesupport#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="pFeatureSupportData">
+	/// <para>Type: <b>void*</b> Specifies a pointer to a buffer that will be filled with data that describes the feature support.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_5/nf-dxgi1_5-idxgifactory5-checkfeaturesupport#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <param name="FeatureSupportDataSize">
+	/// <para>Type: <b>UINT</b> The size, in bytes, of <i>pFeatureSupportData</i>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_5/nf-dxgi1_5-idxgifactory5-checkfeaturesupport#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns an HRESULT success or error code.</para>
+	/// </returns>
+	/// <remarks>Refer to the description of <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_chain_flag">DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING</a>.</remarks>
+	void CheckFeatureSupport( Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) ;
+	
+	new static Type ComType => typeof(IDXGIFactory5) ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory5).GUID
+															 .ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	static IInstantiable IInstantiable.Instantiate( ) => new Factory5( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Factory5( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory5( (pComObj as IDXGIFactory5)! ) ;
+} ;
+
+
+// -------------------------------------------------------------------------------------
+// Interface Version: IDXGIFactory6 ::
+// -------------------------------------------------------------------------------------
+
+
+[SupportedOSPlatform("windows10.0.17134")]
+[ProxyFor( typeof( IDXGIFactory6 ) )]
+public interface IFactory6: IFactory5 {
+	
+	/// <summary>Enumerates graphics adapters based on a given GPU preference.</summary>
+			/// <param name="Adapter">
+			/// <para>Type: <b>UINT</b> The index of the adapter to enumerate. The indices are in order of the preference specified in <i>GpuPreference</i>—for example, if <b>DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE</b> is specified, then the highest-performing adapter is at index 0, the second-highest is at index 1, and so on.</para>
+			/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgifactory6-enumadapterbygpupreference#parameters">Read more on docs.microsoft.com</see>.</para>
+			/// </param>
+			/// <param name="GpuPreference">
+			/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ne-dxgi1_6-dxgi_gpu_preference">DXGI_GPU_PREFERENCE</a></b> The GPU preference for the app.</para>
+			/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgifactory6-enumadapterbygpupreference#parameters">Read more on docs.microsoft.com</see>.</para>
+			/// </param>
+			/// <param name="riid">
+			/// <para>Type: <b>REFIID</b> The globally unique identifier (GUID) of the <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nn-dxgi1_6-idxgifactory6">IDXGIAdapter</a> object referenced by the <i>ppvAdapter</i> parameter.</para>
+			/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgifactory6-enumadapterbygpupreference#parameters">Read more on docs.microsoft.com</see>.</para>
+			/// </param>
+			/// <param name="ppvAdapter">
+			/// <para>Type: <b>void**</b> The address of an <a href="https://docs.microsoft.com/windows/win32/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> interface pointer to the adapter. This parameter must not be NULL.</para>
+			/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgifactory6-enumadapterbygpupreference#parameters">Read more on docs.microsoft.com</see>.</para>
+			/// </param>
+			/// <returns>
+			/// <para>Type: <b>HRESULT</b> Returns <b>S_OK</b> if successful; an error code otherwise. For a list of error codes, see <a href="https://docs.microsoft.com/windows/win32/direct3ddxgi/dxgi-error">DXGI_ERROR</a>.</para>
+			/// </returns>
+			/// <remarks>
+			/// <para>This method allows developers to select which GPU they think is most appropriate for each device their app creates and utilizes. This method is similar to <a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgifactory1-enumadapters1">IDXGIFactory1::EnumAdapters1</a>, but it accepts a GPU preference to reorder the adapter enumeration. It returns the appropriate <b>IDXGIAdapter</b> for the given GPU preference. It is meant to be used in conjunction with the <b>D3D*CreateDevice</b> functions, which take in an <b>IDXGIAdapter*</b>. When <b>DXGI_GPU_PREFERENCE_UNSPECIFIED</b> is specified for the <i>GpuPreference</i> parameter, this method is equivalent to calling <a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgifactory1-enumadapters1">IDXGIFactory1::EnumAdapters1</a>. When <b>DXGI_GPU_PREFERENCE_MINIMUM_POWER</b> is specified for the <i>GpuPreference</i> parameter, the order of preference for the adapter returned in <i>ppvAdapter</i> will be:<dl> <dd>1. iGPUs (integrated GPUs)</dd> <dd>2. dGPUs (discrete GPUs)</dd> <dd>3. xGPUs (external GPUs)</dd> </dl></para>
+			/// <para>When <b>DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE</b> is specified for the <i>GpuPreference</i> parameter, the order of preference for the adapter returned in <i>ppvAdapter</i> will be:<dl> <dd>1. xGPUs</dd> <dd>2. dGPUs</dd> <dd>3. iGPUs</dd> </dl></para>
+			/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgifactory6-enumadapterbygpupreference#">Read more on docs.microsoft.com</see>.</para>
+			/// </remarks>
+	void EnumAdapterByGPUPreference< A >( uint Adapter, 
+										  GPUPreference GpuPreference,
+										  in Guid riid,
+										  out A ppvAdapter ) where A: IAdapter ;
+	
+	
+	new static Type ComType => typeof(IDXGIFactory6) ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory6).GUID
+															 .ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	static IInstantiable IInstantiable.Instantiate( ) => new Factory6( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Factory6( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory6( (pComObj as IDXGIFactory6)! ) ;
+} ;
+
+
+// -------------------------------------------------------------------------------------
+// Interface Version: IDXGIFactory7 ::
+// -------------------------------------------------------------------------------------
+
+
+[SupportedOSPlatform("windows10.0.17763")]
+[ProxyFor( typeof( IDXGIFactory7 ) )]
+public interface IFactory7: IFactory6 {
+	
+	/// <summary>Registers to receive notification of changes whenever the adapter enumeration state changes.</summary>
+	/// <param name="hEvent">A handle to the event object.</param>
+	/// <param name="pdwCookie">A key value for the registered event.</param>
+	/// <returns>Returns <b>S_OK</b> if successful; an error code otherwise.</returns>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgifactory7-registeradapterschangedevent">Learn more about this API from docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void RegisterAdaptersChangedEvent( Win32Handle hEvent, out uint pdwCookie ) ;
+
+	/// <summary>Unregisters an event to stop receiving notifications when the adapter enumeration state changes.</summary>
+	/// <param name="dwCookie">A key value for the event to unregister.</param>
+	/// <returns>Returns <b>S_OK</b> if successful; an error code otherwise.</returns>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgifactory7-unregisteradapterschangedevent">Learn more about this API from docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void UnregisterAdaptersChangedEvent( uint dwCookie ) ;
+	
+	new static Type ComType => typeof(IDXGIFactory7) ;
+	
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIFactory7).GUID
+															.ToByteArray( ) ;
+			
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
+	
+	static IInstantiable IInstantiable.Instantiate( ) => new Factory7( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Factory7( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory7( (pComObj as IDXGIFactory7)! ) ;
+} ;
 
 // -------------------------------------------------------------------------------------
 

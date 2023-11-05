@@ -11,16 +11,8 @@ namespace DXSharp.Direct3D12 ;
 
 [ProxyFor(typeof(ID3D12Resource))]
 public interface IResource: IPageable,
-							IComObjectRef< ID3D12Resource >,
-							IUnknownWrapper< ID3D12Resource >,
 							IInstantiable {
 	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12Resource >? ComPointer { get ; }
-	new ID3D12Resource? COMObject => ComPointer?.Interface ;
-	ID3D12Resource? IComObjectRef< ID3D12Resource >.COMObject => COMObject ;
-	ComPtr< ID3D12Resource >? IUnknownWrapper< ID3D12Resource >.ComPointer => ComPointer ;
-	// ==================================================================================
-	
 	
 	/// <summary>Gets a CPU pointer to the specified subresource in the resource, but may not disclose the pointer value to applications. Map also invalidates the CPU cache, when necessary, so that CPU reads to this address reflect any modifications made by the GPU.</summary>
 	/// <param name="Subresource">
@@ -46,15 +38,8 @@ public interface IResource: IPageable,
 	/// <para>This doc was truncated.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-map#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void Map( uint Subresource, [Optional] in Range pReadRange, out nint ppData ) {
-		unsafe { fixed( Range* pReadRangePtr = &pReadRange ) {
-				void* pData = default ;
-				COMObject!.Map( Subresource, (D3D12_RANGE *)pReadRangePtr, &pData ) ;
-				ppData = (nint)pData! ;
-			}
-		}
-	}
-	
+	void Map( uint Subresource, [Optional] in Range pReadRange, out nint ppData ) ;
+
 	/// <summary>Invalidates the CPU pointer to the specified subresource in the resource.</summary>
 	/// <param name="Subresource">
 	/// <para>Type: <b>UINT</b> Specifies the index of the subresource.</para>
@@ -65,12 +50,8 @@ public interface IResource: IPageable,
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-unmap#parameters">Read more on docs.microsoft.com</see>.</para>
 	/// </param>
 	/// <remarks>Refer to the extensive Remarks and Examples for the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12resource-map">Map</a> method.</remarks>
-	void Unmap( uint Subresource, [Optional] in Range pWrittenRange ) {
-		unsafe { fixed( Range* pWrittenRangePtr = &pWrittenRange )
-				COMObject!.Unmap( Subresource, (D3D12_RANGE *)pWrittenRangePtr ) ;
-		}
-	}
-	
+	void Unmap( uint Subresource, [Optional] in Range pWrittenRange ) ;
+
 	/// <summary>Gets the resource description.</summary>
 	/// <returns>
 	/// <para>This method has no parameters.</para>
@@ -79,7 +60,7 @@ public interface IResource: IPageable,
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/direct3d12/id3d12resource-getdesc">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	ResourceDescription GetDesc( ) => COMObject!.GetDesc( ) ;
+	ResourceDescription GetDesc( ) ;
 
 	/// <summary>This method returns the GPU virtual address of a buffer resource.</summary>
 	/// <returns>
@@ -89,9 +70,8 @@ public interface IResource: IPageable,
 	/// <para>This method is only useful for buffer resources, it will return zero for all texture resources. For more information on the use of GPU virtual addresses, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/indirect-drawing">Indirect Drawing</a>.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-getgpuvirtualaddress#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	ulong GetGPUVirtualAddress( ) => COMObject!.GetGPUVirtualAddress( ) ;
-	
-	
+	ulong GetGPUVirtualAddress( ) ;
+
 	/// <summary>Uses the CPU to copy data into a subresource, enabling the CPU to modify the contents of most textures with undefined layouts.</summary>
 	/// <param name="DstSubresource">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> Specifies the index of the subresource.</para>
@@ -123,15 +103,10 @@ public interface IResource: IPageable,
 	/// <para><b>WriteToSubresource</b> and <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12resource-readfromsubresource">ReadFromSubresource</a> enable near zero-copy optimizations for UMA adapters, but can prohibitively impair the efficiency of discrete/ NUMA adapters as the texture data cannot reside in local video memory. Typical applications should stick to discrete-friendly upload techniques, unless they recognize the adapter architecture is UMA. For more details on uploading, refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copytextureregion">CopyTextureRegion</a>, and for more details on UMA, refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_feature_data_architecture">D3D12_FEATURE_DATA_ARCHITECTURE</a>. On UMA systems, this routine can be used to minimize the cost of memory copying through the loop optimization known as <a href="https://en.wikipedia.org/wiki/Loop_tiling">loop tiling</a>. By breaking up the upload into chucks that comfortably fit in the CPU cache, the effective bandwidth between the CPU and main memory more closely achieves theoretical maximums.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-writetosubresource#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void WriteToSubresource( uint DstSubresource, out Box pDstBox, 
-							 nint pSrcData, uint SrcRowPitch, uint SrcDepthPitch ) {
-		unsafe { fixed( Box* pDstBoxPtr = &pDstBox )
-				COMObject!.WriteToSubresource( DstSubresource, (D3D12_BOX *)pDstBoxPtr,
-											   (void *)pSrcData, SrcRowPitch, SrcDepthPitch ) ;
-		}
-	}
+	void WriteToSubresource( uint DstSubresource, out Box pDstBox,
+							 nint pSrcData,       uint    SrcRowPitch, uint SrcDepthPitch ) ;
 
-	
+
 	/// <summary>Uses the CPU to copy data from a subresource, enabling the CPU to read the contents of most textures with undefined layouts.</summary>
 	/// <param name="pDstData">
 	/// <para>Type: <b>void*</b> A pointer to the destination data in memory.</para>
@@ -158,16 +133,9 @@ public interface IResource: IPageable,
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
 	/// </returns>
 	/// <remarks>See the Remarks section for <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12resource-writetosubresource">WriteToSubresource</a>.</remarks>
-	void ReadFromSubresource( nint pDstData, uint DstRowPitch,
-							  uint DstDepthPitch, uint SrcSubresource,
-							  in Box? pSrcBox = null ) {
-		Box _box = pSrcBox ?? default ;
-		unsafe {
-			Box* pSrcBoxPtr = &_box ;
-			COMObject!.ReadFromSubresource( (void *)pDstData, DstRowPitch, DstDepthPitch,
-										   SrcSubresource, (D3D12_BOX *)pSrcBoxPtr ) ;
-		}
-	}
+	void ReadFromSubresource( nint    pDstData,      uint DstRowPitch,
+							  uint    DstDepthPitch, uint SrcSubresource,
+							  in Box? pSrcBox = null ) ;
 
 	/// <summary>Retrieves the properties of the resource heap, for placed and committed resources.</summary>
 	/// <param name="pHeapProperties">
@@ -186,24 +154,12 @@ public interface IResource: IPageable,
 	/// <para>For more information, refer to <a href="https://docs.microsoft.com/windows/desktop/direct3d12/memory-management">Memory Management in Direct3D 12</a>.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12resource-getheapproperties#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void GetHeapProperties( out HeapProperties pHeapProperties, out HeapFlags pHeapFlags ) {
-		unsafe {
-			D3D12_HEAP_FLAGS _flags = 0 ;
-			D3D12_HEAP_PROPERTIES _props = default ;
-			COMObject!.GetHeapProperties( &_props, &_flags ) ;
-			pHeapFlags = (HeapFlags)_flags ;
-			pHeapProperties = _props ;
-		}
-	}
+	void GetHeapProperties( out HeapProperties pHeapProperties, out HeapFlags pHeapFlags ) ;
 	
 
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof(ID3D12Resource) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12Resource).GUID ;
 	public new static Type ComType => typeof(ID3D12Resource) ;
-	public new static Guid InterfaceGUID => typeof(ID3D12Resource).GUID ;
-	
-	
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -216,5 +172,51 @@ public interface IResource: IPageable,
 		}
 	}
 
+	static IInstantiable IInstantiable.Instantiate( ) => new Resource( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new Resource( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => new Resource( ( obj as ID3D12Resource )! ) ;
+	// ==================================================================================
+} ;
+
+
+[ProxyFor( typeof( ID3D12Resource1 ) )]
+public interface IResource1: IResource {
+	void GetProtectedResourceSession( in Guid riid, out IProtectedSession ppProtectedSession ) ;
+
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof( ID3D12Resource1 ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( ID3D12Resource1 ).GUID
+															 .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference( data ) ) ;
+		}
+	}
+	// ==================================================================================
+} ;
+
+ 
+[ProxyFor( typeof( ID3D12Resource2 ) )]
+public interface IResource2: IResource1 {
+	ResourceDescription1 GetDesc1( ) ;
+	// ---------------------------------------------------------------------------------
+	public new static Type ComType => typeof( ID3D12Resource2 ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof( ID3D12Resource2 ).GUID
+															 .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference( data ) ) ;
+		}
+	}
 	// ==================================================================================
 } ;

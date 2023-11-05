@@ -1,78 +1,81 @@
 ﻿#region Using Directives
-using System.Collections.ObjectModel ;
-using System.Runtime.Versioning ;
 using Windows.Win32 ;
+using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Direct3D ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using Windows.Win32.Graphics.Dxgi ;
-using DXSharp ;
-using DXSharp.Direct3D12 ;
+
+using DXSharp.Direct3D12.Debug ;
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
-using Device = DXSharp.Direct3D12.Device ;
-using IDevice = DXSharp.Direct3D12.IDevice ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
 public static class D3D12 {
-	internal static TWrapper _CreateDevice< A, D, TWrapper >( A? pAdapter, FeatureLevel MinimumFeatureLevel = FeatureLevel.D3D12_0 ) 
-																	where A: IDXGIAdapter
-																	where D: ID3D12Device
-																	where TWrapper: IDevice, IUnknownWrapper< D > {
-		PInvoke.D3D12CreateDevice( pAdapter, (D3D_FEATURE_LEVEL)MinimumFeatureLevel, 
-								   TWrapper.InterfaceGUID, out var device ) ;
-		
-		return (TWrapper) TWrapper.Instantiate( (D)device ) ;
+
+	internal static TWrapper _CreateDevice< A, D, TWrapper >( A? pAdapter,
+															  FeatureLevel MinimumFeatureLevel = FeatureLevel.D3D12_0 ) 
+																where A: IDXGIAdapter
+																where D: ID3D12Device
+																where TWrapper: IDevice, IUnknownWrapper< D > {
+		PInvoke.D3D12CreateDevice( pAdapter, (D3D_FEATURE_LEVEL)MinimumFeatureLevel,
+								   TWrapper.Guid, out var device ) ;
+
+		return (TWrapper)TWrapper.Instantiate( (D)device ) ;
 	}
 
-	public static HResult GetDebugInterface< TDbg >( out TDbg? _interface ) 
-													where TDbg: IUnknownWrapper, IInstantiable {
-		var hr = PInvoke.D3D12GetDebugInterface( TDbg.InterfaceGUID, out var pDebug ) ;
-		
-		if( TDbg.InterfaceGUID == IDebug6.InterfaceGUID )
-			_interface = (TDbg) TDbg.Instantiate( (ID3D12Debug6)pDebug ) ;
-		else if( TDbg.InterfaceGUID == IDebug5.InterfaceGUID )
-			_interface = (TDbg) TDbg.Instantiate( (ID3D12Debug5)pDebug ) ;
-		else if( TDbg.InterfaceGUID == IDebug4.InterfaceGUID )
-			_interface = (TDbg) TDbg.Instantiate( (ID3D12Debug4)pDebug ) ;
-		else if( TDbg.InterfaceGUID == IDebug3.InterfaceGUID )
-			_interface = (TDbg) TDbg.Instantiate( (ID3D12Debug3)pDebug ) ;
-		else if( TDbg.InterfaceGUID == IDebug2.InterfaceGUID )
-			_interface = (TDbg) TDbg.Instantiate( (ID3D12Debug2)pDebug ) ;
-		else if( TDbg.InterfaceGUID == IDebug1.InterfaceGUID )
-			_interface = (TDbg) TDbg.Instantiate( (ID3D12Debug1)pDebug ) ;
-		else if( TDbg.InterfaceGUID == IDebug.InterfaceGUID )
-			_interface = (TDbg) TDbg.Instantiate( (ID3D12Debug)pDebug ) ;
+	public static HResult GetDebugInterface< TDbg >( out TDbg? _interface )
+		where TDbg: IInstantiable, IComIID {
+		var hr = PInvoke.D3D12GetDebugInterface( TDbg.Guid, out var pDebug ) ;
+
+		if ( TDbg.Guid == Debug6.Guid )
+			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug6)pDebug ) ;
+		else if ( TDbg.Guid == Debug5.Guid )
+			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug5)pDebug ) ;
+		else if ( TDbg.Guid == Debug4.Guid )
+			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug4)pDebug ) ;
+		else if ( TDbg.Guid == Debug3.Guid )
+			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug3)pDebug ) ;
+		else if ( TDbg.Guid == Debug2.Guid )
+			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug2)pDebug ) ;
+		else if ( TDbg.Guid == Debug1.Guid )
+			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug1)pDebug ) ;
+		else if ( TDbg.Guid == DXSharp.Direct3D12.Debug.Debug.Guid )
+			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug)pDebug ) ;
 		else
 			throw new ArgumentException( $"The type parameter " +
-										 $"{typeof(TDbg).Name} is not a valid {nameof(IDebug)} interface!" ) ;
+										 $"{typeof( TDbg ).Name} is not a valid {nameof( IDebug )} interface!" ) ;
 
 		return hr ;
 	}
-	
-	public static HResult EnableExperimentalFeatures( ReadOnlySpan< Guid > iids = default,
-													  nint pConfigurations = 0,
-													  Span< uint > pStructSizes = default ) {
+
+	public static HResult EnableExperimentalFeatures( ReadOnlySpan< Guid > iids            = default,
+													  nint                 pConfigurations = 0,
+													  Span< uint >         pStructSizes    = default ) {
 		unsafe {
-			return PInvoke.D3D12EnableExperimentalFeatures( iids, (void *)pConfigurations, pStructSizes ) ;
+			return PInvoke.D3D12EnableExperimentalFeatures( iids, (void*)pConfigurations, pStructSizes ) ;
 		}
 	}
-	
+
 	public static T CreateDevice< T >( IAdapter? adapter = null,
-									   FeatureLevel featureLevel = FeatureLevel.D3D12_0 ) 
-															where T: IDevice1, IInstantiable {
-		var guid = T.InterfaceGUID ;
-		var hr = PInvoke.D3D12CreateDevice( adapter?.COMObject ?? null,
+									   FeatureLevel featureLevel =
+										   FeatureLevel.D3D12_0 ) where T: IDevice, IInstantiable {
+		var guid = T.Guid ;
+		var _adapter = (IComObjectRef< IDXGIAdapter >?)adapter
+					   ?? throw new ArgumentNullException( nameof( adapter ) ) ;
+		
+		var hr = PInvoke.D3D12CreateDevice( _adapter?.COMObject,
 											(D3D_FEATURE_LEVEL)featureLevel,
 											guid, out var ppDevice ) ;
 		hr.ThrowOnFailure( ) ;
-		
-		return (T) T.Instantiate( (ID3D12Device1)ppDevice ) ;
-	}
-}
 
+		return (T)T.Instantiate( (ID3D12Device)ppDevice ) ;
+	}
+} ;
+
+
+/*
 internal static class WrapperFactory {
 	public static ReadOnlyDictionary< Guid, Func< nint, IDXCOMObject> > D3D12CreationFunctions { get ; } =
 		new( new Dictionary< Guid, Func< nint, IDXCOMObject > > {
@@ -94,4 +97,4 @@ internal static class WrapperFactory {
 		} ) ;
 	
 	
-}
+}*/

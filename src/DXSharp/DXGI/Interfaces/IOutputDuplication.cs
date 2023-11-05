@@ -1,9 +1,11 @@
 ﻿#region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
-using DXSharp.Windows.COM ;
+using DXSharp.Windows ;
+
 #endregion
 namespace DXSharp.DXGI ;
 
@@ -12,30 +14,9 @@ namespace DXSharp.DXGI ;
 /// <remarks>
 /// <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nn-dxgi1_2-idxgioutputduplication">IDXGIOutputDuplication</a>
 /// </remarks>
+[ProxyFor(typeof(IDXGIOutputDuplication))]
 public interface IOutputDuplication: IObject,
-									 IComObjectRef< IDXGIOutputDuplication >,
-									 IUnknownWrapper< IDXGIOutputDuplication >,
 									 IInstantiable {
-	new ComPtr<IDXGIOutputDuplication>? ComPointer { get ; }
-	new IDXGIOutputDuplication? COMObject => ComPointer!.Interface ;
-	
-	
-	#region ComPtr<T> Implementations:
-	ComPtr< IDXGIObject >? IObject.ComPointer => 
-		new( ComPointer?.Interface! as IDXGIObject ) ;
-	ComPtr< IDXGIOutputDuplication >? IUnknownWrapper< IDXGIOutputDuplication >.ComPointer => 
-		new( ComPointer?.InterfaceVPtr ?? 0 ) ;
-	ComPtr< IDXGIObject >? IUnknownWrapper< IDXGIObject >.ComPointer => 
-		new( COMObject! as IDXGIObject ) ;
-	#endregion
-
-	#region COMObject Implementations:
-	IDXGIOutputDuplication? IComObjectRef< IDXGIOutputDuplication >.COMObject => COMObject ;
-	IDXGIObject? IComObjectRef< IDXGIObject >.COMObject => COMObject ;
-	IDXGIObject? IObject.COMObject => COMObject ;
-	#endregion
-
-	
 	
 	/// <summary>
 	/// Retrieves a description of a duplicated output.
@@ -56,7 +37,7 @@ public interface IOutputDuplication: IObject,
 	/// <summary>Indicates that the application is ready to process the next desktop image.</summary>
 	/// <param name="TimeoutInMilliseconds">
 	/// <para>The time-out interval, in milliseconds. This interval specifies the amount of time that this method waits for a new frame before it returns to the caller.  This method returns if the interval elapses, and a new desktop image is not available. For more information about the time-out interval, see Remarks.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-acquirenextframe#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-acquirenextframe#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="pFrameInfo">A pointer to a memory location that receives the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_outdupl_frame_info">DXGI_OUTDUPL_FRAME_INFO</a> structure that describes timing and presentation statistics for a frame.</param>
 	/// <param name="ppDesktopResource">A pointer to a variable that receives the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiresource">IDXGIResource</a> interface of the surface that contains the desktop bitmap.</param>
@@ -66,7 +47,7 @@ public interface IOutputDuplication: IObject,
 	/// </returns>
 	/// <remarks>
 	/// <para>When <b>AcquireNextFrame</b> returns successfully, the calling application can access the desktop image that <b>AcquireNextFrame</b> returns in the variable at <i>ppDesktopResource</i>. If the caller specifies a zero time-out interval in the <i>TimeoutInMilliseconds</i> parameter, <b>AcquireNextFrame</b> verifies whether there is a new desktop image available, returns immediately, and indicates its outcome with the return value.  If the caller specifies an <b>INFINITE</b> time-out interval in the <i>TimeoutInMilliseconds</i> parameter, the time-out interval never elapses. <div class="alert"><b>Note</b>  You cannot cancel the wait that you specified in the <i>TimeoutInMilliseconds</i> parameter. Therefore, if you must periodically check for other conditions (for example, a terminate signal), you should specify a non-<b>INFINITE</b> time-out interval. After the time-out interval elapses, you can check for these other conditions and then call <b>AcquireNextFrame</b> again to wait for the next frame.</div> <div> </div> <b>AcquireNextFrame</b> acquires a new desktop frame when the operating system either updates the desktop bitmap image or changes the shape or position of a hardware pointer.  The new frame that <b>AcquireNextFrame</b> acquires might have only the desktop image updated, only the pointer shape or position updated, or both.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-acquirenextframe#">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-acquirenextframe#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void AcquireNextFrame( uint TimeoutInMilliseconds,
 						   out OutputDuplicationFrameInfo pFrameInfo,
@@ -74,54 +55,76 @@ public interface IOutputDuplication: IObject,
 
 	
 	/// <summary>Gets information about dirty rectangles for the current desktop frame.</summary>
-	/// <param name="DirtyRectsBufferSize">
+	/// <param name="dirtyRectsBufferSize">
 	/// <para>The size in bytes of the buffer that the caller passed to the  <i>pDirtyRectsBuffer</i> parameter.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframedirtyrects#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframedirtyrects#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="pDirtyRectsBuffer">
 	/// <para>A pointer to an array of <a href="https://docs.microsoft.com/windows/desktop/api/windef/ns-windef-rect">RECT</a> structures that identifies the dirty rectangle regions for the desktop frame.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframedirtyrects#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframedirtyrects#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="pDirtyRectsBufferSizeRequired">
 	/// <para>Pointer to a variable that receives the number of bytes that <b>GetFrameDirtyRects</b> needs to store information about dirty regions in the buffer at <i>pDirtyRectsBuffer</i>. For more information about returning the required buffer size, see Remarks.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframedirtyrects#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframedirtyrects#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <returns>
 	/// <para><b>GetFrameDirtyRects</b> returns: </para>
-	/// <para>This doc was truncated.</para>
 	/// </returns>
 	/// <remarks>
-	/// <para><b>GetFrameDirtyRects</b> stores a size value in the variable at <i>pDirtyRectsBufferSizeRequired</i>. This  value specifies the number of bytes that <b>GetFrameDirtyRects</b> needs to store information about dirty regions. You can use this value in the following situations to determine the amount of memory to allocate for future buffers that you pass to <i>pDirtyRectsBuffer</i>: </para>
-	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframedirtyrects#">Read more on docs.microsoft.com</see>.</para>
+	/// <para><b>GetFrameDirtyRects</b> stores a size value in the variable at <i>pDirtyRectsBufferSizeRequired</i>.
+	/// This  value specifies the number of bytes that <b>GetFrameDirtyRects</b> needs to store information about dirty regions.
+	/// You can use this value in the following situations to determine the amount of memory to allocate for future buffers that
+	/// you pass to <i>pDirtyRectsBuffer</i>: </para>
+	/// <para><b>GetFrameDirtyRects</b> fails with <b>DXGI_ERROR_MORE_DATA</b> because the buffer is not big enough.</para>
+	/// <para><b>GetFrameDirtyRects</b> supplies a buffer that is bigger than necessary.
+	/// The size value returned at <i>pDirtyRectsBufferSizeRequired</i> informs the caller how much buffer space was actually used compared to
+	/// how much buffer space the caller allocated and specified in the <i>dirtyRectsBufferSize</i> parameter.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframedirtyrects#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void GetFrameDirtyRects( uint DirtyRectsBufferSize,
-							 out Span< Rect > pDirtyRectsBuffer,
-							 out uint pDirtyRectsBufferSizeRequired ) ;
+	HResult GetFrameDirtyRects( uint dirtyRectsBufferSize,
+								out Span< Rect > pDirtyRectsBuffer,
+								out uint pDirtyRectsBufferSizeRequired ) ;
 
 	
 	/// <summary>Gets information about the moved rectangles for the current desktop frame.</summary>
 	/// <param name="MoveRectsBufferSize">The size in bytes of the buffer that the caller passed to the  <i>pMoveRectBuffer</i> parameter.</param>
 	/// <param name="pMoveRectBuffer">
 	/// <para>A pointer to an array of <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_outdupl_move_rect">DXGI_OUTDUPL_MOVE_RECT</a> structures that identifies the moved rectangle regions for the desktop frame.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframemoverects#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframemoverects#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="pMoveRectsBufferSizeRequired">
 	/// <para>Pointer to a variable that receives the number of bytes that <b>GetFrameMoveRects</b> needs to store information about moved regions in the buffer at <i>pMoveRectBuffer</i>. For more information about returning the required buffer size, see Remarks.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframemoverects#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframemoverects#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <returns>
 	/// <para><b>GetFrameMoveRects</b> returns: </para>
-	/// <para>This doc was truncated.</para>
+	/// <para>S_OK if it successfully retrieved information about moved rectangles.</para>
+	/// <para>
+	/// DXGI_ERROR_ACCESS_LOST if the desktop duplication interface is invalid.
+	/// The desktop duplication interface typically becomes invalid when a different type of image is displayed on the desktop.
+	/// <para/>(Examples of this situation are:
+	/// Desktop switch, Mode changes or switching from DWM on, DWM off, or other full-screen application)
+	/// </para>
+	/// <para>In this situation, the application must release the IDXGIOutputDuplication interface and create a new IDXGIOutputDuplication for the new content.</para>
+	/// <para>DXGI_ERROR_MORE_DATA if the buffer that the calling application provided is not big enough.</para>
+	/// <para>DXGI_ERROR_INVALID_CALL if the application called GetFrameMoveRects without owning the desktop image.</para>
+	/// <para>E_INVALIDARG if one of the parameters to GetFrameMoveRects is incorrect; for example, if pMoveRectBuffer is NULL.</para>
+	/// <para>Possibly other error codes that are described in the DXGI_ERROR topic.</para>
 	/// </returns>
 	/// <remarks>
-	/// <para><b>GetFrameMoveRects</b> stores a size value in the variable at <i>pMoveRectsBufferSizeRequired</i>. This  value specifies the number of bytes that <b>GetFrameMoveRects</b> needs to store information about moved regions. You can use this value in the following situations to determine the amount of memory to allocate for future buffers that you pass to <i>pMoveRectBuffer</i>: </para>
-	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframemoverects#">Read more on docs.microsoft.com</see>.</para>
+	/// <para><b>GetFrameMoveRects</b> stores a size value in the variable at <i>pMoveRectsBufferSizeRequired</i>.
+	/// This  value specifies the number of bytes that <b>GetFrameMoveRects</b> needs to store information about moved regions.
+	/// You can use this value in the following situations to determine the amount of memory to allocate for future buffers that
+	/// you pass to <i>pMoveRectBuffer</i>: </para>
+	/// <para><b>GetFrameMoveRects</b> fails with DXGI_ERROR_MORE_DATA because the buffer is not big enough.</para>
+	/// <para><b>GetFrameMoveRects</b> supplies a buffer that is bigger than necessary.
+	/// The size value returned at pMoveRectsBufferSizeRequired informs the caller how much buffer space was actually used compared to
+	/// how much buffer space the caller allocated and specified in the MoveRectsBufferSize parameter.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframemoverects#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void GetFrameMoveRects( uint MoveRectsBufferSize,
-							out Span< OutputDuplicationMoveRect > pMoveRectBuffer,
-							out uint pMoveRectsBufferSizeRequired ) ;
+	HResult GetFrameMoveRects( uint MoveRectsBufferSize,
+							   out Span< OutputDuplicationMoveRect > pMoveRectBuffer,
+							   out uint pMoveRectsBufferSizeRequired ) ;
 
 	
 	/// <summary>Gets information about the new pointer shape for the current desktop frame.</summary>
@@ -129,7 +132,7 @@ public interface IOutputDuplication: IObject,
 	/// <param name="pPointerShapeBuffer">A pointer to a buffer to which <b>GetFramePointerShape</b> copies and returns pixel data for the new pointer shape.</param>
 	/// <param name="pPointerShapeBufferSizeRequired">
 	/// <para>Pointer to a variable that receives the number of bytes that <b>GetFramePointerShape</b> needs to store the new pointer shape pixel data in the buffer at <i>pPointerShapeBuffer</i>. For more information about returning the required buffer size, see Remarks.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframepointershape#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframepointershape#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="pPointerShapeInfo">Pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_outdupl_pointer_shape_info">DXGI_OUTDUPL_POINTER_SHAPE_INFO</a> structure that receives the pointer shape information.</param>
 	/// <returns>
@@ -138,8 +141,7 @@ public interface IOutputDuplication: IObject,
 	/// </returns>
 	/// <remarks>
 	/// <para><b>GetFramePointerShape</b> stores a size value in the variable at <i>pPointerShapeBufferSizeRequired</i>. This  value specifies the number of bytes that <i>pPointerShapeBufferSizeRequired</i> needs to store the new pointer shape pixel data. You can use the value in the following situations to determine the amount of memory to allocate for future buffers that you pass to <i>pPointerShapeBuffer</i>: </para>
-	/// <para>This doc was truncated.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframepointershape#">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-getframepointershape#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void GetFramePointerShape( uint PointerShapeBufferSize,
 							   nint pPointerShapeBuffer,
@@ -197,8 +199,7 @@ public interface IOutputDuplication: IObject,
 	
 	
 	
-	static Type IUnknownWrapper.ComType => typeof( IDXGIOutputDuplication ) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof( IDXGIOutputDuplication ).GUID ;
+	new static Type ComType => typeof( IDXGIOutputDuplication ) ;
 	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]

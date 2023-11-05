@@ -1,22 +1,53 @@
 ﻿#region Using Directives
-using System.Diagnostics ;
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
+
 using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
-public class CommandQueue: Pageable, ICommandQueue {
-	public new static Type ComType => typeof( ID3D12CommandQueue ) ;
-	public new static Guid InterfaceGUID => typeof( ID3D12CommandQueue ).GUID ;
-	
+[Wrapper(typeof(ID3D12CommandQueue))]
+internal class CommandQueue: Pageable,
+							 ICommandQueue,
+							 IComObjectRef< ID3D12CommandQueue >,
+							 IUnknownWrapper< ID3D12CommandQueue > {
 	// ------------------------------------------------------------------------------------------
-	public new ID3D12CommandQueue? COMObject => ComPointer?.Interface ;
-	public new ComPtr< ID3D12CommandQueue >? ComPointer { get ; protected set ; }
-
+	ComPtr< ID3D12CommandQueue >? _comPtr ;
+	public new virtual ComPtr< ID3D12CommandQueue >? ComPointer =>
+		_comPtr ??= ComResources?.GetPointer< ID3D12CommandQueue >( ) ;
+	
+	public override ID3D12CommandQueue? COMObject => ComPointer?.Interface ;
 	ID3D12CommandQueue cmdQueue => COMObject ?? throw new NullReferenceException( ) ;
+
+	// ------------------------------------------------------------------------------------------
+	
+	internal CommandQueue( ) {
+		_comPtr = ComResources?.GetPointer< ID3D12CommandQueue >( ) ;
+		if ( _comPtr is not null ) 
+			_initOrAdd( _comPtr ) ;
+	}
+	
+	internal CommandQueue( nint childAddr ): base( childAddr ) {
+		_comPtr = ComResources?.GetPointer< ID3D12CommandQueue >( ) ;
+		if ( _comPtr is not null ) 
+			_initOrAdd( _comPtr ) ;
+	}
+	
+	internal CommandQueue( ID3D12Pageable child ): base( child ) {
+		_comPtr = ComResources?.GetPointer< ID3D12CommandQueue >( ) ;
+		if ( _comPtr is not null ) 
+			_initOrAdd( _comPtr ) ;
+	}
+	
+	internal CommandQueue( ComPtr< IUnknown > childPtr ): base( childPtr ) {
+		_comPtr = ComResources?.GetPointer< ID3D12CommandQueue >( ) ;
+		if ( _comPtr is not null ) 
+			_initOrAdd( _comPtr ) ;
+	}
 	
 	
 	// ------------------------------------------------------------------------------------------
@@ -29,8 +60,10 @@ public class CommandQueue: Pageable, ICommandQueue {
 	public void CopyTileMappings( IResource pDstResource, in TiledResourceCoordinate pDstRegionStartCoordinate,
 								  IResource pSrcResource, in TiledResourceCoordinate pSrcRegionStartCoordinate,
 								  in TileRegionSize pRegionSize, TileMappingFlags Flags ) {
-		cmdQueue.CopyTileMappings( pDstResource.COMObject, pDstRegionStartCoordinate, 
-								   pSrcResource.COMObject, pSrcRegionStartCoordinate, 
+		var src = (Resource) pSrcResource ;
+		var dst = (Resource) pDstResource ;
+		cmdQueue.CopyTileMappings( dst.COMObject, pDstRegionStartCoordinate, 
+								   src.COMObject, pSrcRegionStartCoordinate, 
 								   pRegionSize, (D3D12_TILE_MAPPING_FLAGS)Flags ) ;
 	}
 
@@ -45,14 +78,16 @@ public class CommandQueue: Pageable, ICommandQueue {
 									uint[ ] pHeapRangeStartOffsets,
 									uint[ ] pRangeTileCounts,
 									TileMappingFlags flags ) {
+		var heap = (IComObjectRef< ID3D12Heap >) pHeap ;
 		unsafe {
+			var resource = (Resource) pResource ;
 			fixed ( void* pRegionStartCoords = &pResourceRegionStartCoordinates[0],
 						  pRegionSizes = &pResourceRegionSizes[0], pFlags = &pRangeFlags[0] ) {
-				cmdQueue.UpdateTileMappings( pResource.COMObject,
+				cmdQueue.UpdateTileMappings( resource.COMObject,
 											 NumResourceRegions,
 											 (D3D12_TILED_RESOURCE_COORDINATE *)pRegionStartCoords,
 											 (D3D12_TILE_REGION_SIZE *)pRegionSizes,
-											 pHeap.COMObject, 
+											 heap.COMObject,
 											 NumRanges, 
 											 (D3D12_TILE_RANGE_FLAGS *)pFlags,
 											 pHeapRangeStartOffsets, 
@@ -67,7 +102,7 @@ public class CommandQueue: Pageable, ICommandQueue {
 		var pCommandLists = new ID3D12CommandList[ NumCommandLists ] ;
 		
 		for ( int i = 0; i < ppCommandLists.Length; ++i ) {
-			pCommandLists[ i ] = ppCommandLists[i].COMObject
+			pCommandLists[ i ] = ( (IComObjectRef<ID3D12CommandList>)ppCommandLists[ i ] ).COMObject
 #if DEBUG || DEBUG_COM || DEV_BUILD
 								 ?? throw new NullReferenceException( )
 #endif
@@ -89,12 +124,17 @@ public class CommandQueue: Pageable, ICommandQueue {
 	}
 
 	
-	public void Signal( IFence pFence, ulong Value ) => 
-		cmdQueue.Signal( pFence.COMObject, Value ) ;
+	public void Signal( IFence pFence, ulong Value ) {
+		var fence = (IComObjectRef< ID3D12Fence >) pFence ;
+		cmdQueue.Signal( fence.COMObject, Value ) ;
+	}
 
 	
-	public void Wait( IFence pFence, ulong Value ) => 
-		cmdQueue.Wait( pFence.COMObject, Value ) ;
+	public void Wait( IFence pFence, ulong Value ) {
+		var fence = (IComObjectRef< ID3D12Fence >) pFence ;
+		cmdQueue.Wait( fence.COMObject, Value ) ;
+	}
+
 
 	
 	public void GetTimestampFrequency( out ulong pFrequency ) => 
@@ -119,13 +159,21 @@ public class CommandQueue: Pageable, ICommandQueue {
 	
 	// ------------------------------------------------------------------------------------------
 	
-	internal CommandQueue( ) { }
-	internal CommandQueue( nint ptr ) => ComPointer = new( ptr ) ;
-	internal CommandQueue( ComPtr< ID3D12CommandQueue > comObject ) => ComPointer = comObject ;
-	internal CommandQueue( ID3D12CommandQueue? comObject ) => ComPointer = new( comObject! ) ;
 	
+	// --------------------------------------------------------------
+	// Static Members:
+	// --------------------------------------------------------------
 	
-	public static IDXCOMObject Instantiate( ) => new CommandQueue( ) ;
-	public static IDXCOMObject Instantiate( IntPtr pComObj ) => new CommandQueue( pComObj ) ;
-	public static IDXCOMObject Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => new CommandQueue( pComObj as ID3D12CommandQueue ) ;
+	public new static Type ComType => typeof( ID3D12CommandQueue ) ;
+
+	public new static ref readonly Guid Guid {
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3D12CommandQueue).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
+		}
+	}
+
+	// ==============================================================
 } ;

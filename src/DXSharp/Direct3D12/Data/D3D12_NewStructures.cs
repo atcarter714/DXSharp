@@ -1,97 +1,14 @@
 ﻿#region Using Directives
-
 using System.Buffers ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using DXSharp ;
-using DXSharp.DXGI ;
 
+using DXSharp.DXGI ;
 #endregion
 namespace DXSharp.Direct3D12 ;
-
-
-/// <summary>
-/// Provides detail about the adapter architecture, so that your application can better optimize for certain adapter properties.
-/// </summary>
-/// <remarks>
-/// <b>NOTE:</b><para/>
-/// This structure has been superseded by the <see cref="FeatureDataArchitecture1"/> structure.
-/// If your application targets Windows 10, version 1703 (Creators' Update) or higher,
-/// then use D3D12_FEATURE_DATA_ARCHITECTURE1 (and D3D12_FEATURE_ARCHITECTURE1) instead.
-/// </remarks>
-[StructLayout(LayoutKind.Sequential),
- EquivalentOf(typeof(D3D12_FEATURE_DATA_ARCHITECTURE))]
-public struct FeatureDataArchitecture {
-	/// <summary>
-	/// <para>In multi-adapter operation, this indicates which physical adapter of the device is relevant. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>. <b>NodeIndex</b> is filled out by the application before calling <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-checkfeaturesupport">CheckFeatureSupport</a>, as the application can retrieve details about the architecture of each adapter.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public uint NodeIndex ;
-
-	/// <summary>
-	/// <para>Specifies whether the hardware and driver support a tile-based renderer. The runtime sets this member to <b>TRUE</b> if the hardware and driver support a tile-based renderer.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public BOOL TileBasedRenderer ;
-
-	/// <summary>
-	/// <para>Specifies whether the hardware and driver support UMA. The runtime sets this member to <b>TRUE</b> if the hardware and driver support UMA.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public BOOL UMA ;
-
-	/// <summary>
-	/// <para>Specifies whether the hardware and driver support cache-coherent UMA. The runtime sets this member to <b>TRUE</b> if the hardware and driver support cache-coherent UMA.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public BOOL CacheCoherentUMA ;
-} ;
-
-
-/// <summary>
-/// See documentation for: 
-/// <a href="https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture1">D3D12_FEATURE_DATA_ARCHITECTURE1</a>
-/// </summary>
-/// <remarks>
-/// Update to D3D12 since Windows 10 Creators Update (1703).
-/// Used by <see cref="ID3D12Device.CheckFeatureSupport"/>.
-/// </remarks>
-[StructLayout(LayoutKind.Sequential),
- EquivalentOf(typeof(D3D12_FEATURE_DATA_ARCHITECTURE1))]
-public struct FeatureDataArchitecture1 {
-	/// <summary>
-	/// <para>In multi-adapter operation, this indicates which physical adapter of the device is relevant. See <a href="https://docs.microsoft.com/windows/win32/direct3d12/multi-engine">Multi-adapter systems</a>. <b>NodeIndex</b> is filled out by the application before calling <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-checkfeaturesupport">CheckFeatureSupport</a>, as the application can retrieve details about the architecture of each adapter.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture1#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public uint NodeIndex ;
-
-	/// <summary>
-	/// <para>Specifies whether the hardware and driver support a tile-based renderer. The runtime sets this member to <b>TRUE</b> if the hardware and driver support a tile-based renderer.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture1#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public BOOL TileBasedRenderer ;
-
-	/// <summary>
-	/// <para>Specifies whether the hardware and driver support UMA. The runtime sets this member to <b>TRUE</b> if the hardware and driver support UMA.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture1#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public BOOL UMA ;
-
-	/// <summary>
-	/// <para>Specifies whether the hardware and driver support cache-coherent UMA. The runtime sets this member to <b>TRUE</b> if the hardware and driver support cache-coherent UMA.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture1#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public BOOL CacheCoherentUMA ;
-
-	/// <summary>
-	/// <para><a href="https://docs.microsoft.com/visualstudio/code-quality/annotating-structs-and-classes">SAL</a>: <c>_Out_</c> Specifies whether the hardware and driver support isolated Memory Management Unit (MMU). The runtime sets this member to <b>TRUE</b> if the GPU honors CPU page table properties like <b>MEM_WRITE_WATCH</b> (for more information, see <a href="https://docs.microsoft.com/windows/win32/api/memoryapi/nf-memoryapi-virtualalloc">VirtualAlloc</a>) and <b>PAGE_READONLY</b> (for more information, see <a href="https://docs.microsoft.com/windows/win32/Memory/memory-protection-constants">Memory Protection Constants</a>). If <b>TRUE</b>, the application must take care to no use memory with these page table properties with the GPU, as the GPU might trigger these page table properties in unexpected ways. For example, GPU write operations might be coarser than the application expects, particularly writes from within shaders. Certain write-watch pages might appear dirty, even when it isn't obvious how GPU writes may have affected them. GPU operations associated with upload and readback heap usage scenarios work well with write-watch pages, but might occasionally generate false positives that can be safely ignored.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_feature_data_architecture1#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public BOOL IsolatedMMU ;
-} ;
-
 
 
 [EquivalentOf( typeof( D3D12_RANGE_UINT64 ) )]
@@ -180,7 +97,7 @@ public struct ProtectedResourceSessionDescription {
 
 	/// <summary>
 	/// <para>Type: **[D3D12_PROTECTED_RESOURCE_SESSION_FLAGS](./ne-d3d12-d3d12_protected_resource_session_flags.md)** Specifies the supported crypto sessions options.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_protected_resource_session_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_protected_resource_session_desc#members">Read more on docs.microsoft.com </a>.</para>
 	/// </summary>
 	public ProtectedResourceSessionFlags Flags ;
 	
@@ -237,7 +154,7 @@ public struct RenderPassRenderTargetDescription {
 
 /// <summary>Describes the access to resource(s) that is requested by an application at the transition into a render pass.</summary>
 /// <remarks>
-/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_pass_beginning_access">Learn more about this API from docs.microsoft.com</see>.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_pass_beginning_access">Learn more about this API from docs.microsoft.com </a>.</para>
 /// </remarks>
 [EquivalentOf(typeof(D3D12_RENDER_PASS_BEGINNING_ACCESS))]
 public struct RenderPassBeginningAccess {
@@ -313,7 +230,7 @@ public struct RenderPassBeginningAccessPreserveLocalParameters {
 
 /// <summary>Describes the access to resource(s) that is requested by an application at the transition out of a render pass.</summary>
 /// <remarks>
-/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_pass_ending_access">Learn more about this API from docs.microsoft.com</see>.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_render_pass_ending_access">Learn more about this API from docs.microsoft.com </a>.</para>
 /// </remarks>
 [EquivalentOf(typeof(D3D12_RENDER_PASS_ENDING_ACCESS))]
 public partial struct RenderPassEndingAccess {
@@ -363,14 +280,17 @@ public partial struct RenderPassEndingAccess {
 			
 			RenderPassEndingAccessResolveSubresourceParameters* pSubresourceParametersPtr = pSubresourceParametersHandle is null ? null :
 				(RenderPassEndingAccessResolveSubresourceParameters *)pSubresourceParametersHandle.Value.Pointer ;
-			
+
+			var src = (Resource)pSrcResource ;
+			var dst = (Resource)pDstResource ;
 			var resolve =
-				new RenderPassEndingAccessResolveParametersUnmanaged( (ResourceUnmanaged*)pSrcResource?.ComPointer?.InterfaceVPtr,
-																	  (ResourceUnmanaged*)pDstResource?.ComPointer?.InterfaceVPtr,
+				new RenderPassEndingAccessResolveParametersUnmanaged( (ResourceUnmanaged*)src?.ComPointer?.InterfaceVPtr,
+																	  (ResourceUnmanaged*)dst?.ComPointer?.InterfaceVPtr,
 																	  subresourceCount, 
 																	  pSubresourceParametersPtr,
 																	  format, resolveMode, 
 																	  preserveResolveSource ) ;
+			
 			return new( RenderPassEndingAccessType.Resolve, resolve ) ;
 		}
 	}
@@ -439,8 +359,10 @@ public unsafe partial struct RenderPassEndingAccessResolveParametersUnmanaged {
 															 Format format = Format.UNKNOWN,
 															 ResolveMode resolveMode = default,
 															 bool preserveResolveSource = default ) {
-		this.pSrcResource = (ResourceUnmanaged *)pSrcResource?.ComPointer?.InterfaceVPtr ;
-		this.pDstResource = (ResourceUnmanaged *)pDstResource?.ComPointer?.InterfaceVPtr ;
+		Resource src = (Resource)pSrcResource ;
+		Resource dst = (Resource)pDstResource ;
+		this.pSrcResource = (ResourceUnmanaged *)src?.ComPointer?.InterfaceVPtr ;
+		this.pDstResource = (ResourceUnmanaged *)dst?.ComPointer?.InterfaceVPtr ;
 		SubresourceCount = subresourceCount ; this.pSubresourceParameters = null ;
 		Format = format ; ResolveMode = resolveMode ; PreserveResolveSource = preserveResolveSource ;
 		
@@ -736,19 +658,19 @@ public partial struct BufferBarrierUnmanaged {
 /// If the subobject type is unioned with a <b>void*</b>, then there will be additional padding between these 2 members, resulting
 /// in corruption of the stream. Because of this, you should union the entire subobject struct with a <b>void*</b>, when `alignas`
 /// is not available An example of a suitable subobject for use with <see cref="RasterizerDescription"/> is shown here: </para>
-/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc#">Read more on docs.microsoft.com</see>.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc#">Read more on docs.microsoft.com </a>.</para>
 /// </remarks>
 [EquivalentOf(typeof(D3D12_PIPELINE_STATE_STREAM_DESC))]
 public partial struct PipelineStateStreamDescription {
 	/// <summary>
 	/// <para><a href="https://docs.microsoft.com/cpp/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_</c> Specifies the size of the opaque data structure pointed to by the pPipelineStateSubobjectStream member, in bytes.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc#members">Read more on docs.microsoft.com </a>.</para>
 	/// </summary>
 	public nuint SizeInBytes ;
 
 	/// <summary>
 	/// <para><a href="https://docs.microsoft.com/cpp/code-quality/annotating-function-parameters-and-return-values">SAL</a>: <c>_In_reads_(_Inexpressible_("Dependentonsizeofsubobjects"))</c> Specifies the address of a data structure that describes as a bytestream an arbitrary pipeline state subobject.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc#members">Read more on docs.microsoft.com</see>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc#members">Read more on docs.microsoft.com </a>.</para>
 	/// </summary>
 	public nint pPipelineStateSubobjectStream ;
 	
@@ -758,4 +680,422 @@ public partial struct PipelineStateStreamDescription {
 	
 } ;
 
+
+/// <summary>Describes a portion of a texture for the purpose of texture copies.</summary>
+[EquivalentOf( typeof( D3D12_TEXTURE_COPY_LOCATION ) )]
+public struct TextureCopyLocation {
+	/// <summary>Specifies the resource which will be used for the copy operation.<div> </div>When <b>Type</b> is D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT, <b>pResource</b> must point to a buffer resource.<div> </div>When <b>Type</b> is D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, <b>pResource</b> must point to a texture resource.</summary>
+	public ID3D12Resource pResource ;
+
+	/// <summary>
+	/// <para>Specifies which type of resource location this is: a subresource of a texture, or a description of a texture layout which can be applied to a buffer. This <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_copy_type">D3D12_TEXTURE_COPY_TYPE</a> enum indicates which union member to use.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_texture_copy_location#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public TextureCopyType Type ;
+
+	public _locationUnion Location ;
+	[StructLayout( LayoutKind.Explicit )]
+	public partial struct _locationUnion {
+		[FieldOffset( 0 )] public PlacedSubresourceFootprint PlacedFootprint ;
+		[FieldOffset( 0 )] public uint                       SubresourceIndex ;
+
+		public _locationUnion( PlacedSubresourceFootprint placedFootprint ) {
+			Unsafe.SkipInit( out this ) ;
+			PlacedFootprint = placedFootprint ;
+		}
+
+		public _locationUnion( uint subresourceIndex ) {
+			Unsafe.SkipInit( out this ) ;
+			SubresourceIndex = subresourceIndex ;
+		}
+
+		public static implicit operator _locationUnion( PlacedSubresourceFootprint placedFootprint ) =>
+			new( placedFootprint ) ;
+
+		public static implicit operator _locationUnion( uint subresourceIndex ) => new( subresourceIndex ) ;
+	}
+	
+	public TextureCopyLocation( IResource pResource, in PlacedSubresourceFootprint placedFootprint ) {
+		ArgumentNullException.ThrowIfNull( pResource, nameof(pResource) ) ;
+		var resource = (IComObjectRef< ID3D12Resource >)pResource ;
+		this.pResource = resource.COMObject! ; 
+		Type = TextureCopyType.PlacedFootprint ; 
+		Location = new( placedFootprint ) ;
+	}
+	public TextureCopyLocation( IResource pResource, uint subresourceIndex ) {
+		ArgumentNullException.ThrowIfNull( pResource, nameof(pResource) ) ;
+		var resource = (IComObjectRef< ID3D12Resource >)pResource ;
+		this.pResource = resource.COMObject! ; 
+		Type = TextureCopyType.Index ; 
+		Location = new( subresourceIndex ) ;
+	}
+
+	/*public unsafe TextureCopyLocation( ResourceUnmanaged* pResource, in PlacedSubresourceFootprint placedFootprint ) {
+		 
+	}*/
+} ;
+
+
+/// <summary>Describes parameters needed to allocate resources, including offset.</summary>
+/// <remarks>This structure is used by the <see cref="Direct3D12.IDevice4.GetResourceAllocationInfo1"/> method.</remarks>
+[EquivalentOf( typeof( D3D12_RESOURCE_ALLOCATION_INFO1 ) )]
+public partial struct ResourceAllocationInfo1 {
+	/// <summary>
+	/// <para>The offset, in bytes, of the resource.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info1#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public ulong Offset ;
+
+	/// <summary>
+	/// <para>The alignment value for the resource; one of 4KB (4096), 64KB (65536), or 4MB (4194304) alignment.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info1#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public ulong Alignment ;
+
+	/// <summary>
+	/// <para>The size, in bytes, of the resource.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info1#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public ulong SizeInBytes ;
+	
+	public ResourceAllocationInfo1( ulong offset = 0UL, ulong alignment = 0UL, ulong sizeInBytes = 0UL ) {
+		Offset = offset ; Alignment = alignment ; SizeInBytes = sizeInBytes ;
+	}
+	
+	public static implicit operator ResourceAllocationInfo1( in (uint Offset, uint Alignment, uint SizeInBytes) values ) =>
+		new( values.Offset, values.Alignment, values.SizeInBytes ) ;
+} ;
+
+
+/// <summary>Defines flags that specify states related to a graphics command list. Values can be bitwise OR'd together.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_graphics_states">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_META_COMMAND_DESC))]
+public partial struct MetaCommandDescription {
+	
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/api/guiddef/ns-guiddef-guid">GUID</a></b> A <a href="https://docs.microsoft.com/windows/win32/api/guiddef/ns-guiddef-guid">GUID</a> uniquely identifying the meta command.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public Guid Id ;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">LPCWSTR</a></b> The meta command name.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public PCWSTR Name ;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_graphics_states">D3D12_GRAPHICS_STATES</a></b> Declares the command list states that are modified by the call to initialize the meta command. If all state bits are set, then that's equivalent to calling <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearstate">ID3D12GraphicsCommandList::ClearState</a>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public GraphicsStates InitializationDirtyState ;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_graphics_states">D3D12_GRAPHICS_STATES</a></b> Declares the command list states that are modified by the call to execute the meta command. If all state bits are set, then that's equivalent to calling <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearstate">ID3D12GraphicsCommandList::ClearState</a>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public GraphicsStates ExecutionDirtyState ;
+	
+	
+	public MetaCommandDescription( Guid id, PCWSTR name,
+								   GraphicsStates initializationDirtyState = GraphicsStates.None, 
+								   GraphicsStates executionDirtyState = GraphicsStates.None ) {
+		Id = id ; Name = name ; 
+		InitializationDirtyState = initializationDirtyState ; 
+		ExecutionDirtyState = executionDirtyState ;
+	}
+} ;
+
+
+/// <summary>Describes a parameter to a meta command.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_parameter_desc">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf( typeof( D3D12_META_COMMAND_PARAMETER_DESC ) )]
+public partial struct MetaCommandParameterDescription {
+	
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">LPCWSTR</a></b> The parameter name.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_parameter_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public PCWSTR Name;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_meta_command_parameter_type">D3D12_META_COMMAND_PARAMETER_TYPE</a></b> A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_meta_command_parameter_type">D3D12_META_COMMAND_PARAMETER_TYPE</a> specifying the parameter type.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_parameter_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public MetaCommandParameterType Type ;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_meta_command_parameter_flags">D3D12_META_COMMAND_PARAMETER_FLAGS</a></b> A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_meta_command_parameter_flags">D3D12_META_COMMAND_PARAMETER_FLAGS</a> specifying the parameter flags.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_parameter_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public MetaCommandParameterFlags Flags ;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATES</a></b> A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATES</a> specifying the expected state of a resource parameter.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_parameter_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public ResourceStates RequiredResourceState ;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The 4-byte aligned offset for this parameter, within the structure containing the parameter values, which you pass when creating/initializing/executing the meta command, as appropriate.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_meta_command_parameter_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public uint StructureOffset ;
+	
+	
+	public MetaCommandParameterDescription( PCWSTR name, 
+											MetaCommandParameterType type = default,
+											MetaCommandParameterFlags flags = default,
+											ResourceStates requiredResourceState = ResourceStates.Common,
+											uint structureOffset = 0U ) {
+		Name = name ; Type = type ; Flags = flags ; 
+		RequiredResourceState = requiredResourceState ; StructureOffset = structureOffset ;
+	}
+} ;
+
+
+/// <summary>Description of a state object. Pass this structure into ID3D12Device::CreateStateObject.</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_state_object_desc">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_STATE_OBJECT_DESC))]
+public partial struct StateObjectDescription {
+	/// <summary>The type of the state object.</summary>
+	public StateObjectType Type ;
+
+	/// <summary>Size of the <i>pSubobjects</i> array.</summary>
+	public uint NumSubobjects ;
+
+	/// <summary>An array of subobject definitions.</summary>
+	public unsafe D3D12_STATE_SUBOBJECT* pSubobjects;
+} ;
+
+
+/// <summary>Represents a subobject within a state object description. Use with [D3D12_STATE_OBJECT_DESC](/windows/win32/api/d3d12/ns-d3d12-d3d12_state_object_desc).</summary>
+/// <remarks>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_state_subobject">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_STATE_SUBOBJECT))]
+public partial struct StateSubObject {
+	/// <summary>A <see cref="StateSubObjectType"/> specifying the type of the state subobject.</summary>
+	public StateSubObjectType Type ;
+
+	/// <summary>Pointer to state object description of the type specified in the *Type* parameter.</summary>
+	public nint pDesc ;
+	
+	
+	public StateSubObject( StateSubObjectType type = default, nint pDesc = 0x00000000 ) {
+		Type = type ; this.pDesc = pDesc ;
+	}
+} ;
+
+
+/// <summary>
+/// Describes a resource, such as a texture, including a mip region.
+/// This structure is used in several methods.
+/// </summary>
+[EquivalentOf( typeof( D3D12_RESOURCE_DESC1 ) )]
+public partial struct ResourceDescription1 {
+	
+	/// <summary>One member of <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_dimension">D3D12_RESOURCE_DIMENSION</a>, specifying the dimensions of the resource (for example, D3D12_RESOURCE_DIMENSION_TEXTURE1D), or whether it is a buffer ((D3D12_RESOURCE_DIMENSION_BUFFER).</summary>
+	public ResourceDimension Dimension ;
+
+	/// <summary>Specifies the alignment.</summary>
+	public ulong Alignment ;
+
+	/// <summary>Specifies the width of the resource.</summary>
+	public ulong Width ;
+
+	/// <summary>Specifies the height of the resource.</summary>
+	public uint Height ;
+
+	/// <summary>Specifies the depth of the resource, if it is 3D, or the array size if it is an array of 1D or 2D resources.</summary>
+	public ushort DepthOrArraySize ;
+
+	/// <summary>Specifies the number of MIP levels.</summary>
+	public ushort MipLevels ;
+
+	/// <summary>Specifies one member of <a href="https://docs.microsoft.com/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>.</summary>
+	public Format Format ;
+
+	/// <summary>Specifies a <a href="https://docs.microsoft.com/windows/win32/api/dxgicommon/ns-dxgicommon-dxgi_sample_desc">DXGI_SAMPLE_DESC</a> structure.</summary>
+	public SampleDescription SampleDesc ;
+
+	/// <summary>Specifies one member of <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_texture_layout">D3D12_TEXTURE_LAYOUT</a>.</summary>
+	public TextureLayout Layout ;
+
+	/// <summary>Bitwise-OR'd flags, as <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_flags">D3D12_RESOURCE_FLAGS</a> enumeration constants.</summary>
+	public ResourceFlags Flags ;
+
+	/// <summary>A <see cref="MipRegion"/> struct.</summary>
+	public MipRegion SamplerFeedbackMipRegion ;
+	
+	
+	public ResourceDescription1( ResourceDimension dimension = ResourceDimension.Unknown,
+								 ulong alignment = 0UL,
+								 ulong width = 0UL,
+								 uint height = 1U,
+								 ushort depthOrArraySize = 1,
+								 ushort mipLevels = 1,
+								 Format format = Format.UNKNOWN,
+								 SampleDescription sampleDesc = default,
+								 TextureLayout layout = TextureLayout.Unknown,
+								 ResourceFlags flags = ResourceFlags.None,
+								 MipRegion samplerFeedbackMipRegion = default ) {
+		Dimension = dimension ; Alignment = alignment ; Width = width ; Height = height ; 
+		DepthOrArraySize = depthOrArraySize ; MipLevels = mipLevels ; Format = format ; 
+		SampleDesc = sampleDesc ; Layout = layout ; Flags = flags ; 
+		SamplerFeedbackMipRegion = samplerFeedbackMipRegion ;
+	}
+} ;
+
+
+/// <summary>Describes the dimensions of a mip region.</summary>
+[EquivalentOf(typeof(D3D12_MIP_REGION))]
+public partial struct MipRegion {
+	/// <summary>The width of the mip region.</summary>
+	public uint Width ;
+
+	/// <summary>The height of the mip region.</summary>
+	public uint Height ;
+
+	/// <summary>The depth of the mip region.</summary>
+	public uint Depth ;
+	
+	
+	public MipRegion( uint width = 0U, uint height = 0U, uint depth = 0U ) {
+		Width = width ; Height = height ; Depth = depth ;
+	}
+	
+	public static implicit operator MipRegion( in (uint Width, uint Height, uint Depth) values ) =>
+		new( values.Width, values.Height, values.Depth ) ;
+} ;
+
+
+/// <summary>Describes a shader cache session.</summary>
+[EquivalentOf(typeof(D3D12_SHADER_CACHE_SESSION_DESC))]
+public partial struct ShaderCacheSessionDescription {
+	/// <summary>
+	/// <para>A unique identifier to give to this specific cache.
+	/// Caches with different identifiers are stored side by side. Caches with the same identifier are shared across all sessions in the same process.
+	/// Creating a disk cache with the same identifier as an already-existing cache opens that cache, unless the **Version** doesn't matches.
+	/// In that case, if there are no other sessions open to that cache, it is cleared and re-created.
+	/// If there are existing sessions, then <see cref="IDevice9.CreateShaderCacheSession"/> returns <b>DXGI_ERROR_ALREADY_EXISTS</b>.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_cache_session_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public Guid Identifier ;
+
+	/// <summary>
+	/// <para>Specifies the kind of cache.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_cache_session_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public ShaderCacheMode Mode ;
+
+	/// <summary>
+	/// <para>Modifies the behavior of the cache.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_cache_session_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public ShaderCacheFlags Flags ;
+	
+	/// <summary>
+	/// <para>For in-memory caches, this is the only storage available. For disk caches, all entries that are stored or found are temporarily stored in memory, until evicted by newer entries. This value determines the size of that temporary storage. Defaults to 1KB.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_cache_session_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public uint MaximumInMemoryCacheSizeBytes ;
+
+	/// <summary>
+	/// <para>Specifies how many entries can be stored in memory. Defaults to 128.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_cache_session_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public uint MaximumInMemoryCacheEntries ;
+
+	/// <summary>
+	/// <para>For disk caches, controls the maximum file size. Defaults to 128MB.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_cache_session_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public uint MaximumValueFileSizeBytes ;
+
+	/// <summary>
+	/// <para>Can be used to implicitly clear caches when an application or component update is done. If the version doesn't match the version stored in the cache, then it will be wiped and re-created.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_cache_session_desc#members">Read more on docs.microsoft.com </a>.</para>
+	/// </summary>
+	public ulong Version ;
+	
+	
+	public ShaderCacheSessionDescription( Guid identifier, ShaderCacheMode mode = ShaderCacheMode.Memory,
+										  ShaderCacheFlags flags = ShaderCacheFlags.None,
+										  uint maximumInMemoryCacheSizeBytes = 1024U,
+										  uint maximumInMemoryCacheEntries = 128U,
+										  uint maximumValueFileSizeBytes = 128U,
+										  ulong version = 0UL ) {
+		Identifier = identifier ; Mode = mode ; Flags = flags ; 
+		MaximumInMemoryCacheSizeBytes = maximumInMemoryCacheSizeBytes ; 
+		MaximumInMemoryCacheEntries = maximumInMemoryCacheEntries ; 
+		MaximumValueFileSizeBytes = maximumValueFileSizeBytes ; 
+		Version = version ;
+	}
+} ;
+
+
+[EquivalentOf(typeof(D3D12_SAMPLER_DESC2))]
+public partial struct SamplerDescription2 {
+	public Filter Filter ;
+	public TextureAddressMode AddressU ;
+	public TextureAddressMode AddressV ;
+	public TextureAddressMode AddressW ;
+	public float MipLODBias ;
+	public uint MaxAnisotropy ;
+	public ComparisonFunction ComparisonFunc ;
+	public _borderColorUnion BorderColor ;
+	public float MinLOD ;
+	public float MaxLOD ;
+	public SamplerFlags Flags ;
+
+	[StructLayout( LayoutKind.Explicit )]
+	public partial struct _borderColorUnion {
+		[FieldOffset( 0 )] public __float_4 FloatBorderColor ;
+		[FieldOffset( 0 )] public __uint_4 UintBorderColor ;
+		
+		public _borderColorUnion( __float_4 floatBorderColor ) {
+			Unsafe.SkipInit( out this ) ;
+			FloatBorderColor = floatBorderColor ;
+		}
+		public _borderColorUnion( __uint_4 uintBorderColor ) {
+			Unsafe.SkipInit( out this ) ;
+			UintBorderColor = uintBorderColor ;
+		}
+		public static implicit operator _borderColorUnion( __float_4 floatBorderColor ) =>
+			new( floatBorderColor ) ;
+		public static implicit operator _borderColorUnion( __uint_4 uintBorderColor ) =>
+			new( uintBorderColor ) ;
+	}
+	
+	public SamplerDescription2( Filter filter = Filter.MinMagMipPoint,
+								TextureAddressMode addressU = TextureAddressMode.Clamp,
+								TextureAddressMode addressV = TextureAddressMode.Clamp,
+								TextureAddressMode addressW = TextureAddressMode.Clamp,
+								float mipLODBias = 0.0f,
+								uint maxAnisotropy = 0,
+								ComparisonFunction comparisonFunc = ComparisonFunction.Never,
+								__float_4 borderColor = default,
+								float minLOD = 0.0f,
+								float maxLOD = float.MaxValue,
+								SamplerFlags flags = SamplerFlags.None ) {
+		Filter = filter ; AddressU = addressU ; AddressV = addressV ; AddressW = addressW ; 
+		MipLODBias = mipLODBias ; MaxAnisotropy = maxAnisotropy ; ComparisonFunc = comparisonFunc ; 
+		BorderColor = new( borderColor ) ; MinLOD = minLOD ; MaxLOD = maxLOD ; Flags = flags ;
+	}
+	
+	public SamplerDescription2( Filter filter, TextureAddressMode addressU, TextureAddressMode addressV, TextureAddressMode addressW,
+								float mipLODBias, uint maxAnisotropy, ComparisonFunction comparisonFunc, 
+								__uint_4 borderColor, float minLOD, float maxLOD, SamplerFlags flags ) {
+		Filter = filter ; AddressU = addressU ; AddressV = addressV ; AddressW = addressW ; 
+		MipLODBias = mipLODBias ; MaxAnisotropy = maxAnisotropy ; ComparisonFunc = comparisonFunc ; 
+		BorderColor = new( borderColor ) ; MinLOD = minLOD ; MaxLOD = maxLOD ; Flags = flags ;
+	}
+} ;
 

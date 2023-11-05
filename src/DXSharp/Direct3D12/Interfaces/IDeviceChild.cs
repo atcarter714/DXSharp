@@ -21,20 +21,7 @@ namespace DXSharp.Direct3D12 ;
 /// It provides a method to get back to the device object it was created against.
 /// </summary>
 [ProxyFor( typeof( ID3D12DeviceChild ) )]
-public interface IDeviceChild: IObject,
-							   IComObjectRef< ID3D12DeviceChild >,
-							   IUnknownWrapper< ID3D12DeviceChild > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12DeviceChild >? ComPointer { get ; }
-	new ID3D12DeviceChild? COMObject => ComPointer?.Interface ;
-	
-	ID3D12Object? IObject.COMObject => ComPointer?.Interface ;
-	
-	//! Explicit Interface Implementations / Disambiguation ::
-	ID3D12DeviceChild? IComObjectRef< ID3D12DeviceChild >.COMObject => COMObject ;
-	ComPtr< ID3D12DeviceChild >? IUnknownWrapper< ID3D12DeviceChild >.ComPointer => ComPointer ;
-	ComPtr< ID3D12Object >? IUnknownWrapper< ID3D12Object >.ComPointer => ComPointer?.Cast< ID3D12Object >( ) ;
-	// ---------------------------------------------------------------------------------
+public interface IDeviceChild: IObject {
 	
 	/// <summary>Gets a pointer to the device that created this interface.</summary>
 	/// <param name="riid">
@@ -49,18 +36,11 @@ public interface IDeviceChild: IObject,
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
 	/// </returns>
 	/// <remarks>Any returned interfaces have their reference count incremented by one, so be sure to call ::release() on the returned pointers before they are freed or else you will have a memory leak.</remarks>
-	void GetDevice( in Guid riid, out IDevice ppvDevice ) {
-		unsafe {
-			Guid _riid = riid ;
-			COMObject!.GetDevice( &_riid, out var _ppvDevice ) ;
-			ppvDevice = (IDevice)_ppvDevice ;
-		}
-	}
-	
+	void GetDevice( in Guid riid, out IDevice ppvDevice ) ;
 	
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof(ID3D12DeviceChild) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12DeviceChild).GUID ;
+	new static Type ComType => typeof(ID3D12DeviceChild) ;
+	public new static Guid IID => (ComType.GUID) ;
 	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]

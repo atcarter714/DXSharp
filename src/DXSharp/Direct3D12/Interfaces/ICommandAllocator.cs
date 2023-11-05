@@ -10,16 +10,7 @@ namespace DXSharp.Direct3D12 ;
 
 
 [ProxyFor(typeof(ID3D12CommandAllocator))]
-public interface ICommandAllocator: IPageable,
-									IComObjectRef< ID3D12CommandAllocator >,
-									IUnknownWrapper< ID3D12CommandAllocator > {
-	// ---------------------------------------------------------------------------------
-	new ComPtr< ID3D12CommandAllocator >? ComPointer { get ; }
-	new ID3D12CommandAllocator? COMObject => ComPointer?.Interface ;
-	ID3D12CommandAllocator? IComObjectRef< ID3D12CommandAllocator >.COMObject => COMObject ;
-	ComPtr< ID3D12CommandAllocator >? IUnknownWrapper< ID3D12CommandAllocator >.ComPointer => ComPointer;
-	// ==================================================================================
-	
+public interface ICommandAllocator: IPageable {
 	
 	/// <summary>Indicates to re-use the memory that is associated with the command allocator.</summary>
 	/// <returns>
@@ -29,12 +20,11 @@ public interface ICommandAllocator: IPageable,
 	/// <para>Apps call <b>Reset</b> to re-use the memory that is associated with a command allocator.  From this call to <b>Reset</b>, the runtime and driver determine that the graphics processing unit (GPU) is no longer executing any command lists that have recorded commands with the command allocator. Unlike <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-reset">ID3D12GraphicsCommandList::Reset</a>, it is not recommended that you call <b>Reset</b>  on the command allocator while a command list is still being executed. The debug layer will issue a warning if it can't prove that there are no pending GPU references to command lists that have recorded commands in the allocator. The debug layer will issue an error if <b>Reset</b> is called concurrently by multiple threads (on the same allocator object).</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandallocator-reset#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void Reset( ) => COMObject!.Reset( ) ;
+	void Reset( ) ;
 	
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof(ID3D12CommandAllocator) ;
-	static Guid IUnknownWrapper.InterfaceGUID => typeof(ID3D12CommandAllocator).GUID ;
-	
+	new static Type ComType => typeof(ID3D12CommandAllocator) ;
+	public new static Guid IID => (ComType.GUID) ;
 	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
@@ -47,7 +37,7 @@ public interface ICommandAllocator: IPageable,
 											  .GetReference(data) ) ;
 		}
 	}
-
+	
 	// ==================================================================================
 } ;
 
