@@ -1,4 +1,4 @@
-﻿#define USE_STRING_MEM_POOL
+#define USE_STRING_MEM_POOL
 
 #region Using Directives 
 #pragma warning disable CS1591,CS1573,CS0465,CS0649,CS8019,CS1570,CS1584,CS1658,CS0436,CS8981

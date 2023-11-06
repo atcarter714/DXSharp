@@ -1,4 +1,4 @@
-﻿#region Using Directives
+#region Using Directives
 using System.Diagnostics ;
 using System.Collections.Concurrent ;
 using System.Runtime.InteropServices ;

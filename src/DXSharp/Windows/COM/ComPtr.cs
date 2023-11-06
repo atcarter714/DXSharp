@@ -1,4 +1,4 @@
-﻿// COPYRIGHT NOTICES:
+// COPYRIGHT NOTICES:
 // --------------------------------------------------------------------------------
 // Copyright © 2023 Arkaen Solutions, All Rights Reserved.
 // (Original: Copyright © 2022 DXSharp - ATC - Aaron T. Carter)

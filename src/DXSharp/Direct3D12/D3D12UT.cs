@@ -1,4 +1,4 @@
-﻿#region Using Directives
+#region Using Directives
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
