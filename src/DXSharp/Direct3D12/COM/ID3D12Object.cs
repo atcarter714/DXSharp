@@ -32,7 +32,6 @@ public interface ID3D12Object: IUnknown {
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns one of the <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a>.</para>
 	/// </returns>
 	/// <remarks>If the data returned is a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/unknwn/nn-unknwn-iunknown">IUnknown</a>, or one of its derivative classes, which was previously set by SetPrivateDataInterface, that interface will have its reference count incremented before the private data is returned.</remarks>
-	[return: MarshalAs(UnmanagedType.I4)]
 	[PreserveSig] unsafe HResult GetPrivateData( Guid* guid, ref uint pDataSize,
 												 [Optional, MaybeNull] void* pData ) ;
 	
@@ -57,7 +56,6 @@ public interface ID3D12Object: IUnknown {
 	/// <para>Rather than using the Direct3D 11 debug object naming scheme of calling <b>ID3D12Object::SetPrivateData</b> using <b>WKPDID_D3DDebugObjectName</b> with an ASCII name, call <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12object-setname">ID3D12Object::SetName</a> with a UNICODE name.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setprivatedata#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[return: MarshalAs(UnmanagedType.I4)]
 	[PreserveSig] unsafe HResult SetPrivateData( Guid* guid, uint DataSize,
 												 [Optional, MaybeNull] void* pData ) ;
 
@@ -77,7 +75,6 @@ public interface ID3D12Object: IUnknown {
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setprivatedatainterface">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[return: MarshalAs(UnmanagedType.I4)]
 	[PreserveSig] unsafe HResult SetPrivateDataInterface( Guid* guid,
 															   [MarshalAs(0x19)] IUnknown? pData ) ;
 	
@@ -94,6 +91,5 @@ public interface ID3D12Object: IUnknown {
 	/// <para>This method takes UNICODE names. Note that this is simply a convenience wrapper around [ID3D12Object::SetPrivateData](nf-d3d12-id3d12object-setprivatedata.md) with **WKPDID_D3DDebugObjectNameW**. Therefore names which are set with `SetName` can be retrieved with [ID3D12Object::GetPrivateData](nf-d3d12-id3d12object-getprivatedata.md) with the same GUID. Additionally, D3D12 supports narrow strings for names, using the **WKPDID_D3DDebugObjectName** GUID directly instead.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setname#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[return: MarshalAs(UnmanagedType.I4)]
 	[PreserveSig] void SetName( PCWSTR Name ) ;
 } ;

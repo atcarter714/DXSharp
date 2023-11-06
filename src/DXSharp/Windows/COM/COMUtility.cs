@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using Windows.Win32.Graphics.Direct3D ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
 
@@ -11,9 +12,34 @@ namespace DXSharp.Windows.COM ;
 
 
 public static class COMUtility {
+	#region Constant & ReadOnly Values
+	public static readonly Guid DXGI_DEBUG_ALL = new Guid(0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 
+														  0xe9, 0xa9, 0xcf, 0xda, 0x8) ;
+	public static readonly Guid DXGI_DEBUG_DXGI = new Guid(0x25cddaa4, 0xb1c6, 0x47e1, 0xac, 0x3e, 0x98, 
+														   0x87, 0x5b, 0x5a, 0x2e, 0x2a) ;
+	
+	public static readonly Guid WKPDID_D3DDebugObjectName = new( 0x429b8c22, 0x9188, 0x4b0c, 0x87, 0x42,
+																 0xac, 0xb0, 0xbf, 0x85, 0xc2, 0x00 ) ;
+	public static readonly Guid WKPDID_D3DDebugObjectNameW = new( 0x4cca5fd8, 0x921f, 0x42c8, 0x85, 0x66,
+																  0x70, 0xca, 0xf2, 0xa9, 0xb7, 0x41 ) ;
+	public static readonly Guid WKPDID_CommentStringW = new( 0xd0149dc0, 0x90e8, 0x4ec8, 0x81, 0x44,
+															 0xe9, 0x00, 0xad, 0x26, 0x6b, 0xb2 ) ;
+	public static readonly Guid WKPDID_D3D12UniqueObjectId = new( 0x1b39de15, 0xec04, 0x4bae, 0xba, 0x4d,
+																  0x8c, 0xef, 0x79, 0xfc, 0x04, 0xc1 ) ;
+
+	public static readonly Guid D3D_TEXTURE_LAYOUT_ROW_MAJOR = new( 0xb5dc234f, 0x72bb, 0x4bec, 0x97, 0x05,
+																	0x8c, 0xf2, 0x58, 0xdf, 0x6b, 0x6c ) ;
+	
+	public static readonly Guid D3D_TEXTURE_LAYOUT_64KB_STANDARD_SWIZZLE = new( 0x4c0f29e3, 0x3f5f, 0x4d35,
+																			  0x84, 0xc9, 0xbc, 0x09, 0x83,
+																			  0xb6, 0x2c, 0x28 ) ;
+	
+	#endregion
+	
 	
 	static HResult _lastHResult = HResult.S_OK ;
 	internal static HResult LastHResult => _lastHResult ;
+	
 	
 	//! TODO: Decide which of these versions (Exists vs IsDestroyed) to keep ...
 	[MethodImpl(_MAXOPT_)] public static bool Exists( nint pUnknown ) {
@@ -82,14 +108,6 @@ public static class COMUtility {
 		return ( IUnknown )_interface ;
 	}
 
-	
-	/*[MethodImpl( _MAXOPT_ )]
-	public static void GetCOMObject< T >( nint pUnknown, out T? ppObject ) where T: IUnknown =>
-		ppObject = GetCOMObject< T >( pUnknown ) ; //(T)GetCOM_RCW( pUnknown )! ;
-	
-	[MethodImpl(_MAXOPT_)]
-	public static T? GetCOMObject< T >( [NotNull] in ComPtr< T > pUnknown ) where T: IUnknown =>
-															(T)GetCOM_RCW( pUnknown.BaseAddress )! ;*/
 	
 	
 	[MethodImpl(_MAXOPT_)]
@@ -188,25 +206,6 @@ public static class COMUtility {
 		return hr ;
 	}
 	
-	/*[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-	public static HResult QueryInterface< TWrapper, TInterface >( this TWrapper wrapper,
-																	nint pUnknown, out TInterface comObj )
-																		where TWrapper:
-																			IUnknownWrapper< TWrapper, TInterface > 
-																		where TInterface: IUnknown {
-		if( wrapper is null ) throw new ArgumentNullException( nameof(wrapper) ) ;
-		
-		var riid = (wrapper.ComType).GUID ;
-		var hr = (HResult)Marshal.QueryInterface( pUnknown, ref riid,
-												  out var pInterface ) ;
-		
-		object comObjectRef = Marshal.GetObjectForIUnknown( pInterface ) ;
-		comObj = (TInterface)comObjectRef ;
-		
-		_lastHResult = hr ;
-		return hr ;
-	}*/
-
 	#endregion
 	
 	
@@ -216,7 +215,15 @@ public static class COMUtility {
 	
 	[MethodImpl(_MAXOPT_)] public static T? GetD3D12Object< T >( nint pUnknown )
 		where T: class, ID3D12Object => GetRCWObject( pUnknown ) as T ;
-		
+
+	
+	public static TOut Cast< TIn, TOut >( TIn obj ) where TIn:  IDXCOMObject, IInstantiable
+													where TOut: TIn {
+		var _wrapper = (IUnknownWrapper)obj ;
+		var _other = (TOut)TOut.Instantiate( _wrapper.BasePointer ) ;
+		return _other ;
+	}
+	
 	// ------------------------------------------------------------------------------
 	// Extension Methods:
 	// ------------------------------------------------------------------------------
@@ -226,3 +233,15 @@ public static class COMUtility {
 	
 	// ==============================================================================
 } ;
+
+
+
+/* Definitions from C/C++ Headers:
+DEFINE_GUID( WKPDID_D3DDebugObjectName,0x429b8c22,0x9188,0x4b0c,0x87,0x42,0xac,0xb0,0xbf,0x85,0xc2,0x00 ) ;
+DEFINE_GUID( WKPDID_D3DDebugObjectNameW,0x4cca5fd8,0x921f,0x42c8,0x85,0x66,0x70,0xca,0xf2,0xa9,0xb7,0x41) ;
+DEFINE_GUID( WKPDID_CommentStringW,0xd0149dc0,0x90e8,0x4ec8,0x81, 0x44, 0xe9, 0x00, 0xad, 0x26, 0x6b, 0xb2 ) ;
+DEFINE_GUID( WKPDID_D3D12UniqueObjectId, 0x1b39de15, 0xec04, 0x4bae, 0xba, 0x4d, 0x8c, 0xef, 0x79, 0xfc, 0x04, 0xc1 ) ;
+
+DEFINE_GUID(D3D_TEXTURE_LAYOUT_ROW_MAJOR,0xb5dc234f,0x72bb,0x4bec,0x97,0x05,0x8c,0xf2,0x58,0xdf,0x6b,0x6c);
+DEFINE_GUID(D3D_TEXTURE_LAYOUT_64KB_STANDARD_SWIZZLE,0x4c0f29e3,0x3f5f,0x4d35,0x84,0xc9,0xbc,0x09,0x83,0xb6,0x2c,0x28);
+*/

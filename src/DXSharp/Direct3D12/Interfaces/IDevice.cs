@@ -4,8 +4,7 @@ using Windows.Win32.Graphics.Direct3D12 ;
 using System.Runtime.InteropServices ;
 using System.Runtime.Versioning ;
 using Windows.Win32 ;
-using Windows.Win32.Foundation ;
-using Windows.Win32.Security ;
+
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
@@ -14,7 +13,11 @@ using DXSharp.Windows.Win32 ;
 namespace DXSharp.Direct3D12 ;
 
 
-/// <summary>Proxy interface for the native ID3D12Device COM interface</summary>
+/// <summary>
+/// Represents a virtual adapter; it is used to create command allocators,
+/// command lists, command queues, fences, resources, pipeline state objects,
+/// heaps, root signatures, samplers, and many resource views.
+/// </summary>
 [ProxyFor( typeof(ID3D12Device) )]
 public interface IDevice: IObject,
 						  IInstantiable {
@@ -1061,6 +1064,10 @@ public interface IDevice: IObject,
 } ;
 
 
+/// <summary>
+/// Represents a virtual adapter, and expands on the range of methods
+/// provided by <see cref="IDevice"/>.
+/// </summary>
 [ProxyFor( typeof( ID3D12Device1 ) )]
 public interface IDevice1: IDevice {
 
@@ -1172,6 +1179,17 @@ public interface IDevice1: IDevice {
 } ;
 
 
+/// <summary>
+/// Represents a virtual adapter. This interface extends <see cref="IDevice1"/>
+/// to create pipeline state objects from pipeline state stream descriptions.
+/// </summary>
+/// <remarks>
+/// <b>Note:</b> This interface was introduced in Windows 10 Creators Update.
+/// Applications targeting Windows 10 Creators Update should use this interface
+/// instead of earlier or later versions. Applications targeting an earlier or
+/// later version of Windows 10 should use the appropriate version of the
+/// <see cref="IDevice"/> interface.
+/// </remarks>
 [ProxyFor( typeof( ID3D12Device2 ) )]
 public interface IDevice2: IDevice1 {
 	// ---------------------------------------------------------------------------------
@@ -1217,6 +1235,16 @@ public interface IDevice2: IDevice1 {
 }
 
 
+/// <summary>
+/// Represents a virtual adapter. This interface extends <see cref="IDevice2"/> to support
+/// the creation of special-purpose diagnostic heaps in system memory that persist even in
+/// the event of a GPU-fault or device-removed scenario.
+/// </summary>
+/// <remarks>
+/// <b>Note:</b> This interface, introduced in the Windows 10 Fall Creators Update, is the
+/// latest version of the ID3D12Device interface. Applications targeting the Windows 10
+/// Fall Creators Update and later should use this interface instead of earlier versions.
+/// </remarks>
 [ProxyFor( typeof( ID3D12Device3 ) )]
 public interface IDevice3: IDevice2 {
 	
@@ -1354,6 +1382,8 @@ public interface IDevice3: IDevice2 {
 } ;
 
 
+/// <summary>Represents a virtual adapter.</summary>
+/// <remarks>This interface extends <see cref="IDevice3"/>.</remarks>
 [ProxyFor( typeof( ID3D12Device4 ) )]
 public interface IDevice4: IDevice3 {
 	
@@ -1599,6 +1629,14 @@ public interface IDevice4: IDevice3 {
 }
 
 
+/// <summary>Represents a virtual adapter.</summary>
+/// <remarks>
+/// This interface extends <see cref="IDevice4"/>.<para/>
+/// <b>NOTE:</b> This interface, introduced in Windows 10, version 1809, is the latest version of the
+/// <see cref="IDevice"/> interface. Applications targeting Windows 10, version 1809 and later should
+/// use this interface instead of earlier versions.<para/>
+/// (Requires Windows 10, version 10.0.17763 or later.)
+/// </remarks>
 [SupportedOSPlatform( "windows10.0.17763" )]
 [ProxyFor( typeof( ID3D12Device5 ) )]
 public interface IDevice5: IDevice4 {
@@ -2190,6 +2228,8 @@ public interface IDevice9: IDevice8 {
 }
 
 
+/// <summary>Represents a virtual adapter.</summary>
+/// <remarks>Requires the DirectX 12 Agility SDK 1.7 or later.</remarks>
 [ProxyFor( typeof( ID3D12Device10 ) )]
 public interface IDevice10: IDevice9 {
 
@@ -2385,12 +2425,10 @@ public interface IDevice12: IDevice11 {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
 			ReadOnlySpan< byte > data = typeof(ID3D12Device12).GUID.ToByteArray( ) ;
-			
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
 													.GetReference(data) ) ;
 		}
 	}
-	
 	// ---------------------------------------------------------------------------------
 	static IInstantiable IInstantiable. Instantiate( ) => new Device12( ) ;
 	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Device12( pComObj ) ;

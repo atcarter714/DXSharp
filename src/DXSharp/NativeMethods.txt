@@ -132,7 +132,6 @@ ID3D12Resource1
 ID3D12Resource2
 
 // Win32 API Stuff:
-// IUnknown
 GetClientRect
 PeekMessage
 GetMessage
@@ -210,6 +209,7 @@ D3DCompileFromFile
 // Additional Win32 Functions needed:
 // 5/14/23 - AtC
 // ------------------------------------------
+
 LoadCursorA
 LoadCursorW
 CommandLineToArgvW

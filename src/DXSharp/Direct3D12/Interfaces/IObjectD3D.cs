@@ -24,6 +24,17 @@ public interface IObject: IDXCOMObject {
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setname#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void SetName( string Name ) ;
+
+#if DEBUG || DEBUG_COM || DEV_BUILD
+	/// <summary>A debug name (<see cref="string"/>) for this COM interface.</summary>
+	string DebugName { get ; }
+	
+	/// <summary>Gets the debug name of this COM interface.</summary>
+	/// <returns>
+	/// <para>Type: <b>string</b> The debug name of this COM interface.</para>
+	/// </returns>
+	string GetDebugName( ) ;
+#endif
 	
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof(ID3D12Object) ;

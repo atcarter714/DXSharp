@@ -1088,6 +1088,11 @@ public struct CPUDescriptorHandle {
 	/// <summary>The address of  the descriptor.</summary>
 	public nuint ptr ;
 	
+	
+	public void Offset( int offsetInDescriptors, uint descriptorIncrementSize ) => 
+		ptr += (nuint)( (ulong)offsetInDescriptors * (ulong)descriptorIncrementSize ) ;
+	
+	
 	public static implicit operator nuint( CPUDescriptorHandle handle ) => handle.ptr ;
 	public static implicit operator CPUDescriptorHandle( nuint ptr ) => new CPUDescriptorHandle { ptr = ptr } ;
 	public static implicit operator D3D12_CPU_DESCRIPTOR_HANDLE( in CPUDescriptorHandle handle ) => new D3D12_CPU_DESCRIPTOR_HANDLE { ptr = handle.ptr } ;

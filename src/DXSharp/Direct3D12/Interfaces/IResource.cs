@@ -1,17 +1,30 @@
 ﻿#region Using Directives
 
+using System.Collections.ObjectModel ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
+/// <summary>
+/// Encapsulates a generalized ability of the CPU and GPU to read and write to physical memory, or heaps.
+/// It contains abstractions for organizing and manipulating simple arrays of data as well as multidimensional
+/// data optimized for shader sampling.
+/// </summary>
 [ProxyFor(typeof(ID3D12Resource))]
 public interface IResource: IPageable,
 							IInstantiable {
+	internal static readonly ReadOnlyDictionary< Guid, Func<ID3D12Resource, IInstantiable> > _resourceCreationFunctions =
+		new( new Dictionary<Guid, Func<ID3D12Resource, IInstantiable> > {
+			{ IResource.IID, ( pComObj ) => new Resource( pComObj ) },
+			{ IResource1.IID, ( pComObj ) => new Resource1( (pComObj as ID3D12Resource1)! ) },
+			{ IResource2.IID, ( pComObj ) => new Resource2( (pComObj as ID3D12Resource2)! ) },
+		} ) ;
+
 	// ---------------------------------------------------------------------------------
 	
 	/// <summary>Gets a CPU pointer to the specified subresource in the resource, but may not disclose the pointer value to applications. Map also invalidates the CPU cache, when necessary, so that CPU reads to this address reflect any modifications made by the GPU.</summary>
@@ -181,6 +194,11 @@ public interface IResource: IPageable,
 
 [ProxyFor( typeof( ID3D12Resource1 ) )]
 public interface IResource1: IResource {
+	/// <summary>
+	/// Gets the <see cref="IProtectedResourceSession"/> interface for the protected resource.
+	/// </summary>
+	/// <param name="riid">The globally unique identifier (GUID) for the ID3D12ProtectedResourceSession interface.</param>
+	/// <param name="ppProtectedSession">Receives a pointer representing the ID3D12ProtectedResourceSession interface.</param>
 	void GetProtectedResourceSession( in Guid riid, out IProtectedSession ppProtectedSession ) ;
 
 	// ---------------------------------------------------------------------------------
@@ -203,6 +221,10 @@ public interface IResource1: IResource {
  
 [ProxyFor( typeof( ID3D12Resource2 ) )]
 public interface IResource2: IResource1 {
+	/// <summary>
+	/// Gets an extended description (<see cref="ResourceDescription1"/>) of the resource.
+	/// </summary>
+	/// <returns>A <see cref="ResourceDescription1"/> data structure that describes the resource.</returns>
 	ResourceDescription1 GetDesc1( ) ;
 	// ---------------------------------------------------------------------------------
 	public new static Type ComType => typeof( ID3D12Resource2 ) ;

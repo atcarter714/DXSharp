@@ -82,7 +82,7 @@ internal abstract class DXComObject: DisposableObject,
 		return hr ;
 	}
 	
-	public unsafe HResult SetPrivateData< TData >( in Guid name, uint DataSize, nint pData ) {
+	public unsafe HResult SetPrivateData( in Guid name, uint DataSize, nint pData ) {
 		// Obtain interface references:
 		HResult hr = default ;
 		var _name = name ;

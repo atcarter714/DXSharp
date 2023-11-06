@@ -45,8 +45,7 @@ public interface IFactory: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	HResult EnumAdapters< TAdapter >( uint index, out TAdapter? ppAdapter )
-		where TAdapter: class, IAdapter ;
+	HResult EnumAdapters( uint index, out IAdapter? ppAdapter ) ;
 	
 	
 	/// <summary>Allows DXGI to monitor an application's message queue for the alt-enter key sequence (which causes the application to switch from windowed to full screen or vice versa).</summary>
@@ -97,11 +96,9 @@ public interface IFactory: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	HResult CreateSwapChain< TCmdObj, TSwapChain >( in  TCmdObj pCmdQueue,
-													in  SwapChainDescription desc,
-													out TSwapChain? ppSwapChain )
-														where TCmdObj: ICommandQueue
-														where TSwapChain: ISwapChain ;
+	HResult CreateSwapChain( in  ICommandQueue pCmdQueue,
+							 in  SwapChainDescription desc,
+							 out ISwapChain? ppSwapChain ) ;
 
 	
 	/// <summary>Create an adapter interface that represents a software adapter.</summary>
@@ -119,11 +116,11 @@ public interface IFactory: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createsoftwareadapter">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateSoftwareAdapter< TAdapter >( HInstance Module, out TAdapter? ppAdapter ) 
-		where TAdapter: class, IAdapter, IInstantiable ;
+	void CreateSoftwareAdapter( HInstance Module, out IAdapter? ppAdapter ) ;
 	
 	// -----------------------------------------------------------------------------------------------
 	new static Type ComType => typeof( IDXGIFactory ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -178,8 +175,7 @@ public interface IFactory1: IFactory {
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory1-enumadapters1">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	HResult EnumAdapters1< TAdapter >( uint index, out TAdapter? ppAdapter )
-											where TAdapter: class, IAdapter1 ;
+	HResult EnumAdapters1( uint index, out IAdapter1? ppAdapter ) ;
 	
 	
 	/// <summary>Informs an application of the possible need to re-enumerate adapters.</summary>
@@ -194,6 +190,7 @@ public interface IFactory1: IFactory {
 	
 	// -----------------------------------------------------------------------------------------------
 	new static Type ComType => typeof( IDXGIFactory1 ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -246,16 +243,16 @@ public interface IFactory2: IFactory1 {
 	/// </remarks>
 	bool IsWindowedStereoEnabled( ) ;
 
-	
+
 	/// <summary>Creates a swap chain that is associated with an HWND handle to the output window for the swap chain.</summary>
-	/// <param name="pDevice">For Direct3D 11, and earlier versions of Direct3D, this is a pointer to the Direct3D device for the swap chain. For Direct3D 12 this is a pointer to a direct command queue (refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12commandqueue">ID3D12CommandQueue</a>). This parameter cannot be <b>NULL</b>.</param>
+	/// <param name="pCommandQueue">For Direct3D 11, and earlier versions of Direct3D, this is a pointer to the Direct3D device for the swap chain. For Direct3D 12 this is a pointer to a direct command queue (refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12commandqueue">ID3D12CommandQueue</a>). This parameter cannot be <b>NULL</b>.</param>
 	/// <param name="hWnd">The <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a> handle that is associated with the swap chain that <b>CreateSwapChainForHwnd</b> creates. This parameter cannot be <b>NULL</b>.</param>
 	/// <param name="pDesc">A pointer to a  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_swap_chain_desc1">SwapChainDescription1</a> structure for the swap-chain description. This parameter cannot be <b>NULL</b>.</param>
 	/// <param name="pFullscreenDesc">A pointer to a  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_swap_chain_fullscreen_desc">SwapChainFullscreenDescription</a> structure for the description of a full-screen swap chain. You can optionally set this parameter to create a full-screen swap chain. Set it to <b>NULL</b> to create a windowed swap chain.</param>
 	/// <param name="pRestrictToOutput">
-	/// <para>A pointer to the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgioutput">IDXGIOutput</a> interface for the output to restrict content to. You must also pass the <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-present">DXGI_PRESENT_RESTRICT_TO_OUTPUT</a> flag in a <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-present1">IDXGISwapChain1::Present1</a> call to force the content to appear blacked out on any other output. If you want to restrict the content to a different output, you must create a new swap chain. However, you can conditionally restrict content based on the <b>DXGI_PRESENT_RESTRICT_TO_OUTPUT</b> flag.</para>
-	/// <para>Set this parameter to <b>NULL</b> if you don't want to restrict content to an output target.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforhwnd#parameters">Read more on docs.microsoft.com</a>.</para>
+	///     <para>A pointer to the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgioutput">IDXGIOutput</a> interface for the output to restrict content to. You must also pass the <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-present">DXGI_PRESENT_RESTRICT_TO_OUTPUT</a> flag in a <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-present1">IDXGISwapChain1::Present1</a> call to force the content to appear blacked out on any other output. If you want to restrict the content to a different output, you must create a new swap chain. However, you can conditionally restrict content based on the <b>DXGI_PRESENT_RESTRICT_TO_OUTPUT</b> flag.</para>
+	///     <para>Set this parameter to <b>NULL</b> if you don't want to restrict content to an output target.</para>
+	///     <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforhwnd#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="ppSwapChain">A pointer to a variable that receives a pointer to the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nn-dxgi1_2-idxgiswapchain1">IDXGISwapChain1</a> interface for the swap chain that <b>CreateSwapChainForHwnd</b> creates.</param>
 	/// <returns>
@@ -266,16 +263,15 @@ public interface IFactory2: IFactory1 {
 	/// <para><div class="alert"><b>Note</b>Do not use this method in Windows Store apps. Instead, use <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforcorewindow">IDXGIFactory2::CreateSwapChainForCoreWindow</a>.</div> <div></div> If you specify the width, height, or both (<b>Width</b> and <b>Height</b> members of <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_swap_chain_desc1">SwapChainDescription1</a> that <i>pDesc</i> points to) of the swap chain as zero, the runtime obtains the size from the output window that the <i>hWnd</i> parameter specifies. You can subsequently call the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-getdesc1">IDXGISwapChain1::GetDesc1</a> method to retrieve the assigned width or height value. Because you can associate only one flip presentation model swap chain at a time with an <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a>, the Microsoft Direct3D11 policy of deferring the destruction of objects can cause problems if you attempt to destroy a flip presentation model swap chain and replace it with another swap chain. For more info about this situation, see <a href="https://docs.microsoft.com/windows/desktop/api/d3d11/nf-d3d11-id3d11devicecontext-flush">Deferred Destruction Issues with Flip Presentation Swap Chains</a>. For info about how to choose a format for the swap chain's back buffer, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/converting-data-color-space">Converting data for the color space</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforhwnd#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateSwapChainForHwnd( ICommandAllocator pDevice,
-								 HWnd hWnd,
-								 in SwapChainDescription1 pDesc,
-								 [Optional] in SwapChainFullscreenDescription pFullscreenDesc,
-								 IOutput pRestrictToOutput,
-								 out ISwapChain1 ppSwapChain ) ;
+	void CreateSwapChainForHwnd( ICommandQueue pCommandQueue, HWnd hWnd,
+								 in            SwapChainDescription1           pDesc,
+								 [Optional] in SwapChainFullscreenDescription? pFullscreenDesc,
+								 [Optional]    IOutput?                        pRestrictToOutput,
+								 out           ISwapChain1                     ppSwapChain ) ;
 	
 	
 	/// <summary>Creates a swap chain that is associated with the CoreWindow object for the output window for the swap chain.</summary>
-	/// <param name="pDevice">For Direct3D 11, and earlier versions of Direct3D, this is a pointer to the Direct3D device for the swap chain. For Direct3D 12 this is a pointer to a direct command queue (refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12commandqueue">ID3D12CommandQueue</a>). This parameter cannot be <b>NULL</b>.</param>
+	/// <param name="pCmdQueue">For Direct3D 11, and earlier versions of Direct3D, this is a pointer to the Direct3D device for the swap chain. For Direct3D 12 this is a pointer to a direct command queue (refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12commandqueue">ID3D12CommandQueue</a>). This parameter cannot be <b>NULL</b>.</param>
 	/// <param name="pWindow">A pointer to the <a href="https://docs.microsoft.com/uwp/api/Windows.UI.Core.CoreWindow">CoreWindow</a> object that is associated with the swap chain that <b>CreateSwapChainForCoreWindow</b> creates.</param>
 	/// <param name="pDesc">A pointer to a  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_swap_chain_desc1">SwapChainDescription1</a> structure for the swap-chain description. This parameter cannot be <b>NULL</b>.</param>
 	/// <param name="pRestrictToOutput">A pointer to the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgioutput">IDXGIOutput</a> interface that the swap chain is restricted to. If the swap chain is moved to a different output, the content is black. You can optionally set this parameter to an output target that uses <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-present">DXGI_PRESENT_RESTRICT_TO_OUTPUT</a> to restrict the content on this output. If you do not set this parameter to restrict content on an output target, you can set it to <b>NULL</b>.</param>
@@ -290,11 +286,11 @@ public interface IFactory2: IFactory1 {
 	/// <para>This doc was truncated.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforcorewindow#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateSwapChainForCoreWindow< TAlloc >( TAlloc pDevice, 
-												  CoreWindow pWindow,
-												  in SwapChainDescription1 pDesc,
-												  IOutput pRestrictToOutput,
-												  out ISwapChain1 ppSwapChain ) where TAlloc: class, ICommandAllocator ;
+	void CreateSwapChainForCoreWindow( ICommandQueue            pCmdQueue,
+									   CoreWindow               pWindow,
+									   in SwapChainDescription1 pDesc,
+									   IOutput                  pRestrictToOutput,
+									   out ISwapChain1          ppSwapChain ) ;
 
 	
 	/// <summary>Identifies the adapter on which a shared resource object was created.</summary>
@@ -392,15 +388,14 @@ public interface IFactory2: IFactory1 {
 	/// <para>You can use composition swap chains with either: * <a href="https://docs.microsoft.com/windows/win32/directcomp/directcomposition-portal">DirectComposition</a>'s <a href="https://docs.microsoft.com/windows/win32/api/dcomp/nn-dcomp-idcompositionvisual">IDCompositionVisual</a> interface, * System XAML's [SwapChainPanel](/uwp/api/windows.ui.xaml.controls.swapchainpanel) or [SwapChainBackgroundPanel](/uwp/api/windows.ui.xaml.controls.swapchainbackgroundpanel) classes. * [Windows UI Library (WinUI) 3](https://docs.microsoft.com/windows/apps/winui/) XAML's [SwapChainPanel](/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.swapchainpanel) or [SwapChainBackgroundPanel](/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.swapchainbackgroundpanel) classes. For DirectComposition, you can call the <a href="https://docs.microsoft.com/windows/win32/api/dcomp/nf-dcomp-idcompositionvisual-setcontent">IDCompositionVisual::SetContent</a> method to set the swap chain as the content of a <a href="https://docs.microsoft.com/windows/win32/directcomp/basic-concepts">visual object</a>, which then allows you to bind the swap chain to the visual tree. For XAML, the <b>SwapChainBackgroundPanel</b> class exposes a classic COM interface <b>ISwapChainBackgroundPanelNative</b>. You can use the <a href="https://docs.microsoft.com/windows/win32/api/windows.ui.xaml.media.dxinterop/nf-windows-ui-xaml-media-dxinterop-iswapchainbackgroundpanelnative-setswapchain">ISwapChainBackgroundPanelNative::SetSwapChain</a> method to bind to the XAML UI graph. For info about how to use composition swap chains with XAML’s <b>SwapChainBackgroundPanel</b> class, see <a href="https://docs.microsoft.com/windows/uwp/gaming/directx-and-xaml-interop">DirectX and XAML interop</a>. The <a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-setfullscreenstate">IDXGISwapChain::SetFullscreenState</a>, <a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-resizetarget">IDXGISwapChain::ResizeTarget</a>, <a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgiswapchain-getcontainingoutput">IDXGISwapChain::GetContainingOutput</a>, <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-gethwnd">IDXGISwapChain1::GetHwnd</a>, and <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgiswapchain1-getcorewindow">IDXGISwapChain::GetCoreWindow</a> methods aren't valid on this type of swap chain. If you call any of these methods on this type of swap chain, they fail. For info about how to choose a format for the swap chain's back buffer, see <a href="https://docs.microsoft.com/windows/win32/direct3ddxgi/converting-data-color-space">Converting data for the color space</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgifactory2-createswapchainforcomposition#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateSwapChainForComposition< TAlloc >( TAlloc pDevice,
+	void CreateSwapChainForComposition( ICommandQueue pDevice,
 												  in SwapChainDescription1 pDesc,
 												  IOutput pRestrictToOutput,
-												  out ISwapChain1 ppSwapChain ) 
-														where TAlloc: class, ICommandAllocator ;
+												  out ISwapChain1 ppSwapChain ) ;
 
 	// ----------------------------------------------------------------------------------------------------
 	new static Type ComType => typeof(IDXGIFactory2) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -431,7 +426,7 @@ public interface IFactory3: IFactory2 {
 	uint GetCreationFlags( ) ;
 	
 	new static Type ComType => typeof(IDXGIFactory3) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -446,6 +441,10 @@ public interface IFactory3: IFactory2 {
 	static IInstantiable IInstantiable.Instantiate( ) => new Factory3( ) ;
 	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Factory3( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new Factory3( (pComObj as IDXGIFactory3)! ) ;
+	
+	/*public static void Create< T >( out T ppFactory ) where T: IFactory2, IInstantiable {
+		var hr = DXGIFunctions.CreateDXGIFactory2< T >( FactoryCreateFlags.DEBUG, IFactory7.IID, out var factory ) ;
+	}*/
 } ;
 
 
@@ -496,7 +495,7 @@ public interface IFactory4: IFactory3 {
 	
 	
 	new static Type ComType => typeof(IDXGIFactory4) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -541,7 +540,7 @@ public interface IFactory5: IFactory4 {
 	void CheckFeatureSupport( Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) ;
 	
 	new static Type ComType => typeof(IDXGIFactory5) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -600,7 +599,7 @@ public interface IFactory6: IFactory5 {
 	
 	
 	new static Type ComType => typeof(IDXGIFactory6) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -645,7 +644,7 @@ public interface IFactory7: IFactory6 {
 	void UnregisterAdaptersChangedEvent( uint dwCookie ) ;
 	
 	new static Type ComType => typeof(IDXGIFactory7) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {

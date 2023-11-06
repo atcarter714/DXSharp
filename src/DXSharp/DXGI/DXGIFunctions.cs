@@ -6,7 +6,7 @@ using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
 using System.Runtime.InteropServices ;
 using System.Runtime.CompilerServices ;
-
+using DXSharp.Windows ;
 using static DXSharp.DXSharpUtils ;
 #endregion
 namespace DXSharp.DXGI ;
@@ -27,7 +27,7 @@ public enum FactoryCreateFlags: uint {
 	/// <summary>No flags</summary>
 	None  = 0x0000,
 	/// <summary>Enable debug layer</summary>
-	DEBUG = 0x0001,
+	Debug = 0x0001,
 } ;
 
 
@@ -42,6 +42,19 @@ public enum FactoryCreateFlags: uint {
 /// </remarks>
 public static partial class DXGIFunctions {
 
+	//! Factory creation functions:
+	static readonly Dictionary< Guid, Func< IDXGIFactory, IInstantiable > > _factoryCreators = new( ) {
+		{ IFactory.IID, (f) => new Factory(f) },
+		{ IFactory1.IID, (f) => new Factory1( (f as IDXGIFactory1)! ) },
+		{ IFactory2.IID, (f) => new Factory2( (f as IDXGIFactory2)! ) },
+		{ IFactory3.IID, (f) => new Factory3( (f as IDXGIFactory3)! ) },
+		{ IFactory4.IID, (f) => new Factory4( (f as IDXGIFactory4)! ) },
+		{ IFactory5.IID, (f) => new Factory5( (f as IDXGIFactory5)! ) },
+		{ IFactory6.IID, (f) => new Factory6( (f as IDXGIFactory6)! ) },
+		{ IFactory7.IID, (f) => new Factory7( (f as IDXGIFactory7)! ) },
+	} ;
+	
+	
 	internal static unsafe TFactory? CreateDXGIFactory< TFactory >( Guid riid, out HRESULT hr ) 
 																	where TFactory: IDXGIFactory {
 		hr = PInvoke.CreateDXGIFactory( &riid, out object? factoryObj ) ;
@@ -58,6 +71,32 @@ public static partial class DXGIFunctions {
 																	 where TFactory: IDXGIFactory2 {
 		hr = PInvoke.CreateDXGIFactory2( (uint)Flags, &riid, out object? factoryObj ) ;
 		return hr.Succeeded ? (TFactory)factoryObj : default ;
+	}
+	
+	
+	
+	public static HResult CreateDXGIFactory2< T >( FactoryCreateFlags flags, in Guid riid, out T factory ) 
+																		where T : IFactory2, IInstantiable {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		if ( !_factoryCreators.ContainsKey( riid ) )
+			throw new ArgumentException( $"Unrecognized GUID value: " +
+										 $"{riid.ToString()}", nameof( riid ) ) ;
+#endif
+		
+		HResult hr = PInvoke.CreateDXGIFactory2( (uint)flags, riid, out var factoryObj ) ;
+		hr.SetAsLastErrorForThread( ) ;
+
+		// Convert RCW object to IDXGIFactory:
+		var dxgiFactoryBase = factoryObj as IDXGIFactory2
+#if DEBUG || DEBUG_COM || DEV_BUILD
+							  ?? throw new DirectXComError( $"The object returned from {nameof(CreateDXGIFactory2)} is invalid!" )
+#else
+			!
+#endif
+			;
+		
+		factory = (T)_factoryCreators[ riid ]( dxgiFactoryBase ) ;
+		return hr ;
 	}
 	
 	

@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Runtime.Versioning ;
@@ -65,11 +68,9 @@ internal class Factory: Object,
 	
 	// -----------------------------------------------------------------------------------
 	
-	public virtual HResult CreateSwapChain< TCmdObj, TSwapChain >( in TCmdObj pCmdQueue,
-																   in SwapChainDescription desc,
-																   out TSwapChain? ppSwapChain )
-															where TCmdObj:    ICommandQueue
-															where TSwapChain: ISwapChain {
+	public HResult CreateSwapChain( in ICommandQueue pCmdQueue,
+									in SwapChainDescription desc,
+											out ISwapChain? ppSwapChain ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 		ObjectDisposedException.ThrowIf( ComPointer?.Disposed ?? true, nameof(Factory) ) ;
 		ArgumentNullException.ThrowIfNull( pCmdQueue, nameof(pCmdQueue) ) ;
@@ -85,19 +86,20 @@ internal class Factory: Object,
 													out IDXGISwapChain? pSwapChain ) ;
 			
 			if( pSwapChain is null || _hr.Failed ) return _hr ;
-			ppSwapChain = (TSwapChain)(TSwapChain.Instantiate(pSwapChain)) ;
+			ppSwapChain = new SwapChain(pSwapChain) ;
 			return _hr ;
 		}
 	}
 	
-	public void CreateSoftwareAdapter< TAdapter >( HInstance Module, out TAdapter? ppAdapter ) 
-												where TAdapter: class, IAdapter, IInstantiable {
+	
+	public void CreateSoftwareAdapter( HInstance Module, out IAdapter? ppAdapter ) {
 		_ = ComObject ?? throw new NullReferenceException( ) ;
 		ppAdapter = default ;
 		ComObject.CreateSoftwareAdapter( Module, out IDXGIAdapter? pAdapter ) ;
-		ppAdapter = (TAdapter)TAdapter.Instantiate( pAdapter ) ;
+		ppAdapter = new Adapter( pAdapter ) ;
 	}
 
+	
 	public void MakeWindowAssociation( in HWnd WindowHandle, WindowAssociation Flags ) =>
 		( _ = ComObject ?? throw new NullReferenceException() )
 			.MakeWindowAssociation( WindowHandle, (uint)Flags ) ;
@@ -108,6 +110,7 @@ internal class Factory: Object,
 		return h ;
 	}
 	
+	
 	public void GetWindowAssociation( out HWnd pWindowHandle ) {
 		_ = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
@@ -117,8 +120,8 @@ internal class Factory: Object,
 		}
 	}
 	
-	public HResult EnumAdapters< TAdapter >( uint index, out TAdapter? ppAdapter ) 
-												where TAdapter: class, IAdapter {
+	
+	public HResult EnumAdapters( uint index, out IAdapter? ppAdapter ) {
 		var factory = ComObject ?? throw new NullReferenceException( ) ;
 		ppAdapter = default ;
 		
@@ -128,7 +131,7 @@ internal class Factory: Object,
 			return hr ;
 		}
 		
-		var adapter = (TAdapter)( TAdapter.Instantiate(pAdapter) ) ;
+		var adapter = ( new Adapter(pAdapter) ) ;
 		ppAdapter = adapter ;
 		
 		return hr ;
@@ -179,6 +182,18 @@ internal class Factory1: Factory,
 			?? throw new DirectXComError( "Failed to create DXGI Factory!" ) ;
 		return (TFactory)TFactory.Instantiate( dxgiFactory ) ;
 	}
+	
+	
+	[SuppressMessage( "Interoperability", "CA1416:Validate platform compatibility" )] 
+	static readonly ReadOnlyDictionary< Guid, Func<IDXGIAdapter, IInstantiable> > _adapterCreationFunctions =
+		new( new Dictionary< Guid, Func< IDXGIAdapter, IInstantiable > >( ) {
+			{ IAdapter.IID, ( a ) => new Adapter( a ) },
+			{ IAdapter1.IID, ( a ) => new Adapter1( (a as IDXGIAdapter1)! ) },
+			{ IAdapter2.IID, ( a ) => new Adapter2( (a as IDXGIAdapter2)! ) },
+			{ IAdapter3.IID, ( a ) => new Adapter3( (a as IDXGIAdapter3)! ) },
+			{ IAdapter4.IID, ( a ) => new Adapter4( (a as IDXGIAdapter4)! ) },
+		} ) ;
+	
 	// -------------------------------------------------------------------------------------
 
 	ComPtr< IDXGIFactory1 >? _comPointer1 ; 
@@ -206,8 +221,7 @@ internal class Factory1: Factory,
 	
 	public bool IsCurrent( ) => ComObject!.IsCurrent( ) ;
 
-	public HResult EnumAdapters1< TAdapter >( uint index, out TAdapter? ppAdapter )
-												where TAdapter: class, IAdapter1 {
+	public HResult EnumAdapters1( uint index, out IAdapter1? ppAdapter ) {
 		if( ComObject is null ) throw new NullReferenceException( ) ;
 		ppAdapter = default ;
 		
@@ -217,9 +231,7 @@ internal class Factory1: Factory,
 			return _hr ;
 		}
 		
-		ppAdapter = ( (TAdapter.Instantiate(pAdapter) )
-										as TAdapter ?? throw new NullReferenceException() ) ;
-		
+		ppAdapter = new Adapter1( pAdapter ) ;
 		return _hr ;
 	}
 	
@@ -260,6 +272,7 @@ internal class Factory2: Factory1,
 	
 	public bool IsWindowedStereoEnabled( ) => ComObject!.IsWindowedStereoEnabled( ) ;
 	
+	
 	public void GetSharedResourceAdapterLuid( Win32Handle hResource, out Luid pLuid ) {
 		unsafe {
 			pLuid = default ;
@@ -268,33 +281,40 @@ internal class Factory2: Factory1,
 		}
 	}
 
-	public void CreateSwapChainForHwnd( ICommandAllocator pDevice, HWnd hWnd,
-										in SwapChainDescription1 pDesc,
-										in SwapChainFullscreenDescription pFullscreenDesc,
-										IOutput pRestrictToOutput,
-										out ISwapChain1 ppSwapChain ) {
+	
+	public void CreateSwapChainForHwnd( ICommandQueue pCommandQueue, HWnd hWnd,
+										in            SwapChainDescription1           pDesc,
+										[Optional] in SwapChainFullscreenDescription? pFullscreenDesc,
+										[Optional]    IOutput?                        pRestrictToOutput,
+										out           ISwapChain1                     ppSwapChain ) {
 		unsafe {
-			var restrictOutput = (IComObjectRef< IDXGIOutput >)pRestrictToOutput ;
+			void* fsDescPtr      = null ;
+			var   device         = (IComObjectRef< ID3D12CommandQueue >)pCommandQueue ;
+			var   restrictOutput = (IComObjectRef< IDXGIOutput >)pRestrictToOutput! ;
+			
 			fixed( void* _fsDesc = &pFullscreenDesc, _desc = &pDesc ) {
-				ComObject!.CreateSwapChainForHwnd( pDevice,
+				if( pFullscreenDesc.HasValue ) fsDescPtr = _fsDesc ;
+				
+				ComObject!.CreateSwapChainForHwnd( device.ComObject,
 												   hWnd,
 												   (DXGI_SWAP_CHAIN_DESC1 *)_desc,
-												   (DXGI_SWAP_CHAIN_FULLSCREEN_DESC *)_fsDesc,
+												   (DXGI_SWAP_CHAIN_FULLSCREEN_DESC *)fsDescPtr,
 												   restrictOutput?.ComObject,
 												   out var pSwapChain ) ;
+				
 				ppSwapChain = new SwapChain1( pSwapChain ?? throw new NullReferenceException( ) ) ;
 			}
 		}
 	}
 
-	public void CreateSwapChainForCoreWindow< TAlloc >( TAlloc pDevice,
-														CoreWindow pWindow,
-														in SwapChainDescription1 pDesc,
-														IOutput pRestrictToOutput,
-														out ISwapChain1 ppSwapChain ) 
-												where TAlloc: class, ICommandAllocator {
+	
+	public void CreateSwapChainForCoreWindow( ICommandQueue pCmdQueue,
+											  CoreWindow pWindow,
+											  in SwapChainDescription1 pDesc,
+											  IOutput pRestrictToOutput,
+											  out ISwapChain1 ppSwapChain ) {
 		unsafe {
-			var device = (IComObjectRef< ID3D12CommandAllocator >)pDevice ;
+			var device = (IComObjectRef< ID3D12CommandQueue >)pCmdQueue ;
 			var restrictOutput = (IComObjectRef< IDXGIOutput >)pRestrictToOutput ;
 			fixed( void *_desc = &pDesc ) {
 				ComObject!.CreateSwapChainForCoreWindow( device.ComObject,
@@ -327,12 +347,11 @@ internal class Factory2: Factory1,
 	public void UnregisterOcclusionStatus( uint dwCookie ) => 
 		ComObject!.UnregisterOcclusionStatus( dwCookie ) ;
 
-	public unsafe void CreateSwapChainForComposition< TAlloc >( TAlloc pDevice,
+	public unsafe void CreateSwapChainForComposition( ICommandQueue pDevice,
 																in SwapChainDescription1 pDesc,
 																IOutput pRestrictToOutput,
-																out ISwapChain1 ppSwapChain ) 
-																	where TAlloc: class, ICommandAllocator {
-		var allocator      = (IComObjectRef< ID3D12CommandAllocator >)pDevice ;
+																out ISwapChain1 ppSwapChain ) {
+		var allocator      = (IComObjectRef< ID3D12CommandQueue >)pDevice ;
 		var restrictOutput = (IComObjectRef< IDXGIOutput >)pRestrictToOutput ;
 		fixed( void* _desc = &pDesc ) {
 			ComObject!.CreateSwapChainForComposition( allocator.ComObject,
@@ -342,10 +361,9 @@ internal class Factory2: Factory1,
 			ppSwapChain = new SwapChain1( pSwapChain ) ;
 		}
 	}
-
+	
 	// -------------------------------------------------------------------------------------
 	public new static Type ComType => typeof( IDXGIFactory2 ) ;
-
 	public new static ref readonly Guid Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {

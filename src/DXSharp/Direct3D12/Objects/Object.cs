@@ -26,6 +26,37 @@ internal abstract class Object: DXComObject,
 	}
 
 	
+#if DEBUG || DEBUG_COM || DEV_BUILD
+	string? _debugName = null ;
+	
+	public string DebugName {
+		get {
+			if ( _debugName is null ) _debugName = GetDebugName( ) ;
+			return _debugName ;
+		}
+	}
+	
+	public unsafe string GetDebugName( ) {
+		// First, get the size of the name string:
+		uint size = 0 ;
+		var debugNameGuid = COMUtility.WKPDID_D3DDebugObjectNameW ;
+		var obj = ComObject ?? throw new NullReferenceException( ) ;
+		var hr = obj!.GetPrivateData( &debugNameGuid, ref size, null ) ;
+		hr.SetAsLastErrorForThread( ) ;
+		if ( size is 0 ) return string.Empty ;
+		
+		// Then, get the name string:
+		Span< char > name = new char[ (int)size ] ;
+		fixed( char* pName = name ) {
+			hr = obj!.GetPrivateData( &debugNameGuid, ref size, (void*)pName ) ;
+			hr.SetAsLastErrorForThread( ) ;
+		}
+		
+		return name.ToString( ) ;
+	}
+#endif
+
+	
 	public new static ref readonly Guid Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {

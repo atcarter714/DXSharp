@@ -1,5 +1,9 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows.Win32 ;
 using DXSharp.Windows.COM ;
@@ -11,6 +15,14 @@ namespace DXSharp.DXGI ;
 public interface IResource: IDeviceSubObject,
 							IInstantiable {
 	// ---------------------------------------------------------------------------------
+	
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGIResource, IInstantiable> > _resourceCreationFunctions =
+		new( new Dictionary<Guid, Func<IDXGIResource, IInstantiable> > {
+			{ IResource.IID, ( pComObj ) => new Resource( pComObj ) },
+			{ IResource1.IID, ( pComObj ) => new Resource1( (pComObj as IDXGIResource1)! ) },
+		} ) ;
+
+	// ---------------------------------------------------------------------------------
 	void GetEvictionPriority( [Out] out ResourcePriority pEvictionPriority ) ;
 	
 	void SetEvictionPriority( ResourcePriority evictionPriority ) ;
@@ -20,6 +32,19 @@ public interface IResource: IDeviceSubObject,
 	void GetSharedHandle( [Out] out Win32Handle pSharedHandle ) ;
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof(IDXGIResource) ;
+	public new static Guid IID => (ComType.GUID) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIResource).GUID
+															  .ToByteArray( ) ;
+			
+			return ref Unsafe
+					   .As< byte, Guid >( ref MemoryMarshal
+											  .GetReference(data) ) ;
+		}
+	}
+	
 	static IInstantiable IInstantiable. Instantiate( ) => new Resource( ) ;
 	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Resource( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
@@ -70,7 +95,15 @@ public interface IResource1: IResource {
 	void CreateSharedHandle( [Optional] in SecurityAttributes pAttributes, uint dwAccess, string lpName, in Win32Handle pHandle ) ;
 
 	// ---------------------------------------------------------------------------------
-	new static Type ComType => typeof(IDXGIResource1) ;
+	new static Type ComType => typeof(IDXGIResource1) ;public new static Guid IID => (ComType.GUID) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(IDXGIResource1).GUID.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
 	static IInstantiable IInstantiable.Instantiate( ) => new Resource1( ) ;
 	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Resource1( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 

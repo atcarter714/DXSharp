@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using Windows.Win32.Foundation ;
 using DXSharp.Windows ;
 using winmdRoot = Windows.Win32;
 
@@ -39,9 +40,8 @@ public unsafe interface IDXGIObject: IUnknown {
 	/// <para>This doc was truncated.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgiobject-setprivatedata#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	[return: MarshalAs(UnmanagedType.I4)]
 	[PreserveSig] HResult SetPrivateData( Guid* Name, uint DataSize,
-									   [Optional, MaybeNull] void* pData ) ;
+										  [Optional, MaybeNull] void* pData ) ;
 
 	
 	/// <summary>Set an interface in the object's private data.</summary>
@@ -60,9 +60,7 @@ public unsafe interface IDXGIObject: IUnknown {
 	/// <para>This API associates an interface pointer with the object. When the interface is set its reference count is incremented. When the data are overwritten (by calling SPD or SPDI with the same GUID) or the object is destroyed, ::Release() is called and the interface's reference count is decremented.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/nf-dxgi-idxgiobject-setprivatedatainterface#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	[return: MarshalAs(UnmanagedType.I4)]
-	[PreserveSig] HResult SetPrivateDataInterface( Guid* Name,
-													  [MarshalAs(0x19)] IUnknown? pUnknown ) ;
+	[PreserveSig] HResult SetPrivateDataInterface( Guid* Name, [MarshalAs(0x19)] IUnknown? pUnknown ) ;
 	
 	
 	/// <summary>Get a pointer to the object's data.</summary>
@@ -108,7 +106,6 @@ public unsafe interface IDXGIObject: IUnknown {
 	/// Read more on docs.microsoft.com</a>.
 	/// </para>
 	/// </remarks>
-	[return: MarshalAs(UnmanagedType.I4)]
 	[PreserveSig] HResult GetPrivateData( Guid* Name, ref uint pDataSize, 
 										  [Optional, MaybeNull] void* pData ) ;
 	

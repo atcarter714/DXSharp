@@ -255,8 +255,8 @@ public sealed class ComPtr< T >: ComPtr
 		
 		Interface           = _interface ;
 		this._interfaceVPtr = GetInterfaceVPointer< T, T >( _interface ) ;
-		_marshalRefCount    = (int)_interface.Release(  ) ; // decrement extra ref
-		
+		++_refCount ;
+		//_marshalRefCount    = (int)_interface.Release(  ) ; // decrement extra ref
 		//Marshal.GetComInterfaceForObject( _interface, typeof(T) ) ;
 	}
 

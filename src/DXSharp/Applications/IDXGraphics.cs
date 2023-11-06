@@ -1,9 +1,13 @@
-﻿using System.Collections.Concurrent ;
-using Windows.Win32.Graphics.Direct3D12 ;
+﻿#region Using Directives
+using System.Buffers ;
+using System.Collections.Concurrent ;
+
 using DXSharp.DXGI ;
+using DXSharp.Direct3D12 ;
 using DXSharp.Windows.COM ;
 using IDevice = DXSharp.Direct3D12.IDevice ;
-
+using IResource = DXSharp.Direct3D12.IResource ;
+#endregion
 namespace DXSharp.Applications ;
 
 
@@ -11,65 +15,323 @@ namespace DXSharp.Applications ;
 /// A customizable container for storing DirectX 12 native resources
 /// and their managed wrappers for initialization and cleanup ...
 /// </summary>
+/// <remarks>
+/// An <see cref="IDXGraphics"/> object holds a set of Direct3D pipeline objects
+/// (COM interface wrappers), <see cref="IDisposable"/> objects and memory handles
+/// (<see cref="MemoryHandle"/>) so they can be initialized and cleaned up in a group
+/// and in a specific order, while writing less, cleaner code.
+/// Particularly important pipeline objects like an <see cref="IDevice"/> or <see cref="ISwapChain"/>
+/// are cached for easy access via the <see cref="GraphicsDevice"/> and <see cref="SwapChain"/> properties.
+/// Other properties like these exist for other important/core types.
+/// </remarks>
 public interface IDXGraphics: IDisposable, IAsyncDisposable {
-	ConcurrentStack< IUnknownWrapper< IUnknown > > PipelineObjects { get ; }
+	// ----------------------------------------------------------------------------------
+	public bool Disposed => PipelineObjects is not { Count: > 0 } ;
+	public ConcurrentStack< MemoryHandle > AllocatedHandles { get ; }
+	public ConcurrentStack< IDXCOMObject > PipelineObjects { get ; }
+	public ConcurrentStack< IDisposable > Disposables { get ; }
 	
+	IDevice? GraphicsDevice { get ; }
+	ISwapChain? SwapChain { get ; }
 	
-} ;
-
-public class DXGraphics: DisposableObject, IDXGraphics
-{
+	IRootSignature? RootSignature { get ; }
+	IPipelineState? PipelineState { get ; }
 	
-	protected override async ValueTask DisposeUnmanaged( ) {
+	ICommandList? CommandList { get ; }
+	ICommandQueue? CommandQueue { get ; }
+	ICommandAllocator? CommandAllocator { get ; }
+	
+	List< IResource >? BackBuffers { get ; }
+	// ----------------------------------------------------------------------------------
+	
+	public TItem? Find< TItem >( ) where TItem: IDXCOMObject? {
 #if DEBUG || DEBUG_COM || DEV_BUILD
-		if ( Disposed || PipelineObjects is null )
-			throw new ObjectDisposedException( $"{nameof(DXGraphics)} :: " +
-											   $"No pipeline objects exist." ) ;
+		ObjectDisposedException.ThrowIf( Disposed, typeof(IDXGraphics) ) ;
 #endif
-		CancellationToken  token         = new( ) ;
-		Stack< Task > disposalTasks = new( PipelineObjects.Count ) ;
 		
-		while ( !PipelineObjects.IsEmpty ) {
-			PipelineObjects.TryPop( out var next ) ;
-			
-			if ( next is not null && !next.Disposed ) {
-				Action releaseAction = async ( ) => await _releaseAsync( next ) ;
-				Task task = new( releaseAction, token ) ;
-				
-				task.Start( ) ;
-				disposalTasks.Push( task ) ;
-			}
+		foreach ( var obj in PipelineObjects ) {
+			if ( obj is TItem item ) return item ;
 		}
 		
-		while ( disposalTasks is not { Count: < 1 } ) {
-			if ( disposalTasks.Peek( ).IsCompleted ) {
-				var nextTask = disposalTasks.Pop( ) ;
-				nextTask.Dispose( ) ;
-			}
-			else await disposalTasks.Peek( ) ;
-		}
-		
-		static async ValueTask _releaseAsync( IAsyncDisposable disposable ) =>
-			await Task.Run( disposable.DisposeAsync, new CancellationToken(  ) ) ;
+		return default ;
 	}
 	
-	public ConcurrentStack< IUnknownWrapper< IUnknown > > PipelineObjects { get ; }
+	public TItem? Find< TItem >( string name ) where TItem: Direct3D12.IObject {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		ObjectDisposedException.ThrowIf( Disposed, typeof(IDXGraphics) ) ;
+#endif
+		 		
+		foreach ( var obj in PipelineObjects ) {
+			if ( obj is TItem item ) {
+				uint size = 0 ;
+				item.GetPrivateData( COMUtility.WKPDID_D3DDebugObjectNameW, ref size, 0 ) ;
+			}
+		}
+		
+		return default ;
+	}
 	
-	public IDevice? GraphicsDevice { get ; protected set ; }
-	public ISwapChain? SwapChain { get ; protected set ; }
+	public void AddBackBuffer( IResource buffer ) {
+		PipelineObjects.Push( buffer ) ;
+		BackBuffers?.Add( buffer ) ;
+	}
+	public void Add( MemoryHandle handle ) => AllocatedHandles.Push( handle ) ;
+	public void Add( IDisposable disposable ) => Disposables.Push( disposable ) ;
+	public void Add< T >( IDXCOMObject obj ) where T: IUnknown => PipelineObjects.Push( obj ) ;
+	public void Add< T >( IUnknownWrapper< T > obj ) where T: IUnknown => PipelineObjects.Push( (obj as IDXCOMObject)! ) ;
 	
-	public DXGraphics( ) => PipelineObjects = new( ) ;
-	public DXGraphics( params IUnknownWrapper< IUnknown >[ ] objects ) => PipelineObjects = new( objects ) ;
-	public DXGraphics( IEnumerable< IUnknownWrapper<IUnknown> > objects ) => PipelineObjects = new( objects ) ;
+	// ----------------------------------------------------------------------------------
+	
+	/// <summary>Loads and initializes the Direct3D graphics pipeline.</summary>
+	void LoadPipeline( ) ;
+	
+	/// <summary>Loads and initializes application and Direct3D assets/resources.</summary>
+	void LoadAssets( ) ;
+	
+	// ----------------------------------------------------------------------------------
 
+	public async ValueTask ReleasePipelineObjectsAsync( ) {
+		List< Task > disposalTasks = new( AllocatedHandles.Count ) ;
+		
+		while ( PipelineObjects.TryPop( out var obj ) ) {
+			var d = obj.DisposeAsync( ) ;
+			disposalTasks.Add( d.AsTask( ) ) ;
+		}
+		
+		await Task.WhenAll( disposalTasks ) ;
+	}
+	
+	public async ValueTask ReleaseDisposablesAsync( ) {
+		Action? _destroy = default ;
+		List< Task > disposalTasks = new( AllocatedHandles.Count ) ;
+		
+		while ( Disposables.TryPop( out var obj ) ) {
+			_destroy = ( ) => { obj.Dispose( ) ; } ;
+			var d = Task.Run( _destroy ) ;
+			disposalTasks.Add( d ) ;
+		}
+		
+		await Task.WhenAll( disposalTasks ) ;
+	}
+	
+	public async ValueTask ReleaseMemoryAsync( ) {
+		Action? _destroy = default ;
+		List< Task > disposalTasks = new( AllocatedHandles.Count ) ;
+		while ( AllocatedHandles.TryPop( out var handle ) ){
+			_destroy = ( ) => { handle.Dispose( ) ; } ;
+			var d = Task.Run( _destroy ) ;
+			disposalTasks.Add( d ) ;
+		}
+		await Task.WhenAll( disposalTasks ) ;
+	}
+	
+	// ==================================================================================
+} ;
+
+
+
+/// <summary>Helps manage and dispose of native graphics resources in an organized group.</summary>
+/// <remarks>
+/// You can inherit from this class to create a more customized and ideal implementation
+/// for your specific application. It simply provides a starting point for organizing and
+/// managing native D3D/Win32/COM and memory resources for graphics in a group.
+/// </remarks>
+public class DXGraphics: DisposableObject, IDXGraphics {
+	// ----------------------------------------------------------------------------------
+	ISwapChain?        _swapChain ;
+	IDevice?           _graphicsDevice ;
+	ICommandAllocator? _commandAlloc ;
+	ICommandList?      _commandList ;
+	ICommandQueue?     _commandQueue ;
+	IRootSignature?    _rootSignature ;
+	IPipelineState?    _pipelineState ;
+	// ----------------------------------------------------------------------------------
+
+
+	public ConcurrentStack< MemoryHandle > AllocatedHandles { get ; init ; }
+	public ConcurrentStack< IDXCOMObject > PipelineObjects  { get ; init ; }
+	public ConcurrentStack< IDisposable > Disposables { get ; init ; }
+
+	public IDevice? GraphicsDevice => _graphicsDevice ??= Find< IDevice >( ) ;
+	public ISwapChain? SwapChain => _swapChain ??= Find< ISwapChain >( ) ;
+	public ICommandList? CommandList => _commandList ??= Find< ICommandList >( ) ;
+	public ICommandQueue? CommandQueue => _commandQueue ??= Find< ICommandQueue >( ) ;
+	public ICommandAllocator? CommandAllocator => _commandAlloc ??= Find< ICommandAllocator >( ) ;
+	public IRootSignature? RootSignature => _rootSignature ??= Find< IRootSignature >( ) ;
+	public IPipelineState? PipelineState => _pipelineState ??= Find< IPipelineState >( ) ;
+	
+	public List< IResource >? BackBuffers { get ; } = new( ) ;
+	
+	public virtual ColorF BackgroundColor { get ; set ; } = Color.Black ;
+	public ClearValue[ ] ClearValues { get ; set ; }
+	public Viewport[ ] Viewports { get ; set ; }
+	public Rect[ ] ScissorRects { get ; set ; }
+	
+	// ----------------------------------------------------------------------------------
+
+	public DXGraphics( ) {
+		this.AllocatedHandles = new( ) ;
+		this.PipelineObjects  = new( ) ;
+		this.Disposables      = new( ) ;
+	}
+	public DXGraphics( params IDXCOMObject[ ] pipelineObjects ) {
+		PipelineObjects       = new( pipelineObjects ) ;
+		this.AllocatedHandles = new( ) ;
+		this.Disposables      = new( ) ;
+	}
+	public DXGraphics( params IDisposable[ ] disposables ) {
+		PipelineObjects       = new(  ) ;
+		this.AllocatedHandles = new( ) ;
+		this.Disposables      = new( disposables ) ;
+	}
+	public DXGraphics( params MemoryHandle[ ] handles ) {
+		PipelineObjects       = new( ) ;
+		this.AllocatedHandles = new( handles ) ;
+		this.Disposables      = new( ) ;
+	}
+	public DXGraphics( IEnumerable< IDXCOMObject >? pipelineObjects = null,
+					   IEnumerable< IDisposable >?  disposables     = null,
+					   IEnumerable< MemoryHandle >? handles         = null ) {
+		PipelineObjects  = ( pipelineObjects is null ) ? new() : new( pipelineObjects ) ;
+		Disposables      = ( disposables is null ) ? new() : new( disposables ) ;
+		AllocatedHandles = ( handles is null ) ? new() : new( handles ) ;
+	}
+	
+	// ----------------------------------------------------------------------------------
+
+	IDevice? _findDevice( ) {
+		if ( _graphicsDevice is not null ) 
+			return _graphicsDevice ;
+			
+		for ( int i = 0; i < PipelineObjects.Count; ++i ) {
+			if ( PipelineObjects.TryPeek( out var obj ) ) {
+				if ( obj is IDevice device ) {
+					_graphicsDevice = device ;
+					return _graphicsDevice ;
+				}
+			}
+		}
+		return null ;
+	}
+	
+	
 	public void Add< T >( IUnknownWrapper< T > obj ) where T: IUnknown {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 			ArgumentNullException.ThrowIfNull( obj, nameof(obj) ) ;
 #endif
 		if ( obj is IDevice deviceWrapper )
-			this.GraphicsDevice = deviceWrapper ;
+			_graphicsDevice = deviceWrapper ;
+		else if ( obj is ISwapChain swapChainWrapper )
+			_swapChain = swapChainWrapper ;
+		else if ( obj is ICommandAllocator allocatorWrapper )
+			_commandAlloc = allocatorWrapper ;
+		else if ( obj is ICommandList listWrapper )
+			_commandList = listWrapper ;
+		else if ( obj is ICommandQueue queueWrapper )
+			_commandQueue = queueWrapper ;
+		else if ( obj is IRootSignature rootSigWrapper )
+			_rootSignature = rootSigWrapper ;
+		else if ( obj is IPipelineState pipelineStateWrapper )
+			_pipelineState = pipelineStateWrapper ;
+		else
+			PipelineObjects.Push( (IDXCOMObject) obj ) ;
 		
-		PipelineObjects.Push( (IUnknownWrapper< IUnknown >) obj ) ;
+		PipelineObjects.Push( (IDXCOMObject) obj ) ;
 	}
 	
+	public void Add< T >( IDXCOMObject obj ) where T: IUnknown {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+			ArgumentNullException.ThrowIfNull( obj, nameof(obj) ) ;
+#endif
+		
+		if ( obj is IDevice deviceWrapper )
+			_graphicsDevice = deviceWrapper ;
+		else if ( obj is ISwapChain swapChainWrapper )
+			_swapChain = swapChainWrapper ;
+		else if ( obj is ICommandAllocator allocatorWrapper )
+			_commandAlloc = allocatorWrapper ;
+		else if ( obj is ICommandList listWrapper )
+			_commandList = listWrapper ;
+		else if ( obj is ICommandQueue queueWrapper )
+			_commandQueue = queueWrapper ;
+		else if ( obj is IRootSignature rootSigWrapper )
+			_rootSignature = rootSigWrapper ;
+		else if ( obj is IPipelineState pipelineStateWrapper )
+			_pipelineState = pipelineStateWrapper ;
+		
+		PipelineObjects.Push( obj ) ;
+	}
+	
+	
+	public void Add( IDisposable disposable ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+			ArgumentNullException.ThrowIfNull( disposable, nameof(disposable) ) ;
+#endif
+		Disposables.Push( disposable ) ;
+	}
+	
+	public TItem? Find< TItem >( ) where TItem: IDXCOMObject? {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		ObjectDisposedException.ThrowIf( Disposed, typeof(IDXGraphics) ) ;
+#endif
+		
+		foreach ( var obj in PipelineObjects ) {
+			if( obj is IDevice device ) _graphicsDevice = device ;
+			else if ( obj is ISwapChain swapChain ) _swapChain = swapChain ;
+			else if ( obj is ICommandAllocator allocator ) _commandAlloc = allocator ;
+			else if ( obj is ICommandList list ) _commandList = list ;
+			else if ( obj is ICommandQueue queue ) _commandQueue = queue ;
+			else if ( obj is IRootSignature rootSig ) _rootSignature = rootSig ;
+			else if ( obj is IPipelineState pipelineState ) _pipelineState = pipelineState ;
+			
+			if ( obj is TItem item ) return item ;
+		}
+		
+		return default ;
+	}
+	
+	public TItem? Find< TItem >( string name ) where TItem: Direct3D12.IObject {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		ObjectDisposedException.ThrowIf( Disposed, typeof(IDXGraphics) ) ;
+#endif
+		 		
+		foreach ( var obj in PipelineObjects ) {
+			if( obj is IDevice device ) _graphicsDevice                    = device ;
+			else if ( obj is ISwapChain swapChain ) _swapChain             = swapChain ;
+			else if ( obj is ICommandAllocator allocator ) _commandAlloc   = allocator ;
+			else if ( obj is ICommandList list ) _commandList              = list ;
+			else if ( obj is ICommandQueue queue ) _commandQueue           = queue ;
+			else if ( obj is IRootSignature rootSig ) _rootSignature       = rootSig ;
+			else if ( obj is IPipelineState pipelineState ) _pipelineState = pipelineState ;
+
+			if ( obj is TItem item ) {
+				uint size = 0 ;
+				item.GetPrivateData( COMUtility.WKPDID_D3DDebugObjectNameW, ref size, 0 ) ;
+			}
+		}
+		
+		return default ;
+	}
+	
+	// ----------------------------------------------------------------------------------
+
+	public virtual void LoadPipeline( ) { }
+	public virtual void LoadAssets( ) { }
+	
+	// ----------------------------------------------------------------------------------
+	
+	protected override async ValueTask DisposeUnmanaged( ) {
+		var _base = this as IDXGraphics ;
+		var task1 = _base.ReleaseMemoryAsync( ).AsTask( ) ;
+		var task2 = _base.ReleaseDisposablesAsync( ).AsTask( ) ;
+		var task3 = _base.ReleasePipelineObjectsAsync( ).AsTask( ) ;
+		await Task.WhenAll( task1, task2, task3 ) ;
+	}
+
+	public override async ValueTask DisposeAsync( ) {
+		await base.DisposeAsync( ) ;
+		await DisposeUnmanaged( ) ;
+	}
+	
+	// ==================================================================================
 }

@@ -1,4 +1,6 @@
 #region Using Directives
+
+using System.Collections.ObjectModel ;
 using System.Runtime.Versioning ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
@@ -23,6 +25,19 @@ internal class SwapChain: DeviceSubObject,
 						  ISwapChain,
 						  IComObjectRef< IDXGISwapChain >,
 						  IUnknownWrapper< IDXGISwapChain > {
+	
+	static readonly ReadOnlyDictionary< Guid, Func<IDXGIResource, IInstantiable> > _DxgiResourceCreationFunctions =
+		new( new Dictionary< Guid, Func< IDXGIResource, IInstantiable > >( ) {
+			{ DXGI.IResource.IID, ( a ) => new DXGI.Resource( a ) },
+			{ DXGI.IResource1.IID, ( a ) => new DXGI.Resource1( (a as IDXGIResource1)! ) },
+		} ) ;
+	static readonly ReadOnlyDictionary< Guid, Func<ID3D12Resource, IInstantiable> > _D3dResourceCreationFunctions =
+		new( new Dictionary< Guid, Func< ID3D12Resource, IInstantiable > >( ) {
+			{ Direct3D12.IResource.IID, ( a ) => new Direct3D12.Resource( a ) },
+			{ Direct3D12.IResource1.IID, ( a ) => new Direct3D12.Resource1( (a as ID3D12Resource1)! ) },
+			{ Direct3D12.IResource2.IID, ( a ) => new Direct3D12.Resource2( (a as ID3D12Resource2)! ) },
+		} ) ;
+	
 	ComPtr< IDXGISwapChain >? _comPtr ;
 	public new virtual ComPtr< IDXGISwapChain >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGISwapChain >(  ) ;
@@ -57,7 +72,7 @@ internal class SwapChain: DeviceSubObject,
 	}
 	
 	// -----------------------------------------------------------------
-
+	
 	public void Present( uint syncInterval, PresentFlags flags ) => 
 						ComObject!.Present( syncInterval, (uint)flags ) ;
 	
@@ -71,8 +86,36 @@ internal class SwapChain: DeviceSubObject,
 															$"Failed to obtain buffer resource of type \"{typeof(TResource).Name}\" " +
 															$"(GUID: {typeof(TResource).GUID})" ) ;
 #endif
-			var surface = (TResource)TResource.Instantiate( (IUnknown)comObj ) ;
-			pSurface = surface ;
+			
+			//! Is it an ID3D12Resource or an IDXGIResource?
+			// Determine the type of COM object and invoke a creation function for it:
+			if( comObj is ID3D12Resource d3dResrc ) {
+				var fn       = Direct3D12.IResource._resourceCreationFunctions[ guid ] ;
+				var resource = fn( d3dResrc ) ;
+				pSurface = (TResource)resource ;
+				return ;
+			}
+			
+			else if( comObj is IDXGIResource dxgiResrc ) {
+				var fn	   = DXGI.IResource._resourceCreationFunctions[ guid ] ;
+				var resource = fn( dxgiResrc ) ;
+				pSurface = (TResource)resource ;
+				return ;
+			}
+			
+			else {
+				//! Do we have some kind of unrecognized GUID/Type ?
+				if ( !Direct3D12.IResource._resourceCreationFunctions.ContainsKey( guid )
+					 && !DXGI.IResource._resourceCreationFunctions.ContainsKey( guid ) ) {
+					throw new
+						ArgumentException( $"Unsupported Type or COM GUID: {typeof( TResource ).Name} -- {guid}!" ) ;
+				}
+				
+				// Try to instantiate the resource anyway:
+				var surface = (TResource)TResource.Instantiate( (ID3D12Resource)comObj ) ;
+				pSurface = surface ;
+				return;
+			}
 		}
 	}
 

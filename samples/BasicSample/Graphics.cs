@@ -97,7 +97,7 @@ public class Graphics: DisposableObject {
 		using var factory = IFactory1.Create1< IFactory1 >( ) ;
 		
 		// Find best adapter (uses DXGI.XTensions):
-		using IAdapter1? adapter = (IAdapter1)factory.FindBestAdapter< IAdapter1 >( )! ;
+		using IAdapter1? adapter = (IAdapter1)factory.FindBestAdapter( )! ;
 		adapter.GetDesc1( out var _adapterDesc) ;
 		
 		// Create device (default is FeatureLevel.D3D_12_0):
@@ -132,7 +132,7 @@ public class Graphics: DisposableObject {
 			BufferDesc   = bufferDesc,
 			Windowed     = true,
 		} ;
-		var hr = factory.CreateSwapChain< ICommandQueue, ISwapChain >( commandQueue, swapChainDescription, out var swapChain ) ;
+		var hr = factory.CreateSwapChain( commandQueue, swapChainDescription, out var swapChain ) ;
 		if( hr.Failed || swapChain is null ) throw new DirectXComError( hr, "Failed to create SwapChain!" ) ;
 		this.SwapChain = swapChain ;
 		

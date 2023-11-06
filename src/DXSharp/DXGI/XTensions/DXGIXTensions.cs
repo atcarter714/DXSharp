@@ -42,29 +42,27 @@ public static partial class DXGIXTensions {
 	// -----------------------------------------------------------------------------------------------
 	
 	
-	public static IAdapter? FindBestAdapter< A >( this IFactory factory ) where A: class, IAdapter {
+	public static IAdapter? FindBestAdapter( this IFactory factory )  {
 		ArgumentNullException.ThrowIfNull( factory, nameof(factory) ) ;
 		const int MAX = IFactory.MAX_ADAPTER_COUNT ;
 		
 		if( factory is IFactory1 factory1 ) {
-			if ( typeof(A).IsAssignableTo( typeof(IAdapter1 ) ) ) {
-				return factory1.FindBestAdapter1( ) ;
-			}
+			return factory1.FindBestHardwareAdapter1( ) ;
 		}
 		
-		A? adapter = null ;
+		IAdapter? adapter = null ;
 		AdapterDescription desc = default ;
 		
 		for ( int i = 0; i < MAX; ++i ) {
-			var hr = factory.EnumAdapters< A >( (uint)i, out var _adapter ) ;
+			var hr = factory.EnumAdapters( (uint)i, out var _adapter ) ;
 			if ( hr.Failed ) {
 				if ( hr.Is( HResult.DXGI_ERROR_NOT_FOUND ) ) break ;
 				throw new DirectXComError( hr, $"{nameof( DXGIXTensions )} :: " +
 											   $"Error enumerating adapters! " +
 											   $"HRESULT: 0x{hr.Value:X} ({hr.Value})" ) ;
 			}
-			
 			if ( _adapter is null ) continue ;
+			
 			_adapter.GetDesc( out var _desc ) ;
 			
 			// Assign the "best" adapter by greatest amount of VRAM:
@@ -82,7 +80,8 @@ public static partial class DXGIXTensions {
 		return adapter ;
 	}
 
-	public static IAdapter1? FindBestAdapter1( this IFactory1 factory1 ) {
+	
+	public static IAdapter1? FindBestHardwareAdapter1( this IFactory1 factory1 ) {
 		ArgumentNullException.ThrowIfNull( factory1, nameof(factory1) ) ;
 		const int MAX = IFactory.MAX_ADAPTER_COUNT ;
 		
@@ -90,7 +89,7 @@ public static partial class DXGIXTensions {
 		AdapterDescription1 desc = default ;
 		
 		for ( int i = 0; i < MAX; ++i ) {
-			var hr = factory1.EnumAdapters1< IAdapter1 >( (uint)i, out var _adapter ) ;
+			var hr = factory1.EnumAdapters1( (uint)i, out var _adapter ) ;
 			if ( hr.Failed ) {
 				if ( hr.Is( HResult.DXGI_ERROR_NOT_FOUND ) ) break ;
 				throw new DirectXComError( hr, $"{nameof( DXGIXTensions )} :: " +
@@ -107,6 +106,9 @@ public static partial class DXGIXTensions {
 				desc    = _desc ;
 				continue ;
 			}
+
+			if ( _desc.Flags.HasFlag( AdapterFlag.Software )
+				|| _desc.Flags.HasFlag( AdapterFlag.Remote ) ) continue ;
 			if ( _desc.DedicatedVideoMemory > desc.DedicatedVideoMemory ) {
 				adapter = _adapter ;
 				desc    = _desc ;
@@ -115,6 +117,7 @@ public static partial class DXGIXTensions {
 		
 		return adapter ;
 	}
+	
 	
 	/*
 	public static (IAdapter? adapter, AdapterDescription desc) GetAllAdapters< F, A >( this F factory )

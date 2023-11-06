@@ -1,16 +1,14 @@
 ﻿// Implements an idiomatic C# version of IDXGIAdapter interface:
 // https://docs.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter
 #region Using Directives
-
+using System.Collections.ObjectModel ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Runtime.Versioning ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows ;
-using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
-
 #endregion
 namespace DXSharp.DXGI ;
 
@@ -30,6 +28,15 @@ namespace DXSharp.DXGI ;
 [SupportedOSPlatform("windows6.0")]
 [ProxyFor(typeof(IDXGIAdapter))]
 public interface IAdapter: IObject, IInstantiable {
+	internal static readonly ReadOnlyDictionary<Guid, Func<IDXGIAdapter, IInstantiable> > _adapterCreationFunctions =
+		new( new Dictionary<Guid, Func<IDXGIAdapter, IInstantiable> > {
+			{ IAdapter.IID, ( pComObj ) => new Adapter( pComObj ) },
+			{ IAdapter1.IID, ( pComObj ) => new Adapter1( (pComObj as IDXGIAdapter1)! ) },
+			{ IAdapter2.IID, ( pComObj ) => new Adapter2( (pComObj as IDXGIAdapter2)! ) },
+			{ IAdapter3.IID, ( pComObj ) => new Adapter3( (pComObj as IDXGIAdapter3)! ) },
+			{ IAdapter4.IID, ( pComObj ) => new Adapter4( (pComObj as IDXGIAdapter4)! ) },
+		} ) ;
+	
 	
 	/// <summary>
 	/// Enumerate adapter (video card) outputs.
@@ -87,7 +94,7 @@ public interface IAdapter: IObject, IInstantiable {
 	
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof(IDXGIAdapter) ;
-	
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid  {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -133,7 +140,7 @@ public interface IAdapter1: IAdapter {
 	// ---------------------------------------------------------------------------------
 	
 	new static Type ComType => typeof(IDXGIAdapter1) ;
-	
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -180,7 +187,7 @@ public interface IAdapter2: IAdapter1 {
 	// ---------------------------------------------------------------------------------
 	
 	new static Type ComType => typeof( IDXGIAdapter2 ) ;
-	
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -310,7 +317,7 @@ public interface IAdapter3: IAdapter2 {
 	// ---------------------------------------------------------------------------------
 
 	new static Type ComType => typeof( IDXGIAdapter3 ) ;
-
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -353,7 +360,7 @@ public interface IAdapter4: IAdapter3 {
 	
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof( IDXGIAdapter4 ) ;
-	
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
