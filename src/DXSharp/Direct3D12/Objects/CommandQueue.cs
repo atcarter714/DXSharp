@@ -102,7 +102,7 @@ internal class CommandQueue: Pageable,
 		var pCommandLists = new ID3D12CommandList[ NumCommandLists ] ;
 		
 		for ( int i = 0; i < ppCommandLists.Length; ++i ) {
-			pCommandLists[ i ] = ( (IComObjectRef<ID3D12CommandList>)ppCommandLists[ i ] ).ComObject
+			pCommandLists[ i ] = ( (IComObjectRef<ID3D12CommandList>)ppCommandLists[ i ] ).ComObject!
 #if DEBUG || DEBUG_COM || DEV_BUILD
 								 ?? throw new NullReferenceException( )
 #endif

@@ -26,7 +26,7 @@ public readonly unsafe partial struct PCWSTR: IEquatable< PCWSTR >,
 			return ;
 		}
 #endif
-		int len = value.Length ;
+		int len = value?.Length ?? 0 ;
 #if USE_STRING_MEM_POOL
 		var mem = Pool.Rent( len + 1 ) ;
 		mem.Memory.Span[ len ] = '\0' ;
@@ -139,7 +139,7 @@ public readonly unsafe partial struct PCSTR: IEquatable<PCSTR>,
 			return ;
 		}
 #endif
-		int len = value.Length ;
+		int len = value?.Length ?? 0 ;
 #if USE_STRING_MEM_POOL
 		var mem = Pool.Rent( len + 1 ) ;
 		

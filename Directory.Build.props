@@ -13,17 +13,16 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-		<!--<TargetFrameworks>net6.0;net7.0;</TargetFrameworks>-->
-
+		
 		<!-- This entire repo has just one version.json file, so compute the version once and share with all projects in a large build. -->
 		<GitVersionBaseDirectory>$(MSBuildThisFileDirectory)</GitVersionBaseDirectory>
 
 		<!-- Local builds should embed PDBs so we never lose them when a subsequent build occurs. -->
 		<DebugType Condition=" '$(CI)' != 'true' and '$(TF_BUILD)' != 'true' ">embedded</DebugType>
-
+		
 		<SignAssembly>true</SignAssembly>
 		<AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)file\keys\strongname.snk</AssemblyOriginatorKeyFile>
-
+		
 		<Company>Arkaen Solutions</Company>
 		<Authors>Aaron T. Carter, $(Company), Contributors</Authors>
 		<Copyright>© Aaron T. Carter. All rights reserved.</Copyright>

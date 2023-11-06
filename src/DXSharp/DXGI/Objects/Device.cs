@@ -49,7 +49,7 @@ internal class Device: Object,
 #endif
 			;
 
-		var hr = device.GetAdapter( out var ppAdapter ) ;
+		var hr = device!.GetAdapter( out var ppAdapter ) ;
 		adapter = new Adapter( ppAdapter ) ;
 		return hr ;
 	}
@@ -85,7 +85,7 @@ internal class Device: Object,
 			
 			fixed ( SurfaceDescription* pDescPtr = &pDesc ) {
 				IDXGISurface[ ] surfaceData = new IDXGISurface[ numSurfaces ] ;
-				device.CreateSurface( (DXGI_SURFACE_DESC *) pDescPtr, 
+				device!.CreateSurface( (DXGI_SURFACE_DESC *) pDescPtr, 
 									  numSurfaces,
 									  (DXGI_USAGE)usage,
 									  sharedResOut,
@@ -120,7 +120,7 @@ internal class Device: Object,
 			
 			var _residencies = new Residency[ ppResources.Length ] ;
 			fixed( Residency* pResidencies = _residencies )
-				device.QueryResourceResidency( array, (DXGI_RESIDENCY *)pResidencies, numResources ) ;
+				device!.QueryResourceResidency( array, (DXGI_RESIDENCY *)pResidencies, numResources ) ;
 			
 			pResidencyStatus = _residencies ;
 		}
@@ -135,7 +135,7 @@ internal class Device: Object,
 #endif
 			;
 		
-		device.SetGPUThreadPriority( priority ) ;
+		device!.SetGPUThreadPriority( priority ) ;
 	}
 
 	
@@ -146,7 +146,7 @@ internal class Device: Object,
 														  $"The internal COM interface is destroyed/null." )
 #endif
 			;
-		device.GetGPUThreadPriority( out pPriority ) ;
+		device!.GetGPUThreadPriority( out pPriority ) ;
 	}
 	
 	// ----------------------------------------------------------
@@ -261,7 +261,7 @@ internal class Device2: Device1,
 			array[ i ] = ( (IComObjectRef< IDXGIResource >)ppResources[ i ] )
 								.ComObject! ;
 		
-		device.OfferResources( NumResources, array, (DXGI_OFFER_RESOURCE_PRIORITY)Priority ) ;
+		device!.OfferResources( NumResources, array, (DXGI_OFFER_RESOURCE_PRIORITY)Priority ) ;
 	}
 
 	public void ReclaimResources( uint NumResources, IResource[ ] ppResources, out Span< BOOL > pDiscarded ) {
@@ -280,7 +280,7 @@ internal class Device2: Device1,
 		unsafe {
 			var discarded = new BOOL[ (int)NumResources ] ;
 			fixed( BOOL* stackPtr = discarded )
-				device.ReclaimResources( NumResources, array, stackPtr ) ;
+				device!.ReclaimResources( NumResources, array, stackPtr ) ;
 			
 			pDiscarded = discarded ;
 		}
@@ -294,7 +294,7 @@ internal class Device2: Device1,
 #endif
 		 			;
 
-		device.EnqueueSetEvent( hEvent ) ;
+		device!.EnqueueSetEvent( hEvent ) ;
 	}
 	
 	// ----------------------------------------------------------
@@ -344,8 +344,10 @@ internal class Device3: Device2,
 #if DEBUG
 					 ?? throw new NullReferenceException( $"{nameof( Device )} :: " +
 														  $"The internal COM interface is destroyed/null." )
+#else
+			!
 #endif
-		 			;
+			;
 
 		device.Trim( ) ;
 	}
@@ -410,7 +412,7 @@ internal class Device4: Device3,
 			array[ i ] = ( (IComObjectRef< IDXGIResource >)ppResources[ i ] )
 								.ComObject! ;
 		
-		device.OfferResources1( NumResources, array, (DXGI_OFFER_RESOURCE_PRIORITY)Priority, (uint)Flags ) ;
+		device!.OfferResources1( NumResources, array, (DXGI_OFFER_RESOURCE_PRIORITY)Priority, (uint)Flags ) ;
 	}
 
 	public void ReclaimResources1( uint NumResources, 
@@ -431,7 +433,7 @@ internal class Device4: Device3,
 		unsafe {
 			var reclaimResults = new ReclaimResourceResults[ (int)NumResources ] ;
 			fixed ( ReclaimResourceResults* stackPtr = reclaimResults ) {
-				device.ReclaimResources1( NumResources, array, (DXGI_RECLAIM_RESOURCE_RESULTS *)stackPtr ) ;
+				device!.ReclaimResources1( NumResources, array, (DXGI_RECLAIM_RESOURCE_RESULTS *)stackPtr ) ;
 			}
 			
 			pResults = reclaimResults ;

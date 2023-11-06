@@ -355,7 +355,7 @@ internal class COMResource: DisposableObject {
 	/// Destroys the COM object and all of its interface references.
 	/// </summary>
 	/// <remarks>
-	/// This is done by calling the <see cref="ComPtr.Dispose"/> or
+	/// This is done by calling the <see cref="ComPtr{T}.Dispose"/> or
 	/// <see cref="ComPtr.DisposeAsync"/> methods on the
 	/// <see cref="ComPtr"/> instances.
 	/// </remarks>

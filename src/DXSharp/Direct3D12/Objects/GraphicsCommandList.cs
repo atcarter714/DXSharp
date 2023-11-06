@@ -525,7 +525,7 @@ internal class GraphicsCommandList1: GraphicsCommandList,
 		// Copy dependent resources to an array (optimize later):
 		ID3D12Resource[ ] dependentResources = new ID3D12Resource[ ppDependentResources.Length ] ;
 		for ( int i = 0; i < dependentResources.Length; ++i ) {
-			dependentResources[ i ] = ( (Resource)ppDependentResources[ i ] ).ComObject
+			dependentResources[ i ] = ( (Resource)ppDependentResources[ i ] ).ComObject!
 #if DEBUG || DEBUG_COM || DEV_BUILD
 									  ?? throw new ArgumentException( $"{nameof(IGraphicsCommandList1)}.{nameof(AtomicCopyBufferUINT)} :: " +
 																	  $"Collection of dependent resources cannot contain null values!" )
@@ -557,7 +557,7 @@ internal class GraphicsCommandList1: GraphicsCommandList,
 		// Copy dependent resources to an array (optimize later):
 		ID3D12Resource[ ] dependentResources = new ID3D12Resource[ ppDependentResources.Length ] ;
 		for ( int i = 0; i < dependentResources.Length; ++i ) {
-			dependentResources[ i ] = ( (Resource)ppDependentResources[ i ] ).ComObject
+			dependentResources[ i ] = ( (Resource)ppDependentResources[ i ] ).ComObject!
 #if DEBUG || DEBUG_COM || DEV_BUILD
 									  ?? throw new ArgumentException( $"{nameof(IGraphicsCommandList1)}.{nameof(AtomicCopyBufferUINT)} :: " +
 																	  $"Collection of dependent resources cannot contain null values!" )

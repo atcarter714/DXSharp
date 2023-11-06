@@ -11,8 +11,6 @@ internal static class D3D12UT {
 	
 	internal static unsafe uint GetVendorIdFromDevice< T >( T pDevice ) 
 												where T : ID3D12Device {
-		const string msg = "Failed to get the vendor ID from the device!" ;
-		
 		ArgumentNullException.ThrowIfNull( pDevice, nameof(pDevice) ) ;
 		try {
 			// Get the adapter LUID:
@@ -21,12 +19,12 @@ internal static class D3D12UT {
 			// Obtain a DXGI factory:
 			IDXGIFactory7? dxgiFactory = default ;
 			var hr = PInvoke.CreateDXGIFactory2( 0x00U,
-															typeof(IDXGIFactory7).GUID, 
-																	out var factoryObj ) ;
-			
+												 typeof( IDXGIFactory7 ).GUID,
+												 out var factoryObj ) ;
+
 			if ( hr.Failed )
-				throw new COMException( $"{nameof(D3D12UT)} (internal) :: " +
-										$"Failed to create {typeof(T).Name}!", hr ) ;
+				throw new COMException( $"{nameof( D3D12UT )} (internal) :: " +
+										$"Failed to create {typeof( T ).Name}!", hr ) ;
 
 			// Get the adapter by its LUID:
 			IDXGIAdapter4? pAdapter = default ;
@@ -39,19 +37,22 @@ internal static class D3D12UT {
 		}
 
 		// Failed:
-		catch ( COMException comErr ) {
 #if DEBUG || DEV_BUILD || DEBUG_COM
+		const string msg = "Failed to get the vendor ID from the device!" ;
+		
+		catch ( COMException comErr ) {
 			throw new
 				DirectXComError( $"{nameof(D3D12UT)} (internal) :: {msg}", comErr ) ;
-#endif
 		}
 		catch ( Exception err ) {
-#if DEBUG || DEV_BUILD || DEBUG_COM
 			throw new
 				DXSharpException( $"{nameof(D3D12UT)} (internal) :: {msg}", err ) ;
-#endif
 		}
-		//return 0x00000000U ;
+		
+#else
+		finally { }
+		return 0x00000000 ;
+#endif
 	}
 	
 } ;

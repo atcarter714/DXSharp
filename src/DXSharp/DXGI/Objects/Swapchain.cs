@@ -467,9 +467,11 @@ internal class SwapChain3: SwapChain2,
 		var presentQueue = new object[ bufferCount ] ;
 		
 		for( int i = 0; i < bufferCount; ++i ) {
-			presentQueue[ i ] = ( (IComObjectRef<ID3D12CommandQueue>?)ppPresentQueue[ i ] )!.ComObject
+			presentQueue[ i ] = ( (IComObjectRef<ID3D12CommandQueue>?)ppPresentQueue?[ i ] )!.ComObject
 #if DEBUG || DEBUG_COM || DEV_BUILD
-								?? throw new NullReferenceException( ) 
+								?? throw new NullReferenceException( )
+#else
+				!
 #endif
 				;
 		}

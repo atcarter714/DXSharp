@@ -163,8 +163,7 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 #endif
 		var _hr = QueryInterface< IUnknown >( newPtr, out nint pUnknown ) ;
 		if( _hr.Failed ) throw new 
-			ArgumentException( nameof(newPtr), errMsg +
-											   $"Failed to obtain {nameof(IUnknown)} interface!" ) ;
+			ArgumentException( nameof(newPtr), $"Failed to obtain {nameof(IUnknown)} interface!" ) ;
 		
 		Release( ref _baseAddr ) ;
 		_setBasePointer( pUnknown ) ;

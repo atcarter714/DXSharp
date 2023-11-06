@@ -413,9 +413,15 @@ internal class Device: Object,
 																$"Span must not contain null references!" ) ;
 #endif
 
-			pageables[ i ] = next.ComObject ?? throw new ArgumentException( nameof( ppObjects ),
-																			$"{nameof( IDevice )}.{nameof( MakeResident )} :: " +
-																			$"Span must contain only COM objects!" ) ;
+			pageables[ i ] = next?.ComObject
+#if DEBUG || DEBUG_COM || DEV_BUILD
+							 ?? throw new ArgumentException( nameof( ppObjects ),
+															 $"{nameof( IDevice )}.{nameof( MakeResident )} :: " +
+															 $"Span must contain only COM objects!" )
+#else
+				!
+#endif
+				;
 		}
 		ComObject!.MakeResident( NumObjects, pageables ) ;
 	}
@@ -439,7 +445,7 @@ internal class Device: Object,
 											 $"Span must contain only COM objects!" ) ;
 #endif
 			
-			_pageableSpan[ i ] = next.ComObject! ;
+			_pageableSpan[ i ] = next?.ComObject! ;
 		}
 			
 		ComObject!.Evict( NumObjects, pageables ) ;
@@ -632,7 +638,7 @@ internal class Device1: Device,
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		ID3D12Fence[ ] _fences = new ID3D12Fence[ NumFences ] ;
 		for ( uint i = 0; i < NumFences; ++i ) {
-			_fences[ i ] = ( (IComObjectRef<ID3D12Fence>)ppFences[ i ] ).ComObject
+			_fences[ i ] = ( (IComObjectRef<ID3D12Fence>)ppFences[ i ] ).ComObject!
 #if DEBUG || DEBUG_COM || DEV_BUILD
 						   ?? throw new NullReferenceException( )
 #endif
@@ -651,7 +657,7 @@ internal class Device1: Device,
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		ID3D12Pageable[ ] _objects = new ID3D12Pageable[ NumObjects ] ;
 		for ( uint i = 0; i < NumObjects; ++i ) {
-			_objects[ i ] = ( (IComObjectRef< ID3D12Pageable >)ppObjects[ i ] ).ComObject
+			_objects[ i ] = ( (IComObjectRef< ID3D12Pageable >)ppObjects[ i ] ).ComObject!
 #if DEBUG || DEBUG_COM || DEV_BUILD
 							?? throw new NullReferenceException( ) 
 #endif
@@ -788,7 +794,7 @@ internal class Device3: Device2,
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		ID3D12Pageable[ ] _objects = new ID3D12Pageable[ numObjects ] ;
 		for ( uint i = 0; i < numObjects; ++i ) {
-			_objects[ i ] = ( (IComObjectRef< ID3D12Pageable >)ppObjects[ i ] ).ComObject
+			_objects[ i ] = ( (IComObjectRef< ID3D12Pageable >)ppObjects[ i ] ).ComObject!
 #if DEBUG || DEBUG_COM || DEV_BUILD
 							?? throw new NullReferenceException( )
 #endif
