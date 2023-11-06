@@ -146,8 +146,8 @@ internal class Device: Object,
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		return device.GetDescriptorHandleIncrementSize( (D3D12_DESCRIPTOR_HEAP_TYPE)DescriptorHeapType ) ;
 	}
-
-
+	
+	
 	public void CreateRootSignature( uint               nodeMask,
 									 nint               pBlobWithRootSignature,
 									 nuint              blobLengthInBytes, in Guid riid,
