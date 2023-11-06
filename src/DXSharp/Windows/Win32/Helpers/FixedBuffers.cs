@@ -2,12 +2,16 @@
 using System.Numerics ;
 using System.Runtime.CompilerServices ;
 
-using Vector3 = System.Numerics.Vector3 ;
-using DXVector3 = DXSharp.Vector3 ;
+using SysVec2 = System.Numerics.Vector2 ;
+using SysVec3 = System.Numerics.Vector3 ;
+using SysVec4 = System.Numerics.Vector4 ;
+using DXVec2 = DXSharp.Vector2 ;
+using DXVec3 = DXSharp.Vector3 ;
+using DXVec4 = DXSharp.Vector4 ;
+
 using DXSharp ;
 #endregion
 namespace Windows.Win32 ;
-
 
 
 public partial struct __float_4 {
@@ -40,7 +44,7 @@ public partial struct __float_4 {
 		}
 	}
 	
-	public __float_4( in Vector4 vec ) {
+	public __float_4( in DXVec4 vec ) {
 		unsafe {
 			Unsafe.SkipInit( out this ) ;
 			fixed( void* pVec = &vec, pValue = Value )
@@ -48,7 +52,7 @@ public partial struct __float_4 {
 		}
 	}
 	
-	public __float_4( in Vector3 vec, float w = 0 ) {
+	public __float_4( in DXVec3 vec, float w = 0 ) {
 		unsafe {
 			Unsafe.SkipInit( out this ) ;
 			Value[ 0 ] = vec.X ;

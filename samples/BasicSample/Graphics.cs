@@ -1,9 +1,6 @@
 ﻿#region Using Directives
 using System.Buffers ;
-using System.Drawing ;
-using System.Numerics ;
 using System.Runtime.CompilerServices ;
-using System.Runtime.InteropServices ;
 using System.Windows.Forms;
 
 using DXSharp ;
@@ -15,14 +12,21 @@ using DXSharp.Windows.Win32 ;
 using DXSharp.Direct3D12.Shader ;
 using DXSharp.Direct3D12.XTensions ;
 
-using IDevice = DXSharp.Direct3D12.IDevice ;
+using Vector2   = DXSharp.Vector2 ;
+using Vector3   = DXSharp.Vector3 ;
+using Vector4   = DXSharp.Vector4 ;
+using IDevice   = DXSharp.Direct3D12.IDevice ;
 using IResource = DXSharp.Direct3D12.IResource ;
-using Vector3 = DXSharp.Vector3 ;
 #endregion
 namespace BasicSample ;
 
 
+/// <summary>
+/// Simple graphics class to create and
+/// destroy the D3D12 pipeline and assets.
+/// </summary>
 public class Graphics: DisposableObject {
+	// --------------------------------------------------------------------------------------------------
 	const string shaderFilePath = @"shader1.hlsl" ;
 	public const int FrameCount = 2 ;
 	
@@ -47,6 +51,8 @@ public class Graphics: DisposableObject {
 	uint           frameIndex ;
 	ColorF 	       clearColor4 ;
 
+	// --------------------------------------------------------------------------------------------------
+	
 	public IDXApp Application { get ; init ; }
 	
 	Rect[ ] scissorRects = new Rect[ 1 ] ;
@@ -65,42 +71,12 @@ public class Graphics: DisposableObject {
 		Application.Settings.StyleSettings?.BackBufferColor 
 			?? AppSettings.Style.DEFAULT_BUFFER_COLOR ;
 	
+	// --------------------------------------------------------------------------------------------------
 	
 	public Graphics( IDXApp app ) => Application = app ;
 	
-
-	protected override ValueTask DisposeUnmanaged( ) {
-		WaitForPreviousFrame( ) ;
-		foreach ( var target in renderTargets ) {
-			target?.Dispose( ) ;
-		}
-
-		try {
-			foreach ( var handle in cleanupList )
-				handle.Dispose( ) ;
-		}
-		finally { cleanupList.Clear( ) ; }
-
-		try {
-			foreach ( var disposable in _disposables )
-				disposable.Dispose( ) ;
-		}
-		finally { _disposables.Clear( ) ; }
-		
-		commandAllocator?.Dispose( ) ;
-		commandQueue?.Dispose( ) ;
-		rootSignature?.Dispose( ) ;
-		rtvHeap?.Dispose( ) ;
-		pipelineState?.Dispose( ) ;
-		commandList?.Dispose( ) ;
-		fence?.Dispose( ) ;
-		SwapChain?.Dispose( ) ;
-		GraphicsDevice?.Dispose( ) ;
-		
-		return ValueTask.CompletedTask ;
-	}
-
-
+	// --------------------------------------------------------------------------------------------------
+	
 	public void LoadPipeline( ) {
 		hwnd = Application.Window!.Handle ;
 		AppSettings settings = Application.Settings ?? AppSettings.Default ;
@@ -203,10 +179,10 @@ public class Graphics: DisposableObject {
 
 
 	public void LoadAssets( ) {
-		// Create an empty root signature.
+		// Create an empty root signature using AllowInputAssemblerInputLayout flag:
 		var serializedRootSig = 
 			new RootSignatureDescription( RootSignatureFlags.AllowInputAssemblerInputLayout )
-				.Serialize( ) ;
+				.Serialize( ) ?? throw new NullReferenceException( "Failed to serialize root signature!" ) ;
 		
 		GraphicsDevice.CreateRootSignature( 0,
 											serializedRootSig.Pointer, 
@@ -312,20 +288,20 @@ public class Graphics: DisposableObject {
 		
 		// Create the vertex buffer & define geometry of a triangle:
 		var triangleVertices = new[ ] {
-				new Vertex { 
+				new VertexPosCol { 
 					Position = new Vector3(0.0f, 0.25f * AspectRatio, 0.0f ), 
 					Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f ) 
 				},
-				new Vertex {
+				new VertexPosCol {
 					Position = new Vector3(0.25f, -0.25f * AspectRatio, 0.0f), 
 					Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f)
 				},
-				new Vertex {
+				new VertexPosCol {
 					Position = new Vector3(-0.25f, -0.25f * AspectRatio, 0.0f), 
 					Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f )
 				},
 		};
-		int vertexSize       = Vertex.Size ; // Marshal.SizeOf<Vertex>( ) ;
+		int vertexSize       = VertexPosCol.SizeInBytes ; // Marshal.SizeOf<Vertex>( ) ;
 		int vertexBufferSize = ( vertexSize * triangleVertices.Length ) ;
 
 
@@ -333,7 +309,7 @@ public class Graphics: DisposableObject {
 		// recommended. Every time the GPU needs it, the upload heap will be marshalled 
 		// over. Please read up on Default Heap usage. An upload heap is used here for 
 		// code simplicity and because there are very few verts to actually transfer ...
-		var resDesc  = new ResourceDescription { Alignment = Vertex.Size } ;
+		var resDesc  = new ResourceDescription { Alignment = VertexPosCol.SizeInBytes } ;
 		GraphicsDevice.CreateCommittedResource( new ( HeapType.Upload ), HeapFlags.None,
 												ResourceDescription.Buffer( (ulong)vertexBufferSize ),
 									  ResourceStates.GenericRead,
@@ -344,8 +320,8 @@ public class Graphics: DisposableObject {
 		// Copy the triangle data to the vertex buffer.
 		vertexBuffer.Map(0 , default, out var mappedResource ) ;
 		unsafe {
-			Vertex* pVertexDataBegin = (Vertex *)mappedResource ;
-			Memory< Vertex > vertices = new( triangleVertices ) ;
+			VertexPosCol* pVertexDataBegin = (VertexPosCol *)mappedResource ;
+			Memory< VertexPosCol > vertices = new( triangleVertices ) ;
 			using var hVertices = vertices.Pin( ) ;
 			Unsafe.CopyBlock( pVertexDataBegin, hVertices.Pointer, (uint)vertexBufferSize ) ;
 		}
@@ -354,7 +330,7 @@ public class Graphics: DisposableObject {
 		// Initialize the vertex buffer view:
 		vertexBufferView = new VertexBufferView {
 			BufferLocation = vertexBuffer.GetGPUVirtualAddress( ),
-			StrideInBytes  = Vertex.Size,
+			StrideInBytes  = VertexPosCol.SizeInBytes,
 			SizeInBytes    = (uint)vertexBufferSize,
 		} ;
 
@@ -389,7 +365,6 @@ public class Graphics: DisposableObject {
 		SwapChain.Present( 1, 0 ) ;
 		frameIndex ^= 1 ; //! Alternate between the two back buffers.
 	}
-	
 	
 	
 	void WaitForPreviousFrame( ) {
@@ -453,70 +428,45 @@ public class Graphics: DisposableObject {
 		// Done recording commands ...
 		commandList.Close( ) ;
 	}
-}
-
-
-
-[StructLayout(LayoutKind.Sequential, 
-			  Size = (sizeof(float) * 7))]
-public struct Vertex {
-	public const int Size = sizeof(float) * 7 ;
-	public Vector3 Position ;
-	public Vector4 Color ;
 	
-	public Vertex( Vector3 position, Vector4 color ) {
-		Position = position ;
-		Color = color ;
-	}
-} ;
-
-
-
-// Describe and create a constant buffer view (CBV) and shader resource view (SRV) descriptor heap:
-/*var cbvSrvHeapDesc = new DescriptorHeapDescription {
-	NodeMask       = 0,
-	NumDescriptors = 1,
-	Type           = DescriptorHeapType.CBV_SRV_UAV,
-	Flags          = DescriptorHeapFlags.ShaderVisible,
-} ;*/
-
-
-
-/*unsafe {
-	var __device = device.COMObject! ;
-	var _guid    = IDescriptorHeap.InterfaceGUID ;
-	D3D12_DESCRIPTOR_HEAP_DESC _desc = new( )
-	{
-		Type  = D3D12_DESCRIPTOR_HEAP_TYPE.D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
-		Flags = D3D12_DESCRIPTOR_HEAP_FLAGS.D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
-	} ;
-	__device.CreateDescriptorHeap( &_desc, &_guid, out var _heap ) ;
-	ID3D12DescriptorHeap _descHeap = (ID3D12DescriptorHeap)_heap ;
-	_descHeap.SetName( "AaronsDescHeapTest" );
-	var heapDescription1 = _descHeap.GetDesc( ) ;
-	var rtvHeap2 = new DescriptorHeap( _descHeap ) ;
-	var heapDescription2 = rtvHeap2.GetDesc( ) ;
-}
-
-
-
-
-		void _transition( Resource resource, ResourceStates before, ResourceStates after ) {
-			unsafe {
-				ResourceUnmanaged _rt = ResourceUnmanaged.GetUnmanaged( resource ) ;
-				var transition = new ResourceBarrier {
-					Type  = ResourceBarrierType.Transition,
-					Flags = ResourceBarrierFlags.None,
-					Anonymous = new( ) {
-						Transition = new _ResourceTransitionBarrier {
-							Subresource = 0,
-							pResource   = &_rt,
-							StateBefore = before,
-							StateAfter  = after,
-						}
-					}
-				} ;
-				transitionBarriers[ 0 ] = transition ;
-			}
+	
+	// --------------------------------------------------------------------------------------------------
+	
+	protected override ValueTask DisposeUnmanaged( ) {
+		WaitForPreviousFrame( ) ;
+		foreach ( var target in renderTargets ) {
+			target?.Dispose( ) ;
 		}
-		*/
+
+		try {
+			foreach ( var handle in cleanupList )
+				handle.Dispose( ) ;
+		}
+		finally { cleanupList.Clear( ) ; }
+
+		try {
+			foreach ( var disposable in _disposables )
+				disposable.Dispose( ) ;
+		}
+		finally { _disposables.Clear( ) ; }
+		
+		commandAllocator?.Dispose( ) ;
+		commandQueue?.Dispose( ) ;
+		rootSignature?.Dispose( ) ;
+		rtvHeap?.Dispose( ) ;
+		pipelineState?.Dispose( ) ;
+		commandList?.Dispose( ) ;
+		fence?.Dispose( ) ;
+		SwapChain?.Dispose( ) ;
+		GraphicsDevice?.Dispose( ) ;
+		
+		return ValueTask.CompletedTask ;
+	}
+
+	public override async ValueTask DisposeAsync( ) {
+		await base.DisposeAsync( ) ;
+		await Task.Run( Dispose ) ;
+	}
+	
+	// ==================================================================================================
+}

@@ -22,7 +22,7 @@ public static class InteropUtils {
 	/// optimization and inlining options for the runtime, which is
 	/// helpful because it is frequently used and a lot to type out.
 	/// </remarks>
-	internal const short _MAXOPT_ = (0x100|0x200) ;
+	public const short _MAXOPT_ = (0x100|0x200) ;
 	
 	/// <summary>Value of a "null" (zero) pointer/address.</summary>
 	public const int NULL_PTR = 0x0000000000000000 ;
