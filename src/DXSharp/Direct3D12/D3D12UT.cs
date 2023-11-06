@@ -12,6 +12,8 @@ internal static class D3D12UT {
 	internal static unsafe uint GetVendorIdFromDevice< T >( T pDevice ) 
 												where T : ID3D12Device {
 		ArgumentNullException.ThrowIfNull( pDevice, nameof(pDevice) ) ;
+		const string msg = "Failed to get the vendor ID from the device!" ;
+		
 		try {
 			// Get the adapter LUID:
 			var luid = pDevice.GetAdapterLuid( ) ;
@@ -38,7 +40,6 @@ internal static class D3D12UT {
 
 		// Failed:
 #if DEBUG || DEV_BUILD || DEBUG_COM
-		const string msg = "Failed to get the vendor ID from the device!" ;
 		
 		catch ( COMException comErr ) {
 			throw new
