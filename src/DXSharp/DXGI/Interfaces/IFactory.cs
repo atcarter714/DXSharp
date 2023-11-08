@@ -11,6 +11,8 @@ using DXSharp.Windows ;
 using DXSharp.Direct3D12 ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
+using HResult = DXSharp.Windows.HResult ;
+
 #endregion
 namespace DXSharp.DXGI ;
 
@@ -96,9 +98,9 @@ public interface IFactory: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	HResult CreateSwapChain( in  ICommandQueue pCmdQueue,
+	HResult CreateSwapChain( in  ICommandQueue?       pCmdQueue,
 							 in  SwapChainDescription desc,
-							 out ISwapChain? ppSwapChain ) ;
+							 out ISwapChain?          ppSwapChain ) ;
 
 	
 	/// <summary>Create an adapter interface that represents a software adapter.</summary>

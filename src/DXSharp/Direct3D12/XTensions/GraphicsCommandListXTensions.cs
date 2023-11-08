@@ -20,10 +20,10 @@ public static class GraphicsCommandListXTensions {
 	}
 	
 	
-	public static void ClearRenderTargetView( this IGraphicsCommandList graphicsCommandList,
-											  CPUDescriptorHandle     RenderTargetView, 
-											  ColorF                  ColorRGBA,
-											  Span< Rect > pRects = default ) {
+	public static void ClearRenderTargetView( this IGraphicsCommandList? graphicsCommandList,
+											  CPUDescriptorHandle        RenderTargetView, 
+											  ColorF                     ColorRGBA,
+											  Span< Rect >               pRects = default ) {
 		_setTempClearColor( ColorRGBA ) ;
 		graphicsCommandList.ClearRenderTargetView( RenderTargetView, _clearColorCache,
 												   (uint)pRects.Length, pRects ) ;

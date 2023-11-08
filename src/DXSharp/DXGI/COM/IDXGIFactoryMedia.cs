@@ -7,6 +7,7 @@ using Windows.Win32.Foundation ;
 
 using DXSharp ;
 using DXSharp.DXGI ;
+using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 #endregion
 namespace Windows.Win32.Graphics.Dxgi;
@@ -15,6 +16,7 @@ namespace Windows.Win32.Graphics.Dxgi;
 [SupportedOSPlatform( "windows8.1" )]
 [ComImport, Guid( "41E7D1F2-A591-4F7B-A2E5-FA9C843E1C12" ),
  InterfaceType( ComInterfaceType.InterfaceIsIUnknown ),]
+[NativeLibrary("Dxgi.lib", "IDXGIFactoryMedia", "Dxgi1_3.h")]
 public interface IDXGIFactoryMedia: IUnknown {
 	
 	/// <summary>Creates a YUV swap chain for an existing DirectComposition surface handle. (IDXGIFactoryMedia.CreateSwapChainForCompositionSurfaceHandle)</summary>
@@ -36,7 +38,8 @@ public interface IDXGIFactoryMedia: IUnknown {
 	unsafe void CreateSwapChainForCompositionSurfaceHandle( [MarshalAs( UnmanagedType.IUnknown )] object pDevice,
 															HANDLE hSurface,
 															DXGI_SWAP_CHAIN_DESC1* pDesc,
-															IDXGIOutput pRestrictToOutput,
+															[MarshalAs(UnmanagedType.Interface), Optional] 
+																IDXGIOutput pRestrictToOutput,
 															out IDXGISwapChain1 ppSwapChain ) ;
 
 	/// <summary>Creates a YUV swap chain for an existing DirectComposition surface handle. (IDXGIFactoryMedia.CreateDecodeSwapChainForCompositionSurfaceHandle)</summary>
@@ -72,17 +75,19 @@ public interface IDXGIFactoryMedia: IUnknown {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_3/nf-dxgi1_3-idxgifactorymedia-createdecodeswapchainforcompositionsurfacehandle#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
 	unsafe void CreateDecodeSwapChainForCompositionSurfaceHandle( [MarshalAs( UnmanagedType.IUnknown )] object pDevice,
-																  HANDLE hSurface,
+																  [Optional] HANDLE hSurface,
 																  DXGI_DECODE_SWAP_CHAIN_DESC* pDesc,
 																  IDXGIResource pYuvDecodeBuffers,
-																  IDXGIOutput pRestrictToOutput,
-																  IDXGIDecodeSwapChain ppSwapChain ) ;
+																  [Optional] IDXGIOutput pRestrictToOutput,
+																  out IDXGIDecodeSwapChain ppSwapChain ) ;
 } ;
+
 
 
 [SupportedOSPlatform( "windows8.1" )]
 [ComImport, Guid( "2633066B-4514-4C7A-8FD8-12EA98059D18" ), 
  InterfaceType( ComInterfaceType.InterfaceIsIUnknown ),]
+[NativeLibrary("dxgi.dll", "IDXGIDecodeSwapChain", "Dxgi1_3.h")]
 public interface IDXGIDecodeSwapChain: IUnknown {
 	/// <summary>Presents a frame on the output adapter.</summary>
 	/// <param name="BufferToPresent">An index indicating which member of the subresource array to present.</param>
@@ -103,7 +108,7 @@ public interface IDXGIDecodeSwapChain: IUnknown {
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_3/nf-dxgi1_3-idxgidecodeswapchain-presentbuffer">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[PreserveSig] HRESULT PresentBuffer( uint BufferToPresent, uint SyncInterval, uint Flags ) ;
+	[PreserveSig] HResult PresentBuffer( uint BufferToPresent, uint SyncInterval, uint Flags ) ;
 
 	/// <summary>Sets the rectangle that defines the source region for the video processing blit operation.</summary>
 	/// <param name="pRect">

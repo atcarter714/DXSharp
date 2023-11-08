@@ -9,6 +9,8 @@ namespace DXSharp.Windows.Win32 ;
 [DebuggerDisplay("{Value}")]
 public struct HMonitor: IEquatable< HMonitor >,
 						IEquatable< HMONITOR > {
+	public static readonly HMonitor Null = new( 0 ) ;
+	
 	public readonly nint Value ;
 	public HMonitor( nint value ) => Value = value ;
 	public HMonitor( in Win32Handle handle ) => Value = handle.Value ;

@@ -70,7 +70,13 @@ public static class D3D12 {
 											guid, out var ppDevice ) ;
 		hr.ThrowOnFailure( ) ;
 
-		return (T)T.Instantiate( (ID3D12Device)ppDevice ) ;
+		var _rcwObj   = ppDevice as ID3D12Device ?? throw new DirectXComError( $"" );
+		var _createFn = Direct3D12.IDevice._resourceCreationFunctions[ guid ] ;
+		var _device   = (T)_createFn( _rcwObj ) ;
+		
+		return _device ;
+		
+		//return (T)T.Instantiate( (ID3D12Device)ppDevice ) ;
 	}
 } ;
 

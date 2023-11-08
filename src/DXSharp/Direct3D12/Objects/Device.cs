@@ -52,7 +52,7 @@ internal class Device: Object,
 	public uint GetNodeCount( ) => ComObject!.GetNodeCount( ) ;
 	
 	public void CreateCommandQueue( in CommandQueueDescription pDesc,
-									in Guid                    riid, out ICommandQueue ppCommandQueue ) {
+									in Guid                    riid, out ICommandQueue? ppCommandQueue ) {
 		unsafe { fixed ( void* descPtr = &pDesc, riidPtr = &riid ) {
 				ComObject!.CreateCommandQueue( (D3D12_COMMAND_QUEUE_DESC*)descPtr,
 											   (Guid *)riidPtr, out var ppvCommandQueue ) ;
@@ -62,13 +62,13 @@ internal class Device: Object,
 	}
 
 
-	public void CreateCommandAllocator( CommandListType       type, in Guid riid,
-										out ICommandAllocator ppCommandAllocator ) {
+	public void CreateCommandAllocator( CommandListType        type, in Guid riid,
+										out ICommandAllocator? ppCommandAllocator ) {
 		unsafe { fixed ( Guid* riidPtr = &riid ) {
 				ComObject!.CreateCommandAllocator( (D3D12_COMMAND_LIST_TYPE)type, riidPtr,
 														out var ppvCommandAllocator ) ;
-				var _allocator = (ID3D12CommandAllocator)ppvCommandAllocator ;
-				CommandAllocator allocator = new( _allocator ) ;
+				var               _allocator = (ID3D12CommandAllocator)ppvCommandAllocator ;
+				CommandAllocator? allocator  = new( _allocator ) ;
 				ppCommandAllocator = allocator ;
 			}
 		}
@@ -76,7 +76,7 @@ internal class Device: Object,
 
 	
 	public void CreateGraphicsPipelineState( in  GraphicsPipelineStateDescription pDesc, in Guid riid,
-											 out IPipelineState                   ppPipelineState ) {
+											 out IPipelineState?                  ppPipelineState ) {
 		unsafe { fixed ( Guid* riidPtr = &riid ) {
 				ComObject!.CreateGraphicsPipelineState( pDesc, riidPtr, 
 														out var ppvPipelineState ) ;
@@ -94,12 +94,12 @@ internal class Device: Object,
 	}
 
 
-	public void CreateCommandList( uint nodeMask,
-								   CommandListType type,
-								   ICommandAllocator pCommandAllocator,
+	public void CreateCommandList( uint                       nodeMask,
+								   CommandListType            type,
+								   ICommandAllocator?         pCommandAllocator,
 								   [Optional] IPipelineState? pInitialState,
-								   in Guid riid,
-								   out ICommandList ppCommandList ) {
+								   in         Guid            riid,
+								   out        ICommandList    ppCommandList ) {
 		var  device    = ComObject ?? throw new NullReferenceException( ) ;
 		var  allocator    = (IComObjectRef< ID3D12CommandAllocator >)pCommandAllocator ;
 		 var initialState = (IComObjectRef< ID3D12PipelineState >?)pInitialState ;
@@ -135,7 +135,7 @@ internal class Device: Object,
 
 
 	public void CreateDescriptorHeap( in DescriptorHeapDescription pDescriptorHeapDesc,
-									  in Guid                      riid, out IDescriptorHeap ppvHeap ) {
+									  in Guid                      riid, out IDescriptorHeap? ppvHeap ) {
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		device.CreateDescriptorHeap( pDescriptorHeapDesc, riid, out var ppvDescriptorHeap ) ;
 		ppvHeap = new DescriptorHeap( (ID3D12DescriptorHeap)ppvDescriptorHeap ) ;
@@ -148,10 +148,10 @@ internal class Device: Object,
 	}
 	
 	
-	public void CreateRootSignature( uint               nodeMask,
-									 nint               pBlobWithRootSignature,
-									 nuint              blobLengthInBytes, in Guid riid,
-									 out IRootSignature ppvRootSignature ) {
+	public void CreateRootSignature( uint                nodeMask,
+									 nint                pBlobWithRootSignature,
+									 nuint               blobLengthInBytes, in Guid riid,
+									 out IRootSignature? ppvRootSignature ) {
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			device.CreateRootSignature( nodeMask, (void *)pBlobWithRootSignature,
@@ -188,7 +188,7 @@ internal class Device: Object,
 	}
 
 
-	public void CreateRenderTargetView( IResource                                 pResource,
+	public void CreateRenderTargetView( IResource?                                pResource,
 										[Optional] in RenderTargetViewDescription pDescription,
 										CPUDescriptorHandle                       DestDescriptor ) {
 		var device = ComObject ?? throw new NullReferenceException( ) ;
@@ -269,7 +269,7 @@ internal class Device: Object,
 										 ResourceStates            InitialResourceState,
 										 [Optional] in ClearValue? pOptimizedClearValue,
 										 in            Guid        riidResource,
-										 out           IResource   ppvResource ) {
+										 out           IResource?  ppvResource ) {
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe { fixed( void* _pHeapProps = &pHeapProperties, 
 					   _pDesc = &pDesc,
@@ -452,10 +452,10 @@ internal class Device: Object,
 	}
 
 	
-	public void CreateFence( ulong InitialValue, 
-							 FenceFlags Flags,
-							 in Guid riid,
-							 out IFence ppFence ) {
+	public void CreateFence( ulong       InitialValue, 
+							 FenceFlags  Flags,
+							 in  Guid    riid,
+							 out IFence? ppFence ) {
 		unsafe { 
 			Guid iid = riid ;
 			ComObject!.CreateFence( InitialValue, 

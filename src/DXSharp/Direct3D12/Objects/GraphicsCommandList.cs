@@ -51,7 +51,7 @@ internal class GraphicsCommandList: CommandList,
 	public void Close( ) => ComObject?.Close( ) ;
 
 
-	public void Reset( ICommandAllocator pAllocator, IPipelineState pInitialState ) {
+	public void Reset( ICommandAllocator? pAllocator, IPipelineState? pInitialState ) {
 		var allocator = (IComObjectRef< ID3D12CommandAllocator >)pAllocator ;
 		var initialState = (IComObjectRef< ID3D12PipelineState >)pInitialState ;
 #if DEBUG || DEBUG_COM || DEV_BUILD
@@ -109,7 +109,7 @@ internal class GraphicsCommandList: CommandList,
 	}
 	
 
-	public void CopyResource( IResource pDstResource, IResource pSrcResource ) {
+	public void CopyResource( IResource? pDstResource, IResource? pSrcResource ) {
 		var src = (Resource)pSrcResource ;
 		var dst = (Resource)pDstResource ;
 		ComObject!.CopyResource( dst.ComObject, src.ComObject ) ;
@@ -221,7 +221,7 @@ internal class GraphicsCommandList: CommandList,
 	public void SetComputeRootSignature( IRootSignature pRootSignature ) => ComObject!.SetComputeRootSignature( pRootSignature.ComObject ) ;
 
 	
-	public void SetGraphicsRootSignature( IRootSignature pRootSignature ) => ComObject!.SetGraphicsRootSignature( pRootSignature.ComObject ) ;
+	public void SetGraphicsRootSignature( IRootSignature? pRootSignature ) => ComObject!.SetGraphicsRootSignature( pRootSignature.ComObject ) ;
 
 	
 	public void SetComputeRootDescriptorTable( uint RootParameterIndex, GPUDescriptorHandle BaseDescriptor ) => 

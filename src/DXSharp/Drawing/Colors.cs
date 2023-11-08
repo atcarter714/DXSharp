@@ -70,6 +70,12 @@ public struct RGB {
 		new RGB( value.red / 255f, value.green / 255f, value.blue / 255f ) ;
 	public static implicit operator (short red, short green, short blue)( RGB value ) =>
 		( (short)( value.Red * 255 ), (short)( value.Green * 255 ), (short)( value.Blue * 255 ) ) ;
+	
+	public static implicit operator RGB( Vector3   vec )   => new( vec.X, vec.Y, vec.Z ) ;
+	public static implicit operator Vector3( RGB   rgb )   => new( rgb.Red, rgb.Green, rgb.Blue ) ;
+	
+	public static explicit operator RGB( in ColorF color ) => new( color.r, color.g, color.b ) ;
+	public static implicit operator ColorF( in RGB color )  => new( color.Red, color.Green, color.Blue ) ;
 
 	public static implicit operator RGB( DXGI_RGB value ) => new( value.Red, value.Green, value.Blue ) ;
 	public static implicit operator DXGI_RGB( RGB value ) => new DXGI_RGB {

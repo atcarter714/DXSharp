@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using System.Runtime.InteropServices ;
@@ -21,6 +24,27 @@ namespace DXSharp.Direct3D12 ;
 [ProxyFor( typeof(ID3D12Device) )]
 public interface IDevice: IObject,
 						  IInstantiable {
+	// ---------------------------------------------------------------------------------
+	
+	//! Creation Functions for IDevice thru IDevice12:
+	[SuppressMessage( "Interoperability", "CA1416:Validate platform compatibility" )]
+	internal static readonly ReadOnlyDictionary< Guid, Func< ID3D12Device, IInstantiable > >
+		_resourceCreationFunctions = new( new Dictionary< Guid, Func< ID3D12Device, IInstantiable > > {
+				{ IDevice.IID, ( pComObj ) => new Device( pComObj ) },
+				{ IDevice1.IID, ( pComObj ) => new Device1( ( pComObj as ID3D12Device1 )! ) },
+				{ IDevice2.IID, ( pComObj ) => new Device2( ( pComObj as ID3D12Device2 )! ) },
+				{ IDevice3.IID, ( pComObj ) => new Device3( ( pComObj as ID3D12Device3 )! ) },
+				{ IDevice4.IID, ( pComObj ) => new Device4( ( pComObj as ID3D12Device4 )! ) },
+				{ IDevice5.IID, ( pComObj ) => new Device5( ( pComObj as ID3D12Device5 )! ) },
+				{ IDevice6.IID, ( pComObj ) => new Device6( ( pComObj as ID3D12Device6 )! ) },
+				{ IDevice7.IID, ( pComObj ) => new Device7( ( pComObj as ID3D12Device7 )! ) },
+				{ IDevice8.IID, ( pComObj ) => new Device8( ( pComObj as ID3D12Device8 )! ) },
+				{ IDevice9.IID, ( pComObj ) => new Device9( ( pComObj as ID3D12Device9 )! ) },
+				{ IDevice10.IID, ( pComObj ) => new Device10( ( pComObj as ID3D12Device10 )! ) },
+				{ IDevice11.IID, ( pComObj ) => new Device11( ( pComObj as ID3D12Device11 )! ) },
+				{ IDevice12.IID, ( pComObj ) => new Device12( ( pComObj as ID3D12Device12 )! ) }
+			} ) ;
+	
 	// ---------------------------------------------------------------------------------
 	
 	/// <summary>Reports the number of physical adapters (nodes) that are associated with this device.</summary>
@@ -50,9 +74,9 @@ public interface IDevice: IObject,
 	/// </returns>
 	/// <remarks>The <b>REFIID</b>, or <b>GUID</b>, of the interface to the command queue can be obtained by using the __uuidof() macro. For example, __uuidof(ID3D12CommandQueue) will get the <b>GUID</b> of the interface to a command queue.</remarks>
 	/// void CreateCommandQueue( D3D12_COMMAND_QUEUE_DESC* pDesc, Guid* riid, out object ppCommandQueue ) ;
-	void CreateCommandQueue( in CommandQueueDescription pDesc,
-							 in Guid riid, 
-							 out ICommandQueue ppCommandQueue ) ;
+	void CreateCommandQueue( in  CommandQueueDescription pDesc,
+							 in  Guid                    riid, 
+							 out ICommandQueue?          ppCommandQueue ) ;
 
 
 	/// <summary>Creates a command allocator object.</summary>
@@ -72,9 +96,9 @@ public interface IDevice: IObject,
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns <b>E_OUTOFMEMORY</b> if there is insufficient memory to create the command allocator. See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> for other possible return values.</para>
 	/// </returns>
 	/// <remarks>The device creates command lists from the command allocator.</remarks>
-	void CreateCommandAllocator( CommandListType type, 
-								 in Guid riid,
-								 out ICommandAllocator ppCommandAllocator ) ;
+	void CreateCommandAllocator( CommandListType        type, 
+								 in  Guid               riid,
+								 out ICommandAllocator? ppCommandAllocator ) ;
 
 
 	/// <summary>Creates a graphics pipeline state object.</summary>
@@ -97,8 +121,8 @@ public interface IDevice: IObject,
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-creategraphicspipelinestate">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void CreateGraphicsPipelineState( in  GraphicsPipelineStateDescription pDesc, 
-									  in Guid riid,
-									  out IPipelineState ppPipelineState ) ;
+									  in  Guid                             riid,
+									  out IPipelineState?                  ppPipelineState ) ;
 
 
 	/// <summary>Creates a compute pipeline state object.</summary>
@@ -155,7 +179,7 @@ public interface IDevice: IObject,
 	/// <remarks>The device creates command lists from the command allocator.</remarks>
 	void CreateCommandList( uint                       nodeMask,
 							CommandListType            type,
-							ICommandAllocator          pCommandAllocator,
+							ICommandAllocator?         pCommandAllocator,
 							[Optional] IPipelineState? pInitialState,
 							in         Guid            riid,
 							out        ICommandList    ppCommandList ) ;
@@ -204,9 +228,9 @@ public interface IDevice: IObject,
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> This method returns <b>E_OUTOFMEMORY</b> if there is insufficient memory to create the descriptor heap object. See <a href="https://docs.microsoft.com/windows/desktop/direct3d12/d3d12-graphics-reference-returnvalues">Direct3D 12 Return Codes</a> for other possible return values.</para>
 	/// </returns>
 	/// <remarks>The <b>REFIID</b>, or <b>GUID</b>, of the interface to the descriptor heap can be obtained by using the __uuidof() macro. For example, __uuidof(<a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12descriptorheap">ID3D12DescriptorHeap</a>) will get the <b>GUID</b> of the interface to a descriptor heap.</remarks>
-	void CreateDescriptorHeap( in DescriptorHeapDescription pDescriptorHeapDesc,
-							   in Guid riid, 
-							   out IDescriptorHeap ppvHeap ) ;
+	void CreateDescriptorHeap( in  DescriptorHeapDescription pDescriptorHeapDesc,
+							   in  Guid                      riid, 
+							   out IDescriptorHeap?          ppvHeap ) ;
 
 
 	/// <summary>Gets the size of the handle increment for the given type of descriptor heap. This value is typically used to increment a handle into a descriptor array by the correct amount.</summary>
@@ -247,11 +271,11 @@ public interface IDevice: IObject,
 	/// <para>The <b>REFIID</b>, or <b>GUID</b>, of the interface to the root signature layout can be obtained by using the __uuidof() macro. For example, __uuidof(<a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12rootsignature">ID3D12RootSignature</a>) will get the <b>GUID</b> of the interface to a root signature.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrootsignature#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateRootSignature( uint nodeMask,
-							  nint pBlobWithRootSignature,
-							  nuint blobLengthInBytes, 
-							  in Guid riid,
-							  out IRootSignature ppvRootSignature ) ;
+	void CreateRootSignature( uint                nodeMask,
+							  nint                pBlobWithRootSignature,
+							  nuint               blobLengthInBytes, 
+							  in  Guid            riid,
+							  out IRootSignature? ppvRootSignature ) ;
 
 
 	/// <summary>Creates a constant-buffer view for accessing resource data.</summary>
@@ -336,7 +360,7 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createrendertargetview">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateRenderTargetView( IResource                                 pResource,
+	void CreateRenderTargetView( IResource?                                pResource,
 								 [Optional] in RenderTargetViewDescription pDescription,
 								 CPUDescriptorHandle                       DestDescriptor ) ;
 
@@ -531,7 +555,7 @@ public interface IDevice: IObject,
 								  ResourceStates            InitialResourceState,
 								  [Optional] in ClearValue? pOptimizedClearValue,
 								  in            Guid        riidResource,
-								  out           IResource   ppvResource ) ;
+								  out           IResource?  ppvResource ) ;
 
 
 	/// <summary>Creates a heap that can be used with placed resources and reserved resources.</summary>
@@ -841,10 +865,10 @@ public interface IDevice: IObject,
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createfence">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CreateFence( ulong InitialValue, 
-					  FenceFlags Flags,
-					  in Guid riid,
-					  out IFence ppFence ) ;
+	void CreateFence( ulong       InitialValue, 
+					  FenceFlags  Flags,
+					  in  Guid    riid,
+					  out IFence? ppFence ) ;
 
 
 	/// <summary>Gets the reason that the device was removed.</summary>

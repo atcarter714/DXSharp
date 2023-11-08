@@ -124,7 +124,7 @@ internal class CommandQueue: Pageable,
 	}
 
 	
-	public void Signal( IFence pFence, ulong Value ) {
+	public void Signal( IFence? pFence, ulong Value ) {
 		var fence = (IComObjectRef< ID3D12Fence >) pFence ;
 		cmdQueue.Signal( fence.ComObject, Value ) ;
 	}

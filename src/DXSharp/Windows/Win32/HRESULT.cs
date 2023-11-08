@@ -1,6 +1,7 @@
 ﻿#region Using Directives
 #pragma warning disable CS1591, CS1573, CS0465, CS0649, CS8019, CS1570, CS1584, CS1658, CS0436, CS8981
 
+using Windows.Win32.Foundation ;
 using global::System;
 using global::System.Diagnostics;
 using global::System.Diagnostics.CodeAnalysis;
@@ -20,8 +21,8 @@ namespace DXSharp.Windows {
 
 		/// <summary>Creates a new HRESULT value</summary>
 		/// <param name="value">Value of the HRESULT code</param>
-		internal HResult( int value ) => this.Value = value ;
-
+		public HResult( int value ) => this.Value = value ;
+		public HResult( uint value ) => this.Value = (int)( (nint)value ) ;
 		
 		public static bool operator !=( HResult left, HResult right ) => !( left == right ) ;
 		public static bool operator ==( HResult left, HResult right ) => left.Value == right.Value ;
@@ -120,12 +121,45 @@ namespace DXSharp.Windows {
 		/// </para>
 		/// </remarks>
 		public static readonly HResult E_FAIL = (HResult)( -2147467259 ) ;
+		
+		/// <summary>Operation aborted</summary>
+		public static readonly HResult E_ABORT        = new(-2147467260) ;
+
+		/// <summary>General access denied error</summary>
+		public static readonly HResult E_ACCESSDENIED = new( -2147024891 ) ;
+		
+		/// <summary>Handle that is not valid</summary>
+		public static readonly HResult E_HANDLE = new(-2147024890) ;	
+		
+		/// <summary>
+		/// Documentation varies per use. Refer to each:
+		/// <a href="https://docs.microsoft.com/windows/win32/api/mbnapi/nf-mbnapi-imbnconnectioncontextevents-onsetprovisionedcontextcomplete">IMbnConnectionContextEvents.OnSetProvisionedContextComplete</a>,
+		/// <a href="https://docs.microsoft.com/windows/win32/api/mbnapi/nf-mbnapi-imbnserviceactivationevents-onactivationcomplete">IMbnServiceActivationEvents.OnActivationComplete</a>,
+		/// <a href="https://docs.microsoft.com/windows/win32/api/mbnapi/nf-mbnapi-imbnsmsevents-onsmssendcomplete">IMbnSmsEvents.OnSmsSendComplete</a>.
+		/// </summary>
+		public static readonly HResult E_INVALIDARG    = new( -2147024809 ) ;
+		
+		/// <summary>No such interface supported.</summary>
+		public static readonly HResult E_NOINTERFACE = new(-2147467262) ;
+		
+		/// <summary>Not implemented.</summary>
+		public static readonly HResult E_NOTIMPL = new(-2147467263) ;
+		
+		/// <summary>Failed to allocate necessary memory</summary>
+		public static readonly HResult E_OUTOFMEMORY = new(-2147024882) ;	
+		
+		/// <summary>Pointer that is not valid</summary>
+		public static readonly HResult E_POINTER = new(-2147467261) ;	
+		
+		/// <summary>Unexpected failure</summary>
+		public static readonly HResult E_UNEXPECTED = new(-2147418113) ;
+
 
 		/// <summary>
 		/// You tried to use a resource to which you did not have the required access privileges. 
 		/// This error is most typically caused when you write to a shared resource with read-only access.
 		/// </summary>
-		public static readonly HResult DXGI_ERROR_ACCESS_DENIED = (HResult)( -2005270485 ) ;
+		public static readonly HResult DXGI_ERROR_ACCESS_DENIED = HRESULT.DXGI_ERROR_MORE_DATA ;//(HResult)( -2005270485 ) ;
 
 		/// <summary>
 		/// The desktop duplication interface is invalid. The desktop duplication interface 
@@ -254,7 +288,10 @@ namespace DXSharp.Windows {
 		/// and did not execute or schedule the operation.
 		/// </summary>
 		public static readonly HResult DXGI_ERROR_WAS_STILL_DRAWING = (HResult)( -2005270518 ) ;
-		
+				
+		public static readonly HResult D3D12_ERROR_ADAPTER_NOT_FOUND = new(-2005008383) ;
+		public static readonly HResult D3D12_ERROR_DRIVER_VERSION_MISMATCH = new(-2005008382);
+		public static readonly HResult D3D12_ERROR_INVALID_REDIST = new(-2005008381);
 		#endregion
 	} ;
 }

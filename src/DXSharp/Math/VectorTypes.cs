@@ -607,6 +607,14 @@ public partial struct Vector4: IEquatable< Vector4 >,
 	[FieldOffset(ComponentSize * 3)] internal float   w ;
 	
 	internal SysVec4 V => v ;
+
+	[UnscopedRef] internal unsafe ref SysVec4 VectorRef {
+		get {
+			fixed(Vector4* ptr = &this) {
+				return ref *( (SysVec4 *)ptr ) ;
+			}
+		}
+	}
 	
 	
 	/// <summary>Gets reference to the specified component of the vector.</summary>

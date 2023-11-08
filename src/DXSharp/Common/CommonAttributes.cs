@@ -39,6 +39,8 @@ public class DirectXAttribute: DXSharpAttribute, ITypeRelationship {
 				 AllowMultiple = false )]
 public class EquivalentOfAttribute: DirectXAttribute {
 	public EquivalentOfAttribute( Type equivalent ): base(equivalent) { }
+	public EquivalentOfAttribute( string symbolName, string? tag = null ): 
+		base(typeof(void), symbolName, tag) { }
 } ;
 
 

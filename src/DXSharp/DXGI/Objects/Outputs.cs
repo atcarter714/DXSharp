@@ -56,51 +56,52 @@ internal class Output: Object,
 		}
 	}
 
-	public uint GetDisplayModeCount( Format enumFormat, uint flags ) {
+	
+	public uint GetDisplayModeCount( Format enumFormat, EnumModesFlags flags = EnumModesFlags.None ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
-														  $"The internal COM interface is destroyed/null." ) ;
-		uint modeCount = 0U ;
+														   $"The internal COM interface is destroyed/null." ) ;
+#endif
 		unsafe {
+			uint modeCount = 0U ;
 			ComObject.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
-										   flags, ref modeCount ) ;
+										   (uint)flags, ref modeCount ) ;
+			return modeCount ;
 		}
-		return modeCount ;
 	}
 	
+	
 	public void GetDisplayModeList( Format enumFormat,
-									uint flags, out uint pNumModes,
+									EnumModesFlags flags, 
+									out uint pNumModes,
 									out Span< ModeDescription > pDescription ) {
 		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
 		
-		pDescription = default ; pNumModes = 0U ; uint modeCount = 0U ;
+		pDescription = default ;
 		unsafe {
-			// First, call the function just to get the count (no pointer for results):
-			ComObject.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
-										   flags, ref modeCount ) ;
-			pNumModes = modeCount ;
-			if ( pNumModes is 0U ) return ;
+			uint modeCount = GetDisplayModeCount( enumFormat, flags ) ;
+			if ( modeCount is 0U ) {
+				pNumModes = 0 ;
+				return ;
+			}
 			
 			// Now, allocate the memory and call the function again:
-			var _alloc = stackalloc DXGI_MODE_DESC[ (int)pNumModes ] ;
+			var _alloc = new ModeDescription[ modeCount ] ;
 			
 			// This time, we have a pointer telling it where to write the results:
-			ComObject.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
-										   flags, ref pNumModes,
-											_alloc ) ; // (ptr to stack allocation)
+			fixed( void* _ptr = &_alloc[ 0 ] )
+				ComObject.GetDisplayModeList( (DXGI_FORMAT)enumFormat,
+											   (uint)flags,
+											   ref modeCount,
+											   (DXGI_MODE_DESC *)_ptr ) ;
 			
-			// Initialize the Span (out) with the pointer and length:
-			var descSpan = new Span< ModeDescription >( _alloc, (int)pNumModes ) ;
-			pDescription = new ModeDescription[ pNumModes ] ;
-			descSpan.CopyTo( pDescription ) ;
-			
-			// Copies the results into the managed array:
-			/*pDescription = new ModeDescription[ pNumModes ] ;
-			for ( int i = 0 ; i < pNumModes && i < pDescription.Length ; ++i )
-				pDescription[ i ] = new( _alloc[ i ] ) ;*/
+			pNumModes = modeCount ;
+			pDescription = _alloc ;
 		}
 	}
 
+	
 	public void FindClosestMatchingMode( in ModeDescription pModeToMatch, 
 										 out ModeDescription pClosestMatch,
 										 IUnknownWrapper pConcernedDevice ) {
@@ -115,8 +116,10 @@ internal class Output: Object,
 		}
 	}
 
+	
 	public void WaitForVBlank( ) => ComObject!.WaitForVBlank( ) ;
 
+	
 	public void TakeOwnership( IUnknownWrapper pDevice, bool exclusive ) {
 		if ( pDevice is null ) throw new ArgumentNullException( nameof(pDevice) ) ;
 		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
@@ -124,8 +127,10 @@ internal class Output: Object,
 		ComObject.TakeOwnership( pDevice, exclusive ) ;
 	}
 
+	
 	public void ReleaseOwnership( ) => ComObject!.ReleaseOwnership( ) ;
 
+	
 	public void GetGammaControlCapabilities( out GammaControlCapabilities pGammaCaps ) {
 		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
@@ -137,6 +142,7 @@ internal class Output: Object,
 		}
 	}
 
+	
 	public void SetGammaControl( in GammaControl pGammaData ) {
 		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
@@ -144,6 +150,7 @@ internal class Output: Object,
 			ComObject.SetGammaControl( (DXGI_GAMMA_CONTROL *)pGamma ) ; }
 	}
 
+	
 	public void GetGammaControl( out GammaControl pGammaData ) {
 		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;
@@ -155,6 +162,7 @@ internal class Output: Object,
 		}
 	}
 
+	
 	public void SetDisplaySurface<T>( T pScanoutSurface ) where T: class, ISurface {
 		ArgumentNullException.ThrowIfNull( pScanoutSurface, nameof(pScanoutSurface) ) ;
 		var output = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
@@ -163,12 +171,14 @@ internal class Output: Object,
 		output.SetDisplaySurface( surface.ComObject ) ;
 	}
 
+	
 	public void GetDisplaySurfaceData( ISurface pDestination ) {
 		var output = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 																	$"The internal COM interface is destroyed/null." ) ;
 		var dst = (IComObjectRef< IDXGISurface >)pDestination ;
 		output.GetDisplaySurfaceData( dst.ComObject ) ;
 	}
+	
 	
 	public void GetFrameStatistics( out FrameStatistics pStats ) {
 		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
@@ -235,8 +245,9 @@ internal class Output1: Output, IOutput1,
 	
 	// ---------------------------------------------------------------------------------
 	
-	public void GetDisplayModeList1( Format enumFormat, uint flags, 
-									 out uint pNumModes, 
+	public void GetDisplayModeList1( Format enumFormat,
+									 EnumModesFlags flags,
+									 out uint pNumModes,
 									 out Span< ModeDescription1 > pDescription ) {
 		
 		pDescription = default ; pNumModes = 0U ; uint modeCount = 0U ;
@@ -244,7 +255,7 @@ internal class Output1: Output, IOutput1,
 		unsafe {
 			// First, call the function just to get the count (no pointer for results):
 			ComObject!.GetDisplayModeList1( (DXGI_FORMAT)enumFormat,
-											flags, ref modeCount ) ;
+											(uint)flags, ref modeCount ) ;
 			pNumModes = modeCount ;
 			if ( pNumModes is 0U ) return ;
 			
@@ -253,7 +264,7 @@ internal class Output1: Output, IOutput1,
 			
 			// This time, we have a pointer telling it where to write the results:
 			ComObject!.GetDisplayModeList1( (DXGI_FORMAT)enumFormat,
-											flags, ref pNumModes,
+											(uint)flags, ref pNumModes,
 											_alloc ) ; // (ptr to stack allocation)
 			
 			// Initialize the Span (out) with the pointer and length:
@@ -582,6 +593,23 @@ internal class Output6: Output5,
 	internal Output6( ComPtr< IDXGIOutput6 > otherPtr ) {
 		_comPtr = otherPtr ;
 		_initOrAdd( _comPtr ) ;
+	}
+	
+	// ---------------------------------------------------------------------------------
+
+	public void GetDesc1( out OutputDescription1 pDesc ) {
+		unsafe {
+			DXGI_OUTPUT_DESC1 result = default ;
+			ComObject!.GetDesc1( &result ) ;
+			pDesc = result ;
+		}
+	}
+
+	public void CheckHardwareCompositionSupport( out HardwareCompositionSupportFlags pFlags ) {
+		unsafe {
+			ComObject!.CheckHardwareCompositionSupport( out uint flags ) ;
+			pFlags = (HardwareCompositionSupportFlags)flags ;
+		}
 	}
 
 	// ---------------------------------------------------------------------------------

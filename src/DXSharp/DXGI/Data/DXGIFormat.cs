@@ -1,4 +1,8 @@
 ﻿#region Using Directives
+
+using System.Diagnostics ;
+using System.Diagnostics.CodeAnalysis ;
+using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Dxgi.Common;
 #endregion
 
@@ -344,3 +348,191 @@ public enum Format: uint {
 	FORCE_UINT = 4294967295U,
 	
 } ; // <-- enum: DXGI_FORMAT
+
+
+
+/// <summary>
+/// A utility class for handling <see cref="Format"/> enumeration values (equivalent of <see cref="DXGI_FORMAT"/>).
+/// The <b>DXGI_FORMAT</b> enumeration lists the formats that a surface or some kind of resource/data can have.<para/>
+/// There are several groups of <see cref="Format"/>:
+/// <list type="bullet">
+/// <item><description>Block-compression formats</description></item>
+/// <item><description>Planar formats</description></item>
+/// <item><description>Video formats</description></item>
+/// <item><description>Integer formats</description></item>
+/// <item><description>Float formats</description></item>
+/// <item><description>Depth-stencil formats</description></item>
+/// <item><description>SRGB formats</description></item>
+/// <item><description>Legacy formats</description></item>
+/// <item><description>Reserved formats</description></item>
+/// </list>
+/// <para>For more info about DXGI formats, see
+/// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>.</para>
+/// <seealso cref="DXGI_FORMAT"/>
+/// </summary>
+public static class Formats {
+	public static ReadOnlyMemory< Format > AllFormats =
+		(Memory<Format>)Enum.GetValues( typeof(Format) ) ;
+	
+	/// <summary>Utility class for <see cref="Format"/> names in <see cref="string"/> form.</summary>
+	public static partial class Names {
+		
+		/// <summary>The prefix used in naming enumerated format constant values in Direct3D/DXGI headers.</summary>
+		public const string FormatPrefix = "DXGI_FORMAT_" ;
+
+		/// <summary>Gets a read-only span of all DXGI format names (not including the "DXGI_FORMAT_" prefix).</summary>
+		public static ReadOnlySpan< string > AllFormatNames => _allFormatNames.Span ;
+		static readonly ReadOnlyMemory< string > _allFormatNames = new[ ] {
+			"UNKNOWN",
+			"R32G32B32A32_TYPELESS",
+			"R32G32B32A32_FLOAT",
+			"R32G32B32A32_UINT",
+			"R32G32B32A32_SINT",
+			"R32G32B32_TYPELESS",
+			"R32G32B32_FLOAT",
+			"R32G32B32_UINT",
+			"R32G32B32_SINT",
+			"R16G16B16A16_TYPELESS",
+			"R16G16B16A16_FLOAT",
+			"R16G16B16A16_UNORM",
+			"R16G16B16A16_UINT",
+			"R16G16B16A16_SNORM",
+			"R16G16B16A16_SINT",
+			"R32G32_TYPELESS",
+			"R32G32_FLOAT",
+			"R32G32_UINT",
+			"R32G32_SINT",
+			"R32G8X24_TYPELESS",
+			"D32_FLOAT_S8X24_UINT",
+			"R32_FLOAT_X8X24_TYPELESS",
+			"X32_TYPELESS_G8X24_UINT",
+			"R10G10B10A2_TYPELESS",
+			"R10G10B10A2_UNORM",
+			"R10G10B10A2_UINT",
+			"R11G11B10_FLOAT",
+			"R8G8B8A8_TYPELESS",
+			"R8G8B8A8_UNORM",
+			"R8G8B8A8_UNORM_SRGB",
+			"R8G8B8A8_UINT",
+			"R8G8B8A8_SNORM",
+			"R8G8B8A8_SINT",
+			"R16G16_TYPELESS",
+			"R16G16_FLOAT",
+			"R16G16_UNORM",
+			"R16G16_UINT",
+			"R16G16_SNORM",
+			"R16G16_SINT",
+			"R32_TYPELESS",
+			"D32_FLOAT",
+			"R32_FLOAT",
+			"R32_UINT",
+			"R32_SINT",
+			"R24G8_TYPELESS",
+			"D24_UNORM_S8_UINT",
+			"R24_UNORM_X8_TYPELESS",
+			"X24_TYPELESS_G8_UINT",
+			"R8G8_TYPELESS",
+			"R8G8_UNORM",
+			"R8G8_UINT",
+			"R8G8_SNORM",
+			"R8G8_SINT",
+			"R16_TYPELESS",
+			"R16_FLOAT",
+			"D16_UNORM",
+			"R16_UNORM",
+			"R16_UINT",
+			"R16_SNORM",
+			"R16_SINT",
+			"R8_TYPELESS",
+			"R8_UNORM",
+			"R8_UINT",
+			"R8_SNORM",
+			"R8_SINT",
+			"A8_UNORM",
+			"R1_UNORM",
+			"R9G9B9E5_SHAREDEXP",
+			"R8G8_B8G8_UNORM",
+			"G8R8_G8B8_UNORM",
+			"BC1_TYPELESS",
+			"BC1_UNORM",
+			"BC1_UNORM_SRGB",
+			"BC2_TYPELESS",
+			"BC2_UNORM",
+			"BC2_UNORM_SRGB",
+			"BC3_TYPELESS",
+			"BC3_UNORM",
+			"BC3_UNORM_SRGB",
+			"BC4_TYPELESS",
+			"BC4_UNORM",
+			"BC4_SNORM",
+			"BC5_TYPELESS",
+			"BC5_UNORM",
+			"BC5_SNORM",
+			"B5G6R5_UNORM",
+			"B5G5R5A1_UNORM",
+			"B8G8R8A8_UNORM",
+			"B8G8R8X8_UNORM",
+			"R10G10B10_XR_BIAS_A2_UNORM",
+			"B8G8R8A8_TYPELESS",
+			"B8G8R8A8_UNORM_SRGB",
+			"B8G8R8X8_TYPELESS",
+			"B8G8R8X8_UNORM_SRGB",
+			"BC6H_TYPELESS",
+			"BC6H_UF16",
+			"BC6H_SF16",
+			"BC7_TYPELESS",
+			"BC7_UNORM",
+			"BC7_UNORM_SRGB",
+			"AYUV",
+			"Y410",
+			"Y416",
+			"NV12",
+			"P010",
+			"P016",
+			"420_OPAQUE",
+			"YUY2",
+			"Y210",
+			"Y216",
+			"NV11",
+			"AI44",
+			"IA44",
+			"P8",
+			"A8P8",
+		} ;
+		
+		static Names( ) {
+			// Ensure that the Format enum and the format names array are in sync.
+			// If they are not, then the Format enum has been changed without updating this class.
+			// This is a serious error that must be fixed.
+#if DEBUG
+			System.Diagnostics.Debug.Assert( AllFormatNames.Length == AllFormats.Length ) ;
+#endif
+		}
+		
+		/// <summary>
+		/// Indicates if a format name begins with the common prefix
+		/// (i.e., "<c>DXGI_FORMAT_</c>").
+		/// </summary>
+		public static bool IsPrefixed( string formatName ) =>
+			formatName.StartsWith( FormatPrefix, StringComparison.Ordinal ) ;
+		
+		/// <summary>
+		/// Removes the common prefix (i.e., "<c>DXGI_FORMAT_</c>") from a format name.
+		/// </summary>
+		/// <param name="formatName">The format name to remove the prefix from.</param>
+		/// <returns>The format name without the prefix.</returns>
+		public static string WithoutPrefix( string formatName ) =>
+			IsPrefixed( formatName ) ? formatName.Substring( FormatPrefix.Length ) : formatName ;
+		
+		/// <summary>
+		/// Adds the common prefix (i.e., "<c>DXGI_FORMAT_</c>") to a format name.
+		/// </summary>
+		/// <param name="formatName">The format name to add the prefix to.</param>
+		/// <returns>The format name with the prefix.</returns>
+		/// <remarks>
+		/// If the format name already has the prefix, it is returned unchanged.
+		/// </remarks>
+		public static string WithPrefix( string formatName ) =>
+			IsPrefixed( formatName ) ? formatName : FormatPrefix + formatName ;
+	}
+} ;

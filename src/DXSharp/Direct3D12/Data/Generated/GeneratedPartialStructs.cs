@@ -12,29 +12,23 @@
  */
 
 #region Using Directives
-using System ;
 using System.Runtime.CompilerServices ;
-using System.Runtime.InteropServices ;
-
-using Windows.Win32 ;
-using Windows.Win32.Graphics ;
-using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi.Common ;
-using DXSharp ;
-using DXSharp.Direct3D12 ;
-using DXSharp.DXGI ;
 
+using DXSharp ;
+using DXSharp.DXGI ;
+using DXSharp.Direct3D12 ;
 #endregion
 namespace Windows.Win32.Graphics.Direct3D12 ;
 
 
-//! We could actually write our own Roslyn generator to do this dirty work for us ...
-public partial struct D3D12_CPU_DESCRIPTOR_HANDLE
-{
-	public D3D12_CPU_DESCRIPTOR_HANDLE( nuint ptr) {
+[CsWin32, EquivalentOf( typeof( CPUDescriptorHandle ) )]
+public partial struct D3D12_CPU_DESCRIPTOR_HANDLE {
+	public D3D12_CPU_DESCRIPTOR_HANDLE( nuint ptr ) {
 		this.ptr = ptr ;
 	}
-	public D3D12_CPU_DESCRIPTOR_HANDLE( nint ptr) {
+
+	public D3D12_CPU_DESCRIPTOR_HANDLE( nint ptr ) {
 		this.ptr = (nuint)ptr ;
 	}
 
@@ -58,7 +52,7 @@ public partial struct D3D12_CPU_DESCRIPTOR_HANDLE
 		handle = new( (nuint)ptr ) ;
 		return handle ;
 	}
-}
+} ;
 
 
 [CsWin32, EquivalentOf(typeof(TiledResourceCoordinate))]
@@ -123,7 +117,6 @@ public partial struct D3D12_INPUT_LAYOUT_DESC {
 
 [CsWin32, EquivalentOf( typeof( GraphicsPipelineStateDescription ) )]
 public partial struct D3D12_GRAPHICS_PIPELINE_STATE_DESC {
-	
 	public static implicit operator D3D12_GRAPHICS_PIPELINE_STATE_DESC( in GraphicsPipelineStateDescription desc ) => 
 		new D3D12_GRAPHICS_PIPELINE_STATE_DESC {
 			pRootSignature        = desc.pRootSignature,
@@ -178,7 +171,6 @@ public partial struct D3D12_GRAPHICS_PIPELINE_STATE_DESC {
 
 [CsWin32, EquivalentOf( typeof( HeapProperties ) )]
 public partial struct D3D12_HEAP_PROPERTIES {
-	
 	public static implicit operator HeapProperties( in D3D12_HEAP_PROPERTIES props ) => new HeapProperties {
 		Type                 = (HeapType)props.Type,
 		CPUPageProperty      = (CpuPageProperty)props.CPUPageProperty,
@@ -186,7 +178,6 @@ public partial struct D3D12_HEAP_PROPERTIES {
 		CreationNodeMask     = props.CreationNodeMask,
 		VisibleNodeMask      = props.VisibleNodeMask
 	} ;
-	
 	public static implicit operator D3D12_HEAP_PROPERTIES( in HeapProperties props ) => new D3D12_HEAP_PROPERTIES {
 		Type                 = (D3D12_HEAP_TYPE)props.Type,
 		CPUPageProperty      = (D3D12_CPU_PAGE_PROPERTY)props.CPUPageProperty,
@@ -199,7 +190,6 @@ public partial struct D3D12_HEAP_PROPERTIES {
 
 [CsWin32, EquivalentOf( typeof( ResourceDescription ) )]
 public partial struct D3D12_RESOURCE_DESC {
-	
 	public static implicit operator ResourceDescription( in D3D12_RESOURCE_DESC desc ) => new ResourceDescription {
 		Dimension        = (ResourceDimension)desc.Dimension,
 		Alignment        = desc.Alignment,
@@ -225,13 +215,11 @@ public partial struct D3D12_RESOURCE_DESC {
 		Layout           = (D3D12_TEXTURE_LAYOUT)desc.Layout,
 		Flags            = (D3D12_RESOURCE_FLAGS)desc.Flags
 	} ;
-
 } ;
 
 
 [CsWin32, EquivalentOf( typeof( RenderTargetViewDescription ) )]
 public partial struct D3D12_RENDER_TARGET_VIEW_DESC {
-	
 	public static implicit operator D3D12_RENDER_TARGET_VIEW_DESC( in RenderTargetViewDescription o ) {
 		unsafe {
 			fixed ( RenderTargetViewDescription* ptr = &o ) {
@@ -266,18 +254,6 @@ public partial struct D3D12_BLEND_DESC {
 			}
 		}
 	}
-	
-	/*public static implicit operator D3D12_BLEND_DESC( in BlendDescription desc ) => new D3D12_BLEND_DESC {
-		AlphaToCoverageEnable  = desc.AlphaToCoverageEnable,
-		IndependentBlendEnable = desc.IndependentBlendEnable,
-		RenderTarget           = desc.RenderTarget
-	} ;
-	
-	public static implicit operator BlendDescription( in D3D12_BLEND_DESC desc ) => new BlendDescription {
-		AlphaToCoverageEnable  = desc.AlphaToCoverageEnable,
-		IndependentBlendEnable = desc.IndependentBlendEnable,
-		RenderTarget           = desc.RenderTarget
-	} ;*/
 } ;
 
 
@@ -557,11 +533,6 @@ public partial struct D3D12_RESOURCE_BARRIER {
 	}
 } ;
 
-/*public partial struct _Anonymous_e__Union
-{
-	
-}*/
-
 
 [CsWin32, EquivalentOf( typeof( WriteBufferImmediateParameter ) )]
 public partial struct D3D12_WRITEBUFFERIMMEDIATE_PARAMETER {
@@ -588,7 +559,9 @@ public partial struct D3D12_WRITEBUFFERIMMEDIATE_PARAMETER {
 
 [CsWin32, EquivalentOf(typeof(ProtectedResourceSessionDescription))]
 public partial struct D3D12_PROTECTED_RESOURCE_SESSION_DESC {
-	public D3D12_PROTECTED_RESOURCE_SESSION_DESC( uint nodeMask = 0, D3D12_PROTECTED_RESOURCE_SESSION_FLAGS flags = D3D12_PROTECTED_RESOURCE_SESSION_FLAGS.D3D12_PROTECTED_RESOURCE_SESSION_FLAG_NONE ) {
+	public D3D12_PROTECTED_RESOURCE_SESSION_DESC( uint nodeMask = 0, 
+												  D3D12_PROTECTED_RESOURCE_SESSION_FLAGS flags = 
+													  D3D12_PROTECTED_RESOURCE_SESSION_FLAGS.D3D12_PROTECTED_RESOURCE_SESSION_FLAG_NONE ) {
 		NodeMask   = nodeMask ;
 		this.Flags = flags ;
 	}
@@ -597,7 +570,6 @@ public partial struct D3D12_PROTECTED_RESOURCE_SESSION_DESC {
 		NodeMask = desc.NodeMask,
 		Flags = (D3D12_PROTECTED_RESOURCE_SESSION_FLAGS)desc.Flags,
 	} ;
-	
 	public static implicit operator ProtectedResourceSessionDescription( in D3D12_PROTECTED_RESOURCE_SESSION_DESC desc ) => new ProtectedResourceSessionDescription {
 		NodeMask = desc.NodeMask,
 		Flags = (ProtectedResourceSessionFlags)desc.Flags,
@@ -606,27 +578,29 @@ public partial struct D3D12_PROTECTED_RESOURCE_SESSION_DESC {
 
 
 [CsWin32, EquivalentOf(typeof(ProtectedResourceSessionDescription1))]
-public partial struct D3D12_PROTECTED_RESOURCE_SESSION_DESC1
-{
-	public D3D12_PROTECTED_RESOURCE_SESSION_DESC1( uint nodeMask = 0, D3D12_PROTECTED_RESOURCE_SESSION_FLAGS flags = D3D12_PROTECTED_RESOURCE_SESSION_FLAGS.D3D12_PROTECTED_RESOURCE_SESSION_FLAG_NONE, Guid? protectionType = null ) {
+public partial struct D3D12_PROTECTED_RESOURCE_SESSION_DESC1 {
+	public D3D12_PROTECTED_RESOURCE_SESSION_DESC1( uint nodeMask = 0, 
+												   D3D12_PROTECTED_RESOURCE_SESSION_FLAGS flags = 
+													   D3D12_PROTECTED_RESOURCE_SESSION_FLAGS.D3D12_PROTECTED_RESOURCE_SESSION_FLAG_NONE, 
+												   Guid? protectionType = null ) {
 		NodeMask = nodeMask ;
 		this.Flags = flags ;
 		ProtectionType = protectionType ?? Guid.Empty ;
 	}
 	
-	public static implicit operator D3D12_PROTECTED_RESOURCE_SESSION_DESC1( in ProtectedResourceSessionDescription1 desc ) => new D3D12_PROTECTED_RESOURCE_SESSION_DESC1 {
+	public static implicit operator D3D12_PROTECTED_RESOURCE_SESSION_DESC1( in ProtectedResourceSessionDescription1 desc ) => 
+		new D3D12_PROTECTED_RESOURCE_SESSION_DESC1 {
 		NodeMask = desc.NodeMask,
 		Flags = (D3D12_PROTECTED_RESOURCE_SESSION_FLAGS)desc.Flags,
 		ProtectionType = desc.ProtectionType,
 	} ;
-	
-	public static implicit operator ProtectedResourceSessionDescription1( in D3D12_PROTECTED_RESOURCE_SESSION_DESC1 desc ) => new ProtectedResourceSessionDescription1 {
+	public static implicit operator ProtectedResourceSessionDescription1( in D3D12_PROTECTED_RESOURCE_SESSION_DESC1 desc ) => 
+		new ProtectedResourceSessionDescription1 {
 		NodeMask = desc.NodeMask,
 		Flags = (ProtectedResourceSessionFlags)desc.Flags,
 		ProtectionType = desc.ProtectionType,
 	} ;
 } ;
-
 
 
 [CsWin32, EquivalentOf( typeof( RenderPassBeginningAccess ) )]
@@ -657,8 +631,8 @@ public partial struct D3D12_RENDER_PASS_BEGINNING_ACCESS {
 } ;
 
 
-public partial struct D3D12_RENDER_PASS_ENDING_ACCESS
-{
+[CsWin32, EquivalentOf(typeof(RenderPassEndingAccess))]
+public partial struct D3D12_RENDER_PASS_ENDING_ACCESS {
 	public static implicit operator D3D12_RENDER_PASS_ENDING_ACCESS( in RenderPassEndingAccess desc ) {
 		unsafe {
 			Unsafe.SkipInit( out D3D12_RENDER_PASS_ENDING_ACCESS result ) ;
@@ -784,8 +758,7 @@ public partial struct D3D12_SHADER_CACHE_SESSION_DESC {
 } ;
 
 
-public partial struct D3D12_RESOURCE_DESC1
-{
+public partial struct D3D12_RESOURCE_DESC1 {
 	public static implicit operator D3D12_RESOURCE_DESC1( in ResourceDescription1 desc1 ) {
 		unsafe {
 			fixed ( ResourceDescription1* ptr = &desc1 ) {
@@ -801,3 +774,22 @@ public partial struct D3D12_RESOURCE_DESC1
 		}
 	}
 } ;
+
+
+public partial struct D3D12_DESCRIPTOR_RANGE1 {
+	public static implicit operator D3D12_DESCRIPTOR_RANGE1( in DescriptorRange1 desc1 ) {
+		unsafe {
+			fixed ( DescriptorRange1* ptr = &desc1 ) {
+				return *(D3D12_DESCRIPTOR_RANGE1*)ptr ;
+			}
+		}
+	}
+	public static implicit operator DescriptorRange1( in D3D12_DESCRIPTOR_RANGE1 desc1 ) {
+		unsafe {
+			fixed ( D3D12_DESCRIPTOR_RANGE1* ptr = &desc1 ) {
+				return *(DescriptorRange1*)ptr ;
+			}
+		}
+	}
+} ;
+

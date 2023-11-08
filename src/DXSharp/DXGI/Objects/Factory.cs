@@ -15,6 +15,8 @@ using DXSharp.Windows ;
 using DXSharp.Direct3D12 ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
+using HResult = DXSharp.Windows.HResult ;
+
 #endregion
 namespace DXSharp.DXGI;
 
@@ -68,7 +70,7 @@ internal class Factory: Object,
 	
 	// -----------------------------------------------------------------------------------
 	
-	public HResult CreateSwapChain( in ICommandQueue pCmdQueue,
+	public HResult CreateSwapChain( in ICommandQueue? pCmdQueue,
 									in SwapChainDescription desc,
 											out ISwapChain? ppSwapChain ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD
@@ -79,7 +81,7 @@ internal class Factory: Object,
 		unsafe {
 			ppSwapChain = default ;
 			var descCopy = desc ;
-			var cmdQueue = (IComObjectRef<ID3D12CommandQueue> )pCmdQueue ;
+			var cmdQueue = (IComObjectRef< ID3D12CommandQueue >)pCmdQueue ;
 			
 			var _hr = ComObject!.CreateSwapChain( cmdQueue.ComObject,
 												(DXGI_SWAP_CHAIN_DESC *)&descCopy, 

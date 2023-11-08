@@ -29,7 +29,7 @@ public interface IOutput: IObject,
 	void GetDescription( out OutputDescription pDescription ) ;
 	
 	void GetDisplayModeList( Format enumFormat,
-							 uint flags,
+							 EnumModesFlags flags,
 							 out uint pNumModes,
 							 out Span< ModeDescription > pDescription ) ;
 
@@ -90,7 +90,7 @@ public interface IOutput1: IOutput {
 	// ---------------------------------------------------------------------------------
 	
 	void GetDisplayModeList1( Format enumFormat,
-							  uint flags,
+							  EnumModesFlags flags,
 							  out uint pNumModes,
 							  out Span< ModeDescription1 > pDescription ) ;
 	
@@ -361,6 +361,34 @@ public interface IOutput5: IOutput4 {
 /// </remarks>
 [ProxyFor(typeof(IDXGIOutput6))]
 public interface IOutput6: IOutput5 {
+	
+	/// <summary>Get an extended description of the output that includes color characteristics and connection type.</summary>
+	/// <param name="pDesc">
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1">DXGI_OUTPUT_DESC1</a>*</b> A pointer to the output description (see <a href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1">DXGI_OUTPUT_DESC1</a>).</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgioutput6-getdesc1#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns a code that indicates success or failure. S_OK if successful, <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a> if <i>pDesc</i> is passed in as <b>NULL</b>.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para>Some scenarios do not have well-defined values for all fields in this struct. For example, if this IDXGIOutput represents a clone/duplicate set, or if the EDID has missing or invalid data. In these cases, the OS will provide some default values that correspond to a standard SDR display. An output's reported color and luminance characteristics can adjust dynamically while the system is running due to user action or changing ambient conditions. Therefore, apps should periodically query **IDXGIFactory::IsCurrent** and re-create their **IDXGIFactory** if it returns **FALSE**. Then re-query **GetDesc1** from the new factory's equivalent output to retrieve the newest color information. For more details on how to write apps that react dynamically to monitor capabilities, see [Using DirectX with high dynamic range displays and Advanced Color](/windows/win32/direct3darticles/high-dynamic-range). On a high DPI desktop, <b>GetDesc1</b> returns the visualized screen size unless the app is marked high DPI aware. For info about writing DPI-aware Win32 apps, see <a href="https://docs.microsoft.com/windows/desktop/hidpi/high-dpi-desktop-application-development-on-windows">High DPI</a>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgioutput6-getdesc1#">Read more on docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void GetDesc1( out OutputDescription1 pDesc ) ;
+	
+	/// <summary>Notifies applications that hardware stretching is supported.</summary>
+	/// <param name="pFlags">
+	/// <para>Type: <b>UINT*</b> A bitfield of <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_6/ne-dxgi1_6-dxgi_hardware_composition_support_flags">DXGI_HARDWARE_COMPOSITION_SUPPORT_FLAGS</a> enumeration values describing which types of hardware composition are supported. The values are bitwise OR'd together.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgioutput6-checkhardwarecompositionsupport#parameters">Read more on docs.microsoft.com</see>.</para>
+	/// </param>
+	/// <returns>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns a code that indicates success or failure.</para>
+	/// </returns>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgioutput6-checkhardwarecompositionsupport">Learn more about this API from docs.microsoft.com</see>.</para>
+	/// </remarks>
+	void CheckHardwareCompositionSupport( out HardwareCompositionSupportFlags pFlags ) ;
+	
 	// ---------------------------------------------------------------------------------
 	static Type IUnknownWrapper.ComType => typeof( IDXGIOutput6 ) ;
 

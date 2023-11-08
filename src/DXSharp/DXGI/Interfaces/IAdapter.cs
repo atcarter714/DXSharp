@@ -2,6 +2,7 @@
 // https://docs.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter
 #region Using Directives
 using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Runtime.Versioning ;
@@ -9,6 +10,8 @@ using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows ;
 using DXSharp.Windows.Win32 ;
+using HResult = DXSharp.Windows.HResult ;
+
 #endregion
 namespace DXSharp.DXGI ;
 
@@ -28,14 +31,20 @@ namespace DXSharp.DXGI ;
 [SupportedOSPlatform("windows6.0")]
 [ProxyFor(typeof(IDXGIAdapter))]
 public interface IAdapter: IObject, IInstantiable {
-	internal static readonly ReadOnlyDictionary<Guid, Func<IDXGIAdapter, IInstantiable> > _adapterCreationFunctions =
-		new( new Dictionary<Guid, Func<IDXGIAdapter, IInstantiable> > {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", 
+					  "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGIAdapter, IInstantiable> > _adapterCreationFunctions =
+		new( new Dictionary< Guid, Func<IDXGIAdapter, IInstantiable> > {
 			{ IAdapter.IID, ( pComObj ) => new Adapter( pComObj ) },
 			{ IAdapter1.IID, ( pComObj ) => new Adapter1( (pComObj as IDXGIAdapter1)! ) },
 			{ IAdapter2.IID, ( pComObj ) => new Adapter2( (pComObj as IDXGIAdapter2)! ) },
 			{ IAdapter3.IID, ( pComObj ) => new Adapter3( (pComObj as IDXGIAdapter3)! ) },
 			{ IAdapter4.IID, ( pComObj ) => new Adapter4( (pComObj as IDXGIAdapter4)! ) },
 		} ) ;
+	// ---------------------------------------------------------------------------------
 	
 	
 	/// <summary>

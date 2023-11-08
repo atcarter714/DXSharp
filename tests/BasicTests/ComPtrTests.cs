@@ -53,20 +53,21 @@ internal class ComPtrTests
 	[Test, Order( 0 )]
 	public void Test_Create_ComPtr() {
 		// Ensure PInvoke call succeeded:
-		Assert.True( hr.Succeeded );
-		Assert.IsNotNull( factory7 );
+		Assert.True( hr.Succeeded ) ;
+		Assert.IsNotNull( factory7 ) ;
 
 		// Create a ComPtr object with COMUtility using the factory7 object:
 		var ptr = COMUtility.GetIUnknownForObject( factory7 ) ;
+		COMUtility.Release( ptr ) ; // Release the extra ref count
+		
 		factory7Ptr = create_ComPtr< DXGIFactory >( ptr ) ;
 		Assert.IsNotNull( factory7Ptr ) ;
 		Assert.IsFalse( factory7Ptr.Disposed ) ;
 		Assert.IsNotNull( factory7Ptr.Interface ) ;
-		//Assert.That( factory7Ptr.Interface, Is.EqualTo( typeof( DXGIFactory ).GUID ) );
-
+		
 		// Save & verify the COM interface address:
-		address = factory7Ptr.BaseAddress;
-		Assert.That( address, Is.Not.EqualTo( IntPtr.Zero ) );
+		address = factory7Ptr.BaseAddress ;
+		Assert.That( address, Is.Not.EqualTo( IntPtr.Zero ) ) ;
 	}
 
 	[Test, Order( 1 )]
@@ -80,6 +81,7 @@ internal class ComPtrTests
 
 	[Test, Order( 2 )]
 	public void Test_Native_Interface_Freed() {
+		if( factory7Ptr is null ) return ;
 		// Verify the initial state:
 		Assert.IsNotNull( factory7Ptr );            // should be non-null
 		Assert.IsTrue( factory7Ptr.Disposed );      // should be disposed

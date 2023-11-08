@@ -12,6 +12,7 @@ using Windows.Win32.Graphics.Dxgi.Common ;
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using static DXSharp.InteropUtils ;
+using IDisposable = ABI.System.IDisposable ;
 
 #endregion
 namespace DXSharp.Direct3D12 ;
@@ -553,10 +554,33 @@ public struct RasterizerDescription {
 
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_INPUT_ELEMENT_DESC ) )]
-public struct InputElementDescription {
+public struct InputElementDescription: IDisposable {
+	
 	/// <summary>The HLSL semantic associated with this element in a shader input-signature. See <a href="https://docs.microsoft.com/windows/win32/direct3dhlsl/dx-graphics-hlsl-semantics">HLSL Semantics</a> for more info.</summary>
 	public PCSTR SemanticName ;
+	
+	/// <summary>Gets or sets the semantic name as managed <see cref="string"/> data.</summary>
+	public string SemanticNameString {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get => SemanticName.ToString( ) ;
+		
+		[MethodImpl( MethodImplOptions.AggressiveOptimization )]
+		set {
+			unsafe {
+				if ( SemanticName is not { Value: null } ) {
+					try { Marshal.ZeroFreeGlobalAllocAnsi( (nint)SemanticName.Value ) ; }
+					finally { SemanticName = default ; }
+				}
+			}
 
+			D3D12_ROOT_DESCRIPTOR_TABLE1 ttt ;
+			RootDescriptorTable1 tbl;
+			
+			SemanticName = value ;
+		}
+	}
+	
+	
 	/// <summary>
 	/// <para>The semantic index for the element. A semantic index modifies a semantic, with an integer index number. A semantic index is only needed in a case where there is more than one element with the same semantic. For example, a 4x4 matrix would have four components each with the semantic name <b>matrix</b>, however each of the four component would have different semantic indices (0, 1, 2, and 3).</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</a>.</para>
@@ -583,6 +607,44 @@ public struct InputElementDescription {
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_input_element_desc#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public uint InstanceDataStepRate ;
+	
+	
+	public InputElementDescription( PCSTR               semanticName 	     = default, 
+									uint                semanticIndex 	     = 0U, 
+									Format              format               = DXGI.Format.UNKNOWN, 
+									uint                inputSlot            = 0U, 
+									uint                alignedByteOffset    = 0U, 
+									InputClassification inputSlotClass       = InputClassification.PerVertexData, 
+									uint                instanceDataStepRate = 0U ) {
+		SemanticName         = semanticName ;
+		SemanticIndex        = semanticIndex ;
+		Format               = format ;
+		InputSlot            = inputSlot ;
+		AlignedByteOffset    = alignedByteOffset ;
+		InputSlotClass       = inputSlotClass ;
+		InstanceDataStepRate = instanceDataStepRate ;
+	}
+
+	
+	public InputElementDescription( string?             semanticName         = null, int semanticIndex = 0,
+									Format              format               = DXGI.Format.UNKNOWN,
+									int                 inputSlot            = 0, int alignedByteOffset = 0,
+									InputClassification inputSlotClass       = InputClassification.PerVertexData,
+									int                 instanceDataStepRate = 0 ) {
+		SemanticName         = semanticName ;
+		SemanticIndex        = (uint)semanticIndex ;
+		Format               = format ;
+		InputSlot            = (uint)inputSlot ;
+		AlignedByteOffset    = (uint)alignedByteOffset ;
+		InputSlotClass       = inputSlotClass ;
+		InstanceDataStepRate = (uint)instanceDataStepRate ;
+	}
+
+
+	public void Dispose( ) {
+		try { unsafe { Marshal.FreeHGlobal( (nint)SemanticName.Value ) ; } }
+		finally { SemanticName = default ; }
+	}
 } ;
 
 

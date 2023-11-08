@@ -13,6 +13,50 @@ namespace DXSharp.Windows.COM ;
 
 public static class COMUtility {
 	#region Constant & ReadOnly Values
+	/// <summary>COM IID values and utilities.</summary>
+	public static class IIDs {
+		public static readonly Guid IID_OF_IUnknown         = new( "00000000-0000-0000-C000-000000000046" ) ;
+		
+		// D3D12 Interfaces:
+		public static readonly Guid IID_OF_ID3D12Object         = new( "C4FEC28F-7966-4E95-9F94-F431CB56C3B8" ) ;
+		public static readonly Guid IID_OF_ID3D12DeviceChild    = new( "905DB94B-A00C-4140-9DF5-2B64CA9EA357" ) ;
+		public static readonly Guid IID_OF_ID3D12Pageable       = new( "63ee58fb-1268-4835-86da-f008ce62f0d6" ) ;
+		public static readonly Guid IID_OF_ID3D12RootSignature  = new( "C54A6B66-72DF-4EE8-8BE5-A946A1429214" ) ;
+		public static readonly Guid IID_OF_ID3D12DescriptorHeap = new( "8efb471d-616c-4f49-90f7-127bb763fa51" ) ;
+		public static readonly Guid IID_OF_ID3D12PipelineState  = new( "765A30F3-F624-4C6F-A828-ACE948622445" ) ;
+		public static readonly Guid IID_OF_ID3D12Device         = new( "189819F1-1DB6-4B57-BE54-1821339B85F7" ) ;
+		public static readonly Guid IID_OF_ID3D12CommandList    = new( "7116D91C-E7E4-47CE-B8C6-EC8168F437E5" ) ;
+		public static readonly Guid IID_OF_ID3D12CommandQueue   = new( "0EC870A6-5D7E-4C22-8CFC-5BAAE07616ED" ) ;
+		public static readonly Guid IID_OF_ID3D12Fence          = new( "0A753DCF-C4D8-4B91-ADF6-BE5A60D95A76" ) ;
+		public static readonly Guid IID_OF_ID3D12Resource       = new( "696442BE-A72E-4059-BC79-5B5C98040FAD" ) ;
+		public static readonly Guid IID_OF_ID3D12Heap           = new( "6B3B2502-6E51-45B3-90EE-9884265E8DF3" ) ;
+		public static readonly Guid IID_OF_ID3D12GraphicsCommandList = new( "5B160D0F-AC1B-4185-8BA8-B3AE42A5A455" ) ;
+		
+		// DXGI Interfaces:
+		public static readonly Guid IID_OF_IDXGIObject  = new("AEC22FB8-76F3-4639-9BE0-28EB43A67A2E") ;
+		public static readonly Guid IID_OF_IDXGIFactory = new( "7B7166EC-21C7-44AE-B21A-C9AE321AE369" ) ;
+		public static readonly Guid IID_OF_IDXGIAdapter = new( "2411E7E1-12AC-4CCF-BD14-9798E8534DC0" ) ;
+		public static readonly Guid IID_OF_IDXGISwapChain = new( "310D36A0-D2E7-4C0A-AA04-6A9D23B8886A" ) ;
+		public static readonly Guid IID_OF_IDXGIOutput  = new( "AE02EEDB-C735-4690-8D52-5A8DC20213AA" ) ;
+		public static readonly Guid IID_OF_IDXGIDevice  = new( "54EC77FA-1377-44E6-8C32-88FD5F44C84C" ) ;
+		public static readonly Guid IID_OF_IDXGIDeviceSubObject = new( "3D3E0379-F9DE-4D58-BB6C-18D62992F1A6" ) ;
+		public static readonly Guid IID_OF_IDXGIDeviceChild  = new( "905DB94B-A00C-4140-9DF5-2B64CA9EA357" ) ;
+		public static readonly Guid IID_OF_IDXGISurface  = new( "CAFCB56C-6AC3-4889-BF47-9E23BBD260EC" ) ;
+		public static readonly Guid IID_OF_IDXGISurface1 = new( "4AE63092-6327-4C1B-80AE-BFE12EA32B86" ) ;
+		public static readonly Guid IID_OF_IDXGIResource = new( "035F3AB4-482E-4E50-B41F-8A7F8BD8960B" ) ;
+		public static readonly Guid IID_OF_IDXGIKeyedMutex = new( "9D8E1289-D7B3-465F-8126-250E349AF85D" ) ;
+		 
+		
+		
+		//! TODO: See if this works ...
+		public static Guid IID_PPV_ARGS( in nint pUnknown ) {
+			if( pUnknown is NULL_PTR ) return IID_OF_IUnknown ;
+			var _rcw = Marshal.GetObjectForIUnknown( pUnknown ) ;
+			if( _rcw is null ) return IID_OF_IUnknown ;
+			return _rcw.GetType( ).GUID ;
+		}
+	}
+	
 	public static readonly Guid DXGI_DEBUG_ALL = new Guid(0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 
 														  0xe9, 0xa9, 0xcf, 0xda, 0x8) ;
 	public static readonly Guid DXGI_DEBUG_DXGI = new Guid(0x25cddaa4, 0xb1c6, 0x47e1, 0xac, 0x3e, 0x98, 
@@ -42,9 +86,10 @@ public static class COMUtility {
 	
 	
 	//! TODO: Decide which of these versions (Exists vs IsDestroyed) to keep ...
-	[MethodImpl(_MAXOPT_)] public static bool Exists( nint pUnknown ) {
-		bool valid = 
-			GetRCWObject( pUnknown ) is not null ;
+	[MethodImpl(MethodImplOptions.AggressiveOptimization)]
+	public static bool Exists( nint pUnknown ) {
+		bool valid =
+			GetRCWObject( pUnknown ) is IUnknown ;
 		if( valid ) Release( pUnknown ) ;
 		return valid ;
 	}
@@ -68,15 +113,23 @@ public static class COMUtility {
 	
 	
 	[MethodImpl(_MAXOPT_)] public static int AddRef( nint pUnknown ) {
-		if( pUnknown is NULL_PTR ) return 0 ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		if( !pUnknown.IsValid() ) return NULL_PTR ;
+#endif
 		return Marshal.AddRef( pUnknown ) ;
 	}
 	[MethodImpl(_MAXOPT_)] public static int Release( nint pUnknown ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		if( !pUnknown.IsValid() ) return NULL_PTR ;
+#endif
 		return Marshal.Release( pUnknown ) ;
 	}
 	[MethodImpl(_MAXOPT_)] public static int Release( ref nint pUnknown ) {
-		int c = Release( pUnknown ) ; pUnknown = NULL_PTR ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		if( !pUnknown.IsValid() ) return NULL_PTR ;
+#endif
+		int c = Release( pUnknown ) ; 
+		pUnknown = NULL_PTR ;
 		return c ;
 	}
 	
@@ -100,14 +153,9 @@ public static class COMUtility {
 	}
 
 	public static IUnknown? GetCOMObject( Type type, nint pUnknown ) {
-		
-		var guid = type.GUID ;
-		
-		var _interface = Marshal
-			.GetTypedObjectForIUnknown( pUnknown, type ) ;
-		return ( IUnknown )_interface ;
+		var _rcw = ( Marshal.GetTypedObjectForIUnknown( pUnknown, type ) as IUnknown ) ;
+		return _rcw ;
 	}
-
 	
 	
 	[MethodImpl(_MAXOPT_)]
@@ -190,19 +238,24 @@ public static class COMUtility {
 	public static HResult QueryInterface< TInterface >( nint pUnknown,
 															out nint pInterface ) {
 		var riid = typeof(TInterface).GUID ;
+		
 		var hr = (HResult)Marshal.QueryInterface( pUnknown, ref riid, out pInterface ) ;
 		hr.SetAsLastErrorForThread( ) ;
 		_lastHResult = hr ;
+		
 		return hr ;
 	}
 	
 	[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-	public static HResult QueryInterface< TInterface >( nint pUnknown,
-														out TInterface comObj ) where TInterface: IUnknown {
+	public static HResult QueryInterface< TInterface >( nint pUnknown, out TInterface comObj )
+																		where TInterface: IUnknown {
 		var hr = QueryInterface< TInterface >( pUnknown, out nint pInterface ) ;
+		int count = Marshal.Release( pUnknown ) ;
+		
 		object? comObjectRef = Marshal.GetObjectForIUnknown( pInterface ) ;
 		comObj = (TInterface)comObjectRef ;
 		_lastHResult = hr ;
+		
 		return hr ;
 	}
 	

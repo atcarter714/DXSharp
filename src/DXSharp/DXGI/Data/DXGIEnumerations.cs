@@ -9,6 +9,16 @@ using DXSharp.Direct3D12 ;
 namespace DXSharp.DXGI ;
 
 
+[EquivalentOf(typeof(DXGI_MODE_ROTATION))]
+public enum ModeRotation {
+	Unspecified = 0,
+	Identity  = 1,
+	Rotate90  = 2,
+	Rotate180 = 3,
+	Rotate270 = 4,
+} ;
+
+
 /// <summary>Identifies the alpha value, transparency behavior, of a surface.</summary>
 /// <remarks>
 /// <para>For more information about alpha mode, see <a href="https://docs.microsoft.com/windows/desktop/api/dcommon/ne-dcommon-d2d1_alpha_mode">DXGI_ALPHA_MODE</a>.</para>
@@ -794,6 +804,105 @@ public enum DebugRLOFlags {
 
 [EquivalentOf( typeof( DXGI_INFO_QUEUE_MESSAGE_CATEGORY ) )]
 public enum InfoQueueMessageCateogry {
+	/// <summary>Unknown category.</summary>
+	Unknown = 0,
+	/// <summary>Miscellaneous category.</summary>
+	Miscellaneous = 1,
+	/// <summary>Initialization category.</summary>
+	Initialization = 2,
+	/// <summary>Cleanup category.</summary>
+	Cleanup = 3,
+	/// <summary>Compilation category.</summary>
+	Compilation = 4,
+	/// <summary>State creation category.</summary>
+	StateCreation = 5,
+	/// <summary>State setting category.</summary>
+	StateSetting = 6,
+	/// <summary>State getting category.</summary>
+	StateGetting = 7,
+	/// <summary>Resource manipulation category.</summary>
+	ResourceManipulation = 8,
+	/// <summary>Execution category.</summary>
+	Execution = 9,
+	/// <summary>Shader category.</summary>
+	Shader = 10,
+} ;
+
+
+/// <summary>Describes which levels of hardware composition are supported.</summary>
+/// <remarks>Values of this enumeration are returned from the
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_6/nf-dxgi1_6-idxgioutput6-checkhardwarecompositionsupport">IDXGIOutput6::CheckHardwareCompositionSupport</a>
+/// method in the <i>pFlags</i> out parameter.
+/// </remarks>
+[Flags, EquivalentOf(typeof(DXGI_HARDWARE_COMPOSITION_SUPPORT_FLAGS))]
+public enum HardwareCompositionSupportFlags: uint {
+	/// <summary>This flag specifies that swapchain composition can be facilitated in a performant manner using hardware for fullscreen applications.</summary>
+	Fullscreen = 0x00000001,
+	/// <summary>This flag specifies that swapchain composition can be facilitated in a performant manner using hardware for windowed applications.</summary>
+	Windowed = 0x00000002,
+	/// <summary>This flag specifies that swapchain composition facilitated using hardware can cause the cursor to appear stretched.</summary>
+	CursorStretched = 0x00000004,
+} ;
+
+
+/// <summary>
+/// Used to specify additional options for enumerating <see cref="IOutput"/> interfaces.
+/// </summary>
+/// <remarks>
+/// These flag options are used in <see cref="IOutput.GetDisplayModeList"/> to enumerate display modes.<para/>
+/// These flag options are also used in <see cref="IOutput1.GetDisplayModeList1"/> to enumerate display modes.
+/// </remarks>
+[Flags, EquivalentOf("DXGI_ENUM_MODES" )]
+[NativeLibrary("dxgi.dll",
+			   "DXGI_ENUM_MODES", "DXGI.h")]
+public enum EnumModesFlags: uint {
+	/// <summary>No special flags.</summary>
+	None           = 0,
+	/// <summary>Include interlaced modes.</summary>
+	Interlaced     = 0x00000001,
+	/// <summary>Include stretched-scaling modes.</summary>
+	Scaling        = 0x00000002,
+	/// <summary>Include stereo modes.</summary>
+	/// <remarks>(<b>NOTE:</b> In Direct3D 11 this enumeration value was supported starting with Windows 8 ...)</remarks>
+	Stereo         = 0x00000004,
+	/// <summary>
+	/// Include stereo modes that are hidden because the user has disabled stereo.
+	/// Control panel applications can use this option to show stereo capabilities
+	/// that have been disabled as part of a user interface that enables and disables stereo.
+	/// </summary>
+	/// <remarks>(<b>NOTE:</b> In Direct3D 11 this enumeration value was supported starting with Windows 8 ...)</remarks>
+	DisabledStereo = 0x00000008,
+} ;
+
+
+[EquivalentOf(typeof(DXGI_INFO_QUEUE_MESSAGE_SEVERITY))]
+public enum InfoQueueMessageSeverity {
+	/// <summary>Defines some type of corruption that has occurred.</summary>
+	Corruption = 0,
+	/// <summary>Defines an error message.</summary>
+	Error = 1,
+	/// <summary>Defines a warning message.</summary>
+	Warning = 2,
+	/// <summary>Defines an information message.</summary>
+	Info = 3,
+	/// <summary>Defines a message other than corruption, error, warning, or information.</summary>
+	Message = 4,
+} ;
+
+
+/// <summary>Values that specify categories of debug messages.</summary>
+/// <remarks>
+/// <para>Use this enumeration when you call <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/nf-dxgidebug-idxgiinfoqueue-getmessage">IDXGIInfoQueue::GetMessage</a>
+/// to retrieve a message and when you call <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/nf-dxgidebug-idxgiinfoqueue-addmessage">IDXGIInfoQueue::AddMessage</a>
+/// to add a message. When you create an info queue filter, you can use these values to allow or deny any categories of messages to pass through the storage and retrieval filters.
+/// <div class="alert"><b>Note</b> This API requires the Windows Software Development Kit (SDK) for Windows 8.</div> <div></div></para>
+/// <para>
+/// <a href="https://docs.microsoft.com/windows/win32/api/dxgidebug/ne-dxgidebug-dxgi_info_queue_message_category#">
+/// Read more on docs.microsoft.com</a>.
+/// </para>
+/// </remarks>
+[EquivalentOf(typeof(DXGI_INFO_QUEUE_MESSAGE_CATEGORY))]
+public enum InfoQueueMessageCategory {
 	/// <summary>Unknown category.</summary>
 	Unknown = 0,
 	/// <summary>Miscellaneous category.</summary>

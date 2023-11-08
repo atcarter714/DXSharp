@@ -1,5 +1,6 @@
 ﻿#region Using Directives
 
+using System.Buffers ;
 using System.Collections ;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -89,7 +90,7 @@ public struct Matrix3x2F: IEquatable< Matrix3x2F >,
 						  IEquatable<Matrix3x2> {
 	static Matrix3x2F( ) {
 #if DEBUG || DEV_BUILD
-		Debug.Assert( SizeInBytes == Marshal.SizeOf<DXGI_MATRIX_3X2_F >() 
+		System.Diagnostics.Debug.Assert( SizeInBytes == Marshal.SizeOf<DXGI_MATRIX_3X2_F >() 
 					  && SizeInBytes == Marshal.SizeOf<DXGI_MATRIX_3X2_F>( )) ;
 #endif
 	}
@@ -1123,10 +1124,10 @@ public struct OutputDescription {
 	[MarshalAs(UnmanagedType.LPStr, SizeConst = 32)]
 	public FixedStr32 DeviceName ;
 	
-	public Rect        DesktopCoordinates ;
-	public bool        AttachedToDesktop ;
-	public Rotation    Rotation ;
-	public Win32Handle Monitor ;
+	public Rect         DesktopCoordinates ;
+	public bool         AttachedToDesktop ;
+	public ModeRotation ModeRotation ;
+	public Win32Handle  Monitor ;
 	
 	public OutputDescription( in OutputDescription desc ) {
 		unsafe { fixed( OutputDescription* pThis = &this )
@@ -1135,25 +1136,25 @@ public struct OutputDescription {
 	
 	public OutputDescription( in FixedStr32 deviceName, 
 							  in Rect desktopCoordinates, 
-							  bool attachedToDesktop, 
-							  Rotation rotation, 
+							  bool attachedToDesktop,
+							  ModeRotation modeRotation, 
 							  nint monitor ) {
 		this.DeviceName = deviceName ;
 		this.DesktopCoordinates = desktopCoordinates ;
 		this.AttachedToDesktop = attachedToDesktop ;
-		this.Rotation = rotation ;
+		this.ModeRotation = modeRotation ;
 		this.Monitor = monitor ;
 	}
 	
 	public OutputDescription( in FixedStr32 deviceName, 
 							  in Rect desktopCoordinates, 
 							  bool attachedToDesktop, 
-							  Rotation rotation, 
+							  ModeRotation modeRotation, 
 							  Win32Handle monitor ) {
 		this.DeviceName = deviceName ;
 		this.DesktopCoordinates = desktopCoordinates ;
 		this.AttachedToDesktop = attachedToDesktop ;
-		this.Rotation = rotation ;
+		this.ModeRotation = modeRotation ;
 		this.Monitor = monitor ;
 	}
 	
@@ -1161,7 +1162,7 @@ public struct OutputDescription {
 		this.DeviceName         = new( desc.DeviceName ) ;
 		this.DesktopCoordinates = desc.DesktopCoordinates ;
 		this.AttachedToDesktop  = desc.AttachedToDesktop ;
-		this.Rotation           = (Rotation)desc.Rotation ;
+		this.ModeRotation           = (ModeRotation)desc.Rotation ;
 		this.Monitor            = desc.Monitor ;
 	}
 	
@@ -1171,14 +1172,123 @@ public struct OutputDescription {
 		d.DeviceName         = desc.DeviceName.ToString( ) ;
 		d.DesktopCoordinates = desc.DesktopCoordinates ;
 		d.AttachedToDesktop  = desc.AttachedToDesktop ;
-		d.Rotation           = (DXGI_MODE_ROTATION)desc.Rotation ;
+		d.Rotation           = (DXGI_MODE_ROTATION)desc.ModeRotation ;
 		d.Monitor            = desc.Monitor ;
 		return d ;
 	}
 } ;
 
 
+/// <summary>Describes an output or physical connection between the adapter (video card) and a device, including additional information about color capabilities and connection type.</summary>
+/// <remarks>The <b>DXGI_OUTPUT_DESC1</b> structure is initialized by the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_6/nf-dxgi1_6-idxgioutput6-getdesc1">IDXGIOutput6::GetDesc1</a> method.</remarks>
+[EquivalentOf( typeof( DXGI_OUTPUT_DESC1 ) )]
+public struct OutputDescription1 {
+	
+	/// <summary>
+	/// <para>Type: <b>WCHAR[32]</b> A string that contains the name of the output device.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public FixedStr32 DeviceName;
 
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/windef/ns-windef-rect">Rect</a></b> A <a href="https://docs.microsoft.com/windows/desktop/api/windef/ns-windef-rect">Rect</a> structure containing the bounds of the output in desktop coordinates. Desktop coordinates depend on the dots per inch (DPI) of the desktop. For info about writing DPI-aware Win32 apps, see <a href="https://docs.microsoft.com/windows/desktop/hidpi/high-dpi-desktop-application-development-on-windows">High DPI</a>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public Rect DesktopCoordinates;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">BOOL</a></b> True if the output is attached to the desktop; otherwise, false.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public BOOL AttachedToDesktop;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/bb173065(v=vs.85)">DXGI_MODE_ROTATION</a></b> A member of the <a href="https://docs.microsoft.com/previous-versions/windows/desktop/legacy/bb173065(v=vs.85)">DXGI_MODE_ROTATION</a> enumerated type describing on how an image is rotated by the output.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public ModeRotation Rotation;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HMONITOR</a></b> An <a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HMONITOR</a> handle that represents the display monitor. For more information, see <a href="https://docs.microsoft.com/windows/desktop/gdi/hmonitor-and-the-device-context">HMONITOR and the Device Context</a>.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public HMonitor Monitor;
+
+	/// <summary>
+	/// <para>Type: <b>UINT</b> The number of bits per color channel for the active wire format of the display attached to this output.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public uint BitsPerColor;
+
+	/// <summary>
+	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgicommon/ne-dxgicommon-dxgi_color_space_type">DXGI_COLOR_SPACE_TYPE</a></b> The current advanced color capabilities of the display attached to this output. Specifically, whether its capable of reproducing color and luminance values outside of the sRGB color space. A value of DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709 indicates that the display is limited to SDR/sRGB; A value of DXGI_COLOR_SPACE_RGB_FULL_G2048_NONE_P2020 indicates that the display supports advanced color capabilities. For detailed luminance and color capabilities, see additional members of this struct.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public ColorSpaceType ColorSpace;
+
+	/// <summary>
+	/// <para>Type: <b>FLOAT[2]</b> The red color primary, in xy coordinates, of the display attached to this output. This value will usually come from the EDID of the corresponding display or sometimes from an override.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public Vector2 RedPrimary;
+
+	/// <summary>
+	/// <para>Type: <b>FLOAT[2]</b> The green color primary, in xy coordinates, of the display attached to this output. This value will usually come from the EDID of the corresponding display or sometimes from an override.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public Vector2 GreenPrimary;
+
+	/// <summary>
+	/// <para>Type: <b>FLOAT[2]</b> The blue color primary, in xy coordinates, of the display attached to this output. This value will usually come from the EDID of the corresponding display or sometimes from an override.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public Vector2 BluePrimary;
+
+	/// <summary>
+	/// <para>Type: <b>FLOAT[2]</b> The white point, in xy coordinates, of the display attached to this output. This value will usually come from the EDID of the corresponding display or sometimes from an override.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public Vector2 WhitePoint;
+
+	/// <summary>
+	/// <para>Type: <b>FLOAT</b> The minimum luminance, in nits, that the display attached to this output is capable of rendering. Content should not exceed this minimum value for optimal rendering. This value will usually come from the EDID of the corresponding display or sometimes from an override.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public float MinLuminance;
+
+	/// <summary>
+	/// <para>Type: <b>FLOAT</b> The maximum luminance, in nits, that the display attached to this output is capable of rendering; this value is likely only valid for a small area of the panel. Content should not exceed this minimum value for optimal rendering. This value will usually come from the EDID of the corresponding display or sometimes from an override.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public float MaxLuminance;
+
+	/// <summary>
+	/// <para>Type: <b>FLOAT</b> The maximum luminance, in nits, that the display attached to this output is capable of rendering; unlike MaxLuminance, this value is valid for a color that fills the entire area of the panel. Content should not exceed this value across the entire panel for optimal rendering. This value will usually come from the EDID of the corresponding display or sometimes from an override.</para>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ns-dxgi1_6-dxgi_output_desc1#members">Read more on docs.microsoft.com</see>.</para>
+	/// </summary>
+	public float MaxFullFrameLuminance;
+} ;
+
+
+/// <summary>Describes timing and presentation statistics for a frame.</summary>
+/// <remarks>
+/// <para>You initialize the <b>DXGI_FRAME_STATISTICS</b> structure with the
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgioutput-getframestatistics">IDXGIOutput::GetFrameStatistics</a>
+/// or <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiswapchain-getframestatistics">IDXGISwapChain::GetFrameStatistics</a>
+/// method. You can only use
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiswapchain-getframestatistics">IDXGISwapChain::GetFrameStatistics</a>
+/// for swap chains that either use the flip presentation model or draw in full-screen mode. You set the
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ne-dxgi-dxgi_swap_effect">DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL</a> value in the
+/// <b>SwapEffect</b> member of the
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/ns-dxgi1_2-dxgi_swap_chain_desc1">DXGI_SWAP_CHAIN_DESC1</a> structure to specify
+/// that the swap chain uses the flip presentation model. The values in the <b>PresentCount</b> and <b>PresentRefreshCount</b> members indicate
+/// information about when a frame was presented on the display screen. You can use these values to determine whether a glitch occurred. The values
+/// in the <b>SyncRefreshCount</b> and <b>SyncQPCTime</b> members indicate timing information that you can use for audio and video synchronization or
+/// very precise animation. If the swap chain draws in full-screen mode, these values are based on when the computer booted. If the swap chain draws
+/// in windowed mode, these values are based on when the swap chain is created.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi/ns-dxgi-dxgi_frame_statistics#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(DXGI_FRAME_STATISTICS))]
 [StructLayout( LayoutKind.Sequential )]
 public struct FrameStatistics {
 	public uint PresentCount, PresentRefreshCount, SyncRefreshCount ;
@@ -1204,11 +1314,63 @@ public struct FrameStatistics {
 	 }
 } ;
 
-public enum Rotation {
-	Identity  = 1,
-	Rotate90  = 2,
-	Rotate180 = 3,
-	Rotate270 = 4,
+
+/// <summary>Describes a debug message in the information queue.</summary>
+/// <remarks>
+/// <para>
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/nf-dxgidebug-idxgiinfoqueue-getmessage">IDXGIInfoQueue::GetMessage</a>
+/// returns a pointer to this structure.
+/// <div class="alert"><b>Note</b> This API requires the Windows Software Development Kit (SDK) for Windows 8.</div>
+/// </para>
+/// <para>
+/// <a href="https://docs.microsoft.com/windows/win32/api/dxgidebug/ns-dxgidebug-dxgi_info_queue_message#">
+/// Read more on docs.microsoft.com</a>.
+/// </para>
+/// </remarks>
+[EquivalentOf( "DXGI_INFO_QUEUE_MESSAGE", "DXGI" )]
+public partial struct InfoQueueMessage {
+	
+	/// <summary>
+	/// A <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-debug-id">DXGI_DEBUG_ID</a> value
+	/// that identifies the entity that produced the message.
+	/// </summary>
+	public Guid Producer ;
+
+	/// <summary>
+	/// A <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/ne-dxgidebug-dxgi_info_queue_message_category">DXGI_INFO_QUEUE_MESSAGE_CATEGORY</a>-typed
+	/// value that specifies the category of the message.
+	/// </summary>
+	public InfoQueueMessageCategory Category ;
+
+	/// <summary>
+	/// A <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/ne-dxgidebug-dxgi_info_queue_message_severity">DXGI_INFO_QUEUE_MESSAGE_SEVERITY</a>-typed
+	/// value that specifies the severity of the message.
+	/// </summary>
+	public InfoQueueMessageSeverity Severity ;
+
+	/// <summary>An integer that uniquely identifies the message.</summary>
+	public int ID ;
+
+	/// <summary>The message string.</summary>
+	public unsafe byte* pDescription ;
+
+	/// <summary>The length of the message string at <b>pDescription</b>, in bytes.</summary>
+	public nuint DescriptionByteLength ;
+	
+	
+	public unsafe InfoQueueMessage( in Guid producer                        = default, 
+							 InfoQueueMessageCategory category              = default, 
+							 InfoQueueMessageSeverity severity              = default, 
+							 int                      id                    = 0,
+							 byte*                    pDescription          = null,
+							 nuint                    descriptionByteLength = 0x00000000U ) {
+		this.Producer = producer ;
+		this.Category = category ;
+		this.Severity = severity ;
+		this.ID = id ;
+		this.pDescription = pDescription ;
+		this.DescriptionByteLength = descriptionByteLength ;
+	}
 } ;
 
 
@@ -1415,14 +1577,6 @@ public struct PresentParameters {
 } ;
 
 
-
-public enum ModeRotation {
-	Unspecified = 0,
-	Identity    = 1,
-	Rotate90    = 2,
-	Rotate180   = 3,
-	Rotate270   = 4
-} ;
 
 
 
@@ -2234,3 +2388,199 @@ public struct HDRMetaDataHDR10: IEquatable<HDRMetaDataHDR10> {
 
 } ;
 
+
+/// <summary>Describes a debug message filter, which contains lists of message types to allow and deny.</summary>
+/// <remarks>
+/// <para>Use with an <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/nn-dxgidebug-idxgiinfoqueue">IDXGIInfoQueue</a> interface.</para>
+/// <para><div class="alert"><b>Note:</b> This API requires the Windows Software Development Kit (SDK) for Windows 8.</div><div></div></para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgidebug/ns-dxgidebug-dxgi_info_queue_filter#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf( typeof( DXGI_INFO_QUEUE_FILTER ) )]
+public partial struct InfoQueueFilter {
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/ns-dxgidebug-dxgi_info_queue_filter_desc">DXGI_INFO_QUEUE_FILTER_DESC</a> structure that describes the types of messages to allow.</summary>
+	public InfoQueueFilterDescription AllowList ;
+
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/ns-dxgidebug-dxgi_info_queue_filter_desc">DXGI_INFO_QUEUE_FILTER_DESC</a> structure that describes the types of messages to deny.</summary>
+	public InfoQueueFilterDescription DenyList ;
+
+
+	/// <summary>
+	/// <para>Initializes a new instance of the <see cref="InfoQueueFilter"/> struct.</para>
+	/// This is done by setting the <see cref="AllowList"/> and <see cref="DenyList"/> using
+	/// a <see cref="InfoQueueFilterDescription"/> for each.
+	/// </summary>
+	/// <param name="allowList"><para>A <see cref="InfoQueueFilterDescription"/> that describes the types of messages to allow.</para></param>
+	/// <param name="denyList"><para>A <see cref="InfoQueueFilterDescription"/> that describes the types of messages to deny.</para></param>
+	/// <remarks>
+	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgidebug/ns-dxgidebug-dxgi_info_queue_filter#members">
+	/// Read more on docs.microsoft.com
+	/// </see>.</para>
+	/// </remarks>
+	public InfoQueueFilter( in InfoQueueFilterDescription allowList = default,
+								in InfoQueueFilterDescription denyList = default ) {
+		this.AllowList = allowList ;
+		this.DenyList  = denyList ;
+	}
+	
+	/// <summary>Computes total memory required for the filter.</summary>
+	/// <returns>
+	/// <para>Returns the total memory required for the filter.</para>
+	/// <para>See the 
+	/// <a href="https://docs.microsoft.com/windows/win32/api/dxgidebug/ns-dxgidebug-dxgi_info_queue_filter#members">DXGI_INFO_QUEUE_FILTER structure</a>
+	/// documentation for more information about the structure <see cref="InfoQueueFilterDescription"/> is based upon.
+	/// </para>
+	/// </returns>
+	/// <remarks>
+	/// <para>This finds the total size of the filter, including the size of the two <see cref="InfoQueueFilterDescription"/> structs.</para>
+	/// Although this package offers a lot of help with memory management, it is still important to know how managed vs. unmanaged memory works in .NET,
+	/// because these structs store pointers to unmanaged memory or pinned managed memory in some cases.<para/>
+	/// See <a href="https://docs.microsoft.com/en-us/dotnet/standard/automatic-memory-management">Automatic Memory Management</a>
+	/// to understand how managed "garbage collected" memory works in .NET Core.
+	/// See <a href="https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/unmanaged">Cleaning up unmanaged resources</a>
+	/// to learn more about unmanaged memory and cleanup in .NET Core. 
+	/// See <a href="https://docs.microsoft.com/en-us/dotnet/standard/native-interop/pinvoke">Platform Invoke</a>
+	/// to learn more about interoperability in .NET Core (i.e., interaction with external native code, such as Windows DLLs).
+	/// <para/>
+	/// </remarks>
+	public unsafe ulong GetAllocatedSize( ) {
+		//! account for the two InfoQueueFilterDescription structs:
+		int descSize = sizeof(InfoQueueFilterDescription) 
+							* 2 ;
+		
+		ulong categoriesSize = 0UL ;
+		if ( AllowList.pCategoryList is not null ) {
+			var categories = AllowList.CategoryList ;
+			categoriesSize = ( sizeof( InfoQueueMessageCategory ) 
+							   * (ulong)categories.Length ) ;
+		}
+		
+		ulong severitiesSize = 0UL ;
+		if ( AllowList.pSeverityList is not null ) {
+			var severities = AllowList.SeverityList ;
+			severitiesSize = ( sizeof( InfoQueueMessageSeverity ) 
+							   * (ulong)severities.Length ) ;
+		}
+		
+		ulong idsSize = 0UL ;
+		if ( AllowList.pIDList is not null ) {
+			var ids = AllowList.IDList ;
+			idsSize = (ulong)( sizeof( ulong ) * ids.Length ) ;
+		}
+		
+		ulong denyCategoriesSize = 0UL ;
+		if ( DenyList.pCategoryList is not null ) {
+			var categories = DenyList.CategoryList ;
+			denyCategoriesSize = ( sizeof( InfoQueueMessageCategory ) 
+								   * (ulong)categories.Length ) ;
+		}
+		
+		ulong denySeveritiesSize = 0UL ;
+		if ( DenyList.pSeverityList is not null ) {
+			var severities = DenyList.SeverityList ;
+			denySeveritiesSize = ( sizeof(InfoQueueMessageSeverity) 
+								   * (ulong)severities.Length ) ;
+		}
+		
+		ulong denyIdsSize = 0UL ;
+		if ( DenyList.pIDList is not null ) {
+			var ids = DenyList.IDList ;
+			denyIdsSize = ( sizeof(int) 
+							* (ulong)ids.Length ) ;
+		}
+		
+		return ( (ulong)descSize
+					   + (categoriesSize + severitiesSize + idsSize)
+					   + (denyCategoriesSize + denySeveritiesSize + denyIdsSize) ) ;
+	}
+} ;
+
+
+
+/// <summary>Describes the types of messages to allow or deny to pass through a filter.</summary>
+/// <remarks>
+/// <para>This structure is a member of the
+/// <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/ns-dxgidebug-dxgi_info_queue_filter">DXGI_INFO_QUEUE_FILTER</a> structure.
+/// This API requires the Windows Software Development Kit (SDK) for Windows 8.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgidebug/ns-dxgidebug-dxgi_info_queue_filter_desc#">
+/// Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[DebuggerDisplay("ToString()")]
+[EquivalentOf(typeof(DXGI_INFO_QUEUE_FILTER_DESC))]
+public partial struct InfoQueueFilterDescription {
+	/// <summary>The number of message categories to allow or deny.</summary>
+	public uint NumCategories ;
+
+	/// <summary>An array of <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/ne-dxgidebug-dxgi_info_queue_message_category">DXGI_INFO_QUEUE_MESSAGE_CATEGORY</a> enumeration values that describe the message categories to allow or deny. The array must have at least <b>NumCategories</b> number of elements.</summary>
+	public unsafe InfoQueueMessageCategory* pCategoryList ;
+	[UnscopedRef] public unsafe Span< InfoQueueMessageCategory > CategoryList =>
+										new( pCategoryList, (int)NumCategories ) ;
+	
+	/// <summary>The number of message severity levels to allow or deny.</summary>
+	public uint NumSeverities ;
+
+	/// <summary>An array of <a href="https://docs.microsoft.com/windows/desktop/api/dxgidebug/ne-dxgidebug-dxgi_info_queue_message_severity">DXGI_INFO_QUEUE_MESSAGE_SEVERITY</a> enumeration values that describe the message severity levels to allow or deny. The array must have at least <b>NumSeverities</b> number of elements.</summary>
+	public unsafe InfoQueueMessageSeverity* pSeverityList ;
+	[UnscopedRef] public unsafe Span< InfoQueueMessageSeverity > SeverityList =>
+										new( pSeverityList, (int)NumSeverities ) ;
+
+	/// <summary>The number of message IDs to allow or deny.</summary>
+	public uint NumIDs ;
+
+	/// <summary>An array of integers that represent the message IDs to allow or deny. The array must have at least <b>NumIDs</b> number of elements.</summary>
+	public unsafe int* pIDList ;
+	[UnscopedRef] public unsafe Span< int > IDList =>
+										new( pIDList, (int)NumIDs ) ;
+	
+	
+	public unsafe InfoQueueFilterDescription( uint numCategories, InfoQueueMessageCategory* categoryBuffer, 
+											  uint numSeverities, InfoQueueMessageSeverity* severityBuffer, 
+											  uint numIDs, int* idBuffer ) {
+		this.NumCategories = numCategories ;
+		this.pCategoryList = categoryBuffer ;
+		this.NumSeverities = numSeverities ;
+		this.pSeverityList = severityBuffer ;
+		this.NumIDs = numIDs ;
+		this.pIDList = idBuffer ;
+	}
+
+	
+	//! TODO: Test this:
+	// I think this represents a good pattern for dealing with structs that need pinned or native memory ...
+	public InfoQueueFilterDescription( InfoQueueMessageCategory[ ] categoryList,
+											  InfoQueueMessageSeverity[ ] severityList,
+																		int[ ] idList, out MemoryHandle[ ] handles ) {
+		uint numCategories = (uint)categoryList.Length ;
+		Memory< InfoQueueMessageCategory > categoryMemory = categoryList ;
+		var hCategories = categoryMemory.Pin( ) ;
+		
+		uint numSeverities = (uint)severityList.Length ;
+		Memory< InfoQueueMessageSeverity > severityMemory = severityList ;
+		var hSeverities    = severityMemory.Pin( ) ;
+		
+		uint numIDs = (uint)idList.Length ;
+		Memory< int > idMemory = idList ;
+		var hIDs = idMemory.Pin( ) ;
+		
+		this.NumIDs = numIDs ;
+		this.NumSeverities = numSeverities ;
+		this.NumCategories = numCategories ;
+		unsafe {
+			this.pCategoryList = (InfoQueueMessageCategory *)hCategories.Pointer ;
+			this.pSeverityList = (InfoQueueMessageSeverity *)hSeverities.Pointer ;
+			this.pIDList       = (int *)hIDs.Pointer ;
+		}
+		
+		handles = new[ ] { hCategories, hSeverities, hIDs } ;
+	}
+
+	public override string ToString( ) {
+		uint allocSize = (uint)sizeof( InfoQueueMessageCategory ) * NumCategories +
+						 (uint)sizeof( InfoQueueMessageSeverity ) * NumSeverities +
+						 (uint)sizeof( int ) * NumIDs ;
+		string _part1 = $"{nameof(InfoQueueFilterDescription)} (Allocated: {(allocSize / 1024):D}KB) :: " ;
+		string _part2 = $"{{ Categories: [Count: {CategoryList.Length:D}], " +
+						$"Severities: [Count: {SeverityList.Length:D}], " +
+						$"IDs: [Count: {IDList.Length:D}] }}" ;
+		return _part1 + _part2 ;
+	}
+} ;

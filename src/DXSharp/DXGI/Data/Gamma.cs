@@ -29,6 +29,20 @@ public struct GammaCurve: IEnumerable< RGB > {
 			unsafe { *_getAddressAt( index ) = value ; }
 		}
 	}
+	
+	public Span< RGB > this[ Range range ] {
+		get {
+			unsafe {
+				fixed ( void* pStruct = &controlPoints ) {
+					int         count = ( range.End.Value - range.Start.Value ) ;
+					RGB* pStart = (RGB *)pStruct + range.Start.Value ;
+					Span< RGB > s     = new( pStart, count ) ;
+					return s[ range ] ;
+				}
+			}
+		}
+	}
+	
 	void _throwIfOutOfRange( int index ) {
 		if( index < 0 || index > MAX_INDEX ) throw new
 			IndexOutOfRangeException($"{nameof(GammaCurve)} :: " +

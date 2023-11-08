@@ -1,5 +1,6 @@
 ﻿#region Using Directives
 using System.Buffers ;
+using System.Drawing ;
 using System.Runtime.CompilerServices ;
 using System.Windows.Forms;
 
@@ -31,25 +32,25 @@ public class Graphics: DisposableObject {
 	public const int FrameCount = 2 ;
 	
 	HWnd                          hwnd ;
-	IResource                     vertexBuffer ;
+	IResource?                    vertexBuffer ;
 	VertexBufferView              vertexBufferView ;
 	readonly List< MemoryHandle > cleanupList   = new( ) ;
 	readonly List< IDisposable >  _disposables  = new( ) ;
-	readonly IResource[ ]         renderTargets = new IResource[ FrameCount ] ;
+	readonly IResource?[]         renderTargets = new IResource?[ FrameCount ] ;
 	
-	uint              rtvDescriptorSize ;
-	IDescriptorHeap   rtvHeap ;
-	ICommandAllocator commandAllocator ;
-	ICommandQueue     commandQueue ;
-	IRootSignature    rootSignature ;
-	IPipelineState    pipelineState ;
-	IGraphicsCommandList commandList ;
+	uint                  rtvDescriptorSize ;
+	IDescriptorHeap?      rtvHeap ;
+	ICommandAllocator?    commandAllocator ;
+	ICommandQueue?        commandQueue ;
+	IRootSignature?       rootSignature ;
+	IPipelineState?       pipelineState ;
+	IGraphicsCommandList? commandList ;
 	
-	IFence         fence ;
-	AutoResetEvent fenceEvent ;
-	ulong          fenceValue ;
-	uint           frameIndex ;
-	ColorF 	       clearColor4 ;
+	IFence?         fence ;
+	AutoResetEvent? fenceEvent ;
+	ulong           fenceValue ;
+	uint            frameIndex ;
+	ColorF          clearColor4 ;
 
 	// --------------------------------------------------------------------------------------------------
 	
@@ -60,8 +61,8 @@ public class Graphics: DisposableObject {
 	public Rect ScissorRect { get ; protected set ; }
 	public Viewport MainViewport { get ; protected set ; }
 	
-	public IDevice GraphicsDevice { get ; protected set ; }
-	public ISwapChain SwapChain { get ; protected set ; }
+	public IDevice? GraphicsDevice { get ; protected set ; }
+	public ISwapChain? SwapChain { get ; protected set ; }
 	
 	public float AspectRatio => MainViewport.Width / MainViewport.Height ;
 	ResourceBarrier[ ] transitionBarriers = new ResourceBarrier[ 1 ] ;
@@ -101,7 +102,7 @@ public class Graphics: DisposableObject {
 		adapter.GetDesc1( out var _adapterDesc) ;
 		
 		// Create device (default is FeatureLevel.D3D_12_0):
-		IDevice device = D3D12.CreateDevice< IDevice >( adapter, FeatureLevel.D3D12_0 ) ;
+		IDevice? device = D3D12.CreateDevice< IDevice >( adapter, FeatureLevel.D3D12_0 ) ;
 		this.GraphicsDevice = device ;
 		
 		// Create command queue:
@@ -176,7 +177,6 @@ public class Graphics: DisposableObject {
 			}
 		}
 	}
-
 
 	public void LoadAssets( ) {
 		// Create an empty root signature using AllowInputAssemblerInputLayout flag:
@@ -254,10 +254,10 @@ public class Graphics: DisposableObject {
 		var inputLayoutMemory = InputLayoutDescription.Create( inputElements, out var inputLayoutDescription ) ;
 		cleanupList.Add( inputLayoutMemory ) ;
 		
-		// Describe and create the graphics pipeline state object (PSO).
+		// Describe and create the graphics pipeline state object (PSO):
 		var psoDesc = new GraphicsPipelineStateDescription( ) {
 			InputLayout           = inputLayoutDescription,
-			pRootSignature        = rootSignature.ComObject!,
+			pRootSignature        = rootSignature?.ComObject!,
 			VS                    = vertexShader,
 			PS                    = pixelShader,
 			RasterizerState       = RasterizerDescription.Default,
@@ -273,11 +273,12 @@ public class Graphics: DisposableObject {
 			RTVFormats            = new( f0: Format.R8G8B8A8_UNORM ),
 		} ;
 		
+		// Create the PSO:
 		GraphicsDevice.CreateGraphicsPipelineState( psoDesc,
 													IPipelineState.IID, 
 													out pipelineState ) ;
 		
-		// Create the command list.
+		// Create the command list:
 		GraphicsDevice.CreateCommandList( 0,
 										  CommandListType.Direct,
 										  commandAllocator, 
@@ -287,38 +288,44 @@ public class Graphics: DisposableObject {
 		this.commandList = (IGraphicsCommandList)cmdList ;
 		
 		// Create the vertex buffer & define geometry of a triangle:
+		Vector3 p0 = ( 0, 0, 0 ) ;
 		var triangleVertices = new[ ] {
-				new VertexPosCol { 
-					Position = new Vector3(0.0f, 0.25f * AspectRatio, 0.0f ), 
-					Color = new Vector4(1.0f, 0.0f, 0.0f, 1.0f ) 
+				new VertexPosCol {
+					Position = (0.0f, 0.25f * AspectRatio, 0.0f ), 
+					Color = Color.Red,
 				},
 				new VertexPosCol {
-					Position = new Vector3(0.25f, -0.25f * AspectRatio, 0.0f), 
-					Color = new Vector4(0.0f, 1.0f, 0.0f, 1.0f)
+					Position = (0.25f, -0.25f * AspectRatio, 0.0f), 
+					Color = Color.Green,
 				},
 				new VertexPosCol {
-					Position = new Vector3(-0.25f, -0.25f * AspectRatio, 0.0f), 
-					Color = new Vector4(0.0f, 0.0f, 1.0f, 1.0f )
+					Position = (-0.25f, -0.25f * AspectRatio, 0.0f), 
+					Color = Color.Blue,
 				},
 		};
-		int vertexSize       = VertexPosCol.SizeInBytes ; // Marshal.SizeOf<Vertex>( ) ;
+		int vertexSize       = VertexPosCol.SizeInBytes ;
 		int vertexBufferSize = ( vertexSize * triangleVertices.Length ) ;
-
-
-		// Note: using upload heaps to transfer static data like vert buffers is not 
-		// recommended. Every time the GPU needs it, the upload heap will be marshalled 
-		// over. Please read up on Default Heap usage. An upload heap is used here for 
-		// code simplicity and because there are very few verts to actually transfer ...
+		
+		
+		// Note: using upload heaps to transfer static data like vert buffers is not recommended.
+		// Every time the GPU needs it, the upload heap will be marshalled over. Please read up on
+		// Default Heap usage. An upload heap is used here for code simplicity and because there are
+		// very few verts to actually transfer ...
 		var resDesc  = new ResourceDescription { Alignment = VertexPosCol.SizeInBytes } ;
 		GraphicsDevice.CreateCommittedResource( new ( HeapType.Upload ), HeapFlags.None,
 												ResourceDescription.Buffer( (ulong)vertexBufferSize ),
 									  ResourceStates.GenericRead,
 												null,
-												IResource.IID,
-												out vertexBuffer ) ;
-
+												IResource.IID, out vertexBuffer ) ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		if ( vertexBuffer is null )
+			throw new DXSharpException( $"Failed to create vertex buffer!" ) ;
+#endif
+		
+		
 		// Copy the triangle data to the vertex buffer.
-		vertexBuffer.Map(0 , default, out var mappedResource ) ;
+		nint mappedResource = nint.Zero ;
+		vertexBuffer?.Map(0 , default, out mappedResource ) ;
 		unsafe {
 			VertexPosCol* pVertexDataBegin = (VertexPosCol *)mappedResource ;
 			Memory< VertexPosCol > vertices = new( triangleVertices ) ;

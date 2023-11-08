@@ -63,7 +63,8 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 	void _setBasePointer( nint pUnknown ) {
 		this._baseAddr = pUnknown ;
 		TrackPointer( this._baseAddr ) ;
-		AddRef( this._baseAddr ) ;
+		//! This may be why the ref count is 2 instead of 1
+		//AddRef( this._baseAddr ) ; 
 	}
 
 	
@@ -78,23 +79,20 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 															  $"The pointer is a {nameof(NULL_PTR)} (0x00000000) value!" ) ;
 		
 #endif
-		++_refCount ;
-		var _hr = QueryInterface< IUnknown >( ptr, out nint pUnknown ) ;
-		_hr.ThrowOnFailure( ) ;
-		_marshalRefCount = Release( pUnknown ) ;
 		
-		var pObject = GetCOMObject( ComType, ptr )
+		++_refCount ;
+		var _obj   = GetRCWObject( ptr ) ;
+		_marshalRefCount = Release( ptr ) ;
+		this._setBasePointer( ptr ) ;
+		this._comObjectRef = _obj ;
+		
+		/*
+		 var pObject = GetCOMObject( ComType, ptr )
 #if DEBUG || DEBUG_COM || DEV_BUILD
 					  ?? throw new DirectXComError( $"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
 													$"Failed to get the COM object!" )
 #endif
-			;
-		
-		_marshalRefCount = Release( ptr ) ;
-		//_marshalRefCount = Release( ptr ) ;
-		
-		_setBasePointer( pUnknown ) ;
-		_comObjectRef = pObject ;
+			;*/
 	}
 	
 	public ComPtr( int addr ): this( (nint)addr ) { }
@@ -152,31 +150,80 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 	}
 
 	//! Internal Pointer Tracking & Management:
-	internal virtual void Set( nint newPtr ) {
-#if DEBUG
+	internal void Set( nint newPtr ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		string errMsg = $"{nameof(ComPtr)} -> {nameof(Set)}( {nameof(IntPtr)} ) :: " ;
-		if( !newPtr.IsValid() ) throw new ArgumentNullException( nameof(newPtr), errMsg +
-																	 $"The pointer is a \"{nameof(NULL_PTR)}\" (null/0x00000000) value!" ) ;
-		if( !Exists(newPtr) ) throw new 
-			ArgumentException( nameof(newPtr), errMsg + 
-											   $"The pointer is not a valid COM object!" ) ;
+		if( !newPtr.IsValid() ) 
+			throw new ArgumentNullException( nameof(newPtr), 
+											 errMsg +
+											 $"The pointer is a \"{nameof(NULL_PTR)}\" " +
+											 $"(null/0x00000000) value!" ) ;
 #endif
-		var _hr = QueryInterface< IUnknown >( newPtr, out nint pUnknown ) ;
-		if( _hr.Failed ) throw new 
-			ArgumentException( nameof(newPtr), $"Failed to obtain {nameof(IUnknown)} interface!" ) ;
 		
-		Release( ref _baseAddr ) ;
+		//! Find the base RCW object:
+		var rcw = InterfaceObjectRef as IUnknown ;
+		if ( rcw is null ) {
+			_setBasePointer( newPtr ) ;
+			rcw = GetRCWObject( newPtr ) as IUnknown ;
+#if !STRIP_CHECKS
+			if( rcw is null ) {
+#if (DEBUG || DEBUG_COM || DEV_BUILD)
+				throw new ArgumentException( nameof( newPtr ),
+											 $"Failed to obtain {nameof( IUnknown )} interface!" ) ;
+#else
+				Dispose( ) ;
+				return ;
+#endif
+			}
+#endif
+			Release( newPtr ) ;
+		}
+
+		var _interfaceObj = GetCOMObject( ComType, newPtr ) ;
+		_marshalRefCount = Release( ref newPtr ) ;
+		
+		nint pUnknown = GetIUnknownForObject( _interfaceObj ) ;
+#if !STRIP_CHECKS && (DEBUG || DEBUG_COM || DEV_BUILD)
+		if ( !pUnknown.IsValid() ) {
+			Dispose( ) ;
+			return ;
+		}
+
+#if DEBUG_COM
+		if( pUnknown != newPtr ) {
+			//! When COM debug mode is enabled, check if pointer is same as base pointer:
+			Debug.WriteLine( $"The pointer {nameof(newPtr)} (\"0x{newPtr:X}\") " +
+							 $"is not the same as the base {nameof(IUnknown)} pointer!" ) ;
+		}
+#endif
+#endif
+		
+		//! remove extra ref from last call to GetIUknownForObject:
+		Release( pUnknown ) ;
+		//! set the new verified base pointer:
 		_setBasePointer( pUnknown ) ;
 	}
 
 	internal virtual void Set< TInterface >( in TInterface? newComObject )
 												where TInterface: IUnknown {
 		nint pUnknown = GetIUnknownForObject( newComObject ) ;
-		if ( !pUnknown.IsValid() ) throw new ArgumentException( nameof(newComObject), 
-					$"{nameof(ComPtr)} -> Set( {nameof(Object)} ) :: " +
-						$"The object is not a valid COM object implementing {nameof(IUnknown)}!" ) ;
+		_marshalRefCount = Release( pUnknown ) ;
 		
-		this.Set( pUnknown ) ;
+#if !STRIP_CHECKS
+		if ( !pUnknown.IsValid() )
+#if DEBUG || DEBUG_COM || DEV_BUILD
+			throw new ArgumentException( nameof(newComObject), 
+										 $"{nameof(ComPtr)} -> Set( {nameof(Object)} ) :: " +
+										 $"The object is not a valid COM object implementing {nameof(IUnknown)}!" ) ;
+#else
+			return ;
+#endif
+#endif
+		
+		//! set the base pointer:
+		_setBasePointer( pUnknown ) ;
+		//! set the object reference:
+		_comObjectRef = newComObject ;
 	}
 	
 	internal static nint[ ] GetAllAllocations( ) =>
@@ -229,14 +276,18 @@ public sealed class ComPtr< T >: ComPtr
 	internal ComPtr( ) { }
 	public ComPtr( [NotNull] in T comInterface ): 
 					base( GetAddressIUnknown(comInterface) ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		if( comInterface is null ) throw new ArgumentNullException( nameof(comInterface) ) ;
-		_marshalRefCount = Release( BaseAddress ) ; // release the ref from the base c'tor
+#endif
 		
-		var _hr = QueryInterface< T >( base.BaseAddress, out nint ptrToInterface ) ;
+		_marshalRefCount = Release( BaseAddress ) ; // release the ref from the base c'tor
+		var _hr    = QueryInterface< T >( base.BaseAddress, out nint ptrToInterface ) ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		if( _hr.Failed ) throw new COMException($"{nameof(ComPtr<T>)} -> c'tor( {nameof(IUnknown)} ) :: " +
 												$"Failed to get a COM interface pointer to {nameof(T)}!", _hr.Value ) ;
+#endif
 		
-		Release( ptrToInterface ) ;
+		Release( BaseAddress ) ;
 		this.Interface      = comInterface ;
 		this._interfaceVPtr = ptrToInterface ;
 	}
@@ -277,47 +328,40 @@ public sealed class ComPtr< T >: ComPtr
 		return ++_refCount ;
 	}
 	internal T? GetReference( ) {
-		GetReference( out _ ) ;
-		return Interface! ;
+		GetReference( out var _interface ) ;
+		return _interface! ;
 	}
 	internal int GetReference( out T? pInterface ) {
 		pInterface = default ;
+		
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		if( Disposed || Interface is null ) 
-			throw new NullReferenceException( $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " +
-							$"{nameof(ComPtr<T>.GetReference)} :: The internal {nameof(Interface)} is null!" ) ;
+			throw new ObjectDisposedException( $"{nameof(ComPtr<T>)}<{typeof(T).Name}> -> " +
+											   $"{nameof(ComPtr<T>.GetReference)} :: The internal {typeof(T).Name} property \"{nameof(Interface)}\" is null!" ) ;
+#endif
 		
 		pInterface = Interface ;
 		return IncrementReferences( ) ;
 	}
 
 	internal int ReleaseReference( bool final = false ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		if( Disposed || Interface is null )
-			throw new NullReferenceException( $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " +
-											  $"{nameof(ComPtr<T>.GetReference)} :: The internal {nameof(Interface)} is null!" ) ;
+			throw new ObjectDisposedException( $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " +
+											   $"{nameof(ComPtr<T>.GetReference)} :: The internal {nameof(Interface)} is null!" ) ;
+#endif
 		
 		_marshalRefCount = (int)Interface.Release( ) ;
 		return --_refCount ;
 	}
 	
+	
 	internal override void Set< TInterface >( in TInterface? newComObject ) where TInterface: default {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 		ArgumentNullException.ThrowIfNull( newComObject, nameof(newComObject) ) ;
-		if( !typeof(TInterface).IsCOMObject )
-			throw new ArgumentException( nameof(newComObject), 
-										 $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " + 
-										 $"{nameof(Set)}( {newComObject.GetType().Name} {nameof(newComObject)} ) :: " +
-										 $"The object is not a valid COM object!" ) ;
-		
-		// Get the base IUnknown pointer:
-		/*nint pUnknown = GetIUnknownForObject( newComObject ) ;
-		if ( !pUnknown.IsValid() ) 
-			throw new ArgumentException( nameof(newComObject), 
-										 $"{nameof(ComPtr)}<{typeof(T).FullName}> -> Set( {nameof(Object)} ) :: " +
-										 $"The object is not a valid COM object implementing {nameof(IUnknown)}!" ) ;*/
 #endif
 		
 		// All checks passed, set the pointers:
-		//base.Set( pUnknown ) ;
 		base.Set( newComObject ) ;
 		
 		// Query the interface and see if it's actually part of the COM object:
@@ -355,13 +399,16 @@ public sealed class ComPtr< T >: ComPtr
 		return newComPtr ;
 	}
 	
-	public ComPtr< TOut > Cast< TOut >( ) where TOut: IUnknown {
+	public ComPtr< TOut > Cast< TOut >( ) where TOut: IUnknown, T {
 		if( !InterfaceType.IsAssignableTo( typeof(TOut) )) throw new InvalidCastException( ) ;
 		
 		var _result = QueryInterface< TOut >( BaseAddress, out nint pInterface ) ;
-		if( _result.Failed ) throw new COMException( $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " +
-													  $"{nameof(Cast)}<{typeof(TOut).FullName}> :: " +
-													  $"Failed to cast the COM object to {typeof(TOut).FullName}!" ) ;
+		_marshalRefCount = Release( BaseAddress ) ;
+		
+		if( _result.Failed )
+			throw new COMException( $"{nameof(ComPtr<T>)}<{typeof(T).FullName}> -> " +
+									$"{nameof(Cast)}<{typeof(TOut).FullName}> :: " +
+									$"Failed to cast the COM object to {typeof(TOut).FullName}!" ) ;
 		
 		ComPtr< TOut > newComPtr = new( _result ) ;
 		newComPtr.IncrementReferences( ) ;
@@ -369,7 +416,8 @@ public sealed class ComPtr< T >: ComPtr
 	}
 
 	
-	[MethodImpl(_MAXOPT_)] public nint GetVTableMethod< TUnknown >( int index ) where TUnknown: IUnknown {
+	[MethodImpl(_MAXOPT_)]
+	public nint GetVTableMethod< TUnknown >( int index ) where TUnknown: IUnknown {
 		nint interfacePtr = InterfaceVPtr ;
 		if ( typeof( TUnknown ) != typeof( T ) ) {
 			QueryInterface< TUnknown >( BaseAddress, out interfacePtr ) ;
@@ -403,6 +451,24 @@ public sealed class ComPtr< T >: ComPtr
 	// Operator Overloads:
 	// ----------------------------------------------------------
 	
+	[MethodImpl(_MAXOPT_)] public static ComPtr< T > operator ++( ComPtr< T > ptr ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		if( ptr.Interface is null ) throw new NullReferenceException( $"{nameof(ptr.Interface)}") ;
+#endif
+		uint count = ptr.Interface!.AddRef( ) ;
+		return ptr ;
+	}
+	[MethodImpl(_MAXOPT_)] public static ComPtr< T > operator --( ComPtr< T > ptr ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		if( ptr.Interface is null ) throw new NullReferenceException( $"{nameof(ptr.Interface)}") ;
+#endif
+		uint count = ptr.Interface!.Release( ) ;
+		return ptr ;
+	}
+	
+	
+	#region Conversion Operators
+
 	public static explicit operator ComPtr< IUnknown >?( ComPtr< T >? other ) {
 		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
 		return new( other.BaseAddress ) ;
@@ -456,34 +522,7 @@ public sealed class ComPtr< T >: ComPtr
 										$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
 	}
 	
+	#endregion
 	
-	/*public static explicit operator ComPtr< T >( DXGI.Object obj ) {
-		ArgumentNullException.ThrowIfNull( obj, nameof(obj) ) ;
-		
-		var other = (IComObjectRef<IDXGIObject>) obj ;
-		if ( typeof(IDXGIObject).IsAssignableTo(typeof(T)) ) {
-			var _result = new ComPtr< T >( other.COMObject ) ;
-			_result.IncrementReferences( ) ;
-			return _result ;
-		}
-		
-		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
-			$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
-	}
-	
-	public static explicit operator ComPtr< T >( Direct3D12.Object obj ) {
-		ArgumentNullException.ThrowIfNull( obj, nameof(obj) ) ;
-		if( obj.ComPointer?.Disposed ?? true ) throw new 
-			ObjectDisposedException( nameof(obj) ) ;
-		
-		var other = obj.ComPointer ;
-		if ( obj.ComPointer.InterfaceType.IsAssignableTo(typeof(T)) ) {
-			var _result = new ComPtr< T >( obj.ComPointer.BaseAddress ) ;
-			_result.IncrementReferences( ) ;
-			return _result ;
-		}
-		
-		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
-			$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
-	}*/
+	// ==========================================================
 } ;

@@ -1,12 +1,14 @@
 ﻿#region Using Directives
-using System ;
-using System.Diagnostics.CodeAnalysis ;
-using System.Numerics ;
+using System.Globalization ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
-using Windows.Win32 ;
-using Windows.Win32.Graphics.Dxgi ;
+using System.Diagnostics ;
+using System.Diagnostics.CodeAnalysis ;
 
+using Windows.Win32 ;
+
+using static DXSharp.InteropUtils ;
+using SysVec4 = System.Numerics.Vector4 ;
 #endregion
 namespace DXSharp ;
 
@@ -26,7 +28,8 @@ public struct USize {
 
 
 [StructLayout( LayoutKind.Explicit )]
-public struct ColorF {
+[DebuggerDisplay("ToString()")]
+public struct ColorF: IFormattable {
 	[FieldOffset(0)]   Vector4 _color ;
 	
 	[FieldOffset(0)] public float r ;
@@ -47,8 +50,7 @@ public struct ColorF {
 	public ref float A => ref this[ 3 ] ;
 
 	public unsafe ref float this[ int index ] {
-		get { 
-			fixed( float* fptr = &_color.X )
+		get { fixed( float* fptr = &_color.X )
 				return ref fptr[ index ] ;
 		}
 	}
@@ -93,13 +95,62 @@ public struct ColorF {
 	public ColorF WithGreen( float green ) => new( R, green, B, A ) ;
 	public ColorF WithBlue( float blue ) => new( R, G, blue, A ) ;
 	
+	public override bool Equals( object? obj ) => obj is ColorF other && this == other ;
+	public override int GetHashCode( ) => _color.GetHashCode( ) ;
+	
+	public override string ToString( ) => $"ColorF: {{ R: {R}, G: {G}, B: {B}, A: {A} }}" ;
+	
+	public string ToString( string? format, IFormatProvider? formatProvider = null ) {
+		if ( string.IsNullOrEmpty(format) ) format  = "G" ;
+		if( formatProvider is null ) formatProvider = CultureInfo.CurrentCulture ;
+		var str                                       = $"ColorF: {{ " +
+																		  $"R: {R.ToString(format, formatProvider)}, " +
+																		  $"G: {G.ToString(format, formatProvider)}, " +
+																		  $"B: {B.ToString(format, formatProvider)}, " +
+																		  $"A: {A.ToString(format, formatProvider)} }}" ;
+		return str ;
+	}
+
 	public static ColorF FromArgb( float a = 0, float r = 0, float g = 0, float b = 0 ) => new( r, g, b, a ) ;
 	public static ColorF FromArgb( float a = 0, Vector3 rgb = default ) => new( rgb.X, rgb.Y, rgb.Z, a ) ;
 	
-	public static implicit operator ColorF( Vector4 color ) => new( color ) ;
-	public static implicit operator Vector4( ColorF color ) => color._color ;
-	public static implicit operator ColorF( Color color ) => new( color ) ;
-	public static implicit operator Color( ColorF color ) => color.Color ;
+	
+	public static implicit operator ColorF( in Vector4 color ) => new( color ) ;
+	public static implicit operator Vector4( in ColorF color ) => color._color ;
+	public static implicit operator ColorF( in Color color ) => new( color ) ;
+	public static implicit operator Color( in ColorF color ) => color.Color ;
+	public static implicit operator ColorF( in SysVec4 color ) => new( color ) ;
+	
+	public static implicit operator ColorF( in __float_4 color ) => new( color ) ;
+	public static implicit operator __float_4( in ColorF color ) {
+		unsafe {
+			fixed ( ColorF* cptr = &color ) {
+				__float_4* fptr = (__float_4 *)cptr ;
+				return *fptr ;
+			}
+		}
+	}
+	
+	public static implicit operator ColorF( in (float r, float g, float b, float a) tuple ) => 
+		new( tuple.r, tuple.g, tuple.b, tuple.a ) ;
+	public static implicit operator ColorF( in (Vector3 rgb, float a) tuple ) => 
+		new( tuple.rgb.X, tuple.rgb.Y, tuple.rgb.Z, tuple.a ) ;
+	
+	[MethodImpl(_MAXOPT_)] public static bool operator ==( ColorF  left, ColorF right ) => left._color == right._color ;
+	[MethodImpl(_MAXOPT_)] public static bool operator !=( ColorF  left, ColorF right ) => left._color != right._color ;
+	[MethodImpl(_MAXOPT_)] public static bool operator ==( ColorF  left, Vector4 right ) => left._color == right.v ;
+	[MethodImpl(_MAXOPT_)] public static bool operator !=( ColorF  left, Vector4 right ) => left._color != right.v ;
+	[MethodImpl(_MAXOPT_)] public static bool operator ==( Vector4 left, ColorF right ) => left.v == right._color ;
+	[MethodImpl(_MAXOPT_)] public static bool operator !=( Vector4 left, ColorF right ) => left.v != right._color ;
+	
+	[MethodImpl(_MAXOPT_)] public static ColorF operator +( ColorF left, ColorF right ) => new( left._color + right._color ) ;
+	[MethodImpl(_MAXOPT_)] public static ColorF operator -( ColorF left, ColorF right ) => new( left._color - right._color ) ;
+	[MethodImpl(_MAXOPT_)] public static ColorF operator *( ColorF left, ColorF right ) => new( left._color * right._color ) ;
+	[MethodImpl(_MAXOPT_)] public static ColorF operator /( ColorF left, ColorF right ) => new( left._color / right._color ) ;
+	
+	[MethodImpl(_MAXOPT_)] public static ColorF operator *( ColorF left, float  right ) => left._color * right ;
+	[MethodImpl(_MAXOPT_)] public static ColorF operator /( ColorF left, float  right ) => left._color.VectorRef / right ;
+	[MethodImpl(_MAXOPT_)] public static ColorF operator *( float  left, ColorF right ) => new( left * right._color ) ;
 } ;
 
 

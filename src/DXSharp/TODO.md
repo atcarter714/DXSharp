@@ -41,6 +41,17 @@
 
 _____________________________________________
 ---
+## Direct3D 12 API Coverage & Headers
+
+We have a few Windows SDK and DirectX-related headers that we need to
+create coverage for ...
+
+- Dxcapi.h (DirectX Shader Compiler, aka "DXC" or "DXIL")
+- D3D12Shader.h (Direct3D 12 Shader Reflection)
+- Mfd3d12.h (APIs for synchronized resource access to MF producers/consumers)
+- D3d12video.h (Direct3D 12 Video APIs)
+_____________________________________________
+---
 
 ### Missing Types:
  - ...

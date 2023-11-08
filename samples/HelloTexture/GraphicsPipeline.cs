@@ -1,9 +1,14 @@
-﻿using System.Runtime.InteropServices ;
+﻿#region Using Directives
+
+using System.Diagnostics.CodeAnalysis ;
+using System.Runtime.InteropServices ;
 using System.Text ;
 using System.Windows.Forms ;
+
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
+
 using DXSharp ;
 using DXSharp.Applications ;
 using DXSharp.Direct3D12 ;
@@ -11,11 +16,15 @@ using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
-
+#endregion
 namespace HelloTexture ;
 
 
 public class GraphicsPipeline: DXGraphics {
+	#region Constant/ReadOnly Members
+	// -----------------------------------------------------
+	// Constant & Read-Only Values:
+	// -----------------------------------------------------
 	const int MAX_ADAPTERS = 0x10 ;
 	const FactoryCreateFlags FACTORY_FLAGS =
 #if DEBUG
@@ -23,15 +32,26 @@ public class GraphicsPipeline: DXGraphics {
 #else
 		FactoryCreateFlags.None ;
 #endif
+	// ===================================================
+	#endregion
+	
+	
+	// -----------------------------------------------------
+	// Instance Fields:
+	// -----------------------------------------------------
 	HWnd             _wnd ;
 	BasicApp?        _app ;
 	GraphicsSettings _settings ;
 	PCWSTR _DBGName_Factory = default,
 		   _DBGName_Device = default ;
 	
-	IFactory7 _factory ;
+	IFactory7? _factory ;
 	IDevice12? _device ;
+	// =====================================================
 
+	
+	// -----------------------------------------------------------------------------------------------------------------
+	
 	public GraphicsPipeline( GraphicsSettings? settings = null ) {
 		_DBGName_Factory = "DXSharp.DXGI.IFactory7" ;
 		_DBGName_Device = "DXSharp.Direct3D12.IDevice12" ;
@@ -42,27 +62,31 @@ public class GraphicsPipeline: DXGraphics {
 					throw new InvalidOperationException( "Application instance is not initialized!" ) ;
 		_settings = settings ?? GraphicsSettings.Default ;
 		
-		_wnd    = _app.Window.Handle ;
+		_wnd    = _app.Window?.Handle ?? HWnd.Null ;
+		if( _wnd.IsNull ) throw new DXSharpException( "Window handle is null!" ) ;
 	}
-
 	
-	unsafe void _setDBGName( in PCWSTR name, in IDXCOMObject obj ) {
-		obj.SetPrivateData( COMUtility.WKPDID_D3DDebugObjectName,
-									(uint)name.Length * sizeof(char), (nint)name.Value ) ;
-	}
+	// -----------------------------------------------------------------------------------------------------------------
 	
 	
 	public override void LoadPipeline( ) {
 		// Create the DXGI factory:
-		var hr = DXGIFunctions.CreateDXGIFactory2( FACTORY_FLAGS, IFactory7.IID, out _factory ) ;
+		var hr = DXGIFunctions.CreateFactory2( IFactory7.IID, out var _f7 ) ;
+		_factory = (IFactory7) _f7  ;
+		
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		hr.ThrowOnFailure( ) ;
+		if( _factory is null ) throw new DXSharpException($"Failed to create DXGI factory! (hr = {hr})") ;
 		_setDBGName( _DBGName_Factory, _factory ) ;
+#endif
 		
 		// Get the best GPU:
 		using var adapter = _getBestGPU( _factory ) ;
+		_factory.DisposeAsync( ) ;
 		
 		// Create the D3D12 device:
 		var device = D3D12.CreateDevice< IDevice10 >( adapter, FeatureLevel.D3D12_0 ) ;
+		
 		
 		// Describe & create the command queue:
 		CommandQueueDescription queueDesc = new( CommandListType.Direct ) ;
@@ -86,18 +110,20 @@ public class GraphicsPipeline: DXGraphics {
 		// Create the swapchain:
 		_factory.CreateSwapChainForHwnd( cmdQueue, _wnd, swapChainDesc, swapchainFSDesc, 
 										 null, out ISwapChain1? swapChain ) ;
+		
 		_factory.MakeWindowAssociation( _wnd, WindowAssociation.NoAltEnter ) ;
 		
 		// Create the descriptor heaps:
 		uint frameCount  = _settings.BufferCount ;
 		DescriptorHeapDescription rtvHeapDesc = new( DescriptorHeapType.RTV, frameCount ) ;
 		device.CreateDescriptorHeap( rtvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? rtvHeap ) ;
+		if(rtvHeap is null ) throw new DXSharpException( "Failed to create RTV descriptor heap!" ) ;
 		
 		DescriptorHeapDescription dsvHeapDesc = new( DescriptorHeapType.CBV_SRV_UAV, 1, 
 													 DescriptorHeapFlags.ShaderVisible ) ;
 		device.CreateDescriptorHeap( dsvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? dsvHeap ) ;
 		
-		var rtvHandle       = rtvHeap.GetCPUDescriptorHandleForHeapStart( ) ;
+		var rtvHandle       = rtvHeap!.GetCPUDescriptorHandleForHeapStart( ) ;
 		var rtvDescSize = device.GetDescriptorHandleIncrementSize( DescriptorHeapType.RTV ) ;
 		
 		// Create frame resources with a RTV for each frame:
@@ -121,7 +147,6 @@ public class GraphicsPipeline: DXGraphics {
 				
 				var adapter = COMUtility.Cast< IAdapter1, IAdapter4 >( _adapter ) ;
 				
-				
 				adapter.GetDesc3( out var _desc ) ;
 				
 				// Skip software and remote adapters:
@@ -139,7 +164,27 @@ public class GraphicsPipeline: DXGraphics {
 	}
 
 	public override void LoadAssets( ) { }
-}
+	
+	
+	// -----------------------------------------------------
+	// Static Helper Methods:
+	// -----------------------------------------------------
+	
+	static unsafe void _setDBGName( in PCWSTR name, in IDXCOMObject obj ) =>
+		obj.SetPrivateData( COMUtility.WKPDID_D3DDebugObjectName,
+							(uint)name.Length * sizeof(char), (nint)name.Value ) ;
+
+	static PCWSTR _setDBGName( string name, in IDXCOMObject obj ) {
+		unsafe {
+			PCWSTR _name = name ;
+			obj.SetPrivateData( COMUtility.WKPDID_D3DDebugObjectName,
+								(uint)name.Length * sizeof( char ), (nint)_name.Value ) ;
+			return _name ;
+		}
+	}
+	
+	// =================================================================================================================
+} ;
 
 
 

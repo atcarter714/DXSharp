@@ -24,7 +24,20 @@
 		<PackageTags>interop; directx; wrapper; 2d; 3d; graphics; d3d; dxgi; win32; com; gamedev; arkaen;</PackageTags>
 		<PackageIcon>DXSharp_Logo_00_512.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Copyright>Copyright © Aaron T. Carter, Arkaen Solutions. All rights reserved.</Copyright>
+		<PackageReleaseNotes>Early preview: NOT intended for production use! There are no guarantees or warranties (express or implied) of any kind: Use at your own risk!
 
+(NOTE: There is nothing inherently "dangerous" about using these assemblies, but they may contain bugs, errors, glitches, etc which cause undefined and erratic behaviors which are very difficult (and time-consuming) to debug, track down and fix. This can cause significant use of your time and effort, and requires in-depth and adept (i.e., "advanced") skills and a lot of experience to be able to diagnose, fix/modify or otherwise work with low-level interop libraries (not to mention complex, low-level 3D rendering SDKs) such as this. Therefore, it could lead to investing a lot of time and effort into work which either doesn't get completed or takes far longer to complete than was expected/allowed! Such situations could cost people and companies money spent on production/labor time and other operational overheads, or lead to situations where deadlines cannot be met. This is to warn you that, at this time, these packages/libraries are NOT deemed "stable for production" and safe enough to rely upon for any important business purposes (other than R&amp;D, training, experiments, etc).</PackageReleaseNotes>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<AssemblyVersion>0.3.3</AssemblyVersion>
+		<FileVersion>1.0.1</FileVersion>
+
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+	  <DefineConstants>TRACE, DEBUG_COM, DEV_BUILD, CACHE_SIZE_NORMAL</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+	  <DefineConstants>TRACE, DEV_BUILD, CACHE_SIZE_LARGE</DefineConstants>
 	</PropertyGroup>
 
 	

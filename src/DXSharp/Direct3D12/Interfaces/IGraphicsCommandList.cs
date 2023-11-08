@@ -54,7 +54,7 @@ public interface IGraphicsCommandList: ICommandList {
 	/// <para><h3><a id="Debug_layer"></a><a id="debug_layer"></a><a id="DEBUG_LAYER"></a>Debug layer</h3> The debug layer will also track graphics processing unit (GPU) progress and issue an error if it can't prove that there are no outstanding executions of the command list.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-reset#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void Reset( ICommandAllocator pAllocator, IPipelineState pInitialState ) ;
+	void Reset( ICommandAllocator? pAllocator, IPipelineState? pInitialState ) ;
 
 	
 	/// <summary>Resets the state of a direct command list back to the state it was in when the command list was created. (ID3D12GraphicsCommandList.ClearState)</summary>
@@ -230,7 +230,7 @@ public interface IGraphicsCommandList: ICommandList {
 	/// <para><b>CopyResource</b> operations are performed on the GPU, and do not incur a significant CPU workload linearly dependent on the size of the data to copy. <b>CopyResource</b> can be used to initialize resources that alias the same heap memory. See <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource">CreatePlacedResource</a> for more details.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copyresource#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CopyResource( IResource pDstResource, IResource pSrcResource ) ;
+	void CopyResource( IResource? pDstResource, IResource? pSrcResource ) ;
 
 	
 	/// <summary>Copies tiles from buffer to tiled resource or vice versa. (ID3D12GraphicsCommandList.CopyTiles)</summary>
@@ -452,7 +452,7 @@ public interface IGraphicsCommandList: ICommandList {
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-setgraphicsrootsignature">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void SetGraphicsRootSignature( IRootSignature pRootSignature ) ;
+	void SetGraphicsRootSignature( IRootSignature? pRootSignature ) ;
 
 	
 	/// <summary>Sets a descriptor table into the compute root signature.</summary>

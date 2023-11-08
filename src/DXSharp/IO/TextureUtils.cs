@@ -43,12 +43,12 @@ public static class TextureUtils {
 	/// <param name="commandQueue">An (optional) command queue to use</param>
 	/// <param name="flags">Special <see cref="ResourceFlags"/> value to set for the resource.</param>
 	/// <returns></returns>
-	public static IResource CreateTexture( IDevice device,
-										   in Bitmap bitmap,
-										   IGraphicsCommandList? commandList  = null,
-										   ICommandAllocator?    allocator    = null,
-										   ICommandQueue?        commandQueue = null,
-										   ResourceFlags         flags        = ResourceFlags.None ) {
+	public static IResource? CreateTexture( IDevice               device,
+											in Bitmap             bitmap,
+											IGraphicsCommandList? commandList  = null,
+											ICommandAllocator?    allocator    = null,
+											ICommandQueue?        commandQueue = null,
+											ResourceFlags         flags        = ResourceFlags.None ) {
 		ResourceDescription desc = new ResourceDescription
 		{
 			Dimension        = ResourceDimension.Texture2D,

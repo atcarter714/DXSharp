@@ -88,10 +88,10 @@ public struct ResourceBarrier {
 
 
 
- public static ResourceBarrier Transition( IResource resource, 
+ public static ResourceBarrier Transition( IResource?     resource, 
                                            ResourceStates stateBefore = ResourceStates.Common, 
-                                           ResourceStates stateAfter = ResourceStates.Common, 
-                                           uint subresource = 0 ) {
+                                           ResourceStates stateAfter  = ResourceStates.Common, 
+                                           uint           subresource = 0 ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD
   ArgumentNullException.ThrowIfNull( resource, nameof(resource) ) ;
 #endif

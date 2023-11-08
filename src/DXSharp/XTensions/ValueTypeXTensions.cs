@@ -27,22 +27,11 @@ public static class ValueTypeXTensions {
 	
 	public static ref T AsRef< T >( this scoped ref T value ) where T : unmanaged => ref Unsafe.AsRef( value ) ;
 	
-	public static ref TOut Reinterpret< TIn, TOut >( this ref TIn value ) where TIn  : unmanaged
-																		  where TOut : unmanaged {
+	public static ref TOut Reinterpret< TIn, TOut >( this ref TIn value ) where TIn:  unmanaged
+																		  where TOut: unmanaged {
 		unsafe { fixed ( TIn* ptr = &value ) {
 			return ref Unsafe.AsRef< TOut >( (void*)ptr ) ;
 		}}
 	}
 	
-	public static TOut[ ] ReinterpretArray< TIn, TOut >( this TIn[ ] values ) where TIn  : unmanaged
-																		 where TOut : unmanaged {
-		var result = Unsafe.As< TOut[] >( values ) ;
-		return result ;
-	}
-	
-	public static Span<TOut> ReinterpretSpan< TIn, TOut >( this Span< TIn > values ) where TIn  : unmanaged
-																				 where TOut : unmanaged {
-		var result = MemoryMarshal.Cast< TIn, TOut >( values ) ;
-		return result ;
-	}
 } ;

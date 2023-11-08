@@ -1,7 +1,7 @@
 ﻿#region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
-
+using DXSharp ;
 using Vector3 = DXSharp.Vector3 ;
 using Vector4 = DXSharp.Vector4 ;
 using static DXSharp.InteropUtils ;
@@ -38,7 +38,7 @@ public partial struct VertexPosCol: IEquatable< VertexPosCol >,
 	#endregion
 	
 	public Vector3 Position ;
-	public Vector4 Color ;
+	public ColorF Color ;
 
 	/// <summary>Reference to the vertex's position value (<see cref="Vector3"/>).</summary>
 	public ref Vector3 PositionRef {
@@ -49,7 +49,7 @@ public partial struct VertexPosCol: IEquatable< VertexPosCol >,
 		}}
 	}
 	/// <summary>Reference to the vertex's color value (<see cref="Vector4"/>).</summary>
-	public ref Vector4 ColorRef {
+	public ref ColorF ColorRef {
 		[MethodImpl(_MAXOPT_)] get { unsafe {
 			fixed ( VertexPosCol* ptr = &this ) {
 				return ref ptr->Color ;
@@ -89,7 +89,7 @@ public partial struct VertexPosCol: IEquatable< VertexPosCol >,
 	
 	public override string ToString( ) => $"Vertex: {{ Position: {Position}, Color: {Color} }}" ;
 	public override int GetHashCode( ) => HashCode.Combine( Position, Color ) ;
-	public bool Equals( VertexPosCol  other ) => Position == other.Position && Color == other.Color ;
+	public bool Equals( VertexPosCol other ) => Position == other.Position && Color == other.Color ;
 	public bool Equals( Vector3 other ) => Position == other ;
 	public bool Equals( Vector4 other ) => Color == other ;
 

@@ -1,13 +1,33 @@
 ﻿#region Using Directives
+
+using System.Runtime.InteropServices ;
 using Windows.Win32.Foundation ;
 
 using DXSharp ;
 using DXSharp.DXGI ;
+using DXSharp.Windows.Win32.Helpers ;
+
 #endregion
 namespace Windows.Win32.Graphics.Dxgi ;
 
 
-[EquivalentOf(typeof(SharedResource))]
+[CsWin32, EquivalentOf(typeof(OutputDescription1))]
+public partial struct DXGI_OUTPUT_DESC1 {
+	public static implicit operator OutputDescription1( in DXGI_OUTPUT_DESC1 src ) {
+		unsafe {
+			fixed ( DXGI_OUTPUT_DESC1* pSrc = &src )
+				return *( (OutputDescription1 *)pSrc ) ;
+		}
+	}
+	public static implicit operator DXGI_OUTPUT_DESC1( in OutputDescription1 src ) {
+		unsafe {
+			fixed ( OutputDescription1* pSrc = &src )
+				return *( (DXGI_OUTPUT_DESC1 *)pSrc ) ;
+		}
+	}
+} ;
+
+[CsWin32, EquivalentOf(typeof(SharedResource))]
 public partial struct DXGI_SHARED_RESOURCE {
 	public DXGI_SHARED_RESOURCE( HANDLE handle ) => Handle = handle ;
 	public DXGI_SHARED_RESOURCE( nint   handle ) => Handle = new( handle ) ;
@@ -18,7 +38,7 @@ public partial struct DXGI_SHARED_RESOURCE {
 } ;
 
 
-[EquivalentOf(typeof(QueryVideoMemoryInfo))]
+[CsWin32, EquivalentOf(typeof(QueryVideoMemoryInfo))]
 public partial struct DXGI_QUERY_VIDEO_MEMORY_INFO {
 	public DXGI_QUERY_VIDEO_MEMORY_INFO( ulong budget, ulong currentUsage, ulong availableForReservation, ulong currentReservation ) {
 		Budget = budget ;
@@ -35,7 +55,7 @@ public partial struct DXGI_QUERY_VIDEO_MEMORY_INFO {
 } ;
 
 
-[EquivalentOf(typeof(AdapterDescription3))]
+[CsWin32, EquivalentOf(typeof(AdapterDescription3))]
 public partial struct DXGI_ADAPTER_DESC3 {
 	public DXGI_ADAPTER_DESC3( uint vendorId, uint deviceId, uint subSysId, uint revision,
 								nuint dedicatedVideoMemory, nuint dedicatedSystemMemory, nuint sharedSystemMemory,
@@ -73,7 +93,7 @@ public partial struct DXGI_ADAPTER_DESC3 {
 } ;
 
 
-[EquivalentOf(typeof(HDRMetaDataHDR10))]
+[CsWin32, EquivalentOf(typeof(HDRMetaDataHDR10))]
 public partial struct DXGI_HDR_METADATA_HDR10
 {
 	public DXGI_HDR_METADATA_HDR10( ushort2 redPrimary, ushort2 greenPrimary, ushort2 bluePrimary, ushort2 whitePoint,
@@ -99,3 +119,4 @@ public partial struct DXGI_HDR_METADATA_HDR10
 			 src.MaxMasteringLuminance, src.MinMasteringLuminance,
 			 src.MaxContentLightLevel, src.MaxFrameAverageLightLevel ) ;
 }
+

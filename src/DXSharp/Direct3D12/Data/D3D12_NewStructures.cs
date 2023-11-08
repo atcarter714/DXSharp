@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS8629 // Nullable value type may be null.
 #region Using Directives
 using System.Buffers ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
@@ -1060,6 +1061,10 @@ public partial struct ShaderCacheSessionDescription {
 } ;
 
 
+/// <summary>
+/// An extended structure based on <see cref="SamplerDescription"/> which
+/// includes additional members for setting up a sampler feedback object.
+/// </summary>
 [EquivalentOf(typeof(D3D12_SAMPLER_DESC2))]
 public partial struct SamplerDescription2 {
 	public Filter Filter ;
@@ -1115,6 +1120,114 @@ public partial struct SamplerDescription2 {
 		Filter = filter ; AddressU = addressU ; AddressV = addressV ; AddressW = addressW ; 
 		MipLODBias = mipLODBias ; MaxAnisotropy = maxAnisotropy ; ComparisonFunc = comparisonFunc ; 
 		BorderColor = new( borderColor ) ; MinLOD = minLOD ; MaxLOD = maxLOD ; Flags = flags ;
+	}
+} ;
+
+
+/// <summary>Describes the root signature 1.1 layout of a descriptor table as a collection of descriptor ranges that are all relative to a single base descriptor handle.</summary>
+/// <remarks>
+/// <para>Samplers are not allowed in the same descriptor table as constant-buffer views (CBVs), unordered-access views (UAVs), and shader-resource views (SRVs).</para>
+/// <para><b>D3D12_ROOT_DESCRIPTOR_TABLE1</b> is the data type of the <b>DescriptorTable</b> member of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_root_parameter1">D3D12_ROOT_PARAMETER1</a>. Use a <b>D3D12_ROOT_DESCRIPTOR_TABLE1</b> when you set <b>D3D12_ROOT_PARAMETER1</b>'s <b>SlotType</b> member to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_root_parameter_type">D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE</a>.</para>
+/// <para>Refer to the helper structure <a href="https://docs.microsoft.com/windows/desktop/direct3d12/cd3dx12-root-descriptor-table1">CD3DX12_ROOT_DESCRIPTOR_TABLE1</a>.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_root_descriptor_table1#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_ROOT_DESCRIPTOR_TABLE1))]
+public unsafe partial struct RootDescriptorTable1 {
+	static RootDescriptorTable1( ) {
+#if DEBUG || DEV_BUILD
+		if ( SizeInBytes != sizeof( RootDescriptorTable1 ) )
+			throw new DXSharpException( $"Size of {nameof(RootDescriptorTable1)} " +
+										$"doesn't match expected value!" ) ;
+#endif
+	}
+	public const int SizeInBytes = sizeof(uint) + sizeof(long) ;
+	public static readonly uint MarshalSize =
+		(uint)Marshal.SizeOf< RootDescriptorTable1 >(  ) ;
+	// ------------------------------------------------------------------------------------
+	
+	/// <summary>The number of descriptor ranges in the table layout.</summary>
+	public uint NumDescriptorRanges ;
+
+	/// <summary>An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_descriptor_range1">D3D12_DESCRIPTOR_RANGE1</a> structures that describe the descriptor ranges.</summary>
+	public unsafe DescriptorRange1* pDescriptorRanges ;
+	
+	// ------------------------------------------------------------------------------------
+	
+	
+	/// <summary>
+	/// Gets an enumerable <see cref="Span{ DescriptorRange1 }"/>
+	/// over the memory pointed to by <see cref="pDescriptorRanges"/>.
+	/// </summary>
+	[UnscopedRef] public unsafe Span< DescriptorRange1 > DescriptorRanges =>
+		new( pDescriptorRanges, (int)NumDescriptorRanges ) ;
+	
+	// ------------------------------------------------------------------------------------
+	
+	public unsafe RootDescriptorTable1( uint numDescriptorRanges, DescriptorRange1* pDescriptorRanges ) {
+		NumDescriptorRanges = numDescriptorRanges ; this.pDescriptorRanges = pDescriptorRanges ;
+	}
+	public unsafe RootDescriptorTable1( uint numDescriptorRanges, nint pDescriptorRanges ) {
+		NumDescriptorRanges = numDescriptorRanges ;
+		this.pDescriptorRanges = (DescriptorRange1 *)pDescriptorRanges ;
+	}
+	
+	// ------------------------------------------------------------------------------------
+	
+	public static MemoryHandle CreateDescriptorRanges( out RootDescriptorTable1 table, 
+													   params DescriptorRange1[ ] data ) {
+		Memory< DescriptorRange1 > memory = data ;
+		var handle = memory.Pin( ) ;
+		
+		Unsafe.SkipInit( out table ) ;
+		table.NumDescriptorRanges = (uint)memory.Length ;
+		unsafe { table.pDescriptorRanges = (DescriptorRange1 *)handle.Pointer ; }
+		return handle ;
+	}
+	
+	// =====================================================================================
+} ;
+
+
+/// <summary>Describes a descriptor range, with flags to determine their volatility.</summary>
+/// <remarks>
+/// <para>This structure is a member of the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_root_descriptor_table1">D3D12_ROOT_DESCRIPTOR_TABLE1</a> structure.</para>
+/// <para>Refer to the helper structure <a href="https://docs.microsoft.com/windows/desktop/direct3d12/cd3dx12-descriptor-range1">CD3DX12_DESCRIPTOR_RANGE1</a>.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_descriptor_range1#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_DESCRIPTOR_RANGE1))]
+public partial struct DescriptorRange1 {
+	
+	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_descriptor_range_type">D3D12_DESCRIPTOR_RANGE_TYPE</a>-typed value that specifies the type of descriptor range.</summary>
+	public DescriptorRangeType RangeType ;
+
+	/// <summary>The number of descriptors in the range. Use -1 or UINT_MAX to specify unbounded size. Only the last entry in a table can have unbounded size.</summary>
+	public uint NumDescriptors ;
+
+	/// <summary>The base shader register in the range. For example, for shader-resource views (SRVs), 3 maps to ": register(t3);" in HLSL.</summary>
+	public uint BaseShaderRegister ;
+
+	/// <summary>
+	/// <para>The register space. Can typically be 0, but allows multiple descriptor  arrays of unknown size to not appear to overlap. For example, for SRVs, by extending the example in the <b>BaseShaderRegister</b> member description, 5 maps to ": register(t3,space5);" in HLSL.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_descriptor_range1#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	public uint RegisterSpace ;
+
+	/// <summary>Specifies the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_descriptor_range_flags">D3D12_DESCRIPTOR_RANGE_FLAGS</a> that determine descriptor and data volatility.</summary>
+	public DescriptorRangeFlags Flags ;
+
+	/// <summary>The offset in descriptors from the start of the root signature. This value can be <b>D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND</b>, which indicates this range should immediately follow the preceding range.</summary>
+	public uint OffsetInDescriptorsFromTableStart ;
+	
+	
+	public DescriptorRange1( DescriptorRangeType rangeType = default,
+							 uint numDescriptors = 1U,
+							 uint baseShaderRegister = 0U,
+							 uint registerSpace = 0U,
+							 DescriptorRangeFlags flags = DescriptorRangeFlags.None,
+							 uint offsetInDescriptorsFromTableStart = 0U ) {
+		RangeType = rangeType ; NumDescriptors = numDescriptors ; BaseShaderRegister = baseShaderRegister ; 
+		RegisterSpace = registerSpace ; Flags = flags ; 
+		OffsetInDescriptorsFromTableStart = offsetInDescriptorsFromTableStart ;
 	}
 } ;
 

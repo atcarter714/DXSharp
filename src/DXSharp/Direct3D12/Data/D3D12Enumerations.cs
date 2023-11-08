@@ -2557,3 +2557,34 @@ public enum MeasurementsAction {
 	/// <summary>Specifies that the optimization state should be reset; hinting that whatever has previously been measured no longer applies.</summary>
 	DiscardPrevious = 3,
 } ;
+
+
+/// <summary>Specifies the volatility of both descriptors and the data they reference in a Root Signature 1.1 description, which can enable some driver optimizations.</summary>
+/// <remarks>
+/// <para>This enum is used by the  <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_descriptor_range1">D3D12_DESCRIPTOR_RANGE1</a> structure. To specify the volatility of just the data referenced by descriptors, refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_root_descriptor_flags">D3D12_ROOT_DESCRIPTOR_FLAGS</a>.</para>
+/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_range_flags#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[Flags, EquivalentOf(typeof(D3D12_DESCRIPTOR_RANGE_FLAGS))]
+public enum DescriptorRangeFlags {
+	/// <summary>Default behavior. Descriptors are static, and default assumptions are made for data (for SRV/CBV: DATA_STATIC_WHILE_SET_AT_EXECUTE, and for UAV: DATA_VOLATILE).</summary>
+	None = 0x00000000,
+	/// <summary>
+	/// <para>If this is the only flag set, then descriptors are volatile and default assumptions are made about data
+	/// (for SRV/CBV: DATA_STATIC_WHILE_SET_AT_EXECUTE, and for UAV: DATA_VOLATILE). If this flag is combined with
+	/// DATA_VOLATILE, then both descriptors and data are volatile, which is equivalent to Root Signature Version 1.0.
+	/// If this flag is combined with DATA_STATIC_WHILE_SET_AT_EXECUTE, then descriptors are volatile. This still doesn’t
+	/// allow them to change during command list execution so it is valid to combine the additional declaration that data
+	/// is static while set via root descriptor table during execution – the underlying descriptors are effectively static
+	/// for longer than the data is being promised to be static.</para>
+	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_descriptor_range_flags#members">Read more on docs.microsoft.com</a>.</para>
+	/// </summary>
+	DescriptorsVolatile = 0x00000001,
+	/// <summary>Descriptors are static and the data is volatile.</summary>
+	DataVolatile = 0x00000002,
+	/// <summary>Descriptors are static and data is static while set at execute.</summary>
+	DataStaticWhileSetAtExecute = 0x00000004,
+	/// <summary>Both descriptors and data are static. This maximizes the potential for driver optimization.</summary>
+	DataStatic = 0x00000008,
+	/// <summary>Provides the same benefits as static descriptors (see **NONE**), except that the driver is not allowed to promote buffers to root descriptors as an optimization, because they must maintain bounds checks and root descriptors do not have those.</summary>
+	DescriptorsStaticKeepingBufferBoundsChecks = 0x00010000,
+} ;

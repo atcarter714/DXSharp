@@ -20,6 +20,7 @@ namespace DXSharp.Windows.Win32 {
 		
 		public readonly nint Value ;
 		public HWnd( nint value ) => Value = value ;
+		public bool IsNull => Value is 0x00000000 ;
 		
 		public static implicit operator nint( HWnd value ) => value.Value ;
 		public static implicit operator HWnd( nint value ) => new( value ) ;

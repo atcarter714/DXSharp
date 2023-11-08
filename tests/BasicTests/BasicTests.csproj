@@ -38,4 +38,9 @@
 	<ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="D3D12\" />
+    <Folder Include="DXGI\" />
+  </ItemGroup>
+
 </Project>
