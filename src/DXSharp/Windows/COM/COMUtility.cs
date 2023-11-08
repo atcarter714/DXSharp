@@ -270,8 +270,8 @@ public static class COMUtility {
 		where T: class, ID3D12Object => GetRCWObject( pUnknown ) as T ;
 
 	
-	public static TOut Cast< TIn, TOut >( TIn obj ) where TIn:  IDXCOMObject, IInstantiable
-													where TOut: TIn {
+	public static TOut? Cast< TIn, TOut >( TIn obj ) where TIn:  IDXCOMObject, IInstantiable
+													 where TOut: TIn {
 		var _wrapper = (IUnknownWrapper)obj ;
 		var _other = (TOut)TOut.Instantiate( _wrapper.BasePointer ) ;
 		return _other ;

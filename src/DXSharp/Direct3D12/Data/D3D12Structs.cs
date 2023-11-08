@@ -44,6 +44,9 @@ public struct Box {
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_COMMAND_QUEUE_DESC ) )]
 public struct CommandQueueDescription {
+	public static readonly CommandQueueDescription Default =
+		new( CommandListType.Direct, 0, CommandQueueFlags.None, 0 ) ;
+	
 	public CommandListType   Type ;
 	public int               Priority ;
 	public CommandQueueFlags Flags ;
@@ -58,6 +61,7 @@ public struct CommandQueueDescription {
 		Flags    = flags ;
 		NodeMask = nodeMask ;
 	}
+
 } ;
 
 
@@ -2105,149 +2109,6 @@ public struct RootSignatureDescription {
 		var serialized = Serialize( out var blob ) ;
 		return serialized ;
 	}
-} ;
-
-
-[StructLayout( LayoutKind.Sequential ),
- EquivalentOf( typeof( D3D12_ROOT_PARAMETER ) )]
-public struct RootParameter {
-	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_root_parameter_type">D3D12_ROOT_PARAMETER_TYPE</a>-typed value that  specifies the type of root signature slot. This member determines which type to use in the union below.</summary>
-	public RootParameterType ParameterType ;
-
-	public _rootParamUnion ReadAs ;
-
-	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_shader_visibility">D3D12_SHADER_VISIBILITY</a>-typed value that  specifies the shaders that can access the contents of the root signature slot.</summary>
-	public ShaderVisibility ShaderVisibility ;
-
-	[StructLayout( LayoutKind.Explicit )]
-	public partial struct _rootParamUnion {
-		[FieldOffset( 0 )] public RootDescriptorTable DescriptorTable ;
-		[FieldOffset( 0 )] public RootConstants Constants ;
-		[FieldOffset( 0 )] public RootDescriptor Descriptor ;
-	}
-} ;
-
-
-[StructLayout( LayoutKind.Sequential ),
- EquivalentOf( typeof( D3D12_ROOT_DESCRIPTOR_TABLE ) )]
-public struct RootDescriptorTable {
-	/// <summary>The number of ranges in the descriptor table.</summary>
-	public uint NumDescriptorRanges ;
-
-	/// <summary>
-	/// An array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_descriptor_range">D3D12_DESCRIPTOR_RANGE</a>
-	/// structures that describe the descriptor ranges.
-	/// </summary>
-	public unsafe D3D12_DESCRIPTOR_RANGE* pDescriptorRanges ;
-} ;
-
-
-[StructLayout( LayoutKind.Sequential ),
- EquivalentOf( typeof( D3D12_ROOT_CONSTANTS ) )]
-public struct RootConstants {
-	/// <summary>The shader register that contains the constants.</summary>
-	public uint ShaderRegister ;
-
-	/// <summary>The register space. This is typically 0.</summary>
-	public uint RegisterSpace ;
-
-	/// <summary>
-	/// <para>The number of constants that occupy a single shader slot (these constants appear like a single constant buffer). All constants occupy a single root signature bind slot.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_root_constants#members">Read more on docs.microsoft.com</a>.</para>
-	/// </summary>
-	public uint Num32BitValues ;
-} ;
-	
-
-[StructLayout( LayoutKind.Sequential ),
- EquivalentOf( typeof( D3D12_ROOT_DESCRIPTOR ) )]
-public struct RootDescriptor {
-	/// <summary>The shader register.</summary>
-	public uint ShaderRegister;
-
-	/// <summary>The register space.</summary>
-	public uint RegisterSpace;
-} ;
-
-
-[StructLayout(LayoutKind.Sequential),
- EquivalentOf(typeof(D3D12_STATIC_SAMPLER_DESC))]
-public struct StaticSamplerDescription {
-	/// <summary>The filtering method to use when sampling a texture, as a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_filter">D3D12_FILTER</a> enumeration constant.</summary>
-	public Filter Filter ;
-
-	/// <summary>Specifies the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">D3D12_TEXTURE_ADDRESS_MODE</a> mode to use for resolving a <i>u</i> texture coordinate that is outside the 0 to 1 range.</summary>
-	public TextureAddressMode AddressU ;
-
-	/// <summary>Specifies the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">D3D12_TEXTURE_ADDRESS_MODE</a> mode to use for resolving a <i>v</i> texture coordinate that is outside the 0 to 1 range.</summary>
-	public TextureAddressMode AddressV ;
-
-	/// <summary>Specifies the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_texture_address_mode">D3D12_TEXTURE_ADDRESS_MODE</a> mode to use for resolving a <i>w</i> texture coordinate that is outside the 0 to 1 range.</summary>
-	public TextureAddressMode AddressW ;
-
-	/// <summary>Offset from the calculated mipmap level. For example, if Direct3D calculates that a texture should be sampled at mipmap level 3 and MipLODBias is 2, then the texture will be sampled at mipmap level 5.</summary>
-	public float MipLODBias ;
-
-	/// <summary>Clamping value used if D3D12_FILTER_ANISOTROPIC or D3D12_FILTER_COMPARISON_ANISOTROPIC is specified as the filter. Valid values are between 1 and 16.</summary>
-	public uint MaxAnisotropy ;
-
-	/// <summary>
-	/// <para>A function that compares sampled data against existing sampled data. The function options are listed in <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_comparison_func">D3D12_COMPARISON_FUNC</a>.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_static_sampler_desc#members">Read more on docs.microsoft.com</a>.</para>
-	/// </summary>
-	public ComparisonFunction ComparisonFunc ;
-
-	/// <summary>
-	/// <para>One member of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_static_border_color">D3D12_STATIC_BORDER_COLOR</a>, the border color to use if D3D12_TEXTURE_ADDRESS_MODE_BORDER is specified for AddressU, AddressV, or AddressW. Range must be between 0.0 and 1.0 inclusive.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_static_sampler_desc#members">Read more on docs.microsoft.com</a>.</para>
-	/// </summary>
-	public StaticBorderColor BorderColor ;
-
-	/// <summary>Lower end of the mipmap range to clamp access to, where 0 is the largest and most detailed mipmap level and any level higher than that is less detailed.</summary>
-	public float MinLOD ;
-
-	/// <summary>Upper end of the mipmap range to clamp access to, where 0 is the largest and most detailed mipmap level and any level higher than that is less detailed. This value must be greater than or equal to MinLOD. To have no upper limit on LOD set this to a large value such as D3D12_FLOAT32_MAX.</summary>
-	public float MaxLOD ;
-
-	/// <summary>
-	/// <para>The <i>ShaderRegister</i> and <i>RegisterSpace</i> parameters correspond to the binding syntax of HLSL.  For example, in HLSL:</para>
-	/// <para></para>
-	/// <para>This doc was truncated.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_static_sampler_desc#members">Read more on docs.microsoft.com</a>.</para>
-	/// </summary>
-	public uint ShaderRegister ;
-
-	/// <summary>
-	/// <para>See the description for <i>ShaderRegister</i>. Register space is optional; the default register space is 0.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_static_sampler_desc#members">Read more on docs.microsoft.com</a>.</para>
-	/// </summary>
-	public uint RegisterSpace ;
-
-	/// <summary>Specifies the visibility of the sampler to the pipeline shaders, one member of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_shader_visibility">D3D12_SHADER_VISIBILITY</a>.</summary>
-	public ShaderVisibility ShaderVisibility ;
-}
-
-
-[StructLayout( LayoutKind.Sequential ),
- EquivalentOf( typeof( D3D12_DESCRIPTOR_RANGE ) )]
-public struct DescriptorRange {
-	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_descriptor_range_type">D3D12_DESCRIPTOR_RANGE_TYPE</a>-typed value that specifies the type of descriptor range.</summary>
-	public DescriptorRangeType RangeType ;
-
-	/// <summary>The number of descriptors in the range. Use -1 or UINT_MAX to specify an unbounded size. If a given descriptor range is unbounded, then it must either be the last range in the table definition, or else the following range in the table definition must have a value for *OffsetInDescriptorsFromTableStart* that is not [D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND]().</summary>
-	public uint NumDescriptors ;
-
-	/// <summary>The base shader register in the range. For example, for shader-resource views (SRVs), 3 maps to ": register(t3);" in HLSL.</summary>
-	public uint BaseShaderRegister ;
-
-	/// <summary>
-	/// <para>The register space. Can typically be 0, but allows multiple descriptor  arrays of unknown size to not appear to overlap. For example, for SRVs, by extending the example in the <b>BaseShaderRegister</b> member description, 5 maps to ": register(t3,space5);" in HLSL.</para>
-	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_descriptor_range#members">Read more on docs.microsoft.com</see>.</para>
-	/// </summary>
-	public uint RegisterSpace ;
-
-	/// <summary>The offset in descriptors, from the start of the descriptor table which was set as the root argument value for this parameter slot. This value can be <b>D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND</b>, which indicates this range should immediately follow the preceding range.</summary>
-	public uint OffsetInDescriptorsFromTableStart ;
 } ;
 
 

@@ -1845,9 +1845,7 @@ public interface IDevice5: IDevice4 {
 /// </summary>
 /// <remarks>Defines the <see cref="SetBackgroundProcessingMode"/> method.</remarks>
 [ProxyFor( typeof( ID3D12Device6 ) )]
-public interface IDevice6: IDevice5,
-						   IComObjectRef< ID3D12Device6 >,
-						   IUnknownWrapper< ID3D12Device6 > {
+public interface IDevice6: IDevice5 {
 	
 	/// <summary>Sets the mode for driver background processing optimizations.</summary>
 	/// <param name="Mode">

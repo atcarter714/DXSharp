@@ -148,6 +148,9 @@ ID3D12PipelineLibrary
 ID3D12Resource1
 ID3D12Resource2
 
+ID3D12VersionedRootSignatureDeserializer
+
+
 // Win32 API Stuff:
 GetClientRect
 PeekMessage

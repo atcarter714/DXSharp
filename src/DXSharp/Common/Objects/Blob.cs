@@ -1,10 +1,18 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
+using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D ;
 using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp ;
 
 
+/// <summary>
+/// The <see cref="IBlob"/> interface is used by Windows and Direct3D to return data of arbitrary shape and length.
+/// </summary>
+[Wrapper(typeof(ID3DBlob))]
 internal class Blob: DisposableObject,
 					 IBlob,
 					 IComObjectRef< ID3DBlob >, 
@@ -61,4 +69,16 @@ internal class Blob: DisposableObject,
 	public unsafe void* GetBufferPointer( ) => ComObject!.GetBufferPointer( ) ;
 	
 	public nuint GetBufferSize( ) => ComObject!.GetBufferSize( ) ;
+	
+	
+	public static Type ComType => typeof( ID3DBlob ) ;
+	static ref readonly Guid IComIID.Guid {
+		[MethodImpl( MethodImplOptions.AggressiveInlining )]
+		get {
+			ReadOnlySpan< byte > data = typeof(ID3DBlob).GUID
+														.ToByteArray( ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference(data) ) ;
+		}
+	}
 } ;

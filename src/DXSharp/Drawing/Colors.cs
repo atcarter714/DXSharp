@@ -37,6 +37,7 @@ public struct RGB8 {
 	#endregion
 } ;
 
+
 [StructLayout(LayoutKind.Sequential)]
 public struct RGB {
  	public float Red, Green, Blue ;

@@ -1231,3 +1231,50 @@ public partial struct DescriptorRange1 {
 	}
 } ;
 
+
+/// <summary>Describes a static sampler.</summary>
+[EquivalentOf(typeof(D3D12_STATIC_SAMPLER_DESC1))]
+public partial struct StaticSamplerDescription1 {
+	public Filter Filter ;
+	public TextureAddressMode AddressU ;
+	public TextureAddressMode AddressV ;
+	public TextureAddressMode AddressW ;
+
+	public float MipLODBias ;
+	public uint MaxAnisotropy ;
+
+	public ComparisonFunction ComparisonFunc ;
+	public StaticBorderColor BorderColor ;
+
+	public float MinLOD ;
+	public float MaxLOD ;
+	public uint ShaderRegister ;
+	public uint RegisterSpace ;
+	
+	public ShaderVisibility ShaderVisibility ;
+	public SamplerFlags Flags ;
+	
+	
+	public StaticSamplerDescription1( Filter             filter           = Filter.MinMagMipPoint,
+									  TextureAddressMode addressU         = TextureAddressMode.Clamp,
+									  TextureAddressMode addressV         = TextureAddressMode.Clamp,
+									  TextureAddressMode addressW         = TextureAddressMode.Clamp,
+									  float              mipLODBias       = 0.0f,
+									  uint               maxAnisotropy    = 0x00U,
+									  ComparisonFunction comparisonFunc   = ComparisonFunction.Never,
+									  StaticBorderColor  borderColor      = StaticBorderColor.TransparentBlack,
+									  float              minLOD           = 0.0f,
+									  float              maxLOD           = float.MaxValue,
+									  uint               shaderRegister   = 0x00U,
+									  uint               registerSpace    = 0x00U,
+									  ShaderVisibility   shaderVisibility = ShaderVisibility.All,
+									  SamplerFlags       flags            = SamplerFlags.None ) {
+		Filter = filter ; AddressU = addressU ; AddressV = addressV ; AddressW = addressW ; 
+		MipLODBias = mipLODBias ; MaxAnisotropy = maxAnisotropy ; ComparisonFunc = comparisonFunc ; 
+		BorderColor = borderColor ; MinLOD = minLOD ; MaxLOD = maxLOD ; 
+		ShaderRegister = shaderRegister ; RegisterSpace = registerSpace ; 
+		ShaderVisibility = shaderVisibility ; Flags = flags ;
+	}
+	
+	
+} ;

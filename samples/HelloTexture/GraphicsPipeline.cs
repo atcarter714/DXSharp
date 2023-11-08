@@ -79,18 +79,19 @@ public class GraphicsPipeline: DXGraphics {
 		if( _factory is null ) throw new DXSharpException($"Failed to create DXGI factory! (hr = {hr})") ;
 		_setDBGName( _DBGName_Factory, _factory ) ;
 #endif
-		
 		// Get the best GPU:
 		using var adapter = _getBestGPU( _factory ) ;
-		_factory.DisposeAsync( ) ;
 		
 		// Create the D3D12 device:
 		var device = D3D12.CreateDevice< IDevice10 >( adapter, FeatureLevel.D3D12_0 ) ;
-		
+		if ( device is null ) throw new DXSharpException( $"Failed to create {nameof(IDevice10)}!" ) ;
+		else Add( device ) ;
 		
 		// Describe & create the command queue:
-		CommandQueueDescription queueDesc = new( CommandListType.Direct ) ;
-		device.CreateCommandQueue( queueDesc, ICommandQueue.IID, out ICommandQueue? cmdQueue ) ;
+		device.CreateCommandQueue( CommandQueueDescription.Default,
+								   ICommandQueue.IID, out ICommandQueue? cmdQueue ) ;
+		if( cmdQueue is null ) throw new DXSharpException( "Failed to create command queue!" ) ;
+		else Add( cmdQueue ) ;
 		
 		// Describe the swap chain:
 		var swapChainDesc = new SwapChainDescription1 {
@@ -109,17 +110,24 @@ public class GraphicsPipeline: DXGraphics {
 		
 		// Create the swapchain:
 		_factory.CreateSwapChainForHwnd( cmdQueue, _wnd, swapChainDesc, swapchainFSDesc, 
-										 null, out ISwapChain1? swapChain ) ;
+										 null, out var swapChain1 ) ;
+		var swapChain = COMUtility.Cast< ISwapChain1, ISwapChain4 >( swapChain1 ) ;
+		if( swapChain is null ) throw new DXSharpException( "Failed to create swap chain!" ) ;
+		else Add( swapChain ) ;
+		swapChain1?.DisposeAsync( ) ;
 		
+		
+		// Set the window association flags:
 		_factory.MakeWindowAssociation( _wnd, WindowAssociation.NoAltEnter ) ;
 		
 		// Create the descriptor heaps:
 		uint frameCount  = _settings.BufferCount ;
 		DescriptorHeapDescription rtvHeapDesc = new( DescriptorHeapType.RTV, frameCount ) ;
 		device.CreateDescriptorHeap( rtvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? rtvHeap ) ;
-		if(rtvHeap is null ) throw new DXSharpException( "Failed to create RTV descriptor heap!" ) ;
+		if( rtvHeap is null ) throw new DXSharpException( "Failed to create RTV descriptor heap!" ) ;
 		
-		DescriptorHeapDescription dsvHeapDesc = new( DescriptorHeapType.CBV_SRV_UAV, 1, 
+		DescriptorHeapDescription dsvHeapDesc = new( DescriptorHeapType.CBV_SRV_UAV,
+													 1, 
 													 DescriptorHeapFlags.ShaderVisible ) ;
 		device.CreateDescriptorHeap( dsvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? dsvHeap ) ;
 		
@@ -134,6 +142,7 @@ public class GraphicsPipeline: DXGraphics {
 		}
 		
 		static IAdapter4? _getBestGPU( IFactory7 factory ) {
+			List< IAdapter1 > adapters = new( ) ;
 			IAdapter4? bestAdapter = null ;
 			ulong maxVRAM = 0 ;
 			
@@ -145,7 +154,16 @@ public class GraphicsPipeline: DXGraphics {
 				if( hr == HResult.DXGI_ERROR_NOT_FOUND || _adapter is null ) break ;
 				else hr.ThrowOnFailure( ) ;
 				
+				adapters.Add( _adapter ) ;
 				var adapter = COMUtility.Cast< IAdapter1, IAdapter4 >( _adapter ) ;
+				if ( adapter is null ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+					throw new DXSharpException( $"Failed to cast " +
+												$"{nameof(IAdapter1)} to " +
+												$"{nameof(IAdapter4)}!" ) ;
+#endif
+					continue ;
+				}
 				
 				adapter.GetDesc3( out var _desc ) ;
 				
@@ -159,6 +177,7 @@ public class GraphicsPipeline: DXGraphics {
 					bestAdapter = (IAdapter4)adapter ;
 				}
 			}
+			foreach ( var adapter in adapters ) adapter.Dispose( ) ;
 			return bestAdapter ;
 		}
 	}

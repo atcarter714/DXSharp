@@ -757,7 +757,7 @@ public partial struct D3D12_SHADER_CACHE_SESSION_DESC {
 	}
 } ;
 
-
+[CsWin32, EquivalentOf( typeof( ResourceDescription1 ))]
 public partial struct D3D12_RESOURCE_DESC1 {
 	public static implicit operator D3D12_RESOURCE_DESC1( in ResourceDescription1 desc1 ) {
 		unsafe {
@@ -776,6 +776,7 @@ public partial struct D3D12_RESOURCE_DESC1 {
 } ;
 
 
+[CsWin32, EquivalentOf( typeof( DescriptorRange1 ) )]
 public partial struct D3D12_DESCRIPTOR_RANGE1 {
 	public static implicit operator D3D12_DESCRIPTOR_RANGE1( in DescriptorRange1 desc1 ) {
 		unsafe {
@@ -788,6 +789,25 @@ public partial struct D3D12_DESCRIPTOR_RANGE1 {
 		unsafe {
 			fixed ( D3D12_DESCRIPTOR_RANGE1* ptr = &desc1 ) {
 				return *(DescriptorRange1*)ptr ;
+			}
+		}
+	}
+} ;
+
+
+[CsWin32, EquivalentOf( typeof( StaticSamplerDescription1 ) )]
+public partial struct D3D12_STATIC_SAMPLER_DESC1 {
+	public static implicit operator D3D12_STATIC_SAMPLER_DESC1( in StaticSamplerDescription1 desc1 ) {
+		unsafe {
+			fixed ( StaticSamplerDescription1* ptr = &desc1 ) {
+				return *(D3D12_STATIC_SAMPLER_DESC1*)ptr ;
+			}
+		}
+	}
+	public static implicit operator StaticSamplerDescription1( in D3D12_STATIC_SAMPLER_DESC1 desc1 ) {
+		unsafe {
+			fixed ( D3D12_STATIC_SAMPLER_DESC1* ptr = &desc1 ) {
+				return *(StaticSamplerDescription1*)ptr ;
 			}
 		}
 	}

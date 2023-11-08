@@ -77,7 +77,7 @@ public interface IDXGraphics: IDisposable, IAsyncDisposable {
 	}
 	public void Add( MemoryHandle handle ) => AllocatedHandles.Push( handle ) ;
 	public void Add( IDisposable disposable ) => Disposables.Push( disposable ) ;
-	public void Add< T >( IDXCOMObject obj ) where T: IUnknown => PipelineObjects.Push( obj ) ;
+	public void Add( IDXCOMObject obj ) => PipelineObjects.Push( obj ) ;
 	public void Add< T >( IUnknownWrapper< T > obj ) where T: IUnknown => PipelineObjects.Push( (obj as IDXCOMObject)! ) ;
 	
 	// ----------------------------------------------------------------------------------
@@ -239,7 +239,7 @@ public class DXGraphics: DisposableObject, IDXGraphics {
 		PipelineObjects.Push( (IDXCOMObject) obj ) ;
 	}
 	
-	public void Add< T >( IDXCOMObject obj ) where T: IUnknown {
+	public void Add( IDXCOMObject obj ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 			ArgumentNullException.ThrowIfNull( obj, nameof(obj) ) ;
 #endif
@@ -262,13 +262,13 @@ public class DXGraphics: DisposableObject, IDXGraphics {
 		PipelineObjects.Push( obj ) ;
 	}
 	
-	
 	public void Add( IDisposable disposable ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 			ArgumentNullException.ThrowIfNull( disposable, nameof(disposable) ) ;
 #endif
 		Disposables.Push( disposable ) ;
 	}
+	
 	
 	public TItem? Find< TItem >( ) where TItem: IDXCOMObject? {
 #if DEBUG || DEBUG_COM || DEV_BUILD
