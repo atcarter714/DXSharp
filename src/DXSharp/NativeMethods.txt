@@ -93,6 +93,7 @@ D3D12_FEATURE_DATA_QUERY_META_COMMAND
 D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPE_COUNT
 D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPES
 
+IUnknown
 
 // D3D12 Interfaces:
 ID3D12Device
@@ -126,6 +127,7 @@ IDXGISwapChain1
 IDXGISwapChain2
 IDXGISwapChain3
 IDXGISwapChain4
+ID3D12SwapChainAssistant
 
 ID3D12ShaderCacheSession
 
@@ -249,47 +251,6 @@ D3D12_FEATURE_DATA_ARCHITECTURE
 D3D12_FEATURE_DATA_ARCHITECTURE1
 D3D12_FEATURE_DATA_CROSS_NODE
 
-// ------------------------------------------
-// DXC, DXIL & Shader Compilation Items
-// ------------------------------------------
-D3dcompiler_47.*
-
-IDxcBlob
-IDxcBlobEncoding
-IDxcBlobUtf8
-IDxcBlobUtf16
-IDxcCompiler
-IDxcCompiler2
-IDxcCompiler3
-IDxcCompilerArgs
-IDxcAssembler
-IDxcContainerBuilder
-IDxcContainerReflection
-IDxcExtraOutputs
-IDxcIncludeHandler
-IDxcLibrary
-IDxcLinker
-IDxcOperationResult
-IDxcOptimizer
-IDxcOptimizerPass
-IDxcResult
-IDxcUtils
-IDxcValidator
-IDxcValidator2
-IDxcVersionInfo
-IDxcVersionInfo2
-IDxcVersionInfo3
-DxcArgPair
-DxcShaderHash
-DxcBuffer
-
-Dxc*
-DXC_*
-DXC_OUT_KIND
-
-GetProcAddress
-DxcCreateInstance
-Dxc*
 
 IDXGIKeyedMutex
 ID3D12DebugCommandList

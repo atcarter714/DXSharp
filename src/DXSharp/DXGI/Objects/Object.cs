@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Dxgi ;
-using DXSharp.Objects ;
 using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.DXGI ;
@@ -17,7 +16,7 @@ internal abstract class Object: DXComObject,
 	//! ---------------------------------------------------------------------------------
 	
 	ComPtr< IDXGIObject >? _comPtr ;
-	public override ComPtr? ComPointer =>
+	public override ComPtr< IDXGIObject >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIObject >( )! ;
 	
 	public virtual IDXGIObject? ComObject => (IDXGIObject)ComPointer?.InterfaceObjectRef! ;

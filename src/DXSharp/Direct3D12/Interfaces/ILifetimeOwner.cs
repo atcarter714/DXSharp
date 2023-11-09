@@ -45,7 +45,7 @@ internal class LifetimeOwner: DisposableObject,
 	ComPtr< ID3D12LifetimeOwner >? _comPtr ;
 	public ComPtr< ID3D12LifetimeOwner >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer<ID3D12LifetimeOwner>( ) ;
-	ComPtr? IUnknownWrapper< ID3D12LifetimeOwner >.ComPointer => ComPointer ;
+	//ComPtr? IUnknownWrapper< ID3D12LifetimeOwner >.ComPointer => ComPointer ;
 
 	public ComPtr? ComPtrBase => ComPointer ;
 	
@@ -71,6 +71,8 @@ internal class LifetimeOwner: DisposableObject,
 		_comPtr = new( comObject ) ;
 		_initOrAdd( _comPtr ) ;
 	}
+
+	~LifetimeOwner( ) => Dispose( false ) ;
 
 	void _initOrAdd( ComPtr< ID3D12LifetimeOwner > comPtr ) {
 		ArgumentNullException.ThrowIfNull( comPtr, nameof(comPtr) ) ;

@@ -20,7 +20,7 @@ internal class DecodeSwapChain: DisposableObject,
 	}
 
 	protected ComPtr< IDXGIDecodeSwapChain >? _comptr ;
-	public virtual ComPtr? ComPointer => _comptr ??= ComResources?.GetPointer< IDXGIDecodeSwapChain >( ) ;
+	public virtual ComPtr< IDXGIDecodeSwapChain >? ComPointer => _comptr ??= ComResources?.GetPointer< IDXGIDecodeSwapChain >( ) ;
 	public virtual ComPtr? ComPtrBase => this.ComPointer ;
 
 	public virtual IDXGIDecodeSwapChain? ComObject =>

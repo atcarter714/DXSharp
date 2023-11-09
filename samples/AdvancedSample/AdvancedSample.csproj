@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <!-- Common Project Properties :: -->
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>AdvancedDXS</RootNamespace>
+        <ApplicationIcon>Assets\DXSharp_ICON_256.ico</ApplicationIcon>
+        <Product>Advanced DXSharp Sample</Product>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <FileVersion>1.0.0</FileVersion>
+    </PropertyGroup>
+    
+    
+    <!-- Debug/Release Configurations :: -->
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <DefineConstants>TRACE, DEBUG_COM, DEV_BUILD</DefineConstants>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <DefineConstants>TRACE, STRIP_CHECKS, DXS_FAST</DefineConstants>
+    </PropertyGroup>
+    
+    
+    <!-- References :: -->
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\DXSharp.Dxc\DXSharp.Dxc.csproj" />
+        <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -46,7 +46,7 @@ internal class Factory: Object,
 						IUnknownWrapper< IDXGIFactory > {
 	// -----------------------------------------------------------------------------------
 	ComPtr< IDXGIFactory >? _comPointer ;
-	public override ComPtr< IDXGIFactory >? ComPointer => 
+	public virtual ComPtr< IDXGIFactory >? ComPointer => 
 		_comPointer ??= ComResources?.GetPointer< IDXGIFactory >( ) ;
 	
 	public override IDXGIFactory? ComObject => ComPointer?.Interface ;
@@ -412,7 +412,8 @@ internal class Factory3: Factory2,
 
 	// -------------------------------------------------------------------------------------
 	
-	public uint GetCreationFlags( ) => ComObject!.GetCreationFlags( ) ;
+	public FactoryCreateFlags GetCreationFlags( ) =>
+		(FactoryCreateFlags)ComObject!.GetCreationFlags( ) ;
 	
 	// -------------------------------------------------------------------------------------
 	public new static Type ComType => typeof( IDXGIFactory3 ) ;

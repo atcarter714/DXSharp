@@ -31,7 +31,7 @@ internal class Adapter: Object,
 	// ---------------------------------------------------------------------------------
 
 	ComPtr< IDXGIAdapter >? _comPtr ;
-	public override ComPtr< IDXGIAdapter >? ComPointer =>
+	public new virtual ComPtr< IDXGIAdapter >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter >( )! ;
 	
 	public override IDXGIAdapter? ComObject => ComPointer?.Interface ;

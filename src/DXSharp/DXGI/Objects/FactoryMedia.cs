@@ -23,7 +23,7 @@ internal class FactoryMedia: DisposableObject,
 	}
 
 	protected ComPtr< IDXGIFactoryMedia >? _comptr ;
-	public virtual ComPtr? ComPointer => _comptr ??= ComResources?.GetPointer< IDXGIFactoryMedia >( ) ;
+	public virtual ComPtr< IDXGIFactoryMedia >? ComPointer => _comptr ??= ComResources?.GetPointer< IDXGIFactoryMedia >( ) ;
 	public virtual ComPtr? ComPtrBase => this.ComPointer ;
 
 	public virtual IDXGIFactoryMedia? ComObject =>

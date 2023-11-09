@@ -1,9 +1,14 @@
 ﻿#region Using Directives
+
+using System.Buffers ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Collections.Concurrent ;
+using Windows.Win32.System.Com ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
+using IUnknown = DXSharp.Windows.COM.IUnknown ;
+
 #endregion
 namespace DXSharp ;
 
@@ -102,5 +107,32 @@ public static class InteropUtils {
 		int threadID = Environment.CurrentManagedThreadId ;
 		return LastHResults.TryGetValue( threadID, out var hr ) 
 				   ? hr : null ;
+	}
+
+	
+	public static unsafe nint CreateNativeInst< T >( T inst ) where T: IUnknown {
+		var pHeap = Marshal.AllocCoTaskMem( sizeof(nint **) ) ;
+		Marshal.GetNativeVariantForObject( inst, pHeap ) ;
+		
+		try {
+			var pInst = *( (IUnknownUnsafe *)pHeap ) ;
+			return pHeap ;
+		}
+		catch ( Exception e ) {
+			throw new DXSharpException( $"{nameof(InteropUtils)} :: " +
+										$"Cannot create the requested instance of {nameof(T)}!", e ) ;
+		}
+	}
+	
+	
+	public static unsafe nint GetManagedAddress< T >( T inst,
+														out MemoryHandle handle ) where T: class {
+		var managedAddr = (nint)Unsafe.AsPointer( ref inst ) ;
+		handle = new( (void *)managedAddr ) ;
+		return managedAddr ;
+		/*GCHandle gcHandle = GCHandle.Alloc( inst, GCHandleType.WeakTrackResurrection ) ;
+		nint ptr    =  gcHandle.AddrOfPinnedObject( ) ;
+		handle  =   new( (void *)ptr, gcHandle ) ;
+		return ptr ;*/
 	}
 } ;

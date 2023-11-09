@@ -89,6 +89,8 @@ public interface IDXCOMObject: IComIID,
 	/// </remarks>
 	HResult SetPrivateDataInterface< T >( in Guid name, in T? pUnknown ) where T: IDXCOMObject ;
 	
+	uint AddRef( ) ;
+	uint Release( ) ;
 	
 	// ----------------------------------------------------------
 	// Static Properties:

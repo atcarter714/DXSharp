@@ -82,7 +82,10 @@ internal class CommandQueue: Pageable,
 		unsafe {
 			var resource = (Resource) pResource ;
 			fixed ( void* pRegionStartCoords = &pResourceRegionStartCoordinates[0],
-						  pRegionSizes = &pResourceRegionSizes[0], pFlags = &pRangeFlags[0] ) {
+							pRangeStartOffsets = &pHeapRangeStartOffsets[0],
+						  pRegionSizes = &pResourceRegionSizes[0],
+						 pTileCounts = &pRangeTileCounts[0],
+						pFlags = &pRangeFlags[0] ) {
 				cmdQueue.UpdateTileMappings( resource.ComObject,
 											 NumResourceRegions,
 											 (D3D12_TILED_RESOURCE_COORDINATE *)pRegionStartCoords,
@@ -90,8 +93,8 @@ internal class CommandQueue: Pageable,
 											 heap.ComObject,
 											 NumRanges, 
 											 (D3D12_TILE_RANGE_FLAGS *)pFlags,
-											 pHeapRangeStartOffsets, 
-											 pRangeTileCounts,
+											 (uint *)pRangeStartOffsets,
+											 (uint *)pTileCounts,
 											 (D3D12_TILE_MAPPING_FLAGS)flags ) ;
 			}
 		}

@@ -9,7 +9,7 @@ using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 using static DXSharp.InteropUtils ;
 #endregion
-namespace DXSharp.Objects ;
+namespace DXSharp ;
 
 
 [Wrapper(typeof(IUnknown))]
@@ -31,29 +31,48 @@ internal abstract class DXComObject: DisposableObject,
 	public virtual ComPtr? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IUnknown >( )! ;
 	
-	
 	public virtual IUnknown? ComObject =>
 		(IUnknown)ComPointer?.InterfaceObjectRef! ;
 	
 	//! ---------------------------------------------------------------------------------
+
+	public uint AddRef( ) {
+		var comObj = this.ComPtrBase?.InterfaceObjectRef as IUnknown ;
+		if( comObj is null ) return 0 ;
+		
+		if( comObj is IDXGIObject dxgiObj ) 
+			return dxgiObj.AddRef( ) ;
+		if( comObj is ID3D12Object d3d12Obj ) 
+			return d3d12Obj.AddRef( ) ;
+		
+		return comObj.AddRef( ) ;
+
+		/*unsafe {
+			var pUnk = ComObject ;
+			var vtblPtr = (delegate *unmanaged [Stdcall]< IUnknown*, uint >)
+				( ComPointer as ComPtr< IUnknown > )!
+					.GetVTableMethod< IUnknown >( 1 ) ;
+			return vtblPtr( (IUnknown *)Unsafe.AsPointer( ref pUnk ) ) ;
+		}*/
+		
+		// NOTE: CsWin32 implements it like this in a struct definition:
+		// return
+		//	 ( (delegate *unmanaged [Stdcall]<global::Windows.Win32.System.Com.IUnknown*, uint>)
+		//	 	lpVtbl[ 1 ] )( (global::Windows.Win32.System.Com.IUnknown*)Unsafe.AsPointer( ref this ) ) ;
+	}
 	
-	//! IDisposable:
-	protected override async ValueTask DisposeUnmanaged( ) {
-		if( _comPtr is not null )
-			await _comPtr.DisposeAsync( ) ;
+	public uint Release( ) {
+		var comObj = this.ComPtrBase?.InterfaceObjectRef as IUnknown ;
+		if( comObj is null ) return 0 ;
+		
+		if( comObj is IDXGIObject dxgiObj ) 
+			return dxgiObj.Release( ) ;
+		if( comObj is ID3D12Object d3d12Obj ) 
+			return d3d12Obj.Release( ) ;
+		
+		return comObj.Release( ) ;
 	}
-	protected override void Dispose( bool disposing ) {
-		base.Dispose( disposing ) ;
-		if( disposing ) 
-			DisposeManaged( ) ;
-		DisposeUnmanaged( ) ;
-	}
-	public override async ValueTask DisposeAsync( ) {
-		await base.DisposeAsync( ) ;
-		await Task.Run( Dispose ) ;
-	}
-	
-	// ----------------------------------------------------------------------------------
+
 	
 	public HResult GetPrivateData( in Guid name, ref uint pDataSize, nint pData = 0x0000 ) {
 		// Obtain interface references:
@@ -141,6 +160,27 @@ internal abstract class DXComObject: DisposableObject,
 		return hr ;
 	}
 	
+	//! ---------------------------------------------------------------------------------
+	//! IDisposable:
+	~DXComObject( ) => Dispose( false ) ;
+	
+	protected override async ValueTask DisposeUnmanaged( ) {
+		if( _comPtr is not null )
+			await _comPtr.DisposeAsync( ) ;
+	}
+	protected override void Dispose( bool disposing ) {
+		base.Dispose( disposing ) ;
+		if( disposing ) 
+			DisposeManaged( ) ;
+		
+#pragma warning disable CS4014
+		DisposeUnmanaged( ) ;
+#pragma warning restore CS4014
+	}
+	public override async ValueTask DisposeAsync( ) {
+		await base.DisposeAsync( ) ;
+		await Task.Run( Dispose ) ;
+	}
 	//! ---------------------------------------------------------------------------------
 	public static Type ComType => typeof(IUnknown) ;
 	public static ref readonly Guid Guid {

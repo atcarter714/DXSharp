@@ -2,7 +2,7 @@
   "$schema": "https://aka.ms/CsWin32.schema.json",
   "emitSingleFile": false,
   "public": true,
-
+  
   "comInterop": {
     "preserveSigMethods": [
       "IDXGIFactory.EnumAdapters",
@@ -15,7 +15,10 @@
       "IDXGISwapChain3.ResizeBuffers1",
       "IDXGIOutputDuplication.GetFrameDirtyRects",
       "IDXGIOutputDuplication.GetFrameMoveRects",
-      "IDXGIDevice.GetAdapter"
+      "IDXGIDevice.GetAdapter",
+      "IUnknown.QueryInterface",
+      "IUnknown.AddRef",
+      "IUnknown.Release"
     ]
   }
 }

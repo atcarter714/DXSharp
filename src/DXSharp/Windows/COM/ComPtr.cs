@@ -49,24 +49,18 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 	static readonly HashSet< nint > _allPtrs = new( ) ;
 	#endregion
 	
-	public abstract Type ComType { get ; }
-	
+	// ----------------------------------------------------------
 	nint _baseAddr ;
 	protected object? _comObjectRef ;
 	protected int _refCount = 0, _marshalRefCount = 0;
-	
+	// ----------------------------------------------------------
+	public abstract Type ComType { get ; }
 	internal int RefCount => _refCount ;
 	internal nint BaseAddress => _baseAddr ;
 	internal object? InterfaceObjectRef => _comObjectRef ;
 	
+	// ----------------------------------------------------------
 	//! Constructors & Initializers:
-	void _setBasePointer( nint pUnknown ) {
-		this._baseAddr = pUnknown ;
-		TrackPointer( this._baseAddr ) ;
-		//! This may be why the ref count is 2 instead of 1
-		//AddRef( this._baseAddr ) ; 
-	}
-
 	
 	#region Constructors
 	/// <summary>Creates an empty/unitialized ComPtr</summary>
@@ -123,32 +117,33 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 	}
 	#endregion
 	
-		
+	void _setBasePointer( nint pUnknown ) {
+		this._baseAddr = pUnknown ;
+		TrackPointer( this._baseAddr ) ;
+		//! This may be why the ref count is 2 instead of 1
+		//AddRef( this._baseAddr ) ; 
+	}
+
 	
+	// ----------------------------------------------------------
+	//! IDisposable:
+	public override bool Disposed => !BaseAddress.IsValid( ) ;
+	~ComPtr( ) => Dispose( false ) ;
+	public override async ValueTask DisposeAsync( ) {
+		await base.DisposeAsync( ) ;
+		await Task.Run( Dispose ) ;
+	}
+	// ----------------------------------------------------------
 	//! System.Object overrides:
-	public override string ToString( ) => $"COM OBJECT[ Address: 0x{BaseAddress:X} ]" ;
+	public override string ToString( ) => $"COM RCW[ Address: 0x{BaseAddress:X} ]" ;
 	public override int GetHashCode( ) => BaseAddress.GetHashCode( ) ;
 	public override bool Equals( object? obj ) => 
 		( obj is ComPtr ptr && ptr.BaseAddress == BaseAddress )
 			|| ( obj is nint address && address == BaseAddress ) ;
+	// ----------------------------------------------------------
 	
-	//! IDisposable:
-	public override bool Disposed => !BaseAddress.IsValid( ) ;
-	~ComPtr( ) => Dispose( false ) ;
-
-	protected override ValueTask DisposeUnmanaged( ) {
-		//Release( _baseAddr ) ;
-#if DEBUG || DEBUG_COM
-		System.Diagnostics.Debug.WriteLine( $"\n{ComType.Name} - RefCount: {RefCount}\n" ) ;
-#endif
-		return ValueTask.CompletedTask ;
-	}
-
-	public override async ValueTask DisposeAsync( ) {
-		await Task.Run( Dispose ) ;
-		await base.DisposeAsync( ) ;
-	}
-
+	
+	// ----------------------------------------------------------
 	//! Internal Pointer Tracking & Management:
 	internal void Set( nint newPtr ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD
@@ -234,7 +229,34 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 		if( ptr.IsValid() ) _allPtrs?.Add( ptr ) ;
 	}
 	internal static void UntrackPointer( nint ptr ) => _allPtrs?.Remove( ptr ) ;
+	// ----------------------------------------------------------
 	
+	
+	public virtual void Attach( nint ptr ) {
+		Release( BaseAddress ) ;
+		_setBasePointer( ptr ) ;
+	}
+	public virtual nint Detach( ) {
+		nint ptr = BaseAddress ;
+		_baseAddr = NULL_PTR ;
+		_comObjectRef = null ;
+		return ptr ;
+	}
+	
+	public virtual void Swap( ComPtr other ) {
+		nint ptr = BaseAddress ;
+		_baseAddr = other.BaseAddress ;
+		other._baseAddr = ptr ;
+		
+		object? obj = InterfaceObjectRef ;
+		_comObjectRef = other._comObjectRef ;
+		other._comObjectRef = obj ;
+	}
+	
+	
+	// ----------------------------------------------------------
+	// Static Methods:
+	// ----------------------------------------------------------
 	
 	internal static ComPtr< TInto > Convert< TFrom, TInto >( ComPtr< TFrom >? other ) 
 																where TFrom: IUnknown 
@@ -249,6 +271,8 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 										$"{nameof(Convert)}<{dstType.Name}, {srcType.FullName}> :: " +
 										$"Failed to cast the COM object to {dstType.Name}!" ) ;
 	}
+	
+	// =================================================================================================================
 } ;
 
 
@@ -432,8 +456,6 @@ public sealed class ComPtr< T >: ComPtr
 
 	
 	protected override ValueTask DisposeUnmanaged( ) {
-		base.DisposeUnmanaged( ) ;
-		
 		if( BaseAddress.IsValid() ) { 
 			while ( _refCount > 0 ) {
 				if( _marshalRefCount  < 1 ) break ;

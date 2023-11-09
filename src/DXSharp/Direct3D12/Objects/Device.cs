@@ -222,13 +222,15 @@ internal class Device: Object,
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			fixed( CPUDescriptorHandle* pDestRangeStart = pDestDescriptorRangeStarts, pSrcRangeStart = pSrcDescriptorRangeStarts ) {
-				device.CopyDescriptors( NumDestDescriptorRanges,
-										(D3D12_CPU_DESCRIPTOR_HANDLE *)pDestRangeStart,
-										pDestDescriptorRangeSizes,
-										NumSrcDescriptorRanges,
-										(D3D12_CPU_DESCRIPTOR_HANDLE *)pSrcRangeStart,
-										pSrcDescriptorRangeSizes,
-										( D3D12_DESCRIPTOR_HEAP_TYPE )DescriptorHeapsType ) ;
+				fixed( uint* pDstSizes = &pDestDescriptorRangeSizes[0], pSrcSizes = &pSrcDescriptorRangeSizes[0] ) {
+					device.CopyDescriptors( NumDestDescriptorRanges,
+											(D3D12_CPU_DESCRIPTOR_HANDLE*)pDestRangeStart,
+											pDstSizes,
+											NumSrcDescriptorRanges,
+											(D3D12_CPU_DESCRIPTOR_HANDLE*)pSrcRangeStart,
+											pSrcSizes,
+											(D3D12_DESCRIPTOR_HEAP_TYPE)DescriptorHeapsType ) ;
+				}
 			}
 		}
 	}
@@ -483,26 +485,33 @@ internal class Device: Object,
 		//! pNumRows: to be filled with the number of rows for each subresource
 		//! pRowSizeInBytes: to be filled with the unpadded size in bytes of a row, of each subresource
 
-		uint[ ]?  _numRows        = default ;
-		ulong[ ]? _rowSizeInBytes = default ;
-			
-		// allocate memory for the layouts:
+		uint[ ]?  _numRows        = new uint[ NumSubresources ] ;
+		ulong[ ]? _rowSizeInBytes = new ulong[ NumSubresources ] ;
+		
 		unsafe {
 			var _pLayouts = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)
 				( NativeMemory.Alloc( (nuint)
 									  ( sizeof( PlacedSubresourceFootprint )
 										* NumSubresources ) ) ) ;
 
-			fixed ( ResourceDescription* _descPtr = &pResourceDesc ) {
+			fixed ( void* _descPtr = &pResourceDesc,
+						 _rowCounts = &_numRows[ 0 ],
+						 _rowSizes = &_rowSizeInBytes[ 0 ] ) {
+				
+				ulong _totalBytes = 0 ;
 				ComObject!.GetCopyableFootprints( (D3D12_RESOURCE_DESC*)_descPtr,
 												  FirstSubresource,
-												  NumSubresources, BaseOffset,
-												  _pLayouts, _numRows, _rowSizeInBytes,
-												  out pTotalBytes ) ;
+												  NumSubresources,
+												  BaseOffset,
+												  _pLayouts,
+												  (uint *)_rowCounts,
+												  (ulong *)_rowSizes,
+												  &_totalBytes ) ;
 
-				pLayouts        = new( _pLayouts, (int)NumSubresources ) ;
+				pLayouts          = new( _pLayouts, (int)NumSubresources ) ;
 				pNumRows        = _numRows ;
 				pRowSizeInBytes = _rowSizeInBytes ;
+				pTotalBytes	      = _totalBytes ;
 				return (nint)_pLayouts ;
 			}
 		}
@@ -550,18 +559,25 @@ internal class Device: Object,
 			var _ptileShapeForNonPacked = stackalloc D3D12_TILE_SHAPE[ 1 ] ;
 			
 			var resource = (Resource)pTiledResource ;
-			fixed( SubresourceTiling* pSubresourceTiling = &pSubresourceTilingsForNonPackedMips ) {
+			fixed( void* pSubresourceTiling = &pSubresourceTilingsForNonPackedMips,
+						 pNumSubTiles = &pNumSubresourceTilings ) {
+				
+				uint _numTilesForRsrc = 0 ;
 				ComObject!.GetResourceTiling( resource.ComObject,
-											  out pNumTilesForEntireResource,
+											  &_numTilesForRsrc,
 											  _pMipDesc, _ptileShapeForNonPacked,
-											  ref pNumSubresourceTilings, FirstSubresourceTilingToGet,
-											  (D3D12_SUBRESOURCE_TILING*)pSubresourceTiling ) ;
+											  (uint *)pNumSubTiles,
+											  FirstSubresourceTilingToGet,
+											  (D3D12_SUBRESOURCE_TILING *)pSubresourceTiling ) ;
+				
+				pNumTilesForEntireResource = _numTilesForRsrc ;
 			}
 			
 			pPackedMipDesc = *(PackedMipInfo *)_pMipDesc ;
 			pStandardTileShapeForNonPackedMips = *(TileShape *)_ptileShapeForNonPacked ;
 		}
 	}
+	
 	
 	public Luid GetAdapterLuid( ) => ComObject!.GetAdapterLuid( ) ;
 	
@@ -1120,24 +1136,16 @@ internal class Device5: Device4,
 												out uint pTotalStructureSizeInBytes, 
 												ref uint pParameterCount,
 												out Span< MetaCommandParameterDescription > pParameterDescs ) {
+		uint totalSize = 0 ;
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
-			
 			fixed ( Guid* _commandId = &commandId ) {
-				// Get the size needed for the parameter descriptions:
-				if ( pParameterCount is 0 ) {
-					 device.EnumerateMetaCommandParameters( _commandId, (D3D12_META_COMMAND_PARAMETER_STAGE)Stage, 
-															out pTotalStructureSizeInBytes, ref pParameterCount, null ) ;
-					 pParameterDescs = default ;
-					 return ;
-				}
-				
-				// Get the parameter descriptions:
 				pParameterDescs = new MetaCommandParameterDescription[ (int)pParameterCount ] ;
 				fixed( MetaCommandParameterDescription* descPtr = pParameterDescs ) {
 					device.EnumerateMetaCommandParameters( _commandId, (D3D12_META_COMMAND_PARAMETER_STAGE)Stage, 
-														  out pTotalStructureSizeInBytes, ref pParameterCount, 
+														  &totalSize, ref pParameterCount, 
 														  (D3D12_META_COMMAND_PARAMETER_DESC*)descPtr ) ;
+					pTotalStructureSizeInBytes = totalSize ;
 				}
 			}
 		}
@@ -1423,14 +1431,16 @@ internal class Device8: Device7,
 							uint[ ] numRows = new uint[ NumSubresources ] ;
 							ulong[ ] rowSizeInBytes = new ulong[ NumSubresources ] ;
 							
-							device.GetCopyableFootprints1( (D3D12_RESOURCE_DESC1*)_pResourceDesc,
-														   FirstSubresource,
-														   NumSubresources,
-														   BaseOffset,
-														   (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)_pLayouts,
-														   numRows,
-														   rowSizeInBytes,
-														   out pTotalBytes ) ;
+							fixed( void* _numRows = numRows, _rowSizeInBytes = rowSizeInBytes ) {
+								device.GetCopyableFootprints1( (D3D12_RESOURCE_DESC1*)_pResourceDesc,
+															   FirstSubresource,
+															   NumSubresources,
+															   BaseOffset,
+															   (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)_pLayouts,
+															   (uint *)_numRows,
+															   (ulong *)_rowSizeInBytes,
+															   _pTotalBytes ) ;
+							}
 							
 							pNumRows = numRows ;
 							pRowSizeInBytes = rowSizeInBytes ;
@@ -1823,50 +1833,25 @@ internal class Device12: Device11,
 															  in ResourceAllocationInfo1? pResourceAllocationInfo1 = null ) {
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
-
-			if ( ppCastableFormats is { Length: > 0 } ) {
-				fixed ( Format* pCastableFormats = &ppCastableFormats[ 0 ] ) {
-
-					DXGI_FORMAT** ppCastableFormatsPtr = (DXGI_FORMAT**)&pCastableFormats ;
-
-					fixed ( ResourceDescription1* resDescs = &pResourceDescs ) {
-						if ( pResourceAllocationInfo1 is null ) {
-							return device.GetResourceAllocationInfo3( visibleMask, numResourceDescs,
-																	  (D3D12_RESOURCE_DESC1*)resDescs,
-																	  pNumCastableFormats,
-																	  ppCastableFormatsPtr,
-																	  null ) ;
-						}
-
-						ResourceAllocationInfo1  allocInfo1 = pResourceAllocationInfo1.Value ;
-						ResourceAllocationInfo1* allocInfo  = &allocInfo1 ;
-						var result = device.GetResourceAllocationInfo3( visibleMask, numResourceDescs,
-																		(D3D12_RESOURCE_DESC1*)resDescs,
-																		pNumCastableFormats,
-																		ppCastableFormatsPtr,
-																		(D3D12_RESOURCE_ALLOCATION_INFO1*)allocInfo ) ;
-						return result ;
+			fixed ( void* resDescs = &pResourceDescs,
+					pFormatCounts = &pNumCastableFormats[ 0 ],
+					formats = &ppCastableFormats[ 0 ] ) {
+				
+				DXGI_FORMAT** _formats = (ppCastableFormats is { Length: > 0 } ) 
+											 ? (DXGI_FORMAT**)&formats : null ;
+				
+				D3D12_RESOURCE_ALLOCATION_INFO1* allocInfo1 = null ;
+				if ( pResourceAllocationInfo1 is not null ) {
+					fixed( void* _allocInfo1 = &pResourceAllocationInfo1 ) {
+						allocInfo1 = (D3D12_RESOURCE_ALLOCATION_INFO1 *)_allocInfo1 ;
 					}
 				}
-			}
-			
-			fixed ( ResourceDescription1* resDescs = &pResourceDescs ) {
-				if ( pResourceAllocationInfo1 is null ) {
-					return device.GetResourceAllocationInfo3( visibleMask, numResourceDescs,
-															  (D3D12_RESOURCE_DESC1*)resDescs,
-															  pNumCastableFormats,
-															  null,
-															  null ) ;
-				}
 
-				ResourceAllocationInfo1  allocInfo1 = pResourceAllocationInfo1.Value ;
-				ResourceAllocationInfo1* allocInfo  = &allocInfo1 ;
-				var result = device.GetResourceAllocationInfo3( visibleMask, numResourceDescs,
-																(D3D12_RESOURCE_DESC1*)resDescs,
-																pNumCastableFormats,
-																null,
-																(D3D12_RESOURCE_ALLOCATION_INFO1*)allocInfo ) ;
-				return result ;
+				return device.GetResourceAllocationInfo3( visibleMask, numResourceDescs,
+														  (D3D12_RESOURCE_DESC1*)resDescs,
+														  (uint*)pFormatCounts,
+														  _formats,
+														  allocInfo1 ) ;
 			}
 		}
 	}

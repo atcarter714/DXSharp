@@ -11,7 +11,7 @@ using static DXSharp.InteropUtils ;
 namespace DXSharp.Windows.COM ;
 
 
-public static class COMUtility {
+public static partial class COMUtility {
 	#region Constant & ReadOnly Values
 	/// <summary>COM IID values and utilities.</summary>
 	public static class IIDs {
@@ -109,6 +109,16 @@ public static class COMUtility {
 		if( obj is null ) return NULL_PTR ;
 		nint pIUnknownForObject = Marshal.GetIUnknownForObject( obj ) ;
 		return pIUnknownForObject ;
+	}
+	
+	[MethodImpl(_MAXOPT_)] public static int GetRefCount( nint pUnknown ) {
+		try {
+			if ( pUnknown is NULL_PTR ) return 0 ;
+			int r = AddRef( pUnknown ) ;
+			r = Release( pUnknown ) ;
+			return r ;
+		}
+		catch { return 0 ; }
 	}
 	
 	

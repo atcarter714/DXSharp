@@ -759,7 +759,10 @@ public struct TextureCopyLocation {
 /// <summary>Describes parameters needed to allocate resources, including offset.</summary>
 /// <remarks>This structure is used by the <see cref="Direct3D12.IDevice4.GetResourceAllocationInfo1"/> method.</remarks>
 [EquivalentOf( typeof( D3D12_RESOURCE_ALLOCATION_INFO1 ) )]
-public partial struct ResourceAllocationInfo1 {
+public partial struct ResourceAllocationInfo1: IEquatable< ResourceAllocationInfo1 > {
+	public static readonly ResourceAllocationInfo1 Empty = 
+		new( 0,0, 0 ) ;
+	
 	/// <summary>
 	/// <para>The offset, in bytes, of the resource.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_allocation_info1#members">Read more on docs.microsoft.com</a>.</para>
@@ -778,12 +781,27 @@ public partial struct ResourceAllocationInfo1 {
 	/// </summary>
 	public ulong SizeInBytes ;
 	
-	public ResourceAllocationInfo1( ulong offset = 0UL, ulong alignment = 0UL, ulong sizeInBytes = 0UL ) {
+	
+	public ResourceAllocationInfo1( ulong offset = 0UL, 
+									ulong alignment = 0UL, 
+									ulong sizeInBytes = 0UL ) {
 		Offset = offset ; Alignment = alignment ; SizeInBytes = sizeInBytes ;
 	}
 	
-	public static implicit operator ResourceAllocationInfo1( in (uint Offset, uint Alignment, uint SizeInBytes) values ) =>
-		new( values.Offset, values.Alignment, values.SizeInBytes ) ;
+	
+	public override int GetHashCode( ) => 
+		HashCode.Combine( Offset, Alignment, SizeInBytes ) ;
+	public override bool Equals( object? obj ) => 
+		obj is ResourceAllocationInfo1 other && Equals( other ) ;
+	public bool Equals( ResourceAllocationInfo1 other ) =>
+										Offset == other.Offset 
+											&& Alignment == other.Alignment 
+												&& SizeInBytes == other.SizeInBytes ;
+	
+	public static bool operator ==( in ResourceAllocationInfo1 left, in ResourceAllocationInfo1 right ) => left.Equals( right ) ;
+	public static bool operator !=( in ResourceAllocationInfo1 left, in ResourceAllocationInfo1 right ) => !left.Equals( right ) ;
+	
+	public static implicit operator ResourceAllocationInfo1( in (uint Offset, uint Alignment, uint SizeInBytes) values ) => new( values.Offset, values.Alignment, values.SizeInBytes ) ;
 } ;
 
 

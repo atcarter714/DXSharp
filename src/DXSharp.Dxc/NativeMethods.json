@@ -1,0 +1,10 @@
+﻿{
+  "$schema": "https://aka.ms/CsWin32.schema.json",
+  "emitSingleFile": false,
+  "public": true,
+  "className": "DxcPInvoke",
+  
+  "comInterop": {
+    "preserveSigMethods": [ ]
+  }
+}

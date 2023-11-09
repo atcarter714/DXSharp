@@ -21,7 +21,7 @@ internal class Blob: DisposableObject,
 	ComPtr< ID3DBlob >? _comPtr ;
 	
 	public ComPtr? ComPtrBase => ComPointer ;
-	public virtual ComPtr? ComPointer =>
+	public virtual ComPtr< ID3DBlob >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< ID3DBlob >( ) ;
 	
 	public virtual ID3DBlob? ComObject => ( (ComPtr<ID3DBlob>)ComPointer! )?.Interface ;

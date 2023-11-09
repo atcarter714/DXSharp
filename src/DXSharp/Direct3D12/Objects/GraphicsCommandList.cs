@@ -169,7 +169,12 @@ internal class GraphicsCommandList: CommandList,
 	}
 
 	
-	public void OMSetBlendFactor( float[ ] BlendFactor ) => ComObject!.OMSetBlendFactor( BlendFactor ) ;
+	public void OMSetBlendFactor( float[ ] BlendFactor ) {
+		unsafe {
+			fixed( float* pBlendF = &BlendFactor[0] )
+				ComObject!.OMSetBlendFactor( pBlendF ) ;
+		}
+	}
 
 	
 	public void OMSetStencilRef( uint StencilRef ) => ComObject!.OMSetStencilRef( StencilRef ) ;

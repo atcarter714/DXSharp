@@ -40,9 +40,11 @@ public readonly unsafe partial struct PCWSTR: IEquatable< PCWSTR >,
 		this.Value = (char *)Marshal.StringToHGlobalUni( value ) ;
 		_PCWSTRAllocations.Add( (nint)Value ) ;
 #endif
-		_PCWSTR_Sizes.Add( this, len ) ;
+		
+		if ( !_PCWSTR_Sizes.ContainsKey( this ) )
+			_PCWSTR_Sizes.Add( this, len ) ;
 	}
-
+	
 	public void Dispose( ) {
 #if USE_STRING_MEM_POOL
 		if( Value is not null ) {
@@ -59,7 +61,7 @@ public readonly unsafe partial struct PCWSTR: IEquatable< PCWSTR >,
 		}
 #endif
 	}
-
+	
 	
 	public static PCWSTR Create( in string? value ) => new( value ) ;
 	
@@ -130,8 +132,7 @@ public readonly unsafe partial struct PCWSTR: IEquatable< PCWSTR >,
 
 /// <summary>A pointer to a null-terminated, constant, ANSI character string.</summary>
 [DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
-public readonly unsafe partial struct PCSTR: IEquatable<PCSTR>, 
-											 IDisposable {
+public readonly unsafe partial struct PCSTR: IDisposable {
 	public PCSTR( string? value ) {
 #if DEBUG || DEV_BUILD
 		if ( string.IsNullOrEmpty(value) ) {
@@ -152,9 +153,11 @@ public readonly unsafe partial struct PCSTR: IEquatable<PCSTR>,
 		this.Value = (char *)Marshal.StringToHGlobalUni( value ) ;
 		_PCSTRAllocations.Add( (nint)Value ) ;
 #endif
-		_PCSTR_Sizes.Add( this, c ) ;
+		
+		if ( !_PCSTR_Sizes.ContainsKey( this ) )
+			_PCSTR_Sizes.Add( this, c ) ;
 	}
-
+	
 	public void Dispose( ) {
 #if USE_STRING_MEM_POOL
 		if( Value is not null ) {
@@ -162,6 +165,7 @@ public readonly unsafe partial struct PCSTR: IEquatable<PCSTR>,
 			var mem = _PCSTRAllocations[ (nint)Value ] ;
 			mem.Dispose( ) ;
 			_PCSTRAllocations.Remove( (nint)Value ) ;
+			_PCSTR_Sizes.Remove( this ) ;
 		}
 #else
  		if( Value is not null ) {
@@ -179,6 +183,7 @@ public readonly unsafe partial struct PCSTR: IEquatable<PCSTR>,
 	public static bool operator !=( in PCSTR left, in PCSTR right ) => !left.Equals( right ) ;
 	
 	public static bool operator !=( in PCSTR left, in string? right ) => !( left == right ) ;
+	
 	public static bool operator ==( in PCSTR left, in string? right ) {
 		if( right is null ) return left.Value is null ;
 		if( left.Value is null ) return false ;
@@ -195,6 +200,26 @@ public readonly unsafe partial struct PCSTR: IEquatable<PCSTR>,
 		fixed( byte* ptr = Encoding.ASCII.GetBytes(right) )
 			return CompareChars( left.Value, ptr, len ) ;
 	}
+	
+	/*public static bool operator ==( in PCSTR left, string? right ) {
+		if( left.Value is null ) return right is null ;
+		if( right is null ) return false ;
+		
+		if( _PCSTR_Sizes.TryGetValue( left, out int len ) ) {
+			if( len != right.Length ) return false ;
+			fixed( byte* ptr = Encoding.ASCII.GetBytes(right) )
+				return CompareChars( left.Value, ptr, len ) ;
+		}
+		else {
+			len = left.Length ;
+			_PCSTR_Sizes.Add( left, len ) ;
+			
+			if ( len != right.Length ) return false ;
+			fixed( byte* ptr = Encoding.ASCII.GetBytes(right) )
+				return CompareChars( left.Value, ptr, len ) ;
+		}
+	}*/
+	
 	
 	public static implicit operator PCSTR( in string? value ) => new( value ) ;
 	public static implicit operator string?( in PCSTR value ) => value.ToString( ) ;

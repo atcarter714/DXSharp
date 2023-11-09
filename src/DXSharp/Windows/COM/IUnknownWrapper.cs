@@ -67,7 +67,7 @@ public interface IUnknownWrapper< TInterface >: IUnknownWrapper
 	/// A <see cref="ComPtr{T}"/> with addresses and references to
 	/// the native COM interface and RCW object(s).
 	/// </summary>
-	ComPtr? ComPointer { get ; }
+	ComPtr< TInterface >? ComPointer { get ; }
 	
 	/// <inheritdoc cref="IUnknownWrapper.ComPtrBase"/>
 	ComPtr? IUnknownWrapper.ComPtrBase => ComPointer ;
