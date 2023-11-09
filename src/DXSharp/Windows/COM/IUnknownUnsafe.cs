@@ -1,11 +1,9 @@
-﻿#pragma warning disable CS1591,CS1573,CS0465,CS0649,CS8019,CS1570,CS1584,CS1658,CS0436,CS8981
+﻿#pragma warning disable CS1591,CS1573,CS0465,CS0649,CS8019,CS1570,CS1584,CS1658,CS0436,CS8981,CS8500
 
 #region Using Directives
-using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
-using System.Runtime.InteropServices.Marshalling ;
-using Windows.Foundation.Metadata ;
+
 using Windows.Win32.Foundation ;
 
 using DXSharp.Windows ;
@@ -31,7 +29,7 @@ internal unsafe delegate HResult QueryInterfaceDelegate( IUnknownUnsafe* pThis,
 
 [global::System.Runtime.InteropServices.Guid( "00000000-0000-0000-C000-000000000046" )]
 public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
-											 IComIID {
+											 IComIID, IVTableData {
 	// -----------------------------------------------------------------
 	
 	
@@ -50,19 +48,33 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 	/// and the <a href="https://docs.microsoft.com/en-us/dotnet/standard/native-interop/">Native Interoperability</a> documentation to learn more.
 	/// </para></para>
 	/// </remarks>
-	public struct VTable: IEquatable< VTable > {
+	public struct VTable: IVTable, IEquatable< VTable >, IEquatable< IVTable > {
+		// ---------------------------------------------------------------------------
+		/// <summary>The minimum number of function pointers the V-Table is known to have.</summary>
+		/// <remarks>
+		/// In reality, a V-Table could have more functions than the current <see cref="IVTable"/> implementation
+		/// is aware of, because a complex COM interface could have multiple base interfaces, and each of those are
+		/// made up of the smaller V-Tables of their ancestors. This is why the <b><see cref="IVTable.PointerCount"/></b>
+		/// property is used to determine the bounds of the V-Table, and why the <see cref="IVTable.this"/> indexer
+		/// (used to access a function pointer at the specified index/offset) does not consider it "out of bounds" if
+		/// you wish to index beyond the known bounds of the V-Table and does not throw an <see cref="Exception"/>.<para/>
+		/// For example, <i>all</i> COM interfaces inherit from <see cref="IUnknown"/>, which has 3 function pointers,
+		/// so the methods of <i>any</i> COM interface will be beyond the bounds of the <b><see cref="IUnknown.VTable"/></b> (3) ...
+		/// </remarks>
+		public const int MIN_FNPTR_COUNT = 3 ;
+		
 		// ---------------------------------------------------------------------------
 		//! QueryInterface Function Pointer:
-		internal delegate *unmanaged [Stdcall]< IUnknown*, Guid*, void**, HRESULT > 
-			QueryInterface_1 ;
+		internal delegate *unmanaged [Stdcall]< IUnknownUnsafe*, Guid*, void**, HRESULT > 
+			_0_QueryInterface ;
 		
 		//! AddRef Function Pointer:
-		internal delegate *unmanaged [Stdcall]< IUnknown*, uint > 
-			AddRef_2 ;
+		internal delegate *unmanaged [Stdcall]< IUnknownUnsafe*, uint > 
+			_1_AddRef ;
 
 		//! Release Function Pointer:
-		internal delegate *unmanaged [Stdcall]< IUnknown*, uint > 
-			Release_3 ;
+		internal delegate *unmanaged [Stdcall]< IUnknownUnsafe*, uint > 
+			_2_Release ;
 		// ---------------------------------------------------------------------------
 
 		public int PointerCount => 3 ;
@@ -116,29 +128,46 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 			ppvObject = null ;
 			HRESULT hr = default ;
 			fixed( void* p = &this ) {
-				hr = QueryInterface_1( (IUnknown *)p, &guid, &fn ) ;
+				hr = _0_QueryInterface( (IUnknownUnsafe *)p, &guid, &fn ) ;
 				if( fn is not null ) ppvObject = (nint)fn! ;
 				return hr ;
 			}
 		}
-		
 		public uint InvokeAddRef( ) {
 			void* fn   = null ;
 			uint count = 0x00U ;
 			fixed( void* p = &this ) {
-				count = AddRef_2( (IUnknown *)p ) ;
+				count = _1_AddRef( (IUnknownUnsafe *)p ) ;
 				return count ;
 			}
 		}
-
 		public uint InvokeRelease( ) {
 			void* fn    = null ;
 			uint  count = 0x00U ;
 			fixed( void* p = &this ) {
-				count = Release_3( (IUnknown *)p ) ;
+				count = _2_Release( (IUnknownUnsafe *)p ) ;
 				return count ;
 			}
 		}
+		
+		
+		/*public TOut? InvokeFnPtr< TOut >( int index, IComMethodArgList? args = null ) where TOut: unmanaged {
+			fixed( void* p = &this ) {
+				uint  count = 0x00U ;
+				void* thisAddr = (void *)this[ index ] ;
+				
+				if( args is null ) {
+					var fn = (delegate *unmanaged [Stdcall]< IUnknownUnsafe*, void >)p ;
+					fn( (IUnknownUnsafe *)p ) ;
+					return null ;
+				}
+				else {
+						var argList = args.Args ;
+				}
+			}
+		}*/
+		
+		
 		// ---------------------------------------------------------
 		
 		
@@ -149,7 +178,7 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 		/// An <see cref="AddRefDelegate"/> delegate that invokes the native <c>HRESULT AddRef( )</c> method.
 		/// </returns>
 		[MethodImpl(_MAXOPT_)] internal AddRefDelegate GetAddRefDelegate( ) =>
-			Marshal.GetDelegateForFunctionPointer< AddRefDelegate >( (nint)AddRef_2 ) ;
+			Marshal.GetDelegateForFunctionPointer< AddRefDelegate >( (nint)_1_AddRef ) ;
 		
 		/// <summary>
 		/// Gets a managed <see cref="ReleaseDelegate"/> wrapper for the COM interface method <c>HRESULT Release( )</c>.
@@ -158,7 +187,7 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 		/// An <see cref="ReleaseDelegate"/> delegate that invokes the native <c>HRESULT Release( )</c> method.
 		/// </returns>
 		[MethodImpl(_MAXOPT_)] internal ReleaseDelegate GetReleaseDelegate( ) =>
-		 			Marshal.GetDelegateForFunctionPointer< ReleaseDelegate >( (nint)Release_3 ) ;
+		 			Marshal.GetDelegateForFunctionPointer< ReleaseDelegate >( (nint)_2_Release ) ;
 		
 		/// <summary>
 		/// Gets a managed <see cref="QueryInterfaceDelegate"/> wrapper for the COM interface method <c>HRESULT QueryInterface(REFIID, void**)</c>.
@@ -167,35 +196,48 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 		/// An <see cref="QueryInterfaceDelegate"/> delegate that invokes the native <c>HRESULT QueryInterface(REFIID, void**)</c> method.
 		/// </returns>
 		[MethodImpl(_MAXOPT_)] internal QueryInterfaceDelegate GetQueryInterfaceDelegate( ) =>
-		 			Marshal.GetDelegateForFunctionPointer< QueryInterfaceDelegate >( (nint)QueryInterface_1 ) ;
+		 			Marshal.GetDelegateForFunctionPointer< QueryInterfaceDelegate >( (nint)_0_QueryInterface ) ;
 
 
 		#region System Overrides
 		public bool Equals( VTable other ) =>
-			QueryInterface_1 == other.QueryInterface_1
-					&& AddRef_2 == other.AddRef_2
-						&& Release_3 == other.Release_3 ;
+			_0_QueryInterface == other._0_QueryInterface
+					&& _1_AddRef == other._1_AddRef
+						&& _2_Release == other._2_Release ;
+
+		public bool Equals( IVTable? other ) =>
+			other is not null && other[ 0 ] == this[ 0 ]
+							  && other[ 1 ] == this[ 1 ]
+							  && other[ 2 ] == this[ 2 ] ;
+		
 		public override bool Equals( object? obj ) => 
 				obj is VTable other && Equals( other ) ;
+		
 		public override int GetHashCode( ) =>
-					HashCode.Combine( (nint)QueryInterface_1,
-										  (nint)AddRef_2,
-											(nint)Release_3 ) ;
+					HashCode.Combine( (nint)_0_QueryInterface,
+										  (nint)_1_AddRef,
+											(nint)_2_Release ) ;
 		#endregion
 		
 		
 		
+		// --------------------------------------------------------------
 		public static explicit operator VTable( nint addr ) {
 			VTable* vtbl = (VTable*)addr ;
 			return *vtbl ;
 		}
 		
-		// --------------------------------------------------------------
+		public static explicit operator VTable( in IUnknownUnsafe pUnk ) {
+			VTable* vtbl = (VTable*)pUnk.lpVtbl ;
+			return *vtbl ;
+		}
+		
+		
 		public static bool operator !=( in VTable left, in VTable right ) => !( left == right ) ;
 		public static bool operator ==( in VTable left, in VTable right ) => 
-												left.AddRef_2 == right.AddRef_2 
-													&& left.Release_3 == right.Release_3 
-														&& left.QueryInterface_1 == right.QueryInterface_1 ;
+												left._1_AddRef == right._1_AddRef 
+													&& left._2_Release == right._2_Release 
+														&& left._0_QueryInterface == right._0_QueryInterface ;
 		// ==============================================================
 	} //! <-- VTable Structure
 	// -----------------------------------------------------------------
@@ -213,7 +255,7 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 	/// You can learn more about <a href="https://learn.microsoft.com/en-us/dotnet/standard/native-interop/cominterop">COM Interop in .NET</a>
 	/// by reading the online <a href="https://learn.microsoft.com/">Microsoft Learn</a> documentation and articles.
 	/// </remarks>
-	[UnscopedRef] public ref void** pVTableRef {
+	public ref void** pVTableRef {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )] get {
 			fixed ( void* fieldAddress = &lpVtbl ) {
 				ref void** fieldRef = ref *( (void***)( fieldAddress ) ) ;
@@ -287,7 +329,6 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 		ppvUnk      = *p ;
 		return hr ;
 	}
-	
 	
 	
 	// -----------------------------------------------------------------

@@ -13,7 +13,7 @@ namespace DXSharp ;
 /// <summary>Contract for wrapper objects with reference to a COM object interface.</summary>
 public interface IComObjectRef< T > where T: IUnknown {
 	/// <summary>A reference to the native COM object interface.</summary>
-	T? ComObject { get; }
+	T? ComObject { get ; }
 } ;
 
 
@@ -21,7 +21,24 @@ public interface IComObjectRef< T > where T: IUnknown {
 public interface IInstantiable {
 	public static virtual IInstantiable Instantiate( ) => throw new NotImplementedException( ) ;
 	public static virtual IInstantiable Instantiate( nint pComObj ) => throw new NotImplementedException( ) ;
-	public static virtual IInstantiable Instantiate< ICom >( ICom pComObj ) where ICom: IUnknown? => throw new NotImplementedException( ) ;
+	public static virtual IInstantiable Instantiate< TComObj >( TComObj pComObj ) 
+		where TComObj: IUnknown? => throw new NotImplementedException( ) ;
+	
+	public static TComObj ConvertArg< TComObj >( IUnknown pComObj ) where TComObj: class, IUnknown? =>
+		pComObj as TComObj ?? throw new ArgumentNullException( nameof(pComObj) ) ;
+
+	public static void fn( IInstantiable x ) {
+		var y = x as IUnknownWrapper ;
+		
+		// Use reflection to cast x to the IUnknownWrapper's ComType Type ...
+		var targetType = y.ComPtrBase.ComType ;
+		var castMethod = typeof( Convert ).GetMethod( nameof(Convert.ChangeType),
+													  new[ ] {
+														  typeof( object ),
+														  typeof( Type ),
+														  typeof( IFormatProvider )
+													  } ) ;
+	}
 } ;
 
 
@@ -91,6 +108,8 @@ public interface IDXCOMObject: IComIID,
 	
 	uint AddRef( ) ;
 	uint Release( ) ;
+	HResult QueryInterface( in Guid riid, out nint ppvObject ) ;
+	HResult QueryInterface< T >( out T ppvUnk ) where T: IDXCOMObject, IInstantiable ;
 	
 	// ----------------------------------------------------------
 	// Static Properties:

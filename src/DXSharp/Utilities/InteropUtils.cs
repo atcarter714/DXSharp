@@ -130,9 +130,5 @@ public static class InteropUtils {
 		var managedAddr = (nint)Unsafe.AsPointer( ref inst ) ;
 		handle = new( (void *)managedAddr ) ;
 		return managedAddr ;
-		/*GCHandle gcHandle = GCHandle.Alloc( inst, GCHandleType.WeakTrackResurrection ) ;
-		nint ptr    =  gcHandle.AddrOfPinnedObject( ) ;
-		handle  =   new( (void *)ptr, gcHandle ) ;
-		return ptr ;*/
 	}
 } ;

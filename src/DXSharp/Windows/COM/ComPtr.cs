@@ -135,7 +135,7 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 	}
 	// ----------------------------------------------------------
 	//! System.Object overrides:
-	public override string ToString( ) => $"COM RCW[ Address: 0x{BaseAddress:X} ]" ;
+	public override string ToString( ) => $"COM OBJECT[ Address: 0x{BaseAddress:X} ]" ;
 	public override int GetHashCode( ) => BaseAddress.GetHashCode( ) ;
 	public override bool Equals( object? obj ) => 
 		( obj is ComPtr ptr && ptr.BaseAddress == BaseAddress )

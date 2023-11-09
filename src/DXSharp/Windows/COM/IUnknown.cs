@@ -25,21 +25,24 @@ public interface IUnknown {
 		typeof( CallConvThiscall ),
 		typeof( CallConvMemberFunction ),
 	} )]
-	[PreserveSig] uint AddRef( ) ;
+	[PreserveSig]
+	public uint AddRef( ) ;
 	
 	[UnmanagedCallConv( CallConvs = new[ ] {
 		typeof( CallConvStdcall ),
 		typeof( CallConvMemberFunction ),
 	} )]
-	[PreserveSig] uint Release( ) ;
+	[PreserveSig]
+	public uint Release( ) ;
 	
 	[UnmanagedCallConv( CallConvs = new[ ] {
 		typeof( CallConvStdcall ),
 		typeof( CallConvMemberFunction ),
 	} )]
-	[PreserveSig] HResult QueryInterface( ref Guid riid,
-										  [MarshalAs(UnmanagedType.IUnknown)] 
-											out nint ppvObject ) ;
+	[PreserveSig]
+	public HResult QueryInterface( ref Guid riid,
+								   [MarshalAs(UnmanagedType.IUnknown)] 
+								   out nint ppvObject ) ;
 } ;
 
 // -----------------------------------------------------------------

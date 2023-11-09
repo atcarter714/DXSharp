@@ -3,11 +3,15 @@ using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 
 using Windows.Win32.Graphics.Direct3D12 ;
+using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
+using Windows.Win32.System.Com ;
 
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
+
 using static DXSharp.InteropUtils ;
+using IUnknown = DXSharp.Windows.COM.IUnknown ;
 #endregion
 namespace DXSharp ;
 
@@ -36,44 +40,83 @@ internal abstract class DXComObject: DisposableObject,
 	
 	//! ---------------------------------------------------------------------------------
 
-	public uint AddRef( ) {
-		var comObj = this.ComPtrBase?.InterfaceObjectRef as IUnknown ;
-		if( comObj is null ) return 0 ;
-		
-		if( comObj is IDXGIObject dxgiObj ) 
-			return dxgiObj.AddRef( ) ;
-		if( comObj is ID3D12Object d3d12Obj ) 
-			return d3d12Obj.AddRef( ) ;
-		
-		return comObj.AddRef( ) ;
+	public HResult QueryInterface( in Guid riid, out nint ppvObject ) {
+		unsafe {
+			var vTableAddr = ComPtrBase?.BaseAddress ?? NULL_PTR ;
+			if( vTableAddr is NULL_PTR ) {
+				ppvObject = 0x00000000 ;
+#if DEBUG || DEV_BUILD || DEBUG_COM
+				throw new NullReferenceException($"{nameof(DXComObject)} :: " +
+												 $"{nameof(ComPtrBase)} is null (no COM RCW object attached).") ;
+#else
+				return HResult.E_FAIL ;
+#endif
+			}
+			
+			
+			var _qryInterfaceFn =
+				( (delegate* unmanaged< IUnknownUnsafe*, Guid*, void**, HRESULT >)( *( *(void ***)vTableAddr + 0) ) ) ;
+													/* +0 is for the IUnknown.QueryInterface slot */
 
-		/*unsafe {
-			var pUnk = ComObject ;
-			var vtblPtr = (delegate *unmanaged [Stdcall]< IUnknown*, uint >)
-				( ComPointer as ComPtr< IUnknown > )!
-					.GetVTableMethod< IUnknown >( 1 ) ;
-			return vtblPtr( (IUnknown *)Unsafe.AsPointer( ref pUnk ) ) ;
-		}*/
-		
-		// NOTE: CsWin32 implements it like this in a struct definition:
-		// return
-		//	 ( (delegate *unmanaged [Stdcall]<global::Windows.Win32.System.Com.IUnknown*, uint>)
-		//	 	lpVtbl[ 1 ] )( (global::Windows.Win32.System.Com.IUnknown*)Unsafe.AsPointer( ref this ) ) ;
+			var thisInst = (IUnknownUnsafe *)vTableAddr ;
+			fixed( void* _riid = &riid, _ppvObject = &ppvObject ) {
+				return _qryInterfaceFn( thisInst,
+											(Guid *)_riid,
+												(void **)_ppvObject ) ;
+			}
+		}
+	}
+
+	public HResult QueryInterface< T >( out T ppvUnk ) where T: IDXCOMObject, IInstantiable {
+		unsafe {
+			var vTableAddr = ComPtrBase?.BaseAddress ?? NULL_PTR ;
+			if( vTableAddr is NULL_PTR ) {
+				ppvUnk = default ;
+#if DEBUG || DEV_BUILD || DEBUG_COM
+				throw new NullReferenceException($"{nameof(DXComObject)} :: " +
+												 $"{nameof(ComPtrBase)} is null (no COM RCW object attached).") ;
+#else
+ 				return HResult.E_FAIL ;
+#endif
+			}
+			
+			var _qryInterfaceFn =
+				( (delegate* unmanaged< IUnknownUnsafe*, Guid*, void**, HRESULT >)( *( *(void ***)vTableAddr + 0) ) ) ;
+													/* +0 is for the IUnknown.QueryInterface slot */
+
+			var thisInst = (IUnknownUnsafe *)vTableAddr ;
+			var _riid = typeof(T).GUID ;
+			var _ppvObject = default( void* ) ;
+			var hr = _qryInterfaceFn( thisInst,
+											(Guid *)&_riid,
+												(void **)&_ppvObject ) ;
+			
+			ppvUnk = (T)T.Instantiate( (nint)_ppvObject ) ;
+			return hr ;
+		}
+	}
+
+	public uint AddRef( ) {
+		unsafe {
+			var vTableAddr = ComPtrBase!.BaseAddress ;
+			var _marshalStyleCall =
+				( (delegate* unmanaged< nint, uint >)( *( *(void ***)vTableAddr + 1) ) ) ;
+													/* +1 is for the IUnknown.AddRef slot */
+			return _marshalStyleCall( vTableAddr ) ;
+		}
 	}
 	
 	public uint Release( ) {
-		var comObj = this.ComPtrBase?.InterfaceObjectRef as IUnknown ;
-		if( comObj is null ) return 0 ;
-		
-		if( comObj is IDXGIObject dxgiObj ) 
-			return dxgiObj.Release( ) ;
-		if( comObj is ID3D12Object d3d12Obj ) 
-			return d3d12Obj.Release( ) ;
-		
-		return comObj.Release( ) ;
+		unsafe {
+			var vTableAddr = ComPtrBase!.BaseAddress ;
+			var _marshalStyleCall =
+				( (delegate* unmanaged< nint, uint >)( *( *(void ***)vTableAddr + 2) ) ) ;
+													/* +2 is for the IUnknown.Release slot */
+			return _marshalStyleCall( vTableAddr ) ;
+		}
 	}
 
-	
+
 	public HResult GetPrivateData( in Guid name, ref uint pDataSize, nint pData = 0x0000 ) {
 		// Obtain interface references:
 		var _name = name ;
@@ -160,10 +203,11 @@ internal abstract class DXComObject: DisposableObject,
 		return hr ;
 	}
 	
+	
+	
 	//! ---------------------------------------------------------------------------------
 	//! IDisposable:
 	~DXComObject( ) => Dispose( false ) ;
-	
 	protected override async ValueTask DisposeUnmanaged( ) {
 		if( _comPtr is not null )
 			await _comPtr.DisposeAsync( ) ;
@@ -181,6 +225,8 @@ internal abstract class DXComObject: DisposableObject,
 		await base.DisposeAsync( ) ;
 		await Task.Run( Dispose ) ;
 	}
+	
+	
 	//! ---------------------------------------------------------------------------------
 	public static Type ComType => typeof(IUnknown) ;
 	public static ref readonly Guid Guid {
