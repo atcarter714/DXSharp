@@ -15,13 +15,15 @@ namespace Windows.Win32.System.Com ;
 
 
 // -----------------------------------------------------------------
-[UnmanagedFunctionPointer(CallingConvention.StdCall)]
+//[UnmanagedFunctionPointer(CallingConvention.Winapi)]
+[UnmanagedFunctionPointer(CallingConvention.StdCall, 
+						  BestFitMapping = true, CharSet = CharSet.Auto, SetLastError = true)]
 internal unsafe delegate uint AddRefDelegate( IUnknownUnsafe*  pThis ) ;
 
-[UnmanagedFunctionPointer(CallingConvention.StdCall)]
+//[UnmanagedFunctionPointer(CallingConvention.Winapi)]
 internal unsafe delegate uint ReleaseDelegate( IUnknownUnsafe* pThis ) ;
 
-[UnmanagedFunctionPointer(CallingConvention.StdCall)]
+//[UnmanagedFunctionPointer(CallingConvention.StdCall)]
 internal unsafe delegate HResult QueryInterfaceDelegate( IUnknownUnsafe* pThis,
 														 Guid* riid, void** ppvObject ) ;
 // -----------------------------------------------------------------
@@ -101,7 +103,7 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 					}
 #endif
 #endif
-					void** ptrPtr = (void **)pThis ;
+					void** ptrPtr = *( (void ***)pThis ) ;
 					return (nint)ptrPtr[ index ] ;
 				}
 			}

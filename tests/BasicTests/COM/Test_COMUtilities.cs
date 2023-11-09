@@ -76,6 +76,8 @@ public class Test_COMUtilities {
 							 Assert.That( _factoryObj, Is.Not.Null ) ;
 							 Assert.That( _factoryObj!.ComObject, Is.Not.Null ) ;
 						 } ) ;
+
+		
 		
 		// Get the COM pointer and make sure it's not null:
 		var comPtr   = _factoryWrapper!.ComPointer as ComPtr< IDXGIFactory1 > ;
@@ -89,6 +91,24 @@ public class Test_COMUtilities {
         nint baseAddr = comPtr!.BaseAddress ;
 		nint vTableAddr   = comPtr!.InterfaceVPtr ;
 		Assert.That( baseAddr.IsValid( ) && vTableAddr.IsValid( ) ) ;
+		
+		int counter00 = Marshal.AddRef( baseAddr ) ;
+		int counter01 = Marshal.AddRef( vTableAddr ) ;
+		int counter02 = Marshal.Release( baseAddr ) ;
+		int counter03 = Marshal.Release( vTableAddr ) ;
+		unsafe {
+			var _marshalStyleCall =
+				/* +1 is for the IUnknown.AddRef slot */
+				( (delegate* unmanaged< nint, uint >)( *( *(void ***)vTableAddr + 1) ) ) ;
+			
+			uint r = _marshalStyleCall( vTableAddr ) ;
+			Assert.That( r != 0 ) ;
+			
+			var cswinUnknown = *(Windows.Win32.System.Com.IUnknown *)baseAddr ;
+			r = cswinUnknown.AddRef( ) ;
+		}
+		_factoryObj!.ComObject!.AddRef( ) ;
+		
 		
 		// Test query for IDXGIFactory1:
 		var _hr1 = QueryInterface< IDXGIFactory1 >( vTableAddr,
@@ -123,24 +143,28 @@ public class Test_COMUtilities {
 
 
         // Now try downcasting to IDXGIFactory4:
-        var _factory4 = Cast< IFactory1, IFactory4 >( _factory! ) ;
+
+		var _factory4 = Cast< IFactory1, IFactory4 >( _factory! ) ;
 		
 		// Get the object references for wrapper and COM object:
 		var _factory4Wrapper   = _factory4 as IUnknownWrapper< IDXGIFactory4 > ;
 		var _factory4Obj       = _factory4Wrapper as IComObjectRef< IDXGIFactory4 > ;
 		var dxgiF1 = _factoryObj!.ComObject! ;
 		var dxgiF4 = (_factory4 as IComObjectRef< IDXGIFactory4 > )!.ComObject! ;
-		ID3D12SwapChainAssistant sss ;
+
+		uint value0 = _factory4Obj!.ComObject.AddRef( ) ;
+		uint value1 = _factory4Obj!.ComObject.Release( ) ;
+		
 		unsafe {
 			// Steal the pointer to the interface and IUnknown methods:
-			var _pf4 = ( (IDXGIFactory4 *)( &dxgiF4 ) ) ;
+			var _pf4 = *(void ***)( (IDXGIFactory4 *)( &dxgiF4 ) ) ;
 			var _vtb = (IUnknownUnsafe.VTable *)_pf4 ;
 			nint _method0 = ( *_vtb )[ 0 ],
 				 _method1 = ( *_vtb )[ 1 ],
 				 _method2 = ( *_vtb )[ 2 ] ;
 			Windows.Win32.System.Com.IUnknown kk ;
 			// Do likewise for the IDXGIFactory1 object:
-			var _pF1 = ( (IDXGIFactory1 *)( &dxgiF1 ) ) ;
+			var _pF1  = *(void ***)( (IDXGIFactory1 *)( &dxgiF1 ) ) ;
 			var _vtb1 = (IUnknownUnsafe.VTable *)_pF1 ;
 			nint _method0_1 = ( *_vtb1 )[ 0 ],
 				 _method1_1 = ( *_vtb1 )[ 1 ],
@@ -150,17 +174,27 @@ public class Test_COMUtilities {
 			nint f4Address = InteropUtils.GetManagedAddress( dxgiF4, out var hF4 ) ;
 			nint f1Address = InteropUtils.GetManagedAddress( dxgiF1, out var hF1 ) ;
 			
+			// Get v-table address from f4Address and f1Address:
+			var vTableAddr4 = *( (void ***)f4Address ) ;
+			var vTableAddr1 = *( (void ***)f1Address ) ;
+			//( (IUnknownUnsafe *)f4Address )->lpVtbl ;
+			//( (IUnknownUnsafe *)f1Address )->lpVtbl ;
+			//var vtA4_B = (void ***)vTableAddr4 ;
+			//var vtA1_B = (void ***)vTableAddr1 ;
+			
 			// Get the delegate pointers for the methods:
 			QueryInterfaceDelegate* pQryInterface = (QueryInterfaceDelegate *)_method0 ;
 			AddRefDelegate* pAddRef = (AddRefDelegate *)_method1 ;
 			ReleaseDelegate* pRelease = (ReleaseDelegate *)_method2 ;
+
+			uint ct0 = ( *pAddRef )( (IUnknownUnsafe *)_pf4 ) ;
+			uint ct1 = ( *pAddRef )( (IUnknownUnsafe *)_pF1 ) ;
 			
 			// Verify the addresses:
 			Assert.Multiple( ( ) => {
-								 Assert.That( f4Address, Is.EqualTo( _method0 ) ) ; // f4Address is the address of the QueryInterface (first) v-table method
-								 Assert.That( f4Address, Is.EqualTo( f1Address ) ) ;
-								 Assert.That( f4Address, Is.EqualTo( (nint)pQryInterface ) ) ;
-								 Assert.That( f1Address, Is.EqualTo( _method0_1 ) ) ;
+								 Assert.That( (nint)vTableAddr4, Is.EqualTo( (nint)_method0 ) ) ; //! address of QueryInterface (1st v-table method)
+								 Assert.That( (nint)vTableAddr1, Is.EqualTo( (nint)_method0_1 ) ) ;
+								 Assert.That( (nint)vTableAddr4, Is.EqualTo( (nint)pQryInterface ) ) ;
 							 } ) ;
 			
 			// Test the methods:
