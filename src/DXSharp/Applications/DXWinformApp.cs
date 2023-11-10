@@ -9,15 +9,9 @@
  */
 
 #region Using Directives
-using System.Threading ;
-using System.Diagnostics ;
-using System.Diagnostics.CodeAnalysis ;
-using System.Threading.Tasks ;
-using System.Runtime.InteropServices ;
-using Windows.Win32 ;
-using Windows.Win32.Graphics.Direct3D ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
+
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
@@ -34,19 +28,12 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	RenderForm? _form ;
 	ITimeProvider? _time ;
 	AppSettings? _settings ;
-	
-	//public string? Title { get ; protected set ; }
-	//public bool IsPaused { get ; protected set ; }
-	//public bool IsRunning { get ; protected set ; }
-	//public bool IsInitialized { get ; protected set ; }
-	//public Size DesiredSize { get ; protected set ; }
-	//public Size CurrentSize => _form?.ClientSize ?? Size.Empty ;
-	
 	public Form? MainForm => _form ;
 	
 	public override IAppWindow? Window => _form ;
 	public override AppSettings Settings => ( _settings ??= base.Settings ) ;
-	public override ITimeProvider GameTime => ( _time ??= new Time(AppCancelTokenSource) ) ;
+	public override ITimeProvider Time => ( _time ??= new Time(AppCancelTokenSource) ) ;
+	
 	
 	Task[ ]? _simulationTasks ;
 	Action[ ]? workActions = null ;
@@ -88,11 +75,12 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	
 	public override void Initialize( ) {
 		base.Initialize( ) ;
+		
 		_form = new RenderForm( Title ) ;
 		_form.ClientSize = DesiredSize ;
-		_form.Show( ) ;
 		_form.ForeColor = Color.Black ;
 		Window?.SetTitle( Settings.Title ) ;
+		_form.Show( ) ;
 		
 		// Configure parallelism and thread setup:
 		cancelTick = AppCancelTokenSource.Token ;
@@ -100,6 +88,7 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 		Action renderFunc   = _RenderWork,
 			   computeFunc  = _ComputeWork,
 			   simulateFunc = _SimulationWork ;
+		
 		workActions = new [ ] { simulateFunc, renderFunc, computeFunc } ;
 		workActionConfig = new ParallelOptions {
 			MaxDegreeOfParallelism = Math.Min( workActions.Length, HardwareInfo.MaxParallelism ),
@@ -109,9 +98,11 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 		
 		this.IsPaused = _abort = false ;
 	}
-
+	
 	public override void Shutdown( ) {
+		if( _Quitting ) return ;
 		AppCancelTokenSource.Cancel( ) ;
+		
 		base.Shutdown( ) ;
 		_abort = true ;
 		_time = null ;
@@ -124,12 +115,12 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	protected virtual void _ComputeWork( ) => Thread.Sleep( 1 ) ;
 	protected virtual void _SimulationWork( ) => Thread.Sleep( 1 ) ;
 	
-	public override void Tick( float delta ) => GameTime?.Update( ) ;
+	public override void Tick( float delta ) => Time?.Update( ) ;
 
 	public override void Update( ) {
 		if( !IsRunning ) return ;
 		if( !IsPaused ) return ;
-		GameTime?.Update( ) ;
+		Time?.Update( ) ;
 		
 	}
 	public override void Draw( ) {
@@ -137,7 +128,7 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	}
 	
 	public override void Run( ) {
-		GameTime.Start( ) ;
+		Time.Start( ) ;
 		IsPaused  = !(IsRunning = true) ;
 		RenderLoop.Run( _form, _MainLoop ) ;
 		
@@ -167,6 +158,7 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 		
 		Parallel.Invoke( workActionConfig, workActions ) ;
 	}
+	
 	
 	// --------------------------------------
 	// Static Methods ::
@@ -204,5 +196,4 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	protected override void OnDestroyManaged( ) { }
 	protected override void OnDestroyUnmanaged( ) { }
 #endregion
-	
 } ;

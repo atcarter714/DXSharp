@@ -93,8 +93,7 @@ namespace DXSharp.Windows ;
 /// This code was adapter from SharpDX project's SharpDX.Windows.RenderForm type.
 /// It is provided as a helper class, and for its familiarity and usefulness.
 /// </remarks>
-public class RenderForm: Form, IAppWindow
-{
+public class RenderForm: Form, IAppWindow {
 	#region Constant Values
 	const int WM_SIZE = 0x0005;
 	const int SIZE_RESTORED = 0;

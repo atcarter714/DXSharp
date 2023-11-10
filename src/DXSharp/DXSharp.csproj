@@ -87,8 +87,8 @@
 	
 	<!-- Additional Item/Folder Inclusions :: -->
 	<ItemGroup>
-		<Folder Include="Common\Numerics\" />
-		<Folder Include="Windows\Win32\XTensions\" />
+		<Folder Include="DXCore\Data\" />
+		<Folder Include="Memory\" />
 	</ItemGroup>
 	
 	

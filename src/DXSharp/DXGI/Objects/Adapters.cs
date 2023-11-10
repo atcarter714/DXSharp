@@ -37,8 +37,7 @@ internal class Adapter: Object,
 	public override IDXGIAdapter? ComObject => ComPointer?.Interface ;
 	// ---------------------------------------------------------------------------------
 	
-	protected AdapterDescription      _descCached = default ;
-	
+	protected AdapterDescription _descCached ;
 	public virtual AdapterDescription Description {
 		get {
 			if( _descCached.DeviceId is 0 )
@@ -86,8 +85,8 @@ internal class Adapter: Object,
 
 	
 	public HResult EnumOutputs( uint index, out IOutput? ppOutput ) {
-		ppOutput = default ; HResult hr = default ;
-		hr = ComObject!.EnumOutputs( index, out IDXGIOutput? pOutput ) ;
+		ppOutput = default ;
+		HResult hr = ComObject!.EnumOutputs( index, out IDXGIOutput? pOutput ) ;
 		ppOutput = pOutput is null ? null : new Output( pOutput ) ;
 		return hr ;
 	}
@@ -136,12 +135,12 @@ internal class Adapter1: Adapter,
 	
 	// ---------------------------------------------------------------------------------
 	
-	protected AdapterDescription1 _desc1Cached = default ;
+	protected AdapterDescription1 _desc1Cached ;
 	public AdapterDescription1 Description1 {
 		get {
 			if( _desc1Cached.DeviceId is 0 ) {
 				GetDesc1( out _desc1Cached ) ;
-				base._descCached = new AdapterDescription {
+				_descCached = new AdapterDescription {
 					VendorId              = _desc1Cached.VendorId,
 					DeviceId              = _desc1Cached.DeviceId,
 					SubSysId              = _desc1Cached.SubSysId,
@@ -236,13 +235,13 @@ internal class Adapter2: Adapter1, IAdapter2,
 		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter2 >( )! ;
 	public override IDXGIAdapter2? ComObject => ComPointer?.Interface ;
 	
-	protected AdapterDescription2 _desc2Cached = default ;
+	protected AdapterDescription2 _desc2Cached ;
 	public AdapterDescription2 Description2 {
 		get {
 			if( _desc2Cached.DeviceId is 0 ) {
 				GetDesc2( out _desc2Cached ) ;
-				base._desc1Cached = _desc2Cached.Description1 ;
-				base._descCached = new AdapterDescription {
+				_desc1Cached = _desc2Cached.Description1 ;
+				_descCached = new AdapterDescription {
 					VendorId              = _desc2Cached.VendorId,
 					DeviceId              = _desc2Cached.DeviceId,
 					SubSysId              = _desc2Cached.SubSysId,
@@ -417,8 +416,7 @@ internal class Adapter4: Adapter3,
 		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter4 >( )! ;
 	public override IDXGIAdapter4? ComObject => ComPointer?.Interface ;
 
-	protected AdapterDescription3 _desc3Cached = default ;
-
+	protected AdapterDescription3 _desc3Cached ;
 	public AdapterDescription3 Description3 {
 		get {
 			if ( _desc3Cached.DeviceId is 0 ) {

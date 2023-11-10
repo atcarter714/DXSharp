@@ -1,14 +1,14 @@
 ﻿#region Using Directives
-
 using System.Buffers ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Collections.Concurrent ;
+
 using Windows.Win32.System.Com ;
+
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 using IUnknown = DXSharp.Windows.COM.IUnknown ;
-
 #endregion
 namespace DXSharp ;
 
@@ -132,3 +132,4 @@ public static class InteropUtils {
 		return managedAddr ;
 	}
 } ;
+

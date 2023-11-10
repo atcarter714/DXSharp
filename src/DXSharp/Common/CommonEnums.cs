@@ -8,20 +8,51 @@ using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Direct3D12 ;
+using Windows.Win32.System.SystemInformation ;
+
 #endregion
 namespace DXSharp ;
 
 
-/// <summary>
-/// Enumeration representing the major GPU vendors
-/// </summary>
+
+/// <summary>Enumeration representing the major GPU vendors.</summary>
 public enum GPUVendor: uint {
-	Unknown     = 0x0000U,
-	AMD         = 0x1002U,
-	Intel       = 0x8086U,
-	Nvidia      = 0x10DEU,
+	Unknown = 0x0000U,
+	AMD     = 0x1002U,
+	Intel   = 0x8086U,
+	Nvidia  = 0x10DEU,
 } ;
 
+public enum CPUVendor: uint {
+	Unknown = 0x0000U,
+	AMD     = 0x1002U,
+	Intel   = 0x8086U,
+	ARM     = 0x13B5U,
+} ;
+
+
+
+/// <summary>Describes the manufacturer and architecture of the processor.</summary>
+
+[EquivalentOf( typeof( PROCESSOR_ARCHITECTURE ) )]
+public enum ProcessorArchitecture: ushort {
+	Intel        = 0,
+	Mips         = 1,
+	Alpha        = 2,
+	PPC          = 3,
+	SHX          = 4,
+	ARM          = 5,
+	IA64         = 6,
+	Alpha64      = 7,
+	MSIL         = 8,
+	AMD64        = 9,
+	IA32OnWin64  = 10,
+	Neutral      = 11,
+	ARM64        = 12,
+	ARM32OnWin64 = 13,
+	IA32OnArm64  = 14,
+	Unknown      = 65535,
+} ;
 
 
 [EquivalentOf( typeof(D3D_PRIMITIVE_TOPOLOGY) )]

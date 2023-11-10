@@ -41,5 +41,6 @@ IDiaDataSource
 GetProcAddress
 DxcCreateInstance
 DxcCreateInstance2
+CoGetMalloc
 
 CLSID_DxcCompiler

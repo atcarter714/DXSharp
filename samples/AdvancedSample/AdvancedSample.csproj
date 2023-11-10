@@ -1,32 +1,47 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
     <!-- Common Project Properties :: -->
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
+    <PropertyGroup Label="CommonProjectProperties">
         <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
+        <OutputType>Exe</OutputType>
         <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <FileVersion>1.0.0</FileVersion>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        
+        <Product>Advanced DXSharp Sample</Product>
         <RootNamespace>AdvancedDXS</RootNamespace>
         <ApplicationIcon>Assets\DXSharp_ICON_256.ico</ApplicationIcon>
-        <Product>Advanced DXSharp Sample</Product>
-        <AssemblyVersion>1.0.0</AssemblyVersion>
-        <FileVersion>1.0.0</FileVersion>
     </PropertyGroup>
     
     
-    <!-- Debug/Release Configurations :: -->
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <!-- Debug/Release Configuration Properties :: -->
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' " 
+                   Label="DebugConfigurationProperties">
       <DefineConstants>TRACE, DEBUG_COM, DEV_BUILD</DefineConstants>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' " 
+                   Label="ReleaseConfigurationProperties">
       <DefineConstants>TRACE, STRIP_CHECKS, DXS_FAST</DefineConstants>
     </PropertyGroup>
     
     
     <!-- References :: -->
-    <ItemGroup>
+    <ItemGroup Label="ProjectReferenceProperties">
         <ProjectReference Include="..\..\src\DXSharp.Dxc\DXSharp.Dxc.csproj" />
         <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
     </ItemGroup>
 
+
+    <!-- Content & Assets :: -->
+    <ItemGroup Label="ProjectContentProperties">
+      <ClCompile Include="Assets\Shaders\testshader1.hlsl" />
+    </ItemGroup>
+
+    <!-- Advanced Project Properties :: -->
+    <PropertyGroup Label="AdvancedProjectProperties">
+        <!-- NOTE: Currently, trimming and NativeAOT is not supported! -->
+        <!--<PublishTrimmed>true</PublishTrimmed>-->
+    </PropertyGroup>
+    
 </Project>

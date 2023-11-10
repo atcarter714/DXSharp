@@ -167,3 +167,75 @@ public struct LargeInteger {
 	[FieldOffset(0)]
 	public long QuadPart ;
 }
+
+
+/// <summary>Represents a range of memory or addresses.</summary>
+public readonly struct AddressRange: IEquatable< AddressRange > {
+	public readonly nint Start, End ;
+	public ulong Size => (ulong)( End - Start ) ;
+	
+	public AddressRange( nint start = 0x0000,
+						 nint end   = int.MaxValue ) {
+		End   = end ;
+		Start = start ;
+	}
+	
+	// ------------------------------------------------------------------------------------------------------------
+	
+	public override string ToString( ) =>
+		$"{nameof(AddressRange)}: {{ 0x{Start:X8} - 0x{End:X8} ({Size} bytes) }}" ;
+	
+	public override bool Equals( object? obj ) =>
+		obj is AddressRange addrRange && Equals( addrRange ) ;
+	
+	public override int GetHashCode( ) => HashCode.Combine( Start, End ) ;
+
+	public bool Equals( AddressRange other ) => Start == other.Start 
+												&& End == other.End 
+												&& Size == other.Size ;
+
+	
+	// ------------------------------------------------------------------------------------------------------------
+	
+	public static AddressRange From( nint start, nint end ) => new( start, end ) ;
+	public static AddressRange From( ulong start, nuint size ) => new( (nint)start, (nint)(start + size) ) ;
+	public static AddressRange From( nint start, ulong size ) => new( start, (nint)((ulong)start + size) ) ;
+	public static AddressRange From( ulong start, ulong size ) => new( (nint)start, (nint)((ulong)start + size) ) ;
+	public static unsafe AddressRange From( void* start, nuint size ) => new( (nint)start, (nint)((ulong)start + size) ) ;
+	public static unsafe AddressRange From( void* start, void* size ) => new( (nint)start, (nint)((ulong)start + (ulong)size) ) ;
+	
+	public static AddressRange Offset( in AddressRange range, int offset = 0x0000 ) =>
+								new( range.Start + offset, range.End + offset ) ;
+	public static AddressRange Offset( in AddressRange range, nint offset = 0x0000 ) =>
+								new( range.Start + offset, range.End + offset ) ;
+	public static AddressRange Offset( in AddressRange range, ulong offset = 0x0000 ) =>
+								new( range.Start + (nint)offset, range.End + (nint)offset ) ;
+	
+	// ------------------------------------------------------------------------------------------------------------
+	// Operator Overloads ::
+	// ------------------------------------------------------------------------------------------------------------
+	public static implicit operator AddressRange( (nint start, nint end) value ) =>
+														new( value.start, value.end ) ;
+	
+	public static bool operator ==( AddressRange left, AddressRange right ) => left.Equals( right ) ;
+	public static bool operator !=( AddressRange left, AddressRange right ) => !left.Equals( right ) ;
+	
+	public static AddressRange operator +( AddressRange left, long right )  =>
+		new( left.Start, (nint)((long)left.End + right) ) ;
+	public static AddressRange operator +( AddressRange left, ulong right ) =>
+		new( left.Start, (nint)((ulong)left.End + right) ) ;
+	public static AddressRange operator +( AddressRange left, int right )  =>
+		new( left.Start, (nint)(left.End + right) ) ;
+	public static AddressRange operator +( AddressRange left, uint right ) =>
+		new( left.Start, (nint)(left.End + right) ) ;
+	
+	public static AddressRange operator -( AddressRange left, long right )  =>
+	 		new( left.Start, (nint)((long)left.End - right) ) ;
+	public static AddressRange operator -( AddressRange left, ulong right ) =>
+	 		new( left.Start, (nint)((ulong)left.End - right) ) ;
+	public static AddressRange operator -( AddressRange left, int right )  =>
+	 		new( left.Start, (nint)(left.End - right) ) ;
+	public static AddressRange operator -( AddressRange left, uint right ) =>
+	 		new( left.Start, (nint)(left.End - right) ) ;
+	// ============================================================================================================
+} ;

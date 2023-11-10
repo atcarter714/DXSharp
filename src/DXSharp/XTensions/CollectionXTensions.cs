@@ -171,4 +171,12 @@ public static class CollectionXTensions {
 			return Unsafe.As< T[ ] >( rFirst ) ;
 		}
 	}
+	
+	
+	public static void AddRange< T >( this List< T > list, params T[ ]? items ) {
+		ArgumentNullException.ThrowIfNull( list, nameof(list) ) ;
+		ArgumentNullException.ThrowIfNull( items, nameof(items) ) ;
+		
+		list.AddRange( items.AsEnumerable() ) ;
+	}
 } ;

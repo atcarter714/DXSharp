@@ -7,7 +7,7 @@ using System.Diagnostics.CodeAnalysis ;
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
-
+using AdvancedDXS.HLSL ;
 using DXSharp ;
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
@@ -16,21 +16,7 @@ using DXSharp.Windows.COM ;
 using DXSharp.Applications ;
 using DXSharp.Windows.Win32 ;
 #endregion
-namespace AdvancedDXS.Framework ;
-
-
-public class GraphicsSettings {
-	public static readonly GraphicsSettings Default = new( ) {
-		BufferCount = 2,
-	} ;
-	
-	public uint BufferCount { get; set ; } = 2 ;
-	
-	public GraphicsSettings( ) { }
-	public GraphicsSettings( uint bufferCount ) {
-		BufferCount = bufferCount ;
-	}
-}
+namespace AdvancedDXS.Framework.Graphics ;
 
 
 public class GraphicsPipeline: DXGraphics {
@@ -55,15 +41,17 @@ public class GraphicsPipeline: DXGraphics {
 	HWnd             _wnd ;
 	DXSApp?          _app ;
 	GraphicsSettings _settings ;
+	ShaderBuilder _shaderBuilder ;
 	PCWSTR _DBGName_Factory = default,
 		   _DBGName_Device = default ;
 	
 	IFactory7? _factory ;
 	IDevice12? _device ;
+	ISwapChain4? _swapChain ;
+	IDescriptorHeap? _rtvHeap, _dsvHeap ;
 	// =====================================================
-
 	
-	// -----------------------------------------------------------------------------------------------------------------
+	
 	
 	public GraphicsPipeline( GraphicsSettings? settings = null ) {
 		_DBGName_Factory = "DXSharp.DXGI.IFactory7" ;
@@ -77,9 +65,12 @@ public class GraphicsPipeline: DXGraphics {
 		
 		_wnd    = _app.Window?.Handle ?? HWnd.Null ;
 		if( _wnd.IsNull ) throw new DXSharpException( "Window handle is null!" ) ;
+		
+		_shaderBuilder = new( ) ;
+		Add( _shaderBuilder ) ;
 	}
 	
-	// -----------------------------------------------------------------------------------------------------------------
+	// -----------------------------------------------------
 	
 	
 	public override void LoadPipeline( ) {
@@ -195,7 +186,9 @@ public class GraphicsPipeline: DXGraphics {
 		}
 	}
 
-	public override void LoadAssets( ) { }
+	public override void LoadAssets( ) {
+		
+	}
 	
 	
 	// -----------------------------------------------------

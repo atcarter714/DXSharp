@@ -5,6 +5,13 @@
   "className": "DxcPInvoke",
   
   "comInterop": {
-    "preserveSigMethods": [ ]
+    "preserveSigMethods": [
+      "IDxcCompiler3.Compile",
+      
+      "IDxcUtils.CreateDefaultIncludeHandler",
+      "IDxcUtils.LoadFile",
+      
+      "IDxcResult.GetOutput"
+    ]
   }
 }

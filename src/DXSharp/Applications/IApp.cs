@@ -15,7 +15,7 @@ public interface IDXApp: IDisposable,
 	Size CurrentSize { get; }
 	IAppWindow? Window { get; }
 	AppSettings Settings { get; }
-	ITimeProvider? GameTime { get ; }
+	ITimeProvider? Time { get ; }
 	bool IsInitialized { get ; }
 	
 	void Initialize( ) ;

@@ -378,8 +378,8 @@ public class D3D12GraphicsInterop
 
 	[Test, Order( 7 )]
 	public unsafe void Create_DXGI_SwapChain() {
-		Assert.IsNotNull( _renderForm );
-		Assert.IsNotNull( _commandQueue );
+		Assert.IsNotNull( _renderForm ) ;
+		Assert.IsNotNull( _commandQueue ) ;
 
 		// Create swapchain descriptions:
 		var scDesc = new SwapChainDescription1( _renderForm.ClientSize.Width, _renderForm.ClientSize.Height,

@@ -31,7 +31,7 @@ internal static class D3D12UT {
 			// Get the adapter by its LUID:
 			IDXGIAdapter4? pAdapter = default ;
 			dxgiFactory?.EnumAdapterByLuid( luid, typeof( IDXGIAdapter4 ).GUID, out object? adapterObj ) ;
-
+			
 			// Get the desc and vendor ID:
 			DXGI_ADAPTER_DESC1 desc = default ;
 			pAdapter?.GetDesc1( &desc ) ;
@@ -40,7 +40,6 @@ internal static class D3D12UT {
 
 		// Failed:
 #if DEBUG || DEV_BUILD || DEBUG_COM
-		
 		catch ( COMException comErr ) {
 			throw new
 				DirectXComError( $"{nameof(D3D12UT)} (internal) :: {msg}", comErr ) ;
@@ -49,7 +48,6 @@ internal static class D3D12UT {
 			throw new
 				DXSharpException( $"{nameof(D3D12UT)} (internal) :: {msg}", err ) ;
 		}
-		
 #else
 		finally { }
 		return 0x00000000 ;

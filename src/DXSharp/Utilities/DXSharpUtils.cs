@@ -1,11 +1,5 @@
 ﻿#region Using Directives
-using System ;
-using System.Runtime.InteropServices ;
 using System.Runtime.CompilerServices ;
-
-using Windows.Win32 ;
-using Windows.Win32.Graphics.Dxgi ;
-using Windows.Win32.Graphics.Direct3D12 ;
 #endregion
 namespace DXSharp ;
 
