@@ -4,7 +4,7 @@
 	<!--Common Project Properties-->
 	<PropertyGroup>
 		<TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>
-		<TargetFrameworks>net7.0-windows10.0.22621.0;</TargetFrameworks>
+		<TargetFrameworks>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0;</TargetFrameworks>
 
 		<Title>DXSharp</Title>
 		<Version>$(VersionPrefix)</Version>

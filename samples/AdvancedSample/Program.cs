@@ -12,6 +12,9 @@ using DXSharp.DXGI ;
 #endregion
 
 
+nint pDxcompilerDll = NativeLibrary.Load( $"dxcompiler.dll" ) ;
+nint pDxilDll = NativeLibrary.Load( $"dxil.dll" ) ;
+
 AppSettings Settings = new( "DXSharp: Advanced Sample",
 							(1920, 1080),
 							new AppSettings.Style {
@@ -21,7 +24,6 @@ AppSettings Settings = new( "DXSharp: Advanced Sample",
 								ForegroundColor = Color.Black,
 								BackgroundColor = SystemColors.Window,
 							} ) ;
-
 
 //! Enable the debug layer in debug mode:
 #if DEBUG || DEBUG_COM
@@ -48,3 +50,6 @@ app.Run( ) ;
 debug6.DisableDebugLayer( ) ;
 debug6.DisposeAsync( ) ;
 #endif
+
+NativeLibrary.Free( pDxcompilerDll );
+NativeLibrary.Free( pDxilDll );

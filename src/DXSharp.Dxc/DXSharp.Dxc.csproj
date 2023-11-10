@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net7.0-windows10.0.22621.0;</TargetFrameworks>
+        <TargetFrameworks>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0;</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -13,9 +13,58 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="Microsoft.Direct3D.D3D12" Version="1.711.3-preview" />
+      <PackageReference Include="Microsoft.Direct3D.DXC" Version="101.7.2207.25" />
       <PackageReference Include="Microsoft.Windows.CsWin32" Version="[0.3.49-beta,)">
         <PrivateAssets>all</PrivateAssets>
       </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.d3d12\1.711.3-preview\build\native\bin\x64\D3D12Core.dll">
+        <Link>sdk\D3D12Core.dll</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.d3d12\1.711.3-preview\build\native\bin\x64\D3D12Core.pdb">
+        <Link>sdk\D3D12Core.pdb</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.d3d12\1.711.3-preview\build\native\bin\x64\d3d12SDKLayers.dll">
+        <Link>sdk\d3d12SDKLayers.dll</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.d3d12\1.711.3-preview\build\native\bin\x64\d3d12SDKLayers.pdb">
+        <Link>sdk\d3d12SDKLayers.pdb</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.d3d12\1.711.3-preview\build\native\bin\x64\d3dconfig.exe">
+        <Link>sdk\d3dconfig.exe</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.d3d12\1.711.3-preview\build\native\bin\x64\d3dconfig.pdb">
+        <Link>sdk\d3dconfig.pdb</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.dxc\101.7.2207.25\build\native\bin\x64\dxc.exe">
+        <Link>sdk\dxc.exe</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.dxc\101.7.2207.25\build\native\bin\x64\dxc.pdb">
+        <Link>sdk\dxc.pdb</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.dxc\101.7.2207.25\build\native\bin\x64\dxcompiler.dll">
+        <Link>sdk\dxcompiler.dll</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.dxc\101.7.2207.25\build\native\bin\x64\dxcompiler.pdb">
+        <Link>sdk\dxcompiler.pdb</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.dxc\101.7.2207.25\build\native\bin\x64\dxil.dll">
+        <Link>sdk\dxil.dll</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>
