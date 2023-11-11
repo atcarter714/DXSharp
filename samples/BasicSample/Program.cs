@@ -11,9 +11,9 @@ static class Program
 									   new AppSettings.Style {
 											FontSize = 13,
 											FontName = "Consolas",
-											BackBufferColor = Color.Black, 
-											ForegroundColor = Color.Black, 
-											BackgroundColor = SystemColors.Window, 
+											BackBufferColor = Color.Black,
+											ForegroundColor = Color.Black,
+											BackgroundColor = SystemColors.Window,
 									   }) ;
 	
 	[STAThread]

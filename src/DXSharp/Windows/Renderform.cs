@@ -462,6 +462,13 @@ public class RenderForm: Form, IAppWindow {
 	/// <param name="e">The <see cref="System.ComponentModel.CancelEventArgs"/> instance containing the event data.</param>
 	void OnScreensaver( CancelEventArgs e ) => Screensaver?.Invoke( this, e ) ;
 
+	/// <summary>
+	/// Raises an event indicating that the DPI of the screen has changed.
+	/// </summary>
+	/// <param name="e">
+	/// A <see cref="DPIChangedEventArgs"/> that contains the event data, such as the
+	/// new DPI value, size of the screen, and the new position of the window.
+	/// </param>
 	void OnDPIChanged( DPIChangedEventArgs e ) => DPIChanged?.Invoke( this, e ) ;
 	
 	
@@ -490,8 +497,8 @@ public class RenderForm: Form, IAppWindow {
 	
 	public void Minimize( ) => WindowState = FormWindowState.Minimized ;
 	public void Maximize( ) => WindowState = FormWindowState.Maximized ;
-	public void SetTitle( in string newTitle ) => Text = newTitle ;
-	public void SetSize( in Size newSize ) => ClientSize = newSize ;
+	public void SetTitle( in string newTitle ) => this.Text = newTitle ;
+	public void SetSize( in Size newSize ) => this.ClientSize = newSize ;
 	public void SetPosition( in Point newLocation ) => Location = newLocation ;
 	// ---------------------------------------------------------------------
 } ;

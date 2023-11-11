@@ -31,14 +31,6 @@
     * ID3D12ShaderReflectionType
     * ID3D12ShaderReflectionVariable
 
-## Complete "Basic Sample" application
-
-- [ ] Full D3D12 pipeline initialization
-- [ ] Full D3D12 pipeline shutdown
-- [ ] Clear backbuffer and present swapchain
-- [ ] Load and compile a simple shader
-- [ ] Load and render a simple quad
-
 _____________________________________________
 ---
 ## Direct3D 12 API Coverage & Headers
@@ -53,9 +45,38 @@ create coverage for ...
 _____________________________________________
 ---
 
-### Missing Types:
- - ...
+## Missing Types:
+Code gen, proxy interface re-definition and/or wrapper classes of the 
+following types are currently missing:
 
+---
+  ### **DXGI Interfaces:**
+ - IDXGIDecodeSwapChain
+ - IDXGIDisplayControl
+
+### **D3D12 Interfaces:**
+ - ID3D12DebugCommandList
+ - ID3D12DebugCommandList1
+ - ID3D12DebugCommandList2
+ - ID3D12DebugCommandQueue
+ - ID3D12DebugDevice
+ - ID3D12DebugDevice1
+ - ID3D12DebugDevice2
+ - ID3D12DeviceRemovedExtendedData
+ - ID3D12DeviceRemovedExtendedData1
+ - ID3D12DeviceRemovedExtendedData2
+ - ID3D12DeviceRemovedExtendedDataSettings
+ - ID3D12InfoQueue
+ - ID3D12InfoQueue1
+ - ID3D12SDKConfiguration
+ - ID3D12ShaderCacheSession
+ - ID3D12SharingContract
+ - ID3D12StateObject
+ - ID3D12StateObjectProperties
+ - ID3D12SwapChainAssistant
+ - ID3D12Tools
+ - ID3D12VersionedRootSignatureDeserializer
+ - ID3D12VirtualizationGuestDevice
 
 _____________________________________________
 
@@ -77,3 +98,26 @@ needs. However, some things are inherently broken, like some COM interface metho
 a value structure and require work-arounds (like unmanaged function pointers) to get working.
 Once you start implementing a proxy interface, you will encounter dependent types that you
 will also need to implement, and so on ...
+
+___
+<br/>
+
+### Recent Progress:
+- #### Completed *"Basic Sample"* application (v0.1.0)
+  - Demonstrates basic usage of the DXSharp API ...
+  - Successfully initializes/shuts down the Direct3D 12 API/pipeline ...
+  - Successfully compiles shaders at runtime and renders a triangle ...
+  - Closely matches the "Hello Triangle" sample from Microsoft ...
+
+- #### Created *"DXSharp.Dxc"* project 
+  - Exposes the DirectX Shader Compiler (DXC) API & tooling ...
+  - Hooked up CsWin32, Win32Metadata, etc for interop layer ...
+  - Created the `NativeMethods.txt` and `NativeMethods.json` files ...
+  - Defined list of all Dxc functions, types, and enumerations and generated code ...
+
+- #### Created *"DXSharp.Framework"* project 
+  - Can be used as a base for future projects and applications ...
+  - Being used for development of a powerful application system and 3D programming API ...
+  - Intended for use cases such as game engines, 3D editors, and other complex applications ...
+
+- #### Created new *"Advanced Sample"* application (v0.0.1) ...

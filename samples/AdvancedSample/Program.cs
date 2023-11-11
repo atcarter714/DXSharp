@@ -20,16 +20,16 @@ AppSettings Settings = new( "DXSharp: Advanced Sample",
 //! Enable the debug layer in debug mode:
 #if DEBUG || DEBUG_COM
 IDebug6? debug6 = default ;
-var hr    = D3D12.GetDebugInterface( out debug6 ) ;
+var hr   = D3D12.GetDebugInterface( out debug6 ) ;
 ObjectDisposedException.ThrowIf( debug6 is null, typeof( IDebug6 ) ) ;
 hr.ThrowOnFailure( ) ;
 
 debug6.EnableDebugLayer( ) ;
 debug6.SetEnableAutoName( true ) ;
 debug6.SetEnableGPUBasedValidation( true ) ;
+#if !GPU_VALIDATE_DESC_ONLY
 debug6.SetGPUBasedValidationFlags( GPUBasedValidationFlags.None ) ;
-
-#if GPU_VALIDATION_DESCRIPTOR_ONLY
+#else
 debug6.SetGPUBasedValidationFlags( GPUBasedValidationFlags.DisableStateTracking ) ;
 #endif
 #endif

@@ -29,6 +29,7 @@
     <!-- References :: -->
     <ItemGroup Label="ProjectReferenceProperties">
         <ProjectReference Include="..\..\src\DXSharp.Dxc\DXSharp.Dxc.csproj" />
+        <ProjectReference Include="..\..\src\DXSharp.Framework\DXSharp.Framework.csproj" />
         <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
     </ItemGroup>
 

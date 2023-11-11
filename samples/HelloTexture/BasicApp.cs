@@ -17,6 +17,8 @@ public class BasicApp: DXWinformApp {
 
 	public override void Initialize( ) {
 		base.Initialize( ) ;
+		Window!.SetSize( Settings.WindowSize ) ;
+		
 		graphics = new( _graphicsSettings ) ;
 		graphics.LoadPipeline( ) ;
 		graphics.LoadAssets( ) ;

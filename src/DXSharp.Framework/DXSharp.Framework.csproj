@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\DXSharp.Dxc\DXSharp.Dxc.csproj" />
       <ProjectReference Include="..\DXSharp\DXSharp.csproj" />
     </ItemGroup>
 

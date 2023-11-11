@@ -69,9 +69,9 @@ public abstract class DXAppBase: IDXApp {
 	
 	protected virtual void OnDPIChanged( object sender, DPIChangedEventArgs e ) {
 		this.DesiredSize = e.NewRect.Size ;
-		this.Window?.SetPosition( e.NewPosition ) ;
 		this.Window?.SetSize( this.DesiredSize ) ;
-		this.Window?.Invalidate( ) ;
+		//this.Window?.SetPosition( e.NewPosition ) ;
+		//this.Window?.Invalidate( ) ;
 	}
 	
 	// --------------------------------------

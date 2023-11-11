@@ -14,6 +14,7 @@ public static class DXSharpUtils {
 	public static readonly uint VendorID_AMD       = _AMD_, 
 								   VendorID_Intel  = _Intel_, 
 								   VendorID_Nvidia = _Nvidia_ ;
+
 	
 	public static GPUVendor GPUVendorFromUID( in this UID32 vendorID ) =>
 		( (uint)vendorID ) switch {

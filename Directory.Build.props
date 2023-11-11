@@ -13,7 +13,8 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-		
+		<Deterministic>true</Deterministic>
+				
 		<!-- This entire repo has just one version.json file, so compute the version once and share with all projects in a large build. -->
 		<GitVersionBaseDirectory>$(MSBuildThisFileDirectory)</GitVersionBaseDirectory>
 
@@ -32,5 +33,11 @@
 		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		
+	</PropertyGroup>
+
+
+	<!-- DirectX SDK & Dependency Properties -->
+	<PropertyGroup>
+		<UsingAgilitySDK>true</UsingAgilitySDK>
 	</PropertyGroup>
 </Project>

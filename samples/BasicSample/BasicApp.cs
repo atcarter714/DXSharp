@@ -14,6 +14,7 @@ public class BasicApp: DXWinformApp {
 	public override void Initialize( ) {
 		base.Initialize( ) ;
 		Window!.SetTitle( Settings.Title) ;
+		Window?.SetSize( Settings.WindowSize ) ;
 		
 #if DEBUG
 		// Enable debug layer in debug builds:

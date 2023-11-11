@@ -252,6 +252,8 @@ ID3D12Resource1
 ID3D12Resource2
 
 ID3D12VersionedRootSignatureDeserializer
+ID3D12SDKConfiguration
+ID3D12Tools
 
 D3DCreateBlob
 D3DCompileFromFile
