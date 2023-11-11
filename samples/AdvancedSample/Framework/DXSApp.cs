@@ -28,7 +28,9 @@ public class DXSApp: DXWinformApp {
 	public override void Initialize( ) {
 		base.Initialize( ) ;
 		
+		Window?.SetSize( Settings.WindowSize ) ;
 		graphics = new( _graphicsSettings ) ;
+		
 		graphics.LoadAssets( ) ;
 	}
 

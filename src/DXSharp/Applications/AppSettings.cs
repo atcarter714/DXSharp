@@ -11,8 +11,8 @@
 /// <param name="StyleSettings">Additional settings for the visual style/appearance of the app.</param>
 /// <param name="AdvancedSettings">Advanced settings for the behavior and capabilities of the app.</param>
 public record AppSettings( string Title, USize WindowSize = default,
-						   AppSettings.Style? StyleSettings = default,
-						   AppSettings.Advanced? AdvancedSettings = default ) {
+						     AppSettings.Style? StyleSettings = default,
+								AppSettings.Advanced? AdvancedSettings = default ) {
 	// ----------------------------------------------------------------------------------------------------
 	public static readonly USize DEFAULT_WINDOW_SIZE = (DEFAULT_WIDTH, DEFAULT_HEIGHT) ;
 	public const uint DEFAULT_WIDTH  = 1280, DEFAULT_HEIGHT = 720 ;
@@ -86,18 +86,17 @@ public record AppSettings( string Title, USize WindowSize = default,
 		// Constructors:
 		// -----------------------------------------------------
 		public Style( ) { }
-		public Style( float fontSize = 10f,
-					  string? fontName = null,
+		public Style( float fontSize      = 10f,
+					  string? fontName     = null,
 					  Color backBufferColor = default,
 					  Color  backgroundColor = default,
-					  Color foregroundColor = default ) {
+					  Color foregroundColor   = default ) {
 			FontSize        = fontSize ;
 			FontName        = fontName ;
 			BackBufferColor = backBufferColor ;
 			BackgroundColor = backgroundColor ;
 			ForegroundColor = foregroundColor ;
 		}
-		
 		// -----------------------------------------------------
 		
 	} ;

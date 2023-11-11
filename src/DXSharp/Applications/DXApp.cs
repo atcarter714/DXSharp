@@ -1,7 +1,10 @@
 ﻿#region Using Directives
+
+using System.Runtime.Versioning ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Direct3D ;
+using DXSharp.Applications ;
 using DXSharp.DXGI ;
 using DXSharp.Windows.Win32.XTensions ;
 
@@ -9,16 +12,18 @@ using static Windows.Win32.PInvoke ;
 #endregion
 namespace DXSharp.Windows.Win32.Helpers ;
 
+//! Why the hell do I have two abstract "DXApp" classes?!
 
 /// <summary>Helper class for creating, running and managing a DirectX12 application.</summary>
+[SupportedOSPlatform("windows7.0")]
 public abstract class DXApp: IDisposable {
     static D3D_FEATURE_LEVEL _d3dFeatures =
         D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_12_0 ;
     
     string _title ;
+    float _aspectRatio ;
     bool _useWarpDevice ;
     readonly string _assetsPath ;
-    readonly float _aspectRatio ;
     readonly uint _width, _height ;
 
     public string Title => _title ;
@@ -26,6 +31,9 @@ public abstract class DXApp: IDisposable {
     public int Height { get; protected set; }
     public string AssetsPath => _assetsPath ;
     public Size Size => new( (int)_width, (int)_height ) ;
+    
+    public float AspectRatio => ( _aspectRatio =
+                                      ( (float)_width / (float)_height ) ) ;
     
 
     public DXApp( uint width, uint height, string name ) {
@@ -63,10 +71,14 @@ public abstract class DXApp: IDisposable {
     
     // --------------------------------------
     // Static Methods ::
+    [SupportedOSPlatform("windows8.0")]
     public static void GetHardwareAdapter( IDXGIFactory2? dxgiFactory,
                                            out IDXGIAdapter1? dxgiAdapter,
                                            bool requestHighPerformanceAdapter ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
         ArgumentNullException.ThrowIfNull( dxgiFactory, nameof(dxgiFactory) ) ;
+#endif
+        
         dxgiAdapter = null ;
         var adapterIndex = 0U ;
         while ( dxgiFactory.EnumAdapters1( adapterIndex, out var adapter ).Succeeded ) {
@@ -106,15 +118,20 @@ public abstract class DXApp: IDisposable {
     }
     public void Dispose( ) => this.Dispose( true ) ;
 
+    // --------------------------------------
+    [SupportedOSPlatform("windows5.0")]
     public virtual void OnKeyDown( byte wParam ) {
-        switch ( wParam ) {
-            case (byte)Keys.Escape:
+        //(byte)Keys.Escape:
+        switch ( (Keys)wParam ) {
+            case Keys.Escape: 
                 CloseWindow( Win32Application._HWnd ) ;
                 Application.Exit( ) ;
                 break ;
         }
     }
     public virtual void OnKeyUp( byte wParam ) { }
+
     public abstract void OnUpdate( ) ;
     public abstract void OnRender( ) ;
+    // ======================================================================================
 } ;

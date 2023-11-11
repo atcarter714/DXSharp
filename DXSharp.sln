@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DXSharp.Dxc", "src\DXSharp.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdvancedSample", "samples\AdvancedSample\AdvancedSample.csproj", "{5AA13E5B-574A-4651-A172-AB3EDA13DEC2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DXSharp.Framework", "src\DXSharp.Framework\DXSharp.Framework.csproj", "{4B5C9C89-A4A4-4081-8508-6E26388817F8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{5AA13E5B-574A-4651-A172-AB3EDA13DEC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5AA13E5B-574A-4651-A172-AB3EDA13DEC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5AA13E5B-574A-4651-A172-AB3EDA13DEC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B5C9C89-A4A4-4081-8508-6E26388817F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B5C9C89-A4A4-4081-8508-6E26388817F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B5C9C89-A4A4-4081-8508-6E26388817F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B5C9C89-A4A4-4081-8508-6E26388817F8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -72,6 +78,7 @@ Global
 		{F3C57F0F-8540-4E97-B28D-A34091C53755} = {AEE84FD5-7441-42CF-AA6C-5805B759E1F8}
 		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53} = {29411031-4490-4542-B2D1-02D223BFD605}
 		{5AA13E5B-574A-4651-A172-AB3EDA13DEC2} = {AEE84FD5-7441-42CF-AA6C-5805B759E1F8}
+		{4B5C9C89-A4A4-4081-8508-6E26388817F8} = {29411031-4490-4542-B2D1-02D223BFD605}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C4990EC-248E-49D5-A254-EA8AD214C338}

@@ -7,7 +7,7 @@ using DXSharp.Applications ;
 static class Program
 {
 	static AppSettings Settings = new( "DXSharp: Hello Triangle",
-									   (1280, 720), 
+									   (1920, 1080),
 									   new AppSettings.Style {
 											FontSize = 13,
 											FontName = "Consolas",

@@ -9,8 +9,9 @@
  */
 
 #region Using Directives
-using Windows.Win32.Graphics.Direct3D12 ;
+using System.Runtime.Versioning ;
 using Windows.Win32.Graphics.Dxgi ;
+using Windows.Win32.Graphics.Direct3D12 ;
 
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
@@ -20,6 +21,7 @@ using static Windows.Win32.PInvoke ;
 namespace DXSharp.Applications ;
 
 
+[SupportedOSPlatform("windows7.0")]
 public class DXWinformApp: DXAppBase, IDXWinformApp {
 	internal static readonly CancellationTokenSource AppCancelTokenSource = new( ) ;
 	readonly object _gameStateLock = new( ) ;
@@ -74,13 +76,19 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	// --------------------------------------
 	
 	public override void Initialize( ) {
-		base.Initialize( ) ;
+		Application.SetCompatibleTextRenderingDefault( true ) ;
+		Application.SetDefaultFont( Settings.StyleSettings.Font ) ;
 		
 		_form = new RenderForm( Title ) ;
-		_form.ClientSize = DesiredSize ;
+		_form.Show( ) ;
 		_form.ForeColor = Color.Black ;
 		Window?.SetTitle( Settings.Title ) ;
-		_form.Show( ) ;
+		_form.ClientSize = DesiredSize ;
+		Window?.SetSize( DesiredSize ) ;
+		
+		_form.PauseRendering += ( s, e )  => IsPaused = true ;
+		_form.ResumeRendering += ( s, e ) => IsPaused = false ;
+		_form.UserResized += ( s, e )  => DesiredSize = e.NewSize ;
 		
 		// Configure parallelism and thread setup:
 		cancelTick = AppCancelTokenSource.Token ;
@@ -97,8 +105,17 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 		} ;
 		
 		this.IsPaused = _abort = false ;
+		
+		base.Initialize( ) ;
 	}
 	
+	public override void Run( ) {
+	    Time.Start( ) ;
+	    IsPaused  = !(IsRunning = true) ;
+	    RenderLoop.Run( _form, _MainLoop ) ;
+	    
+	    //_DispatchJobs( ) ;
+	}
 	public override void Shutdown( ) {
 		if( _Quitting ) return ;
 		AppCancelTokenSource.Cancel( ) ;
@@ -121,18 +138,9 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 		if( !IsRunning ) return ;
 		if( !IsPaused ) return ;
 		Time?.Update( ) ;
-		
 	}
 	public override void Draw( ) {
 		if( !IsRunning ) return ;
-	}
-	
-	public override void Run( ) {
-		Time.Start( ) ;
-		IsPaused  = !(IsRunning = true) ;
-		RenderLoop.Run( _form, _MainLoop ) ;
-		
-		//_DispatchJobs( ) ;
 	}
 	
 	

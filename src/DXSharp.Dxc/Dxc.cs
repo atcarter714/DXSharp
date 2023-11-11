@@ -1,11 +1,13 @@
 ﻿#region Using Directives
 using System ;
+using System.Reflection ;
 using System.Runtime.InteropServices ;
 
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.System.Com ;
 using Windows.Win32.Graphics.Direct3D.Dxc ;
+using Windows.Win32.Graphics.DXCore ;
 using cswinDxc = Windows.Win32.Graphics.Direct3D.Dxc ;
 
 using DXSharp.Windows ;
@@ -17,6 +19,22 @@ namespace DXSharp.Dxc ;
 /// Exposes methods that create Direct3D shader compiler objects.
 /// </summary>
 public static partial class Dxc {
+	const string DxcLibraryName = "dxcompiler.dll", DxilLibraryName = "dxil.dll" ;
+	internal static nint DxcDll, DxilDll ;
+	static Dxc( ) {
+		bool dxcLoaded  = NativeLibrary.TryLoad( DxcLibraryName, out nint dxcompilerDll ) ;
+		bool dxilLoaded = NativeLibrary.TryLoad( DxilLibraryName, out nint dxilDll ) ;
+		
+		if( !dxcLoaded ) {
+			throw new DllNotFoundException( $"{nameof(Dxc)} :: Unable to load dxcompiler.dll" ) ;
+		}
+		DxcDll = dxcompilerDll ;
+
+		if( !dxilLoaded ) {
+			throw new DllNotFoundException( $"{nameof(Dxc)} :: Unable to load dxil.dll" ) ;
+		}
+		DxilDll = dxilDll ;
+	}
 	// -----------------------------------------------------------------------------------------------------------------
 	
 	public static HResult CreateInstance( in Guid clsid, in Guid iid, out object ppv ) {

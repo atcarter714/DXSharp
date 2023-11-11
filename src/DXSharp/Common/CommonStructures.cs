@@ -15,15 +15,25 @@ namespace DXSharp ;
 
 /// <summary>Represents a size using unsigned (32-bit) integers.</summary>
 /// <remarks>Convenient in some interop scenarios with Win32/COM and D3D.</remarks>
-public struct USize {
+[DebuggerDisplay("{Width}x{Height}")]
+public struct USize: IEquatable< USize > {
 	public uint Width, Height ;
-	public USize( (uint width, uint height) size ) => ( Width, Height ) = size ;
-	public USize( Size size ) => ( Width, Height ) = ( (uint)size.Width, (uint)size.Height ) ;
-	public USize( uint width = 0x0000U, uint height = 0x0000U ) => ( Width, Height ) = ( width, height ) ;
+	public USize( (uint width, uint height) size )  => ( Width, Height ) = size ;
+	public USize( Size size ) => ( Width, Height )  =  ( (uint)size.Width, (uint)size.Height ) ;
+	public USize( uint width = 0x0000U, uint height =  0x0000U ) => ( Width, Height ) = ( width, height ) ;
+	
+	public override int  GetHashCode( ) => HashCode.Combine( Width, Height ) ;
+	public override bool Equals( object? obj ) => obj is USize other && Equals( other ) ;
+	public bool Equals( USize other ) => ( Width == other.Width ) && ( Height == other.Height ) ;
+
 	public static implicit operator USize( (uint width, uint height) size ) => new( size.width, size.height ) ;
 	public static implicit operator (uint width, uint height)( USize size ) => ( size.Width, size.Height ) ;
 	public static implicit operator USize( Size size ) => new( (uint)size.Width, (uint)size.Height ) ;
 	public static implicit operator Size( USize size ) => new( (int)size.Width, (int)size.Height ) ;
+	[MethodImpl(_MAXOPT_)] public static bool operator ==( USize left, USize right ) => ( left.Width == right.Width ) && ( left.Height == right.Height ) ;
+	[MethodImpl(_MAXOPT_)] public static bool operator !=( USize left, USize right ) => ( left.Width != right.Width ) || ( left.Height != right.Height ) ;
+	[MethodImpl(_MAXOPT_)] public static bool operator ==( USize left, Size right ) => ( left.Width == right.Width ) && ( left.Height == right.Height ) ;
+	[MethodImpl(_MAXOPT_)] public static bool operator !=( USize left, Size right ) => ( left.Width != right.Width ) || ( left.Height != right.Height ) ;
 } ;
 
 

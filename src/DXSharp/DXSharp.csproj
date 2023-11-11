@@ -36,10 +36,10 @@
 	
 	<!-- Compiler Symbols & Configurations :: -->
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-	  <DefineConstants>TRACE, DEBUG_COM, DEV_BUILD, CACHE_SIZE_NORMAL</DefineConstants>
+	  <DefineConstants>TRACE, DEBUG_COM, DEV_BUILD, CACHE_SIZE_NORMAL, __X64, _64BIT</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-	  <DefineConstants>TRACE, DEV_BUILD, CACHE_SIZE_LARGE</DefineConstants>
+	  <DefineConstants>TRACE, DEV_BUILD, CACHE_SIZE_LARGE, __X64, _64BIT</DefineConstants>
 	</PropertyGroup>
 	
 	
