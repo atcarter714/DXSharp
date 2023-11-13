@@ -8,4 +8,9 @@
   <PropertyGroup Label="Configuration">
     <Import_RootNamespace>DXSharp.Samples.Shared</Import_RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)BasicApps.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BasicGraphics.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)VertexData.cs" />
+  </ItemGroup>
 </Project>

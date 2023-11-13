@@ -31,6 +31,7 @@
 		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 		<AssemblyVersion>0.3.3</AssemblyVersion>
 		<FileVersion>1.0.1</FileVersion>
+		<Platforms>AnyCPU;x64;x86</Platforms>
 	</PropertyGroup>
 	
 	
@@ -70,10 +71,20 @@
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 		
+
 		<!-- DirectX Agility SDK Package -->
-		<PackageReference Condition="$(UsingAgilitySDK)" Aliases="AgilitySDK" Include="Microsoft.Direct3D.D3D12" Version="[1.711.3-preview,)" GeneratePathProperty="true" >
-			
+		<PackageReference Condition="$(UsingAgilitySDK)" Aliases="AgilitySDK" Include="Microsoft.Direct3D.D3D12" Version="[1.711.3-preview,)" GeneratePathProperty="true">
 		</PackageReference>
+	</ItemGroup>
+	
+
+
+	<ItemGroup>
+		<AgilityDLLs Include="$(PkgMicrosoft_Direct3D_D3D12)\build\native\bin\x64\*.dll" />
+		<None Include="@(AgilityDLLs)">
+			<Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 	
 	

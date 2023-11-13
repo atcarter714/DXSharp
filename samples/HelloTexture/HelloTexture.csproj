@@ -5,10 +5,13 @@
         <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <Platforms>AnyCPU;x64;x86</Platforms>
     </PropertyGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
     </ItemGroup>
+
+    <Import Project="..\shared\DXSharp.Samples.Shared\DXSharp.Samples.Shared.projitems" Label="Shared" />
 
 </Project>

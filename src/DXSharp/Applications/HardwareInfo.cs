@@ -1,4 +1,5 @@
-﻿using Windows.Win32 ;
+﻿using System.Runtime.Versioning ;
+using Windows.Win32 ;
 using Windows.Win32.System.SystemInformation ;
 namespace DXSharp.Applications ;
 
@@ -6,6 +7,7 @@ namespace DXSharp.Applications ;
 /// <summary>
 /// Provides important information about the system's hardware and capabilities.
 /// </summary>
+[SupportedOSPlatform("windows6.0.6000")]
 public static class HardwareInfo {
 	public static bool Is64Bit => Environment.Is64BitOperatingSystem ;
 	public static ProcessorArchitecture ProcessorArchitecture { get ; }
@@ -18,6 +20,11 @@ public static class HardwareInfo {
 	public static ulong InstalledMemory { get ; }
 	public static ulong SystemAvailableMemory =>
 				VirtualMemory + PhysicalMemory ;
+	
+	public static double InstalledMemoryInMB => (double)( (decimal)InstalledMemory / MathBin.BytesPerMB ) ;
+	public static double InstalledMemoryInGB => (double)( (decimal)InstalledMemory / MathBin.BytesPerGB ) ;
+	public static double SystemAvailableMemoryInMB => (double)( (decimal)SystemAvailableMemory / MathBin.BytesPerMB ) ;
+	public static double SystemAvailableMemoryInGB => (double)( (decimal)SystemAvailableMemory / MathBin.BytesPerGB ) ;
 	
 	public static readonly DriveInfo[ ] DiskDrives ;
 	public static string SystemName => Environment.MachineName ;

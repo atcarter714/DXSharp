@@ -11,6 +11,7 @@
 	<Nullable>enable</Nullable>
 	<IsPackable>false</IsPackable>
 	<BaseOutputPath>$(RepoRootPath)bin\Tests\$(MSBuildProjectName)\</BaseOutputPath>
+	<Platforms>AnyCPU;x64;x86</Platforms>
 
 	  
 		  

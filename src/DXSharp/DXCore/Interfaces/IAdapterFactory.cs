@@ -41,21 +41,30 @@ public interface IAdapterFactory {
 	
 	/// <summary>Retrieves the DXCore adapter object ( [IDXCoreAdapter]( /windows/win32/api/dxcore_interface/nn-dxcore_interface-idxcoreadapter)) for a specified Luid, if available.</summary>
 	/// <param name="adapterLuid">
-	/// <para>Type: **[Luid]( /windows/win32/api/winnt/ns-winnt-_luid) const\&** The locally unique value that identifies the adapter instance.</para>
+	/// <para>The locally unique value that identifies the adapter instance.</para>
 	/// <para><a href="https://learn.microsoft.com/windows/win32/api/dxcore_interface/nf-dxcore_interface-idxcoreadapterfactory-getadapterbyluid#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="riid">
-	/// <para>Type: **REFIID** A reference to the globally unique identifier ( GUID) of the interface that you wish to be returned in *ppvAdapter*. This is expected to be the interface identifier ( IID) of [IDXCoreAdapter]( /windows/win32/api/dxcore_interface/nn-dxcore_interface-idxcoreadapter).</para>
+	/// <para>A reference to the globally unique identifier ( GUID) of the interface that you wish to be returned in *ppvAdapter*. This is expected to be the interface identifier ( IID) of [IDXCoreAdapter]( /windows/win32/api/dxcore_interface/nn-dxcore_interface-idxcoreadapter).</para>
 	/// <para><a href="https://learn.microsoft.com/windows/win32/api/dxcore_interface/nf-dxcore_interface-idxcoreadapterfactory-getadapterbyluid#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="ppvAdapter">
-	/// <para>Type: **void\*\*** The address of a pointer to an interface with the IID specified in the *riid* parameter. Upon successful return, *\*ppvAdapter* ( the dereferenced address) contains a pointer to the the DXCore adapter created.</para>
+	/// <para>The address of a pointer to an interface with the IID specified in the *riid* parameter. Upon successful return, *\*ppvAdapter* ( the dereferenced address) contains a pointer to the the DXCore adapter created.</para>
 	/// <para><a href="https://learn.microsoft.com/windows/win32/api/dxcore_interface/nf-dxcore_interface-idxcoreadapterfactory-getadapterbyluid#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <returns>
-	/// <para>Type: **[HRESULT]( /windows/win32/com/structure-of-com-error-codes)** If the function succeeds, it returns **S_OK**. Otherwise, it returns an [**HRESULT**]( /windows/win32/com/structure-of-com-error-codes) [error code]( /windows/win32/com/com-error-codes-10). |Return value|Description| |-|-| |DXGI_ERROR_DEVICE_REMOVED|The adapter Luid passed in *adapterLuid* is recognized, but the adapter is no longer in a valid state.| |E_INVALIDARG|No such adapter Luid as the value passed in *adapterLuid* is available through DXCore.| |E_NOINTERFACE|An invalid value was provided for *riid*.| |E_POINTER|`nullptr` was provided for *ppvAdapter*.|</para>
+	/// <para>
+	/// If the function succeeds, it returns <b>S_OK</b>. Otherwise, it returns an <see cref="HResult"/>
+	/// |DXGI_ERROR_DEVICE_REMOVED|The adapter Luid passed in *adapterLuid* is recognized, but the adapter is no longer in a valid state.|
+	/// |E_INVALIDARG| No such adapter Luid as the value passed in *adapterLuid* is available through DXCore. 
+	/// |E_NOINTERFACE| An invalid value was provided for *riid*.|
+	/// |E_POINTER| <b>nullptr</b> was provided for *ppvAdapter*.|
+	/// </para>
 	/// </returns>
-	/// <remarks>Multiple calls passing the same [Luid]( /windows/win32/api/winnt/ns-winnt-_luid) return identical interface pointers. As a result, it's safe to compare interface pointers to determine whether multiple pointers refer to the same adapter object.</remarks>
+	/// <remarks>
+	/// Multiple calls passing the same <see cref="Luid"/> return identical interface pointers.
+	/// As a result, it's safe to compare interface pointers to determine whether multiple pointers refer to the same adapter object.
+	/// </remarks>
 	unsafe void GetAdapterByLuid( Luid* adapterLuid, Guid* riid, out object ppvAdapter ) ;
 
 	

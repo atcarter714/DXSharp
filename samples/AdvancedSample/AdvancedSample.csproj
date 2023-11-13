@@ -12,6 +12,7 @@
         <Product>Advanced DXSharp Sample</Product>
         <RootNamespace>AdvancedDXS</RootNamespace>
         <ApplicationIcon>Assets\DXSharp_ICON_256.ico</ApplicationIcon>
+        <Platforms>AnyCPU;x64;x86</Platforms>
     </PropertyGroup>
     
     

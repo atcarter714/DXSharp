@@ -79,7 +79,7 @@ public static partial class Dxc {
 		public static readonly Guid Linker = new( 0xef6a8087, 0xb0ea, 0x4d56, 0x9e, 0x45, 
 													 0xd0, 0x7e, 0x1a, 0x8b, 0x78, 0x06) ;
 		
-		/// <summary>The CLSID of the <see cref="cswinDxc.IDxcDiaDataSource"/> type.</summary>
+		
 		public static readonly Guid DxcDiaDataSource = new( 0xcd1f6b73, 0x2ab0, 0x484d, 0x8e, 
 															0xdc, 0xeb, 0xe7, 0xa4, 0x3c, 0xa0, 0x9f) ;
 		

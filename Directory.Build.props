@@ -1,20 +1,20 @@
 ﻿<Project>
 	<PropertyGroup>
-		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<RepoRootPath>$(MSBuildThisFileDirectory)</RepoRootPath>
-		<BaseIntermediateOutputPath>$(RepoRootPath)obj\$([MSBuild]::MakeRelative($(RepoRootPath), $(MSBuildProjectDirectory)))\</BaseIntermediateOutputPath>
-		<BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(RepoRootPath)bin\$(MSBuildProjectName)\</BaseOutputPath>
+		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<PackageOutputPath>$(RepoRootPath)bin\Packages\$(Configuration)\</PackageOutputPath>
+		<BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(RepoRootPath)bin\$(MSBuildProjectName)\</BaseOutputPath>
+		<BaseIntermediateOutputPath>$(RepoRootPath)obj\$([MSBuild]::MakeRelative($(RepoRootPath), $(MSBuildProjectDirectory)))\</BaseIntermediateOutputPath>
 		
-		<LangVersion>latest</LangVersion>
-		<ImplicitUsings>true</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<Deterministic>true</Deterministic>
+		<ImplicitUsings>true</ImplicitUsings>
 		<AnalysisLevel>latest</AnalysisLevel>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-		<Deterministic>true</Deterministic>
-				
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		
 		<!-- This entire repo has just one version.json file, so compute the version once and share with all projects in a large build. -->
 		<GitVersionBaseDirectory>$(MSBuildThisFileDirectory)</GitVersionBaseDirectory>
 
@@ -32,12 +32,11 @@
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		
 	</PropertyGroup>
-
-
+	
+	
 	<!-- DirectX SDK & Dependency Properties -->
-	<PropertyGroup>
+	<PropertyGroup Label="DXSDK">
 		<UsingAgilitySDK>true</UsingAgilitySDK>
 	</PropertyGroup>
 </Project>

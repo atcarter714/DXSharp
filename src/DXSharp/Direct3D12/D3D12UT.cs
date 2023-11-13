@@ -1,5 +1,6 @@
 #region Using Directives
 using System.Runtime.InteropServices ;
+using System.Runtime.Versioning ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
@@ -7,6 +8,7 @@ using Windows.Win32.Graphics.Dxgi ;
 namespace DXSharp.Direct3D12 ;
 
 
+[SupportedOSPlatform("windows8.1")]
 internal static class D3D12UT {
 	
 	internal static unsafe uint GetVendorIdFromDevice< T >( T pDevice ) 
