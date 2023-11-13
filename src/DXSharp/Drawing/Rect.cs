@@ -29,9 +29,8 @@ public struct Rect {
 		Right = (int)right ; Bottom = (int)bottom ;
 	}
 	public unsafe Rect( RECT* pRect ) {
-		unsafe { fixed( Rect* pThis = &this )
+		fixed( Rect* pThis = &this )
 			*((RECT*)pThis) = *pRect ;
-		}
 	}
 	public unsafe Rect( RECT rect ): this( &rect ) { }
 	

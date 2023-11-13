@@ -45,7 +45,6 @@ public static class SDKManager {
 		}
 	}
 	
-	
 	static string? _findSDKLibraries( string currentDir ) {
 		string configPath = _findSdkConfigFile( currentDir ) ;
 		BindingConfigs[ ] configs = _loadBindingConfigsData( configPath ) ;
@@ -175,19 +174,19 @@ public class ConfigsList: IEnumerable< BindingConfigs > {
 
 public class BindingConfigs {
 	public string packagePath { get ; set ; }
-	public string loaderClass { get ; set ; }
-	public string packageAlias { get ; set ; }
+	public string? loaderClass { get ; set ; }
+	public string? packageAlias { get ; set ; }
 	public string fileName { get ; set ; }
-	public string name { get ; set ; }
+	public string? name { get ; set ; }
 	public BindingType bindingType { get ; set ; }
-	public string autoload { get ; set ; }
-	public string version { get ; set ; }
-	public string description { get ; set ; }
-	public string remarks { get ; set ; }
+	public string? autoload { get ; set ; }
+	public string? version { get ; set ; }
+	public string? description { get ; set ; }
+	public string? remarks { get ; set ; }
 } ;
 
 public class BindingType {
-	public string moduleType { get ; set ; }
-	public string tag { get ; set ; }
+	public string? moduleType { get ; set ; }
+	public string? tag { get ; set ; }
 } ;
 

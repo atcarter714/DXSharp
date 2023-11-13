@@ -1,11 +1,12 @@
 ﻿#region Using Directives
 using System.Collections ;
 using System.Runtime.InteropServices ;
+
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi.Common ;
 #endregion
-
 namespace DXSharp.DXGI ;
+
 
 [StructLayout(LayoutKind.Sequential)]
 public struct GammaCurve: IEnumerable< RGB > {
@@ -49,10 +50,10 @@ public struct GammaCurve: IEnumerable< RGB > {
 									 $"The index ({index}) is out of range." ) ;
 	}
 	unsafe DXGI_RGB* _getAddressAt( int offset = 0x00 ) {
-		unsafe { fixed ( __DXGI_RGB_1025* addr = &controlPoints ) {
+		fixed ( __DXGI_RGB_1025* addr = &controlPoints ) {
 			DXGI_RGB* pRGB = (DXGI_RGB *)addr ;
 			return ( pRGB + offset ) ;
-		}}
+		}
 	}
 	
 	// Enumeration:

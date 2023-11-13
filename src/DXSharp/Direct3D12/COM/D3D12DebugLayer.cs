@@ -1,6 +1,7 @@
 ﻿#region Using Directives
 #pragma warning disable CS1591,CS1573,CS0465,CS0649,CS8019,CS1570,CS1584,CS1658,CS0436,CS8981
 using DXSharp.Direct3D12 ;
+using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 using global::System.Runtime.InteropServices;
 using winmdroot = global::Windows.Win32;
@@ -14,7 +15,7 @@ namespace Windows.Win32.Graphics.Direct3D12 ;
 public interface ID3D12Debug: IUnknown {
 	/// <summary>Enables the debug layer. (ID3D12Debug.EnableDebugLayer)</summary>
 	/// <remarks>To enable the debug layers using this API, it must be called before the D3D12 device is created. Calling this API after creating the D3D12 device will cause the D3D12 runtime to remove the device.</remarks>
-	[PreserveSig] void EnableDebugLayer( ) ;
+	[PreserveSig] HResult EnableDebugLayer( ) ;
 } ;
 
 
@@ -106,7 +107,7 @@ public interface ID3D12Debug3: ID3D12Debug {
  InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 public interface ID3D12Debug4: ID3D12Debug3 {
 	/// <summary>Disables the debug layer.</summary>
-	[PreserveSig] void DisableDebugLayer( ) ;
+	[PreserveSig] HResult DisableDebugLayer( ) ;
 } ;
 
 

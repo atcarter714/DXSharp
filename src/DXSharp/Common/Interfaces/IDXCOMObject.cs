@@ -27,18 +27,6 @@ public interface IInstantiable {
 	public static TComObj ConvertArg< TComObj >( IUnknown pComObj ) where TComObj: class, IUnknown? =>
 		pComObj as TComObj ?? throw new ArgumentNullException( nameof(pComObj) ) ;
 
-	public static void fn( IInstantiable x ) {
-		var y = x as IUnknownWrapper ;
-		
-		// Use reflection to cast x to the IUnknownWrapper's ComType Type ...
-		var targetType = y.ComPtrBase.ComType ;
-		var castMethod = typeof( Convert ).GetMethod( nameof(Convert.ChangeType),
-													  new[ ] {
-														  typeof( object ),
-														  typeof( Type ),
-														  typeof( IFormatProvider )
-													  } ) ;
-	}
 } ;
 
 
@@ -129,3 +117,19 @@ public interface IDXCOMObject: IComIID,
 	}
 	// ==========================================================
 } ;
+
+
+/* 
+	public static void fn( IInstantiable x ) {
+		var y = x as IUnknownWrapper ;
+		
+		// Use reflection to cast x to the IUnknownWrapper's ComType Type ...
+		var targetType = y.ComPtrBase.ComType ;
+		var castMethod = typeof( Convert ).GetMethod( nameof(Convert.ChangeType),
+													  new[ ] {
+														  typeof( object ),
+														  typeof( Type ),
+														  typeof( IFormatProvider )
+													  } ) ;
+	}
+ */

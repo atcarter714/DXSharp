@@ -1,6 +1,7 @@
 ﻿#region Using Directives
 
 using System.Buffers ;
+using System.Diagnostics ;
 using System.Diagnostics.CodeAnalysis ;
 using System.Numerics ;
 using System.Runtime.CompilerServices ;
@@ -38,30 +39,113 @@ public struct Box {
 
 	/// <summary>The z position of the back of the box, plus 1. This means that <c>back - front</c> equals the depth of the box.</summary>
 	public uint back ;
+	
+	
+	public Box( uint left = 0, uint top = 0, 
+				uint front = 0, uint right = 0, 
+				uint bottom = 0, uint back = 0 ) {
+		this.left   = left ;
+		this.top    = top ;
+		this.front  = front ;
+		this.right  = right ;
+		this.bottom = bottom ;
+		this.back   = back ;
+	}
+
+	public Box( uint x, uint y, USize baseSize, uint height ) {
+		left   = x ;
+		top    = y ;
+		front  = 0 ;
+		right  = x + baseSize.Width ;
+		bottom = y + baseSize.Height ;
+		back   = 1 ;
+	}
 } ;
 
 
+[DebuggerDisplay("{ToString()}")]
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_COMMAND_QUEUE_DESC ) )]
-public struct CommandQueueDescription {
+public struct CommandQueueDescription: IEquatable< CommandQueueDescription > {
+	// -----------------------------------------------------------------------------------------
+	/// <summary>
+	/// A default <see cref="CommandQueueDescription"/> with all fields set to
+	/// default (<c><value>0</value></c>) values.
+	/// </summary>
+	/// <returns>
+	/// A <see cref="CommandQueueDescription"/> with the values:
+	/// <para>
+	/// [ <see cref="CommandListType.Direct"/>, <see cref="CommandQueuePriority.Normal"/>,
+	/// <see cref="CommandQueueFlags.None"/>, <c><value>0x0000</value></c> ]
+	/// </para>
+	/// </returns>
 	public static readonly CommandQueueDescription Default =
-		new( CommandListType.Direct, 0, CommandQueueFlags.None, 0 ) ;
+		new( CommandListType.Direct, CommandQueuePriority.Normal, CommandQueueFlags.None, 0 ) ;
+	// -----------------------------------------------------------------------------------------
 	
-	public CommandListType   Type ;
-	public int               Priority ;
-	public CommandQueueFlags Flags ;
-	public uint              NodeMask ;
-
-	public CommandQueueDescription( CommandListType   type     = CommandListType.Direct,
-									int               priority = 0,
-									CommandQueueFlags flags    = CommandQueueFlags.None,
-									uint              nodeMask = 0 ) {
+	
+	public CommandListType      Type ;
+	public CommandQueuePriority Priority ;
+	public CommandQueueFlags    Flags ;
+	public uint                 NodeMask ;
+	
+	// -----------------------------------------------------------------------------------------
+	
+	public CommandQueueDescription( CommandListType type = CommandListType.Direct,
+									CommandQueuePriority priority = CommandQueuePriority.Normal,
+									CommandQueueFlags flags = CommandQueueFlags.None, uint nodeMask = 0 ) {
 		Type     = type ;
 		Priority = priority ;
 		Flags    = flags ;
 		NodeMask = nodeMask ;
 	}
+	
+	public CommandQueueDescription( CommandListType   type     = CommandListType.Direct,
+									int               priority = 0,
+									CommandQueueFlags flags    = CommandQueueFlags.None,
+									uint              nodeMask = 0 ) {
+		Type     = type ;
+		Priority = (CommandQueuePriority)priority ;
+		Flags    = flags ;
+		NodeMask = nodeMask ;
+	}
+	
+	
+	// -----------------------------------------------------------------------------------------
 
+	public override string ToString( ) => 
+		$"{nameof(CommandQueueDescription)}: [ " +
+		$"{Type}, {Priority}, {Flags}, {NodeMask} ]" ;
+	
+	public override int GetHashCode( ) => HashCode.Combine( Type, Priority, Flags, NodeMask ) ;
+	
+	public bool Equals( CommandQueueDescription other ) => other == this ;
+	public override bool Equals( object? obj ) => obj is CommandQueueDescription desc && Equals( desc ) ;
+	
+	
+	// -----------------------------------------------------------------------------------------
+
+	public static bool operator ==( CommandQueueDescription left, CommandQueueDescription right ) => 
+										left.Type == right.Type && left.Priority == right.Priority && 
+											left.Flags == right.Flags && left.NodeMask == right.NodeMask ;
+	public static bool operator !=( CommandQueueDescription left, CommandQueueDescription right ) => !left.Equals( right ) ;
+	
+	
+	public static implicit operator CommandQueueDescription( in (CommandListType type, CommandQueuePriority priority, 
+																	CommandQueueFlags flags, uint nodeMask ) values ) =>
+																					new( values.type, values.priority, 
+																						 values.flags, values.nodeMask ) ;
+	
+	public static implicit operator CommandQueueDescription( in (CommandListType type, CommandQueuePriority priority, 
+																	CommandQueueFlags flags ) values ) =>
+																					new( values.type, values.priority, values.flags ) ;
+	
+	public static implicit operator CommandQueueDescription( in (CommandListType type, CommandQueuePriority priority ) values ) =>
+																					new( values.type, values.priority ) ;
+	
+	public static implicit operator CommandQueueDescription( CommandListType type ) => new( type, CommandQueuePriority.Normal ) ;
+	
+	// =========================================================================================
 } ;
 
 
@@ -199,8 +283,8 @@ public struct HeapProperties {
 	public HeapType Type ;
 
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_cpu_page_property">D3D12_CPU_PAGE_PROPERTY</a>-typed value that specifies the CPU-page properties for the heap.</summary>
-	public CpuPageProperty CPUPageProperty ;
-
+	public CPUPageProperty CPUPageProperty ;
+	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_memory_pool">D3D12_MEMORY_POOL</a>-typed value that specifies the memory pool for the heap.</summary>
 	public MemoryPool MemoryPoolPreference ;
 
@@ -218,7 +302,7 @@ public struct HeapProperties {
 	
 	
 	public HeapProperties( HeapType type,
-						   CpuPageProperty cpuPageProperty = CpuPageProperty.Unknown, 
+						   CPUPageProperty cpuPageProperty = CPUPageProperty.Unknown, 
 						   MemoryPool memoryPoolPreference = MemoryPool.Unknown,
 						   uint creationNodeMask = 1, uint visibleNodeMask = 1 ) {
 		Type                 = type ;
@@ -1338,40 +1422,80 @@ public struct ResourceAllocationInfo {
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_CLEAR_VALUE ) )]
 public struct ClearValue {
+	// -------------------------------------------------------
+	/// <summary>
+	/// The default clear value for common resources such as backbuffers, render targets,
+	/// textures and other texture-like numeric/color data.
+	/// </summary>
+	/// <returns>
+	/// <see cref="Color.Black"/> (<c><value>0</value></c>, <c><value>0</value></c>, <c><value>0</value></c>, <c><value>0</value></c>)
+	/// with the <see cref="Format.R8G8B8A8_UNORM"/> format.
+	/// </returns>
+	public static readonly ClearValue TextureDefault
+		= new( Format.R8G8B8A8_UNORM, Color.Black ) ;
+	
+	/// <summary>The default clear value for a depth stencil.</summary>
+	/// <returns>
+	/// A value of <c><value>0.0f</value></c> with a depth of <c><value>1.0f</value></c>
+	/// stored in the <see cref="Format.D32_FLOAT_S8X24_UINT"/> format.
+	/// </returns>
+	public static readonly ClearValue DepthStencilDefault
+		= new( Format.D32_FLOAT_S8X24_UINT, new DepthStencilValue(1, 0) ) ;
+	// -------------------------------------------------------
+	
+	
+	
 	/// <summary>
 	/// <para>Specifies one member of the <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a> enum. The format of the commonly cleared color follows the same validation rules as a view/ descriptor creation. In general, the format of the clear color can be any format in the same typeless group that the resource format belongs to. This <i>Format</i> must match the format of the view used during the clear operation. It indicates whether the <i>Color</i> or the <i>DepthStencil</i> member is valid and how to convert the values for usage with the resource.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_clear_value#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public Format Format ;
 
-	public _anon_clrval_union ReadAs ;
+	public _valueUnion ClearValueData ;
 	[StructLayout( LayoutKind.Explicit )]
-	public partial struct _anon_clrval_union {
+	public partial struct _valueUnion {
 		[FieldOffset( 0 )] public __float_4 Color ;
 		[FieldOffset( 0 )] public DepthStencilValue DepthStencil ;
+		
+		public _valueUnion( __float_4 color ) {
+			DepthStencil = default ;
+			Color = color ;
+		}
+		public _valueUnion( ColorF color ) {
+			DepthStencil = default ;
+			Color = color ;
+		}
+		public _valueUnion( DepthStencilValue depthStencil ) {
+			Color = default ;
+			DepthStencil = depthStencil ;
+		}
+		
+		public static implicit operator _valueUnion( __float_4 color ) => new( color ) ;
+		public static implicit operator _valueUnion( DepthStencilValue depthStencil ) => new( depthStencil ) ;
 	} ;
+	
 	
 	public ClearValue( Format format, __float_4 color ) {
 		Format = format ;
-		ReadAs = new _anon_clrval_union { Color = color } ;
+		ClearValueData = new _valueUnion { Color = color } ;
 	}
 	public ClearValue( Format format, ColorF color ) {
 		Format = format ;
-		ReadAs = new _anon_clrval_union { Color = new( color ) } ;
+		ClearValueData = new _valueUnion { Color = new( color ) } ;
 	}
 	public ClearValue( Format format, Color color ) {
 		Format = format ;
-		ReadAs = new _anon_clrval_union { Color = new( color ) } ;
+		ClearValueData = new _valueUnion { Color = new( color ) } ;
 	}
 	public ClearValue( Format format, KnownColor knownColor ): 
 		this( format, Color.FromKnownColor(knownColor) ) { }
 	public ClearValue( Format format, float r, float g, float b, float a ) {
 		Format = format ;
-		ReadAs = new _anon_clrval_union { Color = new( r, g, b, a ) } ;
+		ClearValueData = new _valueUnion { Color = new( r, g, b, a ) } ;
 	}
 	public ClearValue( Format format, DepthStencilValue depthStencil ) {
 		Format = format ;
-		ReadAs = new _anon_clrval_union { DepthStencil = depthStencil } ;
+		ClearValueData = new _valueUnion { DepthStencil = depthStencil } ;
 	}
 	
 	public static implicit operator ClearValue( (Format format, ColorF color) tuple ) => 

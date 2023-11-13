@@ -11,4 +11,8 @@
       <ProjectReference Include="..\DXSharp\DXSharp.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Applications\" />
+    </ItemGroup>
+
 </Project>

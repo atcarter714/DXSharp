@@ -1,8 +1,6 @@
 ﻿#region Using Directives
-using System.ComponentModel ;
 using System.Diagnostics ;
 using System.Runtime.CompilerServices ;
-using System.Runtime.Intrinsics ;
 #endregion
 namespace DXSharp.Applications ;
 
@@ -18,6 +16,9 @@ public interface ITimeSnapshot {
 	TimeSpan TotalTime { get ; }
 	TimeSpan AverageFrameTime { get ; }
 } ;
+
+
+/// <summary>Contract for a time service provider in a looping application.</summary>
 public interface ITimeProvider: ITimeSnapshot {
 	int UpdateDelay { get ; set ; }
 	float ActualDeltaTime { get ; }
@@ -26,11 +27,12 @@ public interface ITimeProvider: ITimeSnapshot {
 	void Start( ) ;
 	void Stop( ) ;
 	void Reset( ) ;
-	void RunAsync( ) ;
+	Task RunAsync( ) ;
 	
 	void Update( ) ;
 	ValueTask< Timing > GetTimingInfo( ) ;
 } ;
+
 
 // ------------------------------------------------------------
 // Game Timing Mechanism:
@@ -115,8 +117,8 @@ public class Time: ITimeProvider {
 	
 	
 
-	public void RunAsync( ) {
-		Task.Run(( ) => {
+	public Task RunAsync( ) {
+		var _runTask = Task.Run(( ) => {
 			Start( ) ;
 			while ( !_tokenSource.IsCancellationRequested ) {
 				 Update( ) ;
@@ -127,6 +129,7 @@ public class Time: ITimeProvider {
 			}
 			Stop( ) ;
 		}, _tokenSource.Token ) ;
+		return _runTask ;
 	}
 	
 	public void Start( ) {
@@ -141,7 +144,7 @@ public class Time: ITimeProvider {
 		_tokenSource?.Cancel( ) ;
 		_stopwatch?.Stop( ) ;
 	}
-
+	
 	public void Reset( ) {
 		_stopwatch?.Reset( ) ;
 		_tokenSource?.Cancel( ) ;

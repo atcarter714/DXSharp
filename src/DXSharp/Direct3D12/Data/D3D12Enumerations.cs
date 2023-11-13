@@ -599,7 +599,11 @@ public enum TextureLayout {
 
 [EquivalentOf( typeof( D3D12_HEAP_TYPE ) )]
 public enum HeapType {
-	/// <summary>Specifies the default heap. This heap type experiences the most bandwidth for the GPU, but cannot provide CPU access. The GPU can read and write to the memory from this pool, and resource transition barriers may be changed. The majority of heaps and resources are expected to be located here, and are typically populated through resources in upload heaps.</summary>
+	/// <summary>
+	/// Specifies the default heap. This heap type experiences the most bandwidth for the GPU, but cannot provide CPU access.
+	/// The GPU can read and write to the memory from this pool, and resource transition barriers may be changed.
+	/// The majority of heaps and resources are expected to be located here, and are typically populated through resources in upload heaps.
+	/// </summary>
 	Default = 1,
 	/// <summary>
 	/// <para>Specifies a heap used for uploading. This heap type has CPU access optimized for uploading to the GPU, but does not experience the maximum amount of bandwidth for the GPU. This heap type is best for CPU-write-once, GPU-read-once data; but GPU-read-once is stricter than necessary. GPU-read-once-or-from-cache is an acceptable use-case for the data; but such usages are hard to judge due to differing GPU cache designs and sizes. If in doubt, stick to the GPU-read-once definition or profile the difference on many GPUs between copying the data to a _DEFAULT heap vs. reading the data from an _UPLOAD heap. Resources in this heap must be created with <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATE</a>_GENERIC_READ and cannot be changed away from this. The CPU address for such heaps is commonly not efficient for CPU reads. The following are typical usages for _UPLOAD heaps: </para>
@@ -617,7 +621,7 @@ public enum HeapType {
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	Custom = 4,
-	GpuUpload = 5,
+	GPUUpload = 5,
 } ;
 
 
@@ -1038,7 +1042,7 @@ public enum InputClassification {
 
 
 [EquivalentOf( typeof(D3D12_CPU_PAGE_PROPERTY) )]
-public enum CpuPageProperty {
+public enum CPUPageProperty {
 	/// <summary>The CPU-page property is unknown.</summary>
 	Unknown = 0,
 	/// <summary>The CPU cannot access the heap, therefore no page properties are available.</summary>
@@ -2459,4 +2463,33 @@ public enum DescriptorRangeFlags {
 	DataStatic = 0x00000008,
 	/// <summary>Provides the same benefits as static descriptors (see **NONE**), except that the driver is not allowed to promote buffers to root descriptors as an optimization, because they must maintain bounds checks and root descriptors do not have those.</summary>
 	DescriptorsStaticKeepingBufferBoundsChecks = 0x00010000,
+} ;
+
+
+/// <summary>Defines priority levels for a command queue.</summary>
+/// <remarks>
+/// <para>
+/// This enumeration is used by the <b>Priority</b> member of the <see cref="CommandQueueDescription"/> structure.<para/>
+/// (See native DirectX docs for
+/// <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_command_queue_desc">D3D12_COMMAND_QUEUE_DESC</a>
+/// for more information).
+/// </para>
+/// <para>An application must be sufficiently privileged in order to create a command queue that has global realtime priority.
+/// If the application is not sufficiently privileged or if neither the adapter or driver can provide the necessary preemption,
+/// then requests to create a global realtime priority queue fail; such a failure could be due to a lack of hardware support or
+/// due to conflicts with other command queue parameters. Requests to create a global realtime command queue won't silently downgrade
+/// the priority when it can't be supported; the request succeeds or fails as-is to indicate to the application whether or not the
+/// command queue is guaranteed to execute before any other queue.</para>
+/// <para><a href="https://learn.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_command_queue_priority#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+/// <seealso cref="CommandQueue"/>
+/// <seealso cref="CommandQueueDescription"/>
+[EquivalentOf(typeof(D3D12_COMMAND_QUEUE_PRIORITY))]
+public enum CommandQueuePriority {
+	/// <summary>Normal priority.</summary>
+	Normal = 0,
+	/// <summary>High priority.</summary>
+	High = 100,
+	/// <summary>Global realtime priority.</summary>
+	GlobalRealtime = 10000,
 } ;

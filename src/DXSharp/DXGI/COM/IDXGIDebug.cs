@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 using DXSharp ;
 using DXSharp.Windows ;
-using DXSharp.DXGI.Debug ;
+using DXSharp.DXGI.Debugging ;
 using DXSharp.Windows.COM ;
 #endregion
 namespace Windows.Win32.Graphics.Dxgi ;
@@ -43,19 +43,19 @@ public interface IDXGIDebug1: IDXGIDebug {
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgidebug/nf-dxgidebug-idxgidebug1-enableleaktrackingforthread">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void EnableLeakTrackingForThread( ) ;
+	[PreserveSig] HResult EnableLeakTrackingForThread( ) ;
 
 	/// <summary>Stops tracking leaks for the current thread.</summary>
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgidebug/nf-dxgidebug-idxgidebug1-disableleaktrackingforthread">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void DisableLeakTrackingForThread( ) ;
-
+	[PreserveSig] void DisableLeakTrackingForThread( ) ;
+	
 	/// <summary>Gets a value indicating whether leak tracking is turned on for the current thread.</summary>
 	/// <returns><b>TRUE</b> if leak tracking is turned on for the current thread; otherwise, <b>FALSE</b>.</returns>
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgidebug/nf-dxgidebug-idxgidebug1-isleaktrackingenabledforthread">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
 	[return: MarshalAs(UnmanagedType.Bool)]
-	bool IsLeakTrackingEnabledForThread( ) ;
+	[PreserveSig] bool IsLeakTrackingEnabledForThread( ) ;
 } ;

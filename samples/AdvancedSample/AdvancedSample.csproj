@@ -38,11 +38,17 @@
     <ItemGroup Label="ProjectContentProperties">
       <ClCompile Include="Assets\Shaders\testshader1.hlsl" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Assets\Meshes\" />
+      <Folder Include="Assets\Textures\" />
+    </ItemGroup>
 
+    
     <!-- Advanced Project Properties :: -->
     <PropertyGroup Label="AdvancedProjectProperties">
+        <ApplicationManifest>./app.manifest</ApplicationManifest>
+        
         <!-- NOTE: Currently, trimming and NativeAOT is not supported! -->
         <!--<PublishTrimmed>true</PublishTrimmed>-->
     </PropertyGroup>
-    
 </Project>

@@ -630,6 +630,15 @@ public struct SwapChainDescription1 {
 	internal SwapChainDescription1( in DXGI_SWAP_CHAIN_DESC1 desc ) => this.desc = desc ;
 	internal unsafe SwapChainDescription1( DXGI_SWAP_CHAIN_DESC1* pDesc ) => desc = *pDesc;
 
+	public SwapChainDescription1( USize size = default, Format format = Format.R8G8B8A8_UNORM, 
+								  bool stereo = false, SampleDescription sampleDesc = default,
+								  Usage     bufferUsage = Usage.BackBuffer, uint bufferCount = 2,
+								  Scaling   scaling     = Scaling.None, SwapEffect swapEffect = SwapEffect.FlipDiscard,
+								  AlphaMode alphaMode   = AlphaMode.Unspecified, SwapChainFlags flags = default ):
+														this( size.Width, size.Height, format, stereo, sampleDesc, 
+															  bufferUsage, bufferCount, scaling, swapEffect, alphaMode, flags ) { }
+	
+	
 	/// <summary>
 	/// Creates a new SwapChainDescription1
 	/// </summary>

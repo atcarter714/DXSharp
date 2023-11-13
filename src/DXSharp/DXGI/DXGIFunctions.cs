@@ -8,7 +8,7 @@ using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Foundation ;
 using Windows.Win32 ;
 
-using DXSharp.DXGI.Debug ;
+using DXSharp.DXGI.Debugging ;
 using DXSharp.Windows ;
 using static DXSharp.DXSharpUtils ;
 #endregion

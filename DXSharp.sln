@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdvancedSample", "samples\A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DXSharp.Framework", "src\DXSharp.Framework\DXSharp.Framework.csproj", "{4B5C9C89-A4A4-4081-8508-6E26388817F8}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "DXSharp.Samples.Shared", "samples\shared\DXSharp.Samples.Shared\DXSharp.Samples.Shared.shproj", "{29E67012-6798-43E1-BEFE-F9270F595779}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,6 +81,7 @@ Global
 		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53} = {29411031-4490-4542-B2D1-02D223BFD605}
 		{5AA13E5B-574A-4651-A172-AB3EDA13DEC2} = {AEE84FD5-7441-42CF-AA6C-5805B759E1F8}
 		{4B5C9C89-A4A4-4081-8508-6E26388817F8} = {29411031-4490-4542-B2D1-02D223BFD605}
+		{29E67012-6798-43E1-BEFE-F9270F595779} = {AEE84FD5-7441-42CF-AA6C-5805B759E1F8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C4990EC-248E-49D5-A254-EA8AD214C338}

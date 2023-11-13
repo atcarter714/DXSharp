@@ -81,7 +81,7 @@ public interface ICommandQueue: IPageable {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12commandqueue-executecommandlists#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
 	void ExecuteCommandLists< C >( uint NumCommandLists, Span< C > ppCommandLists )
-														where C: ICommandList ;
+															where C: ICommandList ;
 	
 	
 	/// <summary>Not intended to be called directly. Use the PIX event runtime to insert events into a command queue. (ID3D12CommandQueue.SetMarker)</summary>

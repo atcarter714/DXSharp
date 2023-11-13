@@ -11,11 +11,14 @@
       "GetDeviceRemovedReason",
       "ID3D12Device.GetDeviceRemovedReason",
       "ID3D12Device.CreateCommandList",
+      "ID3D12Debug.EnableDebugLayer",
       "IDXGIOutput5.DuplicateOutput1",
       "IDXGISwapChain3.ResizeBuffers1",
       "IDXGIOutputDuplication.GetFrameDirtyRects",
       "IDXGIOutputDuplication.GetFrameMoveRects",
       "IDXGIDevice.GetAdapter",
+      "ID3D12SDKConfiguration.SetSDKVersion",
+      
       "IUnknown.QueryInterface",
       "IUnknown.AddRef",
       "IUnknown.Release"

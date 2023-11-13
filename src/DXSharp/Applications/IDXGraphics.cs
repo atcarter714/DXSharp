@@ -136,8 +136,9 @@ public interface IDXGraphics: IDisposable, IAsyncDisposable {
 /// for your specific application. It simply provides a starting point for organizing and
 /// managing native D3D/Win32/COM and memory resources for graphics in a group.
 /// </remarks>
-public class DXGraphics: DisposableObject, IDXGraphics {
+public abstract class DXGraphics: DisposableObject, IDXGraphics {
 	// ----------------------------------------------------------------------------------
+	//! Cache fields for important pipeline objects:
 	ISwapChain?        _swapChain ;
 	IDevice?           _graphicsDevice ;
 	ICommandAllocator? _commandAlloc ;
@@ -146,12 +147,13 @@ public class DXGraphics: DisposableObject, IDXGraphics {
 	IRootSignature?    _rootSignature ;
 	IPipelineState?    _pipelineState ;
 	// ----------------------------------------------------------------------------------
-
-
+	
 	public ConcurrentStack< MemoryHandle > AllocatedHandles { get ; init ; }
 	public ConcurrentStack< IDXCOMObject > PipelineObjects  { get ; init ; }
 	public ConcurrentStack< IDisposable > Disposables { get ; init ; }
-
+	
+	// ----------------------------------------------------------------------------------
+	//! Lookup properties use cached fields for fast & easy access:
 	public IDevice? GraphicsDevice => _graphicsDevice ??= Find< IDevice >( ) ;
 	public ISwapChain? SwapChain => _swapChain ??= Find< ISwapChain >( ) ;
 	public ICommandList? CommandList => _commandList ??= Find< ICommandList >( ) ;
@@ -159,10 +161,10 @@ public class DXGraphics: DisposableObject, IDXGraphics {
 	public ICommandAllocator? CommandAllocator => _commandAlloc ??= Find< ICommandAllocator >( ) ;
 	public IRootSignature? RootSignature => _rootSignature ??= Find< IRootSignature >( ) ;
 	public IPipelineState? PipelineState => _pipelineState ??= Find< IPipelineState >( ) ;
-	
-	public List< IResource >? BackBuffers { get ; } = new( ) ;
+	// ----------------------------------------------------------------------------------
 	
 	public virtual ColorF BackgroundColor { get ; set ; } = Color.Black ;
+	public List< IResource >? BackBuffers { get ; } = new( ) ;
 	public ClearValue[ ] ClearValues { get ; set ; }
 	public Viewport[ ] Viewports { get ; set ; }
 	public Rect[ ] ScissorRects { get ; set ; }
@@ -173,32 +175,31 @@ public class DXGraphics: DisposableObject, IDXGraphics {
 		this.AllocatedHandles = new( ) ;
 		this.PipelineObjects  = new( ) ;
 		this.Disposables      = new( ) ;
-	}
-	public DXGraphics( params IDXCOMObject[ ] pipelineObjects ) {
-		PipelineObjects       = new( pipelineObjects ) ;
-		this.AllocatedHandles = new( ) ;
-		this.Disposables      = new( ) ;
-	}
-	public DXGraphics( params IDisposable[ ] disposables ) {
-		PipelineObjects       = new(  ) ;
-		this.AllocatedHandles = new( ) ;
-		this.Disposables      = new( disposables ) ;
-	}
-	public DXGraphics( params MemoryHandle[ ] handles ) {
-		PipelineObjects       = new( ) ;
-		this.AllocatedHandles = new( handles ) ;
-		this.Disposables      = new( ) ;
-	}
-	public DXGraphics( IEnumerable< IDXCOMObject >? pipelineObjects = null,
-					   IEnumerable< IDisposable >?  disposables     = null,
-					   IEnumerable< MemoryHandle >? handles         = null ) {
-		PipelineObjects  = ( pipelineObjects is null ) ? new() : new( pipelineObjects ) ;
-		Disposables      = ( disposables is null ) ? new() : new( disposables ) ;
-		AllocatedHandles = ( handles is null ) ? new() : new( handles ) ;
+		
+		var scissorRect = Rect.FromXYWH( 0,0,
+								   (int)AppSettings.DEFAULT_WIDTH, 
+								   (int)AppSettings.DEFAULT_HEIGHT ) ;
+		ScissorRects = new[ ] { scissorRect } ;
+		Viewports    = new[ ] { Viewport.Default } ;
+		ClearValues  = new[ ] { ClearValue.TextureDefault, } ;
 	}
 	
-	// ----------------------------------------------------------------------------------
+	public DXGraphics( params IDXCOMObject[ ] pipelineObjects ): this( ) => PipelineObjects.PushRange( pipelineObjects ) ;
+	public DXGraphics( params IDisposable[ ]  disposables ): this( ) => this.Disposables.PushRange( disposables ) ;
+	public DXGraphics( params MemoryHandle[ ] handles ): this( ) => this.AllocatedHandles.PushRange( handles ) ;
 
+	public DXGraphics( IEnumerable< IDXCOMObject >? pipelineObjects = null,
+					   IEnumerable< IDisposable >?  disposables     = null,
+					   IEnumerable< MemoryHandle >? handles         = null ): this( ) {
+		if ( pipelineObjects is not null ) PipelineObjects.PushRange( pipelineObjects.ToArray( ) ) ;
+		if ( disposables is not null ) this.Disposables.PushRange( disposables.ToArray( ) ) ;
+		if ( handles is not null ) this.AllocatedHandles.PushRange( handles.ToArray( ) ) ;
+	}
+	
+	~DXGraphics( ) => Dispose( false ) ;
+	
+	// ----------------------------------------------------------------------------------
+	
 	IDevice? _findDevice( ) {
 		if ( _graphicsDevice is not null ) 
 			return _graphicsDevice ;
@@ -315,8 +316,8 @@ public class DXGraphics: DisposableObject, IDXGraphics {
 	
 	// ----------------------------------------------------------------------------------
 
-	public virtual void LoadPipeline( ) { }
-	public virtual void LoadAssets( ) { }
+	public abstract void LoadPipeline( ) ;
+	public abstract void LoadAssets( ) ;
 	
 	// ----------------------------------------------------------------------------------
 	
@@ -329,8 +330,9 @@ public class DXGraphics: DisposableObject, IDXGraphics {
 	}
 
 	public override async ValueTask DisposeAsync( ) {
-		await base.DisposeAsync( ) ;
-		await DisposeUnmanaged( ) ;
+		var _t1 = base.DisposeAsync( ).AsTask( ) ;
+		var _t2 = Task.Run( Dispose ) ;
+		await Task.WhenAll( _t1, _t2 ) ;
 	}
 	
 	// ==================================================================================

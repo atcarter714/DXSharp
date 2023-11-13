@@ -23,6 +23,10 @@ namespace DXSharp.DXGI ;
 /// Go to <a href="https://learn.microsoft.com">Microsoft Learn</a> to learn more about
 /// the native <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> interface.
 /// </remarks>
+[SupportedOSPlatform("windows5.0"),
+ Wrapper(typeof(IDXGIAdapter)),
+ NativeLibrary( "dxgi.dll", "IDXGIAdapter",
+				"dxgi.h", "DXSharp.Adapter" )]
 [Wrapper(typeof(IDXGIAdapter))]
 internal class Adapter: Object,
 						IAdapter,
@@ -121,7 +125,8 @@ internal class Adapter: Object,
 
 
 
-[Wrapper(typeof(IDXGIAdapter1))]
+[SupportedOSPlatform("windows6.1"),
+ Wrapper(typeof(IDXGIAdapter1))]
 internal class Adapter1: Adapter, 
 						 IAdapter1,
 						 IComObjectRef< IDXGIAdapter1 >,
@@ -406,7 +411,8 @@ internal class Adapter3: Adapter2,
 // DXGI.Adapter4 Wrapper :: IDXGIAdapter4
 // --------------------------------------------------------------------------------------------
 
-[Wrapper( typeof( IDXGIAdapter4 ) )]
+[SupportedOSPlatform("windows8.0"),
+ Wrapper( typeof( IDXGIAdapter4 ) )]
 internal class Adapter4: Adapter3, 
 						 IAdapter4,
 						 IComObjectRef< IDXGIAdapter4 >,

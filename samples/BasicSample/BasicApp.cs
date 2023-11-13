@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Windows.Forms ;
 using DXSharp.Direct3D12 ;
 using DXSharp.Applications ;
 #endregion
@@ -11,7 +13,8 @@ public class BasicApp: DXWinformApp {
 
 	public BasicApp( AppSettings? settings = null ): base( settings ) { }
 	
-	public override void Initialize( ) {
+	public override BasicApp Initialize( ) {
+		Application.SetHighDpiMode( HighDpiMode.PerMonitorV2 ) ;
 		base.Initialize( ) ;
 		Window!.SetTitle( Settings.Title) ;
 		Window?.SetSize( Settings.WindowSize ) ;
@@ -26,6 +29,7 @@ public class BasicApp: DXWinformApp {
 		graphics = new( this ) ;
 		graphics.LoadPipeline( ) ;
 		graphics.LoadAssets( ) ;
+		return this ;
 	}
 
 	public override void Draw( ) {

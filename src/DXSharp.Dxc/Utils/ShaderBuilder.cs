@@ -1,5 +1,13 @@
-﻿#region Using Directives
+﻿/* NOTE: This is a work in progress ...
+ * Since I am new to "Dxc" and Shader Model 6.X+ shaders, I am still learning how to use the API ...
+ * The best thing I could do is begin creating a more abstract, higher-level "ShaderBuilder" class,
+ * as it forces me to make API calls, create object instances and start figuring out what needs to
+ * be done to build a shader and use Dxc in general ...
+ *
+ * For now, this makes a demonstration of how to use the raw interop bindings to Dxc to compile HLSL ...
+ */
 
+#region Using Directives
 using System.Diagnostics.Contracts ;
 using System.Text ;
 using System.Runtime.CompilerServices ;
@@ -10,20 +18,11 @@ using Windows.Win32.System.Com ;
 using Windows.Win32.Graphics.Direct3D.Dxc ;
 
 using DXSharp ;
-using DXSharp.Dxc ;
 using DXSharp.Windows ;
 #endregion
-namespace AdvancedDXS.HLSL ;
+namespace DXSharp.Dxc ;
 
 
-/* NOTE: This is a work in progress ...
- * Since I am new to "Dxc" and Shader Model 6.X+ shaders, I am still learning how to use the API ...
- * The best thing I could do is begin creating a more abstract, higher-level "ShaderBuilder" class,
- * as it forces me to make API calls, create object instances and start figuring out what needs to
- * be done to build a shader and use Dxc in general ...
- *
- * For now, this makes a demonstration of how to use the raw interop bindings to Dxc to compile HLSL ...
- */
 public class ShaderBuilder: DisposableObject {
 	IMalloc 		   pMalloc ;
 	IDxcUtils          pUtils ;
@@ -70,6 +69,7 @@ public class ShaderBuilder: DisposableObject {
 		
 		
 	}
+	~ShaderBuilder( ) => Dispose( false ) ;
 	
 	// --------------------------------------------------------------------------------------------------
 	
@@ -226,9 +226,9 @@ public class ShaderBuilder: DisposableObject {
 
 	
 	
-	static unsafe ulong GetShaderBinary( IDxcResult pResult, 
-										 out string shaderName, 
-										 out void* shaderBytes ) {
+	internal static unsafe ulong GetShaderBinary( IDxcResult pResult, 
+												  out string shaderName, 
+												  out void* shaderBytes ) {
 		HResult hr ; Guid iid = typeof( IDxcBlob ).GUID ;
 		hr = pResult.GetOutput( DXC_OUT_KIND.DXC_OUT_OBJECT, &iid,
 								out var _shaderObj,
@@ -252,9 +252,9 @@ public class ShaderBuilder: DisposableObject {
 		return shaderSize ;
 	}
 	
-	static unsafe ulong GetShaderReflection( IDxcResult pResult, 
-											 out string reflectionName, 
-											 out IDxcBlob shaderReflection ) {
+	internal static unsafe ulong GetShaderReflection( IDxcResult pResult, 
+													  out string reflectionName, 
+													  out IDxcBlob shaderReflection ) {
 		HResult hr ; Guid iid = typeof( IDxcBlob ).GUID ;
 		hr = pResult.GetOutput( DXC_OUT_KIND.DXC_OUT_REFLECTION, &iid,
 								out var _shaderReflection,
@@ -279,8 +279,8 @@ public class ShaderBuilder: DisposableObject {
 		return reflectionSize ;
 	}
 
-	static unsafe ulong GetShaderPBD( IDxcResult pResult, out string pdbName, 
-									  out IDxcBlob shaderPDB ) {
+	internal static unsafe ulong GetShaderPBD( IDxcResult pResult, out string pdbName, 
+											   out IDxcBlob shaderPDB ) {
 		HResult hr ; Guid iid = typeof( IDxcBlob ).GUID ;
 		hr = pResult.GetOutput( DXC_OUT_KIND.DXC_OUT_PDB, &iid,
 								out var _shaderPDB,
@@ -306,9 +306,9 @@ public class ShaderBuilder: DisposableObject {
 		return pdbSize ;
 	}
 	
-	static unsafe ulong GetShaderDisassembly( IDxcResult pResult, 
-											  out IDxcBlobUtf16? pDisassemblyName,
-											  out IDxcBlob shaderDisassembly ) {
+	internal static unsafe ulong GetShaderDisassembly( IDxcResult pResult, 
+													   out IDxcBlobUtf16? pDisassemblyName,
+													   out IDxcBlob shaderDisassembly ) {
 		HResult hr ; Guid iid = typeof( IDxcBlob ).GUID ; 
 		hr = pResult.GetOutput( DXC_OUT_KIND.DXC_OUT_DISASSEMBLY, &iid,
 								out var _shaderDisassembly,
@@ -334,9 +334,9 @@ public class ShaderBuilder: DisposableObject {
 		return disassemblySize ;
 	}
 	
-	static unsafe ulong GetShaderHash( IDxcResult pResult,
-									   out string hashName,
-									   out IDxcBlob shaderHash ) {
+	internal static unsafe ulong GetShaderHash( IDxcResult pResult,
+												out string hashName,
+												out IDxcBlob shaderHash ) {
 		HResult hr ;
 		Guid iid = typeof( IDxcBlob ).GUID ;
 		hr = pResult.GetOutput( DXC_OUT_KIND.DXC_OUT_SHADER_HASH, &iid,
@@ -363,7 +363,7 @@ public class ShaderBuilder: DisposableObject {
 		return hashSize ;
 	}
 	
-	static unsafe ulong GetShaderRootSignature( IDxcResult pResult,
+	internal static unsafe ulong GetShaderRootSignature( IDxcResult pResult,
 											   out string rootSigName,
 											   out IDxcBlob shaderRootSignature ) {
 		var iid = typeof( IDxcBlob ).GUID ;

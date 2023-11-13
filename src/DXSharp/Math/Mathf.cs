@@ -1,12 +1,40 @@
-﻿using System.Numerics ;
+﻿#region Using Directives
+using System.Numerics ;
 using System.Runtime.CompilerServices ;
+
+using DxMath = DXSharp.Math ;
+using SysMath = System.Math ;
 using static DXSharp.InteropUtils ;
+#endregion
 namespace DXSharp ;
 
-public static class Mathf {
-	public const float Epsilon = float.Epsilon ;
-	public static readonly Half HalfEpsilon = Half.Epsilon ;
+
+/// <summary>
+/// Defines mathematical constants, functions and other operations
+/// which are useful when performing mathematical operations in a
+/// real-time DirectX application built with <see cref="DXSharp"/>.
+/// </summary>
+public static partial class Mathf {
+	// ------------------------------------------------------------------------------------------------------------
+	#region Const/ReadOnly Values:
 	static readonly Half HalfEpisolon8x = Half.Epsilon * (Half)8 ;
+	
+	/// <summary>
+	/// Represents the smallest positive <see cref="float"/> value
+	/// that is greater than zero.
+	/// </summary>
+	/// <returns><c><value>1E-45F</value></c></returns>
+	/// <remarks>This field is constant.</remarks>
+	public const float Epsilon = float.Epsilon ;
+	
+	/// <summary>
+	/// Represents the smallest positive <see cref="Half"/> value
+	/// that is greater than zero.
+	/// </summary>
+	/// <returns><c><value>5.9604645E-08</value></c></returns>
+	public static readonly Half HalfEpsilon = Half.Epsilon ;
+	#endregion
+	// ------------------------------------------------------------------------------------------------------------
 	
 	
 	/// <summary>
@@ -15,9 +43,25 @@ public static class Mathf {
 	/// <param name="a"></param>
 	/// <param name="b"></param>
 	/// <returns></returns>
-	[MethodImpl(_MAXOPT_)] public static Half Max( Half a, Half b ) => a > b ? a : b ;
+	[MethodImpl(_MAXOPT_)] public static Half Max( Half a, Half b ) => a >= b ? a : b ;
+	[MethodImpl(_MAXOPT_)] public static Half Min( Half a, Half b ) => a <= b ? a : b ;
+	[MethodImpl(_MAXOPT_)] public static float Max( float a, float b ) => a >= b ? a : b ;
+	[MethodImpl(_MAXOPT_)] public static float Min( float a, float b ) => a <= b ? a : b ;
+	[MethodImpl(_MAXOPT_)] public static double Max( double a, double b ) => a >= b ? a : b ;
+	[MethodImpl(_MAXOPT_)] public static double Min( double a, double b ) => a <= b ? a : b ;
+	[MethodImpl(_MAXOPT_)] public static decimal Max( decimal a, decimal b ) => a >= b ? a : b ;
+	[MethodImpl(_MAXOPT_)] public static decimal Min( decimal a, decimal b ) => a <= b ? a : b ;
+	
+	public static T Max< T >( T a, T b ) where T: INumber< T >,
+									 IComparisonOperators< T, T, bool > => a > b ? a : b ;
+	
+	public static T Min< T >( T a, T b ) where T: INumber< T >,
+	 									 IComparisonOperators< T, T, bool > => a < b ? a : b ;
 	
 	
+	// -----------------------------------------------------
+	// Approximate Floating-Point Equality:
+	// -----------------------------------------------------
 	
 	/// <summary>
 	/// Indicates if two floating point values are approximately equal.
@@ -37,8 +81,7 @@ public static class Mathf {
 	/// <returns></returns>
 	/// <remarks><para>Uses <see cref="Epsilon"/> as the tolerance.</para></remarks>
 	[MethodImpl(_MAXOPT_)] public static bool Approximately( float a, float b ) => 
-		Math.Abs(b - a) < Math.Max( 0.000001f * Math.Max( Math.Abs(a), Math.Abs(b) ), Epsilon * 8 ) ;
-	
+		SysMath.Abs(b - a) < SysMath.Max( 0.000001f * SysMath.Max( SysMath.Abs(a), SysMath.Abs(b) ), Epsilon * 8 ) ;
 	
 	
 	[MethodImpl(_MAXOPT_)] public static bool Approximately( in Vector2 a, in Vector2 b ) => 
@@ -63,6 +106,52 @@ public static class Mathf {
 	
 	[MethodImpl(_MAXOPT_)] public static bool Approximately( in Plane a, in Plane b ) =>
 	 		Approximately( a.Normal, b.Normal ) && Approximately( a.D, b.D ) ;
+
+	
+	[MethodImpl(_MAXOPT_)] 
+	public static bool Approximately< T >( in T a, in T b ) 
+										where T: INumber< T >, IFloatingPoint< T >,
+														IFloatingPointIeee754< T >, 
+												  IBinaryFloatingPointIeee754< T >,
+												 IMultiplyOperators< T, float, T > {
+		T maxVal     = T.Max( T.Abs(a), T.Abs(b) ) ;
+		T absDiff    = T.Abs( b - a ) ;
+		T epsilon    = T.Epsilon ;
+		T epsilon8   = epsilon * 8.0f ;
+		T maxEpsilon = T.Max( maxVal * 0.000001f, epsilon8 ) ;
+		return absDiff < maxEpsilon ;
+	}
 	
 	
+	// -----------------------------------------------------
+	// (to be continued ...):
+	// -----------------------------------------------------
+	
+	
+	
+	// ============================================================================================================
 } ;
+	
+
+
+
+	/*public static bool Approximately< T >(in T a, in T b) where T : IFloatingPoint<T>, 
+		IFloatingPointIeee754< T >, 
+		IBinaryFloatingPointIeee754< T > {
+		var epsilon     = T.Epsilon;
+		var epsilon8x   = ( epsilon * T.ScaleB(T.One, 8) ) ;
+		var maxAB       = T.Max(T.Abs(a), T.Abs(b));
+		var minEpsMaxAB = T.Min( (epsilon8x * maxAB), epsilon8x ) ;
+		var diffAB      = T.Abs( a - b ) ;
+
+		return diffAB < minEpsMaxAB ;
+	}*/
+	/*public static bool Approximately< T >( in T a, in T b ) where T: IFloatingPoint< T >, 
+																IFloatingPointIeee754< T >, 
+															IBinaryFloatingPointIeee754< T > {
+		
+		var epsilon = T.Epsilon ;
+		return T.Abs(b - a) < T.Max( T.Radix( 0.000001f ) * T.Max( T.Abs(a), T.Abs(b) ), epsilon * 8 ) ;
+	}*/
+	
+	

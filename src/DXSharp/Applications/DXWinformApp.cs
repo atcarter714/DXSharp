@@ -10,13 +10,9 @@
 
 #region Using Directives
 using System.Runtime.Versioning ;
-using Windows.Win32.Graphics.Dxgi ;
-using Windows.Win32.Graphics.Direct3D12 ;
 
-using DXSharp.DXGI ;
 using DXSharp.Windows ;
-using DXSharp.Windows.COM ;
-using static Windows.Win32.PInvoke ;
+using DXSharp.Windows.Win32 ;
 #endregion
 namespace DXSharp.Applications ;
 
@@ -48,6 +44,8 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	protected Action? RenderLoopCallback { get ; set ; }
 	protected Action? SimulationLoopCallback { get ; set ; }
 	
+	
+	
 	// --------------------------------------
 	// Constructors:
 	// --------------------------------------
@@ -55,7 +53,7 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	public DXWinformApp( ) => _settings = AppSettings.Default ;
 
 	public DXWinformApp( in AppSettings? settings ) {
-		ArgumentNullException.ThrowIfNull( settings, nameof( settings ) ) ;
+		ArgumentNullException.ThrowIfNull( settings, nameof(settings) ) ;
 		_settings   = settings ;
 	}
 	
@@ -65,30 +63,94 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 		_settings   = settings ?? AppSettings.Default ;
 	}
 	
-	// --------------------------------------
-	// Event Handlers:
-	// --------------------------------------
-	
-	protected override void OnAppQuit( object? sender, EventArgs e ) => Shutdown( ) ;
-	
-	// --------------------------------------
+
+	// -------------------------------------------------------------------------------------------
 	// Instance Methods:
-	// --------------------------------------
+	// -------------------------------------------------------------------------------------------
 	
-	public override void Initialize( ) {
+	//! Event Handler Overrides: -----------------------------------------------------------------
+	protected override void OnAppQuit( object? sender, EventArgs e ) {
+		_abort = true ;
+		base.OnAppQuit( sender, e ) ;
+		AppCancelTokenSource?.Cancel( ) ;
+	}
+	
+	protected override void OnDPIChanged( object sender, DPIChangedEventArgs e ) {
+		base.OnDPIChanged( sender, e ) ;
+		
+		/*this.DesiredSize = _form?.LogicalToDeviceUnits( e.NewRect.Size ) 
+									?? e.NewRect.Size ;
+		
+		this.Window?.SetSize( this.DesiredSize ) ;*/
+	}
+	
+
+	void OnWindowOnContentsResized( object? s, ContentsResizedEventArgs e ) {
+		//this.DesiredSize = e.NewRectangle.Size ;
+	}
+	
+	
+	protected override void OnRegisterWindow( IAppWindow window ) {
+		ObjectDisposedException.ThrowIf( _form is null, typeof(RenderForm) ) ;
+		_form.ContentsResized        += OnWindowOnContentsResized ;
+		_form.ClientSizeChanged      += OnClientSizeChanged ;
+		_form.DPIChanged             += OnDPIChanged ;
+		_form.WindowsMessageReceived += OnWndProc ;
+		_form!.FormClosing           += OnAppQuit ;
+	}
+	
+	protected override void OnUnregisterWindow( IAppWindow window ) {
+		if( _form is null ) return ;
+		_form.ContentsResized -= OnWindowOnContentsResized ;
+		_form.DPIChanged      -= OnDPIChanged ;
+		_form.FormClosing     -= OnAppQuit ;
+	}
+	
+	
+	// -------------------------------------------------------------------------------------------
+	//! WinForm Event Handlers:
+	void OnWndProc( IAppWindow window, Message msg, WParam wparam, LParam lparam ) {}
+	
+	void OnShowForm( object? sender, EventArgs e ) {
+		_form!.Shown -= OnShowForm ;
+		if( Title != Settings.Title ) Window!.SetTitle( Settings.Title ) ;
+		if( Window!.Size != DesiredSize ) Window!.SetSize( DesiredSize ) ;
+		
+		_form.PauseRendering         += ( o, a ) => IsDrawingPaused = true ;
+		_form.ResumeRendering        += ( o, a ) => IsDrawingPaused = false ;
+	}
+	void OnClientSizeChanged( object? sender, EventArgs e ) { }
+	
+	void OnWindowHandleCreated( object? sender, EventArgs e ) {
+		_form!.HandleCreated   -= OnWindowHandleCreated ;
+		_form!.HandleDestroyed += OnWindowHandleDestroyed ;
+		OnRegisterWindow( _form ) ;
+		
+		if( !_form.Visible ) _form.Show( ) ;
+		if ( _form!.IsMinimized )
+			_form!.WindowState = FormWindowState.Normal ;
+	}
+	void OnWindowHandleDestroyed( object? sender, EventArgs e ) {
+		if( _form is null ) return ;
+		_form!.HandleDestroyed -= OnWindowHandleDestroyed ;
+		_form!.HandleCreated += OnWindowHandleCreated ;
+		OnUnregisterWindow( _form ) ;
+	}
+	// -------------------------------------------------------------------------------------------
+	
+	
+	public override DXWinformApp Initialize( ) {
+		var _appFont =
+			Settings.StyleSettings.Font ?? new Font( Settings.StyleSettings.FontName 
+														?? AppSettings.Style.DEFAULT_FONT_NAME, 
+															Settings.StyleSettings.FontSize ) ;
 		Application.SetCompatibleTextRenderingDefault( true ) ;
-		Application.SetDefaultFont( Settings.StyleSettings.Font ) ;
+		Application.SetDefaultFont( _appFont ) ;
+		DesiredSize = Settings.WindowSize ;
 		
-		_form = new RenderForm( Title ) ;
-		_form.Show( ) ;
-		_form.ForeColor = Color.Black ;
-		Window?.SetTitle( Settings.Title ) ;
-		_form.ClientSize = DesiredSize ;
-		Window?.SetSize( DesiredSize ) ;
-		
-		_form.PauseRendering += ( s, e )  => IsPaused = true ;
-		_form.ResumeRendering += ( s, e ) => IsPaused = false ;
-		_form.UserResized += ( s, e )  => DesiredSize = e.NewSize ;
+		_form = new RenderForm( Title, DesiredSize ) ;
+		_form.HandleCreated   += OnWindowHandleCreated ;
+		_form.Shown           += OnShowForm ;
 		
 		// Configure parallelism and thread setup:
 		cancelTick = AppCancelTokenSource.Token ;
@@ -99,29 +161,33 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 		
 		workActions = new [ ] { simulateFunc, renderFunc, computeFunc } ;
 		workActionConfig = new ParallelOptions {
-			MaxDegreeOfParallelism = Math.Min( workActions.Length, HardwareInfo.MaxParallelism ),
+			MaxDegreeOfParallelism = Mathf.Min( workActions.Length,
+												  HardwareInfo.MaxParallelism ),
 			CancellationToken      = AppCancelTokenSource.Token,
 			TaskScheduler          = null,
 		} ;
 		
-		this.IsPaused = _abort = false ;
+		Application.SetHighDpiMode( HighDpiMode.PerMonitorV2 ) ;
+		Application.EnableVisualStyles( ) ;
 		
+		this.IsPaused = _abort = false ;
 		base.Initialize( ) ;
+		return this ;
 	}
+
 	
 	public override void Run( ) {
-	    Time.Start( ) ;
-	    IsPaused  = !(IsRunning = true) ;
+		base.Run( ) ;
+		
 	    RenderLoop.Run( _form, _MainLoop ) ;
-	    
-	    //_DispatchJobs( ) ;
+	    _DispatchJobs( ) ;
 	}
 	public override void Shutdown( ) {
 		if( _Quitting ) return ;
-		AppCancelTokenSource.Cancel( ) ;
-		
 		base.Shutdown( ) ;
 		_abort = true ;
+		
+		AppCancelTokenSource.Cancel( ) ; 
 		_time = null ;
 	}
 	
@@ -132,15 +198,20 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	protected virtual void _ComputeWork( ) => Thread.Sleep( 1 ) ;
 	protected virtual void _SimulationWork( ) => Thread.Sleep( 1 ) ;
 	
-	public override void Tick( float delta ) => Time?.Update( ) ;
-
+	
+	public override void Tick( float delta ) {
+		if( !IsRunning || !CanTick || IsPaused ) return ;
+		if ( IsSimulationPaused ) return ;
+		base.Tick( delta ) ;
+	}
 	public override void Update( ) {
-		if( !IsRunning ) return ;
-		if( !IsPaused ) return ;
-		Time?.Update( ) ;
+		if( !IsRunning || !CanTick || IsPaused ) return ;
+		if ( IsSimulationPaused ) return ;
+		base.Update( ) ;
 	}
 	public override void Draw( ) {
-		if( !IsRunning ) return ;
+		if( !IsRunning || !CanDraw || IsDrawingPaused ) return ;
+		base.Draw( ) ;
 	}
 	
 	
@@ -157,7 +228,7 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	// Simulation Thread Loops:
 	void _DispatchJobs( ) {
 		//! Return if already running, aborted or paused:
-		if ( _abort || IsRunning || IsPaused ) return ;
+		if ( _abort || IsRunning || IsPaused || !CanTick ) return ;
 		
 		//! Parallel Thread Settings Checks ::
 		if( !Settings.AdvancedSettings?.EnableParallelJobs ?? false ) return ;
@@ -168,40 +239,83 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	}
 	
 	
-	// --------------------------------------
-	// Static Methods ::
-	// --------------------------------------
 	
-	static unsafe ComPtr< ID3D12Debug >? _enableDebugLayer( ) {
-		ComPtr< ID3D12Debug >? debugController = null ;
-		try {
-			var dbgGuid = typeof(ID3D12Debug).GUID ;
-			var hrDbg = D3D12GetDebugInterface( &dbgGuid, out var _debug ) ;
-			if ( hrDbg.Failed || _debug is null )
-				throw new DirectXComError( $"Failed to create the {nameof( ID3D12Debug )} layer!" ) ;
+	// -------------------------------------------------------------------------------------------
+	#region Dispose Pattern Overrides
+	protected override void OnDestroyManaged( ) {
+		_abort = true ; //! Set abort flag to make sure threads will exit ...
+		CanDraw = CanTick = IsRunning = IsInitialized = false ;
 		
-			debugController = new( (ID3D12Debug)_debug ) ;
-			( (ID3D12Debug)debugController.Interface! )
-				.EnableDebugLayer( ) ;
+		try {
+			//! Fire a cancellation request to all threads:
+			if ( !AppCancelTokenSource?.IsCancellationRequested ?? false )
+				AppCancelTokenSource?.Cancel( ) ;
+			
+			//! Try to "gently kill" any rogue threads that are still running:
+			if( _simulationTasks is { Length: > 0 } ) {
+				const int MAX_WAIT_TIME = 3500 ;
+				var _waitTimeSpan1 = TimeSpan.FromMilliseconds( MAX_WAIT_TIME ) ;
+				
+				List< Task > waitingFor = new( _simulationTasks.Length ) ;
+				var _waitCancelToken = AppCancelTokenSource?.Token
+									   ?? new CancellationToken(false) ;
+				
+				//! Find any tasks that are still running and try waiting for them:
+				foreach( Task? task in _simulationTasks ) {
+					try {
+						if ( task is { Status: TaskStatus.Running } ) {
+							var _waitTask = task.WaitAsync( _waitTimeSpan1, _waitCancelToken ) ;
+							waitingFor.Add( _waitTask ) ;
+						}
+					}
+					catch ( Exception exWait ) { _OnError( exWait ) ; }
+				}
+				
+				bool waitAllResult = Task.WaitAll( waitingFor.ToArray( ), 
+												   MAX_WAIT_TIME, _waitCancelToken ) ;
+				if ( !waitAllResult ) {
+					//! If we still have tasks running, try to cancel them:
+					foreach( Task? task in _simulationTasks ) {
+						try {
+							if ( task is { Status: TaskStatus.Running } ) {
+								task.Wait( 100, new CancellationToken(true) ) ;
+								task.Dispose( ) ;
+							}
+						}
+						catch ( Exception exWait ) { _OnError( exWait ) ; }
+					}
+				}
+				
+				waitingFor.Clear( ) ;
+				_simulationTasks = null ;
+			}
+			AppCancelTokenSource?.Dispose( ) ;
+			
+			if ( _form is { IsDisposed: false, Disposing: false } ) {
+				if ( _form.IsHandleCreated ) {
+					_form.HandleCreated   -= OnWindowHandleCreated ;
+					_form.HandleDestroyed -= OnWindowHandleDestroyed ;
+				}
+
+				if ( _form.Visible ) _form.Close( ) ;
+				_form?.Dispose( ) ;
+			}
 		}
-		catch { return null ; }
-		finally {  }
-		return debugController ;
+		catch( Exception ex ) { _OnError( ex ) ; }
+		finally { _form = null ; _time = null ; }
+		
+		
+		static void _OnError( Exception ex ) {
+#if DEBUG || DEV_BUILD
+			System.Diagnostics.Debug.WriteLine( $"{nameof(DXWinformApp)} :: " +
+												$"An error occurred in {nameof(OnDestroyManaged)} ...\n" +
+												$"Error (HRESULT - 0x{ex.HResult:X}): \"{ex.Message}\"" ) ;
+#endif
+		}
 	}
-	
-	static unsafe Factory _createFactory( ) {
-		var guid   = typeof( IDXGIFactory ).GUID ;
-		var hrFact = CreateDXGIFactory( &guid, out var ppFactory ) ;
-		if ( hrFact.Failed || ppFactory is null )
-			throw new DirectXComError( "Failed to create DXGI Factory!" ) ;
-		var factory = new Factory( ( ppFactory as IDXGIFactory )! ) ;
-		return factory ;
-	}
-	
-	// ======================================
-	
-#region Dispose Pattern Overrides
-	protected override void OnDestroyManaged( ) { }
-	protected override void OnDestroyUnmanaged( ) { }
-#endregion
+
+	protected override void OnDestroyUnmanaged( ) {}
+	#endregion
+	// ===========================================================================================
 } ;
+

@@ -1,9 +1,14 @@
 ﻿#region Using Directives
 using System.Drawing ;
-using DXSharp.Direct3D12 ;
+using System.Windows.Forms ;
 using DXSharp.Applications ;
 using AdvancedDXS.Framework ;
+using DXSharp.Framework.Debugging ;
+
+using IDebugD3D  = DXSharp.Direct3D12.IDebug6 ;
+using IDebugDXGI = DXSharp.DXGI.Debugging.IDebug1 ;
 #endregion
+
 
 //! Create the app startup settings:
 AppSettings Settings = new( "DXSharp: Advanced Sample",
@@ -16,33 +21,15 @@ AppSettings Settings = new( "DXSharp: Advanced Sample",
 								BackgroundColor = SystemColors.Window,
 							} ) ;
 
-
 //! Enable the debug layer in debug mode:
 #if DEBUG || DEBUG_COM
-IDebug6? debug6 = default ;
-var hr   = D3D12.GetDebugInterface( out debug6 ) ;
-ObjectDisposedException.ThrowIf( debug6 is null, typeof( IDebug6 ) ) ;
-hr.ThrowOnFailure( ) ;
-
-debug6.EnableDebugLayer( ) ;
-debug6.SetEnableAutoName( true ) ;
-debug6.SetEnableGPUBasedValidation( true ) ;
-#if !GPU_VALIDATE_DESC_ONLY
-debug6.SetGPUBasedValidationFlags( GPUBasedValidationFlags.None ) ;
-#else
-debug6.SetGPUBasedValidationFlags( GPUBasedValidationFlags.DisableStateTracking ) ;
+using DebugSystem< IDebugD3D, IDebugDXGI > dbg = new( ) ;
+dbg.Enable( ) ;
 #endif
-#endif
-
 
 // Initialize & run the app:
-using IDXApp app = new DXSApp( Settings ) ;
-app.Initialize( ) ;
+using var app = new DXSApp(Settings)
+						.Initialize( ) ;
+
 app.Run( ) ;
-
-
-//! Destroy the debug layer in debug mode:
-#if DEBUG || DEBUG_COM
-debug6.DisableDebugLayer( ) ;
-debug6.DisposeAsync( ) ;
-#endif
+app?.Shutdown( ) ;

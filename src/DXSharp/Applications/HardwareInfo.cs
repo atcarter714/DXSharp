@@ -10,7 +10,7 @@ public static class HardwareInfo {
 	public static bool Is64Bit => Environment.Is64BitOperatingSystem ;
 	public static ProcessorArchitecture ProcessorArchitecture { get ; }
 	public static int AvailableProcessors => Environment.ProcessorCount ;
-	public static int MaxParallelism => Math.Max( 1, Environment.ProcessorCount - 1 ) ;
+	public static int MaxParallelism => Mathf.Max( 1, Environment.ProcessorCount - 1 ) ;
 	
 	/// <summary>The number of bytes of the computer's free virtual address space.</summary>
 	public static ulong VirtualMemory { get ; }

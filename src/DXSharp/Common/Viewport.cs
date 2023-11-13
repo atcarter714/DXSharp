@@ -1,4 +1,6 @@
 ﻿
+using DXSharp.Applications ;
+
 namespace DXSharp {
 	/// <summary>
 	/// Represents a graphics viewport for DirectX
@@ -14,15 +16,26 @@ namespace DXSharp {
 	/// identical structures with different names.
 	/// </remarks>
 	public struct Viewport {
+		// ------------------------------------------------------------------------------------
+		public static readonly Viewport Default = new( 0,0, 
+													   AppSettings.DEFAULT_WIDTH,
+													   AppSettings.DEFAULT_HEIGHT,
+													   0f, 1f ) ;
+		
+		
+		// ------------------------------------------------------------------------------------
+		//! Private Fields ::
 		float _topLeftX, _topLeftY ;
 		float _width,    _height ;
 		float _minDepth, _maxDepth ;
-
+		// -----------------------------------------
+		
+		
 
 		/// <summary>
 		/// Creates a new Viewport structure
 		/// </summary>
-		public Viewport() {
+		public Viewport( ) {
 			this._topLeftX = 0f ;
 			this._topLeftY = 0f ;
 			this._width    = 0f ;
@@ -72,9 +85,26 @@ namespace DXSharp {
 			this._minDepth = minDepth ;
 			this._maxDepth = maxDepth ;
 		}
+		
+		public Viewport( SizeF size,
+						 float minDepth = 0f,
+						 float maxDepth = 1f ) {
+			this._width = size.Width ; this._height = size.Height ;
+			this._minDepth = minDepth ; this._maxDepth = maxDepth ;
+			this._topLeftX = 0 ; this._topLeftY = 0 ;
+		}
+		
+		public Viewport( USize size,
+						 float minDepth = 0f,
+						 float maxDepth = 1f ) {
+			this._width = size.Width ; this._height = size.Height ;
+			this._minDepth = minDepth ; this._maxDepth = maxDepth ;
+			this._topLeftX = 0 ; this._topLeftY = 0 ;
+		}
+		
+		// ------------------------------------------------------------------------------------
 
-
-
+		
 		/// <summary>
 		/// The top-left X coordinate
 		/// </summary>
@@ -98,7 +128,7 @@ namespace DXSharp {
 			get => _width ;
 			set => _width = value ;
 		}
-
+		
 		/// <summary>
 		/// The height of the viewport
 		/// </summary>
@@ -122,6 +152,18 @@ namespace DXSharp {
 			get => _maxDepth ;
 			set => _maxDepth = value ;
 		}
+		
+		
+		// ------------------------------------------------------------------------------------
+		//! Computed Helper Properties ::
+		/// <summary>The size of the Direct3D <see cref="Viewport"/>.</summary>
+		public SizeF Size => new( _width, _height ) ;
+		/// <summary>The aspect ratio of the Direct3D <see cref="Viewport"/>.</summary>
+		public float AspectRatio => _width / _height ;
+		/// <summary>The <i>unsigned</i> size of the Direct3D <see cref="Viewport"/>.</summary>
+		/// <remarks><seealso cref="USize"/></remarks>
+		public USize UnsignedSize => new( (uint)_width, (uint)_height ) ;
+		// ====================================================================================
 	} ;
 }
 

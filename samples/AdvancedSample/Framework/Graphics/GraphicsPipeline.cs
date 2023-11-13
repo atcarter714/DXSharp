@@ -1,19 +1,21 @@
-﻿#region Using Directives
-using System.Text ;
-using System.Windows.Forms ;
-using System.Runtime.InteropServices ;
-using System.Diagnostics.CodeAnalysis ;
-
-using Windows.Win32 ;
+﻿// --------------------------------------------------------
+// Graphics Pipeline Notes:
+// --------------------------------------------------------
+// The plan is to figure out a good design/architecture we
+// are happy with, then implement it in DXSharp.Framework as
+// a reusable piece of boilerplate infrastructure ...
+// --------------------------------------------------------
+#region Using Directives
 using Windows.Win32.Foundation ;
-using Windows.Win32.Graphics.Dxgi ;
-using AdvancedDXS.HLSL ;
+
 using DXSharp ;
+using DXSharp.Dxc ;
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using DXSharp.Direct3D12 ;
 using DXSharp.Windows.COM ;
 using DXSharp.Applications ;
+using DXSharp.Framework.Graphics ;
 using DXSharp.Windows.Win32 ;
 #endregion
 namespace AdvancedDXS.Framework.Graphics ;
@@ -52,12 +54,13 @@ public class GraphicsPipeline: DXGraphics {
 	// =====================================================
 	
 	
-	
 	public GraphicsPipeline( GraphicsSettings? settings = null ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
 		_DBGName_Factory = "DXSharp.DXGI.IFactory7" ;
-		_DBGName_Device = "DXSharp.Direct3D12.IDevice12" ;
+		_DBGName_Device  = "DXSharp.Direct3D12.IDevice12" ;
 		Add( _DBGName_Factory ) ;
 		Add( _DBGName_Device ) ;
+#endif
 		
 		_app      = DXSApp.Instance ?? 
 					throw new InvalidOperationException( "Application instance is not initialized!" ) ;
@@ -99,12 +102,13 @@ public class GraphicsPipeline: DXGraphics {
 		
 		// Describe the swap chain:
 		var swapChainDesc = new SwapChainDescription1 {
-			BufferCount = _settings.BufferCount,
-			Width = 0, Height = 0,
-			Format = Format.R8G8B8A8_UNORM,
+			Width = _settings.DisplayMode.Resolution.Width,
+			Height = _settings.DisplayMode.Resolution.Height,
+			SampleDesc  = ( 1, 0 ),
+			Format      = Format.R8G8B8A8_UNORM,
+			SwapEffect  = SwapEffect.FlipDiscard,
 			BufferUsage = Usage.RenderTargetOutput,
-			SwapEffect = SwapEffect.FlipDiscard,
-			SampleDesc = ( 1, 0 ),
+			BufferCount = _settings.BackBufferOptions.Count,
 		} ;
 		var swapchainFSDesc = new SwapChainFullscreenDescription {
 			RefreshRate = new Rational( 60, 1 ),
@@ -125,16 +129,15 @@ public class GraphicsPipeline: DXGraphics {
 		_factory.MakeWindowAssociation( _wnd, WindowAssociation.NoAltEnter ) ;
 		
 		// Create the descriptor heaps:
-		uint frameCount  = _settings.BufferCount ;
+		uint frameCount  = _settings.BackBufferOptions.Count ;
 		DescriptorHeapDescription rtvHeapDesc = new( DescriptorHeapType.RTV, frameCount ) ;
 		device.CreateDescriptorHeap( rtvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? rtvHeap ) ;
 		if( rtvHeap is null ) throw new DXSharpException( "Failed to create RTV descriptor heap!" ) ;
 		
 		DescriptorHeapDescription dsvHeapDesc = new( DescriptorHeapType.CBV_SRV_UAV,
-													 1, 
-													 DescriptorHeapFlags.ShaderVisible ) ;
+													 1, DescriptorHeapFlags.ShaderVisible ) ;
 		device.CreateDescriptorHeap( dsvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? dsvHeap ) ;
-		
+		if( dsvHeap is null ) throw new DXSharpException( "Failed to create DSV descriptor heap!" ) ;
 		var rtvHandle       = rtvHeap!.GetCPUDescriptorHandleForHeapStart( ) ;
 		var rtvDescSize = device.GetDescriptorHandleIncrementSize( DescriptorHeapType.RTV ) ;
 		
@@ -144,6 +147,7 @@ public class GraphicsPipeline: DXGraphics {
 			device.CreateRenderTargetView( buffer, default, rtvHandle ) ;
 			rtvHandle.Offset( 1, rtvDescSize ) ;
 		}
+		
 		
 		static IAdapter4? _getBestGPU( IFactory7 factory ) {
 			List< IAdapter1 > adapters = new( ) ;
@@ -191,23 +195,22 @@ public class GraphicsPipeline: DXGraphics {
 	}
 	
 	
+	
 	// -----------------------------------------------------
 	// Static Helper Methods:
 	// -----------------------------------------------------
-	
 	static unsafe void _setDBGName( in PCWSTR name, in IDXCOMObject obj ) =>
 		obj.SetPrivateData( COMUtility.WKPDID_D3DDebugObjectName,
 							(uint)name.Length * sizeof(char), (nint)name.Value ) ;
-
 	static PCWSTR _setDBGName( string name, in IDXCOMObject obj ) {
 		unsafe {
 			PCWSTR _name = name ;
 			obj.SetPrivateData( COMUtility.WKPDID_D3DDebugObjectName,
-								(uint)name.Length * sizeof( char ), (nint)_name.Value ) ;
+								(uint)name.Length * sizeof( char ),
+										(nint)_name.Value ) ;
 			return _name ;
 		}
 	}
-	
 	// =================================================================================================================
 } ;
 

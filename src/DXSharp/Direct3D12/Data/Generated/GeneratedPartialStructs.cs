@@ -27,31 +27,14 @@ public partial struct D3D12_CPU_DESCRIPTOR_HANDLE {
 	public D3D12_CPU_DESCRIPTOR_HANDLE( nuint ptr ) {
 		this.ptr = ptr ;
 	}
-
 	public D3D12_CPU_DESCRIPTOR_HANDLE( nint ptr ) {
 		this.ptr = (nuint)ptr ;
 	}
 
-	public static implicit operator nuint( in D3D12_CPU_DESCRIPTOR_HANDLE handle ) {
-		nuint ptr = default ;
-		ptr = handle.ptr ;
-		return ptr ;
-	}
-	public static implicit operator D3D12_CPU_DESCRIPTOR_HANDLE( in nuint ptr ) {
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = default ;
-		handle = new( ptr ) ;
-		return handle ;
-	}
-	public static implicit operator nint( in D3D12_CPU_DESCRIPTOR_HANDLE handle ) {
-		nint ptr = default ;
-		ptr = (nint)handle.ptr ;
-		return ptr ;
-	}
-	public static implicit operator D3D12_CPU_DESCRIPTOR_HANDLE( in nint ptr ) {
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = default ;
-		handle = new( (nuint)ptr ) ;
-		return handle ;
-	}
+	public static implicit operator nuint( in D3D12_CPU_DESCRIPTOR_HANDLE handle ) => handle.ptr ;
+	public static implicit operator D3D12_CPU_DESCRIPTOR_HANDLE( in nuint ptr )    => new( ptr ) ;
+	public static implicit operator nint( in D3D12_CPU_DESCRIPTOR_HANDLE handle )  => (nint)handle.ptr ;
+	public static implicit operator D3D12_CPU_DESCRIPTOR_HANDLE( in nint ptr )     => new( (nuint)ptr ) ;
 } ;
 
 
@@ -91,7 +74,8 @@ public partial struct D3D12_COMMAND_QUEUE_DESC {
 		new( (CommandListType)desc.Type, desc.Priority, (CommandQueueFlags)desc.Flags, desc.NodeMask ) ;
 	
 	public static implicit operator D3D12_COMMAND_QUEUE_DESC( CommandQueueDescription desc ) =>
-	 		new( (D3D12_COMMAND_LIST_TYPE)desc.Type, desc.Priority, (D3D12_COMMAND_QUEUE_FLAGS)desc.Flags, desc.NodeMask ) ;
+	 									new( (D3D12_COMMAND_LIST_TYPE)desc.Type, (int)desc.Priority, 
+											 (D3D12_COMMAND_QUEUE_FLAGS)desc.Flags, desc.NodeMask ) ;
 } ;
 
 
@@ -173,7 +157,7 @@ public partial struct D3D12_GRAPHICS_PIPELINE_STATE_DESC {
 public partial struct D3D12_HEAP_PROPERTIES {
 	public static implicit operator HeapProperties( in D3D12_HEAP_PROPERTIES props ) => new HeapProperties {
 		Type                 = (HeapType)props.Type,
-		CPUPageProperty      = (CpuPageProperty)props.CPUPageProperty,
+		CPUPageProperty      = (CPUPageProperty)props.CPUPageProperty,
 		MemoryPoolPreference = (MemoryPool)props.MemoryPoolPreference,
 		CreationNodeMask     = props.CreationNodeMask,
 		VisibleNodeMask      = props.VisibleNodeMask

@@ -1,8 +1,7 @@
 ﻿#region Using Directives
 using System.Runtime.InteropServices ;
-using DXSharp.DXGI ;
 using DXSharp.Windows.Win32 ;
-
+using DXSharp.DXGI ;
 #endregion
 namespace DXSharp.Applications ;
 
@@ -28,10 +27,15 @@ public interface IDXApp: IDisposable,
 	ITimeProvider? Time { get ; }
 	/// <summary>Indicates if the application has been initialized.</summary>
 	bool IsInitialized { get ; }
-	
+
+	bool CanDraw { get ; }
+	bool CanTick { get ; }
+	bool IsDrawingPaused { get ; }
+	bool IsSimulationPaused { get ; }
+
 	/// <summary>Initializes the application.</summary>
 	/// <remarks>Called at startup.</remarks>
-	void Initialize( ) ;
+	IDXApp Initialize( ) ;
 	/// <summary>Terminates the application.</summary>
 	/// <remarks>Called upon window close or app exit event or request.</remarks>
 	void Shutdown( ) ;
