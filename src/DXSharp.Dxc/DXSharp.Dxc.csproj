@@ -13,11 +13,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Direct3D.D3D12" Version="[1.711.3-preview,)" GeneratePathProperty="true" Aliases="AgilitySDK" >
+      <PackageReference Include="Microsoft.Direct3D.D3D12" Version="[1.711.3-preview,)" GeneratePathProperty="true" Aliases="AgilitySDK">
           <IncludeAssets>build/native/bin/x64/*.dll</IncludeAssets>
       </PackageReference>
         
-      <PackageReference Include="Microsoft.Direct3D.DXC" Version="[101.7.2207.25,)" GeneratePathProperty="true" Aliases="DxcPackage" >
+      <PackageReference Include="Microsoft.Direct3D.DXC" Version="[101.7.2207.25,)" GeneratePathProperty="true" Aliases="DxcPackage">
           <IncludeAssets>build/native/bin/x64/*.dll</IncludeAssets>
       </PackageReference>
         

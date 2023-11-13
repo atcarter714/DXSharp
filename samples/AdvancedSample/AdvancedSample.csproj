@@ -16,12 +16,10 @@
     
     
     <!-- Debug/Release Configuration Properties :: -->
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' " 
-                   Label="DebugConfigurationProperties">
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' " Label="DebugConfigurationProperties">
       <DefineConstants>TRACE, DEBUG_COM, DEV_BUILD</DefineConstants>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' " 
-                   Label="ReleaseConfigurationProperties">
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' " Label="ReleaseConfigurationProperties">
       <DefineConstants>TRACE, STRIP_CHECKS, DXS_FAST</DefineConstants>
     </PropertyGroup>
     
