@@ -611,14 +611,14 @@ public partial struct RootParameter1: IRootParam1 {
 						   ShaderVisibility shaderVisibility = ShaderVisibility.All ) {
 		parameterType    = RootParameterType.DescriptorTable ;
 		parameterData  = descriptorTable ;
-		shaderVisibility = shaderVisibility ;
+		this.shaderVisibility = shaderVisibility ;
 	}
 	
 	public RootParameter1( in RootConstants constants,
 						   ShaderVisibility shaderVisibility = ShaderVisibility.All ) {
 		parameterType    = RootParameterType.Const32Bits ;
 		parameterData  = constants ;
-		shaderVisibility = shaderVisibility ;
+		this.shaderVisibility = shaderVisibility ;
 	}
 	
 	public RootParameter1( in RootDescriptor1 descriptor,
@@ -626,7 +626,7 @@ public partial struct RootParameter1: IRootParam1 {
 						   ShaderVisibility   shaderVisibility = ShaderVisibility.All ) {
 		parameterType    = type ;
 		parameterData  = descriptor ;
-		shaderVisibility = shaderVisibility ;
+		this.shaderVisibility = shaderVisibility ;
 	}
 } ;
 

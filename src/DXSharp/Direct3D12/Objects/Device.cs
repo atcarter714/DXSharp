@@ -96,22 +96,22 @@ internal class Device: Object,
 
 	public void CreateCommandList( uint                       nodeMask,
 								   CommandListType            type,
-								   ICommandAllocator?         pCommandAllocator,
+								   ICommandAllocator          pCommandAllocator,
 								   [Optional] IPipelineState? pInitialState,
 								   in         Guid            riid,
 								   out        ICommandList    ppCommandList ) {
-		var  device    = ComObject ?? throw new NullReferenceException( ) ;
-		var  allocator    = (IComObjectRef< ID3D12CommandAllocator >)pCommandAllocator ;
-		 var initialState = (IComObjectRef< ID3D12PipelineState >?)pInitialState ;
-		Guid _guid        = riid ;
+		var device       = ComObject ?? throw new NullReferenceException( ) ;
+		var allocator    = (IComObjectRef< ID3D12CommandAllocator >?)pCommandAllocator ;
+		var initialState = (IComObjectRef< ID3D12PipelineState >?)pInitialState ;
+		Guid _guid       = riid ;
 		
 		unsafe {
-			var hr = device.CreateCommandList(  nodeMask, 
-														(D3D12_COMMAND_LIST_TYPE)type, 
-														allocator.ComObject,
-														initialState?.ComObject,
-														&_guid,
-														out object _cmdList ) ;
+			var hr = device.CreateCommandList(  nodeMask,
+												(D3D12_COMMAND_LIST_TYPE)type, 
+												allocator?.ComObject,
+												initialState?.ComObject,
+												&_guid,
+												out object _cmdList ) ;
 
 #if DEBUG || DEBUG_COM || DEV_BUILD
 			hr.ThrowOnFailure( ) ;
@@ -188,7 +188,7 @@ internal class Device: Object,
 	}
 
 
-	public void CreateRenderTargetView( IResource?                                pResource,
+	public void CreateRenderTargetView( IResource                                pResource,
 										[Optional] in RenderTargetViewDescription pDescription,
 										CPUDescriptorHandle                       DestDescriptor ) {
 		var device = ComObject ?? throw new NullReferenceException( ) ;

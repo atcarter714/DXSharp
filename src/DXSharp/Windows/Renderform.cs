@@ -86,7 +86,7 @@ namespace DXSharp.Windows ;
 /// This code was adapter from SharpDX project's SharpDX.Windows.RenderForm type.
 /// It is provided as a helper class, and for its familiarity and usefulness.
 /// </remarks>
-[SupportedOSPlatform("windows5.1.2600")]
+[SupportedOSPlatform( "windows7.0" )]
 public class RenderForm: Form, IAppWindow {
 	#region Constant Values
 	const int   WM_SIZE              = 0x0005 ;
@@ -136,7 +136,7 @@ public class RenderForm: Form, IAppWindow {
 	// Constructors --------------------------------------------------------------------------
 	/// <summary>Initializes a new instance of the <see cref="RenderForm"/> class.</summary>
 	public RenderForm( ): this( DEFAULT_TITLE ) { }
-	
+
 	/// <summary>Initializes a new instance of the <see cref="RenderForm"/> class.</summary>
 	/// <param name="captionText">The <see cref="IAppWindow"/> title bar ("caption") text.</param>
 	public RenderForm( string captionText ):
@@ -386,12 +386,12 @@ public class RenderForm: Form, IAppWindow {
 					OnPauseRendering( EventArgs.Empty ) ;
 				}
 				else {
-                    _ = PInvoke.GetClientRect( m.HWnd, out RECT rect ) ;
+					_ = PInvoke.GetClientRect( m.HWnd, out RECT rect ) ;
 					// Rapidly clicking the task bar to minimize and restore a window
 					// can cause a WM_SIZE message with SIZE_RESTORED when 
 					// the window has actually become minimized due to rapid change
 					// so just ignore this message
-                    if ( rect.bottom - rect.top is 0 ) break ;
+					if ( rect.bottom - rect.top is 0 ) break ;
 					
 					if( wParam == SIZE_MAXIMIZED ) {
 						if( previousWindowState is FormWindowState.Minimized )

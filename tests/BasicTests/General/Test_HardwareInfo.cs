@@ -21,9 +21,9 @@ public class Test_HardwareInfo {
 		Assert.That( HardwareInfo.InstalledMemory, Is.GreaterThan(65535) ) ;
 		Assert.That( HardwareInfo.SystemAvailableMemory, Is.GreaterThan(65535) ) ;
 		
-		#warning This is OK for now, on MY machine, but must be removed later!
+		/*#warning This is OK for now, on MY machine, but must be removed later!
 		Assert.That( (int)HardwareInfo.ProcessorArchitecture, 
-											Is.GreaterThan(4) ) ;
+											Is.GreaterThan(4) ) ;*/
 		
 		Assert.That( HardwareInfo.SystemName, Is.Not.Null ) ;
 		Assert.That( HardwareInfo.SystemName, Is.Not.Empty ) ;

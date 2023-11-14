@@ -9,7 +9,7 @@ namespace BasicTests ;
 [TestFixture, FixtureLifeCycle( LifeCycle.SingleInstance )]
 public class D3D12AppTests {
 	static DXApp? _game ;
-	static Win32Application _win32App ;
+	//static Win32Application? _win32App ;
 	static HMODULE hInstance = HMODULE.Null ;
 	
 	[OneTimeSetUp] public void SetUp( ) {

@@ -1,4 +1,5 @@
-﻿// ReSharper disable HeapView.BoxingAllocation
+﻿#pragma warning disable CS8500
+// ReSharper disable HeapView.BoxingAllocation
 
 using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.InteropServices ;
@@ -102,14 +103,14 @@ public class Test_COMUtilities {
 		
 		// Get the COM pointer and make sure it's not null:
 		var comPtr   = _wrapper1!.ComPointer as ComPtr< IDXGIFactory1 > ;
-        Assert.Multiple( ( ) => {
+		Assert.Multiple( ( ) => {
 			Assert.That( comPtr, Is.Not.Null ) ;
-            Assert.That(comPtr!.BaseAddress, Is.Not.EqualTo(nint.Zero));
-            Assert.That(comPtr.InterfaceVPtr, Is.Not.EqualTo(nint.Zero));
-        } ) ;
+			Assert.That(comPtr!.BaseAddress, Is.Not.EqualTo(nint.Zero));
+			Assert.That(comPtr.InterfaceVPtr, Is.Not.EqualTo(nint.Zero));
+		} ) ;
 		
-        // Get actual address values:
-        nint baseAddr = comPtr!.BaseAddress ;
+		// Get actual address values:
+		nint baseAddr = comPtr!.BaseAddress ;
 		nint vTableAddr   = comPtr!.InterfaceVPtr ;
 		Assert.That( baseAddr.IsValid( ) && vTableAddr.IsValid( ) ) ;
 		
@@ -122,13 +123,13 @@ public class Test_COMUtilities {
 							 Assert.That( ppvFactory1, Is.Not.Zero ) ;
 						 } ) ;
 		
-        // Test query for IUnknown:
-        var _hr2 = QueryInterface< IUnknown >( vTableAddr, 
+		// Test query for IUnknown:
+		var _hr2 = QueryInterface< IUnknown >( vTableAddr, 
 																	  out nint ppvUnknown ) ;
 		Assert.Multiple( ( ) => {
 							 Assert.That( _hr2.Succeeded ) ;
 							 Assert.That( ppvUnknown, Is.Not.Zero ) ;
-					         Assert.That( ppvUnknown  == baseAddr ) ;
+							 Assert.That( ppvUnknown  == baseAddr ) ;
 							 Assert.That( ppvFactory1 == vTableAddr ) ;
 						 } ) ;
 		
@@ -140,13 +141,13 @@ public class Test_COMUtilities {
 		// Check count on queried pointers:
 		int unknownRefCount = GetRefCount( ppvUnknown ) ;
 		int fact1RefCount   = GetRefCount( ppvFactory1 ) ;
-        Assert.Multiple(( ) => {
-            Assert.That( unknownRefCount, Is.Not.Zero ) ;
-            Assert.That( fact1RefCount, Is.Not.Zero ) ;
-        }) ;
+		Assert.Multiple(( ) => {
+			Assert.That( unknownRefCount, Is.Not.Zero ) ;
+			Assert.That( fact1RefCount, Is.Not.Zero ) ;
+		}) ;
 
 
-        // Now try downcasting to IDXGIFactory4:
+		// Now try downcasting to IDXGIFactory4:
 		_factory4 = Cast< IFactory1, IFactory4 >( _factory! ) ;
 		Assert.That( _factory4, Is.Not.Null ) ;
 		
@@ -191,16 +192,16 @@ public class Test_COMUtilities {
 							 } ) ;
 			// -----------------------------------------------------------------
 
-            // Use InteropUtils to pin & get pointer + handle:
+			// Use InteropUtils to pin & get pointer + handle:
 			// (This gives us the address of the managed RCW object in RAM ...)
-            nint f4ManagedAddress = InteropUtils.GetManagedAddress( dxgiF4, out var hF4 ) ;
+			nint f4ManagedAddress = InteropUtils.GetManagedAddress( dxgiF4, out var hF4 ) ;
 			nint f1ManagedAddress = InteropUtils.GetManagedAddress( dxgiF1, out var hF1 ) ;
 			_cleanUpList!.AddRange( hF1, hF4 ) ;
 		}
 		Assert.That( _factory4, Is.Not.Null ) ;
 		Assert.That( dxgiF4 is not null ) ;
 		
-		ref IUnknownUnsafe @unsafe = ref IUnknownUnsafe.CreateUnsafeRef( dxgiF4 ) ;
+		ref IUnknownUnsafe @unsafe = ref IUnknownUnsafe.CreateUnsafeRef( dxgiF4! ) ;
 		uint c1 = @unsafe.AddRef( ),
 			 c2 = @unsafe.Release( ) ;
 		
@@ -211,7 +212,7 @@ public class Test_COMUtilities {
 							 Assert.That( creationFlags, Is.EqualTo( FactoryCreateFlags.None ) ) ;
 							 Assert.That( current, Is.True ) ;
 						 } ) ;
-    }
+	}
 	
 	
 	[Order(2), Test] public void Test_IUnknownWrapper( ) {
@@ -253,11 +254,11 @@ _factoryObj!.ComObject!.AddRef( ) ;*/
 		/*uint c1 = dxgiFactory4.AddRef( ),
 			 c2 = dxgiFactory4.Release( ) ;*/
 		/*
-        Assert.Multiple( ( ) => {
-            Assert.That(c1, Is.Not.EqualTo(0));
-            Assert.That(c2, Is.Not.EqualTo(0));
+		Assert.Multiple( ( ) => {
+			Assert.That(c1, Is.Not.EqualTo(0));
+			Assert.That(c2, Is.Not.EqualTo(0));
 			Assert.That( c2 == c1 - 1 ) ;
 			Assert.That( c2 == 1 ) ;
-        } ) ;*/
+		} ) ;*/
 		
 		

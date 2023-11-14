@@ -4,7 +4,7 @@ namespace BasicTests.General ;
 
 [TestFixture]
 public class Test_App_ServiceProvider_Time {
-	static Task _runTask ;
+	static Task? _runTask ;
 	static readonly Time _time = new( ) ;
 	
 	[SetUp] public void Setup( ) { }

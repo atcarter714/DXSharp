@@ -1,4 +1,6 @@
-﻿namespace DXSharp.Applications ;
+﻿using System.Runtime.Versioning;
+
+namespace DXSharp.Applications ;
 
 
 /// <summary>
@@ -39,8 +41,9 @@ public interface IAppWindow: IWin32Window {
 /// The (<see langword="abstract"/>) base class for implementing
 /// <b>DXSharp</b> application windows.
 /// </summary>
+[SupportedOSPlatform( "windows7.0" )]
 public abstract class AppWindow: DisposableObject, IAppWindow {
-	bool _destroyed ;
+	bool _destroyed = false ;
 	public abstract nint Handle { get ; }
 	public string Title { get ; }
 	
@@ -50,7 +53,7 @@ public abstract class AppWindow: DisposableObject, IAppWindow {
 	public abstract bool IsVisible { get ; }
 	public abstract bool IsMinimized { get ; }
 	public abstract bool IsMaximized { get ; }
-	public virtual bool IsDisposed => (this.Handle == nint.Zero) ;
+	public virtual bool IsDisposed => _destroyed || (this.Handle == nint.Zero) ;
 	
 	~AppWindow( ) {
 		this.Dispose( false ) ;

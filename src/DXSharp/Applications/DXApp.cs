@@ -1,4 +1,6 @@
-﻿#region Using Directives
+﻿
+#pragma warning disable CS0414
+#region Using Directives
 
 using System.Runtime.Versioning ;
 using Windows.Win32 ;

@@ -4,7 +4,6 @@ D3dcompiler_47.*
 Dxc*
 DXC_*
 DXC_OUT_KIND
-IDxc*
 
 IDxcBlob
 IDxcBlobEncoding
@@ -35,8 +34,6 @@ DxcArgPair
 DxcShaderHash
 DxcBuffer
 IDxcPdbUtils
-DxcDiaDataSource
-IDiaDataSource
 
 GetProcAddress
 DxcCreateInstance

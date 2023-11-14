@@ -1,7 +1,7 @@
 ﻿#region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
-
+using System.Runtime.Versioning;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Gdi ;
 using Windows.Win32.Graphics.Dxgi ;
@@ -70,12 +70,13 @@ public interface ISurface:  IDeviceSubObject,
 	// =================================================================================================
 } ;
 
- 
+
 /// <summary>
 /// The <a href="https://learn.microsoft.com/en-us/windows/win32/api/DXGI/nn-dxgi-idxgisurface1">IDXGISurface1</a> interface
 /// extends the <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgisurface">IDXGISurface</a> by adding support for using Windows Graphics Device Interface (GDI) to render to a Microsoft
 /// DirectX Graphics Infrastructure (DXGI) surface.
 /// </summary>
+[SupportedOSPlatform("windows6.1")]
 [ProxyFor(typeof(IDXGISurface1))]
 public interface ISurface1: ISurface  {
 	
@@ -134,6 +135,7 @@ public interface ISurface1: ISurface  {
 } ;
 
 
+[SupportedOSPlatform( "windows8.0" )]
 [ProxyFor( typeof( IDXGISurface2 ) )]
 public interface ISurface2: ISurface1,
 							IComObjectRef< IDXGISurface2 >,

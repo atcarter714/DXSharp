@@ -45,10 +45,10 @@ public class GraphicsPipeline: DXGraphics {
 	GraphicsSettings _settings ;
 	ShaderBuilder _shaderBuilder ;
 	PCWSTR _DBGName_Factory = default,
-		   _DBGName_Device = default ;
+		   _DBGName_Device  = default ;
 	
 	IFactory7? _factory ;
-	IDevice12? _device ;
+	IDevice10? _device ;
 	ISwapChain4? _swapChain ;
 	IDescriptorHeap? _rtvHeap, _dsvHeap ;
 	// =====================================================
@@ -90,12 +90,12 @@ public class GraphicsPipeline: DXGraphics {
 		using var adapter = _getBestGPU( _factory ) ;
 		
 		// Create the D3D12 device:
-		var device = D3D12.CreateDevice< IDevice10 >( adapter, FeatureLevel.D3D12_0 ) ;
-		if ( device is null ) throw new DXSharpException( $"Failed to create {nameof(IDevice10)}!" ) ;
-		else Add( device ) ;
+		_device = D3D12.CreateDevice< IDevice10 >( adapter, FeatureLevel.D3D12_0 ) ;
+		if ( _device is null ) throw new DXSharpException( $"Failed to create {nameof(IDevice10)}!" ) ;
+		else Add( _device ) ;
 		
 		// Describe & create the command queue:
-		device.CreateCommandQueue( CommandQueueDescription.Default,
+		_device.CreateCommandQueue( CommandQueueDescription.Default,
 								   ICommandQueue.IID, out ICommandQueue? cmdQueue ) ;
 		if( cmdQueue is null ) throw new DXSharpException( "Failed to create command queue!" ) ;
 		else Add( cmdQueue ) ;
@@ -131,20 +131,20 @@ public class GraphicsPipeline: DXGraphics {
 		// Create the descriptor heaps:
 		uint frameCount  = _settings.BackBufferOptions.Count ;
 		DescriptorHeapDescription rtvHeapDesc = new( DescriptorHeapType.RTV, frameCount ) ;
-		device.CreateDescriptorHeap( rtvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? rtvHeap ) ;
+		_device.CreateDescriptorHeap( rtvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? rtvHeap ) ;
 		if( rtvHeap is null ) throw new DXSharpException( "Failed to create RTV descriptor heap!" ) ;
 		
 		DescriptorHeapDescription dsvHeapDesc = new( DescriptorHeapType.CBV_SRV_UAV,
 													 1, DescriptorHeapFlags.ShaderVisible ) ;
-		device.CreateDescriptorHeap( dsvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? dsvHeap ) ;
+		_device.CreateDescriptorHeap( dsvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? dsvHeap ) ;
 		if( dsvHeap is null ) throw new DXSharpException( "Failed to create DSV descriptor heap!" ) ;
 		var rtvHandle       = rtvHeap!.GetCPUDescriptorHandleForHeapStart( ) ;
-		var rtvDescSize = device.GetDescriptorHandleIncrementSize( DescriptorHeapType.RTV ) ;
+		var rtvDescSize = _device.GetDescriptorHandleIncrementSize( DescriptorHeapType.RTV ) ;
 		
 		// Create frame resources with a RTV for each frame:
 		for ( uint n = 0; n < frameCount; ++n ) {
 			swapChain.GetBuffer< IResource2 >( n, out var buffer ) ;
-			device.CreateRenderTargetView( buffer, default, rtvHandle ) ;
+			_device.CreateRenderTargetView( buffer, default, rtvHandle ) ;
 			rtvHandle.Offset( 1, rtvDescSize ) ;
 		}
 		
@@ -169,8 +169,9 @@ public class GraphicsPipeline: DXGraphics {
 					throw new DXSharpException( $"Failed to cast " +
 												$"{nameof(IAdapter1)} to " +
 												$"{nameof(IAdapter4)}!" ) ;
+#else
+					continue;
 #endif
-					continue ;
 				}
 				
 				adapter.GetDesc3( out var _desc ) ;

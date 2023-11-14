@@ -2,6 +2,7 @@
 using System.Diagnostics ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using System.Runtime.Versioning;
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
@@ -13,6 +14,7 @@ namespace DXSharp.DXGI ;
 
 
 /// <summary>Represents a DXGI Device object.</summary>
+[SupportedOSPlatform("windows5.0")]
 [DebuggerDisplay($"{nameof(Device)}: {nameof(ComPointer)} = ComPointer")]
 [Wrapper(typeof(IDXGIDevice))]
 internal class Device: Object,
@@ -171,6 +173,7 @@ internal class Device: Object,
 } ;
 
 
+[SupportedOSPlatform( "windows6.1" )]
 [Wrapper(typeof(IDXGIDevice1))]
 internal class Device1: Device,
 						IDevice1,
@@ -221,6 +224,7 @@ internal class Device1: Device,
 } ;
 
 
+[SupportedOSPlatform( "windows8.0" )]
 [Wrapper(typeof(IDXGIDevice2))]
 internal class Device2: Device1,
 						IDevice2,
@@ -312,6 +316,7 @@ internal class Device2: Device1,
 } ;
 
 
+[SupportedOSPlatform( "windows8.1" )]
 [Wrapper(typeof(IDXGIDevice3))]
 internal class Device3: Device2,
 						IDevice3,

@@ -41,6 +41,8 @@ public static class SDKManager {
 	
 	
 	static SDKManager( ) {
+		_platformName = _getFolderNameForCPUArchitecture( ) ;
+
 		// ---------------------------------------------------------
 		// Load the native DLLs:
 		// ---------------------------------------------------------
@@ -48,8 +50,8 @@ public static class SDKManager {
 		// ---------------------------------------------------------
 	}
 
+
 	static void LoadNativeDLLs( ) {
-		_platformName = _getFolderNameForCPUArchitecture( ) ;
 		string sdkSearchPath = Path.Combine( Environment.CurrentDirectory,
 										   _SDK_REL_PATH, _platformName ) ;
 		string d3d12corePath = Path.Combine( sdkSearchPath, _D3D12CORE_NAME ) ;

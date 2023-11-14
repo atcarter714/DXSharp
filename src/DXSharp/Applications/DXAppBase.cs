@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Runtime.Versioning;
 using DXSharp.Windows.Win32 ;
 #endregion
 namespace DXSharp.Applications ;
@@ -14,6 +16,7 @@ public delegate void WndProcDelegate( IAppWindow window, Message msg,
 
 
 /// <summary>Abstract base class for DXSharp applications.</summary>
+[SupportedOSPlatform( "windows7.0" )]
 public abstract class DXAppBase: IDXApp {
 	
 	// ---------------------------------------------------------
@@ -149,13 +152,13 @@ protected virtual void OnAppMemoryUsageDecreased( object? sender, object e ) { }
 protected virtual void OnAppMemoryUsageLimitChange( object? sender, object e ) { }
 	
  static readonly Version MinVersionForMemoryNotifications = 
-    new( 10, 0, 10240, 0 ) ;
+	new( 10, 0, 10240, 0 ) ;
 
 [SupportedOSPlatform("windows10.0.10240.0")]
 void _registerForMemoryNotifications( ) {
-    MemoryManager.AppMemoryUsageIncreased     += OnAppMemoryUsageIncreased ;
-    MemoryManager.AppMemoryUsageDecreased     += OnAppMemoryUsageDecreased ;
-    MemoryManager.AppMemoryUsageLimitChanging += OnAppMemoryUsageLimitChange ;
+	MemoryManager.AppMemoryUsageIncreased     += OnAppMemoryUsageIncreased ;
+	MemoryManager.AppMemoryUsageDecreased     += OnAppMemoryUsageDecreased ;
+	MemoryManager.AppMemoryUsageLimitChanging += OnAppMemoryUsageLimitChange ;
 }
 
 

@@ -76,10 +76,9 @@
 		<PackageReference Condition="$(UsingAgilitySDK)" Aliases="AgilitySDK" Include="Microsoft.Direct3D.D3D12" Version="[1.711.3-preview,)" GeneratePathProperty="true">
 		</PackageReference>
 	</ItemGroup>
-	
 
 
-	<ItemGroup>
+	<ItemGroup Condition="$(UsingAgilitySDK)">
 		<AgilityDLLs Include="$(PkgMicrosoft_Direct3D_D3D12)\build\native\bin\x64\*.dll" />
 		<None Include="@(AgilityDLLs)">
 			<Link>%(RecursiveDir)%(FileName)%(Extension)</Link>

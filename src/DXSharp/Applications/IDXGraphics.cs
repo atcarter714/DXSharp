@@ -1,7 +1,7 @@
 ﻿#region Using Directives
 using System.Buffers ;
 using System.Collections.Concurrent ;
-
+using System.Runtime.Versioning;
 using DXSharp.DXGI ;
 using DXSharp.Direct3D12 ;
 using DXSharp.Windows.COM ;
@@ -136,6 +136,7 @@ public interface IDXGraphics: IDisposable, IAsyncDisposable {
 /// for your specific application. It simply provides a starting point for organizing and
 /// managing native D3D/Win32/COM and memory resources for graphics in a group.
 /// </remarks>
+[SupportedOSPlatform( "windows8.0" )]
 public abstract class DXGraphics: DisposableObject, IDXGraphics {
 	// ----------------------------------------------------------------------------------
 	//! Cache fields for important pipeline objects:

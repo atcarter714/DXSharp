@@ -351,18 +351,18 @@ internal class COMResource: DisposableObject {
 		var comptr = new ComPtr< I >( this._pUnknown ) ;
 		return new( comptr ) ;
 	}
-	
-	
+
+
 	// ----------------------------------------------------------
 	// Disposable Methods:
 	// ----------------------------------------------------------
-	
+
 	/// <summary>
 	/// Destroys the COM object and all of its interface references.
 	/// </summary>
 	/// <remarks>
-	/// This is done by calling the <see cref="ComPtr{T}.Dispose"/> or
-	/// <see cref="ComPtr.DisposeAsync"/> methods on the
+	/// This is done by calling the (inherited) <see cref="DisposableObject.Dispose()"/> or
+	/// <see cref="DisposableObject.DisposeAsync"/> methods on the
 	/// <see cref="ComPtr"/> instances.
 	/// </remarks>
 	protected virtual void Destroy( ) {

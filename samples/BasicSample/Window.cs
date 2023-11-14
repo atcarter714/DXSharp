@@ -5,7 +5,7 @@ namespace BasicSample ;
 
 
 public class Window: RenderForm {
-	ISwapChain? _swapChain ;
+	//ISwapChain? _swapChain ;
 	
 	public Window( ) { }
 	

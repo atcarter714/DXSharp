@@ -1,87 +1,22 @@
-#pragma warning disable CS1591
+#pragma warning disable CS1591, CS0169, CS0649
 
 #region Using Directives
-
-/* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
-Before:
-using Microsoft.Win32;
-After:
-using ABI.Windows.UI;
-
 using DXSharp.DXGI;
-
-using Microsoft.Win32;
-*/
-using DXSharp.DXGI;
-
-
-/* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
-Before:
-using System.Runtime.InteropServices;
-
-using System.Drawing;
-After:
-using System.Drawing;
-using System.Runtime.InteropServices;
-*/
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms ;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Direct3D;
-/* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
-Before:
-using Windows.Win32.Graphics.Dxgi;
-using static Windows.Win32.PInvoke;
-
-using DXSharp.DXGI;
-using System.Runtime.InteropServices;
-using Windows.Win32.Graphics.Dxgi.Common;
-After:
-using Windows.Win32.Sms;
-using static Windows.Win32;
-using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Direct3D;
-*/
 using Windows.Win32.Graphics.Direct3D12;
 using Windows.Win32.Graphics.Dxgi;
-/* Unmerged change from project 'BasicTests (net6.0-windows10.0.22621.0)'
-Before:
-using WinRT;
-using Windows.Devices.Sms;
-using ABI.Windows.UI;
-using System.Drawing;
-After:
-using Windows.Devices.Graphics.Dxgi.Common;
-
-using WinRT;
-
 using static Windows.Win32.PInvoke;
-*/
-using static Windows.Win32.PInvoke;
-
 #endregion
-
 namespace BasicTests;
 
 
+
 [TestFixture, FixtureLifeCycle( LifeCycle.SingleInstance )]
-public class D3D12GraphicsInterop
-{
-	/* Native Pipeline Objects
-		D3D12_VIEWPORT m_viewport;
-		D3D12_RECT m_scissorRect;
-		ComPtr<IDXGISwapChain3> m_swapChain;
-		ComPtr<ID3D12Device> m_device;
-		ComPtr<ID3D12Resource> m_renderTargets[FrameCount];
-		ComPtr<ID3D12CommandAllocator> m_commandAllocator;
-		ComPtr<ID3D12CommandQueue> m_commandQueue;
-		ComPtr<ID3D12RootSignature> m_rootSignature;
-		ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
-		ComPtr<ID3D12PipelineState> m_pipelineState;
-		ComPtr<ID3D12GraphicsCommandList> m_commandList;
-		UINT m_rtvDescriptorSize;
-	 */
+public class D3D12GraphicsInterop {
 
 	RECT _rect;
 	D3D12_VIEWPORT _viewport;
@@ -91,11 +26,11 @@ public class D3D12GraphicsInterop
 
 	// Disable the NUnit warning/error about disposing of the form (we handle it in OneTimeTearDown)
 #pragma warning disable NUnit1032
-	static RenderForm? _renderForm;
+	static RenderForm? _renderForm ;
 #pragma warning restore NUnit1032
 
 	static IDXGIFactory7? _factory;
-	static List<IDXGIAdapter4> _adapters;
+	static List<IDXGIAdapter4>? _adapters;
 	static ID3D12Debug5? _debugController;
 
 	static readonly ID3D12Fence? _fence1;
@@ -111,15 +46,14 @@ public class D3D12GraphicsInterop
 	static ID3D12GraphicsCommandList1? _commandList;
 
 
-	static IDXGIAdapter4? GetBestAdapter() {
+	static IDXGIAdapter4? GetBestAdapter( ) {
 		int i = 0, index = -1; long maxvRam = Int64.MinValue;
 		DXGI_ADAPTER_DESC3 desc = default;
 
-		unsafe
-		{
-			DXGI_ADAPTER_DESC3* pDesc = &desc;
-			foreach (var adapter in _adapters)
-			{
+		unsafe {
+			DXGI_ADAPTER_DESC3* pDesc = &desc ;
+			Assert.That(_adapters is {Count: > 0}) ;
+			foreach ( var adapter in _adapters! ) {
 				adapter.GetDesc3(pDesc);
 				if (desc.Flags.HasFlag(DXGI_ADAPTER_FLAG3.DXGI_ADAPTER_FLAG3_SOFTWARE)) continue;
 
@@ -164,7 +98,8 @@ public class D3D12GraphicsInterop
 
 				// Assert and add it to list:
 				Assert.IsNotNull( adptr4 );
-				_adapters.Add( adptr4 );
+				Assert.That(_adapters is {Count: > 0});
+				_adapters!.Add( adptr4! );
 			}
 			catch( COMException comEx ) {
 
@@ -237,9 +172,10 @@ public class D3D12GraphicsInterop
 	[Test, Order( 1 )]
 	public void Get_DXGI_Adapters() {
 		Assert.That( _factory, Is.Not.Null );
+		Assert.That( _adapters is {Count: > 0} );
 		bool good = EnumAdapters( _factory );
 		Assert.That( good, Is.True );
-		Assert.NotZero( _adapters.Count );
+		Assert.NotZero( _adapters!.Count );
 	}
 
 	[Test, Order( 2 )]
@@ -310,8 +246,8 @@ public class D3D12GraphicsInterop
 		Assert.IsNotNull( _factory );
 
 		// Get an adapter:
-		Assert.IsNotEmpty( _adapters );
-		var adapter = GetBestAdapter();
+		Assert.That( _adapters is {Count: > 0} ) ;
+		var adapter = GetBestAdapter() ;
 		Assert.IsNotNull( adapter );
 
 		// Create device and swapchain for d3d12
@@ -342,8 +278,9 @@ public class D3D12GraphicsInterop
 			Flags = D3D12_COMMAND_QUEUE_FLAGS.D3D12_COMMAND_QUEUE_FLAG_NONE,
 			Type = D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT,
 		};
+		Assert.That(_device is not null);
 
-		_device.CreateCommandQueue1( &queueDesc, &creatorId, &cmdQueueId, out object? cmdQObj );
+		_device!.CreateCommandQueue1( &queueDesc, &creatorId, &cmdQueueId, out object? cmdQObj );
 
 		Assert.DoesNotThrow( () =>
 		{
@@ -362,7 +299,7 @@ public class D3D12GraphicsInterop
 			Assert.IsNotNull( _device );
 			Assert.DoesNotThrow( () =>
 			{
-				_device.CreateCommandList1( 0x00u,
+				_device!.CreateCommandList1( 0x00u,
 											D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT,
 											D3D12_COMMAND_LIST_FLAGS.D3D12_COMMAND_LIST_FLAG_NONE,
 											pId,
@@ -382,14 +319,14 @@ public class D3D12GraphicsInterop
 		Assert.IsNotNull( _commandQueue ) ;
 
 		// Create swapchain descriptions:
-		var scDesc = new SwapChainDescription1( _renderForm.ClientSize.Width, _renderForm.ClientSize.Height,
+		var scDesc = new SwapChainDescription1( _renderForm!.ClientSize.Width, _renderForm.ClientSize.Height,
 			Format.R8G8B8A8_UNORM, false, new SampleDescription(1, 0), Usage.RenderTargetOutput, _bufferCount,
 			Scaling.Stretch, SwapEffect.FlipDiscard, AlphaMode.Ignore, SwapChainFlags.FrameLatencyWaitableObject );
 		var scfsDesc = new SwapChainFullscreenDescription( 60u, ScanlineOrder.Unspecified, ScalingMode.Stretched, true );
 
 		var pSwapChainDesc = (DXGI_SWAP_CHAIN_DESC1*)&scDesc;
 		var pScfsDesc = (DXGI_SWAP_CHAIN_FULLSCREEN_DESC*)&scDesc;
-		IDXGISwapChain1 swapChainObj = default;
+		IDXGISwapChain1? swapChainObj = default ;
 
 		Assert.DoesNotThrow( () =>
 		{
@@ -416,7 +353,7 @@ public class D3D12GraphicsInterop
 		{
 			Guid id = typeof(ID3D12CommandAllocator).GUID;
 
-			_device.CreateCommandAllocator(
+			_device!.CreateCommandAllocator(
 				D3D12_COMMAND_LIST_TYPE.D3D12_COMMAND_LIST_TYPE_DIRECT,
 				&id, out object? allocObj );
 

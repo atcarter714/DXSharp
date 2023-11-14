@@ -19,6 +19,7 @@ namespace DXSharp.DXGI ;
 // Version: IDXGISwapChain
 // -----------------------------------------------
 
+[SupportedOSPlatform( "windows8.0" )]
 [ProxyFor(typeof(IDXGISwapChain))]
 public interface ISwapChain: IDeviceSubObject,
 							 IInstantiable {
@@ -89,6 +90,7 @@ public interface ISwapChain: IDeviceSubObject,
 // Version: IDXGISwapChain1
 // -----------------------------------------------
 
+[SupportedOSPlatform( "windows8.0" )]
 public interface ISwapChain1: ISwapChain {
 	// ---------------------------------------------------------------------------------
 	void GetDesc1( out SwapChainDescription1 pDesc ) ;
@@ -136,6 +138,7 @@ public interface ISwapChain1: ISwapChain {
 // -----------------------------------------------
 
 
+[SupportedOSPlatform( "windows8.1" )]
 public interface ISwapChain2: ISwapChain1 {
 	// ---------------------------------------------------------------------------------
 	

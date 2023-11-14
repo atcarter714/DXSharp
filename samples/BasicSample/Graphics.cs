@@ -103,7 +103,7 @@ public class Graphics: DisposableObject {
 		
 		// Create device (default is FeatureLevel.D3D_12_0):
 		IDevice? device = D3D12.CreateDevice< IDevice >( adapter, FeatureLevel.D3D12_0 ) ;
-		this.GraphicsDevice = device ;
+		this.GraphicsDevice = device ?? throw new ApplicationException($"Failed to create device!") ;
 		
 		// Create command queue:
 		var cmdQDesc = new CommandQueueDescription {
@@ -184,7 +184,7 @@ public class Graphics: DisposableObject {
 			new RootSignatureDescription( RootSignatureFlags.AllowInputAssemblerInputLayout )
 				.Serialize( ) ?? throw new NullReferenceException( "Failed to serialize root signature!" ) ;
 		
-		GraphicsDevice.CreateRootSignature( 0,
+		GraphicsDevice!.CreateRootSignature( 0,
 											serializedRootSig.Pointer, 
 											serializedRootSig.GetBufferSize( ),
 											IRootSignature.IID, out rootSignature ) ;
@@ -281,7 +281,7 @@ public class Graphics: DisposableObject {
 		// Create the command list:
 		GraphicsDevice.CreateCommandList( 0,
 										  CommandListType.Direct,
-										  commandAllocator, 
+										  commandAllocator!, 
 										  pipelineState,
 										  IGraphicsCommandList.IID,
 										  out var cmdList ) ;
@@ -324,15 +324,14 @@ public class Graphics: DisposableObject {
 		
 		
 		// Copy the triangle data to the vertex buffer.
-		nint mappedResource = nint.Zero ;
-		vertexBuffer?.Map(0 , default, out mappedResource ) ;
 		unsafe {
+			vertexBuffer!.Map( 0, default, out nint mappedResource );
 			VertexPosCol* pVertexDataBegin = (VertexPosCol *)mappedResource ;
 			Memory< VertexPosCol > vertices = new( triangleVertices ) ;
 			using var hVertices = vertices.Pin( ) ;
 			Unsafe.CopyBlock( pVertexDataBegin, hVertices.Pointer, (uint)vertexBufferSize ) ;
 		}
-		vertexBuffer.Unmap(0 ) ;
+		vertexBuffer!.Unmap(0 ) ;
 
 		// Initialize the vertex buffer view:
 		vertexBufferView = new VertexBufferView {
@@ -363,24 +362,24 @@ public class Graphics: DisposableObject {
 		
 		// Execute the command list:
 		//! What is this crap ???? ...
-		commandQueue.ExecuteCommandLists< IGraphicsCommandList >( 1, 
+		commandQueue!.ExecuteCommandLists< IGraphicsCommandList >( 1, 
 										  new IGraphicsCommandList[ ] {
-											  (IGraphicsCommandList)commandList
+											  commandList!,
 										  } ) ;
 		
 		// Present the frame:
-		SwapChain.Present( 1, 0 ) ;
+		SwapChain!.Present( 1, 0 ) ;
 		frameIndex ^= 1 ; //! Alternate between the two back buffers.
 	}
 	
 	
 	void WaitForPreviousFrame( ) {
 		ulong localFence = fenceValue ;
-		commandQueue.Signal( fence, fenceValue++ ) ;
+		commandQueue!.Signal( fence, fenceValue++ ) ;
 		
 		// Wait until the previous frame is finished
-		if ( fence.GetCompletedValue( ) < localFence ) {
-			var fenceEventHandle = fenceEvent.SafeWaitHandle.DangerousGetHandle( ) ;
+		if ( fence!.GetCompletedValue( ) < localFence ) {
+			var fenceEventHandle = fenceEvent!.SafeWaitHandle.DangerousGetHandle( ) ;
 			fence.SetEventOnCompletion( localFence, fenceEventHandle ) ;
 			fenceEvent.WaitOne( ) ;
 		}
@@ -390,11 +389,11 @@ public class Graphics: DisposableObject {
 		// Command list allocators can only be reset when the associated 
 		// command lists have finished execution on the GPU; apps should use 
 		// fences to determine GPU execution progress.
-		commandAllocator.Reset( ) ;
+		commandAllocator!.Reset( ) ;
 
 		// However, when ExecuteCommandList() is called on a particular command list,
 		// that command list can then be reset at any time and must be before re-recording.
-		commandList.Reset( commandAllocator, pipelineState ) ;
+		commandList!.Reset( commandAllocator, pipelineState ) ;
 
 
 		// Set necessary state.
@@ -410,7 +409,7 @@ public class Graphics: DisposableObject {
 		
 		
 		// Set the render target for the output merger stage:
-		var rtvHandle = rtvHeap.GetCPUDescriptorHandleForHeapStart( ) ;
+		var rtvHandle = rtvHeap!.GetCPUDescriptorHandleForHeapStart( ) ;
 		rtvHandle += frameIndex * rtvDescriptorSize ;
 		commandList.OMSetRenderTargets(1,
 									   new[ ] { rtvHandle },

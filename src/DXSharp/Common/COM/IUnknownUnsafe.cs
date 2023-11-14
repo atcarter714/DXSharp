@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS1591,CS1573,CS0465,CS0649,CS8019,CS1570,CS1584,CS1658,CS0436,CS8981,CS8500
+﻿#pragma warning disable CS1591, CS1573, CS0465, CS0649, CS8019, CS1570, CS1584, CS1658, CS0436, CS8981, CS8500, CS9091, CS8909
 
 #region Using Directives
 using System.Runtime.CompilerServices ;
@@ -58,8 +58,8 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 		/// property is used to determine the bounds of the V-Table, and why the <see cref="IVTable.this"/> indexer
 		/// (used to access a function pointer at the specified index/offset) does not consider it "out of bounds" if
 		/// you wish to index beyond the known bounds of the V-Table and does not throw an <see cref="Exception"/>.<para/>
-		/// For example, <i>all</i> COM interfaces inherit from <see cref="IUnknown"/>, which has 3 function pointers,
-		/// so the methods of <i>any</i> COM interface will be beyond the bounds of the <b><see cref="IUnknown.VTable"/></b> (3) ...
+		/// For example, <i>all</i> COM interfaces inherit from <see cref="DXSharp.Windows.COM.IUnknown"/>, which has 3 function pointers,
+		/// so the methods of <i>any</i> COM interface will be beyond the bounds of the <b><see cref="IUnknownUnsafe.VTable"/></b> (3) ...
 		/// </remarks>
 		public const int MIN_FNPTR_COUNT = 3 ;
 		
@@ -200,6 +200,7 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 
 
 		#region System Overrides
+		//! TODO: Resolve warning about function pointer comparison (CS8909 - currently suppressed) ...
 		public bool Equals( VTable other ) =>
 			_0_QueryInterface == other._0_QueryInterface
 					&& _1_AddRef == other._1_AddRef

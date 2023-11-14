@@ -39,6 +39,7 @@ namespace DXSharp.DXGI;
 } ;
 
 
+[SupportedOSPlatform("windows5.0")]
 [Wrapper(typeof(IDXGIFactory))]
 internal class Factory: Object,
 						IFactory,
@@ -46,7 +47,7 @@ internal class Factory: Object,
 						IUnknownWrapper< IDXGIFactory > {
 	// -----------------------------------------------------------------------------------
 	ComPtr< IDXGIFactory >? _comPointer ;
-	public virtual ComPtr< IDXGIFactory >? ComPointer => 
+	public new virtual ComPtr< IDXGIFactory >? ComPointer => 
 		_comPointer ??= ComResources?.GetPointer< IDXGIFactory >( ) ;
 	
 	public override IDXGIFactory? ComObject => ComPointer?.Interface ;
@@ -67,9 +68,10 @@ internal class Factory: Object,
 		_comPointer = ptr ;
 		_initOrAdd( _comPointer ) ;
 	}
-	
+
 	// -----------------------------------------------------------------------------------
-	
+
+	[SupportedOSPlatform( "windows8.0" )]
 	public HResult CreateSwapChain( in ICommandQueue? pCmdQueue,
 									in SwapChainDescription desc,
 											out ISwapChain? ppSwapChain ) {
@@ -163,6 +165,7 @@ internal class Factory: Object,
 } ;
 
 
+[SupportedOSPlatform( "windows6.1" )]
 [Wrapper(typeof(IDXGIFactory1))]
 internal class Factory1: Factory,
 						 IFactory1,
@@ -223,6 +226,7 @@ internal class Factory1: Factory,
 	
 	public bool IsCurrent( ) => ComObject!.IsCurrent( ) ;
 
+	[SupportedOSPlatform("windows6.1")]
 	public HResult EnumAdapters1( uint index, out IAdapter1? ppAdapter ) {
 		if( ComObject is null ) throw new NullReferenceException( ) ;
 		ppAdapter = default ;
@@ -240,6 +244,7 @@ internal class Factory1: Factory,
 } ;
 
 
+[SupportedOSPlatform( "windows8.0" )]
 [Wrapper(typeof(IDXGIFactory2))]
 internal class Factory2: Factory1,
 						 IFactory2,
@@ -378,6 +383,7 @@ internal class Factory2: Factory1,
 } ;
 
 
+[SupportedOSPlatform( "windows8.1" )]
 [Wrapper( typeof( IDXGIFactory3 ) )]
 internal class Factory3: Factory2,
 						 IFactory3,

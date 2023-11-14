@@ -28,7 +28,6 @@ GetPhysicallyInstalledSystemMemory
 GetLogicalProcessorInformation
 GetSystemInfo
 VirtualAlloc2
-Virtual2AllocFromApp
 GetCurrentProcess
 
 LoadCursorA
@@ -49,8 +48,6 @@ MEM_*
 RGBQUAD
 WM_*
 
-IUnknown
-IDispatch
 IStream
 
 
@@ -82,13 +79,12 @@ dxcompiler.*
 // ------------------------------------------
 // DXGI Items:
 // ------------------------------------------
-DXGIGetDebugInterface
+//DXGIGetDebugInterface
 DXGIGetDebugInterface1
 
 IDXGIDebug
 IDXGIDebug1
 IDXGIInfoQueue
-IDXGIInfoQueue1
 IDXGIFactory7
 IDXGIAdapter4
 IDXGIOutput6
@@ -119,15 +115,13 @@ DXGI_INFO_QUEUE_MESSAGE_CATEGORY
 DXGI_FORMAT
 DXGI_SAMPLE_DESC
 DXGI_HARDWARE_COMPOSITION_SUPPORT_FLAGS
-DXGI_ENUM_MODES
 DXGI_GAMMA_CONTROL
 DXGI_ADAPTER_FLAG
 DXGI_ADAPTER_FLAG3
 DXGI_OFFER_RESOURCE_PRIORITY
 DXGI_OUTDUPL_POINTER_SHAPE_TYPE
 DXGI_INFO_QUEUE_FILTER
-DXGI_PRESENT
-DXGI_PRESENT_FLAGS
+
 // ------------------------------------------
 // DXGI HRESULT Error Codes:
 DXGI_ERROR_ACCESS_DENIED
@@ -165,7 +159,6 @@ DXGI_ERROR_DEVICE_HUNG
 // D3D12 Items:
 // ------------------------------------------
 D3D12*
-ID3D12*
 D3D12_*
 D3D12_ERROR_*
 
@@ -302,7 +295,6 @@ D3D12_GPU_BASED_VALIDATION_FLAGS
 // ------------------------------------------
 // DXCore Items:
 // ------------------------------------------
-DXCore*
 DXCoreCreateAdapterFactory
 IDXCoreAdapterFactory
 IDXCoreAdapterList

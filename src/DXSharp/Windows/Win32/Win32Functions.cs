@@ -1,6 +1,7 @@
 ﻿#region Using Directives
 
 using System.Runtime.InteropServices ;
+using System.Runtime.Versioning;
 using Windows.System ;
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
@@ -22,6 +23,7 @@ namespace DXSharp.Windows.Win32 ;
 /// always be exactly the same as the original Win32 API, but will be familiar and easy to use for
 /// anyone who has used Win32 or .NET before.
 /// </remarks>
+[SupportedOSPlatform( "windows5.0" )]
 public static class Win32Functions {
 	static RECT _tempRect = default ;
 

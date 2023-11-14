@@ -19,10 +19,12 @@ public class DXGI_Interface_Tests {
 	[Test, Order( 0 )]
 	public void Test_Create_Factory7( ) {
 		FactoryCreateFlags flags = FactoryCreateFlags.Debug ;
-		var                hr= DXGIFunctions.CreateFactory2( IFactory7.IID, out var _f7, flags ) ;
+		var hr = DXGIFunctions.CreateFactory2( IFactory7.IID, out var _f2, flags ) ;
 		Assert.True( hr.Succeeded ) ;
+		Assert.IsNotNull( _f2 ) ;
+		factory7 = _f2 as IFactory7 ;
 		Assert.IsNotNull( factory7 ) ;
-		
+
 		var rc = factory7 as IComObjectRef< IDXGIFactory7 > ;
 		Assert.IsNotNull( rc ) ;
 		var pFactory = rc!.ComObject ;
@@ -96,7 +98,7 @@ public class DXGI_Interface_Tests {
 				Assert.IsNotNull( output6 ) ;
 				
 				// Get the output's description:
-				output6.GetDescription( out var outputDescription ) ;
+				output6!.GetDescription( out var outputDescription ) ;
 				Debug.WriteLine( $"{nameof(Test_EnumAdapters)}: " +
 								 $"\tGraphics Output: {outputDescription.DeviceName}" ) ;
 				
@@ -110,11 +112,13 @@ public class DXGI_Interface_Tests {
 								 $"Gamma Control Curve [1]: \t{sliceOfGammaControl[1]} ...\n" ) ;
 				
 				// Get the output's display modes:
-				uint numModes = 0 ; 
-				EnumModesFlags flags = 0 ;
+				uint numModes = 0 ;
+				const EnumModesFlags flags = EnumModesFlags.None;
 				output6.GetDisplayModeList1( Format.R8G8B8A8_UNORM,
-											 0, out numModes,
+											 flags, out numModes,
 											 out var modes ) ;
+
+				Assert.That(numModes is not 0);
 			}
 
 		}
@@ -136,9 +140,8 @@ public class DXGI_Interface_Tests {
 			else hr.ThrowOnFailure( ) ;
 				
 			var adapter = COMUtility.Cast< IAdapter1, IAdapter4 >( _adapter ) ;
-				
-				
-			adapter.GetDesc3( out var _desc ) ;
+			Assert.That(adapter is not null);
+			adapter!.GetDesc3( out var _desc ) ;
 				
 			// Skip software and remote adapters:
 			if( _desc.Flags.HasFlag( AdapterFlag3.Software ) 

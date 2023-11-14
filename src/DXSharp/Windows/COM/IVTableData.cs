@@ -12,6 +12,8 @@ public interface IVTable {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get ;
 	}
+
+	int PointerCount { get; }
 }
 
 

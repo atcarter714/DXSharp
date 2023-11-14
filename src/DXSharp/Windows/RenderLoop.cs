@@ -33,6 +33,7 @@
 #region Using Directives
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.UI.WindowsAndMessaging;
@@ -75,6 +76,7 @@ namespace DXSharp.Windows ;
 /// provided as a helper class for its convenience and familiarity. It can be used along with
 /// RenderForms and WinForms and potentially a native Win32 window.
 /// </remarks>
+[SupportedOSPlatform( "windows5.0" )]
 public class RenderLoop: IDisposable {
 	/// <summary>Delegate for the rendering loop.</summary>
 	public delegate void RenderCallback( ) ;

@@ -129,7 +129,8 @@ public static partial class DXGIFunctions {
 		factory = (IFactory) _createWrapperFn( dxgiFactory! ) ;
 		return hr ;
 	}
-	
+
+	[SupportedOSPlatform( "windows6.1" )]
 	public static HResult CreateFactory1< T >( out T? factory ) where T: IFactory1, IInstantiable {
 		var riid  = T.Guid ;
 		var hr = CreateFactory1( riid, out var _f1 ) ;
@@ -137,6 +138,7 @@ public static partial class DXGIFunctions {
 		return hr ;
 	}
 
+	[SupportedOSPlatform( "windows6.1" )]
 	public static HResult CreateFactory1( in Guid riid, out IFactory1? factory ) {
 		
 		HResult hr   = PInvoke.CreateDXGIFactory1( in riid, out var _fact ) ;
@@ -160,7 +162,7 @@ public static partial class DXGIFunctions {
 			return hr ;
 		}
 #endif
-		 		
+				
 		//! Verify the type argument is a wrapper of `IDXGIFactory`:
 #if !STRIP_CHECKS
 		if( !_factoryCreators.ContainsKey(riid) ) {
@@ -170,7 +172,7 @@ public static partial class DXGIFunctions {
 											$"{nameof(IDXGIFactory)} interface identifier.",
 											HResult.E_NOINTERFACE ) ) ;
 #else
- 			factory = default ;
+			factory = default ;
 			return HResult.E_NOINTERFACE ;
 #endif
 		}
@@ -182,7 +184,8 @@ public static partial class DXGIFunctions {
 		factory = (IFactory1) _createWrapperFn( dxgiFactory! ) ;
 		return hr ;
 	}
-	
+
+	[SupportedOSPlatform( "windows8.1" )]
 	public static HResult CreateFactory2< T >( out T factory,
 											   FactoryCreateFlags flags = FactoryCreateFlags.None )
 																		where T: IFactory2, IInstantiable {
@@ -192,6 +195,7 @@ public static partial class DXGIFunctions {
 		return hr ;
 	}
 
+	[SupportedOSPlatform( "windows8.1" )]
 	public static HResult CreateFactory2( in Guid riid, out IFactory2 factory,
 										  FactoryCreateFlags flags = FactoryCreateFlags.None ) {
 		
@@ -227,12 +231,13 @@ public static partial class DXGIFunctions {
 	
 	[SupportedOSPlatform("windows10.0.17134")]
 	public static void DisableVBlankVirtualization( ) => PInvoke.DXGIDeclareAdapterRemovalSupport( ) ;
-	
-	
+
+
 	// ---------------------------------------------------------------------------------------------------
 	//! DXGIGetDebugInterfaceX Functions/Overloads:
 	// ---------------------------------------------------------------------------------------------------
-	
+
+	[SupportedOSPlatform( "windows8.0" )]
 	public static HResult GetDebugInterface( in Guid riid, out IDebug? debugInterface ) {
 		unsafe {
 			fixed ( Guid* _riid = &riid ) {
@@ -249,8 +254,9 @@ public static partial class DXGIFunctions {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 					throw new DirectXComError( $"The RCW object returned from " +
 											   $"{nameof(DXGIGetDebugInterface)} is invalid!" ) ;
-#endif
+#else
 					return hr ;
+#endif
 				}
 				
 				// Check if the given GUID is a recognized interface identifier:
@@ -273,7 +279,7 @@ public static partial class DXGIFunctions {
 			}
 		}
 	}
-	
+
 	/// <summary>
 	/// Retrieves an interface that Windows Store apps use for debugging the Microsoft DirectX Graphics Infrastructure (DXGI).
 	/// </summary>
@@ -282,6 +288,7 @@ public static partial class DXGIFunctions {
 	/// IDXGIDebug, IDXGIDebug1, or IDXGIInfoQueue interfaces.
 	/// </param>
 	/// <param name="debugInterface"></param>
+	[SupportedOSPlatform( "windows8.1" )]
 	public static HResult GetDebugInterface1( in Guid riid, out IDebug1? debugInterface ) {
 		unsafe {
 			fixed ( Guid* _riid = &riid ) {
@@ -309,11 +316,11 @@ public static partial class DXGIFunctions {
 					throw new DirectXComError( $"Unrecognized or unsupported {nameof(Guid)} " +
 											   $"used as interface identifier (IID)!" ) ;
 #else
- 					return ;
+					return ;
 #endif
 				}
 #endif
-				 				
+								
 				var _createFn = IDebug._layerCreationFunctions[ riid ] ;
 				debugInterface = (IDebug1) _createFn( _dbg ) ;
 				
@@ -330,12 +337,14 @@ public static partial class DXGIFunctions {
 		return hr.Succeeded ? (TFactory)factoryObj : default ;
 	}
 
+	[SupportedOSPlatform( "windows6.1" )]
 	internal static unsafe TFactory? CreateDXGIFactory1< TFactory >( Guid riid, out HRESULT hr ) 
 																	 where TFactory: IDXGIFactory1 {
 		hr = PInvoke.CreateDXGIFactory1( &riid, out object? factoryObj ) ;
 		return hr.Succeeded ? (TFactory)factoryObj : default ;
 	}
-	
+
+	[SupportedOSPlatform( "windows8.1" )]
 	internal static unsafe TFactory? CreateDXGIFactory2< TFactory >( FactoryCreateFlags Flags, Guid riid, out HRESULT hr ) 
 																	 where TFactory: IDXGIFactory2 {
 		hr = PInvoke.CreateDXGIFactory2( (uint)Flags, &riid, out object? factoryObj ) ;
@@ -371,25 +380,26 @@ public static partial class DXGIFunctions {
 	/// <typeparam name="TFactory">Type of DXGIFactoryX</typeparam>
 	/// <param name="hr">HRESULT to capture the result and indicate success/failure</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
-	[MethodImpl(_MAXOPT_)]
+	[MethodImpl(_MAXOPT_)] [SupportedOSPlatform( "windows6.1" )]
 	internal static TFactory? CreateDXGIFactory1< TFactory >( out HRESULT hr ) where TFactory : IDXGIFactory1 {
 		hr = PInvoke.CreateDXGIFactory1( typeof( TFactory ).GUID, out var factory ) ;
 		_ = hr.ThrowOnFailure( ) ;
 		return (TFactory)factory ;
 	}
-	
+
 	/// <summary>
 	/// Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
 	/// </summary>
 	/// <typeparam name="T">Type of DXGIFactoryX</typeparam>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	/// <exception cref="COMException">Thrown if the call fails and contains detailed error information</exception>
+	[SupportedOSPlatform( "windows6.1" )]
 	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory1< T >( ) where T : IDXGIFactory1 {
 		var factory = CreateDXGIFactory1< T >( out var hr ) ;
 		_ = hr.ThrowOnFailure( ) ;
 		return factory;
 	}
-	
+
 	/// <summary>
 	/// Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
 	/// </summary>
@@ -397,6 +407,7 @@ public static partial class DXGIFunctions {
 	/// <param name="Flags">Creation flags</param>
 	/// <param name="hr">HRESULT to capture the result and indicate success/failure</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
+	[SupportedOSPlatform( "windows8.1" )]
 	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory2< T >( FactoryCreateFlags Flags, out HRESULT hr ) 
 																							where T : IDXGIFactory2 {
 		var factory2 = CreateDXGIFactory2< T >( Flags, typeof(T).GUID, out hr ) ;
@@ -409,6 +420,7 @@ public static partial class DXGIFunctions {
 	/// <typeparam name="T">Type of DXGIFactoryX</typeparam>
 	/// <param name="Flags">Creation flags</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
+	[SupportedOSPlatform( "windows8.1" )]
 	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory2< T >( FactoryCreateFlags Flags ) where T : IDXGIFactory2 {
 		var factory = CreateDXGIFactory2< T >( Flags, out var hr ) ;
 		_ = hr.ThrowOnFailure( ) ;

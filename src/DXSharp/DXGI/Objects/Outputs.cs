@@ -215,6 +215,7 @@ internal class Output: Object,
 } ;
 
 
+[SupportedOSPlatform( "windows8.0" )]
 [Wrapper(typeof(IDXGIOutput1))]
 internal class Output1: Output, IOutput1,
 						IComObjectRef< IDXGIOutput1 >,
@@ -319,6 +320,7 @@ internal class Output1: Output, IOutput1,
 } ;
 
 
+[SupportedOSPlatform( "windows8.1" )]
 [Wrapper( typeof( IDXGIOutput2 ) )]
 internal class Output2: Output1, 
 						IOutput2,
@@ -375,6 +377,7 @@ internal class Output2: Output1,
 }
 
 
+[SupportedOSPlatform( "windows8.1" )]
 [Wrapper( typeof( IDXGIOutput3 ) )]
 internal class Output3: Output2,
 						IOutput3,

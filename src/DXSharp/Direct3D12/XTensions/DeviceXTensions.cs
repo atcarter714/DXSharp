@@ -57,7 +57,7 @@ public static class DeviceXTensions
 		device.CreateCommittedResource( heapProperties, HeapFlags.None, desc, initialState,
 										optimizedClearValue, TRsrc.Guid, out var resource ) ;
 		
-		ppvResource = (TRsrc )resource ;
+		ppvResource = (TRsrc?)resource ;
 	}
 	
 	

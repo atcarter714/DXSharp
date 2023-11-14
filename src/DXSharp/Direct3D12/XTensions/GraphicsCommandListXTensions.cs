@@ -20,7 +20,7 @@ public static class GraphicsCommandListXTensions {
 	}
 	
 	
-	public static void ClearRenderTargetView( this IGraphicsCommandList? graphicsCommandList,
+	public static void ClearRenderTargetView( this IGraphicsCommandList graphicsCommandList,
 											  CPUDescriptorHandle        RenderTargetView, 
 											  ColorF                     ColorRGBA,
 											  Span< Rect >               pRects = default ) {

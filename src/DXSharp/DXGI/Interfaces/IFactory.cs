@@ -25,6 +25,7 @@ namespace DXSharp.DXGI ;
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgifactory">IDXGIFactory</a>. 
 /// The interface implements methods for generating DXGI objects (which also handle full screen transitions).
 /// </summary>
+[SupportedOSPlatform( "windows5.0" )]
 [ProxyFor(typeof(IDXGIFactory))]
 public interface IFactory: IObject,
 						   IInstantiable {
@@ -159,6 +160,7 @@ public interface IFactory: IObject,
 // Interface Version: IDXGIFactory1 ::
 // -------------------------------------------------------------------------------------
 
+[SupportedOSPlatform( "windows6.1" )]
 [ProxyFor(typeof(IDXGIFactory1))]
 public interface IFactory1: IFactory {
 	
@@ -230,6 +232,7 @@ public interface IFactory1: IFactory {
 // Interface Version: IDXGIFactory2 ::
 // -------------------------------------------------------------------------------------
 
+[SupportedOSPlatform( "windows8.0" )]
 [ProxyFor(typeof(IDXGIFactory2))]
 public interface IFactory2: IFactory1 {
 	// ----------------------------------------------------------------------------------------------------
@@ -420,6 +423,7 @@ public interface IFactory2: IFactory1 {
 // Interface Version: IDXGIFactory3 ::
 // -------------------------------------------------------------------------------------
 
+[SupportedOSPlatform( "windows8.1" )]
 [ProxyFor( typeof( IDXGIFactory3 ) )]
 public interface IFactory3: IFactory2 {
 	/// <summary>Gets the flags that were used when a Microsoft DirectX Graphics Infrastructure (DXGI) object was created.</summary>

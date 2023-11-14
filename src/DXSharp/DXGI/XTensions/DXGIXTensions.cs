@@ -2,7 +2,7 @@
 using System.Reflection ;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices ;
-
+using System.Runtime.Versioning;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi.Common;
 
@@ -38,10 +38,11 @@ public static partial class DXGIXTensions {
 	
 	[MethodImpl(_MAXOPT_)] public static bool Is( this HResult hr, in HResult other ) => hr.Value == other.Value ;
 	[MethodImpl(_MAXOPT_)] public static bool Is( this HResult hr, in HRESULT other ) => hr.Value == other.Value ;
-	
+
 	// -----------------------------------------------------------------------------------------------
-	
-	
+
+
+	[SupportedOSPlatform( "windows6.1" )]
 	public static IAdapter? FindBestAdapter( this IFactory factory )  {
 		ArgumentNullException.ThrowIfNull( factory, nameof(factory) ) ;
 		const int MAX = IFactory.MAX_ADAPTER_COUNT ;
@@ -80,7 +81,8 @@ public static partial class DXGIXTensions {
 		return adapter ;
 	}
 
-	
+
+	[SupportedOSPlatform( "windows6.1" )]
 	public static IAdapter1? FindBestHardwareAdapter1( this IFactory1 factory1 ) {
 		ArgumentNullException.ThrowIfNull( factory1, nameof(factory1) ) ;
 		const int MAX = IFactory.MAX_ADAPTER_COUNT ;
@@ -118,44 +120,4 @@ public static partial class DXGIXTensions {
 		return adapter ;
 	}
 	
-	
-	/*
-	public static (IAdapter? adapter, AdapterDescription desc) GetAllAdapters< F, A >( this F factory )
-													where F: class, IFactory
-													where A: class, IAdapter {
-		ArgumentNullException.ThrowIfNull( factory, nameof(factory) ) ;
-		const int MAX = IFactory.MAX_ADAPTER_COUNT ;
-		
-		Adapter? adapter = null ;
-		AdapterDescription desc = default ;
-		//List< (Adapter Adapter, AdapterDescription Description) > allAdapters = new( ) ;
-
-		for ( int i = 0; i < MAX; ++i ) {
-			var hr = factory.EnumAdapters< Adapter >( 0, out var _adapter ) ;
-			if ( hr.Failed ) {
-				if ( hr.Is( HResult.DXGI_ERROR_NOT_FOUND ) ) break ;
-				throw new DirectXComError( hr, $"{nameof( DXGIXTensions )} :: " +
-											   $"Error enumerating adapters! " +
-											   $"HRESULT: 0x{hr.Value:X} ({hr.Value})" ) ;
-			}
-			
-			if ( _adapter is null ) continue ;
-			_adapter.GetDesc( out var _desc ) ;
-			//allAdapters.Add( (_adapter, _desc) ) ;
-			
-			if ( adapter is null ) {
-				adapter = _adapter ;
-				desc	= _desc ;
-				continue ;
-			}
-			
-			// Does the adapter have more available VRAM?
-			if ( _desc.DedicatedVideoMemory > desc.DedicatedVideoMemory ) {
-				adapter = _adapter ;
-				desc	= _desc ;
-			}
-		}
-		
-		return adapter ;
-	}*/
 } ;

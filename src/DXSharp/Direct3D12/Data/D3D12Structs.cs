@@ -661,9 +661,6 @@ public struct InputElementDescription: IDisposable {
 				}
 			}
 
-			D3D12_ROOT_DESCRIPTOR_TABLE1 ttt ;
-			RootDescriptorTable1 tbl;
-			
 			SemanticName = value ;
 		}
 	}

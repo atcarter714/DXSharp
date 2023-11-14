@@ -25,8 +25,7 @@ AppSettings Settings = new( "DXSharp: Hello Texture",
 
 //! Enable the debug layer in debug mode:
 #if DEBUG || DEBUG_COM
-IDebug6? debug6 = default ;
-var hr = D3D12.GetDebugInterface( out debug6 ) ;
+var hr = D3D12.GetDebugInterface( out IDebug6? debug6 ) ;
 hr.ThrowOnFailure( ) ;
 ObjectDisposedException.ThrowIf( debug6 is null, typeof( IDebug6 ) ) ;
 
@@ -38,7 +37,7 @@ debug6.SetGPUBasedValidationFlags( GPUBasedValidationFlags.None ) ;
 
 
 // Initialize & run the app:
-using IDXApp app = new BasicApp( Settings ) ;
+await using IDXApp app = new BasicApp( Settings ) ;
 app.Initialize( ) ;
 app.Run( ) ;
 
@@ -46,5 +45,5 @@ app.Run( ) ;
 //! Destroy the debug layer in debug mode:
 #if DEBUG || DEBUG_COM
 debug6.DisableDebugLayer( ) ;
-debug6.DisposeAsync( ) ;
+await debug6.DisposeAsync( ) ;
 #endif

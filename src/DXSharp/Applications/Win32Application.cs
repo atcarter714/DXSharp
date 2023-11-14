@@ -1,5 +1,6 @@
 ﻿#region Using Directives
 using System.Runtime.InteropServices ;
+using System.Runtime.Versioning;
 using Windows.Win32 ;
 using DXSharp.Windows.COM ;
 using Windows.Win32.Foundation ;
@@ -9,6 +10,8 @@ using static Windows.Win32.PInvoke ; //! <-- CsWin32
 #endregion
 namespace DXSharp.Windows.Win32.XTensions ;
 
+
+[SupportedOSPlatform( "windows7.0" )]
 public class Win32Application {
 	static HWND _hWnd ;
 	static HInstance _hInstance ;

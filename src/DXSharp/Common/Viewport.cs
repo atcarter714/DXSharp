@@ -1,4 +1,5 @@
 ﻿
+using System.Runtime.Versioning;
 using DXSharp.Applications ;
 
 namespace DXSharp {
@@ -17,6 +18,7 @@ namespace DXSharp {
 	/// </remarks>
 	public struct Viewport {
 		// ------------------------------------------------------------------------------------
+		[SupportedOSPlatform( "windows7.0" )]
 		public static readonly Viewport Default = new( 0,0, 
 													   AppSettings.DEFAULT_WIDTH,
 													   AppSettings.DEFAULT_HEIGHT,
@@ -249,6 +251,7 @@ namespace Windows.Win32.Graphics.Direct3D11 {
 		}
 
 
+		[SupportedOSPlatform( "windows6.1" )]
 		public static ReadOnlySpan< D3D11_VIEWPORT > GetFrom( ID3D11DeviceContext? context ) {
 
 			try {

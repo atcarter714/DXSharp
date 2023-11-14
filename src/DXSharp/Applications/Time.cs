@@ -30,7 +30,7 @@ public interface ITimeProvider: ITimeSnapshot {
 	Task RunAsync( ) ;
 	
 	void Update( ) ;
-	ValueTask< Timing > GetTimingInfo( ) ;
+	Timing GetTimingInfo( ) ;
 } ;
 
 
@@ -176,7 +176,7 @@ public class Time: ITimeProvider {
 		OnTickAction?.Invoke( (float)_deltaTime.TotalSeconds ) ;
 	}
 	
-	public async ValueTask< Timing > GetTimingInfo( ) => new Timing {
+	public Timing GetTimingInfo( ) => new Timing {
 		// D - E - L - T - A !!! :-)
 		DeltaTime        = this.DeltaTime,
 		Elapsed          = this.Elapsed,

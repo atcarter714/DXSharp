@@ -371,8 +371,8 @@ public enum Format: uint {
 /// <seealso cref="DXGI_FORMAT"/>
 /// </summary>
 public static class Formats {
-	public static ReadOnlyMemory< Format > AllFormats =
-		(Memory<Format>)Enum.GetValues( typeof(Format) ) ;
+	public static ReadOnlyMemory< Format > AllFormats = 
+		new Memory< Format >((Format[])Enum.GetValues(typeof(Format)) ) ;
 	
 	/// <summary>Utility class for <see cref="Format"/> names in <see cref="string"/> form.</summary>
 	public static partial class Names {

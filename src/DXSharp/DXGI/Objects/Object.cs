@@ -19,7 +19,7 @@ internal abstract class Object: DXComObject,
 	public override ComPtr< IDXGIObject >? ComPointer =>
 		_comPtr ??= ComResources?.GetPointer< IDXGIObject >( )! ;
 	
-	public virtual IDXGIObject? ComObject => (IDXGIObject)ComPointer?.InterfaceObjectRef! ;
+	public override IDXGIObject? ComObject => (IDXGIObject)ComPointer?.InterfaceObjectRef! ;
 	
 	//! ---------------------------------------------------------------------------------
 	

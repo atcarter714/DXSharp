@@ -1,6 +1,7 @@
 ﻿#region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using System.Runtime.Versioning;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi ;
 
@@ -11,6 +12,7 @@ using HResult = DXSharp.Windows.HResult ;
 namespace DXSharp.DXGI ;
 
 
+[SupportedOSPlatform( "windows8.1" )]
 [Wrapper( typeof( IDXGIFactoryMedia ) )]
 internal class FactoryMedia: DisposableObject,
 							 IFactoryMedia,

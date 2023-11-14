@@ -22,7 +22,6 @@ public interface IValueRange< out T > where T: unmanaged, INumber< T >,
 /// (<see cref="Min"/>) to a maximum (<see cref="Max"/>)
 /// value of <typeparam name="T"></typeparam>.
 /// </summary>
-/// <typeparam name="T">The type of value.</typeparam>
 public struct ValueRange< T >: IValueRange< T >, IEquatable< ValueRange< T > > 
 			                          where T: unmanaged, INumber< T >,
 								IComparable<T>, IEquatable<T>, IMinMaxValue<T> {

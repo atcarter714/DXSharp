@@ -220,6 +220,9 @@ public interface IAdapter2: IAdapter1 {
 // Version :: IDXGIAdapter3
 // ------------------------------------------------------------------------------
 
+
+/// <inheritdoc cref="IDXGIAdapter3"/>
+[SupportedOSPlatform("windows5.0")]
 [ProxyFor( typeof( IDXGIAdapter3 ) )]
 public interface IAdapter3: IAdapter2 {
 	// ---------------------------------------------------------------------------------

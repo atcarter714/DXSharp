@@ -145,7 +145,7 @@ public static class TextureUtils {
 			else _allocOK = true ;
 		}
 		if ( !_listOK ) {
-			device.CreateCommandList( 0, CommandListType.Direct, allocator, 
+			device.CreateCommandList( 0, CommandListType.Direct, allocator!, 
 									  null, GraphicsCommandList.Guid, out var list ) ;
 			commandList = (IGraphicsCommandList?)list ;
 			if( commandList is null ) throw new DXSharpException( "Failed to create command list!" ) ;

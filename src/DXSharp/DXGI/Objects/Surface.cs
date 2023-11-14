@@ -2,6 +2,7 @@
 
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using System.Runtime.Versioning;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Dxgi.Common ;
@@ -98,6 +99,7 @@ internal class Surface: DeviceSubObject,
 } ;
 
 
+[SupportedOSPlatform( "windows6.1" )]
 [Wrapper(typeof(IDXGISurface1))]
 internal class Surface1: Surface, 
 						 ISurface1,
@@ -180,6 +182,7 @@ internal class Surface1: Surface,
 
 
 
+[SupportedOSPlatform( "windows8.0" )]
 [Wrapper(typeof(IDXGISurface2))]
 internal class Surface2: Surface1, ISurface2 {
 	// --------------------------------------------------------------------------------------------

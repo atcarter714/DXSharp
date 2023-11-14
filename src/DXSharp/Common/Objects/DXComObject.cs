@@ -67,7 +67,7 @@ internal abstract class DXComObject: DisposableObject,
 		}
 	}
 
-	public HResult QueryInterface< T >( out T ppvUnk ) where T: IDXCOMObject, IInstantiable {
+	public HResult QueryInterface< T >( out T? ppvUnk ) where T: IDXCOMObject, IInstantiable {
 		unsafe {
 			var vTableAddr = ComPtrBase?.BaseAddress ?? NULL_PTR ;
 			if( vTableAddr is NULL_PTR ) {

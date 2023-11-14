@@ -97,7 +97,7 @@ public interface IDXCOMObject: IComIID,
 	uint AddRef( ) ;
 	uint Release( ) ;
 	HResult QueryInterface( in Guid riid, out nint ppvObject ) ;
-	HResult QueryInterface< T >( out T ppvUnk ) where T: IDXCOMObject, IInstantiable ;
+	HResult QueryInterface< T >( out T? ppvUnk ) where T: IDXCOMObject, IInstantiable ;
 	
 	// ----------------------------------------------------------
 	// Static Properties:

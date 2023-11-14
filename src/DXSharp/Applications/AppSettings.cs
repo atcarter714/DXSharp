@@ -1,4 +1,5 @@
-﻿namespace DXSharp.Applications ;
+﻿using System.Runtime.Versioning;
+namespace DXSharp.Applications ;
 
 
 /// <summary>
@@ -10,6 +11,7 @@
 /// <param name="WindowSize">The window client size area (width and height).</param>
 /// <param name="StyleSettings">Additional settings for the visual style/appearance of the app.</param>
 /// <param name="AdvancedSettings">Advanced settings for the behavior and capabilities of the app.</param>
+[SupportedOSPlatform( "windows7.0" )]
 public record AppSettings( string Title, USize WindowSize = default,
 						     AppSettings.Style? StyleSettings = default,
 								AppSettings.Advanced? AdvancedSettings = default ) {
@@ -100,7 +102,8 @@ public record AppSettings( string Title, USize WindowSize = default,
 		// -----------------------------------------------------
 		
 	} ;
-	
+
+
 	public class Advanced {
 		public static readonly ParallelOptions DefaultParallelismSettings = new ParallelOptions {
 			MaxDegreeOfParallelism = HardwareInfo.MaxParallelism,

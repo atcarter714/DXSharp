@@ -230,7 +230,7 @@ public interface IGraphicsCommandList: ICommandList {
 	/// <para><b>CopyResource</b> operations are performed on the GPU, and do not incur a significant CPU workload linearly dependent on the size of the data to copy. <b>CopyResource</b> can be used to initialize resources that alias the same heap memory. See <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-createplacedresource">CreatePlacedResource</a> for more details.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-copyresource#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CopyResource( IResource? pDstResource, IResource? pSrcResource ) ;
+	void CopyResource( IResource pDstResource, IResource pSrcResource ) ;
 
 	
 	/// <summary>Copies tiles from buffer to tiled resource or vice versa. (ID3D12GraphicsCommandList.CopyTiles)</summary>

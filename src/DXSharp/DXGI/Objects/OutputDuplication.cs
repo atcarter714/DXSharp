@@ -2,6 +2,7 @@
 
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using System.Runtime.Versioning;
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
@@ -11,6 +12,7 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.DXGI ;
 
 
+[SupportedOSPlatform( "windows8.0" )]
 [Wrapper(typeof(IDXGIOutputDuplication))]
 internal class OutputDuplication: Object, IOutputDuplication {
 	// ----------------------------------------------------------------------------------------------

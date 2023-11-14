@@ -1,7 +1,7 @@
 ﻿#region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
-
+using System.Runtime.Versioning;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Security ;
@@ -90,6 +90,7 @@ internal class Resource: DeviceSubObject,
 } ;
 
 
+[SupportedOSPlatform( "windows8.0" )]
 [Wrapper(typeof(IDXGIResource1))]
 internal class Resource1: Resource, 
 						  IResource1,

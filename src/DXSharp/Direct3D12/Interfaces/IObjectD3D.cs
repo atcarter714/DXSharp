@@ -31,7 +31,7 @@ namespace DXSharp.Direct3D12 ;
  NativeLibrary("d3d12.dll", nameof(ID3D12Object), "d3d12.h"), ]
 public interface IObject: IDXCOMObject {
 	// ---------------------------------------------------------------------------------
-	
+
 	/// <summary>Associates a name with the device object. This name is for use in debug diagnostics and tools.</summary>
 	/// <param name="name">
 	/// <para>Type: <b>LPCWSTR</b>
@@ -49,8 +49,8 @@ public interface IObject: IDXCOMObject {
 	/// <remarks>
 	/// <para>This method takes <b>UNICODE</b> names.<para/>
 	/// Note that this is simply a convenience wrapper around
-	/// <see cref="IObject.SetPrivateData"/> with the <see cref="Guid"/> "<i><see cref="COMUtility.WKPDID_D3DDebugObjectNameW"/></i>".
-	/// Therefore names which are set with `SetName` can be retrieved with <see cref="IObject.GetPrivateData"/> with the same GUID.
+	/// <see cref="IDXCOMObject.SetPrivateData"/> with the <see cref="Guid"/> "<i><see cref="COMUtility.WKPDID_D3DDebugObjectNameW"/></i>".
+	/// Therefore names which are set with `SetName` can be retrieved with <see cref="IDXCOMObject.GetPrivateData"/> with the same GUID.
 	/// Additionally, D3D12 supports narrow strings for names, using the "<i><see cref="COMUtility.WKPDID_D3DDebugObjectName"/></i>" GUID directly instead.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12object-setname#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>

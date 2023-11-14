@@ -52,11 +52,11 @@ internal class GraphicsCommandList: CommandList,
 
 
 	public void Reset( ICommandAllocator? pAllocator, IPipelineState? pInitialState ) {
-		var allocator = (IComObjectRef< ID3D12CommandAllocator >)pAllocator ;
-		var initialState = (IComObjectRef< ID3D12PipelineState >)pInitialState ;
+		var allocator = (IComObjectRef< ID3D12CommandAllocator >?)pAllocator ;
+		var initialState = (IComObjectRef< ID3D12PipelineState >?)pInitialState ;
 #if DEBUG || DEBUG_COM || DEV_BUILD
 		ArgumentNullException.ThrowIfNull( pAllocator, nameof(pAllocator) ) ;
-		ArgumentNullException.ThrowIfNull( allocator.ComObject, nameof(allocator.ComObject) ) ;
+		ArgumentNullException.ThrowIfNull( allocator?.ComObject, nameof(allocator.ComObject) ) ;
 		ArgumentNullException.ThrowIfNull( initialState, nameof(pInitialState) ) ;
 		ArgumentNullException.ThrowIfNull( initialState.ComObject, nameof(initialState.ComObject) ) ;
 #endif
@@ -109,10 +109,12 @@ internal class GraphicsCommandList: CommandList,
 	}
 	
 
-	public void CopyResource( IResource? pDstResource, IResource? pSrcResource ) {
-		var src = (Resource)pSrcResource ;
-		var dst = (Resource)pDstResource ;
-		ComObject!.CopyResource( dst.ComObject, src.ComObject ) ;
+	public void CopyResource( IResource pDstResource, IResource pSrcResource ) {
+		ArgumentNullException.ThrowIfNull(pDstResource, nameof(pDstResource));
+		ArgumentNullException.ThrowIfNull(pSrcResource, nameof(pSrcResource));
+		var src = (Resource?)pSrcResource;
+		var dst = (Resource?)pDstResource ;
+		ComObject!.CopyResource( dst?.ComObject, src?.ComObject ) ;
 	}
 
 	
@@ -120,8 +122,8 @@ internal class GraphicsCommandList: CommandList,
 						   in TiledResourceCoordinate pTileRegionStartCoordinate, 
 						   in TileRegionSize          pTileRegionSize,
 						   IResource                  pBuffer,
-						   ulong                      BufferStartOffsetInBytes,
-						   TileCopyFlags              Flags ) {
+						   ulong                      bufferStartOffsetInBytes,
+						   TileCopyFlags              flags ) {
 		unsafe {
 			var tiledResource = (Resource)pTiledResource ;
 			var buffer = (Resource)pBuffer ;
@@ -130,8 +132,8 @@ internal class GraphicsCommandList: CommandList,
 									  (D3D12_TILED_RESOURCE_COORDINATE *)pTiledResCoord, 
 									  (D3D12_TILE_REGION_SIZE *)pRegionSize,
 									  buffer.ComObject, 
-									  BufferStartOffsetInBytes, 
-									  (D3D12_TILE_COPY_FLAGS)Flags ) ;
+									  bufferStartOffsetInBytes, 
+									  (D3D12_TILE_COPY_FLAGS)flags ) ;
 			}
 		}
 	}
@@ -226,7 +228,7 @@ internal class GraphicsCommandList: CommandList,
 	public void SetComputeRootSignature( IRootSignature pRootSignature ) => ComObject!.SetComputeRootSignature( pRootSignature.ComObject ) ;
 
 	
-	public void SetGraphicsRootSignature( IRootSignature? pRootSignature ) => ComObject!.SetGraphicsRootSignature( pRootSignature.ComObject ) ;
+	public void SetGraphicsRootSignature( IRootSignature? pRootSignature ) => ComObject!.SetGraphicsRootSignature( pRootSignature?.ComObject ) ;
 
 	
 	public void SetComputeRootDescriptorTable( uint RootParameterIndex, GPUDescriptorHandle BaseDescriptor ) => 

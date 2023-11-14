@@ -16,7 +16,7 @@ using Windows.Storage.Search ;
 
 public sealed class FolderEnumeration {
     
-    public string AllFiles { get; set; }
+    public string? AllFiles { get; set; }
     
     public IList< IList<string> > GroupedFiles { get; set; }
                                     = new List< IList<string> >( ) ;

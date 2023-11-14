@@ -1,7 +1,7 @@
 ﻿#region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
-
+using System.Runtime.Versioning;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Dxgi.Common ;
@@ -85,6 +85,7 @@ public interface IOutput: IObject,
 /// <remarks>
 /// Learn more about DXGI here: <para><a href="https://learn.microsoft.com/en-us/windows/win32/api/_direct3ddxgi/">DirectX Graphics Infrastructure</a></para>
 /// </remarks>
+[SupportedOSPlatform( "windows8.0" )]
 [ProxyFor(typeof(IDXGIOutput1))]
 public interface IOutput1: IOutput {
 	// ---------------------------------------------------------------------------------

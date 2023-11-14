@@ -1,6 +1,7 @@
 ﻿#region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using System.Runtime.Versioning;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 
@@ -10,6 +11,7 @@ using HResult = DXSharp.Windows.HResult ;
 namespace DXSharp.DXGI ;
 
 
+[SupportedOSPlatform( "windows8.1" )]
 [ProxyFor( typeof( IDXGIFactoryMedia ) )]
 public interface IFactoryMedia: IComIID, IInstantiable {
 

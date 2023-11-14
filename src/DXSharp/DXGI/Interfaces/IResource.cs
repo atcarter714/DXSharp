@@ -3,6 +3,7 @@
 using System.Collections.ObjectModel ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+using System.Runtime.Versioning;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows.Win32 ;
@@ -11,6 +12,7 @@ using DXSharp.Windows.COM ;
 namespace DXSharp.DXGI ;
 
 
+[SupportedOSPlatform("windows8.0")]
 [ProxyFor(typeof(IDXGIResource))]
 public interface IResource: IDeviceSubObject,
 							IInstantiable {
@@ -53,6 +55,7 @@ public interface IResource: IDeviceSubObject,
 } ;
 
 
+[SupportedOSPlatform( "windows8.0" )]
 [ProxyFor(typeof(IDXGIResource1))]
 public interface IResource1: IResource {
 	// ---------------------------------------------------------------------------------

@@ -20,6 +20,7 @@ namespace DXSharp.DXGI ;
 
 //public enum ColorSpaceSupportFlags: uint { Present = 0x1, OverlayPresent = 0x2, } ;
 
+[SupportedOSPlatform( "windows8.0" )]
 [Wrapper(typeof(IDXGISwapChain))]
 internal class SwapChain: DeviceSubObject,
 						  ISwapChain,
@@ -198,6 +199,7 @@ internal class SwapChain: DeviceSubObject,
 } ;
 
 
+[SupportedOSPlatform( "windows8.0" )]
 [Wrapper(typeof(IDXGISwapChain1))]
 internal class SwapChain1: SwapChain,
 						   ISwapChain1,
@@ -337,6 +339,7 @@ internal class SwapChain1: SwapChain,
 } ;
 
 
+[SupportedOSPlatform("windows8.1")]
 [Wrapper( typeof( IDXGISwapChain2 ) )]
 internal class SwapChain2: SwapChain1,
 						   ISwapChain2,
