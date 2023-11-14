@@ -37,11 +37,11 @@ public interface IDXGraphics: IDisposable, IAsyncDisposable {
 	IRootSignature? RootSignature { get ; }
 	IPipelineState? PipelineState { get ; }
 	
-	ICommandList? CommandList { get ; }
+	ICommandList? PrimaryCommandList { get ; }
 	ICommandQueue? CommandQueue { get ; }
 	ICommandAllocator? CommandAllocator { get ; }
 	
-	List< IResource >? BackBuffers { get ; }
+	List< IResource >? RenderTargets { get ; }
 	// ----------------------------------------------------------------------------------
 	
 	public TItem? Find< TItem >( ) where TItem: IDXCOMObject? {
@@ -73,7 +73,7 @@ public interface IDXGraphics: IDisposable, IAsyncDisposable {
 	
 	public void AddBackBuffer( IResource buffer ) {
 		PipelineObjects.Push( buffer ) ;
-		BackBuffers?.Add( buffer ) ;
+		RenderTargets?.Add( buffer ) ;
 	}
 	public void Add( MemoryHandle handle ) => AllocatedHandles.Push( handle ) ;
 	public void Add( IDisposable disposable ) => Disposables.Push( disposable ) ;
@@ -140,13 +140,13 @@ public interface IDXGraphics: IDisposable, IAsyncDisposable {
 public abstract class DXGraphics: DisposableObject, IDXGraphics {
 	// ----------------------------------------------------------------------------------
 	//! Cache fields for important pipeline objects:
-	ISwapChain?        _swapChain ;
-	IDevice?           _graphicsDevice ;
-	ICommandAllocator? _commandAlloc ;
-	ICommandList?      _commandList ;
-	ICommandQueue?     _commandQueue ;
-	IRootSignature?    _rootSignature ;
-	IPipelineState?    _pipelineState ;
+	protected ISwapChain?        m_swapChain ;
+	protected IDevice?           m_graphicsDevice ;
+	protected ICommandAllocator? m_commandAlloc ;
+	protected ICommandList?      m_commandList ;
+	protected ICommandQueue?     m_commandQueue ;
+	protected IRootSignature?    m_rootSignature ;
+	protected IPipelineState?    m_pipelineState ;
 	// ----------------------------------------------------------------------------------
 	
 	public ConcurrentStack< MemoryHandle > AllocatedHandles { get ; init ; }
@@ -155,17 +155,20 @@ public abstract class DXGraphics: DisposableObject, IDXGraphics {
 	
 	// ----------------------------------------------------------------------------------
 	//! Lookup properties use cached fields for fast & easy access:
-	public IDevice? GraphicsDevice => _graphicsDevice ??= Find< IDevice >( ) ;
-	public ISwapChain? SwapChain => _swapChain ??= Find< ISwapChain >( ) ;
-	public ICommandList? CommandList => _commandList ??= Find< ICommandList >( ) ;
-	public ICommandQueue? CommandQueue => _commandQueue ??= Find< ICommandQueue >( ) ;
-	public ICommandAllocator? CommandAllocator => _commandAlloc ??= Find< ICommandAllocator >( ) ;
-	public IRootSignature? RootSignature => _rootSignature ??= Find< IRootSignature >( ) ;
-	public IPipelineState? PipelineState => _pipelineState ??= Find< IPipelineState >( ) ;
+	public virtual IDevice? GraphicsDevice => m_graphicsDevice ??= Find< IDevice >( ) ;
+	public virtual ISwapChain? SwapChain => m_swapChain ??= Find< ISwapChain >( ) ;
+	public virtual ICommandQueue? CommandQueue => m_commandQueue ??= Find< ICommandQueue >( ) ;
+	public virtual ICommandList? PrimaryCommandList => m_commandList ??= Find< ICommandList >( ) ;
+	public virtual ICommandAllocator? CommandAllocator => m_commandAlloc ??= Find< ICommandAllocator >( ) ;
+	public virtual IRootSignature? RootSignature => m_rootSignature ??= Find< IRootSignature >( ) ;
+	public virtual IPipelineState? PipelineState => m_pipelineState ??= Find< IPipelineState >( ) ;
+	
+	public virtual IGraphicsCommandList[ ]? GfxCommandLists { get ; set ; }
+	
 	// ----------------------------------------------------------------------------------
 	
 	public virtual ColorF BackgroundColor { get ; set ; } = Color.Black ;
-	public List< IResource >? BackBuffers { get ; } = new( ) ;
+	public List< IResource >? RenderTargets { get ; } = new( ) ;
 	public ClearValue[ ] ClearValues { get ; set ; }
 	public Viewport[ ] Viewports { get ; set ; }
 	public Rect[ ] ScissorRects { get ; set ; }
@@ -202,14 +205,14 @@ public abstract class DXGraphics: DisposableObject, IDXGraphics {
 	// ----------------------------------------------------------------------------------
 	
 	IDevice? _findDevice( ) {
-		if ( _graphicsDevice is not null ) 
-			return _graphicsDevice ;
+		if ( m_graphicsDevice is not null ) 
+			return m_graphicsDevice ;
 			
 		for ( int i = 0; i < PipelineObjects.Count; ++i ) {
 			if ( PipelineObjects.TryPeek( out var obj ) ) {
 				if ( obj is IDevice device ) {
-					_graphicsDevice = device ;
-					return _graphicsDevice ;
+					m_graphicsDevice = device ;
+					return m_graphicsDevice ;
 				}
 			}
 		}
@@ -222,19 +225,19 @@ public abstract class DXGraphics: DisposableObject, IDXGraphics {
 			ArgumentNullException.ThrowIfNull( obj, nameof(obj) ) ;
 #endif
 		if ( obj is IDevice deviceWrapper )
-			_graphicsDevice = deviceWrapper ;
+			m_graphicsDevice = deviceWrapper ;
 		else if ( obj is ISwapChain swapChainWrapper )
-			_swapChain = swapChainWrapper ;
+			m_swapChain = swapChainWrapper ;
 		else if ( obj is ICommandAllocator allocatorWrapper )
-			_commandAlloc = allocatorWrapper ;
+			m_commandAlloc = allocatorWrapper ;
 		else if ( obj is ICommandList listWrapper )
-			_commandList = listWrapper ;
+			m_commandList = listWrapper ;
 		else if ( obj is ICommandQueue queueWrapper )
-			_commandQueue = queueWrapper ;
+			m_commandQueue = queueWrapper ;
 		else if ( obj is IRootSignature rootSigWrapper )
-			_rootSignature = rootSigWrapper ;
+			m_rootSignature = rootSigWrapper ;
 		else if ( obj is IPipelineState pipelineStateWrapper )
-			_pipelineState = pipelineStateWrapper ;
+			m_pipelineState = pipelineStateWrapper ;
 		else
 			PipelineObjects.Push( (IDXCOMObject) obj ) ;
 		
@@ -247,19 +250,19 @@ public abstract class DXGraphics: DisposableObject, IDXGraphics {
 #endif
 		
 		if ( obj is IDevice deviceWrapper )
-			_graphicsDevice = deviceWrapper ;
+			m_graphicsDevice = deviceWrapper ;
 		else if ( obj is ISwapChain swapChainWrapper )
-			_swapChain = swapChainWrapper ;
+			m_swapChain = swapChainWrapper ;
 		else if ( obj is ICommandAllocator allocatorWrapper )
-			_commandAlloc = allocatorWrapper ;
+			m_commandAlloc = allocatorWrapper ;
 		else if ( obj is ICommandList listWrapper )
-			_commandList = listWrapper ;
+			m_commandList = listWrapper ;
 		else if ( obj is ICommandQueue queueWrapper )
-			_commandQueue = queueWrapper ;
+			m_commandQueue = queueWrapper ;
 		else if ( obj is IRootSignature rootSigWrapper )
-			_rootSignature = rootSigWrapper ;
+			m_rootSignature = rootSigWrapper ;
 		else if ( obj is IPipelineState pipelineStateWrapper )
-			_pipelineState = pipelineStateWrapper ;
+			m_pipelineState = pipelineStateWrapper ;
 		
 		PipelineObjects.Push( obj ) ;
 	}
@@ -278,13 +281,13 @@ public abstract class DXGraphics: DisposableObject, IDXGraphics {
 #endif
 		
 		foreach ( var obj in PipelineObjects ) {
-			if( obj is IDevice device ) _graphicsDevice = device ;
-			else if ( obj is ISwapChain swapChain ) _swapChain = swapChain ;
-			else if ( obj is ICommandAllocator allocator ) _commandAlloc = allocator ;
-			else if ( obj is ICommandList list ) _commandList = list ;
-			else if ( obj is ICommandQueue queue ) _commandQueue = queue ;
-			else if ( obj is IRootSignature rootSig ) _rootSignature = rootSig ;
-			else if ( obj is IPipelineState pipelineState ) _pipelineState = pipelineState ;
+			if( obj is IDevice device ) m_graphicsDevice = device ;
+			else if ( obj is ISwapChain swapChain ) m_swapChain = swapChain ;
+			else if ( obj is ICommandAllocator allocator ) m_commandAlloc = allocator ;
+			else if ( obj is ICommandList list ) m_commandList = list ;
+			else if ( obj is ICommandQueue queue ) m_commandQueue = queue ;
+			else if ( obj is IRootSignature rootSig ) m_rootSignature = rootSig ;
+			else if ( obj is IPipelineState pipelineState ) m_pipelineState = pipelineState ;
 			
 			if ( obj is TItem item ) return item ;
 		}
@@ -298,13 +301,13 @@ public abstract class DXGraphics: DisposableObject, IDXGraphics {
 #endif
 		 		
 		foreach ( var obj in PipelineObjects ) {
-			if( obj is IDevice device ) _graphicsDevice                    = device ;
-			else if ( obj is ISwapChain swapChain ) _swapChain             = swapChain ;
-			else if ( obj is ICommandAllocator allocator ) _commandAlloc   = allocator ;
-			else if ( obj is ICommandList list ) _commandList              = list ;
-			else if ( obj is ICommandQueue queue ) _commandQueue           = queue ;
-			else if ( obj is IRootSignature rootSig ) _rootSignature       = rootSig ;
-			else if ( obj is IPipelineState pipelineState ) _pipelineState = pipelineState ;
+			if( obj is IDevice device ) m_graphicsDevice                    = device ;
+			else if ( obj is ISwapChain swapChain ) m_swapChain             = swapChain ;
+			else if ( obj is ICommandAllocator allocator ) m_commandAlloc   = allocator ;
+			else if ( obj is ICommandList list ) m_commandList              = list ;
+			else if ( obj is ICommandQueue queue ) m_commandQueue           = queue ;
+			else if ( obj is IRootSignature rootSig ) m_rootSignature       = rootSig ;
+			else if ( obj is IPipelineState pipelineState ) m_pipelineState = pipelineState ;
 
 			if ( obj is TItem item ) {
 				uint size = 0 ;
@@ -319,6 +322,9 @@ public abstract class DXGraphics: DisposableObject, IDXGraphics {
 
 	public abstract void LoadPipeline( ) ;
 	public abstract void LoadAssets( ) ;
+
+	public virtual void OnRender( ) { }
+	
 	
 	// ----------------------------------------------------------------------------------
 	
@@ -337,4 +343,4 @@ public abstract class DXGraphics: DisposableObject, IDXGraphics {
 	}
 	
 	// ==================================================================================
-}
+} ;

@@ -797,3 +797,12 @@ public partial struct D3D12_STATIC_SAMPLER_DESC1 {
 	}
 } ;
 
+
+[CsWin32, EquivalentOf(typeof(ConstBufferViewDescription))]
+public partial struct D3D12_CONSTANT_BUFFER_VIEW_DESC {
+	public static implicit operator D3D12_CONSTANT_BUFFER_VIEW_DESC( in ConstBufferViewDescription desc ) =>
+		new D3D12_CONSTANT_BUFFER_VIEW_DESC { BufferLocation = desc.BufferLocation, SizeInBytes = desc.SizeInBytes } ;
+	 
+	public static implicit operator ConstBufferViewDescription( in D3D12_CONSTANT_BUFFER_VIEW_DESC desc ) =>
+		new ConstBufferViewDescription { BufferLocation = desc.BufferLocation, SizeInBytes = desc.SizeInBytes } ;
+}

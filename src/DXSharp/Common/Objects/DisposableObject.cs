@@ -13,7 +13,7 @@ public abstract class DisposableObject: IDisposable,
 		this.Disposed = true ;
 	}
 	
-	protected void DisposeManaged( ) { }
+	protected virtual void DisposeManaged( ) { }
 	protected abstract ValueTask DisposeUnmanaged( ) ;
 
 	public void Dispose( ) => Dispose( true ) ;

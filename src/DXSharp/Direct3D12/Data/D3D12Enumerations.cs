@@ -310,6 +310,54 @@ public enum DescriptorHeapType {
 } ;
 
 
+/// <summary>Specifies how memory gets routed by a shader resource view (SRV).</summary>
+/// <remarks>
+/// <para>This enum allows the SRV to select how memory gets routed to the four return components in a shader after a memory fetch.
+/// The options for each shader component [0..3] (corresponding to RGBA) are: component 0..3 from the SRV fetch result or force 0 or
+/// force 1. The default 1:1 mapping can be indicated by specifying **D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING**, otherwise an arbitrary
+/// mapping can be specified using the macro **D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING**. See below. Note the following defines.</para>
+/// <para><a href="https://learn.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_shader_component_mapping#">Read more on docs.microsoft.com</a>.</para>
+/// </remarks>
+[Flags, EquivalentOf( typeof( D3D12_SHADER_COMPONENT_MAPPING ) )]
+public enum ShaderComponentMapping {
+	/// <summary>Indicates return component 0 (red).</summary>
+	FromMemoryComponent0 = 0,
+
+	/// <summary>Indicates return component 1 (green).</summary>
+	FromMemoryComponent1 = 1,
+
+	/// <summary>Indicates return component 2 (blue).</summary>
+	FromMemoryComponent2 = 2,
+
+	/// <summary>Indicates return component 3 (alpha).</summary>
+	FromMemoryComponent3 = 3,
+
+	/// <summary>Indicates forcing the resulting value to 0.</summary>
+	ForceValue0 = 4,
+
+	/// <summary>
+	/// Indicates forcing the resulting value 1.
+	/// The value of forcing 1 is either 0x1 or 1.0f depending
+	/// on the format type for that component in the source format.
+	/// </summary>
+	ForceValue1 = 5,
+	
+	// -----------------------------------------------------------------------------------------------------------------
+	
+	/// <summary>The default 1:1 <see cref="ShaderComponentMapping"/> value.</summary>
+	/// <remarks>
+	/// <para>This value is not part of the native Direct3D 12 enumeration, but instead comes from the value of the macro
+	/// <b><c>D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING</c></b> defined in the Windows SDK header file <b><i>d3d12.h</i></b>
+	/// and declared in <see cref="DXSharpUtils"/> as the constant <see cref="DXSharpUtils.DefaultComponentMapping"/>.</para>
+	/// <para>
+	/// It is the equivalent of calling <see cref="DXSharpUtils.EncodeShader4ComponentMapping"/> with the arguments
+	/// <b><c>0, 1, 2, 3</c></b>, which is equivalent to the native D3D12 macro <b><c>D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING( 0, 1, 2, 3 )</c></b>.
+	/// </para>
+	/// </remarks>
+	Default4ComponentMapping = DXSharpUtils.DefaultComponentMapping,
+} ;
+
+
 [EquivalentOf( typeof( D3D12_SRV_DIMENSION ) )]
 public enum SRVDimension {
 	/// <summary>The type is unknown.</summary>
@@ -319,21 +367,21 @@ public enum SRVDimension {
 	/// <summary>The resource is a 1D texture.</summary>
 	Texture1D = 2,
 	/// <summary>The resource is an array of 1D textures.</summary>
-	Texture1Darray = 3,
+	Texture1DArray = 3,
 	/// <summary>The resource is a 2D texture.</summary>
 	Texture2D = 4,
 	/// <summary>The resource is an array of 2D textures.</summary>
-	Texture2Darray = 5,
+	Texture2DArray = 5,
 	/// <summary>The resource is a multisampling 2D texture.</summary>
-	Texture2Dms = 6,
+	Texture2DMS = 6,
 	/// <summary>The resource is an array of multisampling 2D textures.</summary>
-	Texture2Dmsarray = 7,
+	Texture2DMSArray = 7,
 	/// <summary>The resource is a 3D texture.</summary>
 	Texture3D = 8,
 	/// <summary>The resource is a cube texture.</summary>
-	Texturecube = 9,
+	TextureCube = 9,
 	/// <summary>The resource is an array of cube textures.</summary>
-	Texturecubearray = 10,
+	TextureCubeArray = 10,
 	/// <summary>The resource is a raytracing acceleration structure.</summary>
 	RaytracingAccelerationStructure = 11,
 } ;

@@ -383,24 +383,54 @@ public interface IGraphicsCommandList: ICommandList {
 	/// </remarks>
 	void SetPipelineState( IPipelineState pPipelineState ) ;
 
+	
 	/// <summary>Notifies the driver that it needs to synchronize multiple accesses to resources. (ID3D12GraphicsCommandList.ResourceBarrier)</summary>
-	/// <param name="NumBarriers">
-	/// <para>Type: <b>UINT</b> The number of submitted barrier descriptions.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-resourcebarrier#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// <param name="numBarriers">
+	/// <para>The number (<see cref="uint"/>) of submitted barrier descriptions.</para>
 	/// </param>
 	/// <param name="pBarriers">
-	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_barrier">D3D12_RESOURCE_BARRIER</a>*</b> Pointer to an array of barrier descriptions.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-resourcebarrier#parameters">Read more on docs.microsoft.com</a>.</para>
+	/// <para>An array of barrier descriptions.</para>
 	/// </param>
 	/// <remarks>
-	/// <para>> [!NOTE] > A resource to be used for the [D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE](/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_states) state must be created in that state, and then never transitioned out of it. Nor may a resource that was created not in that state be transitioned into it. For more info, see [Acceleration structure memory restrictions](https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#acceleration-structure-memory-restrictions) in the DirectX raytracing (DXR) functional specification on GitHub. There are three types of barrier descriptions: </para>
-	/// <para>This doc was truncated.</para>
+	/// <para><b>NOTE:</b> A resource to be used for the <see cref="ResourceStates.RaytracingAccelerationStructure"/> state
+	/// must be created in that state, and then never transitioned out of it. Nor may a resource that was created not in that state
+	/// be transitioned into it.
+	/// For more info, see <a href="https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#acceleration-structure-memory-restrictions">Acceleration structure memory restrictions</a>
+	/// in the DirectX raytracing (DXR) functional specification on GitHub.</para><para/>
+	/// There are three types of barrier descriptions:
+	/// <para><b>1)</b> <see cref="ResourceBarrierType.Transition"/>
+	/// barriers indicate that a set of subresources transition between different usages.
+	/// The caller must specify the before and after usages of the subresources.
+	/// The <see cref="DXSharpUtils.D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES"/> flag can
+	/// be used to transition all subresources in a resource at once.</para>
+	/// <para><b>2)</b> <see cref="ResourceBarrierType.Aliasing"/> barriers indicate a transition
+	/// between usages of two different resources which have mappings into the same heap.
+	/// The application can specify both the before and the after resource. Note that one or both
+	/// resources can be <b><c>null</c></b> (indicating that any tiled resource could cause aliasing).</para>
+	/// <para><b>3)</b> <see cref="ResourceBarrierType.UAV"/> (Unordered Access View) barriers indicate all
+	/// UAV accesses (read or writes) to a particular resource must complete before any future UAV accesses
+	/// (read or write) can begin. The specified resource may be <b><c>null</c></b>. It is not necessary to insert a UAV
+	/// barrier between two draw or dispatch calls which only read a UAV. Additionally, it is not necessary
+	/// to insert a UAV barrier between two draw or dispatch calls which write to the same UAV if the application
+	/// knows that it is safe to execute the UAV accesses in any order. The resource can be <b><c>null</c></b> (indicating that
+	/// any UAV access could require the barrier).</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-resourcebarrier#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void ResourceBarrier( uint NumBarriers,
-						  ResourceBarrier[ ] pBarriers ) ;
-
-
+	void ResourceBarrier( uint numBarriers, ResourceBarrier[ ] pBarriers ) ;
+	
+	/// <summary>Notifies the driver that it needs to synchronize access to resources.</summary>
+	/// <param name="barrier">A single barrier descriptions.</param>
+	/// <remarks>
+	/// This method is a "convencience" overload of <see cref="ResourceBarrier(uint,DXSharp.Direct3D12.ResourceBarrier[])"/>
+	/// for situations where there is only one barrier to pass to the API. It uses a static, recycled array of size 1 to
+	/// avoid allocating any new managed arrays or unmanaged memory every time this method is called. It simply calls the
+	/// native <see cref="ID3D12GraphicsCommandList"/>.<see cref="ID3D12GraphicsCommandList.ResourceBarrier"/> method with
+	/// a pointer to the static array of size 1 and a count of 1.
+	/// </remarks>
+	/// <seealso cref="ResourceBarrier(uint,DXSharp.Direct3D12.ResourceBarrier[])"/>
+	void ResourceBarrier( in ResourceBarrier barrier ) ;
+	
+	
 	/// <summary>Executes a bundle.</summary>
 	/// <param name="pCommandList">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12graphicscommandlist">ID3D12GraphicsCommandList</a>*</b> Specifies the <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12graphicscommandlist">ID3D12GraphicsCommandList</a> that determines the bundle to be executed.</para>
@@ -706,37 +736,42 @@ public interface IGraphicsCommandList: ICommandList {
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-sosettargets">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void SOSetTargets( uint StartSlot, uint NumViews, [Optional] Span< StreamOutputBufferView > pViews ) ;
-	
-	
+
+
 	/// <summary>Sets CPU descriptor handles for the render targets and depth stencil.</summary>
 	/// <param name="NumRenderTargetDescriptors">
-	/// <para>Type: <b>UINT</b> The number of entries in the <i>pRenderTargetDescriptors</i> array (ranges between 0 and <b>D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT</b>). If this parameter is nonzero, the number of entries in the array to which pRenderTargetDescriptors points must equal the number in this parameter.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetrendertargets#parameters">Read more on docs.microsoft.com</a>.</para>
+	///     <para>Type: <b>UINT</b> The number of entries in the <i>pRenderTargetDescriptors</i> array (ranges between 0 and <b>D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT</b>). If this parameter is nonzero, the number of entries in the array to which pRenderTargetDescriptors points must equal the number in this parameter.</para>
+	///     <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetrendertargets#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="pRenderTargetDescriptors">
-	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a>*</b> Specifies an array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a> structures that describe the CPU descriptor handles that represents the start of the heap of render target descriptors. If this parameter is NULL and NumRenderTargetDescriptors is 0, no render targets are bound.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetrendertargets#parameters">Read more on docs.microsoft.com</a>.</para>
+	///     <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a>*</b> Specifies an array of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a> structures that describe the CPU descriptor handles that represents the start of the heap of render target descriptors. If this parameter is NULL and NumRenderTargetDescriptors is 0, no render targets are bound.</para>
+	///     <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetrendertargets#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="RTsSingleHandleToDescriptorRange">
-	/// <para>Type: <b>BOOL</b> <b>True</b> means the handle passed in is the pointer to a contiguous range of <i>NumRenderTargetDescriptors</i>  descriptors.  This case is useful if the set of descriptors to bind already happens to be contiguous in memory (so all that’s needed is a handle to the first one).  For example, if  <i>NumRenderTargetDescriptors</i> is 3 then the memory layout is taken as follows: </para>
-	/// <para>This doc was truncated.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetrendertargets#parameters">Read more on docs.microsoft.com</a>.</para>
+	///     <para>Type: <b>BOOL</b> <b>True</b> means the handle passed in is the pointer to a contiguous range of <i>NumRenderTargetDescriptors</i>  descriptors.  This case is useful if the set of descriptors to bind already happens to be contiguous in memory (so all that’s needed is a handle to the first one).  For example, if  <i>NumRenderTargetDescriptors</i> is 3 then the memory layout is taken as follows: </para>
+	///     <para>This doc was truncated.</para>
+	///     <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetrendertargets#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="pDepthStencilDescriptor">
-	/// <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a> structure that describes the CPU descriptor handle that represents the start of the heap that holds the depth stencil descriptor. If this parameter is NULL, no depth stencil descriptor is bound.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetrendertargets#parameters">Read more on docs.microsoft.com</a>.</para>
+	///     <para>Type: <b>const <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a> structure that describes the CPU descriptor handle that represents the start of the heap that holds the depth stencil descriptor. If this parameter is NULL, no depth stencil descriptor is bound.</para>
+	///     <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetrendertargets#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-omsetrendertargets">Learn more about this API from docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void OMSetRenderTargets( uint NumRenderTargetDescriptors,
 							 [Optional] Span< CPUDescriptorHandle > pRenderTargetDescriptors,
-							 bool RTsSingleHandleToDescriptorRange,
-							 [Optional] Span< CPUDescriptorHandle > pDepthStencilDescriptor ) ;
-
-
+							 [Optional] bool RTsSingleHandleToDescriptorRange,
+							 [Optional] CPUDescriptorHandle pDepthStencilDescriptor ) ;
+	
+	void OMSetRenderTargets( CPUDescriptorHandle pRenderTargetDescriptor = default,
+							 bool RTsSingleHandleToDescriptorRange       = false,
+							 CPUDescriptorHandle pDepthStencilDescriptor = default ) ;
+	
+	
+	
 	/// <summary>Clears the depth-stencil resource. (ID3D12GraphicsCommandList.ClearDepthStencilView)</summary>
-	/// <param name="DepthStencilView">
+	/// <param name="depthStencilView">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> Describes the CPU descriptor handle that represents the start of the heap for the depth stencil to be cleared.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-cleardepthstencilview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
@@ -744,15 +779,15 @@ public interface IGraphicsCommandList: ICommandList {
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_clear_flags">D3D12_CLEAR_FLAGS</a></b> A combination of <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_clear_flags">D3D12_CLEAR_FLAGS</a> values that are combined by using a bitwise OR operation. The resulting value identifies the type of data to clear (depth buffer, stencil buffer, or both).</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-cleardepthstencilview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
-	/// <param name="Depth">
+	/// <param name="depth">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">FLOAT</a></b> A value to clear the depth buffer with. This value will be clamped between 0 and 1.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-cleardepthstencilview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
-	/// <param name="Stencil">
+	/// <param name="stencil">
 	/// <para>Type: <b>UINT8</b> A value to clear the stencil buffer with.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-cleardepthstencilview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
-	/// <param name="NumRects">
+	/// <param name="numRects">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The number of rectangles in the array that the <i>pRects</i> parameter specifies.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-cleardepthstencilview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
@@ -764,40 +799,38 @@ public interface IGraphicsCommandList: ICommandList {
 	/// <para>Only direct and bundle command lists support this operation. <b>ClearDepthStencilView</b> may be used to initialize resources which alias the same heap memory. See <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-createplacedresource">CreatePlacedResource</a> for more details. <h3><a id="Runtime_validation"></a><a id="runtime_validation"></a><a id="RUNTIME_VALIDATION"></a>Runtime validation</h3> For floating-point inputs, the runtime will set denormalized values to 0 (while preserving NANs). Validation failure will result in the call to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-close">Close</a> returning <b>E_INVALIDARG</b>. <h3><a id="Debug_layer"></a><a id="debug_layer"></a><a id="DEBUG_LAYER"></a>Debug layer</h3> The debug layer will issue errors if the input colors are denormalized. The debug layer will issue an error if the subresources referenced by the view are not in the appropriate state. For <b>ClearDepthStencilView</b>, the state must be in the state <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATE_DEPTH_WRITE</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-cleardepthstencilview#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void ClearDepthStencilView( CPUDescriptorHandle DepthStencilView, 
-								ClearFlags clearFlags, 
-								float Depth, 
-								byte Stencil,
-								uint NumRects,
-								Span< Rect > pRects ) ;
+	void ClearDepthStencilView( CPUDescriptorHandle depthStencilView, 
+								ClearFlags clearFlags,
+								float depth, byte stencil,
+								[Optional] uint numRects, [Optional] Span< Rect > pRects ) ;
 
 
 	/// <summary>Sets all the elements in a render target to one value.</summary>
 	/// <param name="RenderTargetView">
-	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> Specifies a CPUDescriptorHandle structure that describes the CPU descriptor handle that represents the start of the heap for the render target to be cleared.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview#parameters">Read more on docs.microsoft.com</a>.</para>
+	///     <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ns-d3d12-d3d12_cpu_descriptor_handle">CPUDescriptorHandle</a></b> Specifies a CPUDescriptorHandle structure that describes the CPU descriptor handle that represents the start of the heap for the render target to be cleared.</para>
+	///     <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="ColorRGBA">
-	/// <para>Type: <b>const FLOAT[4]</b> A 4-component array that represents the color to fill the render target with.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview#parameters">Read more on docs.microsoft.com</a>.</para>
+	///     <para>Type: <b>const FLOAT[4]</b> A 4-component array that represents the color to fill the render target with.</para>
+	///     <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="NumRects">
-	/// <para>Type: <b>UINT</b> The number of rectangles in the array that the <i>pRects</i> parameter specifies.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview#parameters">Read more on docs.microsoft.com</a>.</para>
+	///     <para>Type: <b>UINT</b> The number of rectangles in the array that the <i>pRects</i> parameter specifies.</para>
+	///     <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <param name="pRects">
-	/// <para>Type: <b>const D3D12_Rect*</b> An array of <b>D3D12_Rect</b> structures for the rectangles in the resource view to clear. If <b>NULL</b>, <b>ClearRenderTargetView</b> clears the entire resource view.</para>
-	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview#parameters">Read more on docs.microsoft.com</a>.</para>
+	///     <para>Type: <b>const D3D12_Rect*</b> An array of <b>D3D12_Rect</b> structures for the rectangles in the resource view to clear. If <b>NULL</b>, <b>ClearRenderTargetView</b> clears the entire resource view.</para>
+	///     <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview#parameters">Read more on docs.microsoft.com</a>.</para>
 	/// </param>
 	/// <remarks>
 	/// <para><b>ClearRenderTargetView</b> may be used to initialize resources which alias the same heap memory. See <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-createplacedresource">CreatePlacedResource</a> for more details. <h3><a id="Runtime_validation"></a><a id="runtime_validation"></a><a id="RUNTIME_VALIDATION"></a>Runtime validation</h3> For floating-point inputs, the runtime will set denormalized values to 0 (while preserving NANs). Validation failure will result in the call to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12graphicscommandlist-close">Close</a> returning <b>E_INVALIDARG</b>.</para>
 	/// <para><h3><a id="Debug_layer"></a><a id="debug_layer"></a><a id="DEBUG_LAYER"></a>Debug layer</h3> The debug layer will issue errors if the input colors are denormalized. The debug layer will issue an error if the subresources referenced by the view are not in the appropriate state. For <b>ClearRenderTargetView</b>, the state must be <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_resource_states">D3D12_RESOURCE_STATE_RENDER_TARGET</a>.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12graphicscommandlist-clearrendertargetview#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void ClearRenderTargetView( CPUDescriptorHandle RenderTargetView, 
-								float[ ] ColorRGBA,
-								uint NumRects,
-								Span< Rect > pRects = default ) ;
+	void ClearRenderTargetView( CPUDescriptorHandle RenderTargetView,
+								ColorF              ColorRGBA,
+								uint                NumRects = 0,
+								Span< Rect >        pRects = default ) ;
 
 
 	/// <summary>Sets all the elements in a unordered-access view (UAV) to the specified integer values.</summary>

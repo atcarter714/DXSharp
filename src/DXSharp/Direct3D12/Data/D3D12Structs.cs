@@ -279,6 +279,8 @@ public struct HeapDescription {
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_HEAP_PROPERTIES ) )]
 public struct HeapProperties {
+	public static readonly HeapProperties Default = new( HeapType.Default ) ;
+	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_heap_type">D3D12_HEAP_TYPE</a>-typed value that specifies the type of heap.</summary>
 	public HeapType Type ;
 
@@ -311,6 +313,7 @@ public struct HeapProperties {
 		CreationNodeMask     = creationNodeMask ;
 		VisibleNodeMask      = visibleNodeMask ;
 	}
+
 } ;
 
 
@@ -402,6 +405,13 @@ public struct Range {
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_range#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
 	public nuint End ;
+	
+	public Range( nuint begin = 0x0000U, nuint end = 0x0000U ) {
+		Begin = begin ; End = end ;
+	}
+	
+	public static implicit operator Range( in (nuint Begin, nuint End) range ) => 
+		new Range( range.Begin, range.End ) ;
 } ;
 
 
@@ -1231,14 +1241,43 @@ public struct DescriptorHeapDescription {
 
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_CPU_DESCRIPTOR_HANDLE ) )]
-public struct CPUDescriptorHandle {
-	/// <summary>The address of  the descriptor.</summary>
+public struct CPUDescriptorHandle: IEquatable<CPUDescriptorHandle>, 
+								   IEquatable<nuint> {
+	/// <summary>Represents a "null" (zero) handle.</summary>
+	public static readonly CPUDescriptorHandle Null = new( 0 ) ;
+	
+	/// <summary>The address of the descriptor.</summary>
 	public nuint ptr ;
 	
+	public CPUDescriptorHandle( nuint ptr ) => this.ptr = ptr ;
+	public CPUDescriptorHandle( ulong ptr ) => this.ptr = (nuint)ptr ;
+
+
+	public void Offset( uint offsetScaledByIncrementSize ) => 
+		ptr += (nuint)offsetScaledByIncrementSize ;
 	
 	public void Offset( int offsetInDescriptors, uint descriptorIncrementSize ) => 
 		ptr += (nuint)( (ulong)offsetInDescriptors * (ulong)descriptorIncrementSize ) ;
+
 	
+	public override string ToString( ) => $"0x{ptr:X}" ;
+	public override int GetHashCode( ) => ptr.GetHashCode( ) ;
+	public bool Equals( CPUDescriptorHandle other ) => ptr == other.ptr ;
+	public bool Equals( nuint other ) => ptr == other ;
+	public override bool Equals( object? obj ) => 
+		obj is CPUDescriptorHandle other && Equals( other )
+			||	obj is nuint other2 && Equals( other2 ) ;
+
+	public static bool operator ==( CPUDescriptorHandle left, CPUDescriptorHandle right ) => left.ptr == right.ptr ;
+	public static bool operator !=( CPUDescriptorHandle left, CPUDescriptorHandle right ) => left.ptr != right.ptr ;
+	public static bool operator ==( CPUDescriptorHandle left, nuint right ) => left.ptr == right ;
+	public static bool operator !=( CPUDescriptorHandle left, nuint right ) => left.ptr != right ;
+	public static bool operator ==( nuint left, CPUDescriptorHandle right ) => left == right.ptr ;
+	public static bool operator !=( nuint left, CPUDescriptorHandle right ) => left != right.ptr ;
+	public static bool operator ==( CPUDescriptorHandle left, ulong right ) => left.ptr == right ;
+	public static bool operator !=( CPUDescriptorHandle left, ulong right ) => left.ptr != right ;
+	public static bool operator ==( ulong left, CPUDescriptorHandle right ) => left == right.ptr ;
+	public static bool operator !=( ulong left, CPUDescriptorHandle right ) => left != right.ptr ;
 	
 	public static implicit operator nuint( CPUDescriptorHandle handle ) => handle.ptr ;
 	public static implicit operator CPUDescriptorHandle( nuint ptr ) => new CPUDescriptorHandle { ptr = ptr } ;
@@ -1261,9 +1300,43 @@ public struct CPUDescriptorHandle {
 
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_GPU_DESCRIPTOR_HANDLE ) )]
-public struct GPUDescriptorHandle {
+public struct GPUDescriptorHandle: IEquatable<GPUDescriptorHandle>, 
+								   IEquatable<nuint> {
+	/// <summary>Represents a "null" (zero) handle.</summary>
+	public static readonly GPUDescriptorHandle Null = new( 0 ) ;
+	
 	/// <summary>The address of the descriptor.</summary>
 	public ulong ptr ;
+	
+	public GPUDescriptorHandle( nuint ptr ) => this.ptr = ptr ;
+	public GPUDescriptorHandle( ulong ptr ) => this.ptr = (nuint)ptr ;
+	
+	
+	public override string ToString( ) => $"0x{ptr:X}" ;
+	public override int GetHashCode( ) => ptr.GetHashCode( ) ;
+	public bool Equals( GPUDescriptorHandle other ) => ptr == other.ptr ;
+	public bool Equals( nuint other ) => ptr == other ;
+	public override bool Equals( object? obj ) => 
+		obj is GPUDescriptorHandle other && Equals( other )
+			||	obj is nuint other2 && Equals( other2 ) ;
+
+	
+	public void Offset( uint offsetScaledByIncrementSize ) => 
+		ptr += (nuint)offsetScaledByIncrementSize ;
+	
+	public void Offset( int offsetInDescriptors, uint descriptorIncrementSize ) => 
+		ptr += (nuint)( (ulong)offsetInDescriptors * (ulong)descriptorIncrementSize ) ;
+	
+	public static bool operator ==( GPUDescriptorHandle left, GPUDescriptorHandle right ) => left.ptr == right.ptr ;
+	public static bool operator !=( GPUDescriptorHandle left, GPUDescriptorHandle right ) => left.ptr != right.ptr ;
+	public static bool operator ==( GPUDescriptorHandle left, nuint right ) => left.ptr == right ;
+	public static bool operator !=( GPUDescriptorHandle left, nuint right ) => left.ptr != right ;
+	public static bool operator ==( nuint left, GPUDescriptorHandle right ) => left == right.ptr ;
+	public static bool operator !=( nuint left, GPUDescriptorHandle right ) => left != right.ptr ;
+	public static bool operator ==( GPUDescriptorHandle left, ulong right ) => left.ptr == right ;
+	public static bool operator !=( GPUDescriptorHandle left, ulong right ) => left.ptr != right ;
+	public static bool operator ==( ulong left, GPUDescriptorHandle right ) => left == right.ptr ;
+	public static bool operator !=( ulong left, GPUDescriptorHandle right ) => left != right.ptr ;
 	
 	
 	public static implicit operator ulong( GPUDescriptorHandle handle ) => handle.ptr ;
@@ -1510,6 +1583,8 @@ public struct ClearValue {
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_DEPTH_STENCIL_VALUE ) )]
 public struct DepthStencilValue {
+	public static readonly DepthStencilValue Default = new(1.0f, 0 ) ;
+	
 	/// <summary>Specifies the depth value.</summary>
 	public float Depth ;
 	/// <summary>Specifies the stencil value.</summary>
@@ -1519,6 +1594,7 @@ public struct DepthStencilValue {
 		this.Depth = depth ;
 		this.Stencil = stencil ;
 	}
+
 } ;
 
 

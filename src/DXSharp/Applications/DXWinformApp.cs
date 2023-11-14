@@ -242,7 +242,7 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 	
 	// -------------------------------------------------------------------------------------------
 	#region Dispose Pattern Overrides
-	protected override void OnDestroyManaged( ) {
+	protected override void DisposeManaged( ) {
 		_abort = true ; //! Set abort flag to make sure threads will exit ...
 		CanDraw = CanTick = IsRunning = IsInitialized = false ;
 		
@@ -308,13 +308,17 @@ public class DXWinformApp: DXAppBase, IDXWinformApp {
 		static void _OnError( Exception ex ) {
 #if DEBUG || DEV_BUILD
 			System.Diagnostics.Debug.WriteLine( $"{nameof(DXWinformApp)} :: " +
-												$"An error occurred in {nameof(OnDestroyManaged)} ...\n" +
+												$"An error occurred in {nameof(DisposeManaged)} ...\n" +
 												$"Error (HRESULT - 0x{ex.HResult:X}): \"{ex.Message}\"" ) ;
 #endif
 		}
 	}
-
-	protected override void OnDestroyUnmanaged( ) {}
+	
+	protected override async ValueTask DisposeUnmanaged( ) {
+		var _task1 = base.DisposeUnmanaged( ) ;
+		var _task2 = Task.Run( Dispose ) ;
+		await Task.WhenAll( _task1.AsTask( ), _task2 ) ;
+	}
 	#endregion
 	// ===========================================================================================
 } ;

@@ -17,6 +17,7 @@ using DXSharp.Windows.COM ;
 using DXSharp.Applications ;
 using DXSharp.Framework.Graphics ;
 using DXSharp.Windows.Win32 ;
+using IDevice = DXSharp.Direct3D12.IDevice ;
 #endregion
 namespace AdvancedDXS.Framework.Graphics ;
 
@@ -33,9 +34,15 @@ public class GraphicsPipeline: DXGraphics {
 #else
 		FactoryCreateFlags.None ;
 #endif
+	
+	public const int FrameCount = 3,
+					 NumContexts = 3,
+					 CommandListCount = 3,
+					 CommandListPre = 0,
+					 CommandListMid = 1,
+					 CommandListPost = 2 ;
 	// ===================================================
 	#endregion
-	
 	
 	// -----------------------------------------------------
 	// Instance Fields:
@@ -46,11 +53,36 @@ public class GraphicsPipeline: DXGraphics {
 	ShaderBuilder _shaderBuilder ;
 	PCWSTR _DBGName_Factory = default,
 		   _DBGName_Device  = default ;
+
+	uint rtvDescSize = 0 ;
+	int frameIndex   = 0 ;
+	uint frameCount  = 3 ;
 	
 	IFactory7? _factory ;
 	IDevice10? _device ;
 	ISwapChain4? _swapChain ;
 	IDescriptorHeap? _rtvHeap, _dsvHeap ;
+	
+	ICommandQueue? _cmdQueue ;
+	IGraphicsCommandList9? _commandList ;
+	ICommandAllocator? _commandAllocator ;
+	
+	IGraphicsCommandList9[ ] _commandLists = 
+		new IGraphicsCommandList9[ 1 ] ;
+	
+	IFence1?        fence ;
+	ulong           fenceValue ;
+	AutoResetEvent? fenceEvent ;
+	
+	ResourceBarrier[ ] transitionBarriers 
+		= new ResourceBarrier[ 1 ] ;
+	
+	// -----------------------------------------------------
+	public override IDevice10? GraphicsDevice => _device ;
+	
+	public float AspectRatio => MainViewport.Width / MainViewport.Height ;
+	public Viewport MainViewport => Viewports?[ 0 ] ?? default ;
+	
 	// =====================================================
 	
 	
@@ -96,9 +128,9 @@ public class GraphicsPipeline: DXGraphics {
 		
 		// Describe & create the command queue:
 		_device.CreateCommandQueue( CommandQueueDescription.Default,
-								   ICommandQueue.IID, out ICommandQueue? cmdQueue ) ;
-		if( cmdQueue is null ) throw new DXSharpException( "Failed to create command queue!" ) ;
-		else Add( cmdQueue ) ;
+									ICommandQueue.IID, out _cmdQueue ) ;
+		if( _cmdQueue is null ) throw new DXSharpException( "Failed to create command queue!" ) ;
+		else Add( _cmdQueue ) ;
 		
 		// Describe the swap chain:
 		var swapChainDesc = new SwapChainDescription1 {
@@ -117,13 +149,12 @@ public class GraphicsPipeline: DXGraphics {
 		} ;
 		
 		// Create the swapchain:
-		_factory.CreateSwapChainForHwnd( cmdQueue, _wnd, swapChainDesc, swapchainFSDesc, 
+		_factory.CreateSwapChainForHwnd( _cmdQueue, _wnd, swapChainDesc, swapchainFSDesc, 
 										 null, out var swapChain1 ) ;
 		var swapChain = COMUtility.Cast< ISwapChain1, ISwapChain4 >( swapChain1 ) ;
 		if( swapChain is null ) throw new DXSharpException( "Failed to create swap chain!" ) ;
 		else Add( swapChain ) ;
 		swapChain1?.DisposeAsync( ) ;
-		
 		
 		// Set the window association flags:
 		_factory.MakeWindowAssociation( _wnd, WindowAssociation.NoAltEnter ) ;
@@ -139,7 +170,7 @@ public class GraphicsPipeline: DXGraphics {
 		_device.CreateDescriptorHeap( dsvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? dsvHeap ) ;
 		if( dsvHeap is null ) throw new DXSharpException( "Failed to create DSV descriptor heap!" ) ;
 		var rtvHandle       = rtvHeap!.GetCPUDescriptorHandleForHeapStart( ) ;
-		var rtvDescSize = _device.GetDescriptorHandleIncrementSize( DescriptorHeapType.RTV ) ;
+		rtvDescSize = _device.GetDescriptorHandleIncrementSize( DescriptorHeapType.RTV ) ;
 		
 		// Create frame resources with a RTV for each frame:
 		for ( uint n = 0; n < frameCount; ++n ) {
@@ -191,8 +222,107 @@ public class GraphicsPipeline: DXGraphics {
 		}
 	}
 
+
 	public override void LoadAssets( ) {
+		// Create an empty root signature using AllowInputAssemblerInputLayout flag:
+		var serializedRootSig = 
+			new RootSignatureDescription( RootSignatureFlags.AllowInputAssemblerInputLayout )
+				.Serialize( ) ?? throw new NullReferenceException( "Failed to serialize root signature!" ) ;
 		
+		GraphicsDevice!.CreateRootSignature( 0,
+											 serializedRootSig.Pointer, 
+											 serializedRootSig.Size,
+											 IRootSignature.IID, out m_rootSignature ) ;
+
+		
+		
+		// Create synchronization objects:
+		GraphicsDevice.CreateFence( 0, FenceFlags.None,
+								   IFence.IID, out var _ppFence ) ;
+		fence = (IFence1?) _ppFence ?? 
+				throw new NullReferenceException( "Failed to create fence!" ) ;
+		
+		// Create event handle for synchronization:
+		fenceEvent = new(false ) ;
+		fenceValue = 1 ;
+	}
+
+	public override void OnRender( ) {
+		// Wait for the previous frame to complete.
+		WaitForPreviousFrame( ) ;
+		
+		// Populate command list:
+		PopulateCommandList( ) ;
+		
+		// Execute the command list:
+		_cmdQueue!.ExecuteCommandLists< IGraphicsCommandList >( (uint)_commandLists.Length, _commandLists ) ;
+		
+		// Present the frame:
+		SwapChain!.Present( 1, 0 ) ;
+		frameIndex ^= 1 ; //! Alternate between the two back buffers.
+	}
+
+	void PopulateCommandList( ) {
+		// Command list allocators can only be reset when the associated 
+		// command lists have finished execution on the GPU; apps should use 
+		// fences to determine GPU execution progress.
+		_commandAllocator!.Reset( ) ;
+
+		// However, when ExecuteCommandList() is called on a particular command list,
+		// that command list can then be reset at any time and must be before re-recording.
+		_commandList!.Reset( CommandAllocator, PipelineState ) ;
+
+
+		// Set necessary state.
+		_commandList.SetGraphicsRootSignature( RootSignature ) ;
+		_commandList.RSSetViewports( 1, Viewports ) ;
+		_commandList.RSSetScissorRects( 1, ScissorRects ) ;
+
+		// Indicate that the back buffer will be used as a render target:
+		transitionBarriers[ 0 ] = ResourceBarrier.Transition( RenderTargets![ frameIndex ], 
+															  ResourceStates.Present, 
+															  ResourceStates.RenderTarget ) ;
+		_commandList.ResourceBarrier( 1, transitionBarriers ) ;
+		
+		
+		// Set the render target for the output merger stage:
+		var rtvHandle = _rtvHeap!.GetCPUDescriptorHandleForHeapStart( ) ;
+		//rtvHandle += frameIndex * rtvDescSize ;
+		rtvHandle.Offset( frameIndex, rtvDescSize ) ;
+		_commandList.OMSetRenderTargets(1,
+									   new[ ] { rtvHandle },
+									   false ) ;
+
+		// Clear the render target:
+		_commandList.ClearRenderTargetView( rtvHandle, BackgroundColor ) ;
+
+		// Draw the triangle:
+		//_commandList.IASetPrimitiveTopology( PrimitiveTopology.D3D_TriangleList ) ;
+		//_commandList.IASetVertexBuffers(0, 1, new[ ] { vertexBufferView } ) ;
+		//_commandList.DrawInstanced( 3, 1, 0, 0 ) ;
+		
+		
+		// Indicate that the back buffer will now be used to present:
+		transitionBarriers[ 0 ] = ResourceBarrier.Transition( RenderTargets[ frameIndex ],
+															  ResourceStates.RenderTarget, 
+															  ResourceStates.Present ) ;
+
+		_commandList.ResourceBarrier( 1, transitionBarriers ) ;
+		
+		// Done recording commands ...
+		_commandList.Close( ) ;
+	}
+	
+	void WaitForPreviousFrame( ) {
+		ulong localFence = fenceValue ;
+		CommandQueue!.Signal( fence, fenceValue++ ) ;
+		
+		// Wait until the previous frame is finished
+		if ( fence!.GetCompletedValue( ) < localFence ) {
+			var fenceEventHandle = fenceEvent!.SafeWaitHandle.DangerousGetHandle( ) ;
+			fence.SetEventOnCompletion( localFence, fenceEventHandle ) ;
+			fenceEvent.WaitOne( ) ;
+		}
 	}
 	
 	

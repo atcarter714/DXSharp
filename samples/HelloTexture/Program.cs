@@ -1,13 +1,7 @@
 ﻿#region Using Directives
 using System.Drawing ;
-using System.Runtime.InteropServices ;
-
-using Windows.Win32.Graphics.Direct3D12 ;
-
-using DXSharp.Direct3D12.Debug ;
 using DXSharp.Applications ;
 using DXSharp.Direct3D12 ;
-
 using HelloTexture ;
 #endregion
 

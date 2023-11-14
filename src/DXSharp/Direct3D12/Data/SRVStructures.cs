@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.DXGI ;
@@ -18,20 +20,16 @@ public struct ConstBufferViewDescription {
 	/// <summary>The size in bytes of the constant buffer.</summary>
 	public uint SizeInBytes ;
 	
-	public ConstBufferViewDescription( ulong bufferLocation, uint sizeInBytes ) {
+	
+	public ConstBufferViewDescription( ulong bufferLocation = 0UL, uint sizeInBytes = 0U ) {
 		BufferLocation = bufferLocation ;
 		SizeInBytes    = sizeInBytes ;
 	}
-	public ConstBufferViewDescription(in D3D12_CONSTANT_BUFFER_VIEW_DESC desc) {
+	
+	/*public ConstBufferViewDescription( in D3D12_CONSTANT_BUFFER_VIEW_DESC desc ) {
 		BufferLocation = desc.BufferLocation ;
 		SizeInBytes    = desc.SizeInBytes ;
-	}
-	
-	public static implicit operator D3D12_CONSTANT_BUFFER_VIEW_DESC( in ConstBufferViewDescription desc ) =>
-		new D3D12_CONSTANT_BUFFER_VIEW_DESC { BufferLocation = desc.BufferLocation, SizeInBytes = desc.SizeInBytes } ;
-	 
-	public static implicit operator ConstBufferViewDescription( in D3D12_CONSTANT_BUFFER_VIEW_DESC desc ) =>
-		new ConstBufferViewDescription { BufferLocation = desc.BufferLocation, SizeInBytes = desc.SizeInBytes } ;
+	}*/
 } ;
 
 
@@ -129,6 +127,14 @@ public struct Tex2DSRV {
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_tex2d_srv#members">Read more on docs.microsoft.com</see>.</para>
 	/// </summary>
 	public float ResourceMinLODClamp ;
+	
+	public Tex2DSRV( uint mostDetailedMip = 0, uint mipLevels = 0, 
+					 uint planeSlice = 0, float resourceMinLODClamp = 0f ) {
+		MostDetailedMip    = mostDetailedMip ;
+		MipLevels          = mipLevels ;
+		PlaneSlice         = planeSlice ;
+		ResourceMinLODClamp = resourceMinLODClamp ;
+	}
 } ;
 
 [StructLayout( LayoutKind.Sequential ),
@@ -258,14 +264,29 @@ public struct RayTracingAccelerationStructureSRV {
 public struct ShaderResourceViewDescription {
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/dxgiformat/ne-dxgiformat-dxgi_format">DXGI_FORMAT</a>-typed value that specifies the viewing format. See remarks.</summary>
 	public Format Format ;
+	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/ne-d3d12-d3d12_srv_dimension">D3D12_SRV_DIMENSION</a>-typed value that specifies the resource type of the view. This type is the same as the resource type of the underlying resource. This member also determines which _SRV to use in the union below.</summary>
 	public SRVDimension ViewDimension ;
-	/// <summary>A value, constructed using the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_shader_component_mapping">D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING</a> macro. The **D3D12_SHADER_COMPONENT_MAPPING** enumeration specifies what values from memory should be returned when the texture is accessed in a shader via this shader resource view (SRV). For example, it can route component 1 (green) from memory, or the constant `0`, into component 2 (`.b`) of the value given to the shader.</summary>
-	public uint Shader4ComponentMapping ;
+
+	/// <summary>
+	/// A value, constructed using the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ne-d3d12-d3d12_shader_component_mapping">D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING</a> macro.
+	/// The <see cref="ShaderComponentMapping"/> enumeration specifies what values from memory should be returned when the texture is accessed in a shader via this shader resource view (SRV).
+	/// For example, it can route component 1 (green) from memory, or the constant `0`, into component 2 (`.b`) of the value given to the shader.
+	/// </summary>
+	public ShaderComponentMapping Shader4ComponentMapping {
+		get => (ShaderComponentMapping)_shader4ComponentMapping ;
+		set => _shader4ComponentMapping = (uint)value ;
+	}
+	internal uint _shader4ComponentMapping ;
 	
-	public _union_SRV ReadAs ;
+	/// <summary>
+	/// The data union for the shader resource view (SRV).
+	/// The type of data in this union is determined by the
+	/// <see cref="ViewDimension"/> member.
+	/// </summary>
+	public _srvDescUnion SRVDesc ;
 	[StructLayout(LayoutKind.Explicit)]
-	public struct _union_SRV {
+	public struct _srvDescUnion {
 		[FieldOffset(0)] public  BufferSRV Buffer ;
 		[FieldOffset(0)] public  Tex1DSRV Texture1D ;
 		[FieldOffset(0)] public  Tex1DArraySRV Texture1DArray ;
@@ -277,8 +298,148 @@ public struct ShaderResourceViewDescription {
 		[FieldOffset(0)] public  TexCubeSRV TextureCube ;
 		[FieldOffset(0)] public  TexCubeArraySRV TextureCubeArray ;
 		[FieldOffset(0)] public  RayTracingAccelerationStructureSRV RaytracingAccelerationStructure ;
+		
+		public _srvDescUnion( in BufferSRV buffer ) {
+			Unsafe.SkipInit( out this ) ;
+			Buffer = buffer ;
+		}
+		public _srvDescUnion( in Tex1DSRV texture1D ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture1D = texture1D ;
+		}
+		public _srvDescUnion( in Tex1DArraySRV texture1DArray ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture1DArray = texture1DArray ;
+		}
+		public _srvDescUnion( in Tex2DSRV texture2D ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture2D = texture2D ;
+		}
+		public _srvDescUnion( in Tex2DArraySRV texture2DArray ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture2DArray = texture2DArray ;
+		}
+		public _srvDescUnion( in Tex2DMS texture2DMS ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture2DMS = texture2DMS ;
+		}
+		public _srvDescUnion( in Tex2DMSArraySRV texture2DMSArray ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture2DMSArray = texture2DMSArray ;
+		}
+		public _srvDescUnion( in Tex3DSRV texture3D ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture3D = texture3D ;
+		}
+		public _srvDescUnion( in TexCubeSRV textureCube ) {
+			Unsafe.SkipInit( out this ) ;
+			TextureCube = textureCube ;
+		}
+		public _srvDescUnion( in TexCubeArraySRV textureCubeArray ) {
+			Unsafe.SkipInit( out this ) ;
+			TextureCubeArray = textureCubeArray ;
+		}
+		public _srvDescUnion( in RayTracingAccelerationStructureSRV raytracingAccelerationStructure ) {
+			Unsafe.SkipInit( out this ) ;
+			RaytracingAccelerationStructure = raytracingAccelerationStructure ;
+		}
+		
+		public static implicit operator _srvDescUnion( in BufferSRV buffer ) => new( buffer ) ;
+		public static implicit operator _srvDescUnion( in Tex1DSRV texture1D ) => new( texture1D ) ;
+		public static implicit operator _srvDescUnion( in Tex1DArraySRV texture1DArray ) => new( texture1DArray ) ;
+		public static implicit operator _srvDescUnion( in Tex2DSRV texture2D ) => new( texture2D ) ;
+		public static implicit operator _srvDescUnion( in Tex2DArraySRV texture2DArray ) => new( texture2DArray ) ;
+		public static implicit operator _srvDescUnion( in Tex2DMS texture2DMS ) => new( texture2DMS ) ;
+		public static implicit operator _srvDescUnion( in Tex2DMSArraySRV texture2DMSArray ) => new( texture2DMSArray ) ;
+		public static implicit operator _srvDescUnion( in Tex3DSRV texture3D ) => new( texture3D ) ;
+		public static implicit operator _srvDescUnion( in TexCubeSRV textureCube ) => new( textureCube ) ;
+		public static implicit operator _srvDescUnion( in TexCubeArraySRV textureCubeArray ) => new( textureCubeArray ) ;
+		public static implicit operator _srvDescUnion( in RayTracingAccelerationStructureSRV raytracingAccelerationStructure ) => 
+			new( raytracingAccelerationStructure ) ;
 	} ;
 
+	
+	#region Constructors
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in BufferSRV buffer ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.Buffer ;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = buffer ;
+	}
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in Tex1DSRV texture1D ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.Texture1D ;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = texture1D ;
+	}
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in Tex1DArraySRV texture1DArray ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.Texture1DArray;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = texture1DArray ;
+	}
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in Tex2DSRV texture2D ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.Texture2D ;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = texture2D ;
+	}
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in Tex2DArraySRV texture2DArray ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.Texture2DArray ;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = texture2DArray ;
+	}
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in Tex2DMS texture2DMS ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.Texture2DMS ;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = texture2DMS ;
+	}
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in Tex2DMSArraySRV texture2DMSArray ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.Texture2DMSArray ;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = texture2DMSArray ;
+	}
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in Tex3DSRV texture3D ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.Texture3D ;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = texture3D ;
+	}
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in TexCubeSRV textureCube ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.TextureCube ;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = textureCube ;
+	}
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in TexCubeArraySRV textureCubeArray ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.TextureCubeArray ;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = textureCubeArray ;
+	}
+	public ShaderResourceViewDescription( Format format, uint shader4ComponentMapping, in RayTracingAccelerationStructureSRV raytracingAccelerationStructure ) {
+		Format                       = format ;
+		ViewDimension                = SRVDimension.RaytracingAccelerationStructure ;
+		this._shader4ComponentMapping = shader4ComponentMapping ;
+		SRVDesc                       = raytracingAccelerationStructure ;
+	}
+	
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in BufferSRV buffer = default ): this( format, (uint)shader4ComponentMapping, buffer ) { }
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in Tex1DSRV texture1D = default ): this( format, (uint)shader4ComponentMapping, texture1D ) { }
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in Tex1DArraySRV texture1DArray = default ): this( format, (uint)shader4ComponentMapping, texture1DArray ) { }
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in Tex2DSRV texture2D = default ): this( format, (uint)shader4ComponentMapping, texture2D ) { }
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in Tex2DArraySRV texture2DArray = default ): this( format, (uint)shader4ComponentMapping, texture2DArray ) { }
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in Tex2DMS texture2DMS = default ): this( format, (uint)shader4ComponentMapping, texture2DMS ) { }
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in Tex2DMSArraySRV texture2DMSArray = default ): this( format, (uint)shader4ComponentMapping, texture2DMSArray ) { }
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in Tex3DSRV texture3D = default ): this( format, (uint)shader4ComponentMapping, texture3D ) { }
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in TexCubeSRV textureCube = default ): this( format, (uint)shader4ComponentMapping, textureCube ) { }
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in TexCubeArraySRV textureCubeArray = default ): this( format, (uint)shader4ComponentMapping, textureCubeArray ) { }
+	public ShaderResourceViewDescription( Format format = DXGI.Format.UNKNOWN, ShaderComponentMapping shader4ComponentMapping = DXSharpUtils.DefaultComponentMapping, in RayTracingAccelerationStructureSRV raytracingAccelerationStructure = default ): this( format, (uint)shader4ComponentMapping, raytracingAccelerationStructure ) { }
+	#endregion
+	
 	
 	public static implicit operator D3D12_SHADER_RESOURCE_VIEW_DESC( in ShaderResourceViewDescription desc ) {
 		unsafe { fixed ( ShaderResourceViewDescription* ptr = &desc ) {

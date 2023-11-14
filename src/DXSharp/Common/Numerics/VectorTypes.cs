@@ -497,6 +497,8 @@ public partial struct Vector3: IEquatable< Vector3 >,
 	public static Vector3 Transform( in Vector3 vec, in Quaternion quat ) =>
 		SysVec3.Transform( vec.v, quat ) ;
 	
+	public static Vector3 Cross( in Vector3 a, in Vector3 b ) => SysVec3.Cross( a.v, b.v ) ;
+	
 	// -----------------------------------------------------------------------------------------------
 	
 	
@@ -812,7 +814,10 @@ public partial struct Vector4: IEquatable< Vector4 >,
 	public static implicit operator Vector4( in (Vector2 a, Vector2 b) tuple ) => new( tuple.a, tuple.b ) ;
 	public static implicit operator Vector4( in (Vector3 a, float w) tuple ) => new( tuple.a, tuple.w ) ;
 	public static implicit operator Vector4( in (float x, float y, float z, float w) tuple ) => new( tuple ) ;
-	 
+	
+	public static explicit operator Vector3( in Vector4 vec ) => new( vec.v.X, vec.v.Y, vec.v.Z ) ;
+	public static explicit operator Vector2( in Vector4 vec ) => new( vec.v.X, vec.v.Y ) ;
+	
 	// Vector4 >> SysVec:
 	public static implicit operator SysVec4( in Vector4 vec ) => vec.v ;
 	public static explicit operator SysVec2( in Vector4 vec ) => new( vec.X, vec.Y ) ;

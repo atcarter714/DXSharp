@@ -17,6 +17,11 @@ namespace DXSharp ;
 public static partial class Mathf {
 	// ------------------------------------------------------------------------------------------------------------
 	#region Const/ReadOnly Values:
+	/// <inheritdoc cref="float.Pi"/>
+	public const float Pi  = float.Pi ;
+	/// <inheritdoc cref="float.Tau"/>
+	public const float Tau = float.Tau ;
+	
 	static readonly Half HalfEpisolon8x = Half.Epsilon * (Half)8 ;
 	
 	/// <summary>

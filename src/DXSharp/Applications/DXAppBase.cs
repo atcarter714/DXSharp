@@ -17,8 +17,7 @@ public delegate void WndProcDelegate( IAppWindow window, Message msg,
 
 /// <summary>Abstract base class for DXSharp applications.</summary>
 [SupportedOSPlatform( "windows7.0" )]
-public abstract class DXAppBase: IDXApp {
-	
+public abstract class DXAppBase: DisposableObject, IDXApp {
 	// ---------------------------------------------------------
 	/// <summary>Indicates if a shutdown command or event has fired.</summary>
 	/// <remarks>
@@ -26,7 +25,9 @@ public abstract class DXAppBase: IDXApp {
 	/// should abort loops/threads or halt execution of certain code paths.
 	/// </remarks>
 	protected bool _Quitting { get ; private set ; }
+	bool _shutdownComplete = false ;
 	// ---------------------------------------------------------
+	
 	
 	public virtual bool CanDraw { get ; protected set ; }
 	public virtual bool CanTick { get ; protected set ; }
@@ -58,6 +59,7 @@ public abstract class DXAppBase: IDXApp {
 	}
 	
 	protected virtual void OnInitialized( ) {
+		_shutdownComplete = false ;
 		Application.ApplicationExit += OnAppQuit ;
 	}
 	
@@ -92,6 +94,8 @@ public abstract class DXAppBase: IDXApp {
 		if ( Window is { IsVisible: true } ) 
 				Window.Close( ) ;
 		Time?.Stop( ) ;
+		
+		_shutdownComplete = true ;
 	}
 	
 	public virtual void Load( ) { }
@@ -119,24 +123,32 @@ public abstract class DXAppBase: IDXApp {
 	
 	// --------------------------------------------------------------------------------------
 	#region Dispose Pattern
-	protected virtual void OnDestroyManaged( ) { }
-	protected virtual void OnDestroyUnmanaged( ) { }
 	
-	void Dispose( bool disposing ) {
-		OnDestroyUnmanaged( ) ;
-		if ( disposing ) OnDestroyManaged( ) ;
+	protected override ValueTask DisposeUnmanaged( ) {
+		if( !Window?.IsDisposed ?? false ) 
+			Window?.Dispose( ) ;
+		
+		return ValueTask.CompletedTask ;
 	}
-	async ValueTask DisposeAsyncCore( ) => 
-		await Task.Run( OnDestroyUnmanaged );
 
-	public void Dispose( ) {
+	protected override void Dispose( bool disposing ) {
+		if( !_shutdownComplete ) Shutdown( ) ;
+		DisposeUnmanaged( ) ;
+		if ( disposing ) DisposeManaged( ) ;
+	}
+	
+	async ValueTask DisposeAsyncCore( ) => 
+		await Task.Run( DisposeUnmanaged ) ;
+	
+	/*public void Dispose( ) {
 		Dispose( true ) ;
 		GC.SuppressFinalize( this ) ;
-	}
-	public async ValueTask DisposeAsync( ) {
+	}*/
+	public override async ValueTask DisposeAsync( ) {
 		await DisposeAsyncCore( ) ;
 		GC.SuppressFinalize( this ) ;
 	}
+	
 	~DXAppBase( ) => Dispose( false ) ;
 	#endregion
 	// ======================================================================================

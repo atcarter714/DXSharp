@@ -1,8 +1,8 @@
 ﻿#region Using Directives
 using System.Drawing ;
-using System.Windows.Forms ;
 using DXSharp.Applications ;
 using AdvancedDXS.Framework ;
+using DXSharp ;
 using DXSharp.Framework.Debugging ;
 
 using IDebugD3D  = DXSharp.Direct3D12.IDebug6 ;
@@ -21,15 +21,18 @@ AppSettings Settings = new( "DXSharp: Advanced Sample",
 								BackgroundColor = SystemColors.Window,
 							} ) ;
 
+
 //! Enable the debug layer in debug mode:
 #if DEBUG || DEBUG_COM
-using DebugSystem< IDebugD3D, IDebugDXGI > dbg = new( ) ;
+await using DebugSystem< IDebugD3D, IDebugDXGI > dbg = new( ) ;
 dbg.Enable( ) ;
 #endif
 
+
+
 // Initialize & run the app:
-using var app = new DXSApp(Settings)
-						.Initialize( ) ;
+await using var app = new DXSApp( Settings )
+								.Initialize( ) ;
 
 app.Run( ) ;
 app?.Shutdown( ) ;

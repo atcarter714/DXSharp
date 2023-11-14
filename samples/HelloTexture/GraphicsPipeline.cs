@@ -1,20 +1,12 @@
 ﻿#region Using Directives
-
-using System.Diagnostics.CodeAnalysis ;
-using System.Runtime.InteropServices ;
-using System.Text ;
-using System.Windows.Forms ;
-
-using Windows.Win32 ;
 using Windows.Win32.Foundation ;
-using Windows.Win32.Graphics.Dxgi ;
 
 using DXSharp ;
-using DXSharp.Applications ;
-using DXSharp.Direct3D12 ;
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
+using DXSharp.Direct3D12 ;
 using DXSharp.Windows.COM ;
+using DXSharp.Applications ;
 using DXSharp.Windows.Win32 ;
 #endregion
 namespace HelloTexture ;
@@ -71,14 +63,15 @@ public class GraphicsPipeline: DXGraphics {
 	
 	public override void LoadPipeline( ) {
 		// Create the DXGI factory:
-		var hr = DXGIFunctions.CreateFactory2( IFactory7.IID, out var _f7 ) ;
+		var hr = DXGIFunctions.CreateFactory2( IFactory7.IID, out var _f7,
+														FACTORY_FLAGS ) ;
 		_factory = (IFactory7) _f7  ;
-		
 #if DEBUG || DEBUG_COM || DEV_BUILD
 		hr.ThrowOnFailure( ) ;
 		if( _factory is null ) throw new DXSharpException($"Failed to create DXGI factory! (hr = {hr})") ;
 		_setDBGName( _DBGName_Factory, _factory ) ;
 #endif
+		
 		// Get the best GPU:
 		using var adapter = _getBestGPU( _factory ) ;
 		

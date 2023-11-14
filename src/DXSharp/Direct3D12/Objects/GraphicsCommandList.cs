@@ -23,10 +23,18 @@ internal class GraphicsCommandList: CommandList,
 									IGraphicsCommandList,
 									IComObjectRef< ID3D12GraphicsCommandList >,
 									IUnknownWrapper< ID3D12GraphicsCommandList > {
+	#region Recycle Array Caches
+	//! Array of 1 element for use in single-transition calls (avoids allocations):
+	static readonly ResourceBarrier[ ] _singleTransitionCache = new ResourceBarrier[ 1 ] ;
+	//! Array of 1 element for use in single-descriptor calls (avoids allocations):
+	protected static readonly CPUDescriptorHandle[ ] _singleCPUDescHandleCache 
+		= new CPUDescriptorHandle[ 1 ] ;
+		#endregion
+	
+	
 	ComPtr< ID3D12GraphicsCommandList >? _comPtr ;
 	public new ComPtr< ID3D12GraphicsCommandList >? ComPointer => 
-		_comPtr ??= ComResources?.GetPointer<ID3D12GraphicsCommandList>( ) ;
-
+		_comPtr ??= ComResources?.GetPointer< ID3D12GraphicsCommandList >( ) ;
 	public override ID3D12GraphicsCommandList? ComObject => ComPointer?.Interface ;
 	
 	
@@ -46,6 +54,7 @@ internal class GraphicsCommandList: CommandList,
 		_initOrAdd( _comPtr ) ;
 	}
 	
+	protected float[ ] _clearColorCache = new float[ 4 ] ;
 	// ---------------------------------------------------------------------------------
 
 	public void Close( ) => ComObject?.Close( ) ;
@@ -180,18 +189,16 @@ internal class GraphicsCommandList: CommandList,
 
 	
 	public void OMSetStencilRef( uint StencilRef ) => ComObject!.OMSetStencilRef( StencilRef ) ;
-
+	
 	public void SetPipelineState( IPipelineState pPipelineState ) => 
-		ComObject!.SetPipelineState( ( (IComObjectRef<ID3D12PipelineState>)pPipelineState ).ComObject ) ;
-
-	public void ResourceBarrier( uint NumBarriers,
-								 ResourceBarrier[ ] pBarriers ) {
+		ComObject!.SetPipelineState( ( (IComObjectRef<ID3D12PipelineState>)pPipelineState )?.ComObject ) ;
+	
+	
+	public void ResourceBarrier( uint numBarriers, ResourceBarrier[ ] pBarriers ) {
 		var commandList = ComObject ?? throw new NullReferenceException( ) ;
-		unsafe
-		{
-			var _barriers = new D3D12_RESOURCE_BARRIER[pBarriers.Length];
-			for (int i = 0; i < pBarriers.Length; ++i)
-			{
+		unsafe {
+			var _barriers = new D3D12_RESOURCE_BARRIER[ pBarriers.Length ] ;
+			for (int i = 0; i < pBarriers.Length; ++i) {
 				_barriers[i] = pBarriers[i] ;
 			}
 			var _barriers2 = Unsafe.As< D3D12_RESOURCE_BARRIER[ ] >( pBarriers ) ;
@@ -201,13 +208,19 @@ internal class GraphicsCommandList: CommandList,
 			var vtable = *( nint**)ComPointer.InterfaceVPtr ;
 			var getDescriptor = (delegate* unmanaged[ Stdcall, MemberFunction ]
 				< ID3D12GraphicsCommandList*, uint, D3D12_RESOURCE_BARRIER*, void >)( vtable[ 26 ] ) ;
-
+			
 			fixed( D3D12_RESOURCE_BARRIER* barriersPtr = &_barriers2[ 0] )
-				getDescriptor( cmdList, NumBarriers, barriersPtr ) ;
+				getDescriptor( cmdList, numBarriers, barriersPtr ) ;
 		}
 	}
 
+	[MethodImpl( MethodImplOptions.AggressiveInlining )]
+	public void ResourceBarrier( in ResourceBarrier barrier ) {
+		_singleTransitionCache[ 0 ] = barrier ;
+		ResourceBarrier( 1, _singleTransitionCache ) ;
+	}
 
+	
 	public void ExecuteBundle( IGraphicsCommandList pCommandList ) {
 		var commandList = (IComObjectRef< ID3D12GraphicsCommandList >)pCommandList ;
 		ComObject!.ExecuteBundle( commandList.ComObject ) ;
@@ -300,70 +313,93 @@ internal class GraphicsCommandList: CommandList,
 	}
 	
 	
-	public void IASetVertexBuffers( uint StartSlot, uint NumViews, [Optional] Span< VertexBufferView > pViews ) {
+	public void IASetVertexBuffers( uint startSlot, uint numViews,
+									[Optional] Span< VertexBufferView > pViews ) {
 		unsafe {
 			fixed ( VertexBufferView* pViewsPtr = pViews )
-				ComObject!.IASetVertexBuffers( StartSlot, NumViews, (D3D12_VERTEX_BUFFER_VIEW*)pViewsPtr ) ;
+				ComObject!.IASetVertexBuffers( startSlot, numViews, (D3D12_VERTEX_BUFFER_VIEW*)pViewsPtr ) ;
 		}
 	}
 	
 	
-	public void SOSetTargets( uint StartSlot, uint NumViews, [Optional] Span< StreamOutputBufferView > pViews ) {
+	public void SOSetTargets( uint startSlot, uint numViews,
+							  [Optional] Span< StreamOutputBufferView > pViews ) {
 		unsafe {
 			fixed ( StreamOutputBufferView* pViewsPtr = pViews )
-				ComObject!.SOSetTargets( StartSlot, NumViews, (D3D12_STREAM_OUTPUT_BUFFER_VIEW*)pViewsPtr ) ;
+				ComObject!.SOSetTargets( startSlot, numViews, (D3D12_STREAM_OUTPUT_BUFFER_VIEW*)pViewsPtr ) ;
 		}
 	}
 	
 	
-	public void OMSetRenderTargets( uint                                   NumRenderTargetDescriptors,
+	public void OMSetRenderTargets( uint numRenderTargetDescriptors,
 									[Optional] Span< CPUDescriptorHandle > pRenderTargetDescriptors,
-									bool                                   RTsSingleHandleToDescriptorRange,
-									[Optional] Span< CPUDescriptorHandle > pDepthStencilDescriptor ) {
+									[Optional] bool RTsSingleHandleToDescriptorRange,
+									[Optional] CPUDescriptorHandle pDepthStencilDescriptor ) {
 		unsafe {
-			fixed ( CPUDescriptorHandle* pRenderTargetDescriptorsPtr = pRenderTargetDescriptors,
-				   pDepthStencilDescriptorPtr = pDepthStencilDescriptor )
-				ComObject!.OMSetRenderTargets( NumRenderTargetDescriptors,
-											   (D3D12_CPU_DESCRIPTOR_HANDLE*)pRenderTargetDescriptorsPtr,
-											   RTsSingleHandleToDescriptorRange,
-											   (D3D12_CPU_DESCRIPTOR_HANDLE*)pDepthStencilDescriptorPtr ) ;
+			fixed ( CPUDescriptorHandle* pRenderTargetDescriptorsPtr = pRenderTargetDescriptors ) {
+				D3D12_CPU_DESCRIPTOR_HANDLE* pTargetDescHandle =
+					pRenderTargetDescriptors is {Length: > 0} ? 
+						(D3D12_CPU_DESCRIPTOR_HANDLE *)pRenderTargetDescriptorsPtr : null ;
+				
+				D3D12_CPU_DESCRIPTOR_HANDLE* pDepthDescHandle = 
+					pDepthStencilDescriptor != CPUDescriptorHandle.Null ? 
+						(D3D12_CPU_DESCRIPTOR_HANDLE *)&pDepthStencilDescriptor : null ;
+				
+				ComObject!.OMSetRenderTargets( numRenderTargetDescriptors, pTargetDescHandle,
+											   RTsSingleHandleToDescriptorRange, pDepthDescHandle ) ;
+			}
 		}
 	}
-
-
-	public void ClearDepthStencilView( CPUDescriptorHandle DepthStencilView, 
-									   ClearFlags          clearFlags, 
-									   float               Depth, 
-									   byte                Stencil,
-									   uint                NumRects,
-									   Span< Rect >        pRects ) {
+	
+	public void OMSetRenderTargets( CPUDescriptorHandle pRenderTargetDescriptor,
+									bool RTsSingleHandleToDescriptorRange = false,
+									CPUDescriptorHandle pDepthStencilDescriptor = default ) {
+		_singleCPUDescHandleCache[ 0 ] = pRenderTargetDescriptor ;
+		OMSetRenderTargets( 1, _singleCPUDescHandleCache, 
+							RTsSingleHandleToDescriptorRange, pDepthStencilDescriptor ) ;
+	}
+	
+	
+	public void ClearDepthStencilView( CPUDescriptorHandle depthStencilView,
+									   ClearFlags clearFlags,
+									   float depth, byte stencil,
+									   [Optional] uint numRects,
+									   [Optional] Span< Rect > pRects ) {
 		unsafe {
 			fixed ( Rect* pRectsPtr = pRects ) {
-				ComObject!.ClearDepthStencilView( DepthStencilView, (D3D12_CLEAR_FLAGS)clearFlags,
-												  Depth, Stencil, NumRects, (RECT*)pRectsPtr ) ;
+				RECT* _rectsPtr = pRects is {Length: > 0} ? (RECT*)pRectsPtr : null ;
+				ComObject!.ClearDepthStencilView( depthStencilView, (D3D12_CLEAR_FLAGS)clearFlags,
+												  depth, stencil, numRects, _rectsPtr ) ;
 			}
 		}
 	}
 
 
-	public void ClearRenderTargetView( CPUDescriptorHandle RenderTargetView, 
-									   float[ ]            ColorRGBA,
-									   uint                NumRects,
+	public void ClearRenderTargetView( CPUDescriptorHandle renderTargetView,
+									   ColorF              colorRgba,
+									   uint                numRects = 0,
 									   Span< Rect >        pRects = default ) {
 		if( pRects is not { Length: > 0 } )
 			pRects = default ;
 
 		unsafe {
+			//! Copy the color to cache array:
+			//  (Way to avoid allocations temporarily)
+			fixed( float* pColor = &_clearColorCache[ 0 ] ) {
+				ColorF* pDst = (ColorF *)pColor ;
+				*pDst = colorRgba ;
+			}
+			
 			fixed ( Rect* pRectsPtr = ( pRects == default ? null : pRects ) ) {
-				ComObject!.ClearRenderTargetView( RenderTargetView,
-												  ColorRGBA,
-												  pRectsPtr is null ? 0 : NumRects,
+				ComObject!.ClearRenderTargetView( renderTargetView,
+												  _clearColorCache,
+												  pRectsPtr is null ? 0 : numRects,
 												  (RECT*)pRectsPtr ) ;
 			}
 		}
 	}
-
-
+	
+	
 	public void ClearUnorderedAccessViewUint( GPUDescriptorHandle ViewGPUHandleInCurrentHeap,
 											  CPUDescriptorHandle ViewCPUHandle,
 											  IResource           pResource,

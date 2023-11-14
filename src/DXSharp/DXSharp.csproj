@@ -71,7 +71,6 @@
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 		
-
 		<!-- DirectX Agility SDK Package -->
 		<PackageReference Condition="$(UsingAgilitySDK)" Aliases="AgilitySDK" Include="Microsoft.Direct3D.D3D12" Version="[1.711.3-preview,)" GeneratePathProperty="true">
 		</PackageReference>

@@ -168,12 +168,12 @@ internal class Device: Object,
 	}
 
 
-	public void CreateShaderResourceView( IResource                                   pResource,
-										  [Optional] in ShaderResourceViewDescription pDesc,
-										  CPUDescriptorHandle                         DestDescriptor ) {
+	public void CreateShaderResourceView( [Optional] IResource? pResource,
+										  [Optional] ShaderResourceViewDescription pDesc,
+										  CPUDescriptorHandle destDescriptor = default ) {
 		var device = ComObject ?? throw new NullReferenceException( ) ;
-		var resource = (Resource)pResource ;
-		device.CreateShaderResourceView( resource.ComObject, pDesc, DestDescriptor ) ;
+		var resource = (Resource?)pResource ;
+		device.CreateShaderResourceView( resource?.ComObject, pDesc, destDescriptor ) ;
 	}
 
 	

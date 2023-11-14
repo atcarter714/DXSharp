@@ -10,7 +10,8 @@ namespace DXSharp.Applications ;
 /// from the underlying windowing system and can support multiple windowing systems
 /// (e.g., WinForms, WPF, UWP, WinUI, Avalonia, Win32, etc.).
 /// </summary>
-public interface IAppWindow: IWin32Window {
+public interface IAppWindow: IWin32Window, 
+							 IDisposable {
 	Size Size { get ; }
 	Point Location { get ; }
 	string Title { get ; }
@@ -19,6 +20,7 @@ public interface IAppWindow: IWin32Window {
 	bool IsVisible { get ; }
 	bool IsMinimized { get ; }
 	bool IsMaximized { get ; }
+	bool IsDisposed { get ; }
 	
 	void Show( ) ;
 	void Hide( ) ;

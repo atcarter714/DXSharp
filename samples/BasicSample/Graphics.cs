@@ -411,10 +411,8 @@ public class Graphics: DisposableObject {
 		// Set the render target for the output merger stage:
 		var rtvHandle = rtvHeap!.GetCPUDescriptorHandleForHeapStart( ) ;
 		rtvHandle += frameIndex * rtvDescriptorSize ;
-		commandList.OMSetRenderTargets(1,
-									   new[ ] { rtvHandle },
-									   false, null ) ;
-
+		commandList.OMSetRenderTargets( rtvHandle ) ;
+		
 		// Clear the render target:
 		commandList.ClearRenderTargetView( rtvHandle, bufferColor ) ;
 

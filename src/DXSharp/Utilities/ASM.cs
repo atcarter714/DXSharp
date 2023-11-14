@@ -10,10 +10,15 @@ public static class ASM {
 
 
 public static class AssemblyExecutor {
-	
 	[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 	delegate void AssemblyCodeDelegate( ) ;
 	
+	
+	/// <summary>
+	/// Executes an arbitrary block of machine code.
+	/// </summary>
+	/// <param name="assemblyCode">A <see cref="Span{T}"/> containing raw machine code bytes.</param>
+	/// <exception cref="ArgumentException">Thrown if the input is empty.</exception>
 	public static void Execute( Span< byte > assemblyCode ) {
 #if DEBUG || DEV_BUILD
 		if ( assemblyCode is not { Length: > 0 } )
@@ -50,7 +55,7 @@ public static class AssemblyExecutor {
 			}
 		}
 	}
-
+	
 	
 	// ----------------------------------------------------------------------------------
 	// P/Invoke Signatures ::

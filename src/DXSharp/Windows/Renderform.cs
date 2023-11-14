@@ -77,7 +77,6 @@ using DXSharp.Windows.Win32 ;
 namespace DXSharp.Windows ;
 
 
-
 /// <summary>
 /// Default Rendering Form.
 /// </summary>

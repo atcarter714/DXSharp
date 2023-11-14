@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
@@ -130,47 +132,79 @@ public struct DepthStencilViewDesc {
 	/// </summary>
 	public DSVFlags Flags ;
 
-	public _anon_dsv_union ReadAs ;
+	public _dsvUnion TexInfo ;
 	[StructLayout( LayoutKind.Explicit )]
-	public partial struct _anon_dsv_union {
+	public partial struct _dsvUnion {
 		[FieldOffset( 0 )] public Tex1DDSV        Texture1D ;
 		[FieldOffset( 0 )] public Tex1DArrayDSV   Texture1DArray ;
 		[FieldOffset( 0 )] public Tex2DDSV        Texture2D ;
 		[FieldOffset( 0 )] public Tex2DArrayDSV   Texture2DArray ;
 		[FieldOffset( 0 )] public Tex2DMSDSV      Texture2DMS ;
 		[FieldOffset( 0 )] public Tex2DMSArrayDSV Texture2DMSArray ;
+		
+		public _dsvUnion( Tex1DDSV texture1D ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture1D = texture1D ;
+		}
+		public _dsvUnion( Tex1DArrayDSV texture1DArray ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture1DArray = texture1DArray ;
+		}
+		public _dsvUnion( Tex2DDSV texture2D ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture2D = texture2D ;
+		}
+		public _dsvUnion( Tex2DArrayDSV texture2DArray ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture2DArray = texture2DArray ;
+		}
+		public _dsvUnion( Tex2DMSDSV texture2DMS ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture2DMS = texture2DMS ;
+		}
+		public _dsvUnion( Tex2DMSArrayDSV texture2DMSArray ) {
+			Unsafe.SkipInit( out this ) ;
+			Texture2DMSArray = texture2DMSArray ;
+		}
+		
+		public static implicit operator _dsvUnion( Tex1DDSV texture1D ) => new( texture1D ) ;
+		public static implicit operator _dsvUnion( Tex1DArrayDSV texture1DArray ) => new( texture1DArray ) ;
+		public static implicit operator _dsvUnion( Tex2DDSV texture2D ) => new( texture2D ) ;
+		public static implicit operator _dsvUnion( Tex2DArrayDSV texture2DArray ) => new( texture2DArray ) ;
+		public static implicit operator _dsvUnion( Tex2DMSDSV texture2DMS ) => new( texture2DMS ) ;
+		public static implicit operator _dsvUnion( Tex2DMSArrayDSV texture2DMSArray ) => new( texture2DMSArray ) ;
 	} ;
 
 	
 	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex1DDSV texture1D ) {
 		Flags         = flags ; Format = format ;
 		ViewDimension = DSVDimension.Texture1D ;
-		ReadAs        = new( ) { Texture1D = texture1D } ;
+		TexInfo        = new( ) { Texture1D = texture1D } ;
 	}
 	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex1DArrayDSV texture1DArray ) {
 		Flags         = flags ; Format = format ;
 		ViewDimension = DSVDimension.Texture1DArray ;
-		ReadAs        = new( ) { Texture1DArray = texture1DArray } ;
+		TexInfo        = new( ) { Texture1DArray = texture1DArray } ;
 	}
 	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex2DDSV texture2D ) {
 		Flags         = flags ; Format = format ;
 		ViewDimension = DSVDimension.Texture2D ;
-		ReadAs        = new( ) { Texture2D = texture2D } ;
+		TexInfo        = new( ) { Texture2D = texture2D } ;
 	}
 	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex2DArrayDSV texture2DArray ) {
 		Flags         = flags ; Format = format ;
 		ViewDimension = DSVDimension.Texture2DArray ;
-		ReadAs        = new( ) { Texture2DArray = texture2DArray } ;
+		TexInfo        = new( ) { Texture2DArray = texture2DArray } ;
 	}
 	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex2DMSDSV texture2DMS ) {
 		Flags         = flags ; Format = format ;
 		ViewDimension = DSVDimension.Texture2DMS ;
-		ReadAs        = new( ) { Texture2DMS = texture2DMS } ;
+		TexInfo        = new( ) { Texture2DMS = texture2DMS } ;
 	}
 	public DepthStencilViewDesc( Format format, DSVFlags flags, Tex2DMSArrayDSV texture2DMSArray ) {
 		Flags         = flags ; Format = format ;
 		ViewDimension = DSVDimension.Texture2DMSArray ;
-		ReadAs        = new( ) { Texture2DMSArray = texture2DMSArray } ;
+		TexInfo        = new( ) { Texture2DMSArray = texture2DMSArray } ;
 	}
 } ;
 
