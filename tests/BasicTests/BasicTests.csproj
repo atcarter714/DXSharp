@@ -1,35 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	
-	<!--<TargetFrameworks>net6.0-windows;net7.0-windows</TargetFrameworks>-->
-	<!--<TargetFrameworks>net6.0-windows10.0.22621.0;net7.0-windows10.0.22621.0;</TargetFrameworks>-->
-	<TargetFrameworks>net7.0-windows10.0.22621.0;</TargetFrameworks>
-	<!--<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>-->
-	 
-	<ImplicitUsings>enable</ImplicitUsings>
-	<Nullable>enable</Nullable>
-	<IsPackable>false</IsPackable>
-	<BaseOutputPath>$(RepoRootPath)bin\Tests\$(MSBuildProjectName)\</BaseOutputPath>
-	<Platforms>AnyCPU;x64;x86</Platforms>
-
-	  
-		  
+		<Platforms>$(TargetCPUs);</Platforms>
+		<TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+		
+		<IsPackable>false</IsPackable>
+		<BaseOutputPath>$(RepoRootPath)bin\Tests\$(MSBuildProjectName)\$(Platform)\</BaseOutputPath>
+		<!--<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>-->
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-
-  <ItemGroup>
-	<None Include="..\..\.editorconfig" Link=".editorconfig" />
-  </ItemGroup>
-
-  <ItemGroup>
+  <ItemGroup Label="TestingPackageReferences">
 	<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
 	<PackageReference Include="NUnit" Version="3.14.0" />
 	<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
@@ -43,13 +24,17 @@
 	</PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Label="DXSReferences">
 	<ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
   </ItemGroup>
+	
+	<ItemGroup>
+		<None Include="..\..\.editorconfig" Link=".editorconfig" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="D3D12\" />
-    <Folder Include="DXGI\" />
-  </ItemGroup>
+	<ItemGroup Label="FolderIncludes">
+		<Folder Include="D3D12\" />
+		<Folder Include="DXGI\" />
+	</ItemGroup>
 
 </Project>

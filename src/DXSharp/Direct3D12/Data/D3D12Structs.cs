@@ -1,15 +1,15 @@
 ﻿#region Using Directives
-
 using System.Buffers ;
 using System.Diagnostics ;
 using System.Diagnostics.CodeAnalysis ;
-using System.Numerics ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
+
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 using Windows.Win32.Graphics.Dxgi.Common ;
+
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using static DXSharp.InteropUtils ;
@@ -52,14 +52,14 @@ public struct Box {
 		this.back   = back ;
 	}
 
-	public Box( uint x, uint y, USize baseSize, uint height ) {
+	/*public Box( uint x, uint y, USize baseSize, uint height ) {
 		left   = x ;
 		top    = y ;
 		front  = 0 ;
 		right  = x + baseSize.Width ;
 		bottom = y + baseSize.Height ;
 		back   = 1 ;
-	}
+	}*/
 } ;
 
 
@@ -80,7 +80,7 @@ public struct CommandQueueDescription: IEquatable< CommandQueueDescription > {
 	/// </para>
 	/// </returns>
 	public static readonly CommandQueueDescription Default =
-		new( CommandListType.Direct, CommandQueuePriority.Normal, CommandQueueFlags.None, 0 ) ;
+		new( CommandListType.Direct, CommandQueuePriority.Normal ) ;
 	// -----------------------------------------------------------------------------------------
 	
 	
@@ -476,7 +476,7 @@ public struct ResourceDescription {
 		DepthOrArraySize = desc.DepthOrArraySize ;
 		MipLevels        = desc.MipLevels ;
 		Format           = (Format)desc.Format ;
-		SampleDesc       = (SampleDescription)desc.SampleDesc ;
+		SampleDesc       = desc.SampleDesc ;
 		Layout           = (TextureLayout)desc.Layout ;
 		Flags            = (ResourceFlags)desc.Flags ;
 	}
@@ -706,7 +706,7 @@ public struct InputElementDescription: IDisposable {
 	
 	public InputElementDescription( PCSTR               semanticName 	     = default, 
 									uint                semanticIndex 	     = 0U, 
-									Format              format               = DXGI.Format.UNKNOWN, 
+									Format              format               = Format.UNKNOWN, 
 									uint                inputSlot            = 0U, 
 									uint                alignedByteOffset    = 0U, 
 									InputClassification inputSlotClass       = InputClassification.PerVertexData, 
@@ -722,7 +722,7 @@ public struct InputElementDescription: IDisposable {
 
 	
 	public InputElementDescription( string?             semanticName         = null, int semanticIndex = 0,
-									Format              format               = DXGI.Format.UNKNOWN,
+									Format              format               = Format.UNKNOWN,
 									int                 inputSlot            = 0, int alignedByteOffset = 0,
 									InputClassification inputSlotClass       = InputClassification.PerVertexData,
 									int                 instanceDataStepRate = 0 ) {
@@ -915,7 +915,7 @@ public struct SODeclarationEntry {
 		this.SemanticIndex = semanticIndex ;
 		this.StartComponent = startComponent ;
 		this.ComponentCount = componentCount ;
-		this.OutputSlot = 0 ;
+		this.OutputSlot = outputSlot ;
 	}
 } ;
 
@@ -987,8 +987,13 @@ public struct StreamOutputDescription {
 public struct GraphicsPipelineStateDescription {
 	/// <summary>A pointer to the <a href="https://docs.microsoft.com/windows/win32/api/d3d12/nn-d3d12-id3d12rootsignature">ID3D12RootSignature</a> object.</summary>
 	[MarshalAs(UnmanagedType.Interface)]
-	public ID3D12RootSignature pRootSignature ;
-	//public nint pRootSignature ;
+	internal ID3D12RootSignature? pRootSignature ;
+	//! TODO: Come up with better solution for this. May need to change the marshalling and use interface pointer instead of RCW.
+	public IRootSignature? RootSignature {
+		get => pRootSignature is null ? null : new RootSignature( pRootSignature ) ;
+		set => pRootSignature = ( ( IComObjectRef< ID3D12RootSignature >? ) value)?.ComObject ;
+	}
+	
 	
 	/// <summary>A <a href="https://docs.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_shader_bytecode">D3D12_SHADER_BYTECODE</a> structure that describes the vertex shader.</summary>
 	public ShaderBytecode VS;
@@ -1105,24 +1110,6 @@ public struct ComputePipelineStateDescription {
 	public PipelineStateFlags Flags ;
 	
 	
-	
-	public static implicit operator D3D12_COMPUTE_PIPELINE_STATE_DESC( in ComputePipelineStateDescription desc ) => 
-		new D3D12_COMPUTE_PIPELINE_STATE_DESC {
-			pRootSignature = desc.pRootSignature.ComObject,
-			CS             = desc.CS,
-			NodeMask       = desc.NodeMask,
-			CachedPSO      = desc.CachedPSO,
-			Flags          = (D3D12_PIPELINE_STATE_FLAGS)desc.Flags
-	} ;
-	
-	public static implicit operator ComputePipelineStateDescription( in D3D12_COMPUTE_PIPELINE_STATE_DESC desc ) => 
-		new ComputePipelineStateDescription {
-			pRootSignature = new RootSignature( desc.pRootSignature ),
-			CS             = desc.CS,
-			NodeMask       = desc.NodeMask,
-			CachedPSO      = desc.CachedPSO,
-			Flags          = (PipelineStateFlags)desc.Flags
-	} ;
 } ;
 
 
@@ -1254,10 +1241,10 @@ public struct CPUDescriptorHandle: IEquatable<CPUDescriptorHandle>,
 
 
 	public void Offset( uint offsetScaledByIncrementSize ) => 
-		ptr += (nuint)offsetScaledByIncrementSize ;
+		ptr += offsetScaledByIncrementSize ;
 	
 	public void Offset( int offsetInDescriptors, uint descriptorIncrementSize ) => 
-		ptr += (nuint)( (ulong)offsetInDescriptors * (ulong)descriptorIncrementSize ) ;
+		ptr += (nuint)( (ulong)offsetInDescriptors * descriptorIncrementSize ) ;
 
 	
 	public override string ToString( ) => $"0x{ptr:X}" ;
@@ -1322,10 +1309,10 @@ public struct GPUDescriptorHandle: IEquatable<GPUDescriptorHandle>,
 
 	
 	public void Offset( uint offsetScaledByIncrementSize ) => 
-		ptr += (nuint)offsetScaledByIncrementSize ;
+		ptr += offsetScaledByIncrementSize ;
 	
 	public void Offset( int offsetInDescriptors, uint descriptorIncrementSize ) => 
-		ptr += (nuint)( (ulong)offsetInDescriptors * (ulong)descriptorIncrementSize ) ;
+		ptr += (nuint)( (ulong)offsetInDescriptors * descriptorIncrementSize ) ;
 	
 	public static bool operator ==( GPUDescriptorHandle left, GPUDescriptorHandle right ) => left.ptr == right.ptr ;
 	public static bool operator !=( GPUDescriptorHandle left, GPUDescriptorHandle right ) => left.ptr != right.ptr ;
@@ -1510,7 +1497,7 @@ public struct ClearValue {
 	/// stored in the <see cref="Format.D32_FLOAT_S8X24_UINT"/> format.
 	/// </returns>
 	public static readonly ClearValue DepthStencilDefault
-		= new( Format.D32_FLOAT_S8X24_UINT, new DepthStencilValue(1, 0) ) ;
+		= new( Format.D32_FLOAT_S8X24_UINT, new DepthStencilValue(1 ) ) ;
 	// -------------------------------------------------------
 	
 	
@@ -1583,7 +1570,7 @@ public struct ClearValue {
 [StructLayout( LayoutKind.Sequential ),
  EquivalentOf( typeof( D3D12_DEPTH_STENCIL_VALUE ) )]
 public struct DepthStencilValue {
-	public static readonly DepthStencilValue Default = new(1.0f, 0 ) ;
+	public static readonly DepthStencilValue Default = new(1.0f ) ;
 	
 	/// <summary>Specifies the depth value.</summary>
 	public float Depth ;
@@ -2303,7 +2290,7 @@ public struct RootSignatureDescription {
 	}
 	
 	public IBlob? Serialize( ) {
-		var serialized = Serialize( out var blob ) ;
+		var serialized = Serialize( out _ ) ;
 		return serialized ;
 	}
 } ;

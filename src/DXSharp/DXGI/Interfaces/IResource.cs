@@ -1,13 +1,12 @@
 ﻿#region Using Directives
-
 using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Runtime.Versioning;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows.Win32 ;
-using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.DXGI ;
 
@@ -17,21 +16,25 @@ namespace DXSharp.DXGI ;
 public interface IResource: IDeviceSubObject,
 							IInstantiable {
 	// ---------------------------------------------------------------------------------
-	
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", 
+					  "CA1416:Validate platform compatibility" )] 
 	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGIResource, IInstantiable> > _resourceCreationFunctions =
 		new( new Dictionary<Guid, Func<IDXGIResource, IInstantiable> > {
 			{ IResource.IID, ( pComObj ) => new Resource( pComObj ) },
 			{ IResource1.IID, ( pComObj ) => new Resource1( (pComObj as IDXGIResource1)! ) },
 		} ) ;
-
 	// ---------------------------------------------------------------------------------
-	void GetEvictionPriority( [Out] out ResourcePriority pEvictionPriority ) ;
+	
+	
+	void GetEvictionPriority( out ResourcePriority pEvictionPriority ) ;
 	
 	void SetEvictionPriority( ResourcePriority evictionPriority ) ;
 	
-	void GetUsage( [Out] out Usage pUsage ) ;
+	void GetUsage( out Usage pUsage ) ;
 	
-	void GetSharedHandle( [Out] out Win32Handle pSharedHandle ) ;
+	void GetSharedHandle( out Win32Handle pSharedHandle ) ;
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof(IDXGIResource) ;
 	public new static Guid IID => (ComType.GUID) ;
@@ -48,8 +51,8 @@ public interface IResource: IDeviceSubObject,
 	}
 	
 	static IInstantiable IInstantiable. Instantiate( ) => new Resource( ) ;
-	static IInstantiable IInstantiable.Instantiate( IntPtr pComObj ) => new Resource( pComObj ) ;
-	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Resource( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< Com >( Com pComObj ) => 
 		new Resource( (IDXGIResource)pComObj! ) ;
 	// ==================================================================================
 } ;

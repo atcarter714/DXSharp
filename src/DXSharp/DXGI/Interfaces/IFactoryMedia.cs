@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Runtime.Versioning;
@@ -14,6 +17,17 @@ namespace DXSharp.DXGI ;
 [SupportedOSPlatform( "windows8.1" )]
 [ProxyFor( typeof( IDXGIFactoryMedia ) )]
 public interface IFactoryMedia: IComIID, IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", 
+					  "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGIFactoryMedia, IInstantiable> > _factoryMediaCreationFunctions =
+		new( new Dictionary< Guid, Func<IDXGIFactoryMedia, IInstantiable> > {
+			{ IFactoryMedia.IID, ( pComObj ) => new FactoryMedia( pComObj ) },
+		} ) ;
+	// ---------------------------------------------------------------------------------
+
 
 	/// <summary>Creates a YUV swap chain for an existing DirectComposition surface handle. (IDXGIFactoryMedia.CreateSwapChainForCompositionSurfaceHandle)</summary>
 	/// <param name="pDevice">A pointer to the Direct3D device for the swap chain. This parameter cannot be <b>NULL</b>. Software drivers, like <a href="https://docs.microsoft.com/windows/desktop/api/d3dcommon/ne-d3dcommon-d3d_driver_type">D3D_DRIVER_TYPE_REFERENCE</a>, are not supported for composition swap chains.</param>

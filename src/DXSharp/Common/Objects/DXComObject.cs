@@ -39,7 +39,7 @@ internal abstract class DXComObject: DisposableObject,
 		(IUnknown)ComPointer?.InterfaceObjectRef! ;
 	
 	//! ---------------------------------------------------------------------------------
-
+	
 	public HResult QueryInterface( in Guid riid, out nint ppvObject ) {
 		unsafe {
 			var vTableAddr = ComPtrBase?.BaseAddress ?? NULL_PTR ;
@@ -52,7 +52,6 @@ internal abstract class DXComObject: DisposableObject,
 				return HResult.E_FAIL ;
 #endif
 			}
-			
 			
 			var _qryInterfaceFn =
 				( (delegate* unmanaged< IUnknownUnsafe*, Guid*, void**, HRESULT >)( *( *(void ***)vTableAddr + 0) ) ) ;
@@ -68,31 +67,15 @@ internal abstract class DXComObject: DisposableObject,
 	}
 
 	public HResult QueryInterface< T >( out T? ppvUnk ) where T: IDXCOMObject, IInstantiable {
-		unsafe {
-			var vTableAddr = ComPtrBase?.BaseAddress ?? NULL_PTR ;
-			if( vTableAddr is NULL_PTR ) {
-				ppvUnk = default ;
-#if DEBUG || DEV_BUILD || DEBUG_COM
-				throw new NullReferenceException($"{nameof(DXComObject)} :: " +
-												 $"{nameof(ComPtrBase)} is null (no COM RCW object attached).") ;
-#else
- 				return HResult.E_FAIL ;
-#endif
-			}
-			
-			var _qryInterfaceFn =
-				( (delegate* unmanaged< IUnknownUnsafe*, Guid*, void**, HRESULT >)( *( *(void ***)vTableAddr + 0) ) ) ;
-													/* +0 is for the IUnknown.QueryInterface slot */
-
-			var thisInst = (IUnknownUnsafe *)vTableAddr ;
-			var _riid = typeof(T).GUID ;
-			var _ppvObject = default( void* ) ;
-			var hr = _qryInterfaceFn( thisInst,
-											(Guid *)&_riid,
-												(void **)&_ppvObject ) ;
-			
-			ppvUnk = (T)T.Instantiate( (nint)_ppvObject ) ;
-			return hr ;
+		this.QueryInterface( T.Guid, out var ppvObject ) ;
+		var wrapper = (T?)T.Instantiate( ppvObject ) ;
+		if ( wrapper is not null ) {
+			ppvUnk = wrapper ;
+			return HResult.S_OK ;
+		}
+		else {
+			ppvUnk = default ;
+			return HResult.E_NOINTERFACE ;
 		}
 	}
 

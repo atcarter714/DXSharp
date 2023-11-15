@@ -1,4 +1,5 @@
-﻿using DXSharp.Applications ;
+﻿using System.Windows.Forms ;
+using DXSharp.Applications ;
 namespace HelloTexture ;
 
 
@@ -18,6 +19,7 @@ public class BasicApp: DXWinformApp {
 	public override BasicApp Initialize( ) {
 		base.Initialize( ) ;
 		Window!.SetSize( Settings.WindowSize ) ;
+		MainForm!.StartPosition = FormStartPosition.CenterScreen ;
 		
 		graphics = new( _graphicsSettings ) ;
 		graphics.LoadPipeline( ) ;

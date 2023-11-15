@@ -2541,3 +2541,77 @@ public enum CommandQueuePriority {
 	/// <summary>Global realtime priority.</summary>
 	GlobalRealtime = 10000,
 } ;
+
+
+/// <summary>Defines constants that specify render/compute GPU operations.</summary>
+[EquivalentOf(typeof(D3D12_DRED_ENABLEMENT))]
+public enum DREDEnablement {
+	/// <summary>Specifies that a DRED feature is enabled only when DRED is turned on by the system automatically (for example, when a user is reproducing a problem via FeedbackHub).</summary>
+	SystemControlled = 0,
+	/// <summary>Specifies that a DRED feature should be force-disabled, regardless of the system state.</summary>
+	ForcedOff = 1,
+	/// <summary>Specifies that a DRED feature should be force-enabled, regardless of the system state.</summary>
+	ForcedOn = 2,
+} ;
+
+
+/// <summary>Congruent with, and numerically equivalent to, 3D12DDI_HANDLETYPE enumeration values.</summary>
+[EquivalentOf(typeof(D3D12_DRED_ALLOCATION_TYPE))]
+public enum DREDAllocationType {
+	/// <summary></summary>
+	CommandQueue = 19,
+	/// <summary></summary>
+	CommandAllocator = 20,
+	/// <summary></summary>
+	PipelineState = 21,
+	/// <summary></summary>
+	CommandList = 22,
+	/// <summary></summary>
+	Fence = 23,
+	/// <summary></summary>
+	DescriptorHeap = 24,
+	/// <summary></summary>
+	Heap = 25,
+	/// <summary></summary>
+	QueryHeap = 27,
+	/// <summary></summary>
+	CommandSignature = 28,
+	/// <summary></summary>
+	PipelineLibrary = 29,
+	/// <summary></summary>
+	VideoDecoder = 30,
+	/// <summary></summary>
+	VideoProcessor = 32,
+	/// <summary></summary>
+	Resource = 34,
+	/// <summary></summary>
+	Pass = 35,
+	/// <summary></summary>
+	Cryptosession = 36,
+	/// <summary></summary>
+	Cryptosessionpolicy = 37,
+	/// <summary></summary>
+	Protectedresourcesession = 38,
+	/// <summary></summary>
+	VideoDecoderHeap = 39,
+	/// <summary></summary>
+	CommandPool = 40,
+	/// <summary></summary>
+	CommandRecorder = 41,
+	/// <summary></summary>
+	StateObject = 42,
+	/// <summary></summary>
+	Metacommand = 43,
+	/// <summary></summary>
+	Schedulinggroup = 44,
+	/// <summary></summary>
+	VideoMotionEstimator = 45,
+	/// <summary></summary>
+	VideoMotionVectorHeap = 46,
+	/// <summary></summary>
+	VideoExtensionCommand = 47,
+	VideoEncoder = 48,
+	VideoEncoderHeap = 49,
+	/// <summary></summary>
+	Invalid = -1,
+} ;

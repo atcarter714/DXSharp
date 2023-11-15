@@ -40,6 +40,7 @@ EnumDisplayDevicesW
 RegisterWindowMessageA
 RegisterWindowMessageW
 MulDiv
+QueryPerformanceCounter
 
 WNDCLASSEXA
 WNDCLASSEXW
@@ -202,6 +203,9 @@ D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPES
 D3D12_COMMAND_QUEUE_PRIORITY
 D3D12_SHADER_COMPONENT_MAPPING
 D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING
+D3D12_DRED_ENABLEMENT
+D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT
+D3D12_DRED_PAGE_FAULT_OUTPUT
 
 // ------------------------------------------
 // D3D12 Interfaces:
@@ -255,6 +259,9 @@ ID3D12Resource2
 ID3D12VersionedRootSignatureDeserializer
 ID3D12SDKConfiguration
 ID3D12Tools
+ID3D12StateObjectProperties
+ID3D12DeviceRemovedExtendedData
+ID3D12DeviceRemovedExtendedDataSettings
 
 D3DCreateBlob
 D3DCompileFromFile

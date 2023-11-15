@@ -1,7 +1,8 @@
-﻿using System.Runtime.InteropServices ;
+﻿#region Using Directives
+using System.Runtime.InteropServices ;
 using DXSharp.Direct3D12 ;
 using DXSharp.Windows.COM ;
-
+#endregion
 namespace Windows.Win32.Graphics.Direct3D12 ;
 
 
@@ -26,7 +27,7 @@ public interface ID3D12VersionedRootSignatureDeserializer: IUnknown {
 	/// </remarks>
 	unsafe void GetRootSignatureDescAtVersion(
 		RootSignatureVersion convertToVersion,
-		D3D12_VERSIONED_ROOT_SIGNATURE_DESC** ppDesc ) ;
+		VersionedRootSignatureDescription** ppDesc ) ;
 	
 	/// <summary>Gets the layout of the root signature, without converting between root signature versions.</summary>
 	/// <returns>
@@ -35,7 +36,6 @@ public interface ID3D12VersionedRootSignatureDeserializer: IUnknown {
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12versionedrootsignaturedeserializer-getunconvertedrootsignaturedesc">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	[PreserveSig( )]
-	unsafe D3D12_VERSIONED_ROOT_SIGNATURE_DESC* GetUnconvertedRootSignatureDesc( ) ;
+	[PreserveSig] unsafe VersionedRootSignatureDescription* GetUnconvertedRootSignatureDesc( ) ;
 } ;
 		

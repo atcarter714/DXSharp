@@ -6,7 +6,7 @@ using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 #endregion
-namespace DXSharp.Direct3D12.Debug ;
+namespace DXSharp.Direct3D12.Debugging ;
 
 
 [Wrapper(typeof(ID3D12Debug))]

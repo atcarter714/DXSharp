@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Runtime.Versioning;
@@ -13,6 +16,19 @@ namespace DXSharp.DXGI ;
 [SupportedOSPlatform( "windows8.1" )]
 [ProxyFor( typeof( IDXGIDecodeSwapChain ) )]
 public interface IDecodeSwapChain: IComIID, IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", 
+					  "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGIDecodeSwapChain, IInstantiable> > _decodeSwapChainCreationFunctions =
+		new( new Dictionary<Guid, Func<IDXGIDecodeSwapChain, IInstantiable> > {
+			{ IDecodeSwapChain.IID, ( pComObj ) => new DecodeSwapChain( pComObj ) },
+		} ) ;
+	// ---------------------------------------------------------------------------------
+
+	
+	
 	/// <summary>Presents a frame on the output adapter.</summary>
 	/// <param name="BufferToPresent">An index indicating which member of the subresource array to present.</param>
 	/// <param name="SyncInterval">

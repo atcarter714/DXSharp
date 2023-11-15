@@ -1,5 +1,7 @@
 ﻿#region Using Directives
 
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Dxgi ;
@@ -23,6 +25,21 @@ namespace DXSharp.DXGI ;
 [ProxyFor(typeof(IDXGISwapChain))]
 public interface ISwapChain: IDeviceSubObject,
 							 IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", 
+					  "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGISwapChain, IInstantiable> > _swapChainCreationFunctions =
+		new( new Dictionary< Guid, Func<IDXGISwapChain, IInstantiable> > {
+			{ ISwapChain.IID, ( pComObj ) => new SwapChain( pComObj ) },
+			{ ISwapChain1.IID, ( pComObj ) => new SwapChain1( (pComObj as IDXGISwapChain1)! ) },
+			{ ISwapChain2.IID, ( pComObj ) => new SwapChain2( (pComObj as IDXGISwapChain2)! ) },
+			{ ISwapChain3.IID, ( pComObj ) => new SwapChain3( (pComObj as IDXGISwapChain3)! ) },
+			{ ISwapChain4.IID, ( pComObj ) => new SwapChain4( (pComObj as IDXGISwapChain4)! ) },
+		} ) ;
+	// ---------------------------------------------------------------------------------
+
 	
 	/// <summary>Specifies color space support for the swap chain.</summary>
 	/// <remarks>
@@ -67,6 +84,7 @@ public interface ISwapChain: IDeviceSubObject,
 	
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof( IDXGISwapChain ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -114,7 +132,8 @@ public interface ISwapChain1: ISwapChain {
 	void GetRotation( out ModeRotation pRotation ) ;
 	
 	// ---------------------------------------------------------------------------------
-	
+	new static Type ComType => typeof( IDXGISwapChain1 ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -126,7 +145,6 @@ public interface ISwapChain1: ISwapChain {
 											  .GetReference(data) ) ;
 		}
 	}
-	
 	static IInstantiable IInstantiable.Instantiate( ) => new SwapChain1( ) ;
 	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new SwapChain1( pComObj ) ;
 	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => new SwapChain1( (IDXGISwapChain1)pComObj! ) ;
@@ -212,8 +230,8 @@ public interface ISwapChain2: ISwapChain1 {
 	void GetMatrixTransform( out Matrix3x2F pMatrix ) ;
 	
 	// ---------------------------------------------------------------------------------
-	
 	new static Type ComType => typeof( IDXGISwapChain2 ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -324,6 +342,7 @@ public interface ISwapChain3: ISwapChain2 {
 
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof( IDXGISwapChain3 ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -385,6 +404,7 @@ public interface ISwapChain4: ISwapChain3 {
 	
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof( IDXGISwapChain4 ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {

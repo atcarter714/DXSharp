@@ -29,12 +29,10 @@ public class DXGI_Interface_Tests {
 		Assert.IsNotNull( rc ) ;
 		var pFactory = rc!.ComObject ;
 		Assert.IsNotNull( pFactory ) ;
-		
-		uint count = pFactory!.AddRef( ) ;
-		Debug.WriteLine( $"IDXGIFactory7::AddRef() - \t{count}" ) ;
-		count = pFactory!.Release( ) ;
-		Debug.WriteLine( $"IDXGIFactory7::Release() - \t{count}" ) ;
-		
+
+		uint c1 = factory7!.AddRef( ) ;
+		uint c2 = factory7!.Release( ) ;
+		Assert.That( c2 == ( c1 - 1 ) ) ;
 		
 		// Assert the debug flag is set:
 		var creationFlags = (FactoryCreateFlags)factory7!.GetCreationFlags( ) ;
@@ -90,31 +88,25 @@ public class DXGI_Interface_Tests {
 				uint index = 0 ;
 				var hr = bestAdapter.EnumOutputs( index, out IOutput? output ) ;
 				if( hr == HResult.DXGI_ERROR_NOT_FOUND || output is null ) break ;
-				Assert.True( hr.Succeeded ) ;
+				Assert.IsTrue( hr.Succeeded ) ;
 				hr.ThrowOnFailure( ) ;
 				
 				// Downcast the output to IOutput6 with COMUtility:
-				var output6 = COMUtility.Cast< IOutput, IOutput6 >( output ) ;
-				Assert.IsNotNull( output6 ) ;
+				hr = output.QueryInterface< IOutput6 >( out var ppOutput ) ;
+				Assert.IsTrue( hr.Succeeded ) ;
+				output.Dispose( ) ;
+				
+				Assert.IsNotNull( ppOutput ) ;
 				
 				// Get the output's description:
-				output6!.GetDescription( out var outputDescription ) ;
+				ppOutput!.GetDescription( out var outputDescription ) ;
 				Debug.WriteLine( $"{nameof(Test_EnumAdapters)}: " +
 								 $"\tGraphics Output: {outputDescription.DeviceName}" ) ;
-				
-				// Play with the output:
-				Debug.WriteLine( $"Trying {nameof(IOutput6.GetGammaControl)} ...\n" );
-				output.GetGammaControl( out GammaControl gammaControl ) ;
-				
-				// Get a small slice of control curves:
-				var sliceOfGammaControl = gammaControl.Curve[ 0..8 ] ;
-				Debug.WriteLine( $"Gamma Control Curve [0]: \t{sliceOfGammaControl[0]} ...\n" +
-								 $"Gamma Control Curve [1]: \t{sliceOfGammaControl[1]} ...\n" ) ;
 				
 				// Get the output's display modes:
 				uint numModes = 0 ;
 				const EnumModesFlags flags = EnumModesFlags.None;
-				output6.GetDisplayModeList1( Format.R8G8B8A8_UNORM,
+				ppOutput.GetDisplayModeList1( Format.R8G8B8A8_UNORM,
 											 flags, out numModes,
 											 out var modes ) ;
 

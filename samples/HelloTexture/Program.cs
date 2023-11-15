@@ -6,6 +6,7 @@ using HelloTexture ;
 #endregion
 
 
+Console.WriteLine("\"Hello Texture\" sample started ...") ;
 AppSettings Settings = new( "DXSharp: Hello Texture",
 							(1920, 1080),
 							new AppSettings.Style {
@@ -17,16 +18,17 @@ AppSettings Settings = new( "DXSharp: Hello Texture",
 							} ) ;
 
 
-//! Enable the debug layer in debug mode:
-#if DEBUG || DEBUG_COM
-var hr = D3D12.GetDebugInterface( out IDebug6? debug6 ) ;
-hr.ThrowOnFailure( ) ;
-ObjectDisposedException.ThrowIf( debug6 is null, typeof( IDebug6 ) ) ;
 
-debug6.EnableDebugLayer( ) ;
-debug6.SetEnableAutoName( true ) ;
-debug6.SetEnableGPUBasedValidation( true ) ;
-debug6.SetGPUBasedValidationFlags( GPUBasedValidationFlags.None ) ;
+#if DEBUG || DEBUG_COM
+//! Debug Settings --------------------------------------------------------------------
+const GPUBasedValidationFlags gpuBasedValidationFlags  = GPUBasedValidationFlags.None ;
+const bool                    EnableGPUBasedValidation = true ;
+const bool                    EnableAutoName           = true ;
+// ------------------------------------------------------------------------------------
+var debug6 = DebugHelper.Init( EnableGPUBasedValidation, 
+							   gpuBasedValidationFlags, 
+							   EnableAutoName ) ;
+// ------------------------------------------------------------------------------------
 #endif
 
 
@@ -34,10 +36,11 @@ debug6.SetGPUBasedValidationFlags( GPUBasedValidationFlags.None ) ;
 await using IDXApp app = new BasicApp( Settings ) ;
 app.Initialize( ) ;
 app.Run( ) ;
+app.Shutdown( ) ;
 
 
-//! Destroy the debug layer in debug mode:
 #if DEBUG || DEBUG_COM
+//! Destroy the debug layer in debug mode:
 debug6.DisableDebugLayer( ) ;
 await debug6.DisposeAsync( ) ;
 #endif

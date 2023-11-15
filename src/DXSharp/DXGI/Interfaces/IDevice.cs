@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 
@@ -14,6 +17,23 @@ namespace DXSharp.DXGI ;
 
 [ProxyFor(typeof(IDXGIDevice))]
 public interface IDevice: IObject, IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", 
+					  "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGIDevice, IInstantiable> > _deviceCreationFunctions =
+		new( new Dictionary<Guid, Func<IDXGIDevice, IInstantiable> > {
+			{ IDevice.IID, ( pComObj ) => new Device( pComObj ) },
+			{ IDevice1.IID, ( pComObj ) => new Device1( (pComObj as IDXGIDevice1)! ) },
+			{ IDevice2.IID, ( pComObj ) => new Device2( (pComObj as IDXGIDevice2)! ) },
+			{ IDevice3.IID, ( pComObj ) => new Device3( (pComObj as IDXGIDevice3)! ) },
+			{ IDevice4.IID, ( pComObj ) => new Device4( (pComObj as IDXGIDevice4)! ) },
+		} ) ;
+	// ---------------------------------------------------------------------------------
+
+	
+	
 	// ----------------------------------------------------------
 	// Interface Methods:
 	// ----------------------------------------------------------
@@ -121,8 +141,8 @@ public interface IDevice: IObject, IInstantiable {
 	void GetGPUThreadPriority( out int pPriority ) ;
 	
 	// ----------------------------------------------------------
-	public new static Type ComType => typeof( IDXGIDevice ) ;
-	
+	new static Type ComType => typeof( IDXGIDevice ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -149,7 +169,7 @@ public interface IDeviceSubObject: IObject {
 	T GetDevice< T >( ) where T: IDevice ;
 	
 	new static Type ComType => typeof( IDXGIDeviceSubObject ) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -199,7 +219,7 @@ public interface IDevice1: IDevice {
 	
 	
 	new static Type ComType => typeof( IDXGIDevice1 ) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -269,7 +289,7 @@ public interface IDevice2: IDevice1 {
 
 	// ----------------------------------------------------------
 	new static Type ComType => typeof( IDXGIDevice2 ) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -294,7 +314,7 @@ public interface IDevice3: IDevice2 {
 	void Trim( ) ;
 	
 	new static Type ComType => typeof( IDXGIDevice3 ) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -368,7 +388,7 @@ public interface IDevice4: IDevice3 {
 
 	
 	new static Type ComType => typeof( IDXGIDevice4 ) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {

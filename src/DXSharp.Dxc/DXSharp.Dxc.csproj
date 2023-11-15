@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0;</TargetFrameworks>
+        <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <Platforms>AnyCPU;x64;x86</Platforms>
+        <UsingDxc>true</UsingDxc>
     </PropertyGroup>
 
     <ItemGroup>
@@ -27,7 +28,16 @@
       </PackageReference>
     </ItemGroup>
 
+
     <ItemGroup>
+        <DxcDLLs Include="$(PkgMicrosoft_Direct3D_DXC)\build\native\bin\x64\*.dll" />
+        <None Include="@(DxcDLLs)">
+            <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+   <!-- <ItemGroup>
       <Content Include="..\..\..\..\..\..\.nuget\packages\microsoft.direct3d.d3d12\1.711.3-preview\build\native\bin\x64\D3D12Core.dll">
         <Link>sdk\D3D12Core.dll</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -72,6 +82,6 @@
         <Link>sdk\dxil.dll</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
-    </ItemGroup>
+    </ItemGroup>-->
 
 </Project>

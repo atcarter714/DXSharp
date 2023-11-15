@@ -1,16 +1,27 @@
 ﻿#region Using Directives
-
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
-using DXSharp.Windows.COM ;
 #endregion
 namespace DXSharp.Direct3D12 ;
 
 
 [ProxyFor(typeof(ID3D12CommandAllocator))]
-public interface ICommandAllocator: IPageable {
+public interface ICommandAllocator: IPageable, IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", 
+					  "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<ID3D12CommandAllocator, IInstantiable> > _allocatorCreationFunctions =
+		new( new Dictionary<Guid, Func<ID3D12CommandAllocator, IInstantiable> > {
+			{ ICommandAllocator.IID, ( pComObj ) => new CommandAllocator( pComObj ) },
+		} ) ;
+	// ---------------------------------------------------------------------------------
+
 	
 	/// <summary>Indicates to re-use the memory that is associated with the command allocator.</summary>
 	/// <returns>
@@ -25,7 +36,6 @@ public interface ICommandAllocator: IPageable {
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof(ID3D12CommandAllocator) ;
 	public new static Guid IID => (ComType.GUID) ;
-	
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -37,7 +47,11 @@ public interface ICommandAllocator: IPageable {
 											  .GetReference(data) ) ;
 		}
 	}
-	
+
+	static IInstantiable IInstantiable.Instantiate( ) => new CommandAllocator( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new CommandAllocator( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate<T>( T obj ) => new CommandAllocator( (obj as ID3D12CommandAllocator)! ) ;
+	 
 	// ==================================================================================
 } ;
 

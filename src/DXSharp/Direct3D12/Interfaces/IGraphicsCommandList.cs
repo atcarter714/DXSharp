@@ -1695,7 +1695,7 @@ public interface IGraphicsCommandList9: IGraphicsCommandList8 {
 	
 	// ---------------------------------------------------------------------------------
 
-	new static Type ComType => typeof( ID3D12GraphicsCommandList8 ) ;
+	new static Type ComType => typeof( ID3D12GraphicsCommandList9 ) ;
 	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]

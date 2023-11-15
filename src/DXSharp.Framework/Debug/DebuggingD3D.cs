@@ -2,7 +2,7 @@
 using DXSharp ;
 using DXSharp.Windows ;
 using DXSharp.Direct3D12 ;
-using DXSharp.Direct3D12.Debug ;
+using DXSharp.Direct3D12.Debugging ;
 namespace DXSharp.Framework.Debugging ;
 
 

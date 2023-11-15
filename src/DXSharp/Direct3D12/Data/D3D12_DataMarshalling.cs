@@ -241,3 +241,28 @@ public unsafe struct _ResourceUAVBarrier {
  public _ResourceUAVBarrier( ID3D12Resource_unmanaged* pResource ) => 
   this.pResource = (ResourceUnmanaged *)pResource ;
 } ;
+
+
+//! TODO: Complete AutoBreadCrumbNodeUnmanaged and all dependent structures/types ...
+[EquivalentOf(typeof(D3D12_AUTO_BREADCRUMB_NODE_unmanaged))]
+public partial struct AutoBreadCrumbNodeUnmanaged {
+ public unsafe byte* pCommandListDebugNameA;
+
+ public PCWSTR pCommandListDebugNameW;
+
+ public unsafe byte* pCommandQueueDebugNameA;
+
+ public PCWSTR pCommandQueueDebugNameW;
+
+ public unsafe ID3D12GraphicsCommandList_unmanaged* pCommandList;
+
+ public unsafe ID3D12CommandQueue_unmanaged* pCommandQueue;
+
+ public uint BreadcrumbCount;
+
+ public unsafe uint* pLastBreadcrumbValue;
+
+ public unsafe D3D12_AUTO_BREADCRUMB_OP* pCommandHistory;
+
+ public unsafe D3D12_AUTO_BREADCRUMB_NODE_unmanaged* pNext;
+} ;

@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Runtime.Versioning;
@@ -23,37 +26,67 @@ namespace DXSharp.DXGI ;
 /// </remarks>
 [ProxyFor(typeof(IDXGIOutput))]
 public interface IOutput: IObject,
-						  IInstantiable {
+						  IInstantiable {	
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGIOutput, IInstantiable> > _outputCreationFunctions =
+		new( new Dictionary< Guid, Func<IDXGIOutput, IInstantiable> > {
+			{ IOutput.IID, ( pComObj ) => new Output( pComObj ) },
+			{ IOutput1.IID, ( pComObj ) => new Output1( (pComObj as IDXGIOutput1)! ) },
+			{ IOutput2.IID, ( pComObj ) => new Output2( (pComObj as IDXGIOutput2)! ) },
+			{ IOutput3.IID, ( pComObj ) => new Output3( (pComObj as IDXGIOutput3)! ) },
+			{ IOutput4.IID, ( pComObj ) => new Output4( (pComObj as IDXGIOutput4)! ) },
+			{ IOutput5.IID, ( pComObj ) => new Output5( (pComObj as IDXGIOutput5)! ) },
+			{ IOutput6.IID, ( pComObj ) => new Output6( (pComObj as IDXGIOutput6)! ) },
+		} ) ;
 	// ---------------------------------------------------------------------------------
 	
+	/// <inheritdoc cref="IDXGIOutput.GetDesc"/>
 	void GetDescription( out OutputDescription pDescription ) ;
 	
+	/// <inheritdoc cref="IDXGIOutput.GetDisplayModeList"/>
 	void GetDisplayModeList( Format enumFormat,
 							 EnumModesFlags flags,
 							 out uint pNumModes,
 							 out Span< ModeDescription > pDescription ) ;
 
+	/// <inheritdoc cref="IDXGIOutput.FindClosestMatchingMode"/>
 	void FindClosestMatchingMode( in  ModeDescription pModeToMatch, 
 								  out ModeDescription pClosestMatch,
 								  IUnknownWrapper     pConcernedDevice ) ;
 
+	/// <inheritdoc cref="IDXGIOutput.WaitForVBlank"/>
 	void WaitForVBlank( ) ;
 	
+	/// <inheritdoc cref="IDXGIOutput.TakeOwnership"/>
 	void TakeOwnership( IUnknownWrapper pDevice, bool exclusive ) ;
+	
+	/// <inheritdoc cref="IDXGIOutput.ReleaseOwnership"/>
 	void ReleaseOwnership( ) ;
 	
+	/// <inheritdoc cref="IDXGIOutput.GetGammaControlCapabilities"/>
 	void GetGammaControlCapabilities( out GammaControlCapabilities pGammaCaps ) ;
+	
+	/// <inheritdoc cref="IDXGIOutput.SetGammaControl"/>
 	void SetGammaControl( in GammaControl pGammaData ) ;
+	
+	/// <inheritdoc cref="IDXGIOutput.GetGammaControl"/>
 	void GetGammaControl( out GammaControl pGammaData ) ;
 	
-	void SetDisplaySurface<T>( T pScanoutSurface ) where T : class, ISurface ;
+	/// <inheritdoc cref="IDXGIOutput.SetDisplaySurface"/>
+	void SetDisplaySurface< T >( T pScanoutSurface ) where T: ISurface, IInstantiable ;
+	
+	/// <inheritdoc cref="IDXGIOutput.GetDisplaySurfaceData"/>
 	void GetDisplaySurfaceData( ISurface pDestination ) ;
 	
+	/// <inheritdoc cref="IDXGIOutput.GetFrameStatistics"/>
 	void GetFrameStatistics( out FrameStatistics pStats ) ;
 	
 	// ---------------------------------------------------------------------------------
-	new static Type ComType => typeof(IDXGIOutput) ;
-	
+	new static Type ComType => typeof( IDXGIOutput ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -89,22 +122,26 @@ public interface IOutput: IObject,
 [ProxyFor(typeof(IDXGIOutput1))]
 public interface IOutput1: IOutput {
 	// ---------------------------------------------------------------------------------
-	
+	/// <inheritdoc cref="IDXGIOutput1.GetDisplayModeList1"/>
 	void GetDisplayModeList1( Format enumFormat,
 							  EnumModesFlags flags,
 							  out uint pNumModes,
 							  out Span< ModeDescription1 > pDescription ) ;
 	
+	/// <inheritdoc cref="IDXGIOutput1.FindClosestMatchingMode1"/>
 	void FindClosestMatchingMode1( in  ModeDescription1 pModeToMatch, 
 								   out ModeDescription1 pClosestMatch,
 								   Direct3D12.IDevice   pConcernedDevice ) ;
 	
+	/// <inheritdoc cref="IDXGIOutput1.GetDisplaySurfaceData1"/>
 	void GetDisplaySurfaceData1( IResource pDestination ) ;
 	
+	/// <inheritdoc cref="IDXGIOutput1.DuplicateOutput"/>
 	void DuplicateOutput( IDevice pDevice, out IOutputDuplication? ppOutputDuplication ) ;
 	
 	// ---------------------------------------------------------------------------------
-	new static Type ComType => typeof(IDXGIOutput1) ;
+	new static Type ComType => typeof( IDXGIOutput1 ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -136,9 +173,7 @@ public interface IOutput1: IOutput {
 /// Learn more about DXGI here: <para><a href="https://learn.microsoft.com/en-us/windows/win32/api/_direct3ddxgi/">DirectX Graphics Infrastructure</a></para>
 /// </remarks>
 [ProxyFor(typeof(IDXGIOutput2))]
-public interface IOutput2: IOutput1,
-						   IComObjectRef< IDXGIOutput2 >,
-						   IUnknownWrapper< IDXGIOutput2 > {
+public interface IOutput2: IOutput1 {
 	// ---------------------------------------------------------------------------------
 	
 	/// <summary>Queries an adapter output for multiplane overlay support.</summary>
@@ -147,7 +182,8 @@ public interface IOutput2: IOutput1,
 	bool SupportsOverlays( ) ;
 	
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof( IDXGIOutput2 ) ;
+	new static Type ComType => typeof( IDXGIOutput2 ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -159,6 +195,10 @@ public interface IOutput2: IOutput1,
 											  .GetReference( data ) ) ;
 		}
 	}
+	static IInstantiable IInstantiable.Instantiate( ) => new Output2( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Output2( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new Output2( (pComObj as IDXGIOutput2)! ) ;
 	// ==================================================================================
 } ;
 
@@ -175,6 +215,7 @@ public interface IOutput2: IOutput1,
 /// <remarks>
 /// Learn more about DXGI here: <para><a href="https://learn.microsoft.com/en-us/windows/win32/api/_direct3ddxgi/">DirectX Graphics Infrastructure</a></para>
 /// </remarks>
+[SupportedOSPlatform("windows8.1")]
 [ProxyFor(typeof(IDXGIOutput3))]
 public interface IOutput3: IOutput2 {
 	// ---------------------------------------------------------------------------------
@@ -201,8 +242,8 @@ public interface IOutput3: IOutput2 {
 	void CheckOverlaySupport( Format enumFormat, Direct3D12.IDevice pConcernedDevice, out OverlaySupportFlag pFlags ) ;
 	
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof( IDXGIOutput3 ) ;
-
+	new static Type ComType => typeof( IDXGIOutput3 ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -214,6 +255,10 @@ public interface IOutput3: IOutput2 {
 											  .GetReference( data ) ) ;
 		}
 	}
+	static IInstantiable IInstantiable.Instantiate( ) => new Output3( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Output3( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new Output3( (pComObj as IDXGIOutput3)! ) ;
 	// ==================================================================================
 } ;
 
@@ -230,6 +275,7 @@ public interface IOutput3: IOutput2 {
 /// <remarks>
 /// Learn more about DXGI here: <para><a href="https://learn.microsoft.com/en-us/windows/win32/api/_direct3ddxgi/">DirectX Graphics Infrastructure</a></para>
 /// </remarks>
+[SupportedOSPlatform("windows10.0.10240")]
 [ProxyFor(typeof(IDXGIOutput4))]
 public interface IOutput4: IOutput3 {
 	/// <summary>Checks for overlay color space support.</summary>
@@ -261,19 +307,22 @@ public interface IOutput4: IOutput3 {
 										out OverlayColorSpaceSupportFlag pFlags ) ;
 
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof( IDXGIOutput4 ) ;
-
+	new static Type ComType => typeof( IDXGIOutput4 ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
 			ReadOnlySpan< byte > data = typeof( IDXGIOutput4 ).GUID
 															  .ToByteArray( ) ;
 
-			return ref Unsafe
-					   .As< byte, Guid >( ref MemoryMarshal
-											  .GetReference( data ) ) ;
+			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
+													.GetReference( data ) ) ;
 		}
 	}
+	static IInstantiable IInstantiable.Instantiate( ) => new Output4( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Output4( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new Output4( (pComObj as IDXGIOutput4)! ) ;
 	// ==================================================================================
 } ;
 
@@ -290,6 +339,7 @@ public interface IOutput4: IOutput3 {
 /// <remarks>
 /// Learn more about DXGI here: <para><a href="https://learn.microsoft.com/en-us/windows/win32/api/_direct3ddxgi/">DirectX Graphics Infrastructure</a></para>
 /// </remarks>
+[SupportedOSPlatform("windows10.0.10240")]
 [ProxyFor(typeof(IDXGIOutput5))]
 public interface IOutput5: IOutput4 {
 
@@ -331,8 +381,8 @@ public interface IOutput5: IOutput4 {
 							  out IOutputDuplication? ppOutputDuplication ) ;
 
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof( IDXGIOutput5 ) ;
-
+	new static Type ComType => typeof( IDXGIOutput5 ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -344,6 +394,10 @@ public interface IOutput5: IOutput4 {
 											  .GetReference( data ) ) ;
 		}
 	}
+	static IInstantiable IInstantiable.Instantiate( ) => new Output5( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Output5( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new Output5( (pComObj as IDXGIOutput5)! ) ;
 	// ==================================================================================
 } ;
 
@@ -360,6 +414,7 @@ public interface IOutput5: IOutput4 {
 /// <remarks>
 /// Learn more about DXGI here: <para><a href="https://learn.microsoft.com/en-us/windows/win32/api/_direct3ddxgi/">DirectX Graphics Infrastructure</a></para>
 /// </remarks>
+[SupportedOSPlatform("windows10.0.19041")]
 [ProxyFor(typeof(IDXGIOutput6))]
 public interface IOutput6: IOutput5 {
 	
@@ -391,8 +446,8 @@ public interface IOutput6: IOutput5 {
 	void CheckHardwareCompositionSupport( out HardwareCompositionSupportFlags pFlags ) ;
 	
 	// ---------------------------------------------------------------------------------
-	static Type IUnknownWrapper.ComType => typeof( IDXGIOutput6 ) ;
-
+	new static Type ComType => typeof( IDXGIOutput6 ) ;
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -404,6 +459,10 @@ public interface IOutput6: IOutput5 {
 											  .GetReference( data ) ) ;
 		}
 	}
+	static IInstantiable IInstantiable.Instantiate( ) => new Output6( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint pComObj ) => new Output6( pComObj ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom pComObj ) => 
+		new Output6( (pComObj as IDXGIOutput6)! ) ;
 	// ==================================================================================
 } ;
 

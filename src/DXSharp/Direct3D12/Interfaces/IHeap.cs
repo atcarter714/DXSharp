@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 
@@ -9,7 +11,20 @@ namespace DXSharp.Direct3D12 ;
 
 
 [ProxyFor( typeof(ID3D12Heap) )]
-public interface IHeap: IPageable {
+public interface IHeap: IPageable, IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	internal static readonly ReadOnlyDictionary< Guid, Func<ID3D12Heap, IInstantiable> > _heapCreationFunctions =
+		new( new Dictionary<Guid, Func<ID3D12Heap, IInstantiable> > {
+			{ IHeap.IID, ( pComObj ) => new Heap( pComObj ) },
+			{ IHeap1.IID, ( pComObj ) => new Heap1( (pComObj as ID3D12Heap1)! ) },
+		} ) ;
+
+	// ---------------------------------------------------------------------------------
+
+	
+	
 	// ---------------------------------------------------------------------------------
 	
 	/// <summary>Gets the properties of a heap.</summary>
@@ -34,9 +49,8 @@ public interface IHeap: IPageable {
 	HeapDescription GetDesc( ) ;
 	
 	// ---------------------------------------------------------------------------------
-	
 	new static Type ComType => typeof(ID3D12Heap) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -49,6 +63,9 @@ public interface IHeap: IPageable {
 		}
 	}
 	
+	static IInstantiable IInstantiable.Instantiate( ) => new Heap( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new Heap( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => new Heap( ( obj as ID3D12Heap )! ) ;
 	// ==================================================================================
 } ;
 
@@ -60,9 +77,8 @@ public interface IHeap1: IHeap {
 	void GetProtectedResourceSession( in Guid riid, out IProtectedResourceSession ppProtectedSession ) ;
 	
 	// ---------------------------------------------------------------------------------
-	
 	new static Type ComType => typeof(ID3D12Heap1) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -75,6 +91,9 @@ public interface IHeap1: IHeap {
 		}
 	}
 	
+	static IInstantiable IInstantiable.Instantiate( ) => new Heap1( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new Heap1( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => new Heap1( ( obj as ID3D12Heap1 )! ) ;
 	// ==================================================================================
 } ;
 

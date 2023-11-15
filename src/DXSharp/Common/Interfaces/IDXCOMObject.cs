@@ -26,7 +26,6 @@ public interface IInstantiable {
 	
 	public static TComObj ConvertArg< TComObj >( IUnknown pComObj ) where TComObj: class, IUnknown? =>
 		pComObj as TComObj ?? throw new ArgumentNullException( nameof(pComObj) ) ;
-
 } ;
 
 

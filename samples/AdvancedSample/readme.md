@@ -9,9 +9,16 @@ ___
 ### Important Notes:
 In order to run this sample, it requires the following:
 
-- Windows 10 or later
+- Windows 10.1 or later
 - DirectX 12 compatible GPU
-- Windows 10 SDK (10.0.19041.0) or later
+- Windows 10 SDK (10.0.22621.0+) or later
+
+  - **Note:** You can lower the version number in the 
+  `AdvancedSample.csproj` file to match your Windows SDK version.
+  - If you change the version number, you're responsible for the compatibility implications!
+  - Be careful what Direct3D, DXGI or other features you use and the versions that support it.
+  - Many interfaces and API functions are marked with `SupportedOSPlatform` attributes as guidance.
+  - These attributes give compiler warnings about method call sights and version numbers, but can't be relied on.
 
 ### Project/Assembly Dependencies:
 - #### **DXSharp**.dll
@@ -31,13 +38,18 @@ In order to run this sample, it requires the following:
 The sample includes a `PackageReference` for the `Microsoft.Direct3D.D3D12` package (aka, the DirectX "Agility SDK") and
 for the `Microsoft.Direct3D.DXC` package (aka, the DirectX "Shader Compiler").
 
-If you use a custom package cache location, you will need to manually locate these NuGet packages and copy the 
-native DLLs to the output directory. The native DLLs are located in the `\build\native\bin\` folder of the package root.
-You may either copy them to the output directory, or add the folder to your `PATH` environment variable or DLL search 
-path. You can also include them as a link in your project and set the `Copy to Output Directory` property to 
-`Copy if newer`. In any case, you simply need to ensure that the native DLLs are available to the application at 
-startup/runtime for them to be auto-loaded by the DXSharp runtime. If you do not do this, you will have to manually load
-the native DLLs yourself into the process memory.
+The new MSBuild script should now automatically copy the native NuGet dependencies for Agility SDK into the output directory. 
+So, the previous instructions about manually copying the Agility SDK binaries side-along with the assembly
+should no longer be necessary. If you get errors about missing native DLLs, please make an issue and report it. 
+But manually copying the native Agility SDK *.dll files should fix it. You can also modify the Props and Targets
+to do custom setups.
+
+  * **NOTE:** DXSharp looks for `d3d12core.dll` and 
+  `d3d12sdklayers.dll` in the same directory as the DXSharp assembly. Your project MSBuild script can grab all of these
+  things and put them wherever you want them to live in your solution tree. 
+  * You can set `$(UsingAgilitySDK)` to `true` or `false` in your project file to enable/disable the Agility SDK 
+  * If you disable Agility SDK, the default Windows SDK libraries are loaded.
+  * Native Dxc (DirectX Shader Compiler) binaries still need to accompany the `DXSharp.Dxc` assembly.
 
 ---
 

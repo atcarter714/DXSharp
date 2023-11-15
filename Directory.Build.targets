@@ -1,0 +1,20 @@
+<Project>
+    <!-- Custom Task: Log a Message -->
+    <Target Name="LogBuildStartMessage" BeforeTargets="Build">
+        <Message Text="DXSharp build process started ..." Importance="high" />
+    </Target>
+    
+</Project>
+
+
+<!--
+
+        &lt;!&ndash; Custom Task: Run an External Tool or Process &ndash;&gt;
+<Target Name="RunExternalTool" AfterTargets="Build">
+<Exec Command="path\to\your\tool.exe arguments" />
+</Target>
+
+        &lt;!&ndash; Custom Task: Execute a PowerShell Script &ndash;&gt;
+<Target Name="ExecutePowershellScript" AfterTargets="RunExternalTool">
+<Exec Command="powershell.exe -NonInteractive -ExecutionPolicy Unrestricted -File path\to\your\script.ps1" />
+</Target>-->

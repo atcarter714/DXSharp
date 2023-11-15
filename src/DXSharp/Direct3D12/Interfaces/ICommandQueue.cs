@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
@@ -13,7 +15,17 @@ namespace DXSharp.Direct3D12 ;
 /// instrumenting the command queue, and updating resource tile mappings.
 /// </summary>
 [ProxyFor(typeof(ID3D12CommandQueue))]
-public interface ICommandQueue: IPageable {
+public interface ICommandQueue: IPageable, IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	internal static readonly ReadOnlyDictionary< Guid, Func<ID3D12CommandQueue, IInstantiable> > _queueCreationFunctions =
+		new( new Dictionary<Guid, Func<ID3D12CommandQueue, IInstantiable> > {
+			{ ICommandQueue.IID, ( pComObj ) => new CommandQueue( pComObj ) },
+		} ) ;
+
+	// ---------------------------------------------------------------------------------
+
 	
 	/// <summary>Copies mappings from a source reserved resource to a destination reserved resource.</summary>
 	/// <param name="pDstResource">A pointer to the destination reserved resource.</param>

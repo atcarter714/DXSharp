@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.InteropServices ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.Versioning ;
@@ -29,6 +32,24 @@ namespace DXSharp.DXGI ;
 [ProxyFor(typeof(IDXGIFactory))]
 public interface IFactory: IObject,
 						   IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", 
+					  "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGIFactory, IInstantiable> > _factoryCreationFunctions =
+		new( new Dictionary< Guid, Func<IDXGIFactory, IInstantiable> > {
+			{ IFactory.IID, ( pComObj ) => new Factory( pComObj ) },
+			{ IFactory1.IID, ( pComObj ) => new Factory1( (pComObj as IDXGIFactory1)! ) },
+			{ IFactory2.IID, ( pComObj ) => new Factory2( (pComObj as IDXGIFactory2)! ) },
+			{ IFactory3.IID, ( pComObj ) => new Factory3( (pComObj as IDXGIFactory3)! ) },
+			{ IFactory4.IID, ( pComObj ) => new Factory4( (pComObj as IDXGIFactory4)! ) },
+			{ IFactory5.IID, ( pComObj ) => new Factory5( (pComObj as IDXGIFactory5)! ) },
+			{ IFactory6.IID, ( pComObj ) => new Factory6( (pComObj as IDXGIFactory6)! ) },
+			{ IFactory7.IID, ( pComObj ) => new Factory7( (pComObj as IDXGIFactory7)! ) },
+		} ) ;
+	// ---------------------------------------------------------------------------------
+
 	// -----------------------------------------------------------------------------------------------
 	public const int MAX_ADAPTER_COUNT = 0x0F ;
 	// -----------------------------------------------------------------------------------------------

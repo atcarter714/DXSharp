@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 
@@ -16,7 +18,19 @@ namespace DXSharp.Direct3D12 ;
 /// (PSOs) that can be retrieved or loaded by name.
 /// </summary>
 [ProxyFor(typeof(ID3D12PipelineLibrary))]
-public interface IPipelineLibrary: IDeviceChild {
+public interface IPipelineLibrary: IDeviceChild, IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	internal static readonly ReadOnlyDictionary< Guid, Func<ID3D12PipelineLibrary, IInstantiable> > _pipelineLibraryCreationFunctions =
+		new( new Dictionary<Guid, Func<ID3D12PipelineLibrary, IInstantiable> > {
+			{ IPipelineLibrary.IID, ( pComObj ) => new PipelineLibrary( pComObj ) },
+			{ IPipelineLibrary1.IID, ( pComObj ) => new PipelineLibrary1( (pComObj as ID3D12PipelineLibrary1)! ) },
+		} ) ;
+
+	// ---------------------------------------------------------------------------------
+
+	
 
 	/// <summary>Adds the input PSO to an internal database with the corresponding name.</summary>
 	/// <param name="pName">
@@ -114,7 +128,7 @@ public interface IPipelineLibrary: IDeviceChild {
 	// ---------------------------------------------------------------------------------
 	
 	new static Type ComType => typeof(ID3D12PipelineLibrary) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -124,6 +138,9 @@ public interface IPipelineLibrary: IDeviceChild {
 		}
 	}
 	
+	static IInstantiable IInstantiable.Instantiate( ) => new PipelineLibrary( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new PipelineLibrary( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => new PipelineLibrary( ( obj as ID3D12PipelineLibrary )! ) ;
 	// ==================================================================================
 } ;
 
@@ -164,18 +181,20 @@ public interface IPipelineLibrary1: IPipelineLibrary {
 					   out IPipelineState ppPipelineState ) ;
 	
 	// ---------------------------------------------------------------------------------
-	
-	new static Type ComType => typeof(ID3D12PipelineLibrary) ;
-	
+	new static Type ComType => typeof(ID3D12PipelineLibrary1) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
-			ReadOnlySpan< byte > data = typeof(ID3D12PipelineLibrary).GUID.ToByteArray( ) ;
+			ReadOnlySpan< byte > data = typeof(ID3D12PipelineLibrary1).GUID.ToByteArray( ) ;
 			
 			return ref Unsafe.As< byte, Guid >( ref MemoryMarshal
 													.GetReference(data) ) ;
 		}
 	}
 	
+	static IInstantiable IInstantiable.Instantiate( ) => new PipelineLibrary1( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new PipelineLibrary1( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => new PipelineLibrary1( ( obj as ID3D12PipelineLibrary1 )! ) ;
 	// ==================================================================================
 }

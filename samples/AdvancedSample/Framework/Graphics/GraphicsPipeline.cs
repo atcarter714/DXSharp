@@ -238,7 +238,7 @@ public class GraphicsPipeline: DXGraphics {
 		
 		// Create synchronization objects:
 		GraphicsDevice.CreateFence( 0, FenceFlags.None,
-								   IFence.IID, out var _ppFence ) ;
+								   IFence1.IID, out var _ppFence ) ;
 		fence = (IFence1?) _ppFence ?? 
 				throw new NullReferenceException( "Failed to create fence!" ) ;
 		

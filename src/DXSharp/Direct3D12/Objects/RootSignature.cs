@@ -11,10 +11,12 @@ namespace DXSharp.Direct3D12 ;
 
 [Wrapper(typeof(ID3D12RootSignature))]
 internal class RootSignature: DeviceChild,
-							  IRootSignature {
+							  IRootSignature,
+							  IComObjectRef< ID3D12RootSignature >,
+							  IUnknownWrapper< ID3D12RootSignature > {
 	// ------------------------------------------------------------------------------------------
 	ComPtr< ID3D12RootSignature >? _comPtr ;
-	public new ComPtr< ID3D12RootSignature >? ComPointer => 
+	public new virtual ComPtr< ID3D12RootSignature >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< ID3D12RootSignature >( ) ;
 	public override ID3D12RootSignature? ComObject => ComPointer?.Interface ;
 	
@@ -35,9 +37,7 @@ internal class RootSignature: DeviceChild,
 	internal RootSignature( ComPtr< ID3D12RootSignature > childPtr ) => _initOrAdd( _comPtr = childPtr ) ;
 	
 	// ------------------------------------------------------------------------------------------
-	
 	public new static Type ComType => typeof( ID3D12RootSignature ) ;
-	
 	public new static ref readonly Guid Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -49,6 +49,5 @@ internal class RootSignature: DeviceChild,
 											  .GetReference(data) ) ;
 		}
 	}
-	
 	// ==========================================================================================
 } ;

@@ -25,11 +25,10 @@ namespace DXSharp.Direct3D12 ;
 public interface IDevice: IObject,
 						  IInstantiable {
 	// ---------------------------------------------------------------------------------
-	
 	//! Creation Functions for IDevice thru IDevice12:
 	[SuppressMessage( "Interoperability", "CA1416:Validate platform compatibility" )]
 	internal static readonly ReadOnlyDictionary< Guid, Func< ID3D12Device, IInstantiable > >
-		_resourceCreationFunctions = new( new Dictionary< Guid, Func< ID3D12Device, IInstantiable > > {
+		_deviceCreationFunctions = new( new Dictionary< Guid, Func< ID3D12Device, IInstantiable > > {
 				{ IDevice.IID, ( pComObj ) => new Device( pComObj ) },
 				{ IDevice1.IID, ( pComObj ) => new Device1( ( pComObj as ID3D12Device1 )! ) },
 				{ IDevice2.IID, ( pComObj ) => new Device2( ( pComObj as ID3D12Device2 )! ) },

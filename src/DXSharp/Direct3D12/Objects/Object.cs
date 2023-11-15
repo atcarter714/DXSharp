@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 
@@ -69,5 +71,7 @@ internal abstract class Object: DXComObject,
 		}
 	}
 	public new static Type ComType => typeof(ID3D12Object) ;
+	
+	//internal static ReadOnlyDictionary< Guid, Func<IUnknown, > >
 	// ==========================================================
 } ;

@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 
@@ -20,6 +23,19 @@ namespace DXSharp.DXGI ;
 /// </remarks>
 [ProxyFor(typeof(IDXGIKeyedMutex))]
 public interface IKeyedMutex: IDeviceSubObject, IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", 
+					  "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGIKeyedMutex, IInstantiable> > _keyedMutexCreationFunctions =
+		new( new Dictionary< Guid, Func<IDXGIKeyedMutex, IInstantiable> > {
+			{ IKeyedMutex.IID, ( pComObj ) => new KeyedMutex( pComObj ) },
+		} ) ;
+	// ---------------------------------------------------------------------------------
+
+	
+	
 	// ----------------------------------------------------------
 	// Interface Methods:
 	// ----------------------------------------------------------

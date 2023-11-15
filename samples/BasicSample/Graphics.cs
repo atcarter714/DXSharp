@@ -3,7 +3,7 @@ using System.Buffers ;
 using System.Drawing ;
 using System.Runtime.CompilerServices ;
 using System.Windows.Forms;
-
+using Windows.Win32.Graphics.Direct3D12 ;
 using DXSharp ;
 using DXSharp.DXGI ;
 using DXSharp.Direct3D12 ;
@@ -254,10 +254,12 @@ public class Graphics: DisposableObject {
 		var inputLayoutMemory = InputLayoutDescription.Create( inputElements, out var inputLayoutDescription ) ;
 		cleanupList.Add( inputLayoutMemory ) ;
 		
+		var rootSig = rootSignature as IComObjectRef<ID3D12RootSignature> 
+					  ?? throw new NullReferenceException( ) ;
 		// Describe and create the graphics pipeline state object (PSO):
 		var psoDesc = new GraphicsPipelineStateDescription( ) {
 			InputLayout           = inputLayoutDescription,
-			pRootSignature        = rootSignature?.ComObject!,
+			RootSignature         = rootSignature,
 			VS                    = vertexShader,
 			PS                    = pixelShader,
 			RasterizerState       = RasterizerDescription.Default,

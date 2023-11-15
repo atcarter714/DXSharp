@@ -191,11 +191,10 @@ internal class GraphicsCommandList: CommandList,
 	public void OMSetStencilRef( uint StencilRef ) => ComObject!.OMSetStencilRef( StencilRef ) ;
 	
 	public void SetPipelineState( IPipelineState pPipelineState ) => 
-		ComObject!.SetPipelineState( ( (IComObjectRef<ID3D12PipelineState>)pPipelineState )?.ComObject ) ;
+		ComObject!.SetPipelineState( ( (IComObjectRef<ID3D12PipelineState>)pPipelineState ).ComObject ) ;
 	
 	
 	public void ResourceBarrier( uint numBarriers, ResourceBarrier[ ] pBarriers ) {
-		var commandList = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			var _barriers = new D3D12_RESOURCE_BARRIER[ pBarriers.Length ] ;
 			for (int i = 0; i < pBarriers.Length; ++i) {
@@ -238,10 +237,18 @@ internal class GraphicsCommandList: CommandList,
 	}
 
 	
-	public void SetComputeRootSignature( IRootSignature pRootSignature ) => ComObject!.SetComputeRootSignature( pRootSignature.ComObject ) ;
+	public void SetComputeRootSignature( IRootSignature pRootSignature ) {
+		var rootSignature = (IComObjectRef< ID3D12RootSignature >)pRootSignature 
+							?? throw new ArgumentNullException( nameof(pRootSignature) ) ;
+		ComObject!.SetComputeRootSignature( rootSignature.ComObject ) ;
+	}
 
 	
-	public void SetGraphicsRootSignature( IRootSignature? pRootSignature ) => ComObject!.SetGraphicsRootSignature( pRootSignature?.ComObject ) ;
+	public void SetGraphicsRootSignature( IRootSignature? pRootSignature ) {
+		var rootSignature = (IComObjectRef< ID3D12RootSignature >?)pRootSignature 
+							?? throw new ArgumentNullException( nameof(pRootSignature) ) ;
+		ComObject!.SetGraphicsRootSignature( rootSignature.ComObject ) ;
+	}
 
 	
 	public void SetComputeRootDescriptorTable( uint RootParameterIndex, GPUDescriptorHandle BaseDescriptor ) => 
@@ -999,7 +1006,7 @@ internal class GraphicsCommandList5: GraphicsCommandList4,
 		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			if( combiners is { Length: > 0 } ) {
-				D3D12_SHADING_RATE_COMBINER* combinersPtr = null ;
+				D3D12_SHADING_RATE_COMBINER* combinersPtr ;
 				fixed ( ShadingRateCombiner* combinerSpanPtr = combiners ) {
 					combinersPtr = (D3D12_SHADING_RATE_COMBINER*)combinerSpanPtr ;
 					cmdList.RSSetShadingRate( (D3D12_SHADING_RATE)baseShadingRate,

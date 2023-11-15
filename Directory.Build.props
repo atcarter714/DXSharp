@@ -1,6 +1,10 @@
 ﻿<Project>
-	<PropertyGroup>
+	<PropertyGroup Label="CommonSDKProps">
 		<RepoRootPath>$(MSBuildThisFileDirectory)</RepoRootPath>
+		<TargetCPUs>AnyCPU;x64;x86</TargetCPUs>
+		<DotNetTargets>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0</DotNetTargets>
+		
+		<!-- Make sure there's a configuration name and base output path: -->
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<PackageOutputPath>$(RepoRootPath)bin\Packages\$(Configuration)\</PackageOutputPath>
 		<BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(RepoRootPath)bin\$(MSBuildProjectName)\</BaseOutputPath>
@@ -20,6 +24,8 @@
 
 		<!-- Local builds should embed PDBs so we never lose them when a subsequent build occurs. -->
 		<DebugType Condition=" '$(CI)' != 'true' and '$(TF_BUILD)' != 'true' ">embedded</DebugType>
+		<DebugType Condition=" '$(AzureDevOps)' != 'true' or '$(AZ_BUILD)' != 'true' ">embedded</DebugType>
+		
 		
 		<SignAssembly>true</SignAssembly>
 		<AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)file\keys\strongname.snk</AssemblyOriginatorKeyFile>
@@ -31,7 +37,7 @@
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
-		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<!--<SymbolPackageFormat>snupkg</SymbolPackageFormat>-->
 	</PropertyGroup>
 	
 	

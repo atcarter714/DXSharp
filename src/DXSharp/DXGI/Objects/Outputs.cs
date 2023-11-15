@@ -163,7 +163,7 @@ internal class Output: Object,
 	}
 
 	
-	public void SetDisplaySurface<T>( T pScanoutSurface ) where T: class, ISurface {
+	public void SetDisplaySurface<T>( T pScanoutSurface ) where T: ISurface, IInstantiable {
 		ArgumentNullException.ThrowIfNull( pScanoutSurface, nameof(pScanoutSurface) ) ;
 		var output = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														  $"The internal COM interface is destroyed/null." ) ;

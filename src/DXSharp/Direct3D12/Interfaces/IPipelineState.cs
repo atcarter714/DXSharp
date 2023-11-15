@@ -1,5 +1,6 @@
 ﻿#region Using Directives
 
+using System.Collections.ObjectModel ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
@@ -14,7 +15,18 @@ namespace DXSharp.Direct3D12 ;
 /// as certain fixed function state objects.
 /// </summary>
 [ProxyFor(typeof(ID3D12PipelineState))]
-public interface IPipelineState: IPageable {
+public interface IPipelineState: IPageable, IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	internal static readonly ReadOnlyDictionary< Guid, Func<ID3D12PipelineState, IInstantiable> > _pipelineStateCreationFunctions =
+		new( new Dictionary<Guid, Func<ID3D12PipelineState, IInstantiable> > {
+			{ IPipelineState.IID, ( pComObj ) => new PipelineState( pComObj ) },
+		} ) ;
+
+	// ---------------------------------------------------------------------------------
+
+	
 	// ---------------------------------------------------------------------------------
 
 	/// <summary>Gets the cached blob representing the pipeline state.</summary>
@@ -43,5 +55,9 @@ public interface IPipelineState: IPageable {
 											  .GetReference(data) ) ;
 		}
 	}
+	
+	static IInstantiable IInstantiable.Instantiate( ) => new PipelineState( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new PipelineState( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => new PipelineState( ( obj as ID3D12PipelineState )! ) ;
 	// ==================================================================================
 } ;

@@ -1296,3 +1296,54 @@ public partial struct StaticSamplerDescription1 {
 	
 	
 } ;
+
+
+/// <summary>Describes allocation data related to a GPU page fault on a given virtual address (VA).</summary>
+/// <remarks>
+/// <para><a href="https://learn.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_dred_page_fault_output">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_DRED_PAGE_FAULT_OUTPUT))]
+public partial struct DREDPageFaultOutput {
+	/// <summary>A [D3D12_GPU_VIRTUAL_ADDRESS](/windows/desktop/direct3d12/d3d12_gpu_virtual_address) containing the GPU virtual address (VA) of the faulting operation if device removal was due to a GPU page fault.</summary>
+	public ulong PageFaultVA ;
+
+	/// <summary>A pointer to a constant [D3D12_DRED_ALLOCATION_NODE](ns-d3d12-d3d12_dred_allocation_node.md) object representing the head of a linked list of allocation nodes for active allocated runtime objects with virtual address (VA) ranges that match the faulting VA (`PageFaultVA`). Has a value of `nullptr` if the list is empty.</summary>
+	public unsafe DREDAllocationNode* pHeadExistingAllocationNode ;
+
+	/// <summary>A pointer to a constant [D3D12_DRED_ALLOCATION_NODE](ns-d3d12-d3d12_dred_allocation_node.md) object representing the head of a linked list of allocation nodes for recently freed runtime objects with virtual address (VA) ranges that match the faulting VA (`PageFaultVA`). Has a value of `nullptr` if the list is empty.</summary>
+	public unsafe DREDAllocationNode* pHeadRecentFreedAllocationNode ;
+} ;
+
+
+/// <summary>Describes, as a node in a linked list, data about an allocation tracked by Device Removed Extended Data (DRED).</summary>
+/// <remarks>
+/// <para><a href="https://learn.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_dred_allocation_node">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_DRED_ALLOCATION_NODE))]
+public partial struct DREDAllocationNode {
+	/// <summary>A pointer to the ANSI debug name of the allocated runtime object.</summary>
+	public unsafe byte* ObjectNameA ;
+
+	/// <summary>A pointer to the wide debug name of the allocated runtime object.</summary>
+	public PCWSTR ObjectNameW ;
+
+	/// <summary>A [D3D12_DRED_ALLOCATION_TYPE](ne-d3d12-d3d12_dred_allocation_type.md) value representing the runtime object's allocation type.</summary>
+	public DREDAllocationType AllocationType ;
+
+	/// <summary>A pointer to a constant <see cref="DREDAllocationNode"/> representing the next allocation node in the list, or `null` if this is the last node.</summary>
+	public unsafe DREDAllocationNode* pNext ;
+} ;
+
+
+/// <summary>Contains a pointer to the head of a linked list of D3D12_AUTO_BREADCRUMB_NODE objects.</summary>
+/// <remarks>
+/// <para><a href="https://learn.microsoft.com/windows/win32/api/d3d12/ns-d3d12-d3d12_dred_auto_breadcrumbs_output">Learn more about this API from docs.microsoft.com</a>.</para>
+/// </remarks>
+[EquivalentOf(typeof(D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT))]
+public partial struct DREDAutoBreadCrumbOutput {
+	/// <summary>
+	/// A pointer to a constant <see cref="AutoBreadCrumbNodeUnmanaged"/> object representing the head of a linked list
+	/// of auto-breadcrumb nodes, or <b>null</b> if the list is empty.
+	/// </summary>
+	public unsafe AutoBreadCrumbNodeUnmanaged* pHeadAutoBreadcrumbNode ;
+} ;

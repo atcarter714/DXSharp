@@ -1,0 +1,49 @@
+﻿<Project>
+	<PropertyGroup Label="CommonSDKProps">		
+		<SamplesRootPath>$(MSBuildThisFileDirectory)</SamplesRootPath>
+		<TargetCPUs>AnyCPU;x64;x86</TargetCPUs>
+		<DotNetTargets>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0</DotNetTargets>
+
+		
+		<!-- Make sure there's a configuration name and base output path: -->
+		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+		<BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(SamplesRootPath)bin\$(MSBuildProjectName)\$(Platform)\</BaseOutputPath>
+		<BaseIntermediateOutputPath>$(SamplesRootPath)obj\$([MSBuild]::MakeRelative($(SamplesRootPath), $(MSBuildProjectDirectory)))\</BaseIntermediateOutputPath>
+		
+		
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<Deterministic>true</Deterministic>
+		<ImplicitUsings>true</ImplicitUsings>
+		<AnalysisLevel>latest</AnalysisLevel>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		
+		<!-- This entire repo has just one version.json file, so compute the version once and share with all projects in a large build. -->
+		<GitVersionBaseDirectory>$(MSBuildThisFileDirectory)</GitVersionBaseDirectory>
+
+		<!-- Local builds should embed PDBs so we never lose them when a subsequent build occurs. -->
+		<DebugType Condition=" '$(CI)' != 'true' and '$(TF_BUILD)' != 'true' ">embedded</DebugType>
+		<DebugType Condition=" '$(AzureDevOps)' != 'true' or '$(AZ_BUILD)' != 'true' ">embedded</DebugType>
+		
+		
+		<Company>Arkaen Solutions</Company>
+		<Authors>Aaron T. Carter, $(Company), Contributors</Authors>
+		<Copyright>© Aaron T. Carter. All rights reserved.</Copyright>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
+	</PropertyGroup>
+	
+	<PropertyGroup Label="NativeLibConfig">
+		<NativePlatformName Condition=" '$(Platform)' == 'x64' ">x64</NativePlatformName>
+		<NativePlatformName Condition=" '$(Platform)' == 'x86' ">win32</NativePlatformName>
+		<NativePlatformName Condition=" '$(Platform)' == 'AnyCPU' ">x64</NativePlatformName>
+	</PropertyGroup>
+	
+	
+	<!-- DirectX SDK & Dependency Properties -->
+	<PropertyGroup Label="DXSDK">
+		<UsingAgilitySDK>true</UsingAgilitySDK>
+	</PropertyGroup>
+</Project>

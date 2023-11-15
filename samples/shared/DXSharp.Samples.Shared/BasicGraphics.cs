@@ -257,7 +257,7 @@ public class Graphics: DisposableObject {
 		// Describe and create the graphics pipeline state object (PSO):
 		var psoDesc = new GraphicsPipelineStateDescription( ) {
 			InputLayout           = inputLayoutDescription,
-			pRootSignature        = rootSignature?.ComObject!,
+			RootSignature         = rootSignature!,
 			VS                    = vertexShader,
 			PS                    = pixelShader,
 			RasterizerState       = RasterizerDescription.Default,

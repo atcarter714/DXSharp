@@ -6,7 +6,7 @@ using DXSharp.Windows ;
 using DXSharp.DXGI.Debugging ;
 using DXSharp.Direct3D12 ;
 using DXSharp.Windows.COM ;
-using DXSharp.Direct3D12.Debug ;
+using DXSharp.Direct3D12.Debugging ;
 
 using D3D12Debug = DXSharp.Direct3D12.IDebug ;
 using DXGIDebug = DXSharp.DXGI.Debugging.IDebug ;

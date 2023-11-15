@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 
@@ -16,7 +19,16 @@ namespace DXSharp.DXGI ;
 /// </remarks>
 [ProxyFor(typeof(IDXGIOutputDuplication))]
 public interface IOutputDuplication: IObject,
-									 IInstantiable {
+									 IInstantiable {	
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGIOutputDuplication, IInstantiable> > _outputDuplicationCreationFunctions =
+		new( new Dictionary< Guid, Func<IDXGIOutputDuplication, IInstantiable> > {
+			{ IOutputDuplication.IID, ( pComObj ) => new OutputDuplication( pComObj ) },
+		} ) ;
+	// ---------------------------------------------------------------------------------
 	
 	/// <summary>
 	/// Retrieves a description of a duplicated output.
@@ -200,7 +212,7 @@ public interface IOutputDuplication: IObject,
 	
 	
 	new static Type ComType => typeof( IDXGIOutputDuplication ) ;
-	
+	public new static Guid IID => (ComType.GUID) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {

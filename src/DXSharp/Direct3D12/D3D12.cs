@@ -4,7 +4,7 @@ using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Direct3D ;
 using Windows.Win32.Graphics.Direct3D12 ;
 
-using DXSharp.Direct3D12.Debug ;
+using DXSharp.Direct3D12.Debugging ;
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
@@ -30,7 +30,7 @@ public static class D3D12 {
 			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug2)pDebug ) ;
 		else if ( TDbg.Guid == Debug1.Guid )
 			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug1)pDebug ) ;
-		else if ( TDbg.Guid == DXSharp.Direct3D12.Debug.Debug.Guid )
+		else if ( TDbg.Guid == DXSharp.Direct3D12.Debugging.Debug.Guid )
 			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug)pDebug ) ;
 		else
 			throw new ArgumentException( $"The type parameter " +
@@ -71,7 +71,7 @@ public static class D3D12 {
 #endif
 						;
 		
-		var _createFn = Direct3D12.IDevice._resourceCreationFunctions[ guid ] ;
+		var _createFn = Direct3D12.IDevice._deviceCreationFunctions[ guid ] ;
 		var _device   = (T)_createFn( _rcwObj ) ;
 		return _device ;
 	}

@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 
@@ -13,6 +15,17 @@ namespace DXSharp.Direct3D12 ;
 [ProxyFor(typeof(ID3D12Fence))]
 public interface IFence: IPageable,
 						 IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	internal static readonly ReadOnlyDictionary< Guid, Func<ID3D12Fence, IInstantiable> > _fenceCreationFunctions =
+		new( new Dictionary<Guid, Func<ID3D12Fence, IInstantiable> > {
+			{ IFence.IID, ( pComObj ) => new Fence( pComObj ) },
+			{ IFence1.IID, ( pComObj ) => new Fence1( (pComObj as ID3D12Fence1)! ) },
+		} ) ;
+	// ---------------------------------------------------------------------------------
+
+	
 	// ---------------------------------------------------------------------------------
 	
 	/// <summary>Gets the current value of the fence. (ID3D12Fence.GetCompletedValue)</summary>

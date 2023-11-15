@@ -1,4 +1,7 @@
 ﻿#region Using Directives
+
+using System.Collections.ObjectModel ;
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Runtime.Versioning;
@@ -14,6 +17,18 @@ namespace DXSharp.DXGI ;
 [ProxyFor(typeof(IDXGISurface))]
 public interface ISurface:  IDeviceSubObject,
 							IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
+	[SuppressMessage( "Interoperability", 
+					  "CA1416:Validate platform compatibility" )] 
+	internal static readonly ReadOnlyDictionary< Guid, Func<IDXGISurface, IInstantiable> > _surfaceCreationFunctions =
+		new( new Dictionary<Guid, Func<IDXGISurface, IInstantiable> > {
+			{ ISurface.IID, ( pComObj ) => new Surface( pComObj ) },
+			{ ISurface1.IID, ( pComObj ) => new Surface1( (pComObj as IDXGISurface1)! ) },
+			{ ISurface2.IID, ( pComObj ) => new Surface2( (pComObj as IDXGISurface2)! ) },
+		} ) ;
+	// ---------------------------------------------------------------------------------
 	
 	/// <summary>Get a description of the surface.</summary>
 	/// <param name="pDesc">
@@ -56,6 +71,7 @@ public interface ISurface:  IDeviceSubObject,
 	
 	// --------------------------------------------------------------------------------------------
 	new static Type ComType => typeof( IDXGISurface ) ;
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -115,7 +131,7 @@ public interface ISurface1: ISurface  {
 	
 	
 	new static Type ComType => typeof( IDXGISurface1 ) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -160,7 +176,7 @@ public interface ISurface2: ISurface1,
 	
 	// --------------------------------------------------------------------------------------------
 	new static Type ComType => typeof( IDXGISurface2 ) ;
-	
+	public new static Guid IID => ( ComType.GUID ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {

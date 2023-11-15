@@ -806,3 +806,25 @@ public partial struct D3D12_CONSTANT_BUFFER_VIEW_DESC {
 	public static implicit operator ConstBufferViewDescription( in D3D12_CONSTANT_BUFFER_VIEW_DESC desc ) =>
 		new ConstBufferViewDescription { BufferLocation = desc.BufferLocation, SizeInBytes = desc.SizeInBytes } ;
 }
+
+
+[CsWin32, EquivalentOf(typeof(ComputePipelineStateDescription))]
+public partial struct D3D12_COMPUTE_PIPELINE_STATE_DESC {
+	public static implicit operator D3D12_COMPUTE_PIPELINE_STATE_DESC( in ComputePipelineStateDescription desc ) => 
+		new D3D12_COMPUTE_PIPELINE_STATE_DESC {
+			pRootSignature = (desc.pRootSignature as IComObjectRef<ID3D12RootSignature>)?.ComObject,
+			CS             = desc.CS,
+			NodeMask       = desc.NodeMask,
+			CachedPSO      = desc.CachedPSO,
+			Flags          = (D3D12_PIPELINE_STATE_FLAGS)desc.Flags
+		} ;
+	
+	public static implicit operator ComputePipelineStateDescription( in D3D12_COMPUTE_PIPELINE_STATE_DESC desc ) => 
+		new ComputePipelineStateDescription {
+			pRootSignature = new RootSignature( desc.pRootSignature ),
+			CS             = desc.CS,
+			NodeMask       = desc.NodeMask,
+			CachedPSO      = desc.CachedPSO,
+			Flags          = (PipelineStateFlags)desc.Flags
+		} ;
+}

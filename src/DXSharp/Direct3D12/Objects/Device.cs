@@ -535,11 +535,13 @@ internal class Device: Object,
 	public void CreateCommandSignature( in CommandSignatureDescription pDesc,
 										IRootSignature                 pRootSignature, in Guid riid,
 										out ICommandSignature          ppvCommandSignature ) {
+		var rootSignature = (IComObjectRef< ID3D12RootSignature >)pRootSignature 
+							?? throw new ArgumentNullException( nameof(pRootSignature) ) ;
 		unsafe {
 			Guid _guid = riid ;
 			fixed ( CommandSignatureDescription* _ppDesc = &pDesc ) {
 				ComObject!.CreateCommandSignature( (D3D12_COMMAND_SIGNATURE_DESC *)_ppDesc, 
-												  pRootSignature.ComObject, &_guid, 
+												  rootSignature.ComObject, &_guid, 
 												  out var signature ) ;
 				ppvCommandSignature = new
 					CommandSignature( (ID3D12CommandSignature)signature ) ;

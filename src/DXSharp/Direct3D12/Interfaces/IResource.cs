@@ -18,6 +18,9 @@ namespace DXSharp.Direct3D12 ;
 [ProxyFor(typeof(ID3D12Resource))]
 public interface IResource: IPageable,
 							IInstantiable {
+	// ---------------------------------------------------------------------------------
+	//! Creation Functions:
+	// ---------------------------------------------------------------------------------
 	internal static readonly ReadOnlyDictionary< Guid, Func<ID3D12Resource, IInstantiable> > _resourceCreationFunctions =
 		new( new Dictionary<Guid, Func<ID3D12Resource, IInstantiable> > {
 			{ IResource.IID, ( pComObj ) => new Resource( pComObj ) },
@@ -26,6 +29,7 @@ public interface IResource: IPageable,
 		} ) ;
 
 	// ---------------------------------------------------------------------------------
+	
 	
 	/// <summary>Gets a CPU pointer to the specified subresource in the resource, but may not disclose the pointer value to applications. Map also invalidates the CPU cache, when necessary, so that CPU reads to this address reflect any modifications made by the GPU.</summary>
 	/// <param name="Subresource">
@@ -215,6 +219,10 @@ public interface IResource1: IResource {
 											  .GetReference( data ) ) ;
 		}
 	}
+
+	static IInstantiable IInstantiable.Instantiate( ) => new Resource1( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new Resource1( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => new Resource1( ( obj as ID3D12Resource1 )! ) ;
 	// ==================================================================================
 } ;
 
@@ -240,5 +248,9 @@ public interface IResource2: IResource1 {
 											  .GetReference( data ) ) ;
 		}
 	}
+
+	static IInstantiable IInstantiable.Instantiate( ) => new Resource2( ) ;
+	static IInstantiable IInstantiable.Instantiate( nint ptr ) => new Resource2( ptr ) ;
+	static IInstantiable IInstantiable.Instantiate< ICom >( ICom obj ) => new Resource2( ( obj as ID3D12Resource2 )! ) ;
 	// ==================================================================================
 } ;
