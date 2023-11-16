@@ -150,6 +150,11 @@ public readonly struct DisplayMode: IEquatable< DisplayMode > {
 												modeDesc.RefreshRate, false, modeDesc.Format,
 													new(modeDesc.Scaling, modeDesc.ScanlineOrdering) ) ;
 	
+	public static implicit operator DisplayMode( in ModeDescription1 modeDesc ) =>
+		new( ( modeDesc.Width, modeDesc.Height ),
+			 modeDesc.RefreshRate, modeDesc.Stereo, modeDesc.Format,
+			 new( modeDesc.Scaling, modeDesc.ScanlineOrdering ) ) ;
+
 	//! Comparisons: --------------------------------------------------------------
 	public static bool operator ==( DisplayMode left, DisplayMode right ) =>
 											left.Resolution == right.Resolution && 
@@ -160,6 +165,17 @@ public readonly struct DisplayMode: IEquatable< DisplayMode > {
 	 										left.Resolution != right.Resolution || 
 												left.RefreshRate != right.RefreshRate || 
 													left.IsStereo != right.IsStereo ;
+	
+	public static bool operator >( DisplayMode left, DisplayMode right ) =>
+											left.TotalPixels > right.TotalPixels ;
+	public static bool operator <( DisplayMode left, DisplayMode right ) =>
+	 											left.TotalPixels < right.TotalPixels ;
+	
+	public static bool operator >=( DisplayMode left, DisplayMode right ) =>
+	 											left.TotalPixels >= right.TotalPixels ;
+	public static bool operator <=( DisplayMode left, DisplayMode right ) =>
+	 											left.TotalPixels <= right.TotalPixels ;
+	
 	// =============================================================================
 } ;
 

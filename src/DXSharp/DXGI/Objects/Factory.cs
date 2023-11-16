@@ -1,6 +1,7 @@
 ﻿#region Using Directives
 
 using System.Collections.ObjectModel ;
+using System.Diagnostics ;
 using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
@@ -11,7 +12,6 @@ using Windows.Win32.Graphics.Dxgi ;
 using winMD = Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 
-using DXSharp.Windows ;
 using DXSharp.Direct3D12 ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
@@ -225,7 +225,7 @@ internal class Factory1: Factory,
 
 	
 	public bool IsCurrent( ) => ComObject!.IsCurrent( ) ;
-
+	
 	[SupportedOSPlatform("windows6.1")]
 	public HResult EnumAdapters1( uint index, out IAdapter1? ppAdapter ) {
 		if( ComObject is null ) throw new NullReferenceException( ) ;
@@ -468,17 +468,56 @@ internal class Factory4: Factory3,
 	}
 	
 	// -------------------------------------------------------------------------------------
+	
+	[SuppressMessage( "Interoperability", "CA1416:Validate platform compatibility" )]
+	public HResult EnumAdapterByLuid< A >( Luid AdapterLuid, in Guid riid, out A? ppvAdapter ) where A: IAdapter {
+		var     factory = ComObject ?? throw new NullReferenceException( ) ;
+		HResult hr      = factory.EnumAdapterByLuid( AdapterLuid, riid, out var pAdapter ) ;
+		
+		var functionLookup = IAdapter._adapterCreationFunctions ;
+		if ( !functionLookup.ContainsKey(riid) ) {
+			ppvAdapter = default ;
+			return HResult.E_NOINTERFACE ;
+		}
 
-	public void EnumAdapterByLuid< A >( Luid AdapterLuid, in Guid riid, out A ppvAdapter ) where A: IAdapter {
-		var factory = ComObject ?? throw new NullReferenceException( ) ;
-		factory.EnumAdapterByLuid( AdapterLuid, riid, out var pAdapter ) ;
-		ppvAdapter = (A)A.Instantiate( pAdapter as IDXGIAdapter ) ;
+		var createFn = functionLookup[ riid ] ;
+		ppvAdapter = (A?)createFn( (pAdapter as IDXGIAdapter)! ) ;
+
+#if DEBUG || DEBUG_COM
+		if( ppvAdapter is null ) {
+			if ( hr.Succeeded ) { // This means we had a valid COM object, but failed to create the wrapper:
+				Debug.WriteLine( $"{nameof(Factory4)} :: " +
+								 $"Failed to create {typeof(A).Name} with {pAdapter.GetType( ).Name}" ) ;
+			}
+		}
+#endif
+		return hr ;
 	}
-
-	public void EnumWarpAdapter< A >( in Guid riid, out A ppvAdapter ) where A: IAdapter {
+	
+	
+	[SuppressMessage( "Interoperability", "CA1416:Validate platform compatibility" )]
+	public HResult EnumWarpAdapter< A >( in Guid riid, out A? ppvAdapter ) where A: IAdapter {
 		var factory = ComObject ?? throw new NullReferenceException( ) ;
-		factory.EnumWarpAdapter( riid, out var pAdapter ) ;
-		ppvAdapter = (A)A.Instantiate( pAdapter as IDXGIAdapter ) ;
+		HResult hr = factory.EnumWarpAdapter( riid, out var pAdapter ) ;
+		
+		var functionLookup = IAdapter._adapterCreationFunctions ;
+		if ( !functionLookup.ContainsKey(riid) ) {
+			ppvAdapter = default ;
+			return HResult.E_NOINTERFACE ;
+		}
+
+		var createFn = functionLookup[ riid ] ;
+		ppvAdapter = (A?)createFn( (pAdapter as IDXGIAdapter)! ) ;
+
+#if DEBUG || DEBUG_COM
+		if( ppvAdapter is null ) {
+			if ( hr.Succeeded ) { // This means we had a valid COM object, but failed to create the wrapper:
+				Debug.WriteLine( $"{nameof(Factory4)} :: " +
+								 $"Failed to create {typeof(A).Name} with {pAdapter.GetType( ).Name}" ) ;
+			}
+		}
+#endif
+		return hr ;
 	}
 	
 	// -------------------------------------------------------------------------------------
@@ -583,13 +622,30 @@ internal class Factory6: Factory5,
 
 	// -------------------------------------------------------------------------------------
 
-	public void EnumAdapterByGPUPreference< A >( uint          Adapter,
-												 GPUPreference GpuPreference,
-												 in  Guid      riid,
-												 out A         ppvAdapter ) where A: IAdapter {
+	public HResult EnumAdapterByGPUPreference< A >( uint adapterOrdinal, GPUPreference GpuPreference,
+													in Guid riid, out A? ppvAdapter ) where A: IAdapter {
 		var factory = ComObject ?? throw new NullReferenceException( ) ;
-		factory.EnumAdapterByGpuPreference( Adapter, (DXGI_GPU_PREFERENCE)GpuPreference, riid, out var pAdapter ) ;
-		ppvAdapter = (A)A.Instantiate( pAdapter as IDXGIAdapter ) ;
+		HResult hr = factory.EnumAdapterByGpuPreference( adapterOrdinal, (DXGI_GPU_PREFERENCE)GpuPreference, riid, out var pAdapter ) ;
+		
+		//ppvAdapter = (A)A.Instantiate( pAdapter as IDXGIAdapter ) ;
+		var functionLookup = IAdapter._adapterCreationFunctions ;
+		if ( !functionLookup.ContainsKey(riid) ) {
+			ppvAdapter = default ;
+			return HResult.E_NOINTERFACE ;
+		}
+
+		var createFn = functionLookup[ riid ] ;
+		ppvAdapter = (A?)createFn( (pAdapter as IDXGIAdapter)! ) ;
+
+#if DEBUG || DEBUG_COM
+		if( ppvAdapter is null ) {
+			if ( hr.Succeeded ) { // This means we had a valid COM object, but failed to create the wrapper:
+				Debug.WriteLine( $"{nameof(Factory6)} :: " +
+								 $"Failed to create {typeof(A).Name} with {pAdapter.GetType( ).Name}" ) ;
+			}
+		}
+#endif
+		return hr ;
 	}
 	
 	// -------------------------------------------------------------------------------------

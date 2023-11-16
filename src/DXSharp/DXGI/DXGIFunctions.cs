@@ -50,8 +50,8 @@ public static partial class DXGIFunctions {
 	//! For some reason, CsWin32 doesn't create this function in PInvoke class:
 	[DllImport("dxgi.dll", EntryPoint = "CreateDXGIFactory", 
 			   SetLastError = true, ExactSpelling = true)]
-	static extern unsafe HResult DXGIGetDebugInterface(
-			Guid*                                             riid,
+	static extern unsafe HResult DXGIGetDebugInterface( 
+			Guid* riid,
 			[MarshalAs( UnmanagedType.IUnknown )] out object? debugInterface // void** ppDebug
 		) ;
 	// ---------------------------------------------------------------------------------------------------
@@ -227,10 +227,10 @@ public static partial class DXGIFunctions {
 	// ---------------------------------------------------------------------------------------------------
 	
 	[SupportedOSPlatform("windows10.0.17134")]
-	public static void DeclareAdapterRemovalSupport( ) => PInvoke.DXGIDeclareAdapterRemovalSupport( ) ;
+	public static HResult DeclareAdapterRemovalSupport( ) => PInvoke.DXGIDeclareAdapterRemovalSupport( ) ;
 	
 	[SupportedOSPlatform("windows10.0.17134")]
-	public static void DisableVBlankVirtualization( ) => PInvoke.DXGIDeclareAdapterRemovalSupport( ) ;
+	public static HResult DisableVBlankVirtualization( ) => PInvoke.DXGIDeclareAdapterRemovalSupport( ) ;
 
 
 	// ---------------------------------------------------------------------------------------------------

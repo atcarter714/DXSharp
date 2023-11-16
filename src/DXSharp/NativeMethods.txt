@@ -262,10 +262,14 @@ ID3D12Tools
 ID3D12StateObjectProperties
 ID3D12DeviceRemovedExtendedData
 ID3D12DeviceRemovedExtendedDataSettings
+ID3D12SharingContract
 
 D3DCreateBlob
 D3DCompileFromFile
 
+D3D12Experimental*
+D3D12TiledResourceTier4
+D3D12MetaCommand
 
 // ------------------------------------------
 // Additional D3D12/D3DX12 Items:

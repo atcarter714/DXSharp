@@ -60,6 +60,8 @@ public readonly struct Resolution: IEquatable< Resolution>,
 	public uint Height => Size.Height ;
 	/// <summary>The aspect ratio of this <see cref="Resolution"/> value.</summary>
 	public float AspectRatio => ( (float)Width / (float)Height ) ;
+	/// <summary>The area (in pixels or "units") of this <see cref="Resolution"/> value.</summary>
+	public uint Area => (Width * Height) ;
 
 	public Resolution( USize size ) => Size = size ;
 	public Resolution( uint width, uint height ) => Size = ( width, height ) ;
@@ -101,6 +103,25 @@ public readonly struct Resolution: IEquatable< Resolution>,
 	
 	public static bool operator ==( Resolution left, Resolution right ) => left.Size == right.Size ;
 	public static bool operator !=( Resolution left, Resolution right ) => left.Size != right.Size ;
+	
+	public static bool operator ==( Resolution left, USize right ) => left.Size == right ;
+	public static bool operator !=( Resolution left, USize right ) => left.Size != right ;
+	 
+	public static bool operator ==( USize left, Resolution right ) => left == right.Size ;
+	public static bool operator !=( USize left, Resolution right ) => left != right.Size ;
+	
+	public static bool operator >( Resolution left, Resolution right ) => left.Size > right.Size ;
+	public static bool operator <( Resolution left, Resolution right ) => left.Size < right.Size ;
+	
+	public static bool operator >=( Resolution left, Resolution right ) => left.Size >= right.Size ;
+	public static bool operator <=( Resolution left, Resolution right ) => left.Size <= right.Size ;
+	
+	public static bool operator >( Resolution left, USize right ) => left.Size > right ;
+	public static bool operator <( Resolution left, USize right ) => left.Size < right ;
+	
+	public static bool operator >=( Resolution left, USize right ) => left.Size >= right ;
+	public static bool operator <=( Resolution left, USize right ) => left.Size <= right ;
+	
 	
 	/// <summary>Lookup table of standard resolution names, keyed by their <see cref="Resolution"/> value.</summary>
 	public static readonly ReadOnlyDictionary< Resolution, string > StandardResolutionNames =

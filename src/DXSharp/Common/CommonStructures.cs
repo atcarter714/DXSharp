@@ -34,6 +34,21 @@ public struct USize: IEquatable< USize > {
 	[MethodImpl(_MAXOPT_)] public static bool operator !=( USize left, USize right ) => ( left.Width != right.Width ) || ( left.Height != right.Height ) ;
 	[MethodImpl(_MAXOPT_)] public static bool operator ==( USize left, Size right ) => ( left.Width == right.Width ) && ( left.Height == right.Height ) ;
 	[MethodImpl(_MAXOPT_)] public static bool operator !=( USize left, Size right ) => ( left.Width != right.Width ) || ( left.Height != right.Height ) ;
+	
+	[MethodImpl(_MAXOPT_)] public static bool operator ==( Size left, USize right ) => ( left.Width == right.Width ) && ( left.Height == right.Height ) ;
+	[MethodImpl(_MAXOPT_)] public static bool operator !=( Size left, USize right ) => ( left.Width != right.Width ) || ( left.Height != right.Height ) ;
+	
+	[MethodImpl(_MAXOPT_)] public static bool operator >( USize left, USize right ) => ( left.Width > right.Width ) && ( left.Height > right.Height ) ;
+	[MethodImpl(_MAXOPT_)] public static bool operator <( USize left, USize right ) => ( left.Width < right.Width ) && ( left.Height < right.Height ) ;
+	
+	[MethodImpl(_MAXOPT_)] public static bool operator >=( USize left, USize right ) => ( left.Width >= right.Width ) && ( left.Height >= right.Height ) ;
+	[MethodImpl(_MAXOPT_)] public static bool operator <=( USize left, USize right ) => ( left.Width <= right.Width ) && ( left.Height <= right.Height ) ;
+	
+	[MethodImpl(_MAXOPT_)] public static bool operator >( USize left, Size right ) => ( left.Width > right.Width ) && ( left.Height > right.Height ) ;
+	[MethodImpl(_MAXOPT_)] public static bool operator <( USize left, Size right ) => ( left.Width < right.Width ) && ( left.Height < right.Height ) ;
+	
+	[MethodImpl(_MAXOPT_)] public static bool operator >=( USize left, Size right ) => ( left.Width >= right.Width ) && ( left.Height >= right.Height ) ;
+	[MethodImpl(_MAXOPT_)] public static bool operator <=( USize left, Size right ) => ( left.Width <= right.Width ) && ( left.Height <= right.Height ) ;
 } ;
 
 

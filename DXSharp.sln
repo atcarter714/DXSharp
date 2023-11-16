@@ -6,11 +6,6 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DXSharp", "src\DXSharp\DXSharp.csproj", "{82FD3E3F-ECB1-4EA2-B538-E1561AE737EF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build Files", "Build Files", "{8083732C-24ED-46AA-AD90-0ECB3B3B0040}"
-	ProjectSection(SolutionItems) = preProject
-		Directory.Build.props = Directory.Build.props
-		samples\Directory.Build.props = samples\Directory.Build.props
-		Directory.Build.targets = Directory.Build.targets
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{29411031-4490-4542-B2D1-02D223BFD605}"
 EndProject
@@ -36,6 +31,20 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DXSharp.Framework", "src\DXSharp.Framework\DXSharp.Framework.csproj", "{4B5C9C89-A4A4-4081-8508-6E26388817F8}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "DXSharp.Samples.Shared", "samples\shared\DXSharp.Samples.Shared\DXSharp.Samples.Shared.shproj", "{29E67012-6798-43E1-BEFE-F9270F595779}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{430FF448-775A-49C2-8FC4-F56143802138}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Targets", "Targets", "{A26CCC2F-6530-4962-B5BD-C0100C5DB6D1}"
+	ProjectSection(SolutionItems) = preProject
+		samples\Directory.Build.targets = samples\Directory.Build.targets
+		Directory.Build.targets = Directory.Build.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Props", "Props", "{78357CCA-2A33-480A-A890-1A91BD85107F}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+		samples\Directory.Build.props = samples\Directory.Build.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -144,6 +153,9 @@ Global
 		{5AA13E5B-574A-4651-A172-AB3EDA13DEC2} = {AEE84FD5-7441-42CF-AA6C-5805B759E1F8}
 		{4B5C9C89-A4A4-4081-8508-6E26388817F8} = {29411031-4490-4542-B2D1-02D223BFD605}
 		{29E67012-6798-43E1-BEFE-F9270F595779} = {AEE84FD5-7441-42CF-AA6C-5805B759E1F8}
+		{430FF448-775A-49C2-8FC4-F56143802138} = {8083732C-24ED-46AA-AD90-0ECB3B3B0040}
+		{A26CCC2F-6530-4962-B5BD-C0100C5DB6D1} = {8083732C-24ED-46AA-AD90-0ECB3B3B0040}
+		{78357CCA-2A33-480A-A890-1A91BD85107F} = {8083732C-24ED-46AA-AD90-0ECB3B3B0040}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C4990EC-248E-49D5-A254-EA8AD214C338}

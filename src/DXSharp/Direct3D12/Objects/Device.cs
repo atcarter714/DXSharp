@@ -126,10 +126,13 @@ internal class Device: Object,
 
 
 
-	public void CheckFeatureSupport( D3D12Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) {
+	public HResult CheckFeatureSupport( D3D12Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) {
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
-			device.CheckFeatureSupport( (D3D12_FEATURE)Feature, (void *)pFeatureSupportData, FeatureSupportDataSize ) ;
+			var hr = device.CheckFeatureSupport( (D3D12_FEATURE)Feature, 
+												 (void *)pFeatureSupportData, 
+												 FeatureSupportDataSize ) ;
+			return hr ;
 		}
 	}
 

@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Runtime.InteropServices ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Dxgi ;
 using Windows.Win32.Graphics.Direct3D ;
@@ -13,6 +15,40 @@ namespace DXSharp.Direct3D12 ;
 
 /// <summary>Implements D3D12* functions from the Windows API.</summary>
 public static class D3D12 {
+	// -----------------------------------------------------------------------------
+	
+	#region GUID Helpers
+	public static class CLSIDs {
+		/// <summary>CLSID_D3D12Debug</summary>
+		public static readonly Guid Debug = new( 0xf2352aeb, 0xdd84, 0x49fe, 0xb9, 0x7b, 
+												 0xa9, 0xdc, 0xfd, 0xcc, 0x1b, 0x4f ) ;
+		
+		/// <summary>CLSID_D3D12Tools</summary>
+		public static readonly Guid Tools = new( 0xe38216b1, 0x3c8c, 0x4833, 0xaa, 0x09, 
+												 0x0a, 0x06, 0xb6, 0x5d, 0x96, 0xc8 ) ;
+		
+		/// <summary>CLSID_D3D12DeviceRemovedExtendedData</summary>
+		public static readonly Guid DeviceRemovedExtendedData = new( 0x4a75bbc4, 0x9ff4, 0x4ad8, 0x9f, 0x18, 
+																	 0xab, 0xae, 0x84, 0xdc, 0x5f, 0xf2 ) ;
+		
+		/// <summary>CLSID_D3D12SDKConfiguration</summary>
+		public static readonly Guid SDKConfiguration = new( 0x7cda6aca, 0xa03e, 0x49c8, 0x94, 0x58, 
+															0x03, 0x34, 0xd2, 0x0e, 0x07, 0xce ) ;
+	}
+	public static class ExperimentalFeatures {
+		/// <summary>D3D12ExperimentalShaderModels</summary>
+		public static readonly Guid ShaderModels = new( "76f5573e-f13a-40f5-b297-81ce9e18933f" ) ;
+		/// <summary>D3D12TiledResourceTier4</summary>
+		public static readonly Guid TiledResourceTier4 = new( "c9c4725f-a81a-4f56-8c5b-c51039d694fb" ) ;
+		/// <summary>D3D12MetaCommand</summary>
+		public static readonly Guid MetaCommands = new( "C734C97E-8077-48C8-9FDC-D9D1DD31DD77" ) ;
+	}
+	#endregion
+	
+	
+	// -----------------------------------------------------------------------------
+	// D3D12 Functions:
+	// -----------------------------------------------------------------------------
 	
 	public static HResult GetDebugInterface< TDbg >( out TDbg? _interface )
 		where TDbg: IInstantiable, IComIID {
@@ -76,6 +112,40 @@ public static class D3D12 {
 		return _device ;
 	}
 
+	public static HResult CreateDevice( out IDevice? device, 
+										IAdapter? adapter = null, 
+										in Guid riid = default,
+										FeatureLevel featureLevel = FeatureLevel.D3D12_0 ) {
+		var _adapter = (IComObjectRef< IDXGIAdapter >?)adapter
+					   ?? throw new ArgumentNullException( nameof( adapter ) ) ;
+		
+		HResult hr = PInvoke.D3D12CreateDevice( _adapter?.ComObject,
+												(D3D_FEATURE_LEVEL)featureLevel,
+												riid, out var ppDevice ) ;
+		hr.SetAsLastErrorForThread( ) ;
+		if( ppDevice is null ) {
+			device = null ;
+			return hr ;
+		}
+		
+		var _rcwObj   = ( ppDevice as ID3D12Device ) ;
+		if( _rcwObj is null ) {
+			Marshal.FinalReleaseComObject( ppDevice ) ;
+			throw new DirectXComError( $"{nameof(PInvoke.D3D12CreateDevice)} failed!" ) ;
+		}
+		
+		var createFunctions = IDevice._deviceCreationFunctions ;
+		if( !createFunctions.ContainsKey( riid ) ) {
+			Marshal.FinalReleaseComObject( ppDevice ) ;
+			device = null ;
+			return hr ;
+		}
+		
+		var _createFn = createFunctions[ riid ] ;
+		device   = (IDevice)_createFn( _rcwObj ) ;
+		
+		return hr ;
+	}
 	
 	public static HResult SerializeVersionedRootSignature( in  VersionedRootSignatureDescription desc,
 														   out (IBlob? blob, IBlob? errors)      blobs ) {

@@ -352,7 +352,7 @@ internal class COMResource: DisposableObject {
 		return new( comptr ) ;
 	}
 
-
+	
 	// ----------------------------------------------------------
 	// Disposable Methods:
 	// ----------------------------------------------------------

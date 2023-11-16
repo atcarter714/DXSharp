@@ -45,6 +45,20 @@ public interface IOutput: IObject,
 	
 	/// <inheritdoc cref="IDXGIOutput.GetDesc"/>
 	void GetDescription( out OutputDescription pDescription ) ;
+
+	
+	/// <summary>
+	/// A helper method that fetches the number of display modes available for the output
+	/// for the specified DXGI <see cref="Format"/> <i><paramref name="enumFormat"/></i> and
+	/// <see cref="EnumModesFlags"/> <i><paramref name="flags"/></i>.
+	/// </summary>
+	/// <param name="enumFormat"><para>A <see cref="Format"/>-typed value for the color format.</para></param>
+	/// <param name="flags"><para>An <see cref="EnumModesFlags"/>-typed value that specifies options for mode enumeration.</para></param>
+	/// <returns>
+	/// <para>The total number of modes that match the specified enumeration flags.</para>
+	/// </returns>
+	uint GetDisplayModeCount( Format enumFormat    = Format.UNKNOWN,
+							  EnumModesFlags flags = EnumModesFlags.None ) ;
 	
 	/// <inheritdoc cref="IDXGIOutput.GetDisplayModeList"/>
 	void GetDisplayModeList( Format enumFormat,
@@ -52,6 +66,7 @@ public interface IOutput: IObject,
 							 out uint pNumModes,
 							 out Span< ModeDescription > pDescription ) ;
 
+	
 	/// <inheritdoc cref="IDXGIOutput.FindClosestMatchingMode"/>
 	void FindClosestMatchingMode( in  ModeDescription pModeToMatch, 
 								  out ModeDescription pClosestMatch,
@@ -122,6 +137,9 @@ public interface IOutput: IObject,
 [ProxyFor(typeof(IDXGIOutput1))]
 public interface IOutput1: IOutput {
 	// ---------------------------------------------------------------------------------
+	uint GetDisplayModeCount1( Format enumFormat = Format.UNKNOWN,
+							   EnumModesFlags flags = EnumModesFlags.None ) ;
+	
 	/// <inheritdoc cref="IDXGIOutput1.GetDisplayModeList1"/>
 	void GetDisplayModeList1( Format enumFormat,
 							  EnumModesFlags flags,

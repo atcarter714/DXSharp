@@ -27,6 +27,8 @@ public readonly struct RefreshRate: IEquatable< RefreshRate >,
 	public uint Numerator => Hz.Numerator ;
 	/// <summary>The denominator of the refresh rate in Hertz (Hz).</summary>
 	public uint Denominator => Hz.Denominator ;
+	/// <summary>The maximum frames per second (FPS) for the refresh rate.</summary>
+	public uint MaxFPS => Hz.Numerator / Hz.Denominator ;
 	
 	
 	public RefreshRate( Rational hz = default ) => Hz = hz ;
@@ -60,6 +62,8 @@ public readonly struct RefreshRate: IEquatable< RefreshRate >,
 	}
 
 	
+	
+	#region Operators
 	public static implicit operator Rational( in RefreshRate rate ) => rate.Hz ;
 	public static implicit operator RefreshRate( in Rational hz ) => new( hz ) ;
 	public static implicit operator RefreshRate( in (uint numerator, uint denominator) hz ) => 
@@ -67,8 +71,31 @@ public readonly struct RefreshRate: IEquatable< RefreshRate >,
 	
 	public static bool operator ==( in RefreshRate left, in RefreshRate right ) => left.Hz == right.Hz ;
 	public static bool operator !=( in RefreshRate left, in RefreshRate right ) => left.Hz != right.Hz ;
+	public static bool operator < ( in RefreshRate left, in RefreshRate right ) => left.Hz <  right.Hz ;
+	public static bool operator > ( in RefreshRate left, in RefreshRate right ) => left.Hz >  right.Hz ;
+	public static bool operator <=( in RefreshRate left, in RefreshRate right ) => left.Hz <= right.Hz ;
+	public static bool operator >=( in RefreshRate left, in RefreshRate right ) => left.Hz >= right.Hz ;
+	
+	public static bool operator < ( in RefreshRate left, in Rational    right ) => left.Hz <  right ;
+	public static bool operator > ( in RefreshRate left, in Rational    right ) => left.Hz >  right ;
+	public static bool operator <=( in RefreshRate left, in Rational    right ) => left.Hz <= right ;
+	public static bool operator >=( in RefreshRate left, in Rational    right ) => left.Hz >= right ;
 	public static bool operator ==( in RefreshRate left, in Rational    right ) => left.Hz == right ;
 	public static bool operator !=( in RefreshRate left, in Rational    right ) => left.Hz != right ;
+	public static bool operator < ( in Rational    left, in RefreshRate right ) => left <  right.Hz ;
+	public static bool operator > ( in Rational    left, in RefreshRate right ) => left >  right.Hz ;
+	public static bool operator <=( in Rational    left, in RefreshRate right ) => left <= right.Hz ;
+	public static bool operator >=( in Rational    left, in RefreshRate right ) => left >= right.Hz ;
 	public static bool operator ==( in Rational    left, in RefreshRate right ) => left == right.Hz ;
 	public static bool operator !=( in Rational    left, in RefreshRate right ) => left != right.Hz ;
+	 
+	public static bool operator < ( in RefreshRate left, float right ) => left.Hz < right ;
+	public static bool operator > ( in RefreshRate left, float right ) => left.Hz > right ;
+	public static bool operator <=( in RefreshRate left, float right ) => left.Hz <= right ;
+	public static bool operator >=( in RefreshRate left, float right ) => left.Hz >= right ;
+	public static bool operator < ( float left, in RefreshRate right ) => left <  right.Hz ;
+	public static bool operator > ( float left, in RefreshRate right ) => left >  right.Hz ;
+	public static bool operator <=( float left, in RefreshRate right ) => left <= right.Hz ;
+	public static bool operator >=( float left, in RefreshRate right ) => left >= right.Hz ;
+	#endregion
 } ;

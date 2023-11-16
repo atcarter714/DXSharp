@@ -4,6 +4,7 @@ using System.Buffers ;
 using System.Linq ;
 using System.Collections ;
 using System.Collections.Generic ;
+using System.Numerics ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32.Graphics.Direct3D12 ;
@@ -178,5 +179,34 @@ public static class CollectionXTensions {
 		ArgumentNullException.ThrowIfNull( items, nameof(items) ) ;
 		
 		list.AddRange( items.AsEnumerable() ) ;
+	}
+	
+	
+	public static int IndexOf< K, V >( this IDictionary<K, V> list, V item ) 
+										where V: IEqualityOperators< V, V, bool > {
+		int index = 0 ;
+		foreach ( var entry in list ) {
+			if( entry.Value != item ) {
+				++index ;
+				continue ;
+			}
+			return index ;
+		}
+		
+		return -1 ;
+	}
+	
+	
+	public static int IndexOfReference< K, V >( this IDictionary<K, V> list, V item ) where V: class {
+		int index = 0 ;
+		foreach ( var entry in list ) {
+			if( !ReferenceEquals( entry.Value, item ) ) {
+				++index ;
+				continue ;
+			}
+			return index ;
+		}
+		
+		return -1 ;
 	}
 } ;

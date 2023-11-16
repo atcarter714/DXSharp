@@ -1,4 +1,6 @@
 ﻿#region Using Directives
+
+using System.Diagnostics.CodeAnalysis ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using Windows.Win32 ;
@@ -93,9 +95,9 @@ public interface IDXCOMObject: IComIID,
 	/// </remarks>
 	HResult SetPrivateDataInterface< T >( in Guid name, in T? pUnknown ) where T: IDXCOMObject ;
 	
-	uint AddRef( ) ;
-	uint Release( ) ;
-	HResult QueryInterface( in Guid riid, out nint ppvObject ) ;
+	uint    AddRef( ) ;
+	uint    Release( ) ;
+	HResult QueryInterface( in                                   Guid riid, out nint ppvObject ) ;
 	HResult QueryInterface< T >( out T? ppvUnk ) where T: IDXCOMObject, IInstantiable ;
 	
 	// ----------------------------------------------------------

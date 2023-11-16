@@ -3,7 +3,7 @@
 
 public interface IInitialize {
 	bool IsInitialized { get ; }
-	void Initialize( ) ;
+	void InitializeResources( ) ;
 } ;
 public interface IInitialize< T >: IInitialize { void Initialize( T arg ) ; } ;
 public interface IInitializeWithArgs: IInitialize { void Initialize( __arglist ) ; } ;

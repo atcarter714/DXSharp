@@ -207,7 +207,7 @@ public interface IDevice: IObject,
 	/// <para>This doc was truncated.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/d3d12/nf-d3d12-id3d12device-checkfeaturesupport#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
-	void CheckFeatureSupport( D3D12Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) ;
+	HResult CheckFeatureSupport( D3D12Feature Feature, nint pFeatureSupportData, uint FeatureSupportDataSize ) ;
 
 
 	/// <summary>Creates a descriptor heap object.</summary>

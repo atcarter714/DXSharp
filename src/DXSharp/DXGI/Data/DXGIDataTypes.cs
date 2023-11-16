@@ -225,18 +225,19 @@ public struct Matrix3x2F: IEquatable< Matrix3x2F >,
 /// <para>If you are representing a whole number, the denominator should be 1.</para>
 /// 
 /// </remarks>
-[DebuggerDisplay( "Fraction: {numerator}/{denominator} (Float: {AsFloat}f)" )]
+[DebuggerDisplay( "Fraction: {numerator}/{denominator} (Value: {AsFloat}f)" )]
 public struct Rational: IEquatable< Rational > {
 	/// <summary>
 	/// A Rational with a value of zero
 	/// </summary>
-	public static readonly Rational Zero = (0x00u, 0x01u);
+	public static readonly Rational Zero = new( 0x00u, 0x01u ) ;
 
 	/// <summary>
 	/// Gets the rational value as a float
 	/// </summary>
 	[DebuggerBrowsable( DebuggerBrowsableState.Never )]
-	public float AsFloat => denominator == 0 ? 0f : numerator / denominator;
+	public float AsFloat => denominator == 0 ? 0f 
+								: ( (float)numerator / denominator ) ;
 
 
 
@@ -253,7 +254,7 @@ public struct Rational: IEquatable< Rational > {
 	/// <summary>
 	/// Creates a new rational value
 	/// </summary>
-	public Rational() {
+	public Rational( ) {
 		this.numerator = 0;
 		this.denominator = 1;
 	}
@@ -311,22 +312,34 @@ public struct Rational: IEquatable< Rational > {
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> An unsigned integer value representing the top of the rational number.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgicommon/ns-dxgicommon-dxgi_rational#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
-	public uint Numerator { get => numerator; set => numerator = value; }
+	public uint Numerator {
+		get => numerator; 
+		set => numerator = value;
+	}
 
 	/// <summary>
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> An unsigned integer value representing the bottom of the rational number.</para>
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api//dxgicommon/ns-dxgicommon-dxgi_rational#members">Read more on docs.microsoft.com</a>.</para>
 	/// </summary>
-	public uint Denominator { get => denominator; set => denominator = value; }
+	public uint Denominator {
+		get => denominator;
+		set {
+			if ( value is 0 ) {
+				numerator = 0 ;
+				denominator = 1 ;
+				return;
+			}
+			denominator = value ;
+		}
+	}
 
-
-
+	
 
 
 	/// <summary>
 	/// Reduces the rational/fraction value
 	/// </summary>
-	public void Reduce() {
+	public void Reduce( ) {
 		uint k = GDC( this );
 		numerator /= k;
 		denominator /= k;
@@ -336,12 +349,15 @@ public struct Rational: IEquatable< Rational > {
 	/// Gets the reduced value of this rational/fraction value
 	/// </summary>
 	/// <returns>Reduced rationa/fraction value</returns>
-	public Rational Reduced() {
+	public Rational Reduced( ) {
 		var copy = this;
 		copy.Reduce();
 		return copy;
 	}
 
+	
+	
+	#region Interface Implementations & Overrides
 	/// <summary>
 	/// Determines if the given object and this value are equal
 	/// </summary>
@@ -358,16 +374,16 @@ public struct Rational: IEquatable< Rational > {
 	public bool Equals( Rational other ) =>
 		(other.numerator == 0 && this.numerator == 0) ||
 		(other.denominator == 0 && this.denominator == 0) ||
-		(other.numerator == this.numerator && other.denominator == this.denominator);
+		(other.numerator == this.numerator && other.denominator == this.denominator) ;
 
 	/// <summary>
 	/// Gets the 32-bit hash code of this rational value
 	/// </summary>
 	/// <returns>32-bit hash code</returns>
-	public override int GetHashCode() => (numerator, denominator).GetHashCode();
-
-
-
+	public override int GetHashCode( ) => (numerator, denominator).GetHashCode();
+	#endregion
+	
+	
 	/// <summary>
 	/// Finds the greatest common denominator of a rational value
 	/// </summary>
@@ -405,7 +421,10 @@ public struct Rational: IEquatable< Rational > {
 		return n;
 	}
 
+	
 
+
+	#region Operators
 
 	/// <summary>
 	/// Converts a tuple of uints to Rational
@@ -419,12 +438,57 @@ public struct Rational: IEquatable< Rational > {
 	/// <param name="value">A whole, unsigned value</param>
 	public static implicit operator Rational( uint value ) => new( value );
 
+	public static implicit operator float( Rational r ) {
+		return r.Reduced( ).AsFloat ;
+	}
+
 	public static bool operator ==( Rational a, Rational b ) => a.Equals( b );
 	public static bool operator !=( Rational a, Rational b ) => !a.Equals( b );
-	public static bool operator ==( Rational a, uint b ) => a.Equals( b );
-	public static bool operator !=( Rational a, uint b ) => !a.Equals( b );
-	public static bool operator ==( uint a, Rational b ) => a.Equals( b );
-	public static bool operator !=( uint a, Rational b ) => !a.Equals( b );
+	public static bool operator ==( Rational a, uint b ) {
+		var   reduced = a.Reduced( ) ;
+		float f       = reduced.AsFloat ;
+		return Mathf.Approximately( f, b ) ;
+	}
+	public static bool operator !=( Rational a, uint     b ) => !( a == b ) ;
+	public static bool operator ==( uint     a, Rational b ) => b == a ;
+	public static bool operator !=( uint     a, Rational b ) => !( b == a ) ;
+	
+	public static bool operator <( Rational a, Rational b ) => 
+		a.Reduced( ).AsFloat < b.Reduced( ).AsFloat ;
+	public static bool operator >( Rational a, Rational b ) => 
+		a.Reduced( ).AsFloat > b.Reduced( ).AsFloat ;
+	public static bool operator <=( Rational a, Rational b ) => 
+		a.Reduced( ).AsFloat <= b.Reduced( ).AsFloat ;
+	public static bool operator >=( Rational a, Rational b ) =>
+		a.Reduced( ).AsFloat >= b.Reduced( ).AsFloat ;
+	
+	public static bool operator <( Rational a, uint b ) =>
+		a.Reduced( ).AsFloat < b ;
+	public static bool operator >( Rational a, uint b ) =>
+		a.Reduced( ).AsFloat > b ;
+	public static bool operator <=( Rational a, uint b ) =>
+		a.Reduced( ).AsFloat <= b ;
+	public static bool operator >=( Rational a, uint b ) =>
+		a.Reduced( ).AsFloat >= b ;
+	public static bool operator <( uint a, Rational b ) =>
+		a < b.Reduced( ).AsFloat ;
+	public static bool operator >( uint a, Rational b ) =>
+		a > b.Reduced( ).AsFloat ;
+	public static bool operator <=( uint a, Rational b ) =>
+		a <= b.Reduced( ).AsFloat ;
+	public static bool operator >=( uint a, Rational b ) =>
+		a >= b.Reduced( ).AsFloat ;
+	
+	public static bool operator <( Rational a, float b ) =>
+		a.Reduced( ).AsFloat < b ;
+	public static bool operator >( Rational a, float b ) =>
+		a.Reduced( ).AsFloat > b ;
+	public static bool operator <=( Rational a, float b ) =>
+		a.Reduced( ).AsFloat <= b ;
+	public static bool operator >=( Rational a, float b ) =>
+		a.Reduced( ).AsFloat >= b ;
+
+	#endregion
 } ;
 
 
@@ -948,15 +1012,15 @@ public struct ModeDescription {
 		}
 	}
 
-
-
+	
 	//uint width;
 	//uint height;
 	//Rational refreshRate;
 	//Format format;
 	//ScanlineOrder scanlineOrdering;
 	//ScalingMode scaling;
-	[DebuggerBrowsable( DebuggerBrowsableState.Never )] DXGI_MODE_DESC desc ;
+	[DebuggerBrowsable( DebuggerBrowsableState.Never )] 
+	DXGI_MODE_DESC desc ;
 
 
 
@@ -1856,7 +1920,7 @@ public struct OutputDuplicationPointerShapeInfo {
 // ====================================================
 
 /// <summary>Identifies the type of DXGI adapter.</summary>
-[EquivalentOf(typeof(DXGI_ADAPTER_FLAG))]
+[Flags, EquivalentOf(typeof(DXGI_ADAPTER_FLAG))]
 public enum AdapterFlag: uint {
 	/// <summary>Specifies no flags.</summary>
 	None = 0,
@@ -1875,13 +1939,13 @@ public enum AdapterFlag: uint {
 	/// to a size other than 32 bits. This value is not used by applications.
 	/// </summary>
 	/// <remarks>Exists to match native enumeration definition.</remarks>
-	ForceDWord = 0xffffffff
+	ForceDWord = 0xffffffff,
 } ;
 
 
 
 /// <summary>Identifies the type of DXGI adapter.</summary>
-[EquivalentOf( typeof( AdapterFlag3 ) )]
+[Flags, EquivalentOf( typeof( AdapterFlag3 ) )]
 public enum AdapterFlag3: uint {
 	/// <summary>Specifies no flags.</summary>
 	None = 0x00000000,

@@ -1,5 +1,6 @@
 ﻿#region Using Directives
 using DXSharp ;
+using DXSharp.Direct3D12 ;
 using DXSharp.DXGI ;
 #endregion
 namespace Windows.Win32.Graphics.Direct3D12 ;

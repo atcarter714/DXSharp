@@ -134,13 +134,13 @@ public class GraphicsPipeline: DXGraphics {
 		
 		// Describe the swap chain:
 		var swapChainDesc = new SwapChainDescription1 {
-			Width = _settings.DisplayMode.Resolution.Width,
-			Height = _settings.DisplayMode.Resolution.Height,
+			Width = _settings.CurrentMode.Resolution.Width,
+			Height = _settings.CurrentMode.Resolution.Height,
 			SampleDesc  = ( 1, 0 ),
 			Format      = Format.R8G8B8A8_UNORM,
 			SwapEffect  = SwapEffect.FlipDiscard,
 			BufferUsage = Usage.RenderTargetOutput,
-			BufferCount = _settings.BackBufferOptions.Count,
+			BufferCount = _settings.RenderTargetProperties.BufferCount,
 		} ;
 		var swapchainFSDesc = new SwapChainFullscreenDescription {
 			RefreshRate = new Rational( 60, 1 ),
@@ -160,7 +160,7 @@ public class GraphicsPipeline: DXGraphics {
 		_factory.MakeWindowAssociation( _wnd, WindowAssociation.NoAltEnter ) ;
 		
 		// Create the descriptor heaps:
-		uint frameCount  = _settings.BackBufferOptions.Count ;
+		uint frameCount  = _settings.RenderTargetProperties.BufferCount ;
 		DescriptorHeapDescription rtvHeapDesc = new( DescriptorHeapType.RTV, frameCount ) ;
 		_device.CreateDescriptorHeap( rtvHeapDesc, IDescriptorHeap.IID, out IDescriptorHeap? rtvHeap ) ;
 		if( rtvHeap is null ) throw new DXSharpException( "Failed to create RTV descriptor heap!" ) ;

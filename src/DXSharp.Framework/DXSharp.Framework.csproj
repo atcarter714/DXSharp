@@ -12,6 +12,7 @@
 
     <ItemGroup>
       <Folder Include="Applications\" />
+      <Folder Include="XTensions\DX12\" />
     </ItemGroup>
 
 </Project>

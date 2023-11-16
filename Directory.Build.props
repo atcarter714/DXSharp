@@ -4,45 +4,87 @@
 		<TargetCPUs>AnyCPU;x64;x86</TargetCPUs>
 		<DotNetTargets>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0</DotNetTargets>
 		
+		<!-- Make sure valid platforms and target frameworks are set: -->
+		<Platforms Condition=" '$(Platforms)' == '' ">$(TargetCPUs)</Platforms>
+		<TargetFrameworks Condition=" '$(TargetFrameworks)' == '' ">$(DotNetTargets);</TargetFrameworks>
+
 		<!-- Make sure there's a configuration name and base output path: -->
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<PackageOutputPath>$(RepoRootPath)bin\Packages\$(Configuration)\</PackageOutputPath>
 		<BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(RepoRootPath)bin\$(MSBuildProjectName)\</BaseOutputPath>
 		<BaseIntermediateOutputPath>$(RepoRootPath)obj\$([MSBuild]::MakeRelative($(RepoRootPath), $(MSBuildProjectDirectory)))\</BaseIntermediateOutputPath>
 		
+		<!-- Assembly Signing/Keys & Advanced Settings: -->
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)file\keys\strongname.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+	
+	
+	<!-- Compilation & Assembly Generation Properties :: -->
+	<PropertyGroup Label="CompilerConfig">
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
 		<Deterministic>true</Deterministic>
 		<ImplicitUsings>true</ImplicitUsings>
-		<AnalysisLevel>latest</AnalysisLevel>
+		<AnalysisLevel>preview</AnalysisLevel>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+	
+	
+	<!-- Properties for DevOps & CI Pipelines :: -->
+	<PropertyGroup Label="DevOpsConfig">
+		<CI>true</CI>
+		<AZ_BUILD>true</AZ_BUILD>
+		<AzureDevOps>true</AzureDevOps>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/atcarter714/DXSharp</RepositoryUrl>
+		<PowershellScriptsDir>$(RepoRootPath)build\pwsh</PowershellScriptsDir>
 		
-		<!-- This entire repo has just one version.json file, so compute the version once and share with all projects in a large build. -->
+		<!-- This entire repo has just one version.json file, so compute the 
+			 version once and share with all projects in a large build ... -->
 		<GitVersionBaseDirectory>$(MSBuildThisFileDirectory)</GitVersionBaseDirectory>
-
+		
 		<!-- Local builds should embed PDBs so we never lose them when a subsequent build occurs. -->
 		<DebugType Condition=" '$(CI)' != 'true' and '$(TF_BUILD)' != 'true' ">embedded</DebugType>
 		<DebugType Condition=" '$(AzureDevOps)' != 'true' or '$(AZ_BUILD)' != 'true' ">embedded</DebugType>
+	</PropertyGroup>
+	
+	
+	<!-- Properties for Package Generation :: -->
+	<PropertyGroup Label="NuGetPackProperties">
+		<FileVersion>1.0.1</FileVersion>
+		<AssemblyVersion>0.3.3</AssemblyVersion>
 		
-		
-		<SignAssembly>true</SignAssembly>
-		<AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)file\keys\strongname.snk</AssemblyOriginatorKeyFile>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>DXSharp_Logo_00_512.png</PackageIcon>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 		
 		<Company>Arkaen Solutions</Company>
 		<Authors>Aaron T. Carter, $(Company), Contributors</Authors>
-		<Copyright>© Aaron T. Carter. All rights reserved.</Copyright>
-		<PackageProjectUrl>https://github.com/atcarter714/DXSharp</PackageProjectUrl>
+		<Copyright>Copyright © Aaron T. Carter, Arkaen Solutions. All rights reserved.</Copyright>
+		
+		
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
+		<PackageProjectUrl>https://github.com/atcarter714/DXSharp</PackageProjectUrl>
+		
 		<!--<SymbolPackageFormat>snupkg</SymbolPackageFormat>-->
+		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
+		
+		<PackageTags>directx; dxsharp; interop; wrapper; 2d; 3d; graphics; d3d; d3d12; dxgi; win32; com; gamedev; arkaen; dxs;</PackageTags>
+		<PackageReleaseNotes>Early preview: NOT intended for production use!</PackageReleaseNotes>
 	</PropertyGroup>
 	
 	
 	<!-- DirectX SDK & Dependency Properties -->
-	<PropertyGroup Label="DXSDK">
+	<PropertyGroup Label="NativeSDKProperties">
 		<UsingAgilitySDK>true</UsingAgilitySDK>
+		<NativePlatformName Condition=" '$(Platform)' == 'x64' ">x64</NativePlatformName>
+		<NativePlatformName Condition=" '$(Platform)' == 'x86' ">win32</NativePlatformName>
+		<NativePlatformName Condition=" '$(Platform)' == 'AnyCPU' ">x64</NativePlatformName>
+		
+		<AgilityVersion Condition=" '$(UsingAgilitySDK)' == 'true' ">[1.711.3-preview,)</AgilityVersion>
 	</PropertyGroup>
 </Project>

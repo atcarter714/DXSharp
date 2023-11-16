@@ -503,7 +503,7 @@ public interface IFactory4: IFactory3 {
 	/// <para>For Direct3D 12, it's no longer possible to backtrack from a device to the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> that was used to create it. <b>IDXGIFactory4::EnumAdapterByLuid</b> enables an app to retrieve information about the adapter where a D3D12 device was created. <b>IDXGIFactory4::EnumAdapterByLuid</b> is designed to be paired with <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nf-d3d12-id3d12device-getadapterluid">ID3D12Device::GetAdapterLuid</a>. For more information, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-1-4-improvements">DXGI 1.4 Improvements</a>.</para>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_4/nf-dxgi1_4-idxgifactory4-enumadapterbyluid#">Read more on docs.microsoft.com</see>.</para>
 	/// </remarks>
-	void EnumAdapterByLuid< A >( Luid AdapterLuid, in Guid riid, out A ppvAdapter ) where A: IAdapter ;
+	HResult EnumAdapterByLuid< A >( Luid AdapterLuid, in Guid riid, out A? ppvAdapter ) where A: IAdapter ;
 	
 	/// <summary>Provides an adapter which can be provided to D3D12CreateDevice to use the WARP renderer.</summary>
 	/// <param name="riid">
@@ -518,7 +518,7 @@ public interface IFactory4: IFactory3 {
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; an error code otherwise. For a list of error codes, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR</a>. See also Direct3D 12 Return Codes.</para>
 	/// </returns>
 	/// <remarks>For more information, see <a href="https://docs.microsoft.com/windows/desktop/direct3ddxgi/dxgi-1-4-improvements">DXGI 1.4 Improvements</a>.</remarks>
-	void EnumWarpAdapter< A >( in Guid riid, out A ppvAdapter ) where A: IAdapter ;
+	HResult EnumWarpAdapter< A >( in Guid riid, out A? ppvAdapter ) where A: IAdapter ;
 	
 	
 	new static Type ComType => typeof(IDXGIFactory4) ;
@@ -595,11 +595,11 @@ public interface IFactory5: IFactory4 {
 public interface IFactory6: IFactory5 {
 	
 	/// <summary>Enumerates graphics adapters based on a given GPU preference.</summary>
-			/// <param name="Adapter">
+			/// <param name="adapterOrdinal">
 			/// <para>Type: <b>UINT</b> The index of the adapter to enumerate. The indices are in order of the preference specified in <i>GpuPreference</i>—for example, if <b>DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE</b> is specified, then the highest-performing adapter is at index 0, the second-highest is at index 1, and so on.</para>
 			/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgifactory6-enumadapterbygpupreference#parameters">Read more on docs.microsoft.com</see>.</para>
 			/// </param>
-			/// <param name="GpuPreference">
+			/// <param name="gpuPreference">
 			/// <para>Type: <b><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/ne-dxgi1_6-dxgi_gpu_preference">DXGI_GPU_PREFERENCE</a></b> The GPU preference for the app.</para>
 			/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgifactory6-enumadapterbygpupreference#parameters">Read more on docs.microsoft.com</see>.</para>
 			/// </param>
@@ -619,10 +619,8 @@ public interface IFactory6: IFactory5 {
 			/// <para>When <b>DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE</b> is specified for the <i>GpuPreference</i> parameter, the order of preference for the adapter returned in <i>ppvAdapter</i> will be:<dl> <dd>1. xGPUs</dd> <dd>2. dGPUs</dd> <dd>3. iGPUs</dd> </dl></para>
 			/// <para><see href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgifactory6-enumadapterbygpupreference#">Read more on docs.microsoft.com</see>.</para>
 			/// </remarks>
-	void EnumAdapterByGPUPreference< A >( uint Adapter, 
-										  GPUPreference GpuPreference,
-										  in Guid riid,
-										  out A ppvAdapter ) where A: IAdapter ;
+	HResult EnumAdapterByGPUPreference< A >( uint adapterOrdinal, GPUPreference gpuPreference,
+											 in Guid riid, out A? ppvAdapter ) where A: IAdapter ;
 	
 	
 	new static Type ComType => typeof(IDXGIFactory6) ;

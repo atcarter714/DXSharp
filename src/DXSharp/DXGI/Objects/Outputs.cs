@@ -57,7 +57,8 @@ internal class Output: Object,
 	}
 
 	
-	public uint GetDisplayModeCount( Format enumFormat, EnumModesFlags flags = EnumModesFlags.None ) {
+	public uint GetDisplayModeCount( Format enumFormat = Format.UNKNOWN, 
+									 EnumModesFlags flags = EnumModesFlags.None ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 		_ = ComObject ?? throw new NullReferenceException( $"{nameof(Output)} :: " +
 														   $"The internal COM interface is destroyed/null." ) ;
@@ -245,6 +246,18 @@ internal class Output1: Output, IOutput1,
 	}
 	
 	// ---------------------------------------------------------------------------------
+
+	public uint GetDisplayModeCount1( Format enumFormat    = Format.UNKNOWN,
+									  EnumModesFlags flags = EnumModesFlags.None ) {
+		var output = ComObject ?? throw new NullReferenceException( $"{nameof(Output1)} :: " +
+														  $"The internal COM interface is destroyed/null." ) ;
+		unsafe {
+			uint count = 0U ;
+			output.GetDisplayModeList1( (DXGI_FORMAT)enumFormat, 
+										(uint)flags, ref count ) ;
+			return count ;
+		}
+	}
 	
 	public void GetDisplayModeList1( Format enumFormat,
 									 EnumModesFlags flags,

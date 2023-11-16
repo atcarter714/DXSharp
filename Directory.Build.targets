@@ -1,9 +1,45 @@
 <Project>
-    <!-- Custom Task: Log a Message -->
+    <!-- Log startup info: -->
     <Target Name="LogBuildStartMessage" BeforeTargets="Build">
-        <Message Text="DXSharp build process started ..." Importance="high" />
+        <PropertyGroup>
+            <CurrentTime>$([System.DateTime]::Now)</CurrentTime>
+            <PlatformNameStr>$(NativePlatformName)</PlatformNameStr>
+            <OutputFileExt Condition=" '$(OutputType)' == '' ">$(NativePlatformName)</OutputFileExt>
+        </PropertyGroup>
+        
+        <Message Text="DXSharp SDK build process started @ '$(CurrentTime)' ..." Importance="high" />
+        <Message Text="Building :'$(ProjectName)' in: '$(RepoRootPath)'...\n" Importance="high" />
+        <Message Text="Assembly :'$(AssemblyName)' Output Target File: '$(OutputDir)$(OutputName)'" Importance="high" />
+        <Message Text="SDK Target Frameworks: $(DotNetTargets)" Importance="high" />
+        <Message Text="SDK Target Processors: $(PlatformNameStr)" Importance="high" />
+        
+        <Message Text="Current Target Framework: $(TargetFramework)" Importance="high" />
+        <Message Text="Current CPU Architecture: $(TargetCPU)" Importance="high" />
     </Target>
     
+    <Target Name="LogDirectXInfoAtStartup" BeforeTargets="Build">
+        <Message Text="Agility SDK Build: $(UsingAgilitySDK)" Importance="high" />
+        <Message Text="DirectX Platform: '$(NativePlatformName)'" Importance="high" />
+    </Target>
+    
+    
+    <Target Name="RunToolsAtStartup" BeforeTargets="Build">
+        <PropertyGroup>
+            <StartupScriptName>DXSBuildStartup.ps1</StartupScriptName>
+        </PropertyGroup>
+        
+        <Message Text="Running Pwsh Scripts @ '$(PowershellScriptsDir)'" Importance="high" />
+        <Exec Command="pwsh.exe -NonInteractive -ExecutionPolicy Unrestricted -File $(PowershellScriptsDir)\$(StartupScriptName) -Argument1 &quot;$(Arg1)&quot; -Argument2 &quot;$(Arg2)&quot;" />
+    </Target>
+
+    
+
+
+    <!-- Log build completion info: -->
+    <Target Name="LogBuildCompletionMessage" AfterTargets="Build">
+        <Message Text="DXSharp Sample build process completed for: '$(Assembly)'." Importance="high" />
+    </Target>
+
 </Project>
 
 

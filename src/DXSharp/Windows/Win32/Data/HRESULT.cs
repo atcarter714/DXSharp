@@ -14,7 +14,7 @@ using winmdroot = global::Windows.Win32;
 
 namespace DXSharp.Windows {
 	/// <summary>A 32-bit value that is used to describe an error or warning.</summary>
-	[DebuggerDisplay( "{Value}" )]
+	[DebuggerDisplay( "{ToString( )}" )]
 	public readonly struct HResult: IEquatable< HResult > {
 		/// <summary>Gets the value of the HRESULT as an Int32 value</summary>
 		public readonly int Value ;
@@ -92,7 +92,7 @@ namespace DXSharp.Windows {
 		/// </summary>
 		/// <returns>HRESULT in string form</returns>
 		public override string ToString( ) =>
-			string.Format( global::System.Globalization.CultureInfo.InvariantCulture, "0x{0:X8}", this.Value ) ;
+			string.Format( System.Globalization.CultureInfo.InvariantCulture, "0x{0:X8}", this.Value ) ;
 
 		/// <summary>
 		/// Converts the HRESULT value to a specially formatted string representation
