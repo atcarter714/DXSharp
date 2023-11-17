@@ -3,7 +3,6 @@
 		<SamplesRootPath>$(MSBuildThisFileDirectory)</SamplesRootPath>
 		<TargetCPUs>AnyCPU;x64;x86</TargetCPUs>
 		<DotNetTargets>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0</DotNetTargets>
-
 		
 		<!-- Make sure there's a configuration name and base output path: -->
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -40,7 +39,8 @@
 		<NativePlatformName Condition=" '$(Platform)' == 'AnyCPU' ">x64</NativePlatformName>
 
 		<AgilityVersion Condition=" '$(UsingAgilitySDK)' == 'true' ">[1.711.3-preview,)</AgilityVersion>
-		<DxcVersion Condition=" '$(UsingDxc)' == 'true' ">[101.7.2207.25,)</DxcVersion>
+		<!--<DxcVersion Condition=" '$(UsingDxc)' == 'true' ">[1.7.2308.12,)</DxcVersion>-->
+		<DxcVersion Condition=" '$(UsingDxc)' == 'true' ">*</DxcVersion>
 	</PropertyGroup>
 
 

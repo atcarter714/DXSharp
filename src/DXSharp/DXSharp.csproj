@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<!--Common Project Properties-->
-	<PropertyGroup>
+	<PropertyGroup Label="CommonProjectProps">
 		<TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>
 		<TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
 
@@ -27,9 +27,8 @@
 	
 	
 	<!-- Assets, Resources & Icons :: -->
-	<ItemGroup>
+	<ItemGroup Label="ContentAndAssets">
 		<Content Include="DXSharp_ICON_512.ico" CopyToOutputDirectory="PreserveNewest" />
-		
 		<None Include="..\..\file\img\DXSharp_Logo_00_512.png">
 			<Pack>True</Pack>
 			<PackagePath>\</PackagePath>
@@ -43,7 +42,7 @@
 	
 	
 	<!-- Package References :: -->
-	<ItemGroup>
+	<ItemGroup Label="ProjectPackageRefs">
 		<!-- Win32Metadata Package -->
 		<PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" Version="$(WinMDVersion)" />
 		
@@ -71,6 +70,11 @@
 			<Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+		
+		<LocalAgilityDLLs Include="@(AgilityDLLs->'$(OutputPath)%(RecursiveDir)%(FileName)%(Extension)')" />
+		<NativeReference Include="$(LocalAgilityDLLs)">
+			<IsWin32Manifest>false</IsWin32Manifest>
+		</NativeReference>
 	</ItemGroup>
 	
 	
@@ -81,8 +85,7 @@
 			<AutoGen>True</AutoGen>
 			<DependentUpon>LibResources.resx</DependentUpon>
 		</Compile>
-	</ItemGroup>
-	<ItemGroup>
+		
 		<EmbeddedResource Update="LibResources.resx">
 			<Generator>ResXFileCodeGenerator</Generator>
 			<LastGenOutput>LibResources.Designer.cs</LastGenOutput>
@@ -106,12 +109,19 @@
 				BasicTests, PublicKey=0024000004800000940000000602000000240000525341310004000001000100894fae0919aeb23bddcca2687ce855f3649b017c69bbb5f494a7261763dcd01937ebf398222f41977837a77af70995d7a4b7a8ffc6f3dd031ffd6804134c3678af91e99348f25a4fb7125e03ac5d16de4d1944c70a248b27c91a5a75715d856f321be121bd547a4a098a28be8e1b600b7d4136946e7ed1033a692c34495900cc
 			</_Parameter1>
 		</AssemblyAttribute>
+		
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>
+				DXSharp.Framework, PublicKey=0024000004800000940000000602000000240000525341310004000001000100894fae0919aeb23bddcca2687ce855f3649b017c69bbb5f494a7261763dcd01937ebf398222f41977837a77af70995d7a4b7a8ffc6f3dd031ffd6804134c3678af91e99348f25a4fb7125e03ac5d16de4d1944c70a248b27c91a5a75715d856f321be121bd547a4a098a28be8e1b600b7d4136946e7ed1033a692c34495900cc
+			</_Parameter1>
+		</AssemblyAttribute>
 	</ItemGroup>
+	
+	
 	<ItemGroup>
 	  <None Remove="Resources\sdkconf.json" />
 	  <AdditionalFiles Include="Resources\sdkconf.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </AdditionalFiles>
 	</ItemGroup>
-	
 </Project>

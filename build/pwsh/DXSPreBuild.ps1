@@ -7,7 +7,7 @@ param (
 $scriptName = "DXSPreBuild.ps1"
 
 # Show startup message:
-Write-Host "DXS Pre-Build Tool: Startup script (DXSPreBuild.ps1) launched ..."
+Write-Host "DXS Pre-Build Tool: ($scriptName) launched ..."
 
 
 

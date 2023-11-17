@@ -33,7 +33,7 @@ var debug6 = DebugHelper.Init( EnableGPUBasedValidation,
 
 
 // Initialize & run the app:
-await using IDXApp app = new BasicApp( Settings ) ;
+using IDXApp app = new BasicApp( Settings ) ;
 app.Initialize( ) ;
 app.Run( ) ;
 app.Shutdown( ) ;

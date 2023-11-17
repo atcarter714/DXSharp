@@ -1,16 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-		<Platforms>$(TargetCPUs);</Platforms>
-		<TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
-		
-		<IsPackable>false</IsPackable>
+	<PropertyGroup Label="TestProjBuildConfig">
 		<BaseOutputPath>$(RepoRootPath)bin\Tests\$(MSBuildProjectName)\$(Platform)\</BaseOutputPath>
-		<!--<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>-->
-  </PropertyGroup>
-
-
-  <ItemGroup Label="TestingPackageReferences">
+		<TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+		<Platforms>$(TargetCPUs);</Platforms>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+	
+	
+	<ItemGroup Label="TestingPackageReferences">
 	<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
 	<PackageReference Include="NUnit" Version="3.14.0" />
 	<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
@@ -22,19 +19,30 @@
 	  <PrivateAssets>all</PrivateAssets>
 	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	</PackageReference>
-  </ItemGroup>
-
-  <ItemGroup Label="DXSReferences">
-	<ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
-  </ItemGroup>
+	</ItemGroup>
 	
-	<ItemGroup>
+	
+	<ItemGroup Label="DXSReferences">
+		<ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
+	</ItemGroup>
+	
+	
+	<ItemGroup Label="ConfigurationFileIncludes">
 		<None Include="..\..\.editorconfig" Link=".editorconfig" />
 	</ItemGroup>
-
+	
 	<ItemGroup Label="FolderIncludes">
 		<Folder Include="D3D12\" />
 		<Folder Include="DXGI\" />
 	</ItemGroup>
-
+	
+	
+	<!-- Any shaders for the unit tests are included 
+		 unless $(OMIT_SHADERS) is defined as 'true' ... -->
+	<ItemGroup Label="IncludeAnyShaders"
+			   Condition=" 'OMIT_SHADERS' != 'true' ">
+		<None Include="**\*.hlsl" CopyToOutputDirectory="PreserveNewest" />
+		<None Include="**\*.inc" CopyToOutputDirectory="PreserveNewest" />
+		<None Include="**\*.h" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
 </Project>
