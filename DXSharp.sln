@@ -50,6 +50,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Props", "Props", "{78357CCA
 		samples\Directory.Build.props = samples\Directory.Build.props
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{066A62E0-26FE-412E-99F3-1B3D3ADA206C}"
+	ProjectSection(SolutionItems) = preProject
+		build\msbuild\DXSharpShared.Build.props = build\msbuild\DXSharpShared.Build.props
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -154,6 +159,7 @@ Global
 		{430FF448-775A-49C2-8FC4-F56143802138} = {8083732C-24ED-46AA-AD90-0ECB3B3B0040}
 		{A26CCC2F-6530-4962-B5BD-C0100C5DB6D1} = {8083732C-24ED-46AA-AD90-0ECB3B3B0040}
 		{78357CCA-2A33-480A-A890-1A91BD85107F} = {8083732C-24ED-46AA-AD90-0ECB3B3B0040}
+		{066A62E0-26FE-412E-99F3-1B3D3ADA206C} = {78357CCA-2A33-480A-A890-1A91BD85107F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C4990EC-248E-49D5-A254-EA8AD214C338}

@@ -23,7 +23,6 @@
 		<!-- Make sure valid platforms and target frameworks are set: -->
 		<Platforms Condition=" '$(Platforms)' == '' ">$(TargetCPUs)</Platforms>
 		<TargetFrameworks Condition=" '$(TargetFrameworks)' == '' ">$(DotNetTargets);</TargetFrameworks>
-
 		
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
@@ -92,8 +91,8 @@
 		<AgilityVersion Condition=" '$(UsingAgilitySDK)' == 'true' ">[1.711.3-preview,)</AgilityVersion>
 		<DxcVersion Condition=" '$(UsingDxc)' == 'true' ">*</DxcVersion>
 	</PropertyGroup>
-
-
+	
+	
 	<!-- Roslyn Generator Setup Properties :: -->
 	<PropertyGroup Label="CodeGenSettings">
 		<UsingCsWin32 Condition=" '$(UsingCsWin32)' == '' ">true</UsingCsWin32>

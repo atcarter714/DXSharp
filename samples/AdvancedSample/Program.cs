@@ -1,12 +1,15 @@
 ﻿#region Using Directives
 using System.Drawing ;
+
+using DXSharp ;
 using DXSharp.Applications ;
 using AdvancedDXS.Framework ;
-using DXSharp ;
-using DXSharp.Framework.Debugging ;
 
+#if DEBUG || DEBUG_COM
+using DXSharp.Framework.Debugging ;
 using IDebugD3D  = DXSharp.Direct3D12.IDebug6 ;
 using IDebugDXGI = DXSharp.DXGI.Debugging.IDebug1 ;
+#endif
 #endregion
 
 

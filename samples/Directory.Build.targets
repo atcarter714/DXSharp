@@ -2,34 +2,36 @@
     <!-- Log startup info: -->
     <Target Name="LogBuildStartMessage" BeforeTargets="Build">
         <Message Text="DXSharp Sample build process started for '$(ProjectName)' in: '$(SamplesRootPath)'..." Importance="high" />
-        <Message Text="Sample Target Frameworks: $(DotNetTargets)" Importance="high" />
-        <Message Text="Sample Target Processors: $(TargetCPUs)" Importance="high" />
-        
-        <Message Text="Current Target Framework: $(TargetFramework)" Importance="high" />
-        <Message Text="Current CPU Architecture: $(TargetCPU)" Importance="high" />
+        <Message Text="Current Sample Target Framework: $(TargetFramework)" Importance="high" />
+        <Message Text="Current Sample CPU Architecture: $(TargetCPU)" Importance="high" />
     </Target>
-
     <Target Name="LogDirectXInfoAtStartup" BeforeTargets="Build">
         <Message Text="Agility SDK Build: $(UsingAgilitySDK)" Importance="high" />
         <Message Text="DirectX Platform: '$(NativePlatformName)'" Importance="high" />
     </Target>
-
+    
+    
     <!-- Log build completion info: -->
     <Target Name="LogBuildCompletionMessage" AfterTargets="Build">
-        <Message Text="DXSharp Sample build process completed for: '$(Assembly)'." Importance="high" />
+        <!-- Get the build results from MSBuild properties: -->
+        <PropertyGroup>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='' ">Unknown</BuildResult>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='true' ">Success</BuildResult>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'!='true' ">Failed</BuildResult>
+        </PropertyGroup>
+        
+        <!-- Print the build result code and info: -->
+        <Message Text="-------------------------------" Importance="high" />
+        <Message Text="DXSharp sample app build process completed for: '$(AssemblyName)'." Importance="high" />
+        <Message Text="MSBuild Result: '$(BuildResult)' " Importance="high" />
+        <Message Text="-------------------------------" Importance="high" />
+        
+        <OnError ExecuteTargets="FailedBuildMessage"/>
     </Target>
     
+    <!-- Failure Targets: -->
+    <Target Name="FailedBuildMessage">
+        <Message Text="Sample project build failed for $(MSBuildProjectName)!"
+                 Importance="high" />
+    </Target>
 </Project>
-
-
-<!--
-
-        &lt;!&ndash; Custom Task: Run an External Tool or Process &ndash;&gt;
-<Target Name="RunExternalTool" AfterTargets="Build">
-<Exec Command="path\to\your\tool.exe arguments" />
-</Target>
-
-        &lt;!&ndash; Custom Task: Execute a PowerShell Script &ndash;&gt;
-<Target Name="ExecutePowershellScript" AfterTargets="RunExternalTool">
-<Exec Command="powershell.exe -NonInteractive -ExecutionPolicy Unrestricted -File path\to\your\script.ps1" />
-</Target>-->

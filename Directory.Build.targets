@@ -6,8 +6,9 @@
         </BuildDependsOn>
     </PropertyGroup>-->
     
+    
     <Target Name="PreBuildEventTarget" BeforeTargets="PreBuildEvent">
-        <Message Text="DXS SDK build triggered ..." Importance="high" />
+        <Message Text="DXS SDK library build triggered ..." Importance="high" />
     </Target>
     
     
