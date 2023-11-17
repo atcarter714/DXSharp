@@ -14,6 +14,7 @@ using IDevice = DXSharp.Direct3D12.IDevice ;
 #endregion
 namespace DXSharp.Framework.Graphics ;
 
+
 public abstract class DeviceCaps: DisposableObject {
 	// ----------------------------------------------------
 	internal static readonly ReadOnlyMemory< Type > _allDeviceInterfaceTypes ;
@@ -94,22 +95,25 @@ public class DeviceCaps< A >: DeviceCaps where A: IAdapter {
 	
 	public A AdapterInterface { get ; }
 	
-	
-	public FeatureLevel FeatureLevel { get ; }
-	
+	public FeatureLevel FeatureLevel { get ; protected set ; }
 	public Type? BestSupportedDeviceInterface { get ; protected set ; }
 	public Guid? BestSupportedDeviceInterfaceGuid { get ; protected set ; }
+	
+	
+	// ----------------------------------------------------
 	
 	public DeviceCaps( A adapter ) {
 		ArgumentNullException.ThrowIfNull( adapter, nameof(adapter) ) ;
 		this.AdapterInterface = adapter ;
-		this.FeatureLevel = GetBestFeatureLevel( adapter ) ;
 	}
 	
 	// ----------------------------------------------------
 
+	public void Initialize( ) {
+		this.FeatureLevel = GetBestFeatureLevel( this.AdapterInterface ) ;
+		this.FindBestSupportedDeviceInterface( ) ;
+	}
 	public void CheckSupport( D3D12Feature feature ) {
-		FeatureDataArchitecture1 architecture1 = default ;
 		
 	}
 	
@@ -154,7 +158,6 @@ public class DeviceCaps< A >: DeviceCaps where A: IAdapter {
 				this.BestSupportedDeviceInterfaceGuid = riid ;
 				break ;
 			}
-		
 		}
 
 #if !STRIP_CHECKS && (DEBUG || DEV_BUILD)
@@ -207,9 +210,27 @@ public class DeviceCaps< A >: DeviceCaps where A: IAdapter {
 	}
 
 	public IDevice CreateBestDevice( ) {
-		var _rcwDevice = this.CreateBestDeviceRCW( ) ;
-		IDevice device = IDevice.Instantiate( _rcwDevice ) ;
+		var guid = this.BestSupportedDeviceInterfaceGuid 
+				   ?? throw new InvalidOperationException( ) ;
+		
+		var _rcwDevice  = this.CreateBestDeviceRCW( ) ;
+		var _creationFn = (Func<ID3D12Device, IDevice>?)IDevice.GetWrapperCreationFunction( in guid ) ;
+		
+#if !STRIP_CHECKS && (DEBUG || DEV_BUILD)
+		if( _creationFn is null )
+			throw new FrameworkErrorException( $"{nameof(DeviceCaps<A>)} :: " +
+											   $"Unexpected failure to get wrapper creation function." ) ;
+#endif
+		
+		var device = _creationFn( _rcwDevice ) ;
+#if !STRIP_CHECKS && (DEBUG || DEV_BUILD)
+		if( device is null )
+			throw new FrameworkErrorException( $"{nameof(DeviceCaps<A>)} :: " +
+											   $"Unexpected failure to create wrapper." ) ;
+#endif
+		return device ;
 	}
+	
 	
 	// ----------------------------------------------------
 	protected override async ValueTask DisposeUnmanaged( ) {

@@ -33,6 +33,10 @@ EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "DXSharp.Samples.Shared", "samples\shared\DXSharp.Samples.Shared\DXSharp.Samples.Shared.shproj", "{29E67012-6798-43E1-BEFE-F9270F595779}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{430FF448-775A-49C2-8FC4-F56143802138}"
+	ProjectSection(SolutionItems) = preProject
+		build\pwsh\DXSBuildStartup.ps1 = build\pwsh\DXSBuildStartup.ps1
+		build\pwsh\DXSPreBuild.ps1 = build\pwsh\DXSPreBuild.ps1
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Targets", "Targets", "{A26CCC2F-6530-4962-B5BD-C0100C5DB6D1}"
 	ProjectSection(SolutionItems) = preProject

@@ -1,20 +1,33 @@
 <Project>
+    <!-- Set custom targets for a special build process: -->
+    <!--<PropertyGroup>
+        <BuildDependsOn>
+            PreBuildEventTarget;
+        </BuildDependsOn>
+    </PropertyGroup>-->
+    
+    <Target Name="PreBuildEventTarget" BeforeTargets="PreBuildEvent">
+        <Message Text="DXS SDK build triggered ..." Importance="high" />
+    </Target>
+    
+    
     <!-- Log startup info: -->
     <Target Name="LogBuildStartMessage" BeforeTargets="Build">
         <PropertyGroup>
             <CurrentTime>$([System.DateTime]::Now)</CurrentTime>
             <PlatformNameStr>$(NativePlatformName)</PlatformNameStr>
-            <OutputFileExt Condition=" '$(OutputType)' == '' ">$(NativePlatformName)</OutputFileExt>
+            <OutputFileExt Condition=" '$(OutputType)' == 'Library' ">dll</OutputFileExt>
+            <OutputFileExt Condition=" '$(OutputType)' == 'Exe' ">exe</OutputFileExt>
+            <AssemblyOutputFullPath>$(OutputDirectory)$(AssemblyName).$(OutputFileExt)</AssemblyOutputFullPath>
         </PropertyGroup>
         
         <Message Text="DXSharp SDK build process started @ '$(CurrentTime)' ..." Importance="high" />
-        <Message Text="Building :'$(ProjectName)' in: '$(RepoRootPath)'...\n" Importance="high" />
-        <Message Text="Assembly :'$(AssemblyName)' Output Target File: '$(OutputDir)$(OutputName)'" Importance="high" />
+        <Message Text="Building :'$(ProjectName)' in: '$(RepoRootPath)'..." Importance="high" />
+        <Message Text="Assembly :'$(AssemblyName)' Output Target File: '$(AssemblyOutputFullPath)'" Importance="high" />
         <Message Text="SDK Target Frameworks: $(DotNetTargets)" Importance="high" />
         <Message Text="SDK Target Processors: $(PlatformNameStr)" Importance="high" />
         
         <Message Text="Current Target Framework: $(TargetFramework)" Importance="high" />
-        <Message Text="Current CPU Architecture: $(TargetCPU)" Importance="high" />
     </Target>
     
     <Target Name="LogDirectXInfoAtStartup" BeforeTargets="Build">
@@ -23,34 +36,60 @@
     </Target>
     
     
+    <!-- Run custom Powershell startup scripts: 
+            This enables any kind of custom startup logic you want to happen ... 
+            Edit the code in the Powershell script to run things and do any kind
+            of extra work/processing you want or need ... -->
     <Target Name="RunToolsAtStartup" BeforeTargets="Build">
         <PropertyGroup>
             <StartupScriptName>DXSBuildStartup.ps1</StartupScriptName>
+            <ScriptLocation Condition=" '$(ScriptLocation)'=='' ">$(PowershellScriptsDir)\$(StartupScriptName)</ScriptLocation>
+            <LogFileLocation Condition=" '$(LogFileLocation)'=='' ">$(RepoRootPath)\build\logs\$(StartupScriptName).log</LogFileLocation>
+            
+            <!-- Select Powershell version to use and set it to $(PwshExe) property: -->
+            <UseCustomPowershellInstall>true</UseCustomPowershellInstall>
+            <UseCustomPowershellInstall Condition=" '$(UseCustomPowershellInstall)'=='' ">false</UseCustomPowershellInstall>
+            
+            <PWSH_VER Condition=" '$(PWSH_VER)'=='' ">7</PWSH_VER>
+            <CustomPowershellPath>C:\Program Files\PowerShell\$(PWSH_VER)\pwsh.exe</CustomPowershellPath>
+            <PwshExe Condition=" '$(UseCustomPowershellInstall)'=='true' ">$(CustomPowershellPath)</PwshExe>
+            <PwshExe Condition=" '$(UseCustomPowershellInstall)'=='false' ">pwsh.exe</PwshExe>
+            <PowerShellExe Condition=" '$(PowerShellExe)'=='' ">powershell.exe</PowerShellExe>
+            <!-- ................................................................... -->
+
+
+            <!-- Create log message for build tool: -->
+            <RunPwshExe>$(PwshExe)</RunPwshExe>
+            <!--<LogMessage Condition=" '$(LogMessage)'=='' ">
+                [Build Host] $(MSDeployComputerName) :: Running startup scripts @ $(ScriptLocation) ...
+                &#xD;&#xA;[BuildHost] :: Native Platform Target: $(NativePlatformName)&#xD;&#xA;
+                [BuildHost] :: SDK Target Frameworks: $(DotNetTargets)&#xD;&#xA;
+                [BuildHost] :: SDK Target Processors: $(PlatformNameStr)&#xD;&#xA;
+                [BuildHost] :: Current Target Framework: $(TargetFramework)&#xD;&#xA;
+                [BuildHost] :: Current CPU Architecture: $(TargetCPU)&#xD;&#xA;
+            </LogMessage>-->
         </PropertyGroup>
         
-        <Message Text="Running Pwsh Scripts @ '$(PowershellScriptsDir)'" Importance="high" />
-        <Exec Command="pwsh.exe -NonInteractive -ExecutionPolicy Unrestricted -File $(PowershellScriptsDir)\$(StartupScriptName) -Argument1 &quot;$(Arg1)&quot; -Argument2 &quot;$(Arg2)&quot;" />
+        
+        <!-- Run the startup Powershell script: -->
+        <Message Text="Running Startup Scripts @ '$(ScriptLocation)'" Importance="high" />
+        
     </Target>
 
     
-
-
+    
     <!-- Log build completion info: -->
     <Target Name="LogBuildCompletionMessage" AfterTargets="Build">
-        <Message Text="DXSharp Sample build process completed for: '$(Assembly)'." Importance="high" />
+        <Message Text="DXSharp SDK assembly build process completed for: '$(AssemblyName)'." Importance="high" />
+        
+        <!-- Get the build results from MSBuild properties: -->
+        <PropertyGroup>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='' ">Unknown</BuildResult>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='true' ">Success</BuildResult>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'!='true' ">Failed</BuildResult>
+        </PropertyGroup>
+        
+        <!-- Show the result code: -->
+        <Message Text="Build Result Code: '$(MSBuildLastTaskResult)' - '$(BuildResult)' " Importance="high" />
     </Target>
-
 </Project>
-
-
-<!--
-
-        &lt;!&ndash; Custom Task: Run an External Tool or Process &ndash;&gt;
-<Target Name="RunExternalTool" AfterTargets="Build">
-<Exec Command="path\to\your\tool.exe arguments" />
-</Target>
-
-        &lt;!&ndash; Custom Task: Execute a PowerShell Script &ndash;&gt;
-<Target Name="ExecutePowershellScript" AfterTargets="RunExternalTool">
-<Exec Command="powershell.exe -NonInteractive -ExecutionPolicy Unrestricted -File path\to\your\script.ps1" />
-</Target>-->

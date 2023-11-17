@@ -349,7 +349,7 @@ public class DisplaySetup: IInitialize {
 					
 					// Allocate memory for feature struct:
 					uint size = FeatureStructSizes[ feature ] ;
-					var  featureData = AllocateFeatureStructUnmanagedMemory( feature, out var handle ) ;
+					var  featureData = AllocateFeatureStructMemory( feature, out var handle ) ;
 					_featureStructHandles.Add( handle ) ;
 					
 					hr = device10!.CheckFeatureSupport( feature, (nint)handle.Pointer, size ) ;

@@ -19,9 +19,6 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 		
-		<!-- This entire repo has just one version.json file, so compute the version once and share with all projects in a large build. -->
-		<GitVersionBaseDirectory>$(MSBuildThisFileDirectory)</GitVersionBaseDirectory>
-
 		<!-- Local builds should embed PDBs so we never lose them when a subsequent build occurs. -->
 		<DebugType Condition=" '$(CI)' != 'true' and '$(TF_BUILD)' != 'true' ">embedded</DebugType>
 		<DebugType Condition=" '$(AzureDevOps)' != 'true' or '$(AZ_BUILD)' != 'true' ">embedded</DebugType>
@@ -30,20 +27,28 @@
 		<Company>Arkaen Solutions</Company>
 		<Authors>Aaron T. Carter, $(Company), Contributors</Authors>
 		<Copyright>© Aaron T. Carter. All rights reserved.</Copyright>
-		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
 	</PropertyGroup>
 	
-	<PropertyGroup Label="NativeLibConfig">
+	
+	<!-- DirectX SDK & Dependency Properties -->
+	<PropertyGroup Label="NativeSDKProperties">
+		<UsingAgilitySDK>true</UsingAgilitySDK>
 		<NativePlatformName Condition=" '$(Platform)' == 'x64' ">x64</NativePlatformName>
 		<NativePlatformName Condition=" '$(Platform)' == 'x86' ">win32</NativePlatformName>
 		<NativePlatformName Condition=" '$(Platform)' == 'AnyCPU' ">x64</NativePlatformName>
+
+		<AgilityVersion Condition=" '$(UsingAgilitySDK)' == 'true' ">[1.711.3-preview,)</AgilityVersion>
+		<DxcVersion Condition=" '$(UsingDxc)' == 'true' ">[101.7.2207.25,)</DxcVersion>
 	</PropertyGroup>
-	
-	
-	<!-- DirectX SDK & Dependency Properties -->
-	<PropertyGroup Label="DXSDK">
-		<UsingAgilitySDK>true</UsingAgilitySDK>
+
+
+	<!-- Debug/Release Configuration Properties :: -->
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' " Label="DebugConfigurationProperties">
+		<DefineConstants>TRACE, DEBUG_COM, DEV_BUILD</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release' " Label="ReleaseConfigurationProperties">
+		<DefineConstants>TRACE, STRIP_CHECKS, DXS_FAST</DefineConstants>
 	</PropertyGroup>
 </Project>

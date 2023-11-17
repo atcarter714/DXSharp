@@ -9,13 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Update="shader1.hlsl">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
     </ItemGroup>
 
 </Project>

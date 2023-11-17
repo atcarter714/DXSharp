@@ -43,6 +43,13 @@ public interface IDevice: IObject,
 				{ IDevice11.IID, ( pComObj ) => new Device11( ( pComObj as ID3D12Device11 )! ) },
 				{ IDevice12.IID, ( pComObj ) => new Device12( ( pComObj as ID3D12Device12 )! ) }
 			} ) ;
+
+	public static Delegate? GetWrapperCreationFunction( in Guid iid ) {
+		if( _deviceCreationFunctions.TryGetValue( iid, out var func ) ) {
+			return func ;
+		}
+		throw new ArgumentException( $"No creation function exists for IID \"{iid}\"." ) ;
+	}
 	
 	// ---------------------------------------------------------------------------------
 	

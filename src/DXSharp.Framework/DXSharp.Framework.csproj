@@ -5,11 +5,11 @@
         <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
     </PropertyGroup>
 
-    <ItemGroup>
+    <ItemGroup Label="ProjectRefs">
       <ProjectReference Include="..\DXSharp.Dxc\DXSharp.Dxc.csproj" />
       <ProjectReference Include="..\DXSharp\DXSharp.csproj" />
     </ItemGroup>
-
+    
     <ItemGroup>
       <Folder Include="Applications\" />
       <Folder Include="XTensions\DX12\" />
