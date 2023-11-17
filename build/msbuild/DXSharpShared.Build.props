@@ -1,0 +1,58 @@
+﻿<Project>
+    <PropertyGroup Label="WindowsSDKProps">
+        <WindowsOnly>true</WindowsOnly>
+        <WinSDKVersion>10.0.22621.0</WinSDKVersion>
+        <WinSDKMinVersion>$(WinSDKVersion)</WinSDKMinVersion>
+    </PropertyGroup>
+    
+    
+    <PropertyGroup Label="BuildSetupProps">
+        <SDKProjectName>$(SolutionName)</SDKProjectName>
+        <CommonRootNamespace>$(SDKProjectName)</CommonRootNamespace>
+        
+        <!-- Useful global path properties for builds ::
+             (These can be used in other MSBuild scripts) -->
+        <No32Bit Condition=" '$(No32Bit)' == '' ">false</No32Bit>
+        <NoAnyCPU Condition=" '$(NoAnyCPU)' == '' ">false</NoAnyCPU>
+        <IsDXSLibrary Condition=" '$(IsDXSLibrary)' == '' ">false</IsDXSLibrary>
+        <DXSBasePath Condition=" '$(DXSBasePath)' == '' ">$(SolutionDir)</DXSBasePath>
+        
+        <DXSBinDir>$(DXSBasePath)bin\</DXSBinDir>
+        <DXSObjDir>$(DXSBasePath)obj\</DXSObjDir>
+        <DXSDocsDir>$(DXSBasePath)docs\</DXSDocsDir>
+        <DXSSourceDir>$(DXSBasePath)src\</DXSSourceDir>
+        <DXSBuildDir>$(DXSBasePath)build\</DXSBuildDir>
+        <DXSTestsDir>$(DXSBasePath)tests\</DXSTestsDir>
+        <DXSSamplesDir>$(DXSBasePath)samples\</DXSSamplesDir>
+    </PropertyGroup>
+    
+    
+    <ItemGroup Label="DXSFrameworkItems">
+        <!-- Define the .NET runtime major versions we want to target :: -->
+        <DotNetVersions Label="DotNetTargetDefinitions">
+            <Include>7.0</Include>
+            <Include>8.0</Include>
+        </DotNetVersions>
+        
+        <!-- Define the CPU architecture types we want to target :: -->
+        <CPUArchitectures Label="CPUTargetDefinitions">
+            <!-- NOTE: The $(No32Bit) prop should be defined 'true' for any projects 
+                 with native dependencies that don't support 32-bit -->
+            <Include Condition=" '$(No32Bit)' != 'true' ">x86</Include>
+            <Include Condition=" '$(No32Bit)' != 'true' ">arm</Include>
+            <Include>x64</Include>
+            <Include>arm64</Include>
+            <Include>AnyCPU</Include>
+        </CPUArchitectures>
+    </ItemGroup>
+    
+    
+    
+    <PropertyGroup Label="DynamicTargettingProps">
+        <CPUTargetDefs>@(CPUArchitectures->(Identity))</CPUTargetDefs>
+        <DotNetTargetDefs>@(DotNetVersions->'net%(Identity)-windows$(WinSDKVersion)')</DotNetTargetDefs>
+    </PropertyGroup>
+</Project>
+
+        <!--<DotNetTargetsDef>'net'@(DotNetVersions -> '$(TargetFrameworkVersion)', ' ')</DotNetTargetsDef>-->
+        
