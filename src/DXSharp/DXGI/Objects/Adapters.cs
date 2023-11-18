@@ -1,7 +1,6 @@
 ﻿// Implements an idiomatic C# version of IDXGIAdapter interface:
 // https://docs.microsoft.com/en-us/windows/win32/api/dxgi/nn-dxgi-idxgiadapter
 #region Using Directives
-
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 using System.Runtime.Versioning ;
@@ -10,7 +9,6 @@ using Windows.Win32.Graphics.Dxgi ;
 using DXSharp.Windows ;
 using DXSharp.Windows.COM ;
 using DXSharp.Windows.Win32 ;
-
 #endregion
 namespace DXSharp.DXGI ;
 
@@ -108,8 +106,8 @@ internal class Adapter: Object,
 		}
 	}
 
-	// -------------------------------------------------------------------------------------
 	
+	// -------------------------------------------------------------------------------------
 	public new static Type ComType => typeof( IDXGIAdapter ) ;
 	public new static ref readonly Guid Guid {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -119,7 +117,6 @@ internal class Adapter: Object,
 													.GetReference( data ) ) ;
 		}
 	}
-	
 	// ======================================================================================
 } ;
 
@@ -190,7 +187,6 @@ internal class Adapter1: Adapter,
 	}
 	
 	// -------------------------------------------------------------------------------------
-
 	public new static Type ComType => typeof( IDXGIAdapter1 ) ;
 	public new static ref readonly Guid Guid {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -200,7 +196,6 @@ internal class Adapter1: Adapter,
 													.GetReference( data ) ) ;
 		}
 	}
-	
 	// ======================================================================================
 } ;
 
@@ -232,9 +227,10 @@ internal class Adapter1: Adapter,
  Wrapper(typeof(IDXGIAdapter2)),
  NativeLibrary( "dxgi.dll", "IDXGIAdapter2",
 				"dxgi1_2.h", "Adapter2" )]
-internal class Adapter2: Adapter1, IAdapter2,
-					   IComObjectRef< IDXGIAdapter2 >,
-					   IUnknownWrapper< IDXGIAdapter2 > {
+internal class Adapter2: Adapter1, 
+						 IAdapter2,
+						 IComObjectRef< IDXGIAdapter2 >,
+						 IUnknownWrapper< IDXGIAdapter2 > {
 	ComPtr< IDXGIAdapter2 >? _comPtr ;
 	public new ComPtr< IDXGIAdapter2 >? ComPointer => 
 		_comPtr ??= ComResources?.GetPointer< IDXGIAdapter2 >( )! ;
@@ -282,6 +278,17 @@ internal class Adapter2: Adapter1, IAdapter2,
 		_comPtr = ptr ;
 		_initOrAdd( _comPtr ) ;
 	}
+	~Adapter2( ) => Dispose( false ) ;
+	
+	// --------------------------------------------------------------
+	
+	protected override ValueTask DisposeUnmanaged( ) {
+		ObjectDisposedException.ThrowIf( ComResources is null 
+										 || ComResources.Disposed, ComResources ) ;
+		ComResources.Dispose( ) ;
+		return ValueTask.CompletedTask ;
+	}
+	
 	
 	// --------------------------------------------------------------
 	// Interface Instance Methods:
@@ -304,12 +311,9 @@ internal class Adapter2: Adapter1, IAdapter2,
 	}
 	
 	
-	// --------------------------------------------------------------
-	// Static Members:
-	// --------------------------------------------------------------
 	
+	// --------------------------------------------------------------
 	public new static Type ComType => typeof( IDXGIAdapter2 ) ;
-	
 	public new static ref readonly Guid Guid {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		get {
@@ -318,7 +322,6 @@ internal class Adapter2: Adapter1, IAdapter2,
 													.GetReference( data ) ) ;
 		}
 	}
-
 	// ==============================================================
 } ;
 
@@ -357,7 +360,17 @@ internal class Adapter3: Adapter2,
 		_comPtr = ptr ;
 		_initOrAdd( _comPtr ) ;
 	}
-
+	~Adapter3( ) => Dispose( false ) ;
+	
+	// --------------------------------------------------------------
+	
+	protected override ValueTask DisposeUnmanaged( ) {
+		ObjectDisposedException.ThrowIf( ComResources is null 
+										 || ComResources.Disposed, ComResources ) ;
+		ComResources.Dispose( ) ;
+		return ValueTask.CompletedTask ;
+	}
+	
 	// --------------------------------------------------------------
 
 	public unsafe void QueryVideoMemoryInfo( uint NodeIndex, 
@@ -390,10 +403,9 @@ internal class Adapter3: Adapter2,
 	public void RegisterVideoMemoryBudgetChangeNotificationEvent( Win32Handle hEvent, out uint pdwCookie ) => 
 		ComObject!.RegisterVideoMemoryBudgetChangeNotificationEvent( hEvent, out pdwCookie ) ;
 	
+	
 	// --------------------------------------------------------------
-
 	public new static Type ComType => typeof( IDXGIAdapter3 ) ;
-
 	public new static ref readonly Guid Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
 		get {
@@ -402,7 +414,6 @@ internal class Adapter3: Adapter2,
 													.GetReference( data ) ) ;
 		}
 	}
-	
 	// ==============================================================
 } ;
 
@@ -458,7 +469,7 @@ internal class Adapter4: Adapter3,
 			return _desc3Cached ;
 		}
 	}
-
+	
 	public void GetDesc3( out AdapterDescription3 pDesc ) {
 		unsafe {
 			DXGI_ADAPTER_DESC3 desc = default ;
@@ -482,9 +493,20 @@ internal class Adapter4: Adapter3,
 		_comPtr = ptr ;
 		_initOrAdd( _comPtr ) ;
 	}
+	~Adapter4( ) => Dispose( false ) ;
 	
+	// --------------------------------------------------------------
+
+	protected override ValueTask DisposeUnmanaged( ) {
+		if( ComResources is null || ComResources.Disposed ) 
+			return ValueTask.CompletedTask ;
+		
+		ComResources.Dispose( ) ;
+		return ValueTask.CompletedTask ;
+	}
+	
+	// --------------------------------------------------------------
 	public new static Type ComType => typeof( IDXGIAdapter4 ) ;
-	
 	public new static ref readonly Guid Guid {
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		get {
@@ -493,5 +515,6 @@ internal class Adapter4: Adapter3,
 													.GetReference( data ) ) ;
 		}
 	}
+	// ==============================================================
 } ;
 

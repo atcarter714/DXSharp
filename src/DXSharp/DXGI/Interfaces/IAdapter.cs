@@ -47,6 +47,11 @@ public interface IAdapter: IObject, IInstantiable {
 	// ---------------------------------------------------------------------------------
 	
 	
+	AdapterDescription Description { get ; }
+	
+	// ---------------------------------------------------------------------------------
+	
+
 	/// <summary>
 	/// Enumerate adapter (video card) outputs.
 	/// </summary>
@@ -132,6 +137,10 @@ public interface IAdapter: IObject, IInstantiable {
 public interface IAdapter1: IAdapter {
 	// ---------------------------------------------------------------------------------
 	
+	AdapterDescription1 Description1 { get ; }
+
+	// ---------------------------------------------------------------------------------
+	
 	/// <summary>Gets a DXGI 1.1 description of an adapter (or video card).</summary>
 	/// <param name="pDesc">
 	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_adapter_desc1">DXGI_ADAPTER_DESC1</a>*</b> A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_adapter_desc1">DXGI_ADAPTER_DESC1</a> structure that describes the adapter. This parameter must not be <b>NULL</b>. On <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro">feature level</a> 9 graphics hardware, <b>GetDesc1</b> returns zeros for the PCI ID in the <b>VendorId</b>, <b>DeviceId</b>, <b>SubSysId</b>, and <b>Revision</b> members of <b>DXGI_ADAPTER_DESC1</b> and “Software Adapter” for the description string in the <b>Description</b> member.</para>
@@ -178,6 +187,9 @@ public interface IAdapter1: IAdapter {
 [SupportedOSPlatform( "windows8.0" )]
 [ProxyFor( typeof( IDXGIAdapter2 ) )]
 public interface IAdapter2: IAdapter1 {
+	// ---------------------------------------------------------------------------------
+	
+	AdapterDescription2 Description2 { get ; }
 	
 	// ---------------------------------------------------------------------------------
 	
@@ -358,6 +370,10 @@ public interface IAdapter3: IAdapter2 {
 public interface IAdapter4: IAdapter3 {
 	// ---------------------------------------------------------------------------------
 	
+	AdapterDescription3 Description3 { get ; }
+	
+	// ---------------------------------------------------------------------------------
+	
 	/// <summary>Gets a Microsoft DirectX Graphics Infrastructure (DXGI) 1.6 description of an adapter or video card. This description includes information about ACG compatibility.</summary>
 	/// <param name="pDesc">
 	/// <para>A pointer to a <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_6/ns-dxgi1_6-dxgi_adapter_desc3">DXGI_ADAPTER_DESC3</a> structure that describes the adapter. This parameter must not be <b>NULL</b>. On <a href="https://docs.microsoft.com/windows/desktop/direct3d11/overviews-direct3d-11-devices-downlevel-intro">feature level</a> 9 graphics hardware, early versions of  <b>GetDesc3</b> (<a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiadapter1-getdesc1">GetDesc1</a>, and <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nf-dxgi-idxgiadapter-getdesc">GetDesc</a>) return zeros for the PCI ID in the <b>VendorId</b>, <b>DeviceId</b>, <b>SubSysId</b>, and <b>Revision</b> members of the adapter description structure and “Software Adapter” for the description string in the <b>Description</b> member. <b>GetDesc3</b> and <a href="https://docs.microsoft.com/windows/desktop/api/dxgi1_2/nf-dxgi1_2-idxgiadapter2-getdesc2">GetDesc2</a> return the actual feature level 9 hardware values in these members.</para>
@@ -369,6 +385,11 @@ public interface IAdapter4: IAdapter3 {
 	/// <para><a href="https://docs.microsoft.com/windows/win32/api/dxgi1_6/nf-dxgi1_6-idxgiadapter4-getdesc3#">Read more on docs.microsoft.com</a>.</para>
 	/// </remarks>
 	void GetDesc3( out AdapterDescription3 pDesc) ;
+	
+	public AdapterDescription3 GetDesc3( ) {
+		GetDesc3( out AdapterDescription3 desc ) ;
+		return desc ;
+	}
 	
 	// ---------------------------------------------------------------------------------
 	new static Type ComType => typeof( IDXGIAdapter4 ) ;

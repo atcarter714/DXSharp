@@ -31,10 +31,9 @@ public class DXSApp: DXWinformApp {
 	
 	public override DXSApp Initialize( ) {
 		base.Initialize( ) ;
-		//Window?.SetSize( Settings.WindowSize ) ;
 		
 		graphics = new( _graphicsSettings ) ;
-		graphics.LoadAssets( ) ;
+		Load( ) ;
 		return this ;
 	}
 
@@ -47,6 +46,7 @@ public class DXSApp: DXWinformApp {
 		
 		base.Load( ) ;
 		graphics.LoadPipeline( ) ;
+		graphics.LoadAssets( ) ;
 	}
 
 

@@ -57,6 +57,7 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 	public abstract Type ComType { get ; }
 	internal int RefCount => _refCount ;
 	internal nint BaseAddress => _baseAddr ;
+	public abstract nint InterfaceVPtr { get ; }
 	internal object? InterfaceObjectRef => _comObjectRef ;
 	
 	// ----------------------------------------------------------
@@ -74,19 +75,11 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 		
 #endif
 		
-		++_refCount ;
+		_refCount = 1 ;
 		var _obj   = GetRCWObject( ptr ) ;
 		_marshalRefCount = Release( ptr ) ;
 		this._setBasePointer( ptr ) ;
 		this._comObjectRef = _obj ;
-		
-		/*
-		 var pObject = GetCOMObject( ComType, ptr )
-#if DEBUG || DEBUG_COM || DEV_BUILD
-					  ?? throw new DirectXComError( $"{nameof(ComPtr)} -> c'tor( {nameof(IntPtr)} ) :: " +
-													$"Failed to get the COM object!" )
-#endif
-			;*/
 	}
 	
 	public ComPtr( int addr ): this( (nint)addr ) { }
@@ -127,12 +120,25 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 	
 	// ----------------------------------------------------------
 	//! IDisposable:
-	public override bool Disposed => !BaseAddress.IsValid( ) ;
 	~ComPtr( ) => Dispose( false ) ;
-	public override async ValueTask DisposeAsync( ) {
-		await base.DisposeAsync( ) ;
+	public override bool Disposed => !BaseAddress.IsValid( ) ;
+	public override async ValueTask DisposeAsync( ) => 
 		await Task.Run( Dispose ) ;
+
+	protected override ValueTask DisposeUnmanaged( ) {
+		if( BaseAddress.IsValid() ) {
+			while ( _refCount > 0 ) {
+				if( _marshalRefCount < 1 ) break ;
+				_marshalRefCount =
+					Release( BaseAddress ) ;
+				--_refCount ;
+			}
+		}
+		
+		UntrackPointer( this.BaseAddress ) ;
+		return new( Task.CompletedTask ) ;
 	}
+
 	// ----------------------------------------------------------
 	//! System.Object overrides:
 	public override string ToString( ) => $"COM OBJECT[ Address: 0x{BaseAddress:X} ]" ;
@@ -232,10 +238,33 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 	// ----------------------------------------------------------
 	
 	
-	public virtual void Attach( nint ptr ) {
-		Release( BaseAddress ) ;
+	public void Attach( nint ptr ) {
+		if( !ptr.IsValid() ) throw new ArgumentNullException( nameof(ptr),
+															   $"{nameof(ComPtr)} -> {nameof(Attach)}( {nameof(IntPtr)} ) :: " +
+															   $"The pointer is a \"{nameof(NULL_PTR)}\" " +
+															   $"(null/0x00000000) value!" ) ;
+
+#if !STRIP_CHECKS || (DEBUG || DEBUG_COM || DEV_BUILD)
+		if( BaseAddress is not 0x00000000 )
+			throw new InvalidOperationException( $"{nameof(ComPtr)} -> {nameof(Attach)}( {nameof(IntPtr)} ) :: " +
+												 $"The pointer is already attached to a COM object!" ) ;
+#endif
+		_comObjectRef = GetCOMObject( ComType, ptr ) 
+						?? throw new NullReferenceException( $"The address '0x{ptr:X8}' is not a valid object!" ) ;
+		_marshalRefCount = Release( ptr ) ;
 		_setBasePointer( ptr ) ;
+		_refCount = 1 ;
 	}
+	
+	public void Attach< C >( C obj ) where C: IUnknown {
+		_comObjectRef    = obj ;
+		nint pUnknown    = GetInterfaceAddress( obj ) ;
+		_marshalRefCount = Release( pUnknown ) ;
+		_setBasePointer( pUnknown ) ;
+		_refCount = 1 ;
+	}
+	
+	
 	public virtual nint Detach( ) {
 		nint ptr = BaseAddress ;
 		_baseAddr = NULL_PTR ;
@@ -277,7 +306,9 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 
 
 #if DEBUG || DEBUG_COM
-[DebuggerDisplay($"{nameof(ComPtr)}<{nameof(T)}>" + " :: {DebuggerDisplay,nq}")]
+//[DebuggerDisplay($"{nameof(ComPtr)}<{nameof(T)}>")]
+[DebuggerDisplay("{ToString()}")]
+				 //+ " :: {DebuggerDisplay,nq}")]
 #endif
 public sealed class ComPtr< T >: ComPtr 
 								 where T: IUnknown {
@@ -286,15 +317,15 @@ public sealed class ComPtr< T >: ComPtr
 	nint _interfaceVPtr ;
 	public Type InterfaceType => typeof(T) ;
 	public T? Interface { get ; private set ; }
-	public nint InterfaceVPtr => _interfaceVPtr ;
-
+	public override nint InterfaceVPtr => _interfaceVPtr ;
+	
 #if DEBUG || DEBUG_COM
 	public int MarshalRefCount => _marshalRefCount ;
 	
-	public string DebuggerDisplay => $"COM OBJECT[ vTable Pointer: 0x{InterfaceVPtr:X}" +
+	/*public string DebuggerDisplay => $"COM OBJECT[ vTable Pointer: 0x{InterfaceVPtr:X}" +
 									 $"\nBase Address: 0x{BaseAddress:X}," +
 									 $"\nType: {InterfaceType.Name}\n" +
-									 $"Ref Count: {RefCount} (Marshal: {MarshalRefCount}) ]" ;
+									 $"Ref Count: {RefCount} (Marshal: {MarshalRefCount}) ]" ;*/
 #endif
 	
 	internal ComPtr( ) { }
@@ -375,7 +406,7 @@ public sealed class ComPtr< T >: ComPtr
 											   $"{nameof(ComPtr<T>.GetReference)} :: The internal {nameof(Interface)} is null!" ) ;
 #endif
 		
-		_marshalRefCount = (int)Interface.Release( ) ;
+		_marshalRefCount = Release( _interfaceVPtr ) ;
 		return --_refCount ;
 	}
 	
@@ -465,10 +496,22 @@ public sealed class ComPtr< T >: ComPtr
 			}
 		}
 		
+		if ( _refCount > 0 ) {
+			var baseTask = base.DisposeUnmanaged( ).AsTask( ) ;
+			baseTask.Wait( ) ;
+		}
+		
 		UntrackPointer( this.BaseAddress ) ;
 		return new( Task.CompletedTask ) ;
 	}
 	
+	
+	public static ComPtr< C > AttachedTo< C >( C obj ) where C: IUnknown {
+		ComPtr< C > newComPtr = new( ) ;
+		newComPtr.Attach( obj ) ;
+		return newComPtr ;
+	}
+
 	// ----------------------------------------------------------
 	// Operator Overloads:
 	// ----------------------------------------------------------

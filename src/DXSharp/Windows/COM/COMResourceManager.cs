@@ -1,8 +1,9 @@
 #region Using Directives
+using System.Linq ;
 using System.Diagnostics ;
 using System.Collections.Concurrent ;
 using System.Runtime.InteropServices ;
-
+using Microsoft.VisualBasic ;
 using static DXSharp.Windows.COM.COMUtility ;
 #endregion
 namespace DXSharp.Windows.COM ;
@@ -30,7 +31,12 @@ internal record ComInterfaceRef( Type InterfaceType,
 /// <typeparam name="T">The type of COM RCW object.</typeparam>
 internal record ComInterfaceRef< T >( nint VTablePtr,
 									  T InterfaceObject ):
-	ComInterfaceRef( typeof(T), VTablePtr, InterfaceObject ) where T: IUnknown {
+				ComInterfaceRef( typeof(T), VTablePtr, InterfaceObject ) 
+									where T: IUnknown {
+	
+	/// <summary>
+	/// Gets a reference to the COM RCW object as a <typeparamref name="T"/> instance.
+	/// </summary>
 	public T InterfaceObject { get ; init ; } = InterfaceObject ;
 } ;
 
@@ -43,24 +49,35 @@ internal record ComInterfaceRef< T >( nint VTablePtr,
 /// <summary>
 /// Represents a COM object resource which has one or more interface instances.
 /// </summary>
+#if DEBUG || DEBUG_COM || DEV_BUILD
+[DebuggerDisplay("{DebugDisplayStr,nq}")]
+#endif
 internal class COMResource: DisposableObject {
 	nint _pUnknown ;
 	Type _initialType ;
+	
 	ConcurrentDictionary< nint, int > _refCounts = new( ) ;
 	ConcurrentDictionary< ComInterfaceRef, ComPtr > _pointers  = new( ) ;
+	
 	public bool IsAlive => _pointers.Count > 0 ;
 	public override bool Disposed { get ; protected set ; }
-
+	
 	public int TotalRefCount {
 		get {
 			int count = 0 ;
 			foreach ( var entry in _refCounts ) {
 				count += entry.Value ;
 			}
-
 			return count ;
 		}
 	}
+	
+	
+#if DEBUG || DEBUG_COM || DEV_BUILD
+	public string DebugDisplayStr => 
+		$"COMResource: [ \"{_initialType.Name}\", {_initialType.GUID} ] " +
+			$"(Refs: {TotalRefCount}, ComPtrs: {_pointers.Count})" ;
+#endif
 	
 	// ----------------------------------------------------------
 	// Constructors:
@@ -120,10 +137,6 @@ internal class COMResource: DisposableObject {
 	public COMResource( IUnknown @interface ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 		ArgumentNullException.ThrowIfNull( @interface, nameof( @interface ) ) ;
-		if( !@interface.GetType( ).IsCOMObject ) throw new TypeInitializationException(nameof(@interface),
-			new DirectXComError( HResult.E_FAIL,
-								 $"The type \"{@interface.GetType( ).Name}\" is not a COM interface type." ) ) ;
-		
 #endif
 		
 		_initialType = @interface.GetType( ) ;
@@ -149,15 +162,15 @@ internal class COMResource: DisposableObject {
 		var _ptrType = typeof( T ) ;
 		
 		foreach ( var entry in _pointers ) {
-			
 			if ( _ptrType.IsAssignableFrom( entry.Value.ComType ) ) {
 				if ( entry.Value.InterfaceObjectRef is T _interface ) {
-					ComPtr< T >          newPtr = new( _interface ) ;
 					ComInterfaceRef< T > newRef = new( entry.Key.VTablePtr, _interface ) ;
+					ComPtr< T > newPtr = ComPtr< T >.AttachedTo( _interface ) ;
+					
+					newPtr.IncrementReferences( ) ;
 					_pointers.TryAdd( newRef, newPtr ) ;
-
-					_refCounts.AddOrUpdate( newPtr.InterfaceVPtr,
-											( n ) => 1, ( n, c ) => c + 1 ) ;
+					_refCounts.AddOrUpdate( newPtr.InterfaceVPtr, 1,
+											( n, c ) => ++c ) ;
 					return newPtr ;
 				}
 			}
@@ -208,12 +221,11 @@ internal class COMResource: DisposableObject {
 	internal void AddPointer< T >( ComPtr< T > ptr ) where T: IUnknown {
 		ComInterfaceRef< T > ptrRef = new( ptr.InterfaceVPtr, ptr.Interface! ) ;
 		
-		//_interfaces.Add( ptrRef ) ;
 		_pointers.TryAdd( ptrRef, ptr ) ;
 		_refCounts.AddOrUpdate( ptr.InterfaceVPtr,
 								( n ) => 1, ( n, c ) => c + 1 ) ;
 	}
-
+	
 	
 	/// <summary>
 	/// Gets a <see cref="ComPtr{T}"/> instance for the given COM interface type.
@@ -230,7 +242,8 @@ internal class COMResource: DisposableObject {
 	/// </exception>
 	internal ComPtr< T > GetPointer< T >( ) where T: IUnknown {
 #if DEBUG || DEBUG_COM || DEV_BUILD
-		ObjectDisposedException.ThrowIf( ( !IsAlive || Disposed ), typeof(COMResource) ) ;
+		ObjectDisposedException.ThrowIf( ( !IsAlive || Disposed ), 
+											typeof(COMResource) ) ;
 #endif
 		
 		// Search for existing ComPtr< T >:
@@ -238,7 +251,7 @@ internal class COMResource: DisposableObject {
 			if ( entry.Value.ComType == typeof( T ) )
 				return (ComPtr< T >)entry.Value ;
 		}
-
+		
 		// Try to simply create a ComPtr< T >:
 		var newPtr = _initNewPointer< T >( ) ;
 		if ( newPtr is not null ) return newPtr ;
@@ -251,10 +264,11 @@ internal class COMResource: DisposableObject {
 			throw new DirectXComError( $"No such COM interface \"{typeof( T ).Name}\" " +
 									   $"supported by this object!" ) ;
 #endif
+		
 		ComPtr< T >          ptr    = new( pInterface ) ;
 		ComInterfaceRef< T > ptrRef = new( pInterface, ptr.Interface! ) ;
-
-		//_interfaces.Add( ptrRef ) ;
+		int                  rc     = Release( _pUnknown ) ; // Decr. ref count (QueryInterface + 1) ...
+		
 		_pointers.TryAdd( ptrRef, ptr ) ;
 		_refCounts.AddOrUpdate( ptr.InterfaceVPtr,
 								( n ) => 1, ( n, c ) => c + 1 ) ;
@@ -352,6 +366,42 @@ internal class COMResource: DisposableObject {
 		return new( comptr ) ;
 	}
 
+	internal int FinalRelease( ) {
+		int count = 0 ;
+		List< Task > tasks = new( 2 ) ;
+		var allComData = _pointers.Select(
+										  kvp => 
+											   ( Info: kvp.Key, Ptr: kvp.Value ) ).ToArray( ) ;
+		
+		var interfaceAddresses = allComData.Select( entry => entry.Info.VTablePtr )
+												   .Distinct( )
+													.ToArray( ) ;
+		
+		foreach ( var entry in allComData ) {
+			if ( entry.Ptr is not { Disposed: false } alivePtr ) continue ;
+			
+			tasks.Add( alivePtr.DisposeAsync( )
+									.AsTask( ) ) ;
+		}
+		
+		bool done = Task.WaitAll( tasks.ToArray( ), 
+					  TimeSpan.FromMilliseconds(256) ) ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		if( !done ) {
+			Debug.WriteLine( "Failed to dispose all COM pointers!" ) ;
+			throw new DirectXComError( $"{nameof( COMResource )} ({_initialType.Name}) :: " +
+									   $"Failed to release resources." ) ;
+		}
+#endif
+		int released = tasks.Count ;
+		_refCounts.Clear( ) ;
+		_pointers.Clear( ) ;
+		tasks.Clear( ) ;
+		Disposed = true ;
+		
+		return (count - released) ;
+	}
+	
 	
 	// ----------------------------------------------------------
 	// Disposable Methods:
@@ -387,15 +437,17 @@ internal class COMResource: DisposableObject {
 	/// <returns>
 	/// A <see cref="ValueTask"/> representing the asynchronous operation.
 	/// </returns>
-	protected override ValueTask DisposeUnmanaged( ) {
-		Destroy( ) ;
-		return ValueTask.CompletedTask ;
-	}
-	
+	protected override async ValueTask DisposeUnmanaged( ) => await Task.Run( Destroy ) ;
+
 	
 	// ----------------------------------------------------------
 	// Static Methods:
 	// ----------------------------------------------------------
+	
+	public static COMResource Create( nint pUnknown ) => new( pUnknown ) ;
+	public static COMResource Create( IUnknown pUnknown ) => new( pUnknown ) ;
+	public static COMResource Create< T >( object pRCW ) where T: IUnknown => new( (T)pRCW ) ;
+	
 	
 	public static COMResource Create( ComPtr ptr ) => new( ptr ) ;
 	public static COMResource CreateFrom( COMResource other ) => new( other._pUnknown ) ;

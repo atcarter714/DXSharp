@@ -195,10 +195,10 @@ public static partial class COMUtility {
 	[MethodImpl(_MAXOPT_)]
 	public static nint GetInterfaceAddress< T >( [NotNull] in T iObj )
 													where T: IUnknown {
-		var pUnknownForObject = Marshal.GetIUnknownForObject( iObj ) ;
-		var hr = QueryInterface< T >( pUnknownForObject, out nint pInterface ) ;
-		_lastHResult = hr ;
-		return pInterface ;
+		/*var pUnknownForObject = Marshal.GetIUnknownForObject( iObj ) ;
+		var hr = QueryInterface< T >( pUnknownForObject, out nint pInterface ) ;*/
+		nint   addr = Marshal.GetComInterfaceForObject( iObj, typeof(T) ) ;
+		return addr ;
 	}
 	
 	[MethodImpl(_MAXOPT_)]

@@ -34,8 +34,8 @@ dbg.Enable( ) ;
 
 
 // Initialize & run the app:
-await using var app = new DXSApp( Settings )
-								.Initialize( ) ;
+var app = new DXSApp( Settings )
+				.Initialize( ) ;
 
 app.Run( ) ;
 app?.Shutdown( ) ;

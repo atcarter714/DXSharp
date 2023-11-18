@@ -193,28 +193,33 @@ public static class FactoryXTensions
 										 $"does not support an adapter interface for {typeof( A ).Name} (IID: {A.Guid})" ) ;
 		
 		void _resolveAdapterRequirements( IAdapter _nextAdapterX ) {
+			ArgumentNullException.ThrowIfNull( _nextAdapterX, nameof(_nextAdapterX) ) ;
+			
 			// Get the adapter's description:
 			if( _nextAdapterX is IAdapter4 _nextAdapter3 ) {
 				_nextAdapter3.GetDesc3( out var desc3 ) ;
 				if ( desc3.Flags.HasAnyBit( (AdapterFlag3)excludeFlags ) ) {
-					_nextAdapterX.Release( ) ;
 					_nextAdapterX.Dispose( ) ;
 					return ;
 				}
-				
-				allAdapters.Add( (A)_nextAdapter3 ) ;
+
+				var accepted = ( A? )_nextAdapter3 ;
+				if( accepted is not null && !allAdapters.Contains( accepted ) )
+					allAdapters.Add( accepted ) ;
 				return ;
 			}
 				
 			if( _nextAdapterX is IAdapter1 _nextAdapter1 ) {
 				_nextAdapter1.GetDesc1( out var desc1 ) ;
 				if ( desc1.Flags.HasAnyBit( (AdapterFlag)excludeFlags ) ) {
-					_nextAdapterX.Release( ) ;
 					_nextAdapterX.Dispose( ) ;
 					return ;
 				}
-					
-				allAdapters.Add( (A)_nextAdapterX ) ;
+				
+				
+				var accepted = ( A? )_nextAdapter1 ;
+				if( accepted is not null && !allAdapters.Contains(accepted) )
+					allAdapters.Add( accepted ) ;
 				return ;
 			}
 			
@@ -222,9 +227,8 @@ public static class FactoryXTensions
 			var hr2 = _nextAdapterX.QueryInterface( out IAdapter1? _adapter1Q ) ;
 			if ( hr2.Failed || _adapter1Q is null ) {
 				try {
-					_nextAdapterX.Release( ) ;
-					if ( _nextAdapterX is IDisposable disposable )
-						disposable.Dispose( ) ;
+					if( !_nextAdapterX.Disposed )
+						_nextAdapterX.Dispose( ) ;
 				}
 				finally { throw new DirectXComError( hr2, "Failed to query adapter interface: " +
 														  $"\"{typeof(A).Name}\" (IID: {A.Guid})" ) ; }
@@ -232,15 +236,15 @@ public static class FactoryXTensions
 			
 			_adapter1Q.GetDesc1( out var _desc1 ) ;
 			if ( _desc1.Flags.HasAnyBit( (AdapterFlag)excludeFlags ) ) {
-				_adapter1Q.Release( ) ;
-				_adapter1Q.Dispose( ) ;
-				_nextAdapterX.Release( ) ;
 				_nextAdapterX.Dispose( ) ;
+				_adapter1Q.Dispose( ) ;
 				return ;
 			}
-				
-			allAdapters.Add( (A)_adapter1Q ) ;
-			_nextAdapterX.Release( ) ;
+			
+			var acceptedX = ( A? )_adapter1Q ;
+			if( acceptedX is not null && !allAdapters.Contains(acceptedX) )
+				allAdapters.Add( acceptedX ) ;
+			
 			_nextAdapterX.Dispose( ) ;
 		}
 	}

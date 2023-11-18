@@ -28,6 +28,7 @@ internal class Blob: DisposableObject,
 	public int RefCount => (int)( ComPointer?.RefCount ?? 0 ) ;
 	public nint PointerToIUnknown => ComPointer?.BaseAddress ?? 0x0000 ;
 	
+	// ----------------------------------------------------------------------------------
 	
 	public Blob( ) {
 		_comPtr = ComResources?.GetPointer< ID3DBlob >( ) ;
@@ -44,6 +45,8 @@ internal class Blob: DisposableObject,
 		_comPtr = new( comObject ) ;
 		_initOrAdd( _comPtr ) ;
 	}
+	~Blob( ) => Dispose( false ) ;
+	
 	void _initOrAdd( ComPtr< ID3DBlob > comPtr ) {
 		ArgumentNullException.ThrowIfNull( comPtr, nameof(comPtr) ) ;
 		
@@ -56,21 +59,32 @@ internal class Blob: DisposableObject,
 	}
 
 	
+	// ----------------------------------------------------------------------------------
 	//! IDisposable:
+	// ----------------------------------------------------------------------------------
 	public override bool Disposed => ComPointer?.Disposed ?? true ;
 	
-	protected override async ValueTask DisposeUnmanaged( ) {
-		if( ComPointer is not null && !ComPointer.Disposed ) {
-			await ComPointer.DisposeAsync( ) ;
-			_comPtr = null ;
-		}
+	protected override ValueTask DisposeUnmanaged( ) {
+		if( ComResources?.Disposed ?? true ) 
+			return ValueTask.CompletedTask ;
+		
+		_comPtr = null ;
+		ComResources.Dispose( ) ;
+		return ValueTask.CompletedTask ;
 	}
 	
-	public unsafe void* GetBufferPointer( ) => ComObject!.GetBufferPointer( ) ;
+	
+	// ----------------------------------------------------------------------------------
+	// Interface Methods:
+	// ----------------------------------------------------------------------------------
+	
 	
 	public nuint GetBufferSize( ) => ComObject!.GetBufferSize( ) ;
 	
+	public unsafe void* GetBufferPointer( ) => ComObject!.GetBufferPointer( ) ;
 	
+	
+	// ----------------------------------------------------------------------------------
 	public static Type ComType => typeof( ID3DBlob ) ;
 	static ref readonly Guid IComIID.Guid {
 		[MethodImpl( MethodImplOptions.AggressiveInlining )]
@@ -81,4 +95,5 @@ internal class Blob: DisposableObject,
 													.GetReference(data) ) ;
 		}
 	}
+	// ==================================================================================
 } ;

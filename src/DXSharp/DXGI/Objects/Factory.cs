@@ -626,6 +626,10 @@ internal class Factory6: Factory5,
 													in Guid riid, out A? ppvAdapter ) where A: IAdapter {
 		var factory = ComObject ?? throw new NullReferenceException( ) ;
 		HResult hr = factory.EnumAdapterByGpuPreference( adapterOrdinal, (DXGI_GPU_PREFERENCE)GpuPreference, riid, out var pAdapter ) ;
+		if( hr.Failed || pAdapter is null ) {
+			ppvAdapter = default ;
+			return hr ;
+		}
 		
 		//ppvAdapter = (A)A.Instantiate( pAdapter as IDXGIAdapter ) ;
 		var functionLookup = IAdapter._adapterCreationFunctions ;
@@ -633,7 +637,7 @@ internal class Factory6: Factory5,
 			ppvAdapter = default ;
 			return HResult.E_NOINTERFACE ;
 		}
-
+		
 		var createFn = functionLookup[ riid ] ;
 		ppvAdapter = (A?)createFn( (pAdapter as IDXGIAdapter)! ) ;
 

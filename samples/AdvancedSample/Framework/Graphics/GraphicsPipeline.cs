@@ -17,6 +17,7 @@ using DXSharp.Windows.COM ;
 using DXSharp.Applications ;
 using DXSharp.Framework.Graphics ;
 using DXSharp.Windows.Win32 ;
+using DXSharp.Framework.XTensions.DXGI ;
 using IDevice = DXSharp.Direct3D12.IDevice ;
 #endregion
 namespace AdvancedDXS.Framework.Graphics ;
@@ -116,15 +117,45 @@ public class GraphicsPipeline: DXGraphics {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 		hr.ThrowOnFailure( ) ;
 		if( _factory is null ) throw new DXSharpException($"Failed to create DXGI factory! (hr = {hr})") ;
-		_setDBGName( _DBGName_Factory, _factory ) ;
+		_factory.Name = $"{nameof(IFactory7)} (DXSharp)" ;
 #endif
-		// Get the best GPU:
-		using var adapter = _getBestGPU( _factory ) ;
 		
-		// Create the D3D12 device:
-		_device = D3D12.CreateDevice< IDevice10 >( adapter, FeatureLevel.D3D12_0 ) ;
-		if ( _device is null ) throw new DXSharpException( $"Failed to create {nameof(IDevice10)}!" ) ;
-		else Add( _device ) ;
+		// Get the best GPU:
+		var adapters = 
+			_factory.GetAllInstalledAdapterExcluding< IAdapter4 >( AdapterFlag.Software 
+																	| AdapterFlag.Remote ) ;
+		
+		if( adapters is not { Count: > 0 } ) 
+			throw new DXSharpException( "Failed to get adapters!" ) ;
+		
+		adapters.Sort( (a, b) => 
+						   (a.GetDesc3().DedicatedVideoMemory >= b.GetDesc3().DedicatedVideoMemory ? 1 : -1) ) ;
+		
+		foreach ( var adapter4 in adapters ) {
+			var adapter = adapter4 ;
+			adapter.GetDesc3( out var desc ) ;
+			
+			if( desc.DedicatedVideoMemory > 0 ) {
+				hr = D3D12.CreateDevice( out var _dev, adapter, IDevice10.IID ) ;
+				if ( _dev is null || hr.Failed ) {
+					adapter.Dispose( ) ;
+					adapter = null ;
+					continue ;
+				}
+				_device = ( IDevice10? ) _dev ?? 
+						  throw new DXSharpException( "Failed to create device!" ) ;
+				break ;
+			}
+			
+			adapter.Dispose( ) ;
+			adapter = null ;
+		}
+		foreach ( var adapter4 in adapters ) {
+			if( adapter4?.Disposed ?? true ) continue ;
+			adapter4.Dispose( ) ;
+		}
+		if( _device is null ) 
+			throw new DXSharpException( "Failed to create device!" ) ;
 		
 		// Describe & create the command queue:
 		_device.CreateCommandQueue( CommandQueueDescription.Default,
@@ -190,11 +221,12 @@ public class GraphicsPipeline: DXGraphics {
 				var        hr   = factory.EnumAdapters1( i, out _adapter ) ;
 				
 				//! Is this the last adapter?
-				if( hr == HResult.DXGI_ERROR_NOT_FOUND || _adapter is null ) break ;
-				else hr.ThrowOnFailure( ) ;
+				if( _adapter is null || hr.Failed ) {
+					if ( hr == HResult.DXGI_ERROR_NOT_FOUND ) break ;
+					hr.ThrowOnFailure( ) ;
+				}
 				
-				adapters.Add( _adapter ) ;
-				var adapter = COMUtility.Cast< IAdapter1, IAdapter4 >( _adapter ) ;
+				var adapter = COMUtility.Cast< IAdapter1, IAdapter4 >( _adapter! ) ;
 				if ( adapter is null ) {
 #if DEBUG || DEBUG_COM || DEV_BUILD
 					throw new DXSharpException( $"Failed to cast " +
@@ -204,12 +236,15 @@ public class GraphicsPipeline: DXGraphics {
 					continue;
 #endif
 				}
-				
 				adapter.GetDesc3( out var _desc ) ;
 				
 				// Skip software and remote adapters:
 				if( _desc.Flags.HasFlag( AdapterFlag3.Software ) 
-					|| _desc.Flags.HasFlag( AdapterFlag3.Remote ) ) continue ;
+					|| _desc.Flags.HasFlag( AdapterFlag3.Remote ) ) {
+					adapter?.Release( ) ;
+					adapter?.Dispose( ) ;
+					continue ;
+				}
 				
 				ulong vram = (ulong)_desc.DedicatedVideoMemory ;
 				if( vram > maxVRAM ) {
@@ -217,7 +252,13 @@ public class GraphicsPipeline: DXGraphics {
 					bestAdapter = (IAdapter4)adapter ;
 				}
 			}
-			foreach ( var adapter in adapters ) adapter.Dispose( ) ;
+			
+			foreach ( var adapter in adapters ) {
+				//adapter?.Release( ) ;
+				if( (adapter as DisposableObject)?.Disposed ?? true ) continue ;
+				adapter.Dispose( ) ;
+			}
+			adapters.Clear( ) ;
 			return bestAdapter ;
 		}
 	}
@@ -330,7 +371,7 @@ public class GraphicsPipeline: DXGraphics {
 	// -----------------------------------------------------
 	// Static Helper Methods:
 	// -----------------------------------------------------
-	static unsafe void _setDBGName( in PCWSTR name, in IDXCOMObject obj ) =>
+	/*static unsafe void _setDBGName( in PCWSTR name, in IDXCOMObject obj ) =>
 		obj.SetPrivateData( COMUtility.WKPDID_D3DDebugObjectName,
 							(uint)name.Length * sizeof(char), (nint)name.Value ) ;
 	static PCWSTR _setDBGName( string name, in IDXCOMObject obj ) {
@@ -341,7 +382,7 @@ public class GraphicsPipeline: DXGraphics {
 										(nint)_name.Value ) ;
 			return _name ;
 		}
-	}
+	}*/
 	// =================================================================================================================
 } ;
 
