@@ -40,9 +40,21 @@
 	  <ClCompile Include="Assets\Shaders\tests_shader_0.hlsl" />
 	</ItemGroup>
 	
+	
 	<Target Name="RunCSITool" AfterTargets="Build"
 			Condition="'$(CSharpScriptTool)' != '' and '$(CSXScriptDir)' != ''">
-		<Exec Command="&quot;$(CSharpScriptTool)&quot; &quot;$(CSXScriptDir)\csxtest01.csx&quot;"
+		<PropertyGroup>
+			<CSXScriptName>csxtest01.csx</CSXScriptName>
+		</PropertyGroup>
+		
+		<!-- An error is thrown with a proper message if 
+			 the tool path isn't defined and target is run ... -->
+		<Error  
+				Text=" Must have valid path to C# script tool (csi.exe). Define 'CSharpScriptTool' with path to your custom tool."
+				Condition="'$(CSharpScriptTool)' == ''" />
+
+		<!-- Execute the scripts ... -->
+		<Exec Command="$(CSXRun) &quot;$(CSXScriptDir)\$(CSXScriptName)&quot;"
 			  WorkingDirectory="$(RepoRootPath)src\DXSharp\"
 			  Condition="'$(CSharpScriptTool)' != ''"
 			  ContinueOnError="false" /> <!-- Set to true to ignore errors ... -->

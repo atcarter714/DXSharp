@@ -1,11 +1,9 @@
 ﻿<Project>
-
+    <!-- Import the shared props file (up one level): -->
+    <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props" />
+    
     <!-- Before Build: -->
     <Target Name="StartupBaseTarget" BeforeTargets="Build">
-        <PropertyGroup Label="DefineGlobalStartupProps">
-            <UTCNow>$([System.DateTime]::UtcNow.ToString())</UTCNow>
-            <LocalNow>$([System.DateTime]::Now.ToString())</LocalNow>
-        </PropertyGroup>
         <Message Text="SDK Tests project build process started @ local: $(LocalNow) ..." Importance="high" />
     </Target>
 
@@ -18,7 +16,7 @@
             <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='' ">Unknown</BuildResult>
             <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='true' ">Success</BuildResult>
             <BuildResult Condition=" '$(MSBuildLastTaskResult)'!='true' ">Failed</BuildResult>
-            <BuildResultText>$(BuildResult): $(MSBuildLastTaskResult)</BuildResultText>
+            <BuildResultText>$(BuildResult)</BuildResultText>
         </PropertyGroup>
 
         <!-- Print the build result code and info: -->

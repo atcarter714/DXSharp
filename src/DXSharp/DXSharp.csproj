@@ -1,9 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<!--Common Project Properties-->
 	<PropertyGroup Label="CommonProjectProps">
-		<TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>
 		<TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
-
+		
 		<Title>DXSharp</Title>
 		<Version>$(VersionPrefix)</Version>
 		<ApplicationIcon>DXSharp_ICON_512.ico</ApplicationIcon>

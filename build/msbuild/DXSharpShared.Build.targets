@@ -1,0 +1,15 @@
+﻿<Project>
+    
+    <Target Name="ResolveNativeDxcDlls" 
+            BeforeTargets="Build"
+            Condition="'$(UsingDxc)' == 'true'" >
+        <ItemGroup Label="DxcDllsInBinFolderItems">
+            <NativeDll Include="$(OutDir)\**\dxcompiler.dll" />
+            <NativeDll Include="$(OutDir)\**\dxil.dll" />
+        </ItemGroup>
+        <Message Importance="High" Text="DxcDllsInBinFolderItems: @(DxcDllsInBinFolderItems)" />
+        
+        <Copy SourceFiles="@(NativeDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    </Target>
+    
+</Project>

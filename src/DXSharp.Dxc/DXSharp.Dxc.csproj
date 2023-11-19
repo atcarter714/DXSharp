@@ -2,13 +2,13 @@
     <!--Common Project Properties-->
     <PropertyGroup Label="CommonProjectProps">
         <No32Bit>true</No32Bit>
+        <UsingDxc>true</UsingDxc>
         <DxcSupportedPlatforms>x64;arm64;AnyCPU;</DxcSupportedPlatforms>
         <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
         <Platforms>$(DxcSupportedPlatforms)</Platforms>
-        <UsingDxc>true</UsingDxc>
     </PropertyGroup>
-
-
+    
+    
     <!-- Dependencies & References :: -->
     <ItemGroup Label="ProjectRefs">
       <ProjectReference Include="..\DXSharp\DXSharp.csproj" />
@@ -21,7 +21,7 @@
                         GeneratePathProperty="true" 
                         Aliases="DxcPackage" >
       </PackageReference>
-
+        
       <!-- Win32Metadata Package -->
       <PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" 
                         Version="$(WinMDVersion)" />
@@ -32,22 +32,34 @@
         <PrivateAssets>all</PrivateAssets>
       </PackageReference>
     </ItemGroup>
-
+    
+    
+    <!-- Define build process props for Dxc package: -->
+    <PropertyGroup Label="NativeDxcPackageProps">
+        <DxcPackagePath>$(PkgMicrosoft_Direct3D_DXC)</DxcPackagePath>
+        <DxcBinPlatformPath>$(DxcPackagePath)\build\native\bin\$(NativePlatformName)</DxcBinPlatformPath>
+        <BuildHostCPUType Condition="'$(BuildHostCPUType)' == ''">$(ProcessorArchitecture)</BuildHostCPUType>
+        <DxcCompilerToolExe>$(DxcPackagePath)\build\native\bin\$(NativePlatformName)\dxc.exe</DxcCompilerToolExe>
+    </PropertyGroup>
 
     <!-- Grab our native Dxc DLL dependencies: -->
     <ItemGroup Label="CopyTheDxcDlls">
         <!-- Resolve the path to the correct native DLLs for the current platform: -->
-       <DxcDLLs Include="$(PkgMicrosoft_Direct3D_DXC)\build\native\bin\$(NativePlatformName)\*.dll" />
-
-
+        <DxcTool Include="$(DxcCompilerToolExe)" />
+        <DxcDLLs Include="$(DxcPackagePath)\build\native\bin\$(NativePlatformName)\*.dll" />
+        
         <None Include="@(DxcDLLs)" Label="CopyTheDlls">
             <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
 
         <LocalDxcDLLs Include="@(DxcDLLs->'$(OutputPath)%(RecursiveDir)%(FileName)%(Extension)')" />
-        <NativeReference Include="$(LocalDxcDLLs)">
+        
+        <!-- Create native references to the DLLs in the output directory: -->
+        <NativeReference Include="$(LocalDxcDLLs)" Label="MakeNativeRefs" >
             <IsWin32Manifest>false</IsWin32Manifest>
+            <Name>%(Filename)%(Extension)</Name>
+            <HintPath>.\</HintPath>
         </NativeReference>
     </ItemGroup>
 </Project>

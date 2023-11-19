@@ -57,6 +57,19 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{066A62E0-26FE-412E-99F3-1B3D3ADA206C}"
 	ProjectSection(SolutionItems) = preProject
 		build\msbuild\DXSharpShared.Build.props = build\msbuild\DXSharpShared.Build.props
+		build\msbuild\DXSharpShared.Build.targets = build\msbuild\DXSharpShared.Build.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "csscript", "csscript", "{B2BE9D0A-FB53-4653-ADDF-F7922755D7DB}"
+	ProjectSection(SolutionItems) = preProject
+		build\csscript\csxtest01.csx = build\csscript\csxtest01.csx
+		build\csscript\locateSlnRoot.csx = build\csscript\locateSlnRoot.csx
+		build\csscript\StartCSI.bat = build\csscript\StartCSI.bat
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{2761D5CC-DD83-4C5D-87A4-D607413369D5}"
+	ProjectSection(SolutionItems) = preProject
+		build\csscript\include\DirectoryHelper.csx = build\csscript\include\DirectoryHelper.csx
 	EndProjectSection
 EndProject
 Global
@@ -164,6 +177,8 @@ Global
 		{A26CCC2F-6530-4962-B5BD-C0100C5DB6D1} = {8083732C-24ED-46AA-AD90-0ECB3B3B0040}
 		{78357CCA-2A33-480A-A890-1A91BD85107F} = {8083732C-24ED-46AA-AD90-0ECB3B3B0040}
 		{066A62E0-26FE-412E-99F3-1B3D3ADA206C} = {78357CCA-2A33-480A-A890-1A91BD85107F}
+		{B2BE9D0A-FB53-4653-ADDF-F7922755D7DB} = {430FF448-775A-49C2-8FC4-F56143802138}
+		{2761D5CC-DD83-4C5D-87A4-D607413369D5} = {B2BE9D0A-FB53-4653-ADDF-F7922755D7DB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C4990EC-248E-49D5-A254-EA8AD214C338}

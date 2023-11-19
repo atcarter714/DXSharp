@@ -1,8 +1,8 @@
-using System.IO;
-using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
+using System.IO ;
+using System.Linq ;
 using System.Diagnostics ;
+using System.Collections ;
+using System.Collections.Generic ;
 
 
 /// <summary>
@@ -18,29 +18,40 @@ public static class DirectoryHelper {
 	public const string AnyCPU = "AnyCPU",
 				 x64    = "x64", x86   = "x86",
 				 ARM    = "arm", ARM64 = "arm64" ;
-	static readonly string[  ] _allPlatforms = {
-		AnyCPU, x64, x86, ARM, ARM64,
-	} ;
-	static readonly char[ ] _separatorChars = {
-		Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar,
-	} ;
-
 	public const string BuildFolderName              = "build",
 						OutputFolderName             = "bin",
 						SourceFolderName             = "src",
-						FilesFolderName              = "files",
+						FilesFolderName              = "file",
 						TestsFolderName              = "tests",
 						SamplesFolderName            = "samples",
 						DocumentationFolderName      = "doc",
 						IntermediateOutputFolderName = "obj" ;
+	public const string CSharpProjectFileExtensions = ".csproj",
+						CPPProjectFileExtensions = ".vcxproj" ;
+	public const string CSharpSourceFileExtension = ".cs", CSharpScriptFileExtension = ".csx",
+						CPPSourceFileExtension = ".cpp", CSourceFileExtension = ".c",
+						HeaderFileExtension = ".h", PreCompiledHeaderFileExtension = ".pch",
+						PowershellScriptFileExtension = ".ps1", BatchScriptFileExtension = ".bat",
+						HLSLFileExtension = ".hlsl", VertexShaderFileExtension = ".vs",
+						PixelShaderFileExtension = ".ps", GeometryShaderFileExtension = ".geo",
+						ComputeShaderFileExtension = ".comp", DomainShaderFileExtension = ".domain",
+						HullShaderFileExtension = ".hull", DotShaderFileExtension = ".shader",
+						ShaderObjectFileExtension = ".obj", ShaderCompiledFileExtension = ".cso" ;
+
+	static readonly string[  ] _allPlatforms = { AnyCPU, x64, x86, ARM, ARM64, } ;
+	static readonly char[ ]    _separatorChars = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar, } ;
+	static readonly string[ ]  _projectFileExtensions = { CSharpProjectFileExtensions, CPPProjectFileExtensions,	} ;
 	static readonly string[ ] _mainSolutionFolders = {
 		BuildFolderName, OutputFolderName, SourceFolderName,
 		FilesFolderName, TestsFolderName, SamplesFolderName,
 		DocumentationFolderName, IntermediateOutputFolderName,
 	} ;
 	
+	static FileInfo[ ]? _allProjectsInSolutionCache, _allSDKProjectsCache,
+					 _allTestProjectsCache, _allSampleProjectsCache ;
     
-	static readonly string? rootSolutionFolder = Resolve_SLN_DIR( ) ;
+	static readonly string? rootSolutionFolder 
+								= Resolve_SLN_DIR( ) ;
 
 
 	/// <summary>The root directory of the solution.</summary>
@@ -69,19 +80,135 @@ public static class DirectoryHelper {
 
 	/// <summary>The directory containing project folders and source code for DXSharp Unit Testing.</summary>
     public static string TestsSourceFolder => Path.Combine( RootSolutionDir, TestsFolderName ) ;
+
+	/// <summary>The directory containing project folders and source code for DXSharp Sample Projects.</summary>
+    public static string SamplesFolder => Path.Combine( RootSolutionDir, SamplesFolderName ) ;
 	
 	/// <summary>The directory containing intermediate build output files for DXSharp.</summary>
     public static string IntermediateOutputFolder => Path.Combine( RootSolutionDir, IntermediateOutputFolderName) ;
 
 
+	// ----------------------------------------------------
+	// Build Directory Paths Navigation:
+	// ----------------------------------------------------
+
+	/// <summary>The <i>"\build"</i> directory containing build scripts, files and logs for DXSharp.</summary>
+	public static string BuildFolder => Path.Combine( RootSolutionDir, BuildFolderName ) ;
+
+	/// <summary>The <i>"\build\pwsh"</i> directory containing Powershell scripts/tools for DXSharp.</summary>
+	public static string BuildPowershellScriptsFolder => Path.Combine( BuildFolder, "pwsh" ) ;
+	
+	/// <summary>The <i>"\build\logs"</i> directory containing build logs and build tool/script output for DXSharp.</summary>
+	public static string BuildLogsFolder => Path.Combine( BuildFolder, "logs" ) ;
+	
+	/// <summary>The <i>"\build\tools"</i> directory containing reusable tools and scripts for DXSharp.</summary>
+	public static string BuildToolsFolder => Path.Combine( BuildFolder, "tools" ) ;
+
+	/// <summary>The <i>"\build\csscript"</i> directory containing reusable Powershell scripts for DXSharp.</summary>
+	public static string BuildCSXScriptsFolder => Path.Combine( BuildFolder, "csscript" ) ;
+	
+	/// <summary>The <i>"\build\msbuild"</i> directory containing reusable Powershell scripts for DXSharp.</summary>
+	/// <remarks>These scripts are used to generate the architecture report files.</remarks>
+	public static string MSBuildScriptsFolder => Path.Combine( BuildFolder, "msbuild" ) ;
+	
+
+
     /// <summary>The names of all build platforms for DXSharp.</summary>
     public static string[ ] AllPlatformNames => 
-    _allPlatforms.ToArray( ) ;
+    							_allPlatforms.ToArray( ) ;
     
     /// <summary>The names of all primary solution content folders for DXSharp.</summary>
     public static string[ ] MainSolutionFolders => 
-    _mainSolutionFolders.ToArray( ) ;
+    					_mainSolutionFolders.ToArray( ) ;
 
+
+	// ----------------------------------------------------
+	// Directory Info Get-Only Properties:
+	// ----------------------------------------------------
+
+	/// <summary>Directory info for <see cref="RootSolutionDir"/>.</summary>
+	public static DirectoryInfo RootSolutionDirInfo => new( RootSolutionDir ) ;
+	/// <summary>Directory info for <see cref="RootSolutionBinDir"/>.</summary>
+	public static DirectoryInfo RootSolutionBinDirInfo => new( RootSolutionBinDir ) ;
+	/// <summary>Directory info for <see cref="IntermediateOutputFolder"/>.</summary>
+	public static DirectoryInfo IntermediateOutputDirInfo => new( IntermediateOutputFolder ) ;
+	/// <summary>Directory info for <see cref="SourceFolder"/>.</summary>
+	public static DirectoryInfo SourceDirInfo => new( SourceFolder ) ;
+	/// <summary>Directory info for <see cref="TestsSourceFolder"/>.</summary>
+	public static DirectoryInfo TestsDirInfo => new( TestsSourceFolder ) ;
+	/// <summary>Directory info for <see cref="SamplesFolder"/>.</summary>
+	public static DirectoryInfo SamplesDirInfo => new( SamplesFolder ) ;
+	/// <summary>Directory info for <see cref="DocsFolder"/>.</summary>
+	public static DirectoryInfo DocsDirInfo => new( DocsFolder ) ;
+	/// <summary>Directory info for <see cref="FilesFolder"/>.</summary>
+	public static DirectoryInfo FilesDirInfo => new( FilesFolder ) ;
+	/// <summary>Directory info for <see cref="BuildFolder"/>.</summary>
+	public static DirectoryInfo BuildsDirInfo => new( BuildFolder ) ;
+
+
+	// ----------------------------------------------------
+	// Static Methods & Helper Functions:
+	// ----------------------------------------------------
+	
+	/// <summary>
+	/// Indicates if the folder is a "special" folder 
+	/// (i.e., hidden, system, reserved, etc.).
+	/// </summary>
+	/// <param name="folderName">Path or name of the folder</param>
+	/// <returns>True if the folder is a "special folder", otherwise false</returns>
+	public static bool IsSpecialFolder( string folderName ) => 
+									folderName.Contains( "git" )
+										|| folderName.StartsWith( "." ) ;
+
+	/// <summary>
+	/// Gets an array of all SDK library project files in the solution.
+	/// </summary>
+	public static FileInfo[ ] GetAllSDKProjects( ) {
+		_allSDKProjectsCache ??= SourceDirInfo.EnumerateFiles( "*.csproj", 
+															SearchOption.AllDirectories ).ToArray( ) ;
+		return _allSDKProjectsCache.ToArray( ) ;
+	}
+
+	/// <summary>
+	/// Gets an array of all test project files in the solution.
+	/// </summary>
+	/// <returns>An array of all test project file paths.</returns>
+	public static FileInfo[ ] GetAllTestProjects( ) {
+		_allTestProjectsCache ??= TestsDirInfo.EnumerateFiles( "*.csproj", 
+															SearchOption.AllDirectories ).ToArray( ) ;
+		return _allTestProjectsCache.ToArray( ) ;
+	}
+	/// <summary>
+	/// Gets an array of all sample project files in the solution.
+	/// </summary>
+	/// <returns>An array of all project file paths.</returns>
+	public static FileInfo[ ] GetAllSampleProjects( ) {
+		_allSampleProjectsCache ??= SamplesDirInfo.EnumerateFiles( "*.*proj",
+													SearchOption.AllDirectories ).ToArray( ) ;
+		return _allSampleProjectsCache.ToArray( ) ;
+	}
+	
+	/// <summary>
+	/// Gets an array of all project files in the solution.
+	/// </summary>
+	/// <returns>An array of all project file paths in the entire solution.</returns>
+	public static FileInfo[ ] GetAllProjectsInSolution( ) {
+		_allProjectsInSolutionCache ??= RootSolutionDirInfo.EnumerateFiles( "*.*proj",
+													SearchOption.AllDirectories ).ToArray( ) ;
+		return _allProjectsInSolutionCache.ToArray( ) ;
+	}
+	
+   // Takes same patterns, and executes in parallel
+   public static IEnumerable< FileInfo > GetFiles( string path, 
+											   IEnumerable< string > searchPatterns, 
+											   SearchOption searchOption = 
+											   	SearchOption.TopDirectoryOnly ) {
+		var info = new DirectoryInfo( path ) ;
+      	return searchPatterns.AsParallel( )
+             .SelectMany( searchPattern =>
+                    info.EnumerateFiles( searchPattern, searchOption) ) ;
+   }
+	
 
 	// ----------------------------------------------------
 	// Static Constructor & Initialization:
@@ -95,7 +222,7 @@ public static class DirectoryHelper {
 		var folders    = currentDir.TrimEnd( _separatorChars )
 										.Split( _separatorChars )
 										.SkipWhile( s => s.Contains(Path.VolumeSeparatorChar) ) ;
-
+										
 		int index = 0, nFolders = folders.Count( ) ;
 		foreach ( var folder in folders ) {
             bool filterCondition = folder is SolutionName 

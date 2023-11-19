@@ -10,6 +10,25 @@
         <Message Text="DirectX Platform: '$(NativePlatformName)'" Importance="high" />
     </Target>
     
+    <Target Name="DxcDllResolution" BeforeTargets="Build" Condition=" '$(UsingDxc)'=='true' ">
+        <!-- Resolve the DXC DLLs for the current platform: -->
+        <ItemGroup>
+            <DxcDLLs Include="$(DxcDLLs)" Condition=" '$(DxcDLLs)' != '' " />
+        </ItemGroup>
+        <ResolveNativeReference Condition=" '$(DxcDLLs)' != '' "
+                                AdditionalSearchPaths=".\"
+                                NativeReferences="%(itemName.DxcDLLs)" />
+    </Target>
+    
+    <Target Name="AgilityDllResolution" BeforeTargets="Build" Condition=" '$(UsingAgilitySDK)'=='true' ">
+        <!-- Resolve the Agility SDK DLLs for the current platform: -->
+        <ItemGroup>
+            <AgilityDLLs Include="$(AgilityDLLs)" Condition=" '$(AgilityDLLs)' != '' " />
+        </ItemGroup>
+        <ResolveNativeReference  Condition=" '$(AgilityDLLs)' != '' "
+                                 AdditionalSearchPaths=".\"
+                                 NativeReferences="%(itemName.AgilityDLLs)" />
+    </Target>
     
     <!-- Log build completion info: -->
     <Target Name="LogBuildCompletionMessage" AfterTargets="Build">

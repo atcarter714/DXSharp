@@ -1,8 +1,9 @@
-﻿<Project>
+﻿<Project InitialTargets="BuildFrameworks">
     <PropertyGroup Label="WindowsSDKProps">
         <WindowsOnly>true</WindowsOnly>
         <WinSDKVersion>10.0.22621.0</WinSDKVersion>
         <WinSDKMinVersion>$(WinSDKVersion)</WinSDKMinVersion>
+        <DxcMinWinSDKVersion Condition=" '$(DxcMinWinSDKVersion)' == '' ">10.0.18362.0</DxcMinWinSDKVersion>
     </PropertyGroup>
     
     
@@ -26,42 +27,64 @@
         <DXSSamplesDir>$(DXSBasePath)samples\</DXSSamplesDir>
     </PropertyGroup>
 
-    <Target Name="PreBuildSharedTarget0x00" BeforeTargets="PreBuildEvent">
-        <ItemGroup Label="DXSFrameworkItems">
+    
+    <Target Name="CommonSharedTargets0x00" >
+        <ItemGroup Label="MultiTargetingItems">
             <!-- Define the .NET runtime major versions we want to target :: -->
+            <!--<DotNetVersions Include="7.0" />
+            <DotNetVersions Include="8.0" />-->
             <DotNetVersions Label="DotNetTargetDefinitions">
                 <Include>7.0</Include>
                 <Include>8.0</Include>
             </DotNetVersions>
-
+            
             <!-- Define the CPU architecture types we want to target :: -->
             <CPUArchitectures Label="CPUTargetDefinitions">
                 <!-- NOTE: The $(No32Bit) prop should be defined 'true' for any projects 
                      with native dependencies that don't support 32-bit -->
-                <Include Condition=" '$(No32Bit)' != 'true' ">x86</Include>
-                <Include Condition=" '$(No32Bit)' != 'true' ">arm</Include>
-                <Include>x64</Include>
-                <Include>arm64</Include>
-                <Include>AnyCPU</Include>
+                <CPU Condition=" '$(NoAnyCPU)' != 'true' ">AnyCPU</CPU>
+                <CPU Condition=" '$(No32Bit)' != 'true' ">x86</CPU>
+                <CPU Condition=" '$(No32Bit)' != 'true' ">arm</CPU>
+                <CPU>x64</CPU>
+                <CPU>arm64</CPU>
+                <AllCPUs>$([MSBuild]::ValueOrDefault('%(CPU.Identity)', ''))</AllCPUs>
             </CPUArchitectures>
+            
+            <DotNetTargetFrameworks Include="@(DotNetVersions)">
+                <Framework>net%(Identity)-windows$(WinSDKVersion)-%(CPUArchitectures.AllCPUs)</Framework>
+            </DotNetTargetFrameworks>
         </ItemGroup>
-
+        
+        <Message Importance="high" Text="Target: @(DotNetTargetFrameworks->'%(Framework)', ';')" />
     </Target>
     
-    <PropertyGroup Label="DXSFrameworkProps">
-        <CPUTargetList>@(CPUArchitectures->%(Identity))</CPUTargetList>
+    <Target Name="BuildFrameworks">
+        <!--<ItemGroup>
+            <DotNetTargetFrameworks Include="@(DotNetVersions)">
+                <Framework>net%(Identity)-windows$(WinSDKVersion)-%(CPUArchitectures.AllCPUs)</Framework>
+            </DotNetTargetFrameworks>
+        </ItemGroup>-->
+
+        <PropertyGroup>
+            <Frameworks>$(Frameworks);@(DotNetTargetFrameworks->'%(Framework)')</Frameworks>
+        </PropertyGroup>
+
+        <Message Importance="high" Text="Frameworks: $(Frameworks)" />
+    </Target>
+    
+    <PropertyGroup Label="DXSTargetPlatformsProps">
+        <SDKFrameworks>$(Frameworks);@(DotNetTargetFrameworks->'%(Framework)')</SDKFrameworks>
+        <CPUTargetList>$(AllCPUs)</CPUTargetList>
+        <DotNetTargetList>$(SDKFrameworks)</DotNetTargetList>
+    </PropertyGroup>
+
+    <PropertyGroup Label="ToolsSetups">
         <CSharpScriptTool>$(csi)</CSharpScriptTool>
         <CSXScriptDir>$(DXSBuildDir)csscript</CSXScriptDir>
+        <CSXRun>&quot;$(CSharpScriptTool)&quot;</CSXRun>
     </PropertyGroup>
     
     
-    <PropertyGroup Label="DynamicTargettingProps">
-        <CPUTargetDefs>@(CPUArchitectures->'%(Identity)')</CPUTargetDefs>
-        <DotNetTargetDefs>@(DotNetVersions->'net%(Identity)-windows$(WinSDKVersion)')</DotNetTargetDefs>
-    </PropertyGroup>
-
-
-
     <!-- Any shaders for the unit tests are included 
          unless $(OMIT_SHADERS) is defined as 'true'
          or any shader in a folder (or subfolder thereof)

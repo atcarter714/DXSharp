@@ -1,4 +1,10 @@
 ﻿<Project>
+    <PropertyGroup Label="DefineGlobalStartupProps">
+        <UTCNow>$([System.DateTime]::UtcNow.ToString())</UTCNow>
+        <LocalNow>$([System.DateTime]::Now.ToString())</LocalNow>
+    </PropertyGroup>
+    
+    
     <PropertyGroup>
         <!-- Set up base build: -->
         <IsTestProject>true</IsTestProject>
@@ -7,9 +13,10 @@
         <SharedPropsFile>$(SharedPropsDirectory)\DXSharpShared.Build.props</SharedPropsFile>
     </PropertyGroup>
 
+    
     <!-- Import the shared props file (up one level): -->
-    <!-- "C:\Users\atcar\source\repos\AC\DXSharp\build\msbuild\DXSharpShared.Build.props" -->
     <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props" />
+    
     
     <!-- Import the primary props file (up one level): -->
     <Import Project="..\Directory.Build.props"

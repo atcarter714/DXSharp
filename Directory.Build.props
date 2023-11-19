@@ -1,7 +1,9 @@
 ﻿<Project>
 	<PropertyGroup Label="CommonSDKProps">
 		<RepoRootPath>$(MSBuildThisFileDirectory)</RepoRootPath>
+		
 		<TargetCPUs>AnyCPU;x64;x86</TargetCPUs>
+		<TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>
 		<DotNetTargets>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0</DotNetTargets>
 		
 		<!-- Make sure there's a configuration name and base output path: -->
