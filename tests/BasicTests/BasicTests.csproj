@@ -36,13 +36,15 @@
 		<Folder Include="DXGI\" />
 	</ItemGroup>
 	
-	
-	<!-- Any shaders for the unit tests are included 
-		 unless $(OMIT_SHADERS) is defined as 'true' ... -->
-	<ItemGroup Label="IncludeAnyShaders"
-			   Condition=" 'OMIT_SHADERS' != 'true' ">
-		<None Include="**\*.hlsl" CopyToOutputDirectory="PreserveNewest" />
-		<None Include="**\*.inc" CopyToOutputDirectory="PreserveNewest" />
-		<None Include="**\*.h" CopyToOutputDirectory="PreserveNewest" />
+	<ItemGroup>
+	  <ClCompile Include="Assets\Shaders\tests_shader_0.hlsl" />
 	</ItemGroup>
+	
+	<Target Name="RunCSITool" AfterTargets="Build"
+			Condition="'$(CSharpScriptTool)' != '' and '$(CSXScriptDir)' != ''">
+		<Exec Command="&quot;$(CSharpScriptTool)&quot; &quot;$(CSXScriptDir)\csxtest01.csx&quot;"
+			  WorkingDirectory="$(RepoRootPath)src\DXSharp\"
+			  Condition="'$(CSharpScriptTool)' != ''"
+			  ContinueOnError="false" /> <!-- Set to true to ignore errors ... -->
+	</Target>
 </Project>

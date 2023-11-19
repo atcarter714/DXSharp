@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <!--Common Project Properties-->
     <PropertyGroup Label="CommonProjectProps">
+        <No32Bit>true</No32Bit>
         <DxcSupportedPlatforms>x64;arm64;AnyCPU;</DxcSupportedPlatforms>
         <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
         <Platforms>$(DxcSupportedPlatforms)</Platforms>

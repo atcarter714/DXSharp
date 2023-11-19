@@ -65,13 +65,13 @@ public abstract class DeviceCaps: DisposableObject {
 
 		HResult           hr              = default ;
 		D3D_FEATURE_LEVEL d3DFeatureLevel = default ;
-
+		
 		for ( int i = len - 1; i >= 0; --i ) {
 			d3DFeatureLevel = levels[ i ] ;
 			hr = PInvoke.D3D12CreateDevice( _ppvAdapter, d3DFeatureLevel,
 											TAdapter.Guid, out var device ) ;
 			if ( hr.Failed || device is null ) continue ;
-
+			
 			//! Feature level is supported ...
 			Marshal.FinalReleaseComObject( device ) ;
 		}

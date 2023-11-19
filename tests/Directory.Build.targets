@@ -1,0 +1,41 @@
+﻿<Project>
+
+    <!-- Before Build: -->
+    <Target Name="StartupBaseTarget" BeforeTargets="Build">
+        <PropertyGroup Label="DefineGlobalStartupProps">
+            <UTCNow>$([System.DateTime]::UtcNow.ToString())</UTCNow>
+            <LocalNow>$([System.DateTime]::Now.ToString())</LocalNow>
+        </PropertyGroup>
+        <Message Text="SDK Tests project build process started @ local: $(LocalNow) ..." Importance="high" />
+    </Target>
+
+    
+    
+    <!-- After Build: -->
+    <Target Name="StartupBaseTarget" AfterTargets="Build">
+        <!-- Get the build results from MSBuild properties: -->
+        <PropertyGroup Label="DefineBuildResultText">
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='' ">Unknown</BuildResult>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='true' ">Success</BuildResult>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'!='true' ">Failed</BuildResult>
+            <BuildResultText>$(BuildResult): $(MSBuildLastTaskResult)</BuildResultText>
+        </PropertyGroup>
+
+        <!-- Print the build result code and info: -->
+        <Message Text="-------------------------------" Importance="high" />
+        <Message Text="SDK Tests project build process finished @ local: $(LocalNow) ..." Importance="high" />
+        <Message Text="Result :: $(BuildResultText)" Importance="high" />
+        <Message Text="-------------------------------" Importance="high" />
+        
+        <OnError ExecuteTargets="FailedBuildMessage" />
+    </Target>
+
+
+
+    <!-- Failure Targets: -->
+    <Target Name="FailedBuildMessage">
+        <Message Text="Failed Project: $(MSBuildProjectName)"
+                 Importance="high" />
+        <Message Text="Reason: $(ErrorText)" Importance="high" />
+    </Target>
+</Project>

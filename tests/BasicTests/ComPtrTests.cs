@@ -17,8 +17,8 @@ namespace BasicTests;
 [TestFixture, FixtureLifeCycle( LifeCycle.SingleInstance )]
 internal class ComPtrTests
 {
-	static HResult hr;
-	static nint address;
+	static HResult hr ;
+	static nint address ;
 	
 	static DXGIFactory? factory7;
 #pragma warning disable NUnit1032 // An IDisposable field/property should be Disposed in a TearDown method

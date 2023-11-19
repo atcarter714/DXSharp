@@ -12,6 +12,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{AEE84FD5-7441-42CF-AA6C-5805B759E1F8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4A52D278-0251-4FD5-BF3A-5C52C294480A}"
+	ProjectSection(SolutionItems) = preProject
+		tests\Directory.Build.props = tests\Directory.Build.props
+		tests\Directory.Build.targets = tests\Directory.Build.targets
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicTests", "tests\BasicTests\BasicTests.csproj", "{8A61B8EE-8D96-4AF1-9A7B-0026AA0AF498}"
 EndProject

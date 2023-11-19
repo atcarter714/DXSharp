@@ -25,33 +25,60 @@
         <DXSTestsDir>$(DXSBasePath)tests\</DXSTestsDir>
         <DXSSamplesDir>$(DXSBasePath)samples\</DXSSamplesDir>
     </PropertyGroup>
+
+    <Target Name="PreBuildSharedTarget0x00" BeforeTargets="PreBuildEvent">
+        <ItemGroup Label="DXSFrameworkItems">
+            <!-- Define the .NET runtime major versions we want to target :: -->
+            <DotNetVersions Label="DotNetTargetDefinitions">
+                <Include>7.0</Include>
+                <Include>8.0</Include>
+            </DotNetVersions>
+
+            <!-- Define the CPU architecture types we want to target :: -->
+            <CPUArchitectures Label="CPUTargetDefinitions">
+                <!-- NOTE: The $(No32Bit) prop should be defined 'true' for any projects 
+                     with native dependencies that don't support 32-bit -->
+                <Include Condition=" '$(No32Bit)' != 'true' ">x86</Include>
+                <Include Condition=" '$(No32Bit)' != 'true' ">arm</Include>
+                <Include>x64</Include>
+                <Include>arm64</Include>
+                <Include>AnyCPU</Include>
+            </CPUArchitectures>
+        </ItemGroup>
+
+    </Target>
     
-    
-    <ItemGroup Label="DXSFrameworkItems">
-        <!-- Define the .NET runtime major versions we want to target :: -->
-        <DotNetVersions Label="DotNetTargetDefinitions">
-            <Include>7.0</Include>
-            <Include>8.0</Include>
-        </DotNetVersions>
-        
-        <!-- Define the CPU architecture types we want to target :: -->
-        <CPUArchitectures Label="CPUTargetDefinitions">
-            <!-- NOTE: The $(No32Bit) prop should be defined 'true' for any projects 
-                 with native dependencies that don't support 32-bit -->
-            <Include Condition=" '$(No32Bit)' != 'true' ">x86</Include>
-            <Include Condition=" '$(No32Bit)' != 'true' ">arm</Include>
-            <Include>x64</Include>
-            <Include>arm64</Include>
-            <Include>AnyCPU</Include>
-        </CPUArchitectures>
-    </ItemGroup>
-    
+    <PropertyGroup Label="DXSFrameworkProps">
+        <CPUTargetList>@(CPUArchitectures->%(Identity))</CPUTargetList>
+        <CSharpScriptTool>$(csi)</CSharpScriptTool>
+        <CSXScriptDir>$(DXSBuildDir)csscript</CSXScriptDir>
+    </PropertyGroup>
     
     
     <PropertyGroup Label="DynamicTargettingProps">
-        <CPUTargetDefs>@(CPUArchitectures->(Identity))</CPUTargetDefs>
+        <CPUTargetDefs>@(CPUArchitectures->'%(Identity)')</CPUTargetDefs>
         <DotNetTargetDefs>@(DotNetVersions->'net%(Identity)-windows$(WinSDKVersion)')</DotNetTargetDefs>
     </PropertyGroup>
+
+
+
+    <!-- Any shaders for the unit tests are included 
+         unless $(OMIT_SHADERS) is defined as 'true'
+         or any shader in a folder (or subfolder thereof)
+         named "\omit", in which case ignore it by default ... -->
+    <ItemGroup Label="IncludeAnyShaders"
+               Condition=" 'OMIT_SHADERS' != 'true' ">
+        <None Include="**\*.hlsl"
+              Exclude="**\omit\**.hlsl"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="**\*.inc"
+              Exclude="**\omit\**.inc"
+              CopyToOutputDirectory="PreserveNewest" />
+        <None Include="**\*.h"
+              Exclude="**\omit\**.h"
+              CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+    
 </Project>
 
         <!--<DotNetTargetsDef>'net'@(DotNetVersions -> '$(TargetFrameworkVersion)', ' ')</DotNetTargetsDef>-->
