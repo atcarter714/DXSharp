@@ -3,6 +3,7 @@
 namespace DXSharp ;
 
 
+
 /// <summary>Assembly data for DXSharp.</summary>
 public static class AssemblyData {
 	/// <summary>Display name of the assembly.</summary>

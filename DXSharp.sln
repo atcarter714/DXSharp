@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4A52D278
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicTests", "tests\BasicTests\BasicTests.csproj", "{8A61B8EE-8D96-4AF1-9A7B-0026AA0AF498}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{789A8FB0-1777-45F2-8DBC-B1A270FBADE5}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevOps", "DevOps", "{789A8FB0-1777-45F2-8DBC-B1A270FBADE5}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 	EndProjectSection
@@ -37,10 +37,6 @@ EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "DXSharp.Samples.Shared", "samples\shared\DXSharp.Samples.Shared\DXSharp.Samples.Shared.shproj", "{29E67012-6798-43E1-BEFE-F9270F595779}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{430FF448-775A-49C2-8FC4-F56143802138}"
-	ProjectSection(SolutionItems) = preProject
-		build\pwsh\DXSBuildStartup.ps1 = build\pwsh\DXSBuildStartup.ps1
-		build\pwsh\DXSPreBuild.ps1 = build\pwsh\DXSPreBuild.ps1
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Targets", "Targets", "{A26CCC2F-6530-4962-B5BD-C0100C5DB6D1}"
 	ProjectSection(SolutionItems) = preProject
@@ -57,7 +53,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{066A62E0-26FE-412E-99F3-1B3D3ADA206C}"
 	ProjectSection(SolutionItems) = preProject
 		build\msbuild\DXSharpShared.Build.props = build\msbuild\DXSharpShared.Build.props
-		build\msbuild\DXSharpShared.Build.targets = build\msbuild\DXSharpShared.Build.targets
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "csscript", "csscript", "{B2BE9D0A-FB53-4653-ADDF-F7922755D7DB}"
@@ -70,6 +65,30 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{2761D5CC-DD83-4C5D-87A4-D607413369D5}"
 	ProjectSection(SolutionItems) = preProject
 		build\csscript\include\DirectoryHelper.csx = build\csscript\include\DirectoryHelper.csx
+		build\csscript\include\ArchitectureLogs.csx = build\csscript\include\ArchitectureLogs.csx
+		build\csscript\include\LogHelpers.csx = build\csscript\include\LogHelpers.csx
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{68D56704-A6CB-4F41-9F4B-2603568B5C29}"
+	ProjectSection(SolutionItems) = preProject
+		build\msbuild\DXSharpShared.Build.targets = build\msbuild\DXSharpShared.Build.targets
+		build\msbuild\AgilityNative.Build.targets = build\msbuild\AgilityNative.Build.targets
+		build\msbuild\DxcNative.Build.targets = build\msbuild\DxcNative.Build.targets
+		build\msbuild\DxcTool.Build.targets = build\msbuild\DxcTool.Build.targets
+		build\msbuild\DXSExtras.Build.targets = build\msbuild\DXSExtras.Build.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pwsh", "pwsh", "{AF59EB78-E6BC-45DB-8B32-D38F62E1EFF4}"
+	ProjectSection(SolutionItems) = preProject
+		build\pwsh\DXSBuildStartup.ps1 = build\pwsh\DXSBuildStartup.ps1
+		build\pwsh\DXSPreBuild.ps1 = build\pwsh\DXSPreBuild.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pipelines", "Pipelines", "{60DAF7CD-8C68-4BDF-9940-5ACBF49620D3}"
+	ProjectSection(SolutionItems) = preProject
+		azure-pipelines.yml = azure-pipelines.yml
+		azure-pipelines-1.yml = azure-pipelines-1.yml
+		azure-pipelines-2.yml = azure-pipelines-2.yml
 	EndProjectSection
 EndProject
 Global
@@ -179,6 +198,9 @@ Global
 		{066A62E0-26FE-412E-99F3-1B3D3ADA206C} = {78357CCA-2A33-480A-A890-1A91BD85107F}
 		{B2BE9D0A-FB53-4653-ADDF-F7922755D7DB} = {430FF448-775A-49C2-8FC4-F56143802138}
 		{2761D5CC-DD83-4C5D-87A4-D607413369D5} = {B2BE9D0A-FB53-4653-ADDF-F7922755D7DB}
+		{68D56704-A6CB-4F41-9F4B-2603568B5C29} = {A26CCC2F-6530-4962-B5BD-C0100C5DB6D1}
+		{AF59EB78-E6BC-45DB-8B32-D38F62E1EFF4} = {430FF448-775A-49C2-8FC4-F56143802138}
+		{60DAF7CD-8C68-4BDF-9940-5ACBF49620D3} = {789A8FB0-1777-45F2-8DBC-B1A270FBADE5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C4990EC-248E-49D5-A254-EA8AD214C338}

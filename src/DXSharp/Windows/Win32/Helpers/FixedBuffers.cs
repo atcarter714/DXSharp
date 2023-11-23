@@ -1,11 +1,7 @@
 ﻿#region Using Directives
-using System.Numerics ;
 using System.Runtime.CompilerServices ;
 
-using SysVec2 = System.Numerics.Vector2 ;
-using SysVec3 = System.Numerics.Vector3 ;
 using SysVec4 = System.Numerics.Vector4 ;
-using DXVec2 = DXSharp.Vector2 ;
 using DXVec3 = DXSharp.Vector3 ;
 using DXVec4 = DXSharp.Vector4 ;
 
@@ -62,4 +58,11 @@ public partial struct __float_4 {
 		}
 	}
 	
+	public __float_4( in SysVec4 vec4 ) {
+		unsafe {
+			Unsafe.SkipInit( out this ) ;
+			fixed( void* pVec4 = &vec4, pValue = Value )
+				*( (__float_4 *)pValue ) = *( (__float_4 *)pVec4 ) ;
+		}
+	}
 } ;

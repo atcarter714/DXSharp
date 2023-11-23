@@ -1,24 +1,23 @@
 ﻿<Project>
     <!-- Import the shared props file (up one level): -->
-    <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props" />
+    <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.targets" />
     
     <!-- Before Build: -->
     <Target Name="StartupBaseTarget" BeforeTargets="Build">
+        <PropertyGroup>
+            <DXSTestGuid>$([System.Guid]::NewGuid())</DXSTestGuid>
+        </PropertyGroup>
         <Message Text="SDK Tests project build process started @ local: $(LocalNow) ..." Importance="high" />
+        <Message Text="Test GUID: $(DXSTestGuid) ..." Importance="high" />
+        <Message Text="$(MSBuildNodeCount) cores available for parallel build ..." 
+                 Importance="high" />
     </Target>
 
     
     
     <!-- After Build: -->
-    <Target Name="StartupBaseTarget" AfterTargets="Build">
-        <!-- Get the build results from MSBuild properties: -->
-        <PropertyGroup Label="DefineBuildResultText">
-            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='' ">Unknown</BuildResult>
-            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='true' ">Success</BuildResult>
-            <BuildResult Condition=" '$(MSBuildLastTaskResult)'!='true' ">Failed</BuildResult>
-            <BuildResultText>$(BuildResult)</BuildResultText>
-        </PropertyGroup>
-
+    <Target Name="StartupBaseTarget" AfterTargets="Build" 
+            DependsOnTargets="DefineSuccessOrFailure" >
         <!-- Print the build result code and info: -->
         <Message Text="-------------------------------" Importance="high" />
         <Message Text="SDK Tests project build process finished @ local: $(LocalNow) ..." Importance="high" />

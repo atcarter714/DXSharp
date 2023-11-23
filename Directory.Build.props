@@ -1,20 +1,35 @@
 ﻿<Project>
+	<PropertyGroup>
+		<IsDXSLibrary>true</IsDXSLibrary>
+	</PropertyGroup>
+	
+	<!-- Include the shared props file in builds folder :: -->
+	<Import Project=".\build\msbuild\DXSharpShared.Build.props"
+			Condition=" '$(DXSSharedPropsImported' != 'true' " />
+	
+	<ItemGroup Label="CommonSDKItems" >
+		<YamlPipelines Include="$(RepoRootPath)*.yml" />
+		<CsWin32Configs Include="$(MSBuildProjectDirectory)*NativeMethods*.*" />
+		<SdkConfigs Include="$(RepoRootPath)Resources\*sdkconf*.json" />
+	</ItemGroup>
 	<PropertyGroup Label="CommonSDKProps">
-		<RepoRootPath>$(MSBuildThisFileDirectory)</RepoRootPath>
+		<BuildInParallel>false</BuildInParallel>
+		<NugetCacheDir>$(NuGetPackageRoot)</NugetCacheDir>
 		
-		<TargetCPUs>AnyCPU;x64;x86</TargetCPUs>
-		<TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>
-		<DotNetTargets>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0</DotNetTargets>
+		<!-- Fallbacks for critical properties: -->
+		<TargetCPUs Condition=" '$(TargetCPUs)'=='' ">AnyCPU;x64;x86</TargetCPUs>
+		<RepoRootPath Condition=" '$(RepoRootPath)'=='' ">$(MSBuildThisFileDirectory)</RepoRootPath>
+		<DotNetTargets Condition=" '$(DotNetTargets)'=='' ">net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0</DotNetTargets>
 		
 		<!-- Make sure there's a configuration name and base output path: -->
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-		<PackageOutputPath>$(RepoRootPath)bin\Packages\$(Configuration)\</PackageOutputPath>
 		<BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(RepoRootPath)bin\$(MSBuildProjectName)\</BaseOutputPath>
+		<PackageOutputPath Condition=" '$(PackageOutputPath)' == '' ">$(RepoRootPath)bin\Packages\$(Configuration)\</PackageOutputPath>
 		<BaseIntermediateOutputPath>$(RepoRootPath)obj\$([MSBuild]::MakeRelative($(RepoRootPath), $(MSBuildProjectDirectory)))\</BaseIntermediateOutputPath>
 		
 		<!-- Assembly Signing/Keys & Advanced Settings: -->
 		<SignAssembly>true</SignAssembly>
-		<AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)file\keys\strongname.snk</AssemblyOriginatorKeyFile>
+		<AssemblyOriginatorKeyFile>$(RepoRootPath)file\keys\strongname.snk</AssemblyOriginatorKeyFile>
 	</PropertyGroup>
 	
 	
@@ -22,7 +37,9 @@
 	<PropertyGroup Label="CompilerConfig">
 		<OutputType Condition=" '$(OutputType)' == '' ">Library</OutputType>
 		
-		<!-- Make sure valid platforms and target frameworks are set: -->
+		<!-- Make sure valid platforms and target frameworks are set:
+			 (Projects override this with their own values if needed)
+		  -->
 		<Platforms Condition=" '$(Platforms)' == '' ">$(TargetCPUs)</Platforms>
 		<TargetFrameworks Condition=" '$(TargetFrameworks)' == '' ">$(DotNetTargets);</TargetFrameworks>
 		
@@ -82,19 +99,6 @@
 	</PropertyGroup>
 	
 	
-	<!-- DirectX SDK & Dependency Properties -->
-	<PropertyGroup Label="NativeSDKProperties">
-		<UsingAgilitySDK>true</UsingAgilitySDK>
-		<NativePlatformName Condition=" '$(Platform)' == 'x64' ">x64</NativePlatformName>
-		<NativePlatformName Condition=" '$(Platform)' == 'arm64' ">arm64</NativePlatformName>
-		<NativePlatformName Condition=" '$(Platform)' == 'x86' ">win32</NativePlatformName>
-		<NativePlatformName Condition=" '$(Platform)' == 'AnyCPU' ">x64</NativePlatformName>
-		
-		<AgilityVersion Condition=" '$(UsingAgilitySDK)' == 'true' ">[1.711.3-preview,)</AgilityVersion>
-		<DxcVersion Condition=" '$(UsingDxc)' == 'true' ">*</DxcVersion>
-	</PropertyGroup>
-	
-	
 	<!-- Roslyn Generator Setup Properties :: -->
 	<PropertyGroup Label="CodeGenSettings">
 		<UsingCsWin32 Condition=" '$(UsingCsWin32)' == '' ">true</UsingCsWin32>
@@ -105,11 +109,17 @@
 	</PropertyGroup>
 	
 	
-	<!-- Debug/Release Configuration Properties :: -->
-	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' " Label="DebugConfigurationProperties">
-		<DefineConstants>TRACE, DEBUG_COM, DEV_BUILD</DefineConstants>
+	<!-- Compiler Symbols & Configurations :: -->
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<DefineConstants>TRACE, DEBUG_COM, DEV_BUILD, CACHE_SIZE_NORMAL</DefineConstants>
 	</PropertyGroup>
-	<PropertyGroup Condition=" '$(Configuration)' == 'Release' " Label="ReleaseConfigurationProperties">
-		<DefineConstants>TRACE, STRIP_CHECKS, DXS_FAST</DefineConstants>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+		<DefineConstants>TRACE, DEV_BUILD, CACHE_SIZE_LARGE, STRIP_CHECKS, DXS_FAST</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(NativePlatformName)' != '' ">
+		<DefineConstants Condition=" '$(NativePlatformName)' == 'x86' and '$(No32Bit)' != 'true' ">_WIN_32, X86</DefineConstants>
+		<DefineConstants Condition=" '$(NativePlatformName)' == 'arm' and '$(No32Bit)' != 'true' ">_WIN_32, ARM</DefineConstants>
+		<DefineConstants Condition=" '$(NativePlatformName)' == 'x64' ">_WIN_64, X64</DefineConstants>
+		<DefineConstants Condition=" '$(NativePlatformName)' == 'arm64' ">_WIN_64, ARM64</DefineConstants>
 	</PropertyGroup>
 </Project>

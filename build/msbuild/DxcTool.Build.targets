@@ -1,0 +1,83 @@
+﻿<Project>
+    <ImportGroup Label="CommonPropsAndTargetsImport" 
+                 Condition=" '$(UsingDxcCompiler)' == 'true' ">
+        <Import Project="$(RepoRootPath)build\msbuild\DXSharpShared.Build.props" 
+                Condition=" '$(DXSSharedPropsImported)' != 'true' " />
+        <Import Project="$(RepoRootPath)build\msbuild\DxcNative.Build.targets" 
+                Condition=" '$(DXCNativeImported)' != 'true' " />
+    </ImportGroup>
+    <PropertyGroup Label="GraphicsDriversDownloadURLs">
+        <NvidiaDriversUrl>https://www.geforce.com/drivers</NvidiaDriversUrl>
+        <AmdDriversUrl>https://support.amd.com/en-us/download</AmdDriversUrl>
+        <IntelDriversUrl>https://downloadcenter.intel.com/product/80939/Graphics-Drivers</IntelDriversUrl>
+        
+        <DXCContinueOnShaderErrors>true</DXCContinueOnShaderErrors>
+    </PropertyGroup>
+    
+    <!-- Resolve native refs for Dxc DLLs if we're building against Dxc: -->
+    <Target Name="LocateDxcCompilerTool"
+            BeforeTargets="Build"
+            Outputs="$(DxcToolPath)"
+            Condition=" '$(DxcPackagePath)'!='' and '$(UsingDxcCompiler)' == 'true' " >
+        
+        <!-- Resolve the Dxc DLLs for the current platform: -->
+        <PropertyGroup>
+            <HostPlatformStr>$(MachineCPUArchitecture)</HostPlatformStr>
+        </PropertyGroup>
+        
+        <ItemGroup Condition=" '$(UsingDxcCompiler)' == 'true' ">
+            <!-- If $(DEPLOY_DXC_TOOL) is declared 'true', the dxc.exe 
+                 tool is copied to the output directory:
+              -->
+            <DxcCompilerExe Condition="$(DEPLOY_DXC_TOOL) == 'true'" 
+                            Include="$(DxcPackagePath)\build\native\bin\$(HostPlatformStr)\dxc.exe" />
+            <None Condition="$(DEPLOY_DXC_TOOL) == 'true'" 
+                  Include="$(DxcCompilerExe)"
+                  CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+        
+        <!-- Define a path and command for the Dxc Compiler Tool: -->
+        <PropertyGroup>
+            <DxcToolPath>$(DxcBinPlatformPath)\dxc.exe</DxcToolPath>
+        </PropertyGroup>
+    </Target>
+    
+    
+    <!-- Define a task/command to compile shaders with the tool: -->
+    <Target Name="CompileShaders"
+            BeforeTargets="Build" 
+            DependsOnTargets="LocateDxcCompilerTool"
+            Condition=" '$(UsingDxcCompiler)' == 'true' " >
+        
+        <!-- Compile all shader files included for Dxc compilation in the project: 
+                (Note: this is a custom item group defined in the project file)
+                The basic syntax for including files in this group is:
+                    <DxcShader Include="path/to/shader.hlsl" />
+          -->
+        <ItemGroup>
+            <ProjectShaderFiles Include="%(DxcShader)" />
+            <ProjectVertexShaderFiles Include="%(DxcVertexShader)" />
+            <ProjectFragmentShaderFiles Include="%(DxcFragmentShader)" />
+            <ProjectGeometryShaderFiles Include="%(DxcGeometryShader)" />
+            <ProjectComputeShaderFiles Include="%(DxcComputeShader)" />
+        </ItemGroup>
+        <CallTarget Targets="InvokeDxcTool" Condition=" '$(ProjectShaderFiles)' != '' " 
+                    ContinueOnError="$(DXCHaltOnShaderErrors)" />
+    </Target>
+    
+    <Target Name="InvokeDxcTool" 
+            Inputs="@(ProjectShaderFiles)"
+            Condition=" '$(UsingDxcCompiler)' == 'true' and '$(ProjectShaderFiles)' != '' " >
+        <RemoveDuplicates Condition=" '$(ProjectShaderFiles)' != '' " 
+                          Inputs="@(ProjectShaderFiles)" 
+                          Output="@(FilteredProjectShaderFiles)" />
+        
+        <!-- Compile each shader file: -->
+        <Message Text="Compiling shader: @(FilteredProjectShaderFiles->'%(Identity)', ', ')" />
+        
+        <!-- Loop over all shaders and compile each one with Dxc -->
+        <Exec Command="$(DxcToolPath) /E%(FilteredProjectShaderFiles.EntryPoint) /T%(FilteredProjectShaderFiles.ShaderModel) /Fo%(FilteredProjectShaderFiles.Identity).cso %(FilteredProjectShaderFiles.Identity)" />
+    </Target>
+    
+    
+</Project>

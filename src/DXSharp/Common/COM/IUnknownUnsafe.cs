@@ -8,6 +8,8 @@ using Windows.Win32.Foundation ;
 
 using DXSharp.Windows ;
 using static DXSharp.InteropUtils ;
+// ReSharper disable InconsistentNaming
+// ReSharper disable IdentifierTypo
 #endregion
 namespace Windows.Win32.System.Com ;
 
@@ -27,7 +29,7 @@ internal unsafe delegate HResult QueryInterfaceDelegate( IUnknownUnsafe* pThis,
 // -----------------------------------------------------------------
 
 
-[global::System.Runtime.InteropServices.Guid( "00000000-0000-0000-C000-000000000046" )]
+[Guid( "00000000-0000-0000-C000-000000000046" )]
 public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 											 IComIID, IVTableData {
 	// -----------------------------------------------------------------
@@ -126,26 +128,21 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 			var   guid = riid ;
 			void* fn   = null ;
 			ppvObject = null ;
-			HRESULT hr = default ;
 			fixed( void* p = &this ) {
-				hr = _0_QueryInterface( (IUnknownUnsafe *)p, &guid, &fn ) ;
+				HRESULT hr = _0_QueryInterface( (IUnknownUnsafe *)p, &guid, &fn ) ;
 				if( fn is not null ) ppvObject = (nint)fn! ;
 				return hr ;
 			}
 		}
 		public uint InvokeAddRef( ) {
-			void* fn   = null ;
-			uint count = 0x00U ;
 			fixed( void* p = &this ) {
-				count = _1_AddRef( (IUnknownUnsafe *)p ) ;
+				uint count = _1_AddRef( (IUnknownUnsafe *)p ) ;
 				return count ;
 			}
 		}
 		public uint InvokeRelease( ) {
-			void* fn    = null ;
-			uint  count = 0x00U ;
 			fixed( void* p = &this ) {
-				count = _2_Release( (IUnknownUnsafe *)p ) ;
+				uint count = _2_Release( (IUnknownUnsafe *)p ) ;
 				return count ;
 			}
 		}
@@ -268,7 +265,7 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 	// -----------------------------------------------------------------
 
 	
-	public unsafe HRESULT QueryInterface( in Guid riid, out void* ppvObject ) {
+	public HRESULT QueryInterface( in Guid riid, out void* ppvObject ) {
 		fixed ( void** ppvObjectLocal = &ppvObject ) {
 			fixed ( Guid* riidLocal = &riid ) {
 				HRESULT __result = this.QueryInterface( riidLocal, ppvObjectLocal ) ;
@@ -282,7 +279,7 @@ public unsafe partial struct IUnknownUnsafe: DXSharp.Windows.COM.IUnknown,
 	/// <remarks>
 	/// <para><see href="https://docs.microsoft.com/windows/win32/api/unknwn/nf-unknwn-iunknown-queryinterface(q)">Learn more about this API from docs.microsoft.com</see>.</para>
 	/// </remarks>
-	public unsafe HRESULT QueryInterface( Guid* riid, void** ppvObject ) {
+	public HRESULT QueryInterface( Guid* riid, void** ppvObject ) {
 		return ( (delegate *unmanaged [Stdcall]<IUnknownUnsafe*, Guid*, void**, HRESULT>)
 				   lpVtbl[ 0 ] )( (IUnknownUnsafe *)lpVtbl, riid, ppvObject ) ;
 	}

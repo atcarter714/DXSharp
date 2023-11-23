@@ -1,20 +1,99 @@
-﻿<Project InitialTargets="BuildFrameworks">
+﻿<Project>
+    <!-- Set of common, shared global properties for DXSharp project builds: -->
     <PropertyGroup Label="WindowsSDKProps">
+        <DXSSharedPropsImported>true</DXSSharedPropsImported>
+        
         <WindowsOnly>true</WindowsOnly>
         <WinSDKVersion>10.0.22621.0</WinSDKVersion>
         <WinSDKMinVersion>$(WinSDKVersion)</WinSDKMinVersion>
+        <TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>
+        <DotNetTargets>net7.0-windows$(WinSDKVersion);net8.0-windows$(WinSDKVersion)</DotNetTargets>
         <DxcMinWinSDKVersion Condition=" '$(DxcMinWinSDKVersion)' == '' ">10.0.18362.0</DxcMinWinSDKVersion>
+        
+        <DxcVersionDefault Condition=" '$(DxcVersionDefault)' == '' ">1.8.2306.6-preview</DxcVersionDefault>
+        <AgilityVersionDefault Condition=" '$(AgilityVersionDefault)' == '' ">1.711.3-preview</AgilityVersionDefault>
     </PropertyGroup>
     
     
+    <!-- Returns names of multi-targeting framework targets as items: -->
+    <Target Name="GetTargetFrameworksAsItems"
+            Returns="@(TargetFrameworksAsItems)">
+        <ItemGroup Condition=" '$(DotNetTargets)' != '' ">
+            <TargetFrameworksAsItems Include="$(DotNetTargets.Split(';'))" />
+        </ItemGroup>
+    </Target>
+
+    
+    <!-- Resolves location of NuGet package cache and tries to find any packages 
+         that are needed ahead of time (i.e., Agility SDK, Dxc Compiler, etc) ...
+     -->
+    <Target Name="ResolveNuGetCacheLocation" 
+            Outputs="$(NugetCacheDir)"
+            BeforeTargets="PreBuildEvent" 
+            Condition=" '$(NugetCacheDir)' == '' " >
+        <PropertyGroup>
+            <_hasNuGetDeps Condition=" '$(UsingAgility)' == 'true' or '$(UsingDxc)' == 'true' ">true</_hasNuGetDeps>
+            <_hasNuGetDeps Condition=" '$(DXSHasExtraNuGetDeps)' == 'true' ">true</_hasNuGetDeps>
+            <_hasNuGetDeps Condition=" '$(_hasNuGetDeps)' == '' ">false</_hasNuGetDeps>
+        </PropertyGroup>
+        
+        <Message Text="DX# Shared Props: Performing early package dependency checks ..."
+                 Condition=" '$(NugetCacheDir)' != '' " Importance="high" />
+        <Message Text="DX# Shared Props: No special dependencies to resolve ... "
+                 Condition=" '$(_hasNuGetDeps)' != 'true' " Importance="high" />
+        
+        <PropertyGroup Condition=" '$(_hasNuGetDeps)' == 'true' " >
+            <NugetCacheDir Condition=" '$(NuGetPackageRoot)' != '' " >$(NuGetPackageRoot)</NugetCacheDir>
+            <NugetCacheDir Condition=" '$(NuGetPackageRoot)' == '' " >$(USERPROFILE)\.nuget\packages</NugetCacheDir>
+            <NugetCacheDir Condition=" '$(CustomNugetCache)' != '' " >$(CustomNuGetCache)</NugetCacheDir>
+        </PropertyGroup>
+        
+        <Message Text="DX# Shared Props: NuGet cache location: '$(NugetCacheDir)' ... "
+                 Condition=" '$(_hasNuGetDeps)' == 'true' and '$(NugetCacheDir)' != '' " Importance="high" />
+        
+        <!-- Trim any invalid characters off '$(AgilityVersion)' or '$(DxcVersion), as it may have specifiers for version handling 
+             that are not valid for a directory name (e.g., '[1.711.3-preview,)' or '>=1.8.2306.6-preview', etc) ...
+          -->
+        <PropertyGroup Condition=" '$(UsingAgility)' == 'true' and '$(AgilityVersionStr)' == '' " >
+            <!-- Remove all non-digits and non-dots: -->
+            <AgilityVersion Condition=" '$(AgilityVersion)' == '' ">$(AgilityVersionDefault)</AgilityVersion>
+            <SanitizedAgilityVersion>$([System.Text.RegularExpressions.Regex]::Replace($(AgilityVersion), "[^0-9.]+", ""))</SanitizedAgilityVersion>
+            <AgilityVersionStr>$(SanitizedAgilityVersion)</AgilityVersionStr>
+            <AgilityPackageVersionDir Condition=" '$(AgilityPackageVersionDir)'=='' ">$(NugetCacheDir)\$(AgilityPackageName)\$(AgilityVersionStr)</AgilityPackageVersionDir>
+            <_AgilityPackageFound Condition=" Exists('$(AgilityPackageVersionDir)') ">true</_AgilityPackageFound>
+        </PropertyGroup>
+        <PropertyGroup Condition=" '$(UsingDxc)' == 'true' and '$(DxcVersionStr)' == '' " >
+            <!-- Remove all non-digits and non-dots: -->
+            <DxcVersion Condition=" '$(DxcVersion)' == '' ">$(DxcVersionDefault)</DxcVersion>
+            <SanitizedDxcVersion>$([System.Text.RegularExpressions.Regex]::Replace($(DxcVersion), "[^0-9.]+", ""))</SanitizedDxcVersion>
+            <DxcVersionStr>$(SanitizedDxcVersion)</DxcVersionStr>
+            <DxcPackageVersionDir Condition=" '$(DxcPackageVersionDir)'=='' ">$(NugetCacheDir)\$(DxcPackageName)\$(DxcVersionStr)</DxcPackageVersionDir>
+            <_DxcPackageFound Condition=" Exists('$(DxcPackageVersionDir)') ">true</_DxcPackageFound>
+        </PropertyGroup>
+        
+        <Message Text="DX# Shared Props: Resolved '$(AgilityPackageName)' package location to: 
+            $(AgilityPackageVersionDir)" 
+                 Condition=" '$(UsingAgility)' == 'true' and '$(_AgilityPackageFound)' == 'true' " Importance="high" />
+        
+        <Message Text="DX# Shared Props: Resolved '$(DxcPackageName)' package location to:
+            $(DxcPackageVersionDir)" 
+                 Condition=" '$(UsingDxc)' == 'true' and '$(_DxcPackageFound)' == 'true' " Importance="high" />
+    </Target>
+
+
+    <!-- Defines a set of common, shared global properties for use in DXSharp builds ... -->
     <PropertyGroup Label="BuildSetupProps">
-        <SDKProjectName>$(SolutionName)</SDKProjectName>
+        <RepoRootPath>$(SolutionDir)</RepoRootPath>
+        <SDKProjectName Condition=" '$(SolutionName)' != '' " >$(SolutionName)</SDKProjectName>
+        <SDKProjectName Condition=" '$(SolutionName)' == '' " >DXSharp</SDKProjectName>
         <CommonRootNamespace>$(SDKProjectName)</CommonRootNamespace>
         
         <!-- Useful global path properties for builds ::
              (These can be used in other MSBuild scripts) -->
         <No32Bit Condition=" '$(No32Bit)' == '' ">false</No32Bit>
+        <No32Bit Condition=" '$(UsingDxc)' == 'true' ">true</No32Bit>
         <NoAnyCPU Condition=" '$(NoAnyCPU)' == '' ">false</NoAnyCPU>
+        
         <IsDXSLibrary Condition=" '$(IsDXSLibrary)' == '' ">false</IsDXSLibrary>
         <DXSBasePath Condition=" '$(DXSBasePath)' == '' ">$(SolutionDir)</DXSBasePath>
         
@@ -25,65 +104,121 @@
         <DXSBuildDir>$(DXSBasePath)build\</DXSBuildDir>
         <DXSTestsDir>$(DXSBasePath)tests\</DXSTestsDir>
         <DXSSamplesDir>$(DXSBasePath)samples\</DXSSamplesDir>
-    </PropertyGroup>
-
-    
-    <Target Name="CommonSharedTargets0x00" >
-        <ItemGroup Label="MultiTargetingItems">
-            <!-- Define the .NET runtime major versions we want to target :: -->
-            <!--<DotNetVersions Include="7.0" />
-            <DotNetVersions Include="8.0" />-->
-            <DotNetVersions Label="DotNetTargetDefinitions">
-                <Include>7.0</Include>
-                <Include>8.0</Include>
-            </DotNetVersions>
-            
-            <!-- Define the CPU architecture types we want to target :: -->
-            <CPUArchitectures Label="CPUTargetDefinitions">
-                <!-- NOTE: The $(No32Bit) prop should be defined 'true' for any projects 
-                     with native dependencies that don't support 32-bit -->
-                <CPU Condition=" '$(NoAnyCPU)' != 'true' ">AnyCPU</CPU>
-                <CPU Condition=" '$(No32Bit)' != 'true' ">x86</CPU>
-                <CPU Condition=" '$(No32Bit)' != 'true' ">arm</CPU>
-                <CPU>x64</CPU>
-                <CPU>arm64</CPU>
-                <AllCPUs>$([MSBuild]::ValueOrDefault('%(CPU.Identity)', ''))</AllCPUs>
-            </CPUArchitectures>
-            
-            <DotNetTargetFrameworks Include="@(DotNetVersions)">
-                <Framework>net%(Identity)-windows$(WinSDKVersion)-%(CPUArchitectures.AllCPUs)</Framework>
-            </DotNetTargetFrameworks>
-        </ItemGroup>
+        <DXSMSBuildDir>$(DXSBuildDir)msbuild\</DXSMSBuildDir>
         
-        <Message Importance="high" Text="Target: @(DotNetTargetFrameworks->'%(Framework)', ';')" />
-    </Target>
+        <DxcCompilerToolTargets>$(DXSBuildDir)msbuild\DxcTool.Build.targets</DxcCompilerToolTargets>
+        <DxcNativeTargets>$(DXSBuildDir)msbuild\DxcNative.Build.targets</DxcNativeTargets>
+        <AgilitySDKTargets>$(DXSBuildDir)msbuild\AgilityNative.Build.targets</AgilitySDKTargets>
+        <DXSSharedTargets>$(DXSBuildDir)msbuild\DXSharpShared.Build.targets</DXSSharedTargets>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(D3DDebug)' == '' ">
+        <D3DDebug Condition=" '$(Configuration)' != 'Debug' ">false</D3DDebug>
+        <D3DDebug Condition=" '$(Configuration)' == 'Debug' ">true</D3DDebug>
+    </PropertyGroup>
     
-    <Target Name="BuildFrameworks">
-        <!--<ItemGroup>
-            <DotNetTargetFrameworks Include="@(DotNetVersions)">
-                <Framework>net%(Identity)-windows$(WinSDKVersion)-%(CPUArchitectures.AllCPUs)</Framework>
-            </DotNetTargetFrameworks>
-        </ItemGroup>-->
-
-        <PropertyGroup>
-            <Frameworks>$(Frameworks);@(DotNetTargetFrameworks->'%(Framework)')</Frameworks>
-        </PropertyGroup>
-
-        <Message Importance="high" Text="Frameworks: $(Frameworks)" />
-    </Target>
+    <!-- Properties for local build host/machine CPU architecture: 
+             This helps us know what version of platform-specific tools like the Dxc Compiler
+             to run in build processes that call them ...
+      -->
+    <PropertyGroup Label="BuildHostArchitectureProps">
+        <!--<Is32BitHost Condition=" '$(MSBuildExtensionsPath64)' == '' ">true</Is32BitHost>
+        <Is64BitHost Condition=" '$(Is32BitHost)' != 'true' ">true</Is64BitHost>-->
+        <MachineArchitecture>$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString())</MachineArchitecture>
+        <MachineCPUArchitecture Condition=" '$(MachineArchitecture)' == 'X86' ">x86</MachineCPUArchitecture>
+        <MachineCPUArchitecture Condition=" '$(MachineArchitecture)' == 'X64' ">x64</MachineCPUArchitecture>
+        <MachineCPUArchitecture Condition=" '$(MachineArchitecture)' == 'Arm' ">arm</MachineCPUArchitecture>
+        <MachineCPUArchitecture Condition=" '$(MachineArchitecture)' == 'Arm64' ">arm64</MachineCPUArchitecture>
+        
+        <DxcToolPlatformFolderName>$(MachineCPUArchitecture)</DxcToolPlatformFolderName>
+        <NugetNativePlatformFolderName Condition=" '$(Platform)'=='x86' ">win32</NugetNativePlatformFolderName>
+        <NugetNativePlatformFolderName Condition=" '$(Platform)'=='arm' ">arm</NugetNativePlatformFolderName>
+        <NugetNativePlatformFolderName Condition=" '$(Platform)'=='x64' ">x64</NugetNativePlatformFolderName>
+        <NugetNativePlatformFolderName Condition=" '$(Platform)'=='arm64' ">arm64</NugetNativePlatformFolderName>
+        <NugetNativePlatformFolderName Condition=" '$(Platform)'=='AnyCPU' ">$(MachineCPUArchitecture)</NugetNativePlatformFolderName>
+    </PropertyGroup>
     
-    <PropertyGroup Label="DXSTargetPlatformsProps">
-        <SDKFrameworks>$(Frameworks);@(DotNetTargetFrameworks->'%(Framework)')</SDKFrameworks>
-        <CPUTargetList>$(AllCPUs)</CPUTargetList>
-        <DotNetTargetList>$(SDKFrameworks)</DotNetTargetList>
+    <!-- Defines the architecture flag props for running tools: -->
+    <PropertyGroup Label="BuildHostArchitecture32Bit"
+                   Condition=" '$(MachineArchitecture)' == 'x86' or '$(MachineArchitecture)' == 'arm' ">
+        <Is32BitHost>true</Is32BitHost>
+        <Is64BitHost>false</Is64BitHost>
+    </PropertyGroup>
+    <PropertyGroup Label="BuildHostArchitecture64Bit"
+                   Condition=" '$(MachineArchitecture)' == 'x64' or '$(MachineArchitecture)' == 'arm64' ">
+        <Is32BitHost>false</Is32BitHost>
+        <Is64BitHost>true</Is64BitHost>
     </PropertyGroup>
 
+
+    
+    <!-- DirectX SDK & Dependency Properties -->
+    <PropertyGroup Label="NativeSDKProperties">
+        <D3DVersions>12.0</D3DVersions>
+        <DxcVersion>>=1.8.2306.6-preview</DxcVersion>
+        <AgilityVersion>[1.711.3-preview,)</AgilityVersion>
+        <DxcPackageName>Microsoft.Direct3D.Dxc</DxcPackageName>
+        <AgilityPackageName>Microsoft.Direct3D.D3D12</AgilityPackageName>
+        
+        <NativePlatformName Condition=" '$(PlatformName)' == 'x64' ">x64</NativePlatformName>
+        <NativePlatformName Condition=" '$(PlatformName)' == 'arm64' ">arm64</NativePlatformName>
+        <NativePlatformName Condition=" '$(PlatformName)' == 'x86' ">win32</NativePlatformName>
+        <NativePlatformName Condition=" '$(PlatformName)' == 'AnyCPU' ">$(MachineCPUArchitecture)</NativePlatformName>
+        <NativePlatformName Condition=" '$(NativePlatformName)' == '' ">$(MachineCPUArchitecture)</NativePlatformName>
+        
+        <HostPlatformName Condition=" '$(HostPlatformName)' == '' ">$(MachineCPUArchitecture)</HostPlatformName>
+        
+        <D3DDebug Condition=" '$(D3DDebug)'=='true' or '$(Configuration)'=='Debug' ">true</D3DDebug>
+    </PropertyGroup>
+    
+    
+    <!-- Setup properties for shared tools/scripts we will run for builds: -->
     <PropertyGroup Label="ToolsSetups">
-        <CSharpScriptTool>$(csi)</CSharpScriptTool>
-        <CSXScriptDir>$(DXSBuildDir)csscript</CSXScriptDir>
+        <CSharpScriptTool Condition=" '$(CSharpScriptTool)' == '' ">$(csi)</CSharpScriptTool>
         <CSXRun>&quot;$(CSharpScriptTool)&quot;</CSXRun>
+        
+        <CSXScriptDir>$(DXSBuildDir)csscript</CSXScriptDir>
+        <DefaultCsxScriptName>csxtest01.csx</DefaultCsxScriptName>
+        
+        
+        <DxcCompilerToolFolder>$(DxcToolPlatformFolderName)</DxcCompilerToolFolder>
+        <PowershellScriptsFolder>$(DXSBuildDir)pwsh</PowershellScriptsFolder>
+        <BuildToolsFolder>$(DXSBuildDir)tools</BuildToolsFolder>
+        <BuildLogsFolder>$(DXSBuildDir)logs</BuildLogsFolder>
     </PropertyGroup>
-    
+    <Target Name="RunCSITool" Inputs="CSXScriptName;CSXScriptDir;CSharpScriptTool"
+            Condition="'$(CSharpScriptTool)' != '' and '$(CSXScriptDir)' != ''" >
+        <PropertyGroup Condition=" '$(CSXScriptName)' == '' " >
+            <CSXScriptName>$(DefaultCsxScriptName)</CSXScriptName>
+        </PropertyGroup>
+        <!-- An error is thrown with a proper message if 
+             the tool path isn't defined and target is run ... -->
+        <Error
+                Text=" Must have valid path to C# script tool (csi.exe). Define 'CSharpScriptTool' with path to your custom tool."
+                Condition="'$(CSharpScriptTool)' == ''" />
+
+        <!-- Execute the scripts ... -->
+        <Exec Command="$(CSXRun) &quot;$(CSXScriptDir)\$(CSXScriptName)&quot;"
+              WorkingDirectory="$(RepoRootPath)src\DXSharp\"
+              Condition="'$(CSharpScriptTool)' != ''"
+              ContinueOnError="false" /> <!-- Set to true to ignore errors ... -->
+    </Target>
+
+    <!-- Setup utility targets for processing DXSharp builds: -->
+    <Target Name="RunPwshScript" Inputs="PwshScriptPath" >
+        <Exec Command="powershell.exe -ExecutionPolicy Bypass -NoLogo -NonInteractive -NoProfile -File $(PwshScriptPath)"
+              ConsoleToMSBuild="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="ScriptOutput"/>
+        </Exec>
+        <Message Text="PowerShell script output: $(ScriptOutput)" />
+    </Target>
+    <Target Name="CompareFiles">
+        <Exec Command="powershell (Get-Item '$(FilePath1)').LastWriteTime -gt (Get-Item '$(FilePath2)').LastWriteTime"
+              ConsoleToMSBuild="true">
+            <Output TaskParameter="ExitCode" PropertyName="IsNewer"/>
+        </Exec>
+        <Message Text="File $(FilePath1) is newer than $(FilePath2)" Condition="'$(IsNewer)'=='0'"/>
+        <Message Text="File $(FilePath1) is not newer than $(FilePath2)" Condition="'$(IsNewer)'=='1'"/>
+    </Target>
     
     <!-- Any shaders for the unit tests are included 
          unless $(OMIT_SHADERS) is defined as 'true'
@@ -91,18 +226,34 @@
          named "\omit", in which case ignore it by default ... -->
     <ItemGroup Label="IncludeAnyShaders"
                Condition=" 'OMIT_SHADERS' != 'true' ">
-        <None Include="**\*.hlsl"
-              Exclude="**\omit\**.hlsl"
-              CopyToOutputDirectory="PreserveNewest" />
-        <None Include="**\*.inc"
-              Exclude="**\omit\**.inc"
-              CopyToOutputDirectory="PreserveNewest" />
-        <None Include="**\*.h"
-              Exclude="**\omit\**.h"
-              CopyToOutputDirectory="PreserveNewest" />
-    </ItemGroup>
-    
-</Project>
-
-        <!--<DotNetTargetsDef>'net'@(DotNetVersions -> '$(TargetFrameworkVersion)', ' ')</DotNetTargetsDef>-->
+        <ShaderSrcCode Include="**\*.hlsl"
+                       Exclude="**\omit\**.hlsl"
+                       CopyToOutputDirectory="PreserveNewest" />
+        <ShaderSrcCode Include="**\*.fx"
+                       Exclude="**\omit\**.fx"
+                       CopyToOutputDirectory="PreserveNewest" />
         
+        <ShaderIncludes Include="**\*.inc"
+                        Exclude="**\omit\**.inc"
+                        CopyToOutputDirectory="PreserveNewest" />
+        <ShaderIncludes Include="**\*.h"
+                        Exclude="**\omit\**.h"
+                        CopyToOutputDirectory="PreserveNewest" />
+        
+        <ShaderBinCode Include="**\*.cso"
+                       Exclude="**\omit\**.cso"
+                       CopyToOutputDirectory="PreserveNewest" />
+        <ShaderBinCode Include="**\*.blob"
+                       Exclude="**\omit\**.blob"
+                       CopyToOutputDirectory="PreserveNewest" />
+        
+        <AllShaderSrcFiles Include="@(ShaderSrcCode);@(ShaderIncludes)" />
+        <AllShaderBinFiles Include="@(ShaderBinCode)" />
+    </ItemGroup>
+
+    
+    <!-- Restore solution: -->
+    <Target Name="Restore" >
+        <MSBuild Projects="$(RepoRootPath)$(SolutionFileName)" Targets="Restore" />
+    </Target>
+</Project>

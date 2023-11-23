@@ -1,16 +1,18 @@
-﻿// ------------------------------------------------------------------------------
+﻿#pragma warning disable CS1591,CS1573,CS0465,CS0649,CS8019,CS1570,CS1584,CS1658,CS0436,CS8981
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable InconsistentNaming
+// ReSharper disable CheckNamespace
+
+// ------------------------------------------------------------------------------
 // 
 //
 // ------------------------------------------------------------------------------
 
 #region Using Directives
-#pragma warning disable CS1591,CS1573,CS0465,CS0649,CS8019,CS1570,CS1584,CS1658,CS0436,CS8981
-using System ;
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
 
 using Windows.Win32.Foundation ;
-using winmdroot = Windows.Win32 ;
 #endregion
 namespace Windows.Win32.System.Com ;
 

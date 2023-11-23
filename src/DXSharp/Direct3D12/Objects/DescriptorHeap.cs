@@ -28,7 +28,6 @@ internal class DescriptorHeap: Pageable,
 	
 	public DescriptorHeapDescription GetDesc( ) {
 		unsafe {
-			DescriptorHeapDescription description = default ;
 			var pDescHeap = ComPointer 
 							?? throw new NullReferenceException( ) ;
 			
@@ -36,36 +35,34 @@ internal class DescriptorHeap: Pageable,
 			var getDescription = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, DescriptorHeapDescription >)( fnPtr ) ;
 			var heap = (ID3D12DescriptorHeap *)pDescHeap.InterfaceVPtr ;
 			
-			description = getDescription( heap ) ;
+			DescriptorHeapDescription description = getDescription( heap ) ;
 			return description ;
 		}
 	}
 	
 	public CPUDescriptorHandle GetCPUDescriptorHandleForHeapStart( ) {
 		unsafe {
-			D3D12_CPU_DESCRIPTOR_HANDLE handle = default ;
 			var pDescHeap = ComPointer 
 							?? throw new NullReferenceException( ) ;
 
 			var fnPtr = pDescHeap.GetVTableMethod< ID3D12DescriptorHeap >( 9 ) ;
 			var getDescriptor = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, D3D12_CPU_DESCRIPTOR_HANDLE >)( fnPtr ) ;
 
-			var heap = (ID3D12DescriptorHeap*)ComPointer.InterfaceVPtr ;
-			handle = getDescriptor( heap ) ;
+			var                         heap   = (ID3D12DescriptorHeap*)ComPointer.InterfaceVPtr ;
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = getDescriptor( heap ) ;
 			return handle ;
 		}
 	}
 	
 	public GPUDescriptorHandle GetGPUDescriptorHandleForHeapStart( ) {
 		unsafe {
-			D3D12_GPU_DESCRIPTOR_HANDLE handle = default ;
 			var pDescHeap = ComPointer ?? throw new NullReferenceException( ) ;
 
 			var fnPtr = pDescHeap.GetVTableMethod<ID3D12DescriptorHeap>( 10 ) ;
 			var getDescriptor = (delegate* unmanaged[ Stdcall, MemberFunction ]< ID3D12DescriptorHeap*, D3D12_GPU_DESCRIPTOR_HANDLE >)( fnPtr ) ;
 			
-			var heap = (ID3D12DescriptorHeap *)ComPointer.InterfaceVPtr ;
-			handle = getDescriptor( heap ) ;
+			var                         heap   = (ID3D12DescriptorHeap *)ComPointer.InterfaceVPtr ;
+			D3D12_GPU_DESCRIPTOR_HANDLE handle = getDescriptor( heap ) ;
 
 			return handle ;
 		}

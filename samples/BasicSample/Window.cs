@@ -10,7 +10,6 @@ public class Window: RenderForm {
 	public Window( ) { }
 	
 	protected override void OnResize( EventArgs e ) {
-		
 		base.OnResize( e ) ;
 		this.Invalidate( ) ;
 	}

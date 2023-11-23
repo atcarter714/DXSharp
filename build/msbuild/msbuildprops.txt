@@ -1,0 +1,63 @@
+SDKProjectName		The name of the main SDK-style solution/project (i.e., "DXSharp")
+TargetCPUs		Semicolon delimited list of CPU platform targets for compilation
+TargetFrameworks	Semicolon delimited list of .NET Framework versions to target (i.e., "net#.#windows10.X.X.X")
+TargetPlatformMinVersion Minimum Windows OS version allowed
+WindowsOnly		Indicates the build is only for Windows machines
+WinSDKVersion		The version of the Windows SDK used for the build
+WinSDKMinVersion	The minimum allowed version of the Windows SDK for the build
+
+DXSBasePath		The base repo/solution path for DXSharp
+DXSBinDir		The base repo/solution "\bin" output folder for DXSharp
+DXSBuildDir		The base repo/solution "\build" scripts folder for DXSharp
+DXSDocsDir		The base repo/solution "\doc" folder for DXSharp documentation and documents
+DXSObjDir		The base intermediate build output folder for DXSharp
+DXSSamplesDir		The sample application projects directory for DXSharp
+DXSSourceDir		The base repo/solution projects and source folder for the DXSharp SDK libraries
+DXSTestsDir		The base repo/solution projects and source folder for unit testing projects in DXSharp
+
+SamplesRootPath		Alias for the "\samples" folder
+
+
+
+- UsingCsWin32		True if the current build is using the CsWin32 generator package (otherwise false or empty/null).
+- CsWin32Version	The CsWin32 NuGet package version number (string) for the PackageReference (chooses package version).
+
+- UsingWinMD		True if the current build is using the Win32Metadata package (otherwise false or empty/null).
+- WinMDVersion		The Win32Metadata NuGet package version number (string) for the PackageReference (chooses package version).
+
+- UsingAgility		True if the current build is using the Agility SDK package (otherwise false or empty/null).
+- AgilityVersion	The Agility SDK NuGet package version number (string) for the PackageReference (chooses package version).
+
+- UsingDxc		True if the current build is using the Dxc Compiler package (otherwise false or empty/null).
+- DxcVersion		The Dxc NuGet package version number (string) for the PackageReference (chooses package version).
+
+- UsingDxcCompiler	Indicates if the app will use the Dxc Compiler tool (dxc.exe) to build/process shaders
+
+
+
+Is32BitHost		Indicates if build is running on a 32-bit machine
+Is64BitHost		Indicates if build is running on a 64-bit machine
+No32Bit			Indicates 32-bit build platforms are not supported (must be skipped)
+No32Bit			Indicates "AnyCPU" build platforms are not supported (must be skipped)
+DISABLE_PWSH		Disables Powershell tools when set to 'true'
+MachineArchitecture	Value of the InteropServices "ProcessorArchitecture" enum for local host/machine
+MachineCPUArchitecture	The name (string) form of the build host architecture (for resolving dxc.exe)
+
+CSharpScriptTool	Path to Roslyn csi.exe tool (C# Script Engine / "C# Interactive")
+CSXScriptDir		Path to csx (C# script) files in the solution's "\build" folder
+CSXRun			Alias for the name/path to the csi.exe tool for using in custom commands
+
+
+DEPLOY_DXC_TOOL			Makes MSBuild copy the dxc.exe tool from the NuGet package to output directory
+DxcToolPlatformFolderName 	Name of the folder containing the correct dxc.exe tool for the local machine
+NugetNativePlatformFolderName 	Name of the NuGet package folder containing the correct native DLLs for the local machine
+				(This applies to the Agility SDK and Dxc packages ...)
+
+AzureDevOps		Indicates if current project(s) can be compiled via AzureDevOps
+AZ_BUILD		Indicates if the current build is being run on AzureDevOps
+CI			Indicates if a CI/CD pipeline is in use
+
+DxcMinWinSDKVersion		Minimum Windows SDK version required by the Dxc Shader Compiler
+DxcToolPlatformFolderName	Name of the Dxc NuGet package folder with the correct tool for the local build host/machine CPU
+
+

@@ -1,3 +1,6 @@
+// ReSharper disable IdentifierTypo
+#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
+
 #region Using Directives
 using System.Runtime.CompilerServices ;
 using System.Runtime.InteropServices ;
@@ -9,7 +12,6 @@ using Windows.Win32.Graphics.Dxgi.Common ;
 
 using DXSharp.DXGI ;
 using DXSharp.Windows.COM ;
-#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 #endregion
 namespace DXSharp.Direct3D12 ;
 
@@ -1006,9 +1008,8 @@ internal class GraphicsCommandList5: GraphicsCommandList4,
 		var cmdList = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {
 			if( combiners is { Length: > 0 } ) {
-				D3D12_SHADING_RATE_COMBINER* combinersPtr ;
 				fixed ( ShadingRateCombiner* combinerSpanPtr = combiners ) {
-					combinersPtr = (D3D12_SHADING_RATE_COMBINER*)combinerSpanPtr ;
+					D3D12_SHADING_RATE_COMBINER* combinersPtr = (D3D12_SHADING_RATE_COMBINER*)combinerSpanPtr ;
 					cmdList.RSSetShadingRate( (D3D12_SHADING_RATE)baseShadingRate,
 											  combinersPtr ) ;
 				}
@@ -1016,7 +1017,6 @@ internal class GraphicsCommandList5: GraphicsCommandList4,
 			else cmdList.RSSetShadingRate( (D3D12_SHADING_RATE)baseShadingRate, null ) ;
 		}
 	}
-
 	
 	public void RSSetShadingRateImage( IResource shadingRateImage ) {
 		var resource = (IComObjectRef< ID3D12Resource >)shadingRateImage ;

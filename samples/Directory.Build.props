@@ -1,5 +1,10 @@
 ﻿<Project>
-	<PropertyGroup Label="CommonSDKProps">
+	<ImportGroup>
+		<Import Project="..\build\msbuild\DXSharpShared.Build.props"
+				Condition="$(DXSSharedPropsImported) != 'true'" />
+	</ImportGroup>
+	
+	<PropertyGroup Label="CommonSampleProps">
 		<BuildInParallel>true</BuildInParallel>
 		<SamplesRootPath>$(MSBuildThisFileDirectory)</SamplesRootPath>
 		
@@ -7,14 +12,24 @@
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(SamplesRootPath)bin\$(MSBuildProjectName)\$(Platform)\</BaseOutputPath>
 		<BaseIntermediateOutputPath>$(SamplesRootPath)obj\$([MSBuild]::MakeRelative($(SamplesRootPath), $(MSBuildProjectDirectory)))\</BaseIntermediateOutputPath>
+		
+		<No32Bit Condition=" '$(No32Bit)' == '' ">false</No32Bit>
+		<NoAnyCPU Condition=" '$(NoAnyCPU)' == '' ">false</NoAnyCPU>
+		<UsingDxc Condition=" '$(UsingDxc)' == '' ">false</UsingDxc>
+		<UsingAgility Condition=" '$(UsingAgility)' == '' ">false</UsingAgility>
+		<UsingDxcCompiler Condition=" '$(UsingDxcCompiler)' == '' ">false</UsingDxcCompiler>
 	</PropertyGroup>
 
 
 	<!-- Properties for assembly output files :: -->
 	<PropertyGroup Label="AssemblyGenInfo">
 		<Company>Arkaen Solutions</Company>
-		<Authors>Aaron T. Carter, $(Company), Contributors</Authors>
-		<Copyright>© Aaron T. Carter, $(Company). All rights reserved.</Copyright>
+		<Authors>Aaron T. Carter, $(Company)</Authors>
+		<Copyright>© $(Authors). All rights reserved.</Copyright>
+		<Title Condition=" '$(Title)'=='' ">$(ProjectName)</Title>
+		<Product Condition=" '$(Product)'=='' ">$(ProjectName)</Product>
+		<Description Condition=" '$(Description)'=='' ">Sample application for the DXSharp SDK libraries ...</Description>
+		<RootNamespace Condition=" '$(RootNamespace)'=='' ">$(ProjectName)</RootNamespace>
 	</PropertyGroup>
 	
 	
@@ -31,8 +46,9 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 		
-		<TargetCPUs>AnyCPU;x64;x86;</TargetCPUs>
 		<TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>
+		<TargetCPUs Condition=" '$(UsingDxc)' != 'true' ">AnyCPU;x64;x86;</TargetCPUs>
+		<TargetCPUs Condition=" '$(UsingDxc)' or '$(No32Bit)' ">AnyCPU;x64;</TargetCPUs>
 		<DotNetTargets>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0</DotNetTargets>
 		<Platforms Condition=" '$(Platforms)' == '' ">$(TargetCPUs)</Platforms>
 		<TargetFrameworks Condition=" '$(TargetFrameworks)' == '' ">$(DotNetTargets);</TargetFrameworks>
@@ -41,12 +57,11 @@
 	
 	<!-- Properties for DevOps & CI Pipelines :: -->
 	<PropertyGroup Label="DevOpsConfig">
-		<CI>true</CI>
-		<AZ_BUILD>true</AZ_BUILD>
+		<CI>false</CI>
+		<AZ_BUILD>false</AZ_BUILD>
 		<AzureDevOps>true</AzureDevOps>
 		<RepositoryType>git</RepositoryType>
 		<RepositoryUrl>https://github.com/atcarter714/DXSharp</RepositoryUrl>
-		<PowershellScriptsDir>$(RepoRootPath)build\pwsh</PowershellScriptsDir>
 		
 		<!-- Local builds should embed PDBs so we never lose them when a subsequent build occurs. -->
 		<DebugType Condition=" '$(CI)' != 'true' and '$(TF_BUILD)' != 'true' ">embedded</DebugType>
@@ -57,16 +72,6 @@
 	</PropertyGroup>
 	
 	
-	<!-- DirectX SDK & Dependency Properties -->
-	<PropertyGroup Label="NativeSDKProperties">
-		<UsingAgilitySDK>true</UsingAgilitySDK>
-		<NativePlatformName Condition=" '$(Platform)' == 'x64' ">x64</NativePlatformName>
-		<NativePlatformName Condition=" '$(Platform)' == 'x86' ">win32</NativePlatformName>
-		<NativePlatformName Condition=" '$(Platform)' == 'AnyCPU' ">x64</NativePlatformName>
-
-		<AgilityVersion Condition=" '$(UsingAgilitySDK)' == 'true' ">[1.711.3-preview,)</AgilityVersion>
-		<DxcVersion Condition=" '$(UsingDxc)' == 'true' ">*</DxcVersion>
-	</PropertyGroup>
 
 	
 	<!-- Debug/Release Configuration Properties :: -->

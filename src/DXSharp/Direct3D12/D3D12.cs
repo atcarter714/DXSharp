@@ -50,24 +50,24 @@ public static class D3D12 {
 	// D3D12 Functions:
 	// -----------------------------------------------------------------------------
 	
-	public static HResult GetDebugInterface< TDbg >( out TDbg? _interface )
+	public static HResult GetDebugInterface< TDbg >( out TDbg? debugInterface )
 		where TDbg: IInstantiable, IComIID {
 		var hr = PInvoke.D3D12GetDebugInterface( TDbg.Guid, out var pDebug ) ;
 
 		if ( TDbg.Guid == Debug6.Guid )
-			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug6)pDebug ) ;
+			debugInterface = (TDbg)TDbg.Instantiate( (ID3D12Debug6)pDebug ) ;
 		else if ( TDbg.Guid == Debug5.Guid )
-			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug5)pDebug ) ;
+			debugInterface = (TDbg)TDbg.Instantiate( (ID3D12Debug5)pDebug ) ;
 		else if ( TDbg.Guid == Debug4.Guid )
-			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug4)pDebug ) ;
+			debugInterface = (TDbg)TDbg.Instantiate( (ID3D12Debug4)pDebug ) ;
 		else if ( TDbg.Guid == Debug3.Guid )
-			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug3)pDebug ) ;
+			debugInterface = (TDbg)TDbg.Instantiate( (ID3D12Debug3)pDebug ) ;
 		else if ( TDbg.Guid == Debug2.Guid )
-			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug2)pDebug ) ;
+			debugInterface = (TDbg)TDbg.Instantiate( (ID3D12Debug2)pDebug ) ;
 		else if ( TDbg.Guid == Debug1.Guid )
-			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug1)pDebug ) ;
+			debugInterface = (TDbg)TDbg.Instantiate( (ID3D12Debug1)pDebug ) ;
 		else if ( TDbg.Guid == DXSharp.Direct3D12.Debugging.Debug.Guid )
-			_interface = (TDbg)TDbg.Instantiate( (ID3D12Debug)pDebug ) ;
+			debugInterface = (TDbg)TDbg.Instantiate( (ID3D12Debug)pDebug ) ;
 		else
 			throw new ArgumentException( $"The type parameter " +
 										 $"{typeof( TDbg ).Name} is not a valid {nameof( IDebug )} interface!" ) ;

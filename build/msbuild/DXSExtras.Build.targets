@@ -1,0 +1,47 @@
+﻿<Project>
+    <!-- Imports DXSharp shared props & targets if not already imported ... -->
+    <ImportGroup Label="SharedPropsAndTargetsImports" >
+        <Import Project="$(RepoRootPath)build\msbuild\DXSharpShared.Build.props"
+                Condition="$(DXSSharedPropsImported) != 'true'" />
+        <Import Project="$(RepoRootPath)build\msbuild\DXSharpShared.Build.targets"
+                Condition="$(DXSSharedTargetsImported) != 'true'" />
+    </ImportGroup>
+    
+    
+    <Target Name="AddAgilitySDKRefs" 
+            Inputs="AgilityVersion;UsingAgility"
+            Outputs="$(AgilityPackagePath)"
+            Condition=" '$(UsingAgility)' == 'true' " >
+        <ItemGroup Label="AgilityPackageRef"
+                   Condition=" '$(UsingAgility)'=='true' " >
+            <!-- DirectX Agility SDK Package -->
+            <PackageReference Include="Microsoft.Direct3D.D3D12"
+                              Aliases="AgilitySDK"
+                              Version="$(AgilityVersion)"
+                              GeneratePathProperty="true" >
+            </PackageReference>
+        </ItemGroup>
+        <PropertyGroup>
+            <AgilityPackagePath>$(PkgMicrosoft_Direct3D_D3D12)</AgilityPackagePath>
+            <AgilityBinPackagePath>$(PkgMicrosoft_Direct3D_D3D12)\build\native\$(NativePlatformName)</AgilityBinPackagePath>
+        </PropertyGroup>
+    </Target>
+
+
+    <!-- Add the CSharp HLSL build actions package for the old Fx compiler
+         to the project if the 'UsingHLSLCs' property is set to 'true' ...
+        -->
+    <Target Name="AddHLSLCsPackage"
+            Condition=" '$(UsingHLSLCs)' == 'true' " >
+        <PropertyGroup>
+            <HlslCsVbPackageName>Microsoft.HLSL.CSharpVB</HlslCsVbPackageName>
+            <HlslCsVbPackageVersion>1.0.2</HlslCsVbPackageVersion>
+        </PropertyGroup>
+        <ItemGroup>
+            <PackageReference Include="$(HlslCsVbPackage)"
+                              Version="$(HlslCsVbPackageVersion)"
+                              IncludeAssets="all" />
+        </ItemGroup>
+    </Target>
+
+</Project>

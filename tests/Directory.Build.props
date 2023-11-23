@@ -1,21 +1,22 @@
 ﻿<Project>
-    <PropertyGroup Label="DefineGlobalStartupProps">
-        <UTCNow>$([System.DateTime]::UtcNow.ToString())</UTCNow>
-        <LocalNow>$([System.DateTime]::Now.ToString())</LocalNow>
-    </PropertyGroup>
-    
-    
     <PropertyGroup>
         <!-- Set up base build: -->
         <IsTestProject>true</IsTestProject>
+        <BuildInParallel>true</BuildInParallel>
         <BuildsDirectory>..\build</BuildsDirectory>
         <SharedPropsDirectory>$(BuildsDirectory)\msbuild</SharedPropsDirectory>
         <SharedPropsFile>$(SharedPropsDirectory)\DXSharpShared.Build.props</SharedPropsFile>
     </PropertyGroup>
-
     
     <!-- Import the shared props file (up one level): -->
     <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props" />
+    
+    
+    <!-- Define any global properties for tests here: -->
+    <PropertyGroup Label="DefineGlobalStartupProps">
+        <UTCNow Condition=" 'UTCNow'=='' ">$([System.DateTime]::UtcNow.ToString())</UTCNow>
+        <LocalNow Condition=" 'LocalNow'=='' ">$([System.DateTime]::Now.ToString())</LocalNow>
+    </PropertyGroup>
     
     
     <!-- Import the primary props file (up one level): -->

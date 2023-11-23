@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+// ReSharper disable InconsistentNaming
 
 #region Using Directives
 using System.Runtime.CompilerServices ;
@@ -30,7 +31,7 @@ public struct Include {
 	
 	public unsafe void Open( IncludeType includeType, string pFileName, void* pParentData, ref void* ppData, ref uint pBytes ) {
 		fixed (void** ppDataLocal = &ppData) {
-			fixed ( byte* pFileNameLocal = pFileName is object ? System.Text.Encoding.Default.GetBytes(pFileName) : null ) {
+			fixed ( byte* pFileNameLocal = System.Text.Encoding.Default.GetBytes(pFileName) ) {
 				this.Open( includeType, new PCSTR (pFileNameLocal), pParentData, ppDataLocal, ref pBytes ) ;
 			}
 		}

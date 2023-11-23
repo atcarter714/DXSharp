@@ -1,15 +1,94 @@
 ﻿<Project>
+    <Import Project=".\DXSharpShared.Build.props" 
+            Condition=" '$(DXSSharedPropsImported)'!='true' "/>
+    <PropertyGroup>
+        <DXSSharedTargetsImported>true</DXSSharedTargetsImported>
+    </PropertyGroup>
     
-    <Target Name="ResolveNativeDxcDlls" 
-            BeforeTargets="Build"
-            Condition="'$(UsingDxc)' == 'true'" >
-        <ItemGroup Label="DxcDllsInBinFolderItems">
-            <NativeDll Include="$(OutDir)\**\dxcompiler.dll" />
-            <NativeDll Include="$(OutDir)\**\dxil.dll" />
-        </ItemGroup>
-        <Message Importance="High" Text="DxcDllsInBinFolderItems: @(DxcDllsInBinFolderItems)" />
+    <Target Name="BeforeBuildInitTargets" BeforeTargets="Build" >
+        <PropertyGroup Label="CommonBuildStartupProps">
+            <BuildIDHash>$([System.Guid]::NewGuid().ToString())</BuildIDHash>
+            <CurrentTime>$([System.DateTime]::Now)</CurrentTime>
+            <BuildStartTime>$(CurrentTime)</BuildStartTime>
+            <UtcNow>$([System.DateTime]::UtcNow)</UtcNow>
+            <LocalNow>$(CurrentTime)</LocalNow>
+            
+            
+            <!-- The $(PlatfromNameStr) helps resolve the path to the native package dependencies
+                 for things like the Agility SDK, Dxc Compiler, etc, which are platform-specific.
+                 For x64 builds, this will be "x64", for arm64 builds, this will be "arm64", etc ...
+                 x86/arm 32-bit builds are not supported by Dxc, so you cannot build for those platforms
+                 when using the Dxc Compiler libraries ...
+             -->
+            <PlatformNameStr>$(NativePlatformName)</PlatformNameStr>
+            <OutputFileExt Condition=" '$(OutputType)' == '' ">dll</OutputFileExt>
+            <OutputFileExt Condition=" '$(OutputType)' == 'Exe' ">exe</OutputFileExt>
+            <OutputFileExt Condition=" '$(OutputType)' == 'Library' ">dll</OutputFileExt>
+            <AssemblyOutputFullPath>$(OutputPath)$(AssemblyName).$(OutputFileExt)</AssemblyOutputFullPath>
+        </PropertyGroup>
+    </Target>
+
+
+    <!-- Write startup message showing target frameworks: -->
+    <Target Name="StartupMessageTargets" 
+            DependsOnTargets="GetTargetFrameworksAsItems"
+            BeforeTargets="Build" >
+        <Message Importance="high" 
+                 Text="DX# Shared Targets :: Build process initialized with ID: $(BuildIDHash)" />
         
-        <Copy SourceFiles="@(NativeDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+        <Message Importance="high" 
+                 Text="DX# Shared Targets :: Multi-Targeting Build - Target Platform List:" />
+        <Message Importance="high" 
+                 Text="-    %(TargetFrameworksAsItems.Identity) " />
     </Target>
     
+
+    <!-- Defines results and result message text for builds: -->
+    <Target Name="DefineSuccessOrFailure" AfterTargets="Build" >
+        <!-- Get the build results from MSBuild properties: -->
+        <PropertyGroup>
+            <Succeeded Condition=" '$(MSBuildLastTaskResult)'=='true' ">true</Succeeded>
+            <Succeeded Condition=" '$(MSBuildLastTaskResult)'!='true' ">false</Succeeded>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='' ">Unknown</BuildResult>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='true' ">Success</BuildResult>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'!='true' ">Failed</BuildResult>
+        </PropertyGroup>
+    </Target>
+    
+    
+    <Target Name="LogBuildOutputFile"
+            AfterTargets="Build"
+            Condition=" '$(Succeeded)'=='true' "
+            DependsOnTargets="DefineSuccessOrFailure" >
+        <Message Text="Assembly output to: $(AssemblyOutputFullPath)" Importance="high"  />
+    </Target>
+    
+    
+    <Target Name="GroupDxcShaderCompilerInput" 
+            BeforeTargets="InitialTargets"
+            DependsOnTargets="ResolveDxcToolPath"
+            Condition=" '$(UsingDxcCompiler)'=='true' " >
+        
+        <ItemGroup Label="DxcShaderItemGroup"
+                   Condition="$(UsingDxcCompiler)" >
+            <DxcShaders Include="%(DxcShader)" />
+            <ShaderCompilerInputs Include="@(DxcShaders)" />
+        </ItemGroup>
+        
+        <Message Condition=" '$(UsingDxcCompiler)' and '@(DxcShaderItemGroup)' != ''" 
+                 Text="DX# Shared Targets :: DxcShaderItemGroup: @(DxcShaderItemGroup->'%(Filename)')" Importance="high" />
+        <Message Condition=" '$(UsingDxcCompiler)' and '@(DxcShaders)' != '' "
+                 Text="DX# Shared Targets :: ShaderCompilerInput: %(ShaderCompilerInputs->'%(Filename)')" Importance="high" />
+    </Target>
+    
+    
+    <ItemGroup>
+        <CPUList Include="@(TargetCPUs)" />
+        <SupportedCPUs Include="$(CPUList.Split(';'))" />
+    </ItemGroup>
+    <Target Name="GetTargetCPUsAsItems" 
+            BeforeTargets="InitialTargets" >
+        <Message Text="DX# Shared Targets :: CPU List: @(CPUList->'%(Identity)')" Importance="high" />
+        <Message Text="DX# Shared Targets :: Supported CPUs: $(SupportedCPUs)" Importance="high" />
+    </Target>
 </Project>

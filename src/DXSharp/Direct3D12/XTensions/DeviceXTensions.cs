@@ -1,10 +1,10 @@
 ﻿#pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
 #region Using Directives
-using System.Runtime.CompilerServices ;
 using Windows.Win32 ;
 using Windows.Win32.Graphics.Direct3D12 ;
+
 using DXSharp.Windows ;
-using DXSharp.Windows.COM ;
+// ReSharper disable MemberCanBePrivate.Global
 #endregion
 namespace DXSharp.Direct3D12.XTensions ;
 
@@ -13,14 +13,14 @@ public static class DeviceXTensions
 {
 	static readonly ClearValue optimizedClearValue 
 		= new( DXGI.Format.R8G8B8A8_UNORM,
-			   new __float_4( 0.0f, 0.0f, 0.0f, 0.0f ) ) ;
+			   new __float_4( 0.0f ) ) ;
 
 	
-	public static TRsrc? CreateComittedResource< TRsrc >( this IDevice device,
+	public static TResource? CreateCommittedResource< TResource >( this IDevice device,
 														  in   HeapProperties heapProperties,
 														  in   ResourceDescription desc,
-														  ResourceStates initialState ) where TRsrc: IResource {
-		CreateComittedResource< TRsrc >( device, heapProperties, desc, initialState, out var resource ) ;
+														  ResourceStates initialState ) where TResource: IResource {
+		CreateCommittedResource< TResource >( device, heapProperties, desc, initialState, out var resource ) ;
 		return resource ;
 	}
 	
@@ -36,7 +36,7 @@ public static class DeviceXTensions
 	/// When you create a resource together with a <see cref="HeapType.ReadBack"/> heap, you must set InitialResourceState to <see cref="ResourceStates.CopyDest"/>.
 	/// </param>
 	/// <param name="ppvResource"></param>
-	/// <typeparam name="TRsrc"></typeparam>
+	/// <typeparam name="TResource"></typeparam>
 	/// <remarks>
 	/// This method creates both a resource and a heap, such that the heap is big enough to contain the entire resource, and the resource is mapped to the heap.
 	/// The created heap is known as an implicit heap, because the heap object can't be obtained by the application. Before releasing the final reference on the
@@ -48,16 +48,16 @@ public static class DeviceXTensions
 	/// <a href="https://learn.microsoft.com/en-us/windows/win32/direct3d12/volume-tiled-resources">Volume tiled resources</a>.<para/>
 	/// <b>Note:</b> This method may be called by multiple threads concurrently.
 	/// </remarks>
-	public static void CreateComittedResource< TRsrc >( this IDevice device, 
+	public static void CreateCommittedResource< TResource >( this IDevice device, 
 														in HeapProperties heapProperties,
 														in ResourceDescription desc, 
 														ResourceStates initialState,
-														out TRsrc? ppvResource ) where TRsrc : IResource {
+														out TResource? ppvResource ) where TResource : IResource {
 		
 		device.CreateCommittedResource( heapProperties, HeapFlags.None, desc, initialState,
-										optimizedClearValue, TRsrc.Guid, out var resource ) ;
+										optimizedClearValue, TResource.Guid, out var resource ) ;
 		
-		ppvResource = (TRsrc?)resource ;
+		ppvResource = (TResource?)resource ;
 	}
 	
 	

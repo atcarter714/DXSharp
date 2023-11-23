@@ -28,6 +28,8 @@ public static class CollectionXTensions {
 		= 0x100 ;
 #elif CACHE_SIZE_MAX
 		= 0x400 ;
+#else
+		= 0x40 ;
 #endif
 	
 	static readonly Dictionary< Type, Array > _oneItemArrays  = new( ) ;

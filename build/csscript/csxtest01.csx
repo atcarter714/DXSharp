@@ -129,17 +129,51 @@ var AdditionalFiles = DXSharpFiles.Where(
                          !solutionFiles.Contains( f ) &&
                          !gitignoreFiles.Contains( f ) ) ;
 if( AdditionalFiles.Any( ) ) {
-    Logger.Display( $"\nAdditional Files found in root directory:" ) ;
-    Logger.DisplayLines( AdditionalFiles ) ;
     ArchitectureLogs.ReportGroup( ref text, $"\n{ADDITIONAL_FILES_HEADER}", 
-                                    AdditionalFiles,
+                                    AdditionalFiles.ToArray( ),
                                     @"//! Additional Files/Content:" ) ;
 }
 
 
+//! Log list of projects in solution:
+Logger.IndentLevel = 0 ;
+Logger.SkipLine( ref text ) ;
+Logger.LogLine( ref text,  "// -------------------" ) ;
+Logger.LogLine( ref text, $"// Projects List: //! {solutionDir}" ) ;
+Logger.LogLine( ref text,  "// -------------------" ) ;
+
+// Report all project files in log:
+++Logger.IndentLevel ;
+ArchitectureLogs.ReportGroup( ref text, $"\n{PROJECT_FILES_HEADER}",
+                                allProjects.Select( p => p.FullName.Replace( solutionDir, string.Empty ) ), 
+                                    $"//! Projects in solution: \"{solutionDir}\"\n" ) ;
+                                     
+Logger.SkipLine( ref text ) ;
+++Logger.IndentLevel ;   
+// Show SDK projects:
+ArchitectureLogs.ReportGroup( ref text, $"\n{SDK_LIBRARY_HEADER}",
+                                allSDKProjects.Select( p => p.FullName.Replace( solutionDir, string.Empty ) ), 
+                                    $"//! SDK Projects in solution: \"{solutionDir}\"\n" ) ;
+                                     
+Logger.SkipLine( ref text ) ;
+// Show Test projects:
+ArchitectureLogs.ReportGroup( ref text, $"\n{TEST_FILES_HEADER}",
+                                allTestsProjects.Select( p => p.FullName.Replace( solutionDir, string.Empty ) ), 
+                                    $"//! Test Projects in solution: \"{solutionDir}\"\n" ) ;
+                                     
+Logger.SkipLine( ref text ) ;
+// Show Sample projects:
+ArchitectureLogs.ReportGroup( ref text, $"\n{SAMPLE_FILES_HEADER}",
+                                allSamplesProjects.Select( p => p.FullName.Replace( solutionDir, string.Empty ) ), 
+                                    $"//! Sample Projects in solution: \"{solutionDir}\"\n" ) ; 
+Logger.IndentLevel = 0 ; // Reset indent level
+
+
 // ---------------------------------------------------------------------------------------------
+
+
 // -----------------------------------------------------------------
-//! Generate Breakdown of Projects and Source Files:
+//! Generate Breakdown of Folder Contents
 // -----------------------------------------------------------------
 Logger.Display( $"\nScanning \"main\" solution directories ..." ) ;
 Logger.Display( "Generating architectural log report ..." ) ;
@@ -164,17 +198,6 @@ foreach( var dir in MainSlnFolders ) {
     ArchitectureLogs.CreateContentsReport( ref text, dirFullPath ) ;
 }
 
-Logger.IndentLevel = 0 ;
-Logger.SkipLine( ref text ) ;
-Logger.LogLine( ref text,  "// -------------------" ) ;
-Logger.LogLine( ref text, $"// Projects List: //! {solutionDir}" ) ;
-Logger.LogLine( ref text,  "// -------------------" ) ;
-
-// Report all project files in log:
-++Logger.IndentLevel ;
-ArchitectureLogs.ReportGroup( ref text, $"\n{PROJECT_FILES_HEADER}",
-                                allProjects.Select( p => p.FullName.Replace( solutionDir, string.Empty ) ), 
-                                    $"//! Projects in solution: \"{solutionDir}\"\n" ) ;
 
 // -----------------------------------------------------------------
 //! End of log:

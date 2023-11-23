@@ -2,6 +2,7 @@
     
     <!-- Common Project Properties :: -->
     <PropertyGroup Label="CommonProjectProperties">
+        <UsingDxcCompiler>true</UsingDxcCompiler>
         <OutputType Condition=" '$(Configuration)' == 'Debug' ">Exe</OutputType>
         <OutputType Condition=" '$(Configuration)' == 'Release' ">WinExe</OutputType>
         <FileVersion>0.1.0</FileVersion>
@@ -34,21 +35,48 @@
 
 
     <!-- Content & Assets :: -->
-    <ItemGroup Label="ProjectContentProperties">
-      <Content Include="Assets\Shaders\*.hlsl" CopyToOutputDirectory="PreserveNewest" />
+    <Import Project="$(DXSBuildDir)msbuild\DxcTool.Build.targets" 
+            Condition="$(UsingDxcCompiler)" />
+    
+    <ItemGroup Label="ProjectContentProperties" 
+               Condition=" '$(DXC_COMPILE)'!='false' ">
+        <Content Include="Assets\Shaders\*.hlsl"
+                 CopyToOutputDirectory="PreserveNewest" />
+        
+        <DxcShaderIncludes Include="Assets\Shaders\include\*.h" />
+        <DxcShaderIncludes Include="Assets\Shaders\include\*.inc" />
+        <DxcShaderFiles Include="Assets\Shaders\src\*.hlsl" />
+        <DxcShaderFiles Include="Assets\Shaders\src\*.compute" />
+        
+        <DxcShaderBlobs Include="Assets\Shaders\obj\*.blob" />
+        <DxcShaderBlobs Include="Assets\Shaders\obj\*.cso" />
+        
+        <DxcFragmentShader Include="Assets\Shaders\src\*.ps" />
+        <DxcVertexShader Include="Assets\Shaders\src\*.vs" />
+        <DxcGeometryShader Include="Assets\Shaders\src\*.geo" />
+        <DxcComputeShader Include="Assets\Shaders\src\*.compute" />
+        
+        <DxcShader Include="@(DxcShaderFiles)">
+            <OutputHeader>Assets\Shaders\obj\%(Filename).blob</OutputHeader>
+            <OutputBlob>Assets\Shaders\obj\%(Filename).cso</OutputBlob>
+            <ShaderModel>5_0</ShaderModel> <!-- Default Shader Model -->
+            <ShaderTypes>vs;ps;</ShaderTypes>
+        </DxcShader>
     </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Assets\Meshes\" />
-      <Folder Include="Assets\Shaders\obj\" />
-      <Folder Include="Assets\Shaders\src\" />
-      <Folder Include="Assets\Textures\" />
+    
+    <ItemGroup Label="ContentFolderItemsGroup">
+        <Folder Include="Assets\Meshes\" />
+        <Folder Include="Assets\Textures\" />
+        
+        <Folder Include="Assets\Shaders\include\" />
+        <Folder Include="Assets\Shaders\src\" />
+        <Folder Include="Assets\Shaders\obj\" />
     </ItemGroup>
-
+    
     
     <!-- Advanced Project Properties :: -->
     <PropertyGroup Label="AdvancedProjectProperties">
         <ApplicationManifest>./app.manifest</ApplicationManifest>
-        
         <!-- NOTE: Currently, trimming and NativeAOT is not supported! -->
         <!--<PublishTrimmed>true</PublishTrimmed>-->
     </PropertyGroup>

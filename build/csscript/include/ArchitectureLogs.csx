@@ -29,7 +29,8 @@ public static class ArchitectureLogs {
 	public const string SDK_LIBRARY_HEADER = "[SDKLibraries]",
 				PROJECT_FILES_HEADER   = "[Projects]",
 				SOLUTION_FILES_HEADER  = "[Solutions]",
-				TEST_FILES_HEADER      = "[Tests]" ;
+				TEST_FILES_HEADER      = "[Tests]",
+				SAMPLE_FILES_HEADER    = "[Samples]" ;
 				
 	public const string FOLDER_HEADER  = "[Folder]",
 				DIR_HEADER             = "[Directories]",

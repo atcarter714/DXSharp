@@ -1,0 +1,365 @@
+﻿<Project InitialTargets="AgilityDllResolution" >
+    <!-- Import the shared properties file if not imported already: -->
+    <ImportGroup Label="SharedPropsAndTargetsImportGroup">
+        <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props"
+                Condition=" '$(DXSSharedPropsImported)' != 'true' " />
+        <Import Project="$(DXSMSBuildDir)DXSharpShared.Build.targets"
+                Condition=" '$(DXSSharedTargetsImported)' != 'true' " />
+    </ImportGroup>
+    
+    
+    <!-- Notes:
+        This file is used to resolve the native Agility SDK DLLs
+        for the current platform from the NuGet Package cache.  
+        If $(UsingAgility) is set to true, then the Agility SDK
+        DLLs will be linked into the project. It must define the 
+        following properties/items for the target:
+        
+        Required Items:
+            $(AgilityDLLs)            - The Agility SDK DLLs in the NuGet package
+            $(LocalAgilityDLLs)       - The locally-copied Agility SDK DLLs
+            
+        Required Properties:
+            $(UsingAgility)        - Must be set to true, or target is not run ...
+            $(AgilityBinPlatformPath) - The path to the Agility SDK package's bin folder for 
+                                        the current CPU platform. Changing this can link against
+                                        a different/custom version of Agility SDK.
+            
+            Additional Properties:
+            $(OMIT_AGILITY_PDBS)      - If set to true, PDBs for native DLLs are not copied
+            $(COPY_AGILITY_PDBS)      - If set to true, PDBs for native DLLs are copied in 
+                                        non-Debug configs (unless $(OMIT_AGILITY_PDBS) is true)
+    -->
+    <!-- Define global properties for Agility build targets: -->
+    <PropertyGroup Label="AgilityNativeGlobalProps">
+        <AgilityNativeTargetsImported>true</AgilityNativeTargetsImported>
+        
+        <AgilityPackageName Condition=" '$(AgilityPackageName)' == '' ">Microsoft.Direct3D.D3D12</AgilityPackageName>
+        <D3D12CoreDllName>D3D12Core.dll</D3D12CoreDllName>
+        <D3D12SdkLayersDllName>d3d12SDKLayers.dll</D3D12SdkLayersDllName>
+        <D3DConfigToolName>d3dconfig.exe</D3DConfigToolName>
+        
+        <CopySdkLayers Condition=" '$(D3DDebug)'=='true' ">true</CopySdkLayers>
+        <CopySdkLayers Condition=" '$(D3DDebug)'!='true' ">false</CopySdkLayers>
+        
+        <CopyAgilityDebugSymbols Condition=" '$(OMIT_AGILITY_PDBS)'=='true' ">false</CopyAgilityDebugSymbols>
+        <RequiredAgilityDLLs Condition=" '$(CopySdkLayers)'!='true' ">$(D3D12CoreDllName)</RequiredAgilityDLLs>
+        <RequiredAgilityDLLs Condition=" '$(CopySdkLayers)'=='true' ">$(D3D12CoreDllName);$(D3D12SdkLayersDllName)</RequiredAgilityDLLs>
+        <AgilityPackageDefaultAssets Condition=" '$(AgilityPackageDefaultAssets)'=='' ">runtime; build; native; contentfiles;</AgilityPackageDefaultAssets>
+        <BuildOutFolder>$(OutputPath)</BuildOutFolder>
+    </PropertyGroup>
+    
+    <!-- If we're debugging or defined COPY_AGILITY_PDBS, we set the CopyAgilityDebugSymbols value to 'true' 
+         This causes our build to copy the PDBs for the native DLLs into the output directory along with the DLLs ...
+      -->
+    <PropertyGroup Condition=" '$(CopyAgilityDebugSymbols)'=='' " >
+        <CopyAgilityDebugSymbols Condition=" '$(D3DDebug)'=='true' or '$(CopySdkLayers)'=='true' or '$(COPY_AGILITY_PDBS)'=='true' ">true</CopyAgilityDebugSymbols>
+        <CopyAgilityDebugSymbols Condition="  '$(D3DDebug)'!='true' and '$(COPY_AGILITY_PDBS)'!='true' or '$(OMIT_AGILITY_PDBS)'=='true' ">false</CopyAgilityDebugSymbols>
+        <CopyAgilityDebugSymbols Condition=" $(CopyAgilityDebugSymbols) == '' ">false</CopyAgilityDebugSymbols>
+    </PropertyGroup>
+
+    
+    <!-- Returns required native DLL names for the build: -->
+    <Target Name="GetRequiredAgilityDllsAsItems"
+            Returns="@(RequiredAgilityDllsAsItems)"
+            Condition=" '$(RequiredAgilityDLLs)' != '' " >
+        <PropertyGroup>
+            <D3D12SdkLayersExpectedPath>$(OutputPath)$(D3D12SdkLayersDllName)</D3D12SdkLayersExpectedPath>
+            <D3D12CoreExpectedPath>$(OutputPath)$(D3D12CoreDllName)</D3D12CoreExpectedPath>
+            <OutputPathNoSlash>$(OutputPath.TrimEnd('\\'))</OutputPathNoSlash>
+            <BuildOutFolder>$(OutputPathNoSlash)</BuildOutFolder>
+        </PropertyGroup>
+        
+        <ItemGroup  >
+            <_D3D12DllNamesAsItems Include="$(RequiredAgilityDLLs.Split(';'))" />
+        </ItemGroup>
+        <RemoveDuplicates
+                Inputs="@(_D3D12DllNamesAsItems)">
+            <Output
+                    TaskParameter="Filtered"
+                    ItemName="RequiredAgilityDllsAsItems" />
+            <Output
+                    TaskParameter="HadAnyDuplicates"
+                    PropertyName="_hadDuplicateD3D12Names"/>
+        </RemoveDuplicates>
+        <Message Importance="High" Condition="$(_hadDuplicateD3D12Names)=='true'"
+                 Text="(!) Agility Native Targets :: Duplicate DLL names defined for required libraries!" />
+    </Target>
+    
+    
+    <!-- Package References :: -->
+    <Target Name="ReferenceAgilityPackage"
+            Outputs="AgilityPackagePath"
+            Condition=" '$(UsingAgility)'=='true' and '$(AgilityPackagePath)'=='' " >
+        <ItemGroup Label="DirectXAgilityPackageRefs">
+            <!-- DirectX Agility SDK Package -->
+            <PackageReference Include="$(AgilityPackageName)" >
+                <Version>$(AgilityVersion)</Version>
+                <GeneratePathProperty>true</GeneratePathProperty>
+                <IncludeAssets>$(AgilityPackageDefaultAssets)</IncludeAssets>
+            </PackageReference>
+        </ItemGroup>
+        
+        <!-- Display info to build output log ... -->
+        <Message Importance="High" Condition=" '$(PkgMicrosoft_Direct3D_D3D12)'=='' "
+                 Text="(!) Agility Native Targets :: Warning - Generated NuGet package path 'PkgMicrosoft_Direct3D_D3D12' is null/empty!" />
+        <Message Importance="High" Condition=" '$(PkgMicrosoft_Direct3D_D3D12)'!='' "
+                    Text="Agility Native Targets :: $(AgilityPackageName) NuGet package referenced ...
+                        -> Path: '$(PkgMicrosoft_Direct3D_D3D12)' " />
+        
+        <!-- Make sure the property for package path is defined before linking process ... -->
+        <PropertyGroup>
+            <AgilityPackagePath>$(PkgMicrosoft_Direct3D_D3D12)</AgilityPackagePath>
+            <AgilityBinPlatformPath>$(AgilityPackagePath)\build\native\bin\$(NativePlatformName)</AgilityBinPlatformPath>
+        </PropertyGroup>
+    </Target>
+    
+    
+    <!-- Log startup message for builds against Agility targets ... -->
+    <Target Name="AgilityBuildStartupMessages"
+            DependsOnTargets="GetRequiredAgilityDllsAsItems"
+            Condition=" '$(UsingAgility)'=='true' " >
+        <Message Importance="high" Text="Agility SDK Native Targets loaded ... 
+        Linking native library dependencies for: $(ProjectName) [.NET Platform: $(PlatformName), Native: $(NativePlatformName)] ..." />
+        <ItemGroup>
+            <RequiredDllNames Include="@(RequiredAgilityDllsAsItems)" />
+        </ItemGroup>
+        <!-- Display the package location: -->
+        <Message Text="(!) Warning: AgilityPackagePath is undefined, cannot link native libraries!"
+                 Condition=" '$(AgilityPackagePath)'=='' " Importance="high" />
+        <Message Text="Agility Package Path: &quot;$(AgilityPackagePath)&quot; "
+                 Condition=" '$(AgilityPackagePath)'!='' " Importance="high" />
+        <Message Text="Requires native library: &quot;%(RequiredDllNames.Identity)&quot; "
+                 Importance="high" />
+    </Target>
+    
+    
+    
+    <!-- Resolve the Agility package dependencies path for current platform: -->
+    <Target Name="ResolvePackagePath"
+            Outputs="@(AgilityPackageDLLs)"
+            BeforeTargets="AgilityDllResolution"
+            DependsOnTargets="GetRequiredAgilityDllsAsItems"
+            Condition=" '$(UsingAgility)'=='true' "  >
+        <!-- If package path is missing, we need to apply a reference to it: -->
+        <CallTarget Condition=" '$(AgilityPackagePath)' == '' " 
+                    Targets="ReferenceAgilityPackage" />
+        
+        <!-- Display logs to help determine what's going on: -->
+        <Message Text="AgilityPackagePath is not defined. Please define it in your project file."
+                 Importance="High" Condition=" '$(AgilityPackagePath)' == '' " />
+        <Message Text="Agility Package '$(AgilityPackageName)' found at: 
+            '$(AgilityBinPlatformPath)' "
+                 Importance="High" Condition=" '$(AgilityPackagePath)' != '' " />
+        
+        
+        <ItemGroup Condition=" '$(AgilityPackagePath)' != '' " >
+            <!--<AgilityPackageDLLs Include="@(AgilityDLLs)" />-->
+            <RequiredAgilityDlls Include="@(RequiredAgilityDllsAsItems)" />
+            <AgilityPackageDLLs Include="$(AgilityBinPlatformPath)\%(RequiredAgilityDlls.Identity)" />
+            
+            <AgilityDLLNames Include="@(AgilityPackageDLLs->'%(Filename)%(Extension)')" />
+            <AgilityDLLFileNames Include="$([System.IO.Path]::GetFileName( %(AgilityPackageDLLs.Identity) ) )" />
+        </ItemGroup>
+        <Message Importance="High"
+                 Text="Required files: @(RequiredAgilityDlls->'%(Identity)', ', ')" />
+        
+        <!--<Message Importance="High"
+                 Text="Found Package Library: %(AgilityDLLNames.Identity)" />-->
+        <Message Importance="High"
+                 Text="Found Native Package Library: @(AgilityPackageDLLs->'%(Filename)%(Extension)', ', ')" />
+        <Message Importance="High" Condition=" '$(CopyAgilityDebugSymbols)'=='true' and '$(AgilityPackagePDBs)'!='' "
+                 Text="Found Native Package PDB (Debug Symbols): %(AgilityPDBs.Identity)" />
+        
+        <Message Text="Agility project output location: $(OutputPath)"
+                 Importance="High" Condition=" '$(AgilityPackagePath)' != '' " />
+        <Message Text="Agility SDK libraries for this deployment: @(AgilityDLLNames->'%(Identity)', ', ')"
+                 Importance="High" Condition=" '$(AgilityPackagePath)' != '' " />
+    </Target>
+    
+    
+    <Target Name="AgilityDllResolution"
+            BeforeTargets="Build"
+            DependsOnTargets="ResolvePackagePath"
+            Condition=" '$(UsingAgility)'=='true' " >
+        <Message Text="Agility Native Targets :: Native Agility SDK targeting initialized ..." Importance="High" />
+        <Message Text="                       :: Resolving packaged dependencies for:
+                 $(MSBuildProjectName) -- $(ConfigurationName) - $(PlatformName), $(NativePlatformName) ..." Importance="High" />
+        
+        <CallTarget Targets="ResolvePackagePath" />
+        <CallTarget Targets="AgilityBuildStartupMessages" />
+        
+        <Message Text="Agility Native Targets :: Linking native libraries for Agility SDK ..." Importance="High" />
+        
+        <CallTarget Targets="DeployRequiredAgilityFiles" />
+    </Target>
+    
+    
+    
+    <Target Name="DeployRequiredAgilityFiles"
+            Returns="@(DeployedAgilityFiles)"
+            Condition=" '$(UsingAgility)'=='true' and '$(RequiredAgilityDllsAsItems)' != '' " 
+            DependsOnTargets="GetRequiredAgilityDllsAsItems;ResolvePackagePath" >
+       <!-- <ItemGroup Condition=" '$(AgilityPackagePath)' == '' " >
+            <_requiredDlls Include="@(RequiredAgilityDllsAsItems)" />
+            <AgilityPackageDlls Include="@(AgilityPackageDLLs)" />
+        </ItemGroup>-->
+        
+        <CallTarget Targets="AgilityBuildErrors" 
+                    Condition=" '$(AgilityPackagePath)' == '' " />
+
+        <ItemGroup>
+            <RequiredNames Include="@(RequiredAgilityDllsAsItems)" />
+            <AgilityPackageDlls Include="@(AgilityPackageDLLs)" 
+                                Condition=" '$(AgilityPackageDlls)'=='' " />
+            <_AgilityPackagePath Include="$(AgilityBinPlatformPath)\%(RequiredNames.Identity)"
+                                 Condition=" '$(AgilityPackagePath)'=='' " />
+
+            <!-- Split at semicolons to get PBD file name list: -->
+            <PdbNames Include="@(AgilityPackageDlls->'%(Filename).pdb')" />
+            <AgilityPackagePdbs Include="$(AgilityBinPlatformPath)\%(PdbNames.Identity)" 
+                                Condition=" '$(CopyAgilityDebugSymbols)'=='true' " />
+            
+            <RequiredFiles Include="@(AgilityPackageDlls)" />
+            <RequiredFiles Include="@(AgilityPackagePdbs)" Condition=" '$(CopyAgilityDebugSymbols)'=='true' " />
+        </ItemGroup>
+        
+        <RemoveDuplicates
+                Inputs="@(RequiredFiles)">
+            <Output
+                    TaskParameter="Filtered"
+                    ItemName="FilteredRequiredFiles" />
+        </RemoveDuplicates>
+        <ItemGroup>
+           <!-- <_DeploymentNames Include="@(FilteredRequiredFiles -> Replace('$(OutputPath)', ''))" />-->
+        </ItemGroup>
+        
+        <!-- Select the required files in the package to copy & deploy them ... -->
+        <Message Importance="High"
+                 Text="Agility Native Targets :: 
+                     Selected files for deployment: %(FilteredRequiredFiles.Identity)" />
+        
+        <!-- Deploy the selected required files to the destination ... -->
+        <Copy SourceFiles="@(FilteredRequiredFiles)"
+              DestinationFolder="$(OutputPath)" 
+              SkipUnchangedFiles="true" Condition="" >
+            <Output TaskParameter="CopiedFiles"
+                    ItemName="DeployedAgilityFiles" />
+        </Copy>
+        
+        <!-- Log the deployed items ... -->
+        <Message Importance="High"
+                 Text="Agility Native Targets :: Deployed: '%(DeployedAgilityFiles.Identity)'" />
+        
+        <Message Importance="High"
+                 Text="Agility Native Targets :: Deployment complete for: " />
+        <Message Importance="High"
+                 Text="    --> @(DeployedAgilityFiles->'%(Filename)%(Extension)', ', ' )" />
+        
+        <ItemGroup>
+            <DeployedAgilityLibraries Include="@(DeployedAgilityFiles)" Exclude="*.pdb" />
+        </ItemGroup>
+        
+        <Message Importance="High" Condition=" '$(DeployedAgilityLibraries)'!='' "
+                 Text="Generating native references to @(DeployedAgilityLibraries->'%(Filename)%(Extension)', ', ' )" />
+    </Target>
+    
+    <Target Name="AgilityNativeReferences"
+            AfterTargets="DeployRequiredAgilityFiles" 
+            Condition=" '$(UsingAgility)'=='true' " 
+            DependsOnTargets="DeployRequiredAgilityFiles" >
+        <ItemGroup>
+            <DeployedAgilityLibraries Include="@(DeployedAgilityFiles)" Exclude="*.pdb" 
+                                      Condition=" '$(DeployedAgilityLibraries)'=='' " />
+        </ItemGroup>
+        <Message Importance="High" 
+                 Condition=" '$(DeployedAgilityLibraries)'=='' "
+                 Text="(!) Warning :: Deployed library items not defined." />
+        <Message Importance="High" 
+                 Condition=" '$(DeployedAgilityLibraries)'!='' "
+                 Text="Generating native references to: %(DeployedAgilityLibraries, ', ')" />
+        
+        <ItemGroup>            
+            <NativeReference Include="$(DeployedAgilityLibraries)" />
+        </ItemGroup>
+    </Target>
+    
+    
+    
+    <Target Name="ValidateFilesAfterDeployment" 
+            AfterTargets="AgilityDllResolution"
+            DependsOnTargets="DeployRequiredAgilityFiles"
+            Condition=" '$(UsingAgility)'=='true' and '$(AgilityPackagePath)' != '' " >
+        <Message Importance="High"
+                 Text="Agility Native Targets :: Starting pre-build validation for Agility SDK libraries ..." />
+        
+        <PropertyGroup>
+            <D3D12CoreFound Condition="Exists('$(OutputPath)D3D12Core.dll')">true</D3D12CoreFound>
+            <D3D12CoreFound Condition="!Exists('$(OutputPath)D3D12Core.dll')">false</D3D12CoreFound>
+            <D3D12SdkLayersFound Condition="Exists('$(OutputPath)d3d12SDKLayers.dll')">true</D3D12SdkLayersFound>
+            <D3D12SdkLayersFound Condition="!Exists('$(OutputPath)d3d12SDKLayers.dll')">false</D3D12SdkLayersFound>
+        </PropertyGroup>
+        
+        <Message Condition=" '$(D3D12CoreFound)'=='true' "
+                 Importance="High"
+                 Text="Agility Native Targets :: 
+                 Found '$(D3D12CoreDllName)' in output path: $(D3D12CoreExpectedPath)" />
+        
+        <Message Importance="High" Condition=" '$(D3D12SdkLayersFound)'=='true' "
+                 Text="Agility Native Targets :: 
+                 Found '$(D3D12SdkLayersDllName)' in output path: $(D3D12CoreExpectedPath)" />
+    </Target>
+    
+    
+    <!-- Validate that the native DLLs reached their destination (post-build): -->
+    <Target Name="AgilityTargetsPostBuildDLLCheck"
+            AfterTargets="Build" DependsOnTargets="DefineSuccessOrFailure"
+            Condition=" '$(UsingAgility)'=='true' and '$(Succeeded)'=='true' " >
+        <PropertyGroup>
+            <OutputPathFound Condition=" Exists('$(OutputPath)') ">true</OutputPathFound>
+            <OutputPathFound Condition=" !Exists('$(OutputPath)') ">false</OutputPathFound>
+        </PropertyGroup>
+        
+        <Message Importance="High"
+                 Text="Agility Native Targets :: 
+                 Starting post-build validation for Agility SDK libraries ..." />
+        <Message Importance="High"
+                 Condition=" '$(OutputPathFound)'!='true' "
+                 Text="Post-Build Native Dependency Check: Output path not found ..." />
+        <Message Importance="High" Condition=" '$(OutputPathFound)'=='true' "
+                 Text="Agility Native Targets :: Output path found - $(OutputPath) " />
+        
+        <ItemGroup>
+            <D3D12Core Include="$(OutputPath)$(D3D12CoreDllName)" />
+            <D3D12SdkLayers Include="$(OutputPath)$(D3D12SdkLayersDllName)" />
+        </ItemGroup>
+        
+        <Message Importance="High"
+                 Condition=" '$(OutputPathFound)'=='true' and Exists('$(BuildOutFolder)\$(D3D12CoreDllName)') "
+                 Text="Post-Build Native Dependency Check: $(D3D12CoreDllName) found @ deployment site ..." />
+        <Message Importance="High"
+                 Condition=" '$(OutputPathFound)'=='true' and !Exists('$(BuildOutFolder)\$(D3D12CoreDllName)') "
+                 Text="(!) Post-Build Native Dependency Check: $(D3D12CoreDllName) not found @ deployment site!" />
+        
+        <Message Importance="High"
+                 Condition=" '$(OutputPathFound)'=='true' and '$(CopyAgilityDebugSymbols)'=='true' and Exists('$(BuildOutFolder)\$(D3D12SdkLayersDllName)') "
+                 Text="Post-Build Native Dependency Check: $(D3D12SdkLayersDllName) found @ deployment site ..." />
+        <Message Importance="High"
+                 Condition=" '$(OutputPathFound)'=='true' and '$(CopyAgilityDebugSymbols)'=='true' and !Exists('$(BuildOutFolder)\$(D3D12SdkLayersDllName)') "
+                 Text="(!) Post-Build Native Dependency Check: $(D3D12SdkLayersDllName) not found @ deployment site!" />
+    </Target>
+
+    
+    <!-- Error Message Targets: -->
+    <Target Name="AgilityBuildErrors" Condition=" '$(UsingAgility)' == 'true' ">
+        <Error
+                Text=" No Agility package path defined for $(AgilityPackageName)! 
+                Please define it in your project file"
+                Condition=" '$(AgilityPackagePath)' == '' " />
+        
+        <Error 
+                Text="Agility package path '$(AgilityPackagePath)' not found! 
+                Please ensure that the NuGet package is installed, or define the path in your project file."
+                Condition=" '$(AgilityPackagePath)' != '' and !Exists('$(AgilityPackagePath)') " />
+    </Target>
+</Project>
