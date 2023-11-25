@@ -1,0 +1,144 @@
+<Project>
+    <ImportGroup Label="SharedPropsAndTargetsImportGroup">
+        <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props"
+                Condition=" '$(DXSSharedPropsImported)' != 'true' " />
+    </ImportGroup>
+    
+    <ItemDefinitionGroup>
+        <InlineTaskDefinition>
+            <Path>$(MSBuildProjectDirectory)</Path>
+            <TaskName>$(MSBuildProjectName)_Task</TaskName>
+            <TaskFactory>RoslynCodeTaskFactory</TaskFactory>
+            <ErrorCheck>$(InlineTaskErrorChecks)</ErrorCheck>
+            
+            <RelOutputPath>.\</RelOutputPath>
+            <CodeFile>$(TaskName).cs</CodeFile>
+            <TargetFile>$(TaskName).targets</TargetFile>
+            <OutputPath>$(RepoRootPath)tools\tasks\$(MSBuildProjectName)</OutputPath>
+        </InlineTaskDefinition>
+    </ItemDefinitionGroup>
+
+    
+    <PropertyGroup Label="DXSToolsGlobalProps">
+        <DXSToolsPropsImported>true</DXSToolsPropsImported>
+        
+        <WindowsOnly>false</WindowsOnly>
+        <IsToolsProject>true</IsToolsProject>
+        <TargetPlatforms>AnyCPU</TargetPlatforms>
+        <IsMultiTargeting>false</IsMultiTargeting>
+        <DotNetTargets>netstandard2.0</DotNetTargets>
+        <TargetFramework>$(DotNetTargets)</TargetFramework>
+        <RepoRootPath Condition=" '$(RepoRootPath)' == '' " >$(SolutionDir)</RepoRootPath>
+        
+        <DXSToolsVersion>0.1.0</DXSToolsVersion>
+        <DXSToolsPath>$(RepoRootPath)tools</DXSToolsPath>
+        <DXSTasksPath>$(DXSToolsPath)\tasks</DXSTasksPath>
+        <DXSToolsLibrariesPath>$(DXSToolsPath)\bin</DXSToolsLibrariesPath>
+        <DXSTasksLibrariesPath>$(DXSTasksPath)\bin</DXSTasksLibrariesPath>
+        
+        <DXSToolsDllObjPath>$(DXSToolsPath)\obj\$(MSBuildProjectName)\$(Configuration)</DXSToolsDllObjPath>
+        <DXSToolsDllOutputPath Condition=" '$(IsMultiTargeting)' != 'true' " >$(DXSToolsPath)\bin\$(MSBuildProjectName)\$(Configuration)</DXSToolsDllOutputPath>
+        <DXSToolsDllOutputPath Condition=" '$(IsMultiTargeting)' == 'true' " >$(DXSToolsPath)\bin\$(MSBuildProjectName)\$(Configuration)\$(TargetFramework)</DXSToolsDllOutputPath>
+        
+        <DXSTasksDllObjPath>$(DXSTasksPath)\obj\$(MSBuildProjectName)\$(Configuration)</DXSTasksDllObjPath>
+        <DXSTasksDllOutputPath Condition=" '$(IsMultiTargeting)' != 'true' " >$(DXSTasksPath)\bin\$(MSBuildProjectName)\$(Configuration)</DXSTasksDllOutputPath>
+        <DXSTasksDllOutputPath Condition=" '$(IsMultiTargeting)' == 'true' " >$(DXSTasksPath)\bin\$(MSBuildProjectName)\$(Configuration)\$(TargetFramework)</DXSTasksDllOutputPath>
+        
+        <ToolsSrcFolder>$(MSBuildProjectDirectory)</ToolsSrcFolder>
+        <ShaderToolsSrcFolder>$(ToolsSrcFolder)Shaders</ShaderToolsSrcFolder>
+        <InlineTasksOutputFolder>$(DXSTasksPath)\$(MSBuildProjectName)</InlineTasksOutputFolder>
+        <ToolsSrcFolderRel>$([MSBuild]::MakeRelative( $(RepoRootPath), $(ToolsSrcFolder) ))</ToolsSrcFolderRel>
+        <NuGetPackageOutputFolder>$(DXSToolsLibrariesPath)\packages\$(MSBuildProjectName)</NuGetPackageOutputFolder>
+        
+        <Configurations>Debug;Release;InlineTasks;Package</Configurations>
+        <BuildingForNuGet Condition=" '$(BuildingForNuGet)' == '' ">false</BuildingForNuGet>
+        <BuildingInlineTasks Condition=" '$(BuildingInlineTasks)' == '' ">true</BuildingInlineTasks>
+        
+        <InlineTaskErrorChecks Condition=" '$(InlineTaskErrorChecks)' == '' " >true</InlineTaskErrorChecks>
+    </PropertyGroup>
+    <Choose>
+        <When Condition=" '$(Configuration)' == 'InlineTasks' or '$(BuildingInlineTasks)' == 'true' " >
+            <!-- Setup props for building inline task scripts: -->
+            <PropertyGroup>
+                <IsPackable>false</IsPackable>
+                <BuildingClassLib>false</BuildingClassLib>
+                <BuildingForNuGet>false</BuildingForNuGet>
+                <BuildingInlineTasks>true</BuildingInlineTasks>
+                <BaseOutputPath>$(DXSTasksPath)\</BaseOutputPath>
+                <OutputPath>$(InlineTasksOutputFolder)\</OutputPath>
+            </PropertyGroup>
+        </When>
+        <When Condition=" '$(Configuration)' == 'Package' " >
+            <!-- Setup props for building a NuGet package: -->
+            <PropertyGroup>
+                <BuildingForNuGet>true</BuildingForNuGet>
+                <BuildingClassLib>false</BuildingClassLib>
+                <BuildingInlineTasks>false</BuildingInlineTasks>
+                <OutputPath>$(NuGetPackageOutputFolder)\</OutputPath>
+                
+                <!-- This property tells MSBuild where the root folder of the package's build assets should be. 
+                     Because we are not a library package, we should not pack to 'lib'. Instead, we choose 'tasks' by convention. -->
+                <BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
+                
+                <!-- NuGet does validation that libraries in a package are exposed as dependencies, but we _explicitly_ 
+                     do not want that behavior for MSBuild tasks. They are isolated by design. Therefore we ignore this specific warning. -->
+                <NoWarn>NU5100</NoWarn>
+                <IsPackable>true</IsPackable>
+                <DebugType>embedded</DebugType>
+                <PackageTags>dxsharp;msbuild;tasks;tools;shader;dxc;compiler;directx;3d;hlsl</PackageTags>
+            </PropertyGroup>
+        </When>
+        <Otherwise>
+            <!-- If we're not building inline task scripts, define props for building DLL: -->
+            <PropertyGroup Condition=" '$(BuildingInlineTasks)' != 'true' " >
+                <!-- Here, we're building a complete .dll library -->
+                <IsPackable>false</IsPackable>
+                <OutputType>Library</OutputType>
+                <BuildingClassLib>true</BuildingClassLib>
+                <BuildingForNuGet>false</BuildingForNuGet>
+                <OutputPath>$(DXSToolsDllOutputPath)\</OutputPath>
+                <BaseIntermediateOutputPath>$(DXSToolsDllObjPath)\</BaseIntermediateOutputPath>
+            </PropertyGroup>
+        </Otherwise>
+    </Choose>
+    
+    
+    <!-- Import the shared props/targets file(s) if not imported already: -->
+    <ImportGroup Label="SharedPropsAndTargetsImportGroup">
+        <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props"
+                Condition=" '$(DXSSharedPropsImported)' != 'true' " />
+    </ImportGroup>
+    
+    
+    
+    <PropertyGroup Label="AssemblyInfoProps" >
+        <Company>Arkaen Solutions</Company>
+        <Authors>Aaron T. Carter, $(Company)</Authors>
+        <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+        <AssemblyVersion>$(DXSToolsVersion)</AssemblyVersion>
+        <Title Condition=" '$(Title)' == '' ">$(AssemblyName)</Title>
+        <Description>Custom tooling for the DXSharp build process.</Description>
+        <Product Condition=" '$(Product)' == '' " >$(MSBuildProjectName)</Product>
+        <ProductName Condition=" '$(ProductName)' == '' " >$(Product)</ProductName>
+        <Copyright>Copyright © Aaron T. Carter, Arkaen Solutions. All rights reserved.</Copyright>
+        <AssemblyTitle Condition=" '$(AssemblyTitle)' == '' " >$(MSBuildProjectName)</AssemblyTitle>
+        
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+        <RootNamespace>$(MSBuildProjectName)</RootNamespace>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <GeneratePackageOnBuild Condition=" '$(BuildingForNuGet)' == 'true' ">true</GeneratePackageOnBuild>
+        
+        <!--<Nullable>enable</Nullable>-->
+        <LangVersion>latest</LangVersion>
+        <AnalysisLevel>latest</AnalysisLevel>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <FileVersion>$(DXSToolsVersion)</FileVersion>
+        <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    </PropertyGroup>
+
+
+    <Import Project="$(DXSToolsPath)\Directory.Build.targets" />
+
+</Project>

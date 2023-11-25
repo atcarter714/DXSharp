@@ -1,9 +1,10 @@
 ﻿<Project>
     <!-- Import the shared props file (up one level): -->
-    <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.targets" />
+    <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.targets" 
+            Condition=" '$(DXSSharedTargetsImported)' != 'true' " />
     
     <!-- Before Build: -->
-    <Target Name="StartupBaseTarget" BeforeTargets="Build">
+    <Target Name="StartupBaseTarget" BeforeTargets="Build" >
         <PropertyGroup>
             <DXSTestGuid>$([System.Guid]::NewGuid())</DXSTestGuid>
         </PropertyGroup>

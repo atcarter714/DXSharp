@@ -87,16 +87,14 @@ public partial struct VertexPosCol: IEquatable< VertexPosCol >,
 	}
 	
 	
-	public override string ToString( ) => $"Vertex: {{ Position: {Position}, Color: {Color} }}" ;
 	public override int GetHashCode( ) => HashCode.Combine( Position, Color ) ;
+	public override string ToString( ) => $"Vertex: {{ Position: {Position}, Color: {Color} }}" ;
 	public bool Equals( VertexPosCol other ) => Position == other.Position && Color == other.Color ;
 	public bool Equals( Vector3 other ) => Position == other ;
 	public bool Equals( Vector4 other ) => Color == other ;
 
-
-
-	public static implicit operator VertexPosCol( in (Vector3 pos, Vector4 col) tuple ) => 
-		new( tuple.pos, tuple.col ) ;
+	
+	public static implicit operator VertexPosCol( in (Vector3 pos, Vector4 col) tuple ) => new( tuple.pos, tuple.col ) ;
 	public static implicit operator VertexPosCol( in (float x, float y, float z, float r, float g, float b, float a) tuple ) => 
 		new( tuple.x, tuple.y, tuple.z, tuple.r, tuple.g, tuple.b, tuple.a ) ;
 } ;

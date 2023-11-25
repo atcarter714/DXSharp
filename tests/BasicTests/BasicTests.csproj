@@ -24,19 +24,40 @@
 	
 	<ItemGroup Label="DXSReferences">
 		<ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
+		<ProjectReference Include="..\..\tools\DXSharp.Tools.Builds\DXSharp.Tools.Builds.csproj" />
 	</ItemGroup>
-	
-	
+
+
+	<PropertyGroup>
+		<AssetsFolder>Assets</AssetsFolder>
+		<ShadersFolder>Assets\Shaders</ShadersFolder>
+		<DxShadersFolder>Assets\Shaders\dxs</DxShadersFolder>
+	</PropertyGroup>
 	<ItemGroup Label="ConfigurationFileIncludes">
 		<None Include="..\..\.editorconfig" Link=".editorconfig" />
-		<Folder Include="D3D12\" />
+		
 		<Folder Include="DXGI\" />
+		<Folder Include="D3D12\" />
+		<Folder Include="$(AssetsFolder)" />
+		<Folder Include="$(ShadersFolder)" />
 	</ItemGroup>
 	
-	<ItemGroup>
-	  <ClCompile Include="Assets\Shaders\tests_shader_0.hlsl">
-		<ExcludedFromBuild Condition="'$(Configuration)'=='Release'">true</ExcludedFromBuild>
-	  </ClCompile>
+	
+	<ItemGroup Label="ShaderIncludes">
+		
+		<Shader Include="Assets\Shaders\tests_shader_0.hlsl" >
+			<Name>%(Filename)_%(Extension)</Name>
+			<ShaderType>Fragment</ShaderType>
+			<EntryPoint>ps_main</EntryPoint>
+			<ShaderModel>6.0</ShaderModel>
+		</Shader>
+		
+		<DxShader Include="Assets\Shaders\dxs\*.dxs" >
+			<Name>%(Filename)_%(Extension)</Name>
+			<ShaderType>DxShader</ShaderType>
+			<ShaderModel>6.8</ShaderModel>
+			<EntryPoint>main</EntryPoint>
+		</DxShader>		
 	</ItemGroup>
 	
 </Project>

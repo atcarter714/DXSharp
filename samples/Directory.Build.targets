@@ -1,21 +1,20 @@
 <Project>
-    <!-- Log startup info: -->
-    <Target Name="LogBuildStartMessage" BeforeTargets="Build">
-        <Message Text="DXSharp Sample build process started for '$(ProjectName)' in: '$(SamplesRootPath)'..." Importance="high" />
-        <Message Text="Current Sample Target Framework: $(TargetFramework)" Importance="high" />
-        <Message Text="Current Sample CPU Architecture: $(TargetCPU)" Importance="high" />
-    </Target>
-    <Target Name="LogDirectXInfoAtStartup" BeforeTargets="Build">
-        <Message Text="Agility SDK Build: $(UsingAgilitySDK)" Importance="high" />
-        <Message Text="DirectX Platform: '$(NativePlatformName)'" Importance="high" />
-    </Target>
-
-
     <PropertyGroup>
         <UsingDxc Condition=" '$(UsingDxc)'=='' ">false</UsingDxc>
         <UsingAgility Condition=" '$(UsingAgility)'=='' ">false</UsingAgility>
         <UsingDxcCompiler Condition=" '$(UsingDxcCompiler)'=='' ">false</UsingDxcCompiler>
     </PropertyGroup>
+    
+    <!-- Log startup info: -->
+    <Target Name="LogBuildStartMessage" BeforeTargets="Build">
+        <Message Text="DXSharp Sample build process started for '$(ProjectName)' in: '$(SamplesRootPath)'..." Importance="high" />
+        <Message Text="Current Sample Target Framework: $(TargetFramework)" Importance="high" />
+        <Message Text="Current Sample CPU Architecture: $(Platform)" Importance="high" />
+        <Message Text="Agility SDK Build: $(UsingAgility)" Importance="high" />
+        <Message Text="DirectX Platform: '$(NativePlatformName)'" Importance="high" />
+    </Target>
+
+
     <ImportGroup>
         <Import Project="..\build\msbuild\DXSharpShared.Build.props" 
                 Condition=" '$(DXSSharedPropsImported)' != 'true' " />
@@ -23,11 +22,11 @@
                 Condition=" '$(DXSSharedTargetsImported)' != 'true' " />
         
         <Import Project="..\build\msbuild\AgilityNative.Build.targets"
-                Condition="$(UsingAgility)" />
+                Condition=" '$(UsingAgility)' and '$(AgilityNativeTargetsImported)'!='true' " />
         <Import Project="..\build\msbuild\DxcNative.Build.targets"
-                Condition="$(UsingDxc)" />
+                Condition=" '$(UsingDxc)' and '$(DXCNativeImported)'!='true' " />
         <Import Project="..\build\msbuild\DxcTool.Build.targets"
-                Condition="$(UsingDxcCompiler)" />
+                Condition=" '$(UsingDxcCompiler)'=='true' and '$(DXCToolTargetsImported)'!='true' " />
     </ImportGroup>
     
     

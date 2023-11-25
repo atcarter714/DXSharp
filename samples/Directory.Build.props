@@ -3,7 +3,9 @@
 		<Import Project="..\build\msbuild\DXSharpShared.Build.props"
 				Condition="$(DXSSharedPropsImported) != 'true'" />
 	</ImportGroup>
+
 	
+	<!-- Defines the shared common props for sample projects :: -->
 	<PropertyGroup Label="CommonSampleProps">
 		<BuildInParallel>true</BuildInParallel>
 		<SamplesRootPath>$(MSBuildThisFileDirectory)</SamplesRootPath>
@@ -19,8 +21,8 @@
 		<UsingAgility Condition=" '$(UsingAgility)' == '' ">false</UsingAgility>
 		<UsingDxcCompiler Condition=" '$(UsingDxcCompiler)' == '' ">false</UsingDxcCompiler>
 	</PropertyGroup>
-
-
+	
+	
 	<!-- Properties for assembly output files :: -->
 	<PropertyGroup Label="AssemblyGenInfo">
 		<Company>Arkaen Solutions</Company>
@@ -28,8 +30,8 @@
 		<Copyright>© $(Authors). All rights reserved.</Copyright>
 		<Title Condition=" '$(Title)'=='' ">$(ProjectName)</Title>
 		<Product Condition=" '$(Product)'=='' ">$(ProjectName)</Product>
-		<Description Condition=" '$(Description)'=='' ">Sample application for the DXSharp SDK libraries ...</Description>
 		<RootNamespace Condition=" '$(RootNamespace)'=='' ">$(ProjectName)</RootNamespace>
+		<Description Condition=" '$(Description)'=='' ">Sample application for the DXSharp SDK libraries ...</Description>
 	</PropertyGroup>
 	
 	
@@ -71,8 +73,6 @@
 		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
 	</PropertyGroup>
 	
-	
-
 	
 	<!-- Debug/Release Configuration Properties :: -->
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' " 

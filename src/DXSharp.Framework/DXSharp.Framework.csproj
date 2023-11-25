@@ -3,6 +3,9 @@
     <PropertyGroup>
         <Platforms>$(TargetCPUs);</Platforms>
         <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+        <UsingDxcCompiler>false</UsingDxcCompiler>
+        <UsingAgility>true</UsingAgility>
+        <UsingDxc>true</UsingDxc>
     </PropertyGroup>
 
     <ItemGroup Label="ProjectRefs">

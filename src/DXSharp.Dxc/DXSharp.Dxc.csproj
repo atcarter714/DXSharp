@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <!--Common Project Properties-->
     <PropertyGroup Label="CommonProjectProps">
-        <No32Bit>true</No32Bit>
         <UsingDxc>true</UsingDxc>
         <DxcSupportedPlatforms>x64;arm64;AnyCPU;</DxcSupportedPlatforms>
         <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
@@ -24,14 +23,6 @@
                         Version="$(CsWin32Version)">
         <PrivateAssets>all</PrivateAssets>
       </PackageReference>
-        
-        <!-- Dxc Compiler Package -->
-        <!--<PackageReference Include="$(DxcPackageName)"
-                          GeneratePathProperty="true"
-                          Version="$(DxcVersion)"
-                          Aliases="DxcPackage">
-            <IncludeAssets>build; native; contentfiles; buildtransitive</IncludeAssets>
-        </PackageReference>-->
     </ItemGroup>
 
    <!-- <ItemGroup>

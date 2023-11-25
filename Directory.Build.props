@@ -5,7 +5,7 @@
 	
 	<!-- Include the shared props file in builds folder :: -->
 	<Import Project=".\build\msbuild\DXSharpShared.Build.props"
-			Condition=" '$(DXSSharedPropsImported' != 'true' " />
+			Condition=" '$(DXSSharedPropsImported)' != 'true' " />
 	
 	<ItemGroup Label="CommonSDKItems" >
 		<YamlPipelines Include="$(RepoRootPath)*.yml" />
@@ -14,7 +14,10 @@
 	</ItemGroup>
 	<PropertyGroup Label="CommonSDKProps">
 		<BuildInParallel>false</BuildInParallel>
+		<IsMultiTargeting>true</IsMultiTargeting>
 		<NugetCacheDir>$(NuGetPackageRoot)</NugetCacheDir>
+		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+		
 		
 		<!-- Fallbacks for critical properties: -->
 		<TargetCPUs Condition=" '$(TargetCPUs)'=='' ">AnyCPU;x64;x86</TargetCPUs>

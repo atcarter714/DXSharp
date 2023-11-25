@@ -1,0 +1,249 @@
+<Project InitialTargets="BeforeBuildInitTargets;InlineTasksBuild;Build" 
+         DefaultTargets="BeforeBuildInitTargets;Build" >
+    <!-- Import the shared properties file if not imported already: -->
+    <ImportGroup Label="SharedPropsAndTargetsImportGroup" >
+        <Import Project="$(RepoRootPath)build\msbuild\DXSharpShared.Build.props"
+                Condition=" '$(DXSSharedPropsImported)' != 'true' " />
+        <Import Project="$(RepoRootPath)build\msbuild\DXSharpShared.Build.targets"
+                Condition=" '$(DXSSharedTargetsImported)' != 'true' " />
+        <Import Project="$(RepoRootPath)build\msbuild\Directory.Build.props"
+                Condition=" '$(DXSToolsPropsImported)' != 'true' " />
+    </ImportGroup>
+    
+    <PropertyGroup>
+        <ToolsDefFileName>Tools.targets</ToolsDefFileName>
+        <ToolTargetsPath>$(ToolsSrcFolder)\$(ToolsDefFileName)</ToolTargetsPath>
+    </PropertyGroup>
+    
+    <!-- Here we define the item groups to include all the C# source, targets and props files -->
+    <ItemGroup>
+        <CSharpFiles Include="$([System.IO.Path]::Combine('$(ToolsSrcFolder)', '**', '*.cs'))">
+            
+        </CSharpFiles>
+        <PropsFiles Include="$([System.IO.Path]::Combine('$(ToolsSrcFolder)', '**', '*.props'))" />
+        <TargetsFiles Include="$([System.IO.Path]::Combine('$(ToolsSrcFolder)', '**', '*.targets'))" />
+        <ToolSpecFiles Include="$([System.IO.Path]::Combine('$(ToolsSrcFolder)', '**', '*.targets'))" />
+        
+        <!-- Combine all files into a single item group, for easier manipulation: -->
+        <DeploymentFiles Include="@(CSharpFiles);@(PropsFiles);@(TargetsFiles)" />
+    </ItemGroup>
+    <ItemGroup>
+        <!-- Preprocesses and prepares the files we're interested in for inline task builds: -->
+        <ToolsTargetDef Include="$(ToolTargetsPath)" 
+                        Condition="Exists( '$(ToolTargetsPath)' )">
+            <RelOutputPath>.\$([MSBuild]::MakeRelative('$(ToolsSrcFolder)', '$(ToolTargetsPath)'))</RelOutputPath>
+            <OutputPath>$(InlineTasksOutputFolder)</OutputPath>
+            <TargetsFile>$(ToolsDefFileName)</TargetsFile>
+            <CodeFile>null</CodeFile>
+            <Type>tool-define</Type>
+        </ToolsTargetDef>
+        
+        <csFiles Include="$(ToolsSrcFolder)\**\*.cs" 
+                 Exclude="**\obj\**" />
+
+        <_allTargetsFiles Include="$(ToolsSrcFolder)\**\*.targets" />
+        
+        <!-- Now use the FilterExistingFiles target on the items ... -->
+        <_swappedExtToTargets Include="@( csFiles -> '%(Identity)'->Replace('.cs', '.targets'))" />
+        <PossibleTaskDefFiles Include="@( _swappedExtToTargets )" />
+        <AggregatedBuildFiles Include="@( csFiles )" />
+    </ItemGroup>
+    
+    
+    <Target Name="LocateDefinitions" 
+            BeforeTargets="BeforeBuildInitTargets"
+            Inputs="$(ToolsSrcFolder)" Outputs="@(InlineTaskDefinition);@(AggregatedBuildFiles)" >
+        <Message Text="DXSTools Targets :: Initialization >> Aggregating build inputs ..." Importance="high" />
+        
+        <ItemGroup Label="FindingInlineTaskDefinitions" >
+            <_allClassFiles Include="$(ToolsSrcFolder)\**\*.cs" Exclude="**\obj\**" />
+            <_allTargetsFiles Include="$(ToolsSrcFolder)\**\*.targets" Exclude="**\obj\**" />
+            <_swappedCsToTargets Include="@( _allClassFiles -> '%(Identity)'->Replace('.cs', '.targets') )" />
+            <_validTaskDefs Include="@( _swappedCsToTargets )" Condition=" Exists( '%(Identity)' ) " />
+            <_folderNames Include="@( _validTaskDefs -> '%(Identity)'->Replace( '$(RepoRootPath)', '' ) )" />
+            
+            
+            <InlineTaskDefinition Include="@( _validTaskDefs )"
+                                  Condition=" '%(InlineTaskDefinition.Identity)' != '%(Identity)' " >
+                <RelOutputPath>$([MSBuild]::MakeRelative('$(ToolsSrcFolder)', '%(Identity)'))</RelOutputPath>
+                <!--<RelOutputPath>$([MSBuild]::MakeRelative( '$(ToolsSrcFolder)', '%(Identity->Replace('%(Filename)%(Extension)', '') )' ))</RelOutputPath>-->
+                <OutputPath>$(InlineTasksOutputFolder)</OutputPath>
+                <RootFolder>%(RootDir)%(Directory)</RootFolder>
+                <TargetsFile>%(Filename).targets</TargetsFile>
+                <CodeFile>%(Filename).cs</CodeFile>
+                <TaskName>%(Filename)</TaskName>
+                <Type>task-inline</Type>
+                <SubType>Code</SubType>
+            </InlineTaskDefinition>
+            <CSharpTaskScripts Include="@( InlineTaskDefinition->'.\%(RelOutputPath -> Replace('.targets', '.cs'))' )" >
+                <DependentUpon>%( InlineTaskDefinition.Identity )</DependentUpon>
+                <TargetsFile>%(Filename).targets</TargetsFile>
+                <TaskName>%( TaskName )</TaskName>
+                <Link>%( Identity )</Link>
+                <Type>task-inline</Type>
+                
+                <SubType>Code</SubType>
+            </CSharpTaskScripts>
+            
+            <AggregatedBuildFiles Include="@( InlineTaskDefinition )" 
+                                  Condition=" Exists('%(Identity)') and '%(AggregatedBuildFiles.Identity)' != '%(Identity)' " />
+            
+            <AggregatedBuildFiles Include="@( AggregatedBuildFiles )" 
+                                  Condition=" '%( Identity )' != '%( AggregatedBuildFiles.Identity )' " >
+                <RelOutputPath>.\$([MSBuild]::MakeRelative('$(ToolsSrcFolder)', '%(Identity)'))</RelOutputPath>
+                <OutputPath>$(InlineTasksOutputFolder)</OutputPath>
+                <RootFolder>%(RootDir)%(Directory)</RootFolder>
+                <TargetsFile>%(Filename).targets</TargetsFile>
+                <CodeFile>%(Filename).cs</CodeFile>
+                <TaskName>%(Filename)</TaskName>
+            </AggregatedBuildFiles>
+            
+            <AggregatedBuildFiles Remove="@( ToolsTargetDef )" />
+            <AggregatedBuildFiles Include="@( ToolsTargetDef )" />
+        </ItemGroup>
+
+        
+        
+        <!-- List the "Tools.target" files found in the project file system hierarchy: -->
+        <Message Text="DXSTools Targets :: Initialization >> Tools.targets file found:
+                    @( ToolsTargetDef -> '%(Identity)', ',
+                    ' ) "
+                 Importance="high" Condition=" '@( ToolsTargetDef )' != '' " />
+        <!-- List the collection of files prepared as build inputs: -->
+        <Message Text="DXSTools Targets :: Initialization >> Aggregated build payload: 
+                    @( AggregatedBuildFiles -> '%(RelOutputPath)', ',
+                    ' ) "
+                 Importance="high" Condition=" '@( AggregatedBuildFiles )' != '' " />
+
+
+        <!-- List the inline tasks prepared as build inputs: -->
+        <Message Text="DXSTools Targets :: Initialization >> Inline task definitions found: 
+                 @( InlineTaskDefinition->'%(TargetsFile) [ %(CodeFile) ]', ',
+                 ' ) "
+                 Importance="high" Condition=" '@( InlineTaskDefinition )' != '' " />
+
+        
+        <!-- Filter and sanitize the payload: -->
+        <Message Text="DXSTools Targets :: Sanitizing build inputs ..."
+                 Importance="high" Condition=" '@( ToolsTargetDef )' != '' " />
+
+        <RemoveDuplicates Inputs="@( AggregatedBuildFiles )" >
+            <Output ItemName="FilteredBuildFiles"
+                    TaskParameter="Filtered" />
+            <Output TaskParameter="HadAnyDuplicates"
+                    ItemName="_hadDuplicateBuildFiles" />
+        </RemoveDuplicates>
+        <RemoveDuplicates Inputs="@( InlineTaskDefinition )" >
+            <Output ItemName="FilteredTaskDefs"
+                    TaskParameter="Filtered" />
+            <Output TaskParameter="HadAnyDuplicates"
+                    PropertyName="_hadDuplicateTasks" />
+        </RemoveDuplicates>
+        <Message Text="DXSTools Targets :: Initialization >> Aggregate build inputs collected and paths validated ..." Importance="high" />
+    </Target>
+    
+    
+    <Target Name="BeforeBuildInitTargets"
+            BeforeTargets="BeforeBuild" DependsOnTargets="LocateDefinitions" >
+        <Message Text="DXSTools Targets :: Initialization >> Phase changing to 'Build' ..."
+                 Importance="high" Condition=" '@( AggregatedBuildFiles )' != '' " />
+    </Target>
+    
+
+    
+    
+   <!-- <Target Name="CollectInlineTasks" BeforeTargets="BeforeBuildInitTargets"
+            Inputs="@(InlineTaskDef);@(csFiles)" Outputs="@( InlineTaskDefinitions )"
+            Condition="'$(BuildingInlineTasks)' == 'true'" >
+        <Message Text="DXSTools Targets :: Processing custom inline tasks build(s) ..." Importance="high" />
+        <Message Text="DXSTools Targets :: Collecting inline task definitions in '$(ToolsSrcFolder)' ..." Importance="high" />
+        <Message Text="DXSTools Targets :: Found C# files: @( csFiles -> '%(Identity)', ', ' )" Importance="high" />
+
+        <Message Condition=" '$(InlineTaskDef)' == '' " Importance="high"
+                 Text="(!) DXSTools Targets :: No inline task definitions found in '$(MSBuildProjectDirectory)' ..."  />
+        <Message Condition=" '$(csFiles)' == '' " Importance="high"
+                 Text="(!) DXSTools Targets :: No C# source files found in '$(MSBuildProjectDirectory)' ..."  />
+        
+        <Message Condition=" '@(InlineTaskDef)' != '' " Importance="high"
+                 Text="DXSTools Targets :: Found inline task definitions: "  />
+        <Message Condition=" '@(InlineTaskDef)' != '' " Importance="high"
+                 Text="DXSTools Targets :: Found inline task definitions: "  />
+        
+        <Message Text="         @( csFiles -> '%(Identity)' )"
+                 Condition=" '$(InlineTaskDef)' != '' " Importance="high" />
+    </Target>-->
+
+
+    <Target Name="Build" DependsOnTargets="InlineTasksBuild" 
+            Inputs="@(AggregatedBuildFiles)" Outputs="@( DeploymentFiles )"
+            BeforeTargets="Compile" AfterTargets="InlineTasksBuildBeforeBuildInitTargets"
+            Condition=" '$(BuildingInlineTasks)' == 'true' and '@( InlineTaskDefinition )' != '' " >
+        <Message Text="DXSTools Targets :: Build >> Deploying DXSTools project inline tasks ..." Importance="high" />
+        
+        <Message Text="DXSTools Targets :: No inline task definitions found for project: '$(MSBuildProjectFile)' "
+                 Importance="high" Condition=" '$(InlineTasks)' == '' " />
+        <Message Text="DXSTools Targets :: Found inline task definitions for: @( InlineTaskDefinitions->'%(Filename)', ', ' )"
+                 Importance="high" Condition=" '$(InlineTasks)' != '' " />
+
+        <Message Text="DXSTools Targets :: Processing task definitions from: "
+                 Importance="high" Condition=" '$(InlineTasks)' != '' " />
+        <Message Text="         @( InlineTasks -> '%(Identity)', ' ' ) " />
+        
+        <Error Text="DXSTools Targets :: Inline tasks build failed. "
+               Condition=" '$(InlineTasks)' != '' and '$(BuildingInlineTasks)' != 'true' " />
+        
+        <ItemGroup>
+            <_inlineTaskDefFiles Include="@( InlineTaskDefinitions )" />
+            <_inlineTaskDefFiles Include="@( InlineTaskDefinitions )" />
+        </ItemGroup>
+        <Message Text="DXSTools Targets :: Inline tasks build succeeded. "
+                 Condition=" '$(InlineTasks)' != '' and '$(BuildingInlineTasks)' == 'true' " />
+    </Target>
+    
+    
+    <Target Name="InlineTasksBuild"
+            BeforeTargets="Build" AfterTargets="BeforeBuildInitTargets"
+            DependsOnTargets="LocateDefinitions;BeforeBuildInitTargets"
+            Condition=" '$(BuildingInlineTasks)' == 'true' " >
+        <Message Text="DXSTools Targets :: Custom DX# Build Tools  -  special deployment services starting ..." Importance="high" />
+        
+        <Message Text="DXSTools Targets :: Building Task: '@( InlineTaskDefinition -> '%(TaskName)' )' ..." Importance="high" />
+        <Message Text="DXSTools Targets :: @( InlineTaskDefinition -> 'Target: &quot;%(TargetsFile)&quot; | C# Code: &quot;%(CodeFile)&quot; | OutDir: &quot;%(RelOutputPath)&quot;' ) ..." Importance="high" />
+    </Target>
+    
+    
+    <Target Name="PreBuildMessages" DependsOnTargets="PrebuildPropGeneration"
+            BeforeTargets="Build" AfterTargets="PrebuildPropGeneration"
+            Condition=" '$(BuildingInlineTasks)' == 'true' " >
+        <PropertyGroup>
+            <IsBuildingForNuGet Condition=" '$(IsBuildingForNuGet)' != 'true' " >false</IsBuildingForNuGet>
+            <HasInlineTasksInputs Condition=" '@( InlineTaskDefinition )' != '' " >true</HasInlineTasksInputs>
+            <HasInlineTasksInputs Condition=" '@( InlineTaskDefinition )' == '' " >false</HasInlineTasksInputs>
+        </PropertyGroup>
+        
+        <Message Text="DXSTools Targets :: Starting deployment phase ...
+        " Importance="high" />
+        
+        <CallTarget Targets="StartupEventLog" Condition="$(HasInlineTasksInputs)" />
+    </Target>
+    
+    
+    <Target Name="StartupEventLog" Inputs="$(IsBuildingForNuGet);$(HasInlineTasksInputs)" Outputs="$(StartupTime)" >
+        <PropertyGroup>
+            <StartupTime>$([System.DateTime]::Now.ToString( 'MM-dd-YY HH:mm' ))</StartupTime>
+        </PropertyGroup>
+        <Message Text="DXSTools Targets :: DX# Build Tools for inline tasks initiated @: $(LocalNow) ..." Importance="high" />
+        <Message Text="DXSTools Targets :: Tools Project(s)   :   '$(MSBuildProjectDirectory)'" Importance="high" />
+        <Message Text="DXSTools Targets :: Deployment Site    :   '$(InlineTasksOutputFolder)'" Importance="high" />
+        <Message Text="DXSTools Targets :: MSBuild Version    :   '$(MSBuildFileVersion)'" Importance="high" />
+        <Message Text="DXSTools Targets :: Inline Definitions :   '$(HasInlineTasksInputs)'" Importance="high" />
+        <Message Text="DXSTools Targets :: Package Deploy?    :   '$(IsBuildingForNuGet)'" Importance="high" />
+        
+        <Message Text="DXSTools Targets :: Internal build(s) + deployment(s) within the repository starting ... " 
+                 Importance="high" Condition=" '$(BuildingInlineTasks)' == 'true' and '$(HasInlineTasksInputs)' == 'true' and '$(IsBuildingForNuGet)'!='true' " />
+        
+        <Message Text="DXSTools Targets :: Package build(s) and/or NuGet deployment(s) starting ... "
+                    Importance="high" Condition=" '$(BuildingInlineTasks)' == 'true' and '$(HasInlineTasksInputs)' == 'true' and '$(IsBuildingForNuGet)'=='true' " />
+    </Target>
+    
+</Project>

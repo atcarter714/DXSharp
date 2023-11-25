@@ -1,26 +1,39 @@
 ﻿<Project>
-    <PropertyGroup>
+    <!-- Define any global properties for tests here: -->
+    <PropertyGroup Label="DefineGlobalStartupProps">
+        <LocalNow Condition=" '$(LocalNow)'=='' ">$([System.DateTime]::Now.ToString())</LocalNow>
+        <UTCNow Condition=" '$(UTCNow)'=='' ">$([System.DateTime]::UtcNow.ToString())</UTCNow>
+        <RepoRootPath Condition=" '$(RepoRootPath)' == '' ">$(SolutionDir)</RepoRootPath>
+        
         <!-- Set up base build: -->
         <IsTestProject>true</IsTestProject>
         <BuildInParallel>true</BuildInParallel>
+        <IsMultiTargeting>true</IsMultiTargeting>
+        <ToolsDirectory>..\tools</ToolsDirectory>
         <BuildsDirectory>..\build</BuildsDirectory>
         <SharedPropsDirectory>$(BuildsDirectory)\msbuild</SharedPropsDirectory>
         <SharedPropsFile>$(SharedPropsDirectory)\DXSharpShared.Build.props</SharedPropsFile>
+        <SharedTargetsFile>$(SharedPropsDirectory)\DXSharpShared.Build.targets</SharedTargetsFile>
+        <DxsBuildToolsDirectory>$(ToolsDirectory)\tasks\DXSharp.Tools.Builds</DxsBuildToolsDirectory>
     </PropertyGroup>
     
-    <!-- Import the shared props file (up one level): -->
-    <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props" />
+    <ImportGroup>
+        <!-- Import the shared props file (up one level): -->
+        <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props"
+                Condition="$(DXSSharedPropsImported) != 'true'" />
+        <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.targets"
+                Condition="$(DXSSharedTargetsImported) != 'true'" />
+        
+        
+        <!-- Import the DXSTools targets: -->
+        <Import Project="$(ToolsDirectory)\DXSharp.Tools.Builds\Tools.targets"
+                Condition=" '$(DXSBuildToolsImported)' != 'true' " />
+        
+        
+        <!-- Import the primary props file (up one level): -->
+        <Import Project="..\Directory.Build.props"
+                Label="BaseSDKBuildProps"
+                Condition="Exists( '..\Directory.Build.props' )" />
+    </ImportGroup>
     
-    
-    <!-- Define any global properties for tests here: -->
-    <PropertyGroup Label="DefineGlobalStartupProps">
-        <UTCNow Condition=" 'UTCNow'=='' ">$([System.DateTime]::UtcNow.ToString())</UTCNow>
-        <LocalNow Condition=" 'LocalNow'=='' ">$([System.DateTime]::Now.ToString())</LocalNow>
-    </PropertyGroup>
-    
-    
-    <!-- Import the primary props file (up one level): -->
-    <Import Project="..\Directory.Build.props"
-            Label="BaseSDKBuildProps"
-            Condition="Exists('..\Directory.Build.props')" />
 </Project>

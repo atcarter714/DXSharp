@@ -1,83 +1,322 @@
 ﻿<Project>
+    <ProjectExtensions>
+        <VisualStudio><UserProperties DXCContinueOnShaderErrors="$(ContinueOnShaderErrors)" /></VisualStudio>
+        <Rider><ProjectProperties DXCContinueOnShaderErrors="$(ContinueOnShaderErrors)" /></Rider>
+        <VSCode><UserProperties DXCContinueOnShaderErrors="$(ContinueOnShaderErrors)" /></VSCode>
+    </ProjectExtensions>
     <ImportGroup Label="CommonPropsAndTargetsImport" 
-                 Condition=" '$(UsingDxcCompiler)' == 'true' ">
+                 Condition=" '$(UsingDxcCompiler)' == 'true' " >
+        
         <Import Project="$(RepoRootPath)build\msbuild\DXSharpShared.Build.props" 
                 Condition=" '$(DXSSharedPropsImported)' != 'true' " />
+        
         <Import Project="$(RepoRootPath)build\msbuild\DxcNative.Build.targets" 
                 Condition=" '$(DXCNativeImported)' != 'true' " />
     </ImportGroup>
-    <PropertyGroup Label="GraphicsDriversDownloadURLs">
+    
+    
+    <!-- Define shared/common global props for Dxc Tools: -->
+    <PropertyGroup Label="DxcCompilerToolCommonProps">
+        <DXCToolTargetsImported>true</DXCToolTargetsImported>
+        
+        <ShaderIncDir>$(ShaderIncDir);.\inc;.\include</ShaderIncDir>
+        <ShaderOutDir Condition=" '$(ShaderOutDir)' == '' " >$(OutputPath)assets\shaders\</ShaderOutDir>
+        <ShaderIntermediateOutDir Condition=" '$(ShaderIntermediateOutDir)' == '' " >$(BaseIntermediateOutputPath)dxc-obj\shaders</ShaderIntermediateOutDir>
+        <DXCContinueOnShaderErrors Condition=" '$(DXCContinueOnShaderErrorsCondition)' == '' " >true</DXCContinueOnShaderErrors>
+        
         <NvidiaDriversUrl>https://www.geforce.com/drivers</NvidiaDriversUrl>
         <AmdDriversUrl>https://support.amd.com/en-us/download</AmdDriversUrl>
         <IntelDriversUrl>https://downloadcenter.intel.com/product/80939/Graphics-Drivers</IntelDriversUrl>
         
-        <DXCContinueOnShaderErrors>true</DXCContinueOnShaderErrors>
+        <DxcRepoUrl>https://github.com/microsoft/DirectXShaderCompiler</DxcRepoUrl>
     </PropertyGroup>
+    
+    
+
+    <!-- Define a "Shader" and the metadata for constructing Dxc command-lines: -->
+    <ItemGroup Label="DefineValidItemNamesForShaders" >
+        <ValidShaderTypes Include="DxShader" />
+        <ValidShaderTypes Include="VertexShader" />
+        <ValidShaderTypes Include="PixelShader" />
+        <ValidShaderTypes Include="GeometryShader" />
+        <ValidShaderTypes Include="HullShader" />
+        <ValidShaderTypes Include="DomainShader" />
+        <ValidShaderTypes Include="ComputeShader" />
+    </ItemGroup>
+    <ItemGroup Label="DefineValidOutputTypesForShaders" >
+        <ValidOutputTypes Include="bin" />
+        <ValidOutputTypes Include="cso" />
+        <ValidOutputTypes Include="blob" />
+        <ValidOutputTypes Include="header" />
+    </ItemGroup>
+    <ItemGroup Label="DefineRecognizedShaderExtensions" >
+        <RecognizedShaderExtensions Include=".vs" />
+        <RecognizedShaderExtensions Include=".ps" />
+        <RecognizedShaderExtensions Include=".gs" />
+        <RecognizedShaderExtensions Include=".hs" />
+        <RecognizedShaderExtensions Include=".ds" />
+        <RecognizedShaderExtensions Include=".cs" />
+        <RecognizedShaderExtensions Include=".geo" />
+        <RecognizedShaderExtensions Include=".hull" />
+        <RecognizedShaderExtensions Include=".domain" />
+        <RecognizedShaderExtensions Include=".compute" />
+        <RecognizedShaderExtensions Include=".comp" />
+        
+        <RecognizedShaderExtensions Include=".fx" />
+        <RecognizedShaderExtensions Include=".hlsl" />
+        <RecognizedShaderExtensions Include=".effect" />
+        
+        <RecognizedShaderExtensions Include=".h" />
+        <RecognizedShaderExtensions Include=".fxh" />
+        <RecognizedShaderExtensions Include=".inc" />
+        <RecognizedShaderExtensions Include=".fxinc" />
+        <RecognizedShaderExtensions Include=".hlslinc" />
+    </ItemGroup>
+    
+    
+    <!-- Define "Shader" items and "DxcConfig" files: -->
+    <ItemDefinitionGroup Condition=" '$(UsingDxcCompiler)' == 'true' " >
+        
+        <Shader>
+            <IntermediateBuildDirectory>$(ShaderIntermediateOutDir)</IntermediateBuildDirectory>
+            <Name>%(Filename)_%(ShaderModel)_%(ShaderType)_%(EntryPoint)</Name>
+            <OutputFilename>%(Name).%(Extension)</OutputFilename>
+            <OutputDirectory>$(ShaderOutDir)</OutputDirectory>
+            <ShaderOutputType>%(OutputType)</ShaderOutputType>
+            <ShaderProfile>%(ShaderProfile)</ShaderProfile>
+            <ShaderModel>%(ShaderModel)</ShaderModel>
+            <EntryPoint>%(EntryPoint)</EntryPoint>
+            <OutExt>%(Extension)</OutExt>
+            <Type>%(ShaderType)</Type>
+        </Shader>
+        
+        <DxcConfig>
+            <HLSLDebug>%(ShaderDebug)</HLSLDebug>
+            <ShaderTypes>%(ShaderTypes)</ShaderTypes>
+            <ShaderModels>%(ShaderModels)</ShaderModels>
+            <ShaderProfiles>%(ShaderProfiles)</ShaderProfiles>
+            <ShaderFileFilters>%(ShaderFilters)</ShaderFileFilters>
+        </DxcConfig>
+        
+    </ItemDefinitionGroup>
+
     
     <!-- Resolve native refs for Dxc DLLs if we're building against Dxc: -->
     <Target Name="LocateDxcCompilerTool"
             BeforeTargets="Build"
             Outputs="$(DxcToolPath)"
             Condition=" '$(DxcPackagePath)'!='' and '$(UsingDxcCompiler)' == 'true' " >
-        
         <!-- Resolve the Dxc DLLs for the current platform: -->
-        <PropertyGroup>
-            <HostPlatformStr>$(MachineCPUArchitecture)</HostPlatformStr>
-        </PropertyGroup>
-        
-        <ItemGroup Condition=" '$(UsingDxcCompiler)' == 'true' ">
+        <ItemGroup >
             <!-- If $(DEPLOY_DXC_TOOL) is declared 'true', the dxc.exe 
                  tool is copied to the output directory:
               -->
             <DxcCompilerExe Condition="$(DEPLOY_DXC_TOOL) == 'true'" 
-                            Include="$(DxcPackagePath)\build\native\bin\$(HostPlatformStr)\dxc.exe" />
-            <None Condition="$(DEPLOY_DXC_TOOL) == 'true'" 
+                            Include="$(DxcBinPlatformPath)\dxc.exe" />
+            <None Condition=" '$(DEPLOY_DXC_TOOL)' == 'true' and '$(DxcCompilerExe)' != '' "
                   Include="$(DxcCompilerExe)"
                   CopyToOutputDirectory="PreserveNewest" />
         </ItemGroup>
-        
-        <!-- Define a path and command for the Dxc Compiler Tool: -->
-        <PropertyGroup>
-            <DxcToolPath>$(DxcBinPlatformPath)\dxc.exe</DxcToolPath>
-        </PropertyGroup>
     </Target>
+    <Choose >
+        <!-- Defining '$(CustomDxcExePath)' allows overriding the default Dxc.exe path: -->
+        <When Condition=" '$(CustomDxcExePath)' != '' ">
+            <PropertyGroup>
+                <DxcToolPath>$(CustomDxcExePath)</DxcToolPath>
+                <RUN_DXC>&quot;$(DxcToolPath)&quot;</RUN_DXC>
+            </PropertyGroup>
+        </When>
+        <Otherwise>
+            <!-- Define default path and command for the Dxc Compiler Tool: -->
+            <PropertyGroup>
+                <DxcToolPath>$(DxcBinPlatformPath)\dxc.exe</DxcToolPath>
+                <RUN_DXC>&quot;$(DxcToolPath)&quot;</RUN_DXC>
+            </PropertyGroup>
+        </Otherwise>
+    </Choose>
     
+    
+    
+    
+    
+    
+    <!-- Creates a list of all "Shader" items in project: -->
+    <Target Name="GetAllShaders" 
+            Inputs="@(Shader);@(DxcShader)"
+            Outputs="@(ProjectShaderFiles)"
+            Condition=" '$(UsingDxcCompiler)' == 'true' " >
+        <ItemGroup>
+            <!-- Gather all shader itemss: -->
+            <_ProjectShaderFiles Include="@(Shader)" Condition=" Exists('%(Identity)') ">
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.ps' ">PixelShader</ShaderType>
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.vs' ">VertexShader</ShaderType>
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.gs' ">GeometryShader</ShaderType>
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.hs' ">HullShader</ShaderType>
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.ds' ">DomainShader</ShaderType>
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.cs' ">ComputeShader</ShaderType>
+            </_ProjectShaderFiles>
+            
+            <!-- Gather all "DxcShader" itemss: -->
+            <_ProjectShaderFiles Include="@(DxcShader)" Condition=" Exists('%(Identity)') ">
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.ps' ">PixelShader</ShaderType>
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.vs' ">VertexShader</ShaderType>
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.gs' ">GeometryShader</ShaderType>
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.hs' ">HullShader</ShaderType>
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.ds' ">DomainShader</ShaderType>
+                <ShaderType Condition=" '$(ShaderType)' == '' and '%(Extension)' == '.cs' ">ComputeShader</ShaderType>
+            </_ProjectShaderFiles>
+        </ItemGroup>
+        
+        <RemoveDuplicates Inputs="_ProjectShaderFiles" 
+                          Condition=" '$(_ProjectShaderFiles)' != '' " 
+                          Output="ProjectShaderFiles" />
+    </Target>
     
     <!-- Define a task/command to compile shaders with the tool: -->
-    <Target Name="CompileShaders"
-            BeforeTargets="Build" 
-            DependsOnTargets="LocateDxcCompilerTool"
-            Condition=" '$(UsingDxcCompiler)' == 'true' " >
-        
-        <!-- Compile all shader files included for Dxc compilation in the project: 
-                (Note: this is a custom item group defined in the project file)
-                The basic syntax for including files in this group is:
-                    <DxcShader Include="path/to/shader.hlsl" />
+    <Target Name="GatherProjectShaders"
+            Outputs="@(ShaderCompilerInputs)"
+            DependsOnTargets="LocateDxcCompilerTool;GetAllShaders"
+            Condition=" '$(UsingDxcCompiler)' == 'true' and '$(Shader)' != '' " >
+        <!-- Gather all shader items defined in the project:
+                - This is a list of all shader files defined in the project.
+                - Each shader file is defined as a separate item in the project.
+                - Each shader file has metadata that defines the shader type, 
+                  shader model, entry point, output type, etc ...
+                  
+                - The shader metadata is used to construct the command-line
+                  for the Dxc compiler tool. That command-line is then executed
+                  for each shader file in the project's batch of shader items ...
           -->
         <ItemGroup>
-            <ProjectShaderFiles Include="%(DxcShader)" />
-            <ProjectVertexShaderFiles Include="%(DxcVertexShader)" />
-            <ProjectFragmentShaderFiles Include="%(DxcFragmentShader)" />
-            <ProjectGeometryShaderFiles Include="%(DxcGeometryShader)" />
-            <ProjectComputeShaderFiles Include="%(DxcComputeShader)" />
+            <_allShaderFiles Include="@(ProjectShaderFiles)" />
+            
+            <!-- Gather fragment/pixel shaders: -->
+            <ProjectPixelShaderFiles Include="%(_allShaderFiles)"
+                                     Condition=" '%(Shader.Type)' == 'PixelShader' " />
+            <ProjectPixelShaderFiles Include="%(_allShaderFiles)"
+                                      Condition=" '@(Shader->'%(Extension)')' == '.ps' " />
+            <!-- Gather vertex shaders: -->
+            <ProjectVertexShaderFiles Include="%(_allShaderFiles)"
+                                      Condition=" '%(Shader.Type)' == 'VertexShader' " />
+            <ProjectVertexShaderFiles Include="%(_allShaderFiles)"
+                                       Condition=" '%(Shader->'%(Extension)')' == '.vs' " />
+            <!-- Gather geometry shaders: -->
+            <ProjectGeometryShaderFiles Include="%(_allShaderFiles)"
+                                        Condition=" '%(Shader.Type)' == 'GeometryShader' " />
+            <ProjectGeometryShaderFiles Include="%(_allShaderFiles)"
+                                         Condition=" '%(Shader->'%(Extension)')' == '.gs' or '%(Shader->'%(Extension)')' == '.geo' " />
+            <!-- Gather hull shaders: -->
+            <ProjectHullShaderFiles Include="%(_allShaderFiles)"
+                                    Condition=" '%(Shader.Type)' == 'HullShader' " />
+            <ProjectHullShaderFiles Include="%(_allShaderFiles)"
+                                     Condition=" '%(Shader->'%(Extension)')' == '.hs' or '%(Shader->'%(Extension)')' == '.hull' " />
+            <!-- Gather domain shaders: -->
+            <ProjectDomainShaderFiles Include="%(_allShaderFiles)"
+                                      Condition=" '%(Shader.Type)' == 'DomainShader' " />
+            <ProjectDomainShaderFiles Include="%(_allShaderFiles)"
+                                       Condition=" '%(Shader->'%(Extension)')' == '.ds' or '%(Shader->'%(Extension)')' == '.domain' " />
+            <!-- Gather compute shaders: -->
+            <ProjectComputeShaderFiles Include="%(_allShaderFiles)"
+                                       Condition=" '%(Shader.Type)' == 'ComputeShader' " />
+            <ProjectComputeShaderFiles Include="%(_allShaderFiles)"
+                                        Condition=" '%(Shader->'%(Extension)')' == '.compute' or '%(Shader->'%(Extension)')' == '.comp' " />
         </ItemGroup>
-        <CallTarget Targets="InvokeDxcTool" Condition=" '$(ProjectShaderFiles)' != '' " 
-                    ContinueOnError="$(DXCHaltOnShaderErrors)" />
+        
+        <ItemGroup Condition=" '$(ProjectShaderFiles)' != '' " >
+            <_ShaderCompilerInputs Include="@(ProjectPixelShaderFiles)" />
+            <_ShaderCompilerInputs Include="@(ProjectVertexShaderFiles)" />
+            <_ShaderCompilerInputs Include="@(ProjectGeometryShaderFiles)" />
+            <_ShaderCompilerInputs Include="@(ProjectHullShaderFiles)" />
+            <_ShaderCompilerInputs Include="@(ProjectDomainShaderFiles)" />
+            <_ShaderCompilerInputs Include="@(ProjectComputeShaderFiles)" />
+        </ItemGroup>
+        
+        <RemoveDuplicates Inputs="_ShaderCompilerInputs" 
+                          Condition=" '%(Identity)' != '' " 
+                          Output="@(ShaderCompilerInputs)" />
     </Target>
     
-    <Target Name="InvokeDxcTool" 
-            Inputs="@(ProjectShaderFiles)"
+    <Target Name="BuildProjectShaders" 
+            Inputs="@(ShaderCompilerInputs)"
+            Outputs="@(ShaderCompilerOutputs)"
+            DependsOnTargets="GatherProjectShaders"
             Condition=" '$(UsingDxcCompiler)' == 'true' and '$(ProjectShaderFiles)' != '' " >
-        <RemoveDuplicates Condition=" '$(ProjectShaderFiles)' != '' " 
-                          Inputs="@(ProjectShaderFiles)" 
-                          Output="@(FilteredProjectShaderFiles)" />
         
-        <!-- Compile each shader file: -->
-        <Message Text="Compiling shader: @(FilteredProjectShaderFiles->'%(Identity)', ', ')" />
+        <!-- Make sure compiler inputs are sanitized (no duplicate or missing files): -->
+        <CallTarget Targets="SanitizeDxcCompilerInput" />
+        <ItemGroup>
+            <FilteredProjectShaderFiles Include="@(SanitizedShaderCompilerInputs)" />
+        </ItemGroup>
+        <!-- Log compilation startup message for each shader file: -->
+        <Message Text="Dxc Shader Compiler :: Input files collected:
+             @(FilteredProjectShaderFiles->'%(Identity)', ', ')" 
+                 Condition=" '$(FilteredProjectShaderFiles)' != '' " />
         
-        <!-- Loop over all shaders and compile each one with Dxc -->
-        <Exec Command="$(DxcToolPath) /E%(FilteredProjectShaderFiles.EntryPoint) /T%(FilteredProjectShaderFiles.ShaderModel) /Fo%(FilteredProjectShaderFiles.Identity).cso %(FilteredProjectShaderFiles.Identity)" />
+        
+        <!-- Loop over all shaders and call 'CompileHlslFile' on each: -->
+        <ItemGroup>
+            <_ShaderFile Include="@(FilteredProjectShaderFiles)" />
+        </ItemGroup>
+        <Message Text="Dxc Shader Compiler :: Compiling shader files:
+             @(_ShaderFile->'%(Identity)', ', ')" 
+                 Condition=" '$(_ShaderFile)' != '' " />
+        
+        <MSBuild Projects="$(MSBuildThisFileFullPath)"
+                 Targets="CompileHlslFile"
+                 Properties="ShaderCompilerInputs=@(_ShaderFile);ShaderCompilerOutputs=@(_ShaderCompilerOutput)" 
+                 Condition=" '$(_ShaderFile)' != '' " />
     </Target>
     
+    <Target Name="SanitizeDxcCompilerInput" 
+            Inputs="@(ShaderCompilerInputs)"
+            Outputs="@(SanitizedShaderCompilerInputs)"
+            DependsOnTargets="GatherProjectShaders"
+            Condition=" '$(UsingDxcCompiler)' == 'true' and '$(ProjectShaderFiles)' != '' " >
+        <RemoveDuplicates Condition=" '$(ProjectShaderFiles)' != '' "
+                          Inputs="ShaderCompilerInputs"
+                          Output="_FilteredCompilerInputs" />
+        <ItemGroup>
+            <_sanitizedFiles Include="@(_FilteredCompilerInputs)" 
+                                         Condition=" Exists('%(Identity)') " />
+            <_RemovedShaderFiles Include="@(_FilteredCompilerInputs)"
+                                 Condition=" !Exists('%(Identity)') " />
+        </ItemGroup>
+        <Message Text="(!) Dxc Compiler Tool :: Removed missing shader files: @(_RemovedShaderFiles->'%(Identity)', ', ')" 
+                 Condition=" '$(_RemovedShaderFiles)' != '' " />
+
+        <ItemGroup>
+            <SanitizedShaderCompilerInputs Include="@(_sanitizedFiles)"
+                                           Condition=" @(ValidShaderTypes->Contains('%(ShaderType)')) == 'true' " />
+            <InvalidShaderCompilerInputs Include="@(_sanitizedFiles)"
+                                         Condition=" @(ValidShaderTypes->Contains('%(ShaderType)')) != 'true' " />
+        </ItemGroup>
+        
+        <Message Text="(!) Dxc Compiler Tool :: Removed invalid shader types: 
+                    @(InvalidShaderCompilerInputs->'%(Identity)', ' '%(Type)', ')" 
+                 Condition=" '$(InvalidShaderCompilerInputs)' != '' " />
+    </Target>
+    
+    <Target Name="CompileHlslFile" 
+            Label="CompileHlslFile" 
+            DependsOnTargets="BuildProjectShaders"
+            Inputs="$(_ShaderFile)" Outputs="$(_ShaderCompilerOutput)" 
+            Condition=" '$(UsingDxcCompiler)' == 'true' and '$(ProjectShaderFiles)' != '' " >
+        <!-- Compile a single HLSL file with the Dxc compiler tool: -->
+        <Exec Command="$(RUN_DXC) /E%(_ShaderFile.EntryPoint) /T%(_ShaderFile.ShaderModel) /Fo&quot;%(_ShaderFile.OutputFilename)&quot; &quot;%(_ShaderFile.Identity)&quot;"
+              LogStandardErrorAsError="$(ContinueOnShaderErrors)" ContinueOnError="$(ContinueOnShaderErrors)" 
+              ConsoleToMSBuild="true" Timeout="90" WorkingDirectory="$(ShaderIncDir)" 
+              YieldDuringToolExecution="true" 
+              Condition=" '%(_ShaderFile.Identity)' != '' " >
+            <Output TaskParameter="ExitCode"
+                    PropertyName="_ShaderCompilerExitCode" />
+            <Output TaskParameter="stdout"
+                    PropertyName="_ShaderCompilerStdOutput" />
+        </Exec>
+        <Message Text="Dxc Shader Compiler :: Finished with ExitCode: $(_ShaderCompilerExitCode)" />
+        <Message Text="Dxc Shader Compiler :: StdOutput data: $(_ShaderCompilerStdOutput)" />
+        <ItemGroup>
+            <_ShaderCompilerOutput Include="$(_ShaderCompilerOutput)" />
+        </ItemGroup>
+    </Target>
     
 </Project>

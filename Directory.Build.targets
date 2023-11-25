@@ -83,8 +83,8 @@
 
     
     <!-- Log build completion info: -->
-    <Target Name="LogBuildCompletionMessage" AfterTargets="Build"
-            DependsOnTargets="DefineSuccessOrFailure" >
+    <Target Name="LogBuildCompletionMessage" 
+            AfterTargets="Build" DependsOnTargets="DefineSuccessOrFailure" >
         <PropertyGroup>
             <CompletionMsgText>DXSharp SDK library build process completed for: '$(MSBuildProjectName)'.</CompletionMsgText>
             <ResultText>Result: $(BuildResult)</ResultText>
@@ -96,7 +96,7 @@
         <Message Importance="high" Text="$(ResultText)" />
         <Message Importance="high" Text="--------------------------------------" />
         
-        <OnError ExecuteTargets="FailedBuildMessage"/>
+        <OnError ExecuteTargets="FailedBuildMessage" />
     </Target>
     
     

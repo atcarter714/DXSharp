@@ -4,9 +4,9 @@
 		<UsingAgility>true</UsingAgility>
 		<UsingAgilitySDK>true</UsingAgilitySDK>
 		
-		<TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
 		<Title>DXSharp</Title>
 		<Version>$(VersionPrefix)</Version>
+		<TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
 		<ApplicationIcon>DXSharp_ICON_512.ico</ApplicationIcon>
 		<Description>A modern .NET Core wrapper for DirectX 12 Agility SDK, DXGI, DXCore and Dxc (DirectX Shader Compiler).</Description>
 		
@@ -34,10 +34,12 @@
 	<!-- Package References :: -->
 	<ItemGroup Label="ProjectPackageRefs">
 		<!-- Win32Metadata Package -->
-		<PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" Version="$(WinMDVersion)" />
+		<PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" 
+						  Version="$(WinMDVersion)" />
 
 		<!-- CsWin32 Generator -->
-		<PackageReference Include="Microsoft.Windows.CsWin32" Version="$(CsWin32Version)">
+		<PackageReference Include="Microsoft.Windows.CsWin32" 
+						  Version="$(CsWin32Version)">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 
@@ -47,7 +49,6 @@
 			<GeneratePathProperty>true</GeneratePathProperty>
 			<IncludeAssets>runtime; build; native; contentfiles;</IncludeAssets>
 		</PackageReference>
-		
 	</ItemGroup>
 	
 	<PropertyGroup Label="ProjectPackageProps" Condition=" '$(UsingAgility)'=='true' ">
@@ -76,69 +77,6 @@
 			<HintPath>.\%(Filename)%(Extension)</HintPath>
 		</NativeReference>
 	</ItemGroup>
-	
-	<!--<NativeReference Include="%(LocalAgilityDLLs->'$(OutputPath)%(RecursiveDir)%(Filename)%(Extension)')" >
-			<IsWin32Manifest>false</IsWin32Manifest>
-		</NativeReference>
-	</ItemGroup>
-	<ItemGroup Condition=" '$(UsingAgility)'=='true' ">
-		<DeployedNativeLibs Include="$(BuildOutFolder)D3D12Core.dll">
-			<Link>.\x64\deployed\D3D12Core.dll</Link>
-			<Visible>true</Visible>
-		</DeployedNativeLibs>
-		<DeployedNativeLibs Include="$(BuildOutDir)d3d12SDKLayers.dll" >
-			<Link>d3d12SDKLayers.dll</Link>
-			<Visible>true</Visible>
-		</DeployedNativeLibs>
-	</ItemGroup>-->
-	
-	<!--<Target Name="ResolveNativeDependencies" 
-			BeforeTargets="Build" >
-		<Copy SourceFiles="@(AgilityDLLs)" 
-			  DestinationFolder="$(OutputPath)" 
-			  Condition=" '$(AgilityDLLs)'!='' "
-			  SkipUnchangedFiles="true" >
-			<Output TaskParameter="CopiedFiles" 
-					ItemName="NativeLibs" />
-		</Copy>
-		<Message Text="Copying native dependencies to output folder: @(NativeReference)" 
-				 Importance="high" Condition=" '$(AgilityDLLs)'!='' " />
-		<PropertyGroup Condition=" '$(AgilityDLLs)'!='' ">
-			<BuildOutFolder>$(OutputPath)$(TargetFramework)</BuildOutFolder>
-		</PropertyGroup>
-	</Target>-->
-<!--
-	<Target Name="LinkToAgility"
-			BeforeTargets="Build">
-
-		
-		&lt;!&ndash;<ResolveNativeReferences AdditionalSearchPaths=".\" Architecture="*"
-								Condition=" '$(AgilityDLLs)'!='' "
-								NativeReferences="@(DeployedNativeLibs)" />&ndash;&gt;
-		<Message Text="Linking to Agility native dependencies: @(DeployedNativeLibs)" 
-				 Importance="high" Condition=" '$(DeployedNativeLibs)'!='' " />
-	</Target>-->
-	
-	<!--<Import Project="$(DXSBuildDir)msbuild\Agility.Ref.targets" />-->
-	<!-- If we're building with Agility, we have to grab our native dependencies: -->
-	<!--<ItemGroup Condition="$(UsingAgilitySDK)" >
-		&lt;!&ndash; Resolve the path to the correct native DLLs for the current platform: &ndash;&gt;
-		<AgilityDLLs Include="$(AgilityBinPlatformPath)\*.dll" />
-		
-		<LocalAgilityDLLCopies Include="@(AgilityDLLs)" Label="CopyTheAgilityDlls" >
-			<Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</LocalAgilityDLLCopies>
-		
-		<LocalAgilityDLLs Include="@(AgilityDLLs->'$(OutputPath)%(RecursiveDir)%(FileName)%(Extension)')" />
-		<NativeReference Include="$(LocalAgilityDLLs)"  
-						 Label="MakeNativeAgilityRefs" >
-			<IsWin32Manifest>false</IsWin32Manifest>
-			<Name>%(Filename)%(Extension)</Name>
-			<HintPath>.\%(Filename)%(Extension)</HintPath>
-		</NativeReference>
-	</ItemGroup>
-	<Import Project="$(DXSBuildDir)msbuild\AgilityNative.Build.targets" />-->
 	
 	
 	<!-- Resource Design/Generation Options :: -->
@@ -190,3 +128,70 @@
 		</AssemblyAttribute>
 	</ItemGroup>
 </Project>
+
+
+
+		<!--<NativeReference Include="%(LocalAgilityDLLs->'$(OutputPath)%(RecursiveDir)%(Filename)%(Extension)')" >
+                <IsWin32Manifest>false</IsWin32Manifest>
+            </NativeReference>
+        </ItemGroup>
+        <ItemGroup Condition=" '$(UsingAgility)'=='true' ">
+            <DeployedNativeLibs Include="$(BuildOutFolder)D3D12Core.dll">
+                <Link>.\x64\deployed\D3D12Core.dll</Link>
+                <Visible>true</Visible>
+            </DeployedNativeLibs>
+            <DeployedNativeLibs Include="$(BuildOutDir)d3d12SDKLayers.dll" >
+                <Link>d3d12SDKLayers.dll</Link>
+                <Visible>true</Visible>
+            </DeployedNativeLibs>
+        </ItemGroup>-->
+
+		<!--<Target Name="ResolveNativeDependencies" 
+                BeforeTargets="Build" >
+            <Copy SourceFiles="@(AgilityDLLs)" 
+                  DestinationFolder="$(OutputPath)" 
+                  Condition=" '$(AgilityDLLs)'!='' "
+                  SkipUnchangedFiles="true" >
+                <Output TaskParameter="CopiedFiles" 
+                        ItemName="NativeLibs" />
+            </Copy>
+            <Message Text="Copying native dependencies to output folder: @(NativeReference)" 
+                     Importance="high" Condition=" '$(AgilityDLLs)'!='' " />
+            <PropertyGroup Condition=" '$(AgilityDLLs)'!='' ">
+                <BuildOutFolder>$(OutputPath)$(TargetFramework)</BuildOutFolder>
+            </PropertyGroup>
+        </Target>-->
+		<!--
+            <Target Name="LinkToAgility"
+                    BeforeTargets="Build">
+        
+                
+                &lt;!&ndash;<ResolveNativeReferences AdditionalSearchPaths=".\" Architecture="*"
+                                        Condition=" '$(AgilityDLLs)'!='' "
+                                        NativeReferences="@(DeployedNativeLibs)" />&ndash;&gt;
+                <Message Text="Linking to Agility native dependencies: @(DeployedNativeLibs)" 
+                         Importance="high" Condition=" '$(DeployedNativeLibs)'!='' " />
+            </Target>-->
+
+		<!--<Import Project="$(DXSBuildDir)msbuild\Agility.Ref.targets" />-->
+		<!-- If we're building with Agility, we have to grab our native dependencies: -->
+		<!--<ItemGroup Condition="$(UsingAgilitySDK)" >
+            &lt;!&ndash; Resolve the path to the correct native DLLs for the current platform: &ndash;&gt;
+            <AgilityDLLs Include="$(AgilityBinPlatformPath)\*.dll" />
+            
+            <LocalAgilityDLLCopies Include="@(AgilityDLLs)" Label="CopyTheAgilityDlls" >
+                <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            </LocalAgilityDLLCopies>
+            
+            <LocalAgilityDLLs Include="@(AgilityDLLs->'$(OutputPath)%(RecursiveDir)%(FileName)%(Extension)')" />
+            <NativeReference Include="$(LocalAgilityDLLs)"  
+                             Label="MakeNativeAgilityRefs" >
+                <IsWin32Manifest>false</IsWin32Manifest>
+                <Name>%(Filename)%(Extension)</Name>
+                <HintPath>.\%(Filename)%(Extension)</HintPath>
+            </NativeReference>
+        </ItemGroup>
+        <Import Project="$(DXSBuildDir)msbuild\AgilityNative.Build.targets" />-->
+	
+	

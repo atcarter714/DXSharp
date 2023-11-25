@@ -17,14 +17,6 @@
     </PropertyGroup>
     
     
-    <!-- Debug/Release Configuration Properties :: -->
-    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' " Label="DebugConfigurationProperties">
-      <DefineConstants>TRACE, DEBUG_COM, DEV_BUILD</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)' == 'Release' " Label="ReleaseConfigurationProperties">
-      <DefineConstants>TRACE, STRIP_CHECKS, DXS_FAST</DefineConstants>
-    </PropertyGroup>
-    
     
     <!-- References :: -->
     <ItemGroup Label="ProjectRefs">
@@ -34,9 +26,11 @@
     </ItemGroup>
 
 
-    <!-- Content & Assets :: -->
-    <Import Project="$(DXSBuildDir)msbuild\DxcTool.Build.targets" 
-            Condition="$(UsingDxcCompiler)" />
+    <ImportGroup>
+        <!-- Import "DxcTool.Build.targets" when using Dxc compilation ... -->
+        <Import Project="$(DXSBuildDir)msbuild\DxcTool.Build.targets"
+                Condition=" '$(UsingDxcCompiler)'=='true' and '$(DXCNativeImported)' != 'true' " />
+    </ImportGroup>
     
     <ItemGroup Label="ProjectContentProperties" 
                Condition=" '$(DXC_COMPILE)'!='false' ">
@@ -77,6 +71,7 @@
     <!-- Advanced Project Properties :: -->
     <PropertyGroup Label="AdvancedProjectProperties">
         <ApplicationManifest>./app.manifest</ApplicationManifest>
+        <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
         <!-- NOTE: Currently, trimming and NativeAOT is not supported! -->
         <!--<PublishTrimmed>true</PublishTrimmed>-->
     </PropertyGroup>
