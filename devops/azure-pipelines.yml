@@ -1,0 +1,55 @@
+# ===   DXSharp .NET Desktop Pipeline   ======================================
+# Performs a routine, full-solution build of the DXSharp solution projects.
+# Starting with the main DXSharp.csproj, followed by the dependent SDK class
+# libraries, and finally the test projects, samples and tools which can be
+# built in parallel. The build is followed by a test run of all the unit 
+# tests in the ".\Tests" folder ... and finally, a code coverage report is
+# generated and published to the build artifacts.
+# ---------------------------------------------------------------------------
+
+trigger:
+- main
+
+pool: 
+   name: default
+
+variables:
+  solution:           '*.sln'
+  buildPlatform:      'Any CPU'
+  buildConfiguration: 'Release'
+
+
+steps:
+- task: NuGetToolInstaller@1
+  condition: not(exists('$(NuGetExePath)'))
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+
+
+# ---------------------------------------------------------------------------
+# BUILD SOLUTION ::
+# ---------------------------------------------------------------------------
+
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+
+
+# ---------------------------------------------------------------------------
+# RUN TESTS ::
+# ---------------------------------------------------------------------------
+# Make the VSTest step smarter:
+# Look for any .dll inside the \tests directory with "Test" in the name ...
+
+- task: VSTest@2
+  inputs:
+    testAssemblyVer2: |
+      [Bb]in\[Tt]ests\**\*[Tt]est*.dll
+      !**\*TestAdapter.dll
+      !**\obj\**
+    searchFolder: '$(System.DefaultWorkingDirectory)\bin\Tests'
+    codeCoverageEnabled: true
+

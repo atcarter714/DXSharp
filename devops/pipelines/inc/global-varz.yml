@@ -1,0 +1,103 @@
+
+variables:
+    poolNames:              |
+                            default
+                            windows-latest
+                            Arkaen-Games-Pool-0
+                            Custom
+
+    defaultPoolName:        'windows-latest'
+  
+    RepoRootPath:           '$(System.DefaultWorkingDirectory)'
+
+    solutionName:           'DXSharp.sln'
+
+    scriptsPath:            '$(System.DefaultWorkingDirectory)/devops/pipelines/scripts'
+    
+    buildsPath:             '$(System.DefaultWorkingDirectory)/builds'
+    
+    outputPath:             '$(System.DefaultWorkingDirectory)/bin'
+    
+    intermediatePath:       '$(System.DefaultWorkingDirectory)/obj'
+    
+    devOpsFolderPath:       '$(System.DefaultWorkingDirectory)/devops'
+    
+    azurePipelinesPath:     '$(System.DefaultWorkingDirectory)/devops/pipelines'
+    
+    azurePipelinesIncPath:  '$(System.DefaultWorkingDirectory)/devops/pipelines/inc'
+    
+    azurePipelinesScriptsPath:     '$(System.DefaultWorkingDirectory)/devops/pipelines/scripts'
+    
+
+    buildConfigs:           |
+                              Debug
+                              Release
+
+    toolsBuildConfigs:     |
+                              Debug
+                              Release
+                              Pack
+                              InlineTasks
+
+    buildPlatforms:         |
+                              Any CPU
+                              x86
+                              x64
+                              arm
+                              arm64
+
+    winSDKVersion:          '10.0.22621.0'
+
+    dotNetTargets:          |
+                              net8.0-windows
+                              net7.0-windows
+
+    dotNetTargetsWin:       |
+                              net8.0-windows10.0.22621.0
+                              net7.0-windows10.0.22621.0
+
+    dotNetCommands:         |
+                              Build
+                              Clean
+                              Pack
+                              Publish
+                              Restore
+                              Run
+                              Test
+                              Tool
+                              VSTest
+                              MSBuild
+
+    sdkProjNames:          |
+                            DXSharp
+                            DXSharp.Dxc
+                            DXSharp.Framework
+
+    testProjNames:         |
+                            BasicTests
+
+    sampleProjNames:       |
+                            BasicSample
+                            AdvancedSample
+                            HelloTexture
+
+    nativePlatforms:       |
+                              x86
+                              x64
+                              arm
+                              arm64
+
+    nativePackageFolders:  |
+                              win32
+                              x64
+                              arm
+                              arm64
+
+    nativePackageNames:    |
+                              Microsoft.DirectX.Direct3D12
+                              Microsoft.DirectX.DXC
+
+    AgilityVersion:       '*'
+
+    DxcVersion:           '1.8.2306.6-preview'
+
