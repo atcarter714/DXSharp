@@ -1,0 +1,3 @@
+﻿[PipelineConfig]
+WinSDKVersion = 10.0.22621.0
+DotNetVersions = net8.0;net7.0

@@ -1,0 +1,134 @@
+
+# DXSharp Core Pipeline - .NET Desktop 
+# -------------------------------------------
+
+trigger:
+  branches:
+    include:
+      - main
+      - az-atc-0x02
+      - AtC-Overhaul-0x0225
+
+variables:
+  solution:            'DXSharp.sln'
+  version.Major:       '0'
+  version.Minor:       '1'
+  version.MajorMinor:  '$(version.Major).$(version.Minor)' # Edit for semantic versioning
+  version.Patch:       $[counter(variables['version.MajorMinor'], 0)]
+  versionNumber:       '$(version.MajorMinor).$(version.Patch)'
+  framework:           'net7.0-windows10.0.22621.0'
+
+
+stages:
+  # -------------------------------------------------------------
+  # Core Build Stage ::
+  # -------------------------------------------------------------
+  - stage:          CoreBuild
+    displayName:    'DX# Core Build Stage'
+    jobs:
+      - job:          CoreBuildJob
+        displayName:  'DX# Core Build Job'
+        pool:
+          vmImage:    '$(poolImage)'
+        
+        strategy:
+          matrix:
+            # (!) Temporarily commenting out additional jobs for pipeline dev
+            #  any_debug:
+            #    cpu: 'Any CPU'
+            #    conf: 'Debug'
+            #  x86_debug:
+            #    cpu: 'x86'
+            #    conf: 'Debug'
+            x64_debug:
+              cpu:  'x64'
+              conf: 'Debug'
+            # any_release:
+            #   cpu: 'Any CPU'
+            #   conf: 'Release'
+            # x86_release:
+            #   cpu: 'x86'
+            #   conf: 'Release'
+            x64_release:
+              cpu:  'x64'
+              conf: 'Release'
+          
+          maxParallel: 4
+        
+        steps:
+          - pwsh:   |
+              Write-Host "Building for $(cpu)"
+              Write-Host "Installing NuGet & restoring $(solution) ..."
+          - task: UseDotNet@2
+            inputs:
+              version: '7.x'
+              packageType: sdk
+
+          - task: NuGetToolInstaller@1
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution:  '$(solution)'
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command:        'build'
+              projects:       '$(solution)'
+              majorVersion:   '$(version.Major)'
+              minorVersion:   '$(version.Minor)'
+              arguments:      '--configuration $(conf) --framework $(framework)'
+
+          - pwsh:   |
+              Write-Host "Builds completed at $(Get-Date) for $(solution) ..."
+              Write-Host "Publishing '$(Pipeline.Workspace)/bin' to pipeline artifacts ..."
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish DX# SDK Artifacts'
+            inputs:
+              targetPath:       '$(System.DefaultWorkingDirectory)\bin'
+              artifact:         'buildBin'
+              publishLocation:  'pipeline'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish DX# Samples Artifacts'
+            inputs:
+              targetPath:       '$(System.DefaultWorkingDirectory)\samples\bin'
+              artifact:         'samplesBin'
+              publishLocation:  'pipeline'
+  
+  # -------------------------------------------------------------
+  # Core Test Stage ::
+  # -------------------------------------------------------------
+  - stage:        CoreTest
+    dependsOn:    CoreBuild
+    displayName:  'DX# Core Testing Stage'
+    jobs:
+
+      - job:          CoreTestJob
+        condition:    succeeded()
+        workspace:
+          clean: true
+        displayName:  'DX# Core Test Job'
+        pool:
+          vmImage:    '$(poolImage)'
+        
+        steps:
+          - pwsh: |
+              Write-Host "Beginning core unit testing stage for $(solution) ..."
+
+          - task: UseDotNet@2
+            inputs:
+              version:      '7.x'
+              packageType:  sdk
+
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              buildType:    'current'
+              itemPattern:  '*buildBin*'
+              targetPath:   '$(System.DefaultWorkingDirectory)'
+
+          - task: DotNetCoreCLI@2
+            inputs:
+              command:              'test'
+              publishTestResults:   true
+              testRunTitle:         'DXSharp Testing (Core)'
+              projects:             '$(solution)'

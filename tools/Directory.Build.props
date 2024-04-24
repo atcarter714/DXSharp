@@ -3,11 +3,30 @@
         <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props"
                 Condition=" '$(DXSSharedPropsImported)' != 'true' " />
     </ImportGroup>
+    <PropertyGroup>
+        <UseRoslynCodeFactory Condition=" '$(UseRoslynCodeFactory)' == '' ">true</UseRoslynCodeFactory>
+    </PropertyGroup>
+    <Choose>
+        <When Condition=" '$(UseRoslynCodeFactory)' == 'true' " >
+            <!-- Declare the code factory as the RoslynCodeFactory type: -->
+            <PropertyGroup>
+                <InlineTaskCodeFactory>RoslynCodeFactory</InlineTaskCodeFactory>
+            </PropertyGroup>
+        </When>
+        <Otherwise>
+            <!-- Declare the code factory as the old CodeTaskFactory type: -->
+            <PropertyGroup>
+                <InlineTaskCodeFactory>CodeTaskFactory</InlineTaskCodeFactory>
+            </PropertyGroup>
+        </Otherwise>
+    </Choose>
     
     <ItemDefinitionGroup>
         <InlineTaskDefinition>
-            <Path>$(MSBuildProjectDirectory)</Path>
-            <TaskName>$(MSBuildProjectName)_Task</TaskName>
+            <TaskFiles>%(RootPath)\%(Name).cs;%(RootPath)\%(Name).targets"</TaskFiles>
+            <RootPath>%(RootPath)</RootPath>
+            <TaskName>%(Name)</TaskName>
+            
             <TaskFactory>RoslynCodeTaskFactory</TaskFactory>
             <ErrorCheck>$(InlineTaskErrorChecks)</ErrorCheck>
             
@@ -19,7 +38,7 @@
     </ItemDefinitionGroup>
 
     
-    <PropertyGroup Label="DXSToolsGlobalProps">
+    <PropertyGroup Label="DXSToolsGlobalProps" >
         <DXSToolsPropsImported>true</DXSToolsPropsImported>
         
         <WindowsOnly>false</WindowsOnly>
@@ -53,7 +72,6 @@
         <Configurations>Debug;Release;InlineTasks;Package</Configurations>
         <BuildingForNuGet Condition=" '$(BuildingForNuGet)' == '' ">false</BuildingForNuGet>
         <BuildingInlineTasks Condition=" '$(BuildingInlineTasks)' == '' ">true</BuildingInlineTasks>
-        
         <InlineTaskErrorChecks Condition=" '$(InlineTaskErrorChecks)' == '' " >true</InlineTaskErrorChecks>
     </PropertyGroup>
     <Choose>
@@ -107,9 +125,10 @@
     <ImportGroup Label="SharedPropsAndTargetsImportGroup">
         <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props"
                 Condition=" '$(DXSSharedPropsImported)' != 'true' " />
+        
+        <Import Project="$(DXSToolsPath)\Directory.Build.targets"
+                Condition=" '$(DXSToolsTargetsImported)' != 'true' " />
     </ImportGroup>
-    
-    
     
     <PropertyGroup Label="AssemblyInfoProps" >
         <Company>Arkaen Solutions</Company>
@@ -130,15 +149,90 @@
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <GeneratePackageOnBuild Condition=" '$(BuildingForNuGet)' == 'true' ">true</GeneratePackageOnBuild>
         
-        <!--<Nullable>enable</Nullable>-->
-        <LangVersion>latest</LangVersion>
-        <AnalysisLevel>latest</AnalysisLevel>
+        
+        <LangVersion>10</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <FileVersion>$(DXSToolsVersion)</FileVersion>
         <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     </PropertyGroup>
-
-
-    <Import Project="$(DXSToolsPath)\Directory.Build.targets" />
-
+    
 </Project>
+
+
+
+<!-- NOTES ::
+    _________________________________________________________________________________________________________________
+    -   This project file is designed to be a set of reusable properties, data, targets, tasks, etc for building
+        DXSharp custom tools projects ...
+        
+    -   It helps define a custom internal build process for MSBuild "inline tasks", which can be deployed to a
+        target folder within the DXSharp ".\tools\tasks" directory, which other DXSharp projects can then consume
+        as MSBuild tasks. This is useful for building custom tools that are not available in the default MSBuild,
+        such as the DXC compiler tool/tasks for MSBuild-based DXSharp projects with HLSL shaders/assets ...
+        
+    -   About "Inline Tasks" for MSBuild:
+        -   Inline tasks are a way to write custom MSBuild tasks in C# code, and then use them in MSBuild projects.
+            They are not really compiled into an assembly, and are not deployed as a DLL, but rather are error-checked
+            and validated before being deployed as a pairing of a ".cs" file and a ".targets" file, which are then 
+            pointed to by an MSBuild "UsingTask" declaration. Rather than the normal route of declaring a custom task
+            factory, building/deploying a DLL, and then referencing it in a project, users simply import a ".targets"
+            file which holds the <UsingTask ...> declaration, and then the task is available for use in the project. 
+            Rather than using the normal "CodeTaskFactory" type, we use the newer "RoslynCodeTaskFactory" type, which 
+            accepts a file or fragment of C# code, and then compiles it into an in-memory assembly on the fly, which 
+            is then used to execute the task. This is a very modular, streamlined and efficient/flexible way to build 
+            tasks and tools, and the custom deployment strategy allows for a very clean and simple way to deploy them 
+            to other projects and code/scripts which need them ...
+            
+            Documentation: https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-inline-tasks?view=vs-2022
+            Walkthrough: https://learn.microsoft.com/en-us/visualstudio/msbuild/walkthrough-creating-an-inline-task
+    _________________________________________________________________________________________________________________
+    -   About "Directory.Build.props" and "Directory.Build.targets":
+        - `Directory.Build.props` in the "<root>\tools" directory defines common/shared properties for MSBuild
+           projects/scripts used for building custom DXSharp tooling and tasks. It is imported by all of the 
+           "tools projects" (the special projects which build our custom tools). It is essentially part of the
+           "tools for making tools" toolbox, and is mostly used for such internal tooling projects (although it
+           could be used/adapted in ways outside of that scope if needed/desired) ...
+           
+        - `Directory.Build.targets` in the "<root>\tools" directory defines common/shared targets for MSBuild
+           projects/scripts used for building custom DXSharp tooling and tasks. It is imported by all of the 
+           "tools projects" (the special projects which build our custom tools). It is also a big part of our
+           "tools for making tools" toolbox, and is mostly used for such internal tooling projects ...
+    _________________________________________________________________________________________________________________
+            # Important Properties:
+            .............................................
+                **UseRoslynCodeFactory**
+                   (Type: boolean, Default: 'true')
+                    -   This property is used to determine whether to use the newer RoslynCodeFactory type for
+                        inline tasks, or the older CodeTaskFactory type. The RoslynCodeFactory type is newer and
+                        more flexible, but requires the Roslyn SDK to be installed on the machine. If it is not
+                        installed, then the older CodeTaskFactory type is used instead ...
+                        
+                **InlineTaskCodeFactory**
+                     (Type: string, Default: 'RoslynCodeFactory')
+                      -   This property is used to explicitly declare the type of code factory to use for inline
+                          tasks. It is set to the value of the "UseRoslynCodeFactory" property by default, but
+                          can be overridden if needed/desired ...
+                          
+                **BuildingInlineTasks**
+                        (Type: boolean, Default: 'true')
+                        -   This property is used to determine whether to build the inline tasks for this project.
+                            It is set to 'true' by default, but can be overridden if needed/desired ...
+                            
+                **InlineTaskErrorChecks**
+                        (Type: boolean, Default: 'true')
+                        -   This property is used to determine whether to perform error checks on the inline tasks
+                            before building them. Default is 'true', but can be overridden ...
+                            
+                **BuildingForNuGet**
+                        (Type: boolean, Default: 'false')
+                        -   This property is used to determine whether to build the project for NuGet packaging.
+                            It is set to 'false' by default, but can be overridden if needed/desired ...
+                            
+                **BuildingClassLib**
+                        (Type: boolean, Default: 'false')
+                        -   This property is used to determine whether to build the project as a class 
+                            library (DLL) assembly. It is set to 'false' by default, but can be overridden.
+                            A tools project can be built into a DLL library either in whole or in part, depending 
+                            upon other build settings/properties ...
+    _________________________________________________________________________________________________________________
+    -->

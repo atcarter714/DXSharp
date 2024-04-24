@@ -1,5 +1,9 @@
 
 variables:
+    defaultBuildConfig:     'Debug'
+    defaultBuildPlatform:   'Any CPU'
+    defaultTestPlatform:    'Any CPU'
+    
     poolNames:              |
                             default
                             windows-latest
@@ -27,6 +31,7 @@ variables:
     azurePipelinesIncPath:  '$(System.DefaultWorkingDirectory)/devops/pipelines/inc'
     
     azurePipelinesScriptsPath:     '$(System.DefaultWorkingDirectory)/devops/pipelines/scripts'
+    
     
 
     buildConfigs:           |

@@ -5,6 +5,7 @@
         <DXSSharedTargetsImported>true</DXSSharedTargetsImported>
     </PropertyGroup>
 
+    
     <!-- Initialization target before builds: -->
     <Target Name="PrebuildPropGeneration" BeforeTargets="PreBuildEvent" >
         <PropertyGroup Label="CommonBuildStartupProps" >
@@ -32,7 +33,7 @@
 
 
     <!-- Write startup message showing target frameworks: -->
-    <Target Name="StartupMessageTargets" BeforeTargets="Build">
+    <Target Name="StartupMessageTargets" BeforeTargets="Build" >
         <Message Importance="high"
                  Text="DX# Shared Targets :: Build process initialized with ID: $(BuildIDHash)" />
         

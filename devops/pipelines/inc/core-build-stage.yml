@@ -1,0 +1,55 @@
+﻿# ==============================================================================
+# DXSharp Core Pipelines -- .NET Desktop
+# This template defines a build stage for DXSharp "core" projects.
+# ................................................................................
+
+# The "buildPlatform" and "buildConfig" parameter may be a comma-separated list of values.
+# We'll split them into an array and iterate over each value in the list.
+# And spawn a new job for each one so they can be built in parallel.
+
+parameters:
+# Name of the build configuration to use for this job:
+  - name:     buildConfig
+    type:     string
+    default:  'Debug'
+    values:
+       - 'Debug'
+       - 'Release'
+       - 'Custom'
+       - 'Tools-Debug'
+
+# Name of the build platform to use for this job:
+  - name:     buildPlatforms
+    type:     string
+    default:  'Any CPU'
+    values:
+       - 'Any CPU'
+       - 'x86'
+       - 'x64'
+       - 'ARM'
+       - 'ARM64'
+       - 'Custom'
+
+
+
+# ------- Variables -----------------------------------------------------------
+variables:
+  - name:   solution
+    value: 'DXSharp.sln'
+# -----------------------------------------------------------------------------
+    
+    
+    
+# ---------------------------------------------------------------------------
+# STAGES ::
+# ---------------------------------------------------------------------------
+
+  - stage:        DXSBuild
+    displayName:  'DX# Build Stage (Core)'
+    
+    jobs:
+      - template:   devops/pipelines/inc/core-build-job.yml
+        parameters:
+          solution:       $(solution)
+          buildConfig:    '${{ parameters.buildConfigs }}'
+          buildPlatform:  '${{ parameters.buildPlatforms }}'

@@ -26,6 +26,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DevOps", "DevOps", "{789A8FB0-1777-45F2-8DBC-B1A270FBADE5}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		devops\readme.md = devops\readme.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicSample", "samples\BasicSample\BasicSample.csproj", "{971248F4-F547-4B17-B6FE-0C84A3577D30}"
@@ -90,9 +91,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pwsh", "pwsh", "{AF59EB78-E
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pipelines", "Pipelines", "{60DAF7CD-8C68-4BDF-9940-5ACBF49620D3}"
 	ProjectSection(SolutionItems) = preProject
-		azure-pipelines.yml = azure-pipelines.yml
-		azure-pipelines-1.yml = azure-pipelines-1.yml
-		azure-pipelines-2.yml = azure-pipelines-2.yml
+		devops\azure-pipelines.yml = devops\azure-pipelines.yml
+		devops\azure-pipelines-1.yml = devops\azure-pipelines-1.yml
+		devops\azure-pipelines-2.yml = devops\azure-pipelines-2.yml
+		devops\pipelines\dxs-core-pipeline.yml = devops\pipelines\dxs-core-pipeline.yml
+		devops\DevOps.Pipelines.targets = devops\DevOps.Pipelines.targets
+		devops\pipelines\pipelines.init = devops\pipelines\pipelines.init
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{AF35E6EE-C244-4E1F-84A6-DED8F9BD0EC7}"
@@ -102,6 +106,25 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{AF35E6EE
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DXSharp.Tools.Builds", "tools\DXSharp.Tools.Builds\DXSharp.Tools.Builds.csproj", "{2362EB4B-6F3D-4274-A836-C5394A9660FC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "msbuild", "msbuild", "{9AA76EA1-7D92-40CF-A170-B38DEEB87396}"
+	ProjectSection(SolutionItems) = preProject
+		tools\msbuild\DXSProject.Items.props = tools\msbuild\DXSProject.Items.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{3FEFFBFD-24AE-4B98-AF02-1A2EA87F9245}"
+	ProjectSection(SolutionItems) = preProject
+		devops\pipelines\scripts\read-pipelines-init.ps1 = devops\pipelines\scripts\read-pipelines-init.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "inc", "inc", "{301D517A-3852-4BEC-911A-EAF7F421F3EB}"
+	ProjectSection(SolutionItems) = preProject
+		devops\pipelines\inc\global-varz.yml = devops\pipelines\inc\global-varz.yml
+		devops\pipelines\inc\core-build-stage.yml = devops\pipelines\inc\core-build-stage.yml
+		devops\pipelines\inc\core-build-job.yml = devops\pipelines\inc\core-build-job.yml
+		devops\pipelines\inc\core-test-job.yml = devops\pipelines\inc\core-test-job.yml
+		devops\pipelines\inc\core-test-stage.yml = devops\pipelines\inc\core-test-stage.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -218,6 +241,9 @@ Global
 		{AF59EB78-E6BC-45DB-8B32-D38F62E1EFF4} = {430FF448-775A-49C2-8FC4-F56143802138}
 		{60DAF7CD-8C68-4BDF-9940-5ACBF49620D3} = {789A8FB0-1777-45F2-8DBC-B1A270FBADE5}
 		{2362EB4B-6F3D-4274-A836-C5394A9660FC} = {AF35E6EE-C244-4E1F-84A6-DED8F9BD0EC7}
+		{9AA76EA1-7D92-40CF-A170-B38DEEB87396} = {AF35E6EE-C244-4E1F-84A6-DED8F9BD0EC7}
+		{3FEFFBFD-24AE-4B98-AF02-1A2EA87F9245} = {60DAF7CD-8C68-4BDF-9940-5ACBF49620D3}
+		{301D517A-3852-4BEC-911A-EAF7F421F3EB} = {60DAF7CD-8C68-4BDF-9940-5ACBF49620D3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C4990EC-248E-49D5-A254-EA8AD214C338}

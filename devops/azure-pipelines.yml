@@ -9,14 +9,46 @@
 
 trigger:
 - main
+  
+parameters:
+  - name: buildPlatforms
+    type: string
+    default: 'Any CPU; x86; x64; arm; arm64'
+
+  - name: buildConfiguration
+    type: string
+    default: 'Release'
+
+  - name: solution
+    type: string
+    default: 'DXSharp.sln'
+
+  - name: testFilter
+    type: string
+    default: '.\tests\**\*[Tt][Ee][Ss][Tt]*.csproj'
+
+  - name: testDllFilter
+    type: string
+    default: '.\tests\**\*[Tt][Ee][Ss][Tt]*.dll'
+
+  - name: testSettings
+    type: string
+    default: ''
+
+  - name: publishTestResults
+    type: boolean
+    default: true
+
+  - name: codeCoverageEnabled
+    type: boolean
+    default: true
+
 
 pool: 
    name: default
 
 variables:
-  solution:           '*.sln'
-  buildPlatform:      'Any CPU'
-  buildConfiguration: 'Release'
+  - template: devops/pipelines/inc/global-varz.yml
 
 
 steps:
@@ -26,6 +58,17 @@ steps:
   inputs:
     restoreSolution: '$(solution)'
 
+- stage: Build
+  displayName: 'Build stage'
+  jobs:
+  - job: Build
+    displayName: 'Build job'
+    steps:
+    - task: VSBuild@1
+      inputs:
+        solution: '$(solution)'
+        platform: '$(buildPlatform)'
+        configuration: '$(buildConfiguration)'
 
 # ---------------------------------------------------------------------------
 # BUILD SOLUTION ::

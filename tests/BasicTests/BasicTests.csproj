@@ -1,4 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	
 	<PropertyGroup Label="TestProjBuildConfig">
 		<BaseOutputPath>$(RepoRootPath)bin\Tests\$(MSBuildProjectName)\$(Platform)\</BaseOutputPath>
 		<TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
@@ -24,10 +25,9 @@
 	
 	<ItemGroup Label="DXSReferences">
 		<ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
-		<ProjectReference Include="..\..\tools\DXSharp.Tools.Builds\DXSharp.Tools.Builds.csproj" />
+		<!--<ProjectReference Include="..\..\tools\DXSharp.Tools.Builds\DXSharp.Tools.Builds.csproj" />-->
 	</ItemGroup>
-
-
+	
 	<PropertyGroup>
 		<AssetsFolder>Assets</AssetsFolder>
 		<ShadersFolder>Assets\Shaders</ShadersFolder>
@@ -35,6 +35,7 @@
 	</PropertyGroup>
 	<ItemGroup Label="ConfigurationFileIncludes">
 		<None Include="..\..\.editorconfig" Link=".editorconfig" />
+		
 		
 		<Folder Include="DXGI\" />
 		<Folder Include="D3D12\" />

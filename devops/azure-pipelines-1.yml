@@ -1,0 +1,172 @@
+# ==============================================================================
+# DXSharp Core Pipelines -- .NET Desktop
+# This pipeline will automatically build and test DXSharp "core" projects
+# upon any push into `main` or `az-atc-0x02` (current/active dev) branches.
+# ................................................................................
+parameters:
+# Name of the agent pool to use for this job:
+  - name:         poolName
+    type:         string
+    default:      "windows-latest"
+    displayName:  Agent Pool
+    values:     
+                - 'windows-latest'
+                - 'Arkaen-Games-Pool-0' # Custom Self-Hosted Pool (connection required)
+                - 'Custom' # Custom Self-Hosted Pool (setup/connection required)
+
+# Name of the build configuration to use for this job:
+  - name: buildConfig
+    type:         string
+    default:      'Debug'
+    displayName:  Build Configuration
+    values:
+                - Debug
+                - Release
+                - Custom
+                - Tools-Debug
+
+# Name of the target CPUs to compile for (if applicable):
+  - name:         buildPlatform
+    type:         string
+    default:      'Any CPU'
+    displayName:  Build Platforms (CPU)
+    values:
+          - Any CPU
+          - x86
+          - x64
+          - ARM
+          - ARM64
+          - Custom
+
+# Name of the target CPUs to compile test projects for (if applicable):
+  - name: testPlatform
+    displayName: Test Platforms (CPU)
+    type: string
+    default: 'Any CPU'
+    values:
+      - Any CPU
+      - x86
+      - x64
+
+# Filter for selecting required unit test projects (if applicable):
+  # By default, this looks for: /tests/  **(anything)  / *has-test-in-name* .csproj
+  - name:         testFilter
+    type:         string
+    displayName:  Test Project Path Filter
+    default:      '.\tests\**\*[Tt][Ee][Ss][Tt]*.csproj'
+# Filter for selecting required unit test projects DLLs (from build output; if applicable):
+  # By default, this looks for: ./bin/tests/  **(anything)  / *has-test-in-name* .csproj
+  - name:         testFilter
+    type:         string
+    displayName:  Test Project Path Filter
+    default:      '.\bin\tests\**\*[Tt][Ee][Ss][Tt]*.dll'
+    
+  - name:         testSettings
+    type:         string
+    default:      ''
+    displayName:  Test Settings
+  - name:         publishTestResults
+    type:         boolean
+    default:      true
+    displayName:  Publish Test Results
+  - name:         codeCoverageEnabled
+    type:         boolean
+    default:      true
+    displayName:  Code Coverage Enabled
+    
+
+trigger:
+- main
+- az-atc-0x02
+
+# ---------------------------------------------------------------------------
+# Use my pre-configured, self-hosted pool "Arkaen-Games-Pool-0":
+# ---------------------------------------------------------------------------
+pool:
+  name: Arkaen-Games-Pool-0
+  
+
+
+# ---------------------------------------------------------
+# Pipeline Variables ::
+# ---------------------------------------------------------
+variables:
+  solution:           '*.sln'
+  buildConfig:        'Debug'
+  buildPlatform:      'Any CPU'
+  
+  dxsSDKProjects:     './src/DXSharp/DXSharp.csproj'
+                      './src/DXSharp.Dxc/DXSharp.Dxc.csproj'
+                      './src/DXSharp.Framework/DXSharp.Framework.csproj'
+  dxsSDKModules:     './bin/DXSharp/**/DXSharp.dll'
+                     './bin/DXSharp.Dxc/**/DXSharp.Dxc.dll'
+                     './bin/DXSharp.Framework/**/DXSharp.Framework.dll'
+  
+  dxsTestProjects:   '**/Tests/**/*[Tt]est*.csproj'
+                     './src/Tests/BasicTests.csproj'
+  dxsTestModules:    '**/bin/Tests/**/*[Tt]est*.dll'
+                    !'**/bin/Tests/**/*[Tt]est*.Framework.dll'
+  
+  dxsSampleProjects: './[Ss]amples/**/*.csproj'
+  dxsSampleApps:     './[Ss]amples/bin/**/*.exe'
+  
+  dxsToolsProjects:  './Tools/**/*.csproj'
+  dxsToolsModules:   './Tools/**/*.dll'
+# =========================================================
+
+
+# Install NuGet and run `dotnet restore`:
+steps:
+- task: NuGetToolInstaller@1
+
+- task: NuGetCommand@2
+  inputs:
+    restoreSolution: '$(solution)'
+  
+# ---------------------------------------------------------
+# Full Solution Build :: 
+# ---------------------------------------------------------
+# Run the build:
+- task: VSBuild@1
+  inputs:
+    solution:       '$(solution)'
+    platform:       '$(buildPlatform)'
+    configuration:  '$(buildConfig)'
+
+
+# ---------------------------------------------------------
+# Core Unit Testing ::
+# ---------------------------------------------------------
+# Run the tests:
+- task: VSTest@2
+  inputs:
+    platform: '$(buildPlatform)'
+    testSelector: 'testAssemblies'
+    configuration: '$(buildConfig)'
+
+- task: DotNetCoreCLI@2
+  condition: succeededOrFailed()
+  inputs:
+    command: 'test'
+    projects: '**/src/Tests/**/*[Tt]est*.csproj'
+    arguments: '--configuration $(buildConfig)'
+    publishTestResults: true
+    
+- script: dotnet build --configuration $(buildConfig)
+  displayName: 'dotnet build $(buildConfig)'
+    
+
+# ---------------------------------------------------------------------------
+# RUN TESTS ::
+# ---------------------------------------------------------------------------
+# Make the VSTest step smarter:
+# Look for any .dll inside the \tests directory with "Test" in the name ...
+
+- task: VSTest@2
+  inputs:
+    testAssemblyVer2: |
+      [Bb]in\[Tt]ests\**\*[Tt]est*.dll
+      !**\*TestAdapter.dll
+      !**\obj\**
+    codeCoverageEnabled: true
+    searchFolder: '$(System.DefaultWorkingDirectory)\bin\Tests'

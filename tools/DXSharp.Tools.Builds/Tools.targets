@@ -1,10 +1,38 @@
 ﻿<Project>
+    <!-- Notes:
+    _____________________________________________________________
+         We want to end up with this directory structure:
+    _____________________________________________________________
+    
+            - tools
+                - bin \ $(DllOutputPath) \
+                    - DXSharp.Tools.Build.dll
+                    - DXSharp.Tools.Build.dll.config
+                    - DXSharp.Tools.Build.targets
+                    - DXSharp.Tools.Build.xml
+    _____________________________________________________________
+                - tasks
+                    - DXSharp.Tools.Build
+                        - Shaders
+                            - DxcTool.cs
+                            - DxcTool.targets
+                            - ShaderTools.Build.props
+                        - Tools.targets
+                    - bin
+                        - DXSharp.Tools.Build.Tasks.dll
+                        - DXSharp.Tools.Build.Tasks.dll.config
+                        - DXSharp.Tools.Build.Tasks.targets
+                        - DXSharp.Tools.Build.Tasks.xml
+    _____________________________________________________________
+        -->
+    
     <PropertyGroup Label="ToolDefs">
         <ToolKitName>DXSTools</ToolKitName>
         <ToolsList>Shaders.DxcTool;</ToolsList>
         <ToolsDllName>DXSharp.Tools.Build</ToolsDllName>
         <ToolKitFullName>DXSharp.Tools.Builds</ToolKitFullName>
         <ToolKitNamespace>$(ToolKitFullName)</ToolKitNamespace>
+        <RootFolder Condition="'$(RootFolder)' == ''">$(MSBuildThisFileDirectory)</RootFolder>
         
         <ToolsFolder Condition=" '$(ToolsFolder)'=='' " >$(SolutionDir)tools</ToolsFolder>
         <TasksFolder Condition=" '$(TasksFolder)'=='' " >$(ToolsFolder)\tasks</TasksFolder>
@@ -12,9 +40,13 @@
         <ToolKitTasksFolder Condition=" '$(TasksFolder)'=='' " >$(TasksFolder)\$(ToolKitFullName)</ToolKitTasksFolder>
         
         <DxcToolTaskNamespace Condition=" '$(DxcToolTaskNamespace)' == '' " >$(ToolKitNamespace).Shaders</DxcToolTaskNamespace>
-        <DxcToolSrcFolderRel Condition="'$(DxcToolSrcFolderRel)' == ''">$([MSBuild]::MakeRelative( $(RepoRootPath), $(DxcToolSrcFolder) ))</DxcToolSrcFolderRel>
     </PropertyGroup>
-    
+    <Target Name="InitPaths" Outputs="$(DxcToolSrcFolderRel)" >
+        <PropertyGroup>
+            <DxcToolSrcFolderRel Condition="'$(DxcToolSrcFolderRel)' == ''">$([MSBuild]::MakeRelative( $(RepoRootPath), $(DxcToolSrcFolder) ))</DxcToolSrcFolderRel>
+        </PropertyGroup>
+    </Target>
+
     
     <!-- Define common properties for the DXSTools kit ... -->
     <PropertyGroup Label="ToolKitGlobalProps" >
@@ -41,7 +73,8 @@
                 <CustomTasksAssembly>$(TasksFolder)\bin\$(ToolKitFullName)\$(ToolsDllName).dll</CustomTasksAssembly>
             </PropertyGroup>
         </Otherwise>
-        
+    </Choose>
+    <Choose>
         <!-- Selects RoslynCodeTaskFactory for current/newer MSBuild versions,
              but falls back to CodeTaskFactory for older MSBuild versions ...
              -->
@@ -57,8 +90,8 @@
             </PropertyGroup>
         </Otherwise>
     </Choose>
-
-
+    
+    
     <!-- Import the custom tasks ... -->
     <ItemGroup Condition=" '$(IsInlined)' == 'true' " >
         <_csSrcFiles Include="$(ToolKitTasksFolder)\**\*.cs" />
@@ -71,12 +104,7 @@
     <PropertyGroup Condition=" '$(IsInlined)' == 'true' " >
         
     </PropertyGroup>
-
-
-    <!--Task parameters default values, this can be overridden-->
-    <PropertyGroup>
-        <RootFolder Condition="'$(RootFolder)' == ''">$(MSBuildProjectDirectory)</RootFolder>
-    </PropertyGroup>
+    
 
     
     <!-- Command to run Dxc release download script:

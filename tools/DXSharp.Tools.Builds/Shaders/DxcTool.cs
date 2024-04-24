@@ -21,6 +21,8 @@ public class DxcTool: MSBuildTask {
 							InvalidBytecode = -4, ValidationFailed = -5, InvalidOperation = -6, 
 							OutOfMemory = -7, InvalidState = 8, InvalidFile = -9 ;
 	}
+	
+
 	public static class Info {
 		public const string TOOLNAME = "dxc.exe" ;
 		public const string OVERVIEW = "HLSL Compiler" ;

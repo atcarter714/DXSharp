@@ -1,0 +1,178 @@
+#!meta
+
+{"kernelInfo":{"defaultKernelName":"csharp","items":[{"aliases":[],"languageName":"csharp","name":"csharp"}]}}
+
+#!csharp
+
+#r "System.CommandLine"
+
+using System;
+using System.Diagnostics;
+
+Program.Main( "-help" ) ;
+class Program {
+    public static int Main( params string[ ] args ) {
+        Process dxc = new( ) ;
+        dxc.StartInfo.FileName = "dxc.exe" ;
+        dxc.StartInfo.Arguments = " -help" ;
+        dxc.StartInfo.UseShellExecute = false ;
+        dxc.StartInfo.RedirectStandardOutput = true ;
+        dxc.Start( ) ;
+        dxc.WaitForExit( ) ;
+
+        var output = dxc.StandardOutput.ReadToEnd( ) ;
+        Console.WriteLine( output ) ;
+        return dxc.ExitCode ;
+    }
+}
+
+#!csharp
+
+#nullable enable
+parse_deployment( data ) ;
+
+static string[ ] parse_deployment( string deploymentFileAsStr ) {
+    Dictionary< int, string > lookup = new( ) ;
+    int text_length = deploymentFileAsStr.Length ;
+    int current_key = 0 ; string current_value = null ;
+    List< string > result = new( 8 ) { "<!DEPLOYMENT!>" } ;
+
+
+    int open = 0, close = 0 ;
+    string objPointer = string.Empty ;
+    bool literal = false, identifier = false ;
+
+    Dictionary< string, List<int> > indices = new( ) {
+        { "{", new( ) }, { "}", new( ) }, //!    {, } =  [0,   1]
+        { ",", new( ) }, { ":", new( ) }, //!    [, ] =  [2,   3]
+        { "(", new( ) }, { ")", new( ) }, //!    (, ) =  [4,   5]
+        { "[", new( ) }, { "]", new( ) }, //!    [, ] =  [6,   7]
+        { "<", new( ) }, { ">", new( ) }, //!    <, > =  [8,   9]
+        { "\"", new( ) }, { "*", new( ) },//!    ", * =  [10, 11]
+        { "/", new( ) }, { "\\", new( ) },//!    /, \ =  [10, 11]
+        { "=", new( ) }, { "!", new( ) }, { ";", new( ) }, //! =, !, ; = [12, 13, 14]
+        { "%", new( ) }, { "$", new( ) }, { "@", new( ) }, //! %, $, % = [12, 13, 14]
+        
+        { ".", new( ) },
+       
+       
+        { " ", new( ) },
+        { "#", new( ) },
+        { "^", new( ) },
+
+        { "&", new( ) },
+        { "+", new( ) }, { "-", new( ) },
+        { "?", new( ) }, { "|", new( ) },
+        { "~", new( ) }, { "`", new( ) },
+        { "_", new( ) },
+        { "'", new( ) },
+        { "\t", new( ) }, { "\n", new( ) }, { "\r", new( ) },
+    } ;
+    
+    for( int i = 0; i < text_length; ++i ) {
+        char c = deploymentFileAsStr [ i ] ;
+        if( c is '\0' ) continue ;
+
+        switch( c ) {
+            case '{' :
+                ++open ;
+                if( current_key is not < 1 )
+                    lookup[ current_key ] = current_value ;
+                    
+                current_key = 0 ; current_value = null ;
+                break ;
+            
+            case '}' :
+                ++close ;
+                if( lookup.Count > 0 ) {
+                    var ( parent_key, parent_value ) = lookup.Last( ) ;
+                    
+                }
+                else {
+                    result[ current_key ] = current_value ;
+                    current_key = 0 ; current_value = null ;
+                }
+                break ;
+        }
+    }
+    return Array.Empty< string >( ) ;
+}
+
+// static string[ ] parse_deployment( string deploymentFileAsStr ) {
+//     Dictionary< int, string > lookup = new( ) ;
+//     int current_key = 0 ; string? current_value = null ;
+//     List< string > result = new( 8 ) { "<!DEPLOYMENT!>" } ;
+    
+//     foreach( char c in deploymentFileAsStr ) {
+//         if( c is '{' ) {
+//             if( current_key is not null )
+//                 lookup[ current_key ] = current_value ;
+
+//             current_key = current_value = null ;
+//         }
+//         else if( c is '}' ) {
+//             if( lookup is not null ) {
+//                 var ( parent_key, parent_value ) = lookup.Last( ) ;
+//                 parent_value[ current_key ]  = current_value ;
+//                 current_value = parent_value ;
+//                 current_key  = parent_key ;
+//             }
+//             else {
+//                 result[ current_key ] = current_value ;
+//                 current_key = current_value = null ;
+//             }
+//         }
+//         else if( c is '\0' ) continue ;
+//         else if( c is ',' ) {
+//             if( current_key is not null )
+//                 current_value[ current_key ] = null ;
+//                 current_key = null ;
+//         }
+//         else if( c is '"' ) { 
+//             if( current_key is null )
+//                 current_key = string.Empty ;
+//             else {
+//                 if( current_value is null )
+//                     current_value = string.Empty ;
+//                 else {
+//                     current_value[ current_key ] = string.Empty ;
+//                     current_key = null ;
+//                 }
+//             }
+//         }
+//         else {
+//             if( current_key is not < 0 )
+//                 current_key += c ;
+//             else if( current_value is not null )
+//                 current_value += c ;
+//         }
+//     }
+
+//     return result.ToArray( ) ;
+// }
+
+string data1 = 
+@"{
+    ""_proj_"": \""C:\Users\atcar\src\repos\Proj11\SubProjA"",
+	""work_dirs"": { ""src"": ""C:\Users\atcar\src\repos\Proj11"", ""dst"": ""<src>\tools\SomeNewTool"" },
+
+	""deployment"": {
+		""_root_"": ""V:\users\%userprofile%\desktop\something"",
+		""objects"": [
+			{ ""rootSrc"": ""$(SolutionDir)\src"" },
+			{ ""rootDst"": ""..\..\out\builds\bin"" } ]
+	}
+}" ;
+
+const string data = 
+@"{
+    ""_proj_"": ""C:\\Users\\atcar\\src\\repos\\Proj11\\SubProjA"",
+    ""work_dirs"": { ""src"": ""C:\\Users\\atcar\\src\\repos\\Proj11"", ""dst"": ""<src>\\tools\\SomeNewTool"" },
+    ""deployment"": {
+        ""_root_"": ""V:\\users\\%userprofile%\\desktop\\something"",
+        ""objects"": [
+            { ""rootSrc"": ""$(SolutionDir)\\src"" },
+            { ""rootDst"": ""..\\..\\out\\builds\\bin"" }
+        ]
+    }
+}" ;

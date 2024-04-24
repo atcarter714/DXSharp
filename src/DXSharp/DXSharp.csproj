@@ -3,6 +3,7 @@
 	<PropertyGroup Label="CommonProjectProps">
 		<UsingAgility>true</UsingAgility>
 		<UsingAgilitySDK>true</UsingAgilitySDK>
+		<RunStartupTools>true</RunStartupTools>
 		
 		<Title>DXSharp</Title>
 		<Version>$(VersionPrefix)</Version>

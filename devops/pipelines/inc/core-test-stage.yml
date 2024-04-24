@@ -1,0 +1,46 @@
+﻿
+
+parameters:
+  # Name of the test configuration to use for this job:
+  - name:     testConfig
+    type:     string
+    default:  'Debug'
+    values:
+      - 'Debug'
+      - 'Release'
+      - 'Custom'
+      - 'Tools-Debug'
+  
+  # Name of the test platform to use for this job:
+  - name:     testPlatform
+    type:     string
+    default:  'AnyCPU'
+    values:
+      - 'Any CPU'
+      - 'x86'
+      - 'x64'
+      - 'ARM'
+      - 'ARM64'
+      - 'Custom'
+
+  - name:     testDllSearchDir
+    type:     string
+    default:  '$(System.DefaultWorkingDirectory)\bin\tests'
+
+  - name:     testName
+    type:     string
+    default:  '*[Tt][Ee][Ss][Tt]*'
+    
+    
+
+stages:
+  - stage:        DXSTest
+    displayName:  'DX# Test Stage (Core)'
+    
+    jobs:
+      - template:         devops/pipelines/inc/core-test-job.yml
+        parameters:
+          testConfig:       '${{ parameters.testConfig }}'
+          testPlatform:     '${{ parameters.testPlatform }}'
+          testDllSearchDir: '${{ parameters.testDllSearchDir }}'
+          testName:         '${{ parameters.testName }}'

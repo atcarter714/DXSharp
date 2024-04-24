@@ -1,0 +1,48 @@
+﻿
+trigger:
+  - main
+  - az-atc-0x02
+
+
+parameters:
+
+- name:     buildPlatforms
+  type:     string
+  default:  'AnyCPU'
+
+- name:     buildConfigs
+  type:     string
+  default:  'Debug'
+  
+- name:     testName
+  type:     string
+  default:  '*[Tt][Ee][Ss][Tt]*'
+
+- name:     testDllSearchDir
+  type:     string
+  default:  '$(System.DefaultWorkingDirectory)\bin\tests'
+
+
+variables:
+  - template: devops/pipelines/inc/global-varz.yml
+  
+    
+poolName: ${{ parameters.poolName }}
+strategy:
+  matrix:
+    buildPlatform: ${{ parameters.buildPlatforms.split(';') }}
+    buildConfiguration: ${{ parameters.buildConfigs.split(';') }}
+    
+    stages:
+      - template: devops/pipelines/inc/core-build-stage.yml
+        parameters:
+          buildPlatform: ${{ matrix.buildPlatform }}
+          buildConfiguration: ${{ matrix.buildConfiguration }}
+          solution: ${{ parameters.solution }}
+      
+      - template: devops/pipelines/inc/core-test-stage.yml
+        parameters:
+          testConfig:       '${{ matrix.buildPlatform }}'
+          testPlatform:     '${{ matrix.buildConfiguration }}'
+          testDllSearchDir: '${{ parameters.testDllSearchDir }}'
+          testName:         '${{ parameters.testName }}'

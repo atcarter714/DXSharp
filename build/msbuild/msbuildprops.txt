@@ -124,3 +124,19 @@ AddHLSLCsPackage	Target to call to automatically add the Microsoft.HLSL.CSharpVB
 UsingHLSLCs		This adds support for the old FxCompiler tools.
 
 
+
+--------------------------------------------------------------------
+DxcTool.Build.targets -- Targets for building shaders with Dxc
+--------------------------------------------------------------------
+
+ShaderFolder		"\Assets\Shaders" by default, unless overidden with custom value.
+			Specifies the folder(s) that shaders live in within the project.
+ShaderIncDir		An (optional) list of include directories for shader compilation
+			"\inc" and "\include" are considered include directories by default if they exist
+ShaderOutDir		Default: "$(OutputPath)assets\shaders\"
+			Specifies where shader build output from compilation will be output.
+ShaderIntermediateOutDir	Specifies the intermediate output directory for the compiler.
+
+DXCContinueOnShaderErrorsCondition	Determines if the rest of the build continues if a shader fails to compile.
+					(Default: true)
+

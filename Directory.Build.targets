@@ -1,35 +1,42 @@
 <Project>
     <!-- Import the necessary shared targets for DXSharp builds: -->
-    <Import Project=".\build\msbuild\DXSharpShared.Build.targets"
-            Condition=" '$(DXSSharedTargetsImported)' != 'true'" />
-    <Import Project=".\build\msbuild\AgilityNative.Build.targets" 
-            Condition=" '$(UsingAgility)'=='true' and '$(AgilityNativeTargetsImported)'!='true' " />
-    <Import Project=".\build\msbuild\DxcNative.Build.targets" 
-            Condition=" '$(UsingDxc)'=='true' " />
-    <Import Project=".\build\msbuild\DxcTool.Build.targets" 
-            Condition=" '$(UsingDxcCompiler)'=='true' " />
+    <ImportGroup Label="SharedTargets">
+        <Import Project=".\build\msbuild\DXSharpShared.Build.targets"
+                Condition=" '$(DXSSharedTargetsImported)' != 'true'" />
+        
+        <Import Project=".\build\msbuild\AgilityNative.Build.targets" 
+                Condition=" '$(UsingAgility)'=='true' and '$(AgilityNativeTargetsImported)'!='true' " />
+        <Import Project=".\build\msbuild\DxcNative.Build.targets" 
+                Condition=" '$(UsingDxc)'=='true' " />
+        
+        <Import Project=".\build\msbuild\DxcTool.Build.targets" 
+                Condition=" '$(UsingDxcCompiler)'=='true' " />
+    </ImportGroup>
     
     
     <!-- Define pre-build event actions: -->
-    <Target Name="PreBuildEventTarget" BeforeTargets="PreBuildEvent" >
-        <Message Text="$(SolutionName) pre-build event invoked ..." 
-                 Importance="high" />
-        <Message Text="DXS SDK Targets loaded ..." 
-                 Importance="high" />
-        
-        <Message Text="Main SDK Targets: DXS SDK library build triggered ..." 
+    <PropertyGroup>
+        <DXSCorePrebuildDependsOn>
+            $(DXSCorePrebuildDependsOn);
+        </DXSCorePrebuildDependsOn>
+    </PropertyGroup>
+    <Target Name="DXSCorePreBuild" BeforeTargets="PreBuildEvent" >
+        <Message Text="Pre-build event invoked: '$(SolutionName)' -> '$(ProjectName)':
+        DXS SDK Core Targets loaded ..."
                  Importance="high" />
         
         <Message Text="Agility Build: $(UsingAgility)" 
                  Condition=" '$(UsingAgility)'=='true' " Importance="high" />
         <Message Text="Agility Build: false"
                  Condition=" '$(UsingAgility)'!='true' " Importance="high" />
+        
         <Message Text="Dxc Build: $(UsingDxc)"
                  Condition=" '$(UsingDxc)'=='true' " Importance="high" />
         <Message Text="Dxc Build: false"
                  Condition=" '$(UsingDxc)'!='true' " Importance="high" />
         
-        <Message Text="DirectX Native Runtime: $(NativePlatformName)" Importance="high" />
+        <Message Text="DirectX Native Runtime: $(NativePlatformName)" 
+                 Importance="high" Condition=" '$(NativePlatformName)'!='' " />
     </Target>
     
     
@@ -50,9 +57,10 @@
             This enables any kind of custom startup logic you want to happen ... 
             Edit the code in the Powershell script to run things and do any kind
             of extra work/processing you want or need ... -->
-    <Target Name="RunToolsAtStartup" BeforeTargets="Build">
+    <Target Name="RunToolsAtStartup" BeforeTargets="Build" 
+            Condition=" '$(RunStartupTools)'=='true' " >
         <PropertyGroup Condition=" '$(DISABLE_PWSH)'!='true' ">
-            <StartupScriptName>DXSBuildStartup.ps1</StartupScriptName>
+            <StartupScriptName Condition=" '$(StartupScriptName)'=='' ">DXSBuildStartup.ps1</StartupScriptName>
             <LogFileNamePrefix>$(MSBuildProjectName)_$(Configuration)_$(Platform)_Build</LogFileNamePrefix>
             <ScriptLocation Condition=" '$(ScriptLocation)'=='' ">$(PowershellScriptsDir)\$(StartupScriptName)</ScriptLocation>
             <LogFileLocation Condition=" '$(LogFileLocation)'=='' ">$(RepoRootPath)build\logs\$(LogFileNamePrefix)_PreBuildToolsLog.log</LogFileLocation>

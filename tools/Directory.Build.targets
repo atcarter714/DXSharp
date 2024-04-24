@@ -2,15 +2,16 @@
          DefaultTargets="BeforeBuildInitTargets;Build" >
     <!-- Import the shared properties file if not imported already: -->
     <ImportGroup Label="SharedPropsAndTargetsImportGroup" >
-        <Import Project="$(RepoRootPath)build\msbuild\DXSharpShared.Build.props"
+        <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.props"
                 Condition=" '$(DXSSharedPropsImported)' != 'true' " />
-        <Import Project="$(RepoRootPath)build\msbuild\DXSharpShared.Build.targets"
+        <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.targets"
                 Condition=" '$(DXSSharedTargetsImported)' != 'true' " />
-        <Import Project="$(RepoRootPath)build\msbuild\Directory.Build.props"
+        <Import Project="$(MSBuildThisFileDirectory)Directory.Build.props"
                 Condition=" '$(DXSToolsPropsImported)' != 'true' " />
     </ImportGroup>
-    
     <PropertyGroup>
+        <DXSToolsTargetsImported>true</DXSToolsTargetsImported>
+        
         <ToolsDefFileName>Tools.targets</ToolsDefFileName>
         <ToolTargetsPath>$(ToolsSrcFolder)\$(ToolsDefFileName)</ToolTargetsPath>
     </PropertyGroup>

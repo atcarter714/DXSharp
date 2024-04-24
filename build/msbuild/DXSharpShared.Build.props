@@ -3,7 +3,7 @@
     <PropertyGroup Label="WindowsSDKProps">
         <DXSSharedPropsImported>true</DXSSharedPropsImported>
         
-        <WindowsOnly Condition=" '$(WindowsOnly)' == '' ">true</WindowsOnly>
+        <WindowsOnly Condition=" '$(WindowsOnly)' == '' or '$(IsToolsProject)' == 'false' ">true</WindowsOnly>
         <WinSDKVersion>10.0.22621.0</WinSDKVersion>
         <WinSDKMinVersion>$(WinSDKVersion)</WinSDKMinVersion>
         <TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>
@@ -16,29 +16,46 @@
         <WindowsSDKInstallerURL>https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/</WindowsSDKInstallerURL>
     </PropertyGroup>
     
+    <ItemGroup>
+        <MSBuildScript Include="$(DXSMSBuildDir)DXSharpShared.Build.targets" />
+    </ItemGroup>
     
     
     <!-- Returns names of multi-targeting framework targets as items: -->
     <Target Name="GetTargetFrameworksAsItems"
             Returns="@(TargetFrameworksAsItems)">
+        <PropertyGroup>
+            <dotNetVersions>net7.0;net8.0</dotNetVersions>
+            <WindowsSDKVersionMajor>10.0</WindowsSDKVersionMajor>
+            <WindowsSDKVersionMinor>22621.0</WindowsSDKVersionMinor>
+            
+            <WindowsSDKVersion>$(WinSDKVersionMajor).$(WinSDKVersionMinor)</WindowsSDKVersion>
+        </PropertyGroup>
         <ItemGroup Condition=" '$(DotNetTargets)' != '' " >
+            <NetVersionList Include="$(dotNetVersions.Split(';'))" />
+            <NetTargetList Include="%( NetVersionList.Identity )-windows$(WindowsSDKVersion)" />
+            
             <TargetFrameworksAsItems Include="$(DotNetTargets.Split(';'))" />
         </ItemGroup>
     </Target>
-    <Target Name="GetNuGetRootFolderFromMSBuild"
-            Returns="@( NuGetRootFolder )" Condition=" '$( NuGetPackageRoot )' != '' " >
+    <Target Name="GetNuGetRootFolderFromMSBuild" Returns="$(NuGetRootFolder)" 
+            Condition=" '$(NuGetPackageRoot)' != '' " >
         <ItemGroup>
-            <NuGetRootFolder Include="$( NuGetPackageRoot )" />
+            <_NuGetFolder Include="$(NuGetPackageRoot)" />
         </ItemGroup>
+        <PropertyGroup>
+            <NuGetRootFolder>%(_NuGetFolder.Identity)</NuGetRootFolder>
+        </PropertyGroup>
     </Target>
 
     
     <!-- Resolves location of NuGet package cache and tries to find any packages 
          that are needed ahead of time (i.e., Agility SDK, Dxc Compiler, etc) ...
+         BeforeTargets="PreBuildEvent" removed (want to eliminate this)
      -->
     <Target Name="ResolveNuGetCacheLocation" 
             Outputs="$(NugetCacheDir)"
-            BeforeTargets="PreBuildEvent" 
+            
             Condition=" '$(NugetCacheDir)' == '' " >
         <PropertyGroup>
             <_hasNuGetDeps Condition=" '$(UsingAgility)' == 'true' or '$(UsingDxc)' == 'true' or '$(UsingDxcCompiler)' == 'true' ">true</_hasNuGetDeps>
@@ -89,22 +106,26 @@
                  Condition=" '$(UsingDxc)' == 'true' and '$(_DxcPackageFound)' == 'true' " Importance="high" />
     </Target>
     
+    
     <!-- Defines a set of common, shared global properties for use in DXSharp builds ... -->
     <PropertyGroup Label="BuildSetupProps" >
-        <RepoRootPath>$(SolutionDir)</RepoRootPath>
-        <SDKProjectName Condition=" '$(SolutionName)' != '' " >$(SolutionName)</SDKProjectName>
         <SDKProjectName Condition=" '$(SolutionName)' == '' " >DXSharp</SDKProjectName>
+        <SDKProjectName Condition=" '$(SolutionName)' != '' " >$(SolutionName)</SDKProjectName>
         <CommonRootNamespace>$(SDKProjectName)</CommonRootNamespace>
-        
-        <!-- Useful global path properties for builds ::
-             (These can be used in other MSBuild scripts) -->
         <No32Bit Condition=" '$(No32Bit)' == '' ">false</No32Bit>
         <No32Bit Condition=" '$(UsingDxc)' == 'true' ">true</No32Bit>
         <NoAnyCPU Condition=" '$(NoAnyCPU)' == '' ">false</NoAnyCPU>
         
         <IsDXSLibrary Condition=" '$(IsDXSLibrary)' == '' ">false</IsDXSLibrary>
+        <IsToolsProject Condition=" '$(IsToolsProject)' == '' ">false</IsToolsProject>
+        <IsTestsProject Condition=" '$(IsTestsProject)' == '' ">false</IsTestsProject>
+        <IsSampleProject Condition=" '$(IsSampleProject)' == '' ">false</IsSampleProject>
+
+        <!-- Useful global path properties for builds ::
+             (These can be used in other MSBuild scripts) -->
         <DXSBasePath Condition=" '$(DXSBasePath)' == '' ">$(SolutionDir)</DXSBasePath>
-        
+        <RepoRootPath Condition=" '$(RepoRootPath)' == '' and '$(SolutionDir)' != '' " >$(SolutionDir)</RepoRootPath>
+
         <DXSBinDir>$(DXSBasePath)bin\</DXSBinDir>
         <DXSObjDir>$(DXSBasePath)obj\</DXSObjDir>
         <DXSDocsDir>$(DXSBasePath)docs\</DXSDocsDir>
@@ -185,21 +206,26 @@
     
     <!-- Setup properties for shared tools/scripts we will run for builds: -->
     <PropertyGroup Label="ToolsSetups">
-        <CSharpScriptTool Condition=" '$(CSharpScriptTool)' == '' ">$(csi)</CSharpScriptTool>
+        <Warning Condition=" '$(csi)' == '' " >
+        No 'csi.exe' path to C# script tool (csi.exe) defined. 
+        Define 'CSharpScriptTool' with path to your custom tool or set 'csi' as an environment variable.
+        </Warning>
+        
+        <CSharpScriptTool Condition=" '$(CSharpScriptTool)' == '' " >$(csi)</CSharpScriptTool>
+        <RunStartupTools Condition=" '$(RunStartupTools)' == '' ">false</RunStartupTools>
         <CSXRun>&quot;$(CSharpScriptTool)&quot;</CSXRun>
         
         <CSXScriptDir>$(DXSBuildDir)csscript</CSXScriptDir>
         <DefaultCsxScriptName>csxtest01.csx</DefaultCsxScriptName>
-        
         
         <DxcCompilerToolFolder>$(DxcToolPlatformFolderName)</DxcCompilerToolFolder>
         <PowershellScriptsFolder>$(DXSBuildDir)pwsh</PowershellScriptsFolder>
         <BuildToolsFolder>$(DXSBuildDir)tools</BuildToolsFolder>
         <BuildLogsFolder>$(DXSBuildDir)logs</BuildLogsFolder>
     </PropertyGroup>
-    <Target Name="RunCSITool" Inputs="CSXScriptName;CSXScriptDir;CSharpScriptTool"
-            Condition=" '$(CSXScriptDir)' != '' " >
+    <Target Name="RunCSITool" Inputs="CSXScriptName;CSXScriptDir;CSharpScriptTool" >
         <PropertyGroup>
+            <CSXScript Condition=" '$(CSXScript)' != '' " >&quot;$(CSXScriptDir ->Replace( '&quot;', '' ))&quot;</CSXScript>
             <CSXScriptDir Condition=" '$(CSXScriptDir)' == '' ">$(DXSBuildDir)csscript</CSXScriptDir>
             <CSXScriptName Condition=" '$(CSXScriptName)' == '' ">$(DefaultCsxScriptName)</CSXScriptName>
             <CSXScriptName Condition=" '$(CSXScriptName)' == '' ">$(DefaultCsxScriptName)</CSXScriptName>
@@ -216,15 +242,57 @@
               Condition=" '$(CSharpScriptTool)' != '' "
               ContinueOnError="false" /> <!-- Set to true to ignore errors ... -->
     </Target>
+    <!-- (!) This version intended to replace the above: -->
+    <Target Name="CSIRun" Inputs="$(CSXScript)" Outputs="CSXScriptOutput" >
+        <Error Text="Must have valid path to C# script tool (csi.exe). Define 'CSharpScriptTool' with path to your custom tool.
+                    (Or: Set 'csi' as an environment variable.)"
+               Condition=" '$(CSharpScriptTool)' == '' " />
+        <Error Text="Must have valid path to C# script to run (e.g., &quot;.\path\script.csx&quot;). 
+        Define 'CSharpScriptTool' with path to your custom tool.
+        (Or: Set 'csi' as an environment variable.)"
+               Condition=" '$(CSXScript)' == '' " />
+        
+        <ItemGroup>
+            <CSXArgs Include="@( CustomCSXArgs )" Condition=" '$(CustomCSXArgs)' != '' " />
+            <!-- Add any more arguments logic ... -->
+        </ItemGroup>
+        <PropertyGroup>
+            <CSXScript Condition=" '$(CSXScript)' != '' " >&quot;$(CSXScript ->Replace( '&quot;', '' ))&quot;</CSXScript>
+            <CSXScript Condition=" '$(CSXScript)' == '' " >&quot;$(DXSBuildDir)csscript\$(DefaultCsxScriptName)&quot;</CSXScript>
+            
+            <_csxArgs Condition=" '$(CSXArgs)' != '' " > @( CSXArgs, ' ' )</_csxArgs>
+            <_csxArgs Condition=" '$( !CSXArgs.StartsWith(' ') )" > @( CSXArgs, ' ' )</_csxArgs>
+            <_csxArgs Condition=" '$(CSXArgs)' == '' " > </_csxArgs>
+        </PropertyGroup>
+        
+        <Exec Command="$(CSXRun) $(CSXScript) $(_csxArgs)"
+              Condition=" '$(CSharpScriptTool)' != '' "
+              WorkingDirectory="$(MSBuildProjectDirectory)"
+              ContinueOnError="false" >
+            <Output TaskParameter="ConsoleOutput" 
+                    PropertyName="CSXScriptOutput" />
+        </Exec>
+    </Target>
     
     <!-- Setup utility targets for processing DXSharp builds: -->
-    <Target Name="RunPwshScript" Inputs="PwshScriptPath" >
+    <Target Name="RunPwshScript" Inputs="PwshScriptPath" Outputs="ScriptOutput" >
+        <PropertyGroup>
+            <!-- Wrap the path in quotes, but first call Replace(...) and erase any existing quotes!
+                 This should be a bit more reliable and predicatable, and won't suddenly break because
+                 you had a space in a path or another dev added extra quotes around it and no one noticed ...
+                -->
+            <PwshScriptPath Condition=" '$(PwshScriptPath)' != '' " >&quot;$(PwshScriptPath ->Replace( '&quot;', '' ))&quot;</PwshScriptPath>
+            <PwshScriptPath Condition=" '$(PwshScriptPath)' == '' " >&quot;$(DXSBuildDir)pwsh\test01.ps1&quot;</PwshScriptPath>
+        </PropertyGroup>
+        
         <Exec Command="powershell.exe -ExecutionPolicy Bypass -NoLogo -NonInteractive -NoProfile -File $(PwshScriptPath)"
               ConsoleToMSBuild="true">
             <Output TaskParameter="ConsoleOutput" PropertyName="ScriptOutput"/>
         </Exec>
         <Message Text="PowerShell script output: $(ScriptOutput)" />
     </Target>
+    
+    
     <Target Name="CompareFileAges" 
             Inputs="FilePath1;FilePath2" Outputs="IsNewer" >
         <Exec Command="powershell (Get-Item '$(FilePath1)').LastWriteTime -gt (Get-Item '$(FilePath2)').LastWriteTime"
@@ -238,7 +306,7 @@
     
     <!-- Restore solution: -->
     <Target Name="Restore" >
-        <MSBuild Projects="$(RepoRootPath)$(SolutionFileName)" Targets="Restore" />
+        <MSBuild Projects="$(SolutionDir)$(SolutionFileName)" Targets="Restore" />
     </Target>
 </Project>
 
