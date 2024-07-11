@@ -1,0 +1,58 @@
+﻿# ------`CoreTest` Job Template  ------------------------------------------------
+# This template defines a "Core Build" job for DXSharp "core" projects.
+# ................................................................................
+
+# Parameters:
+parameters:
+  - name:     testConfig
+    type:     string
+    default:  'Debug'
+    
+  - name:     testPlatform
+    type:     string
+    default:  'AnyCPU'
+
+  - name:     testDllSearchDir
+    type:     string
+    default:  '$(System.DefaultWorkingDirectory)\bin\tests'
+
+  - name:     testName
+    type:     string
+    default:  '*[Tt][Ee][Ss][Tt]*'
+    
+
+variables:
+  - template: devops/pipelines/inc/global-varz.yml
+    
+    
+
+# ------- Jobs :: --------------------------------------------------------------
+
+jobs:
+
+    job: CoreTest
+    displayName: 'Core DXSharp Test Job'
+    variables:
+      - name: testDllSelector
+        value: '**\$(Platform)\$(Configuration)\$(testName).dll'
+
+    steps:
+      - pwsh:   |
+          Write-Host "Running tests for configuration: ${{ parameters.buildConfiguration }} on platform: ${{ parameters.buildPlatform }}"
+          Write-Host "Locating test projects matching filter: ${{ parameters.testProjFilter }}"
+          Write-Host "Locating test DLLs matching filter: ${{ parameters.testDllFilter }}"
+          Write-Host "Solution: $(solution)"
+
+      - task: VisualStudioTestPlatformInstaller@1
+        inputs:
+          packageFeedSelector:  'nugetOrg'
+          versionSelector:      'latestPreRelease'
+
+      - task: VSTest@2
+        inputs:
+          testSelector: 'testAssemblies'
+          searchFolder: '$(testDllSearchDir)'
+          testAssemblyVer2: |
+            $(testDllSelector).dll
+            !**\*TestAdapter.dll
+            !**\obj\**

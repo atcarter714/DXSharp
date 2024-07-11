@@ -1,0 +1,23 @@
+﻿{
+"Filter": "*.hlsl",
+"ShaderType": "ps",
+"ShaderModel": "6.1",
+"EntryPoint": "main",
+"Asynchronous": false,
+"Optimizations": "03",
+"OutputType": "blob+header+asm",
+"OutputPath": ".\hlslbin\ps_6_1",
+
+"Options": [ "/Zi", "/Od", "/Oy-", "/Ges", 
+             "/Gfp", "/Gfp:fast", "/Gfp:except-", 
+             "/Gfp:except-"
+        ],
+        
+"IncludePath": [ "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\um",
+                 "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\shared",
+                 "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\winrt",
+                 "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\ucrt",
+                 "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\cppwinrt"
+        ],
+
+}

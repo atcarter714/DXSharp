@@ -1,0 +1,212 @@
+﻿<Project >
+    <ItemDefinitionGroup Condition=" '$(UsingDxcCompiler)' == 'true' " >
+        <Shader>
+            <IntermediateBuildDirectory>$(ShaderOutDir)</IntermediateBuildDirectory>
+            <Name>%(Filename)_%(ShaderModel)_%(ShaderType)_%(EntryPoint)</Name>
+            <OutputFilename>%(Name).%(Extension)</OutputFilename>
+            <OutputDirectory>$(ShaderOutDir)</OutputDirectory>
+            <ShaderOutputType>%(OutputType)</ShaderOutputType>
+            <ShaderProfile>%(ShaderProfile)</ShaderProfile>
+            <ShaderModel>%(ShaderModel)</ShaderModel>
+            <EntryPoint>%(ShaderModel)</EntryPoint>
+            <OutExt>%(Extension)</OutExt>
+            <Type>%(ShaderType)</Type>
+        </Shader>
+        
+        <DxcConfig>
+            <HLSLDebug>%(ShaderDebug)</HLSLDebug>
+            <ShaderTypes>%(ShaderTypes)</ShaderTypes>
+            <ShaderModels>%(ShaderModels)</ShaderModels>
+            <ShaderProfiles>%(ShaderProfiles)</ShaderProfiles>
+            <ShaderFileFilters>%(ShaderFilters)</ShaderFileFilters>
+        </DxcConfig>
+    </ItemDefinitionGroup>
+    <PropertyGroup>
+        <TaskFactoryName Condition=" '$(TaskFactoryName)' == '' " >CodeTaskFactory</TaskFactoryName>
+    </PropertyGroup>
+    
+    
+    <UsingTask 
+            TaskName="DxcTool"
+            TaskFactory="CodeTaskFactory"
+            AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" >
+        <ParameterGroup>
+            <Source ParameterType="Microsoft.Build.Framework.ITaskItem[ ]" Required="true" />
+            <EntryPoint />
+            <ShaderType />
+            <ShaderModel />
+            <AssemblerOutDir />
+            <AssemblerOutputFile />
+            <EnableDebuggingInfo ParameterType="System.Boolean" />
+            <DisableOptimizations ParameterType="System.Boolean" />
+            <PreprocessorDefinitions ParameterType="System.String[ ]" />
+            <AdditionalIncludeDirectories ParameterType="System.String[ ]" />
+        </ParameterGroup>
+        
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.IO" />
+            <Using Namespace="System.Linq" />
+            <Using Namespace="Microsoft.Build.Tasks" />
+            <Using Namespace="Microsoft.Build.Utilities" />
+            <Using Namespace="Microsoft.Build.Framework" />
+            <Using Namespace="System.Collections.ObjectModel" />
+            <Using Namespace="MSBuildTask = Microsoft.Build.Utilities.Task" />
+            <Reference Include="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" />
+            <Code Type="Class" Language="cs" Source="$(MSBuildThisFileDirectory)DxcTool.cs" />
+        </Task>
+    </UsingTask>
+    
+    <PropertyGroup>
+        <PrepInputFilesDependsOn>
+            $(PrepInputFilesDependsOn);
+            DxcGenerateShader;
+            DxcCompileShader;
+        </PrepInputFilesDependsOn>
+    </PropertyGroup>
+    <ItemGroup>
+        <ValidShaderTypes Include="DxShader" />
+        <ValidShaderTypes Include="VertexShader" />
+        <ValidShaderTypes Include="PixelShader" />
+        <ValidShaderTypes Include="GeometryShader" />
+        <ValidShaderTypes Include="HullShader" />
+        <ValidShaderTypes Include="DomainShader" />
+        <ValidShaderTypes Include="ComputeShader" />
+        <ValidShaderTypes Include="TextureShader" />
+    </ItemGroup>
+    
+    
+    
+    <Target Name="AssignCompilerWorkItems" >
+        <AssignTargetPath Files="@(DxShader)" RootFolder="$(MSBuildProjectDirectory)" >
+            <Output TaskParameter="AssignedFiles" ItemName="_EffectShaderWithTargetPath" />
+        </AssignTargetPath>
+        <AssignTargetPath Files="@(VertexShader)" RootFolder="$(MSBuildProjectDirectory)">
+            <Output TaskParameter="AssignedFiles" ItemName="_VertexShaderWithTargetPath" />
+        </AssignTargetPath>
+
+        <AssignTargetPath Files="@(PixelShader)" RootFolder="$(MSBuildProjectDirectory)">
+            <Output TaskParameter="AssignedFiles" ItemName="_PixelShaderWithTargetPath" />
+        </AssignTargetPath>
+
+        <AssignTargetPath Files="@(GeometryShader)" RootFolder="$(MSBuildProjectDirectory)">
+            <Output TaskParameter="AssignedFiles" ItemName="_GeometryShaderWithTargetPath" />
+        </AssignTargetPath>
+
+        <AssignTargetPath Files="@(HullShader)" RootFolder="$(MSBuildProjectDirectory)">
+            <Output TaskParameter="AssignedFiles" ItemName="_HullShaderWithTargetPath" />
+        </AssignTargetPath>
+
+        <AssignTargetPath Files="@(DomainShader)" RootFolder="$(MSBuildProjectDirectory)">
+            <Output TaskParameter="AssignedFiles" ItemName="_DomainShaderWithTargetPath" />
+        </AssignTargetPath>
+
+        <AssignTargetPath Files="@(ComputeShader)" RootFolder="$(MSBuildProjectDirectory)">
+            <Output TaskParameter="AssignedFiles" ItemName="_ComputeShaderWithTargetPath" />
+        </AssignTargetPath>
+
+        <AssignTargetPath Files="@(TextureShader)" RootFolder="$(MSBuildProjectDirectory)">
+            <Output TaskParameter="AssignedFiles" ItemName="_TextureShaderWithTargetPath" />
+        </AssignTargetPath>
+        
+        
+        <ItemGroup>
+            <SrcFiles Include="@(_DxShaderWithTargetPath)" Condition="'%(Extension)' == '.dxhlsl'" />
+            <SrcFiles Include="@(_VertexShaderWithTargetPath)" Condition="'%(Extension)' == '.vs'" />
+            <SrcFiles Include="@(_PixelShaderWithTargetPath)" Condition="'%(Extension)' == '.ps'" />
+            <SrcFiles Include="@(_GeometryShaderWithTargetPath)" Condition="'%(Extension)' == '.geo'" />
+            <SrcFiles Include="@(_HullShaderWithTargetPath)" Condition="'%(Extension)' == '.hull'" />
+            <SrcFiles Include="@(_DomainShaderWithTargetPath)" Condition="'%(Extension)' == '.domain'" />
+            <SrcFiles Include="@(_ComputeShaderWithTargetPath)" Condition="'%(Extension)' == '.compute'" />
+            <SrcFiles Include="@(_TextureShaderWithTargetPath)" Condition="'%(Extension)' == '.ts'" />
+        </ItemGroup>
+        <ItemGroup>
+            <SrcFiles Include="@(_DxShaderWithTargetPath)">
+                <ShaderType>DxShader</ShaderType>
+                <ShaderModel Condition="'%(_EffectShaderWithTargetPath.ShaderModel)' == ''">5_0</ShaderModel>
+            </SrcFiles>
+            <SrcFiles Include="@(_VertexShaderWithTargetPath)">
+                <ShaderType>Vertex</ShaderType>
+                <ShaderModel Condition="'%(_VertexShaderWithTargetPath.ShaderModel)' == ''">5_0</ShaderModel>
+            </SrcFiles>
+            <SrcFiles Include="@(_PixelShaderWithTargetPath)">
+                <ShaderType>Pixel</ShaderType>
+                <ShaderModel Condition="'%(_PixelShaderWithTargetPath.ShaderModel)' == ''">5_0</ShaderModel>
+            </SrcFiles>
+            <SrcFiles Include="@(_GeometryShaderWithTargetPath)">
+                <ShaderType>Geometry</ShaderType>
+                <ShaderModel Condition="'%(_GeometryShaderWithTargetPath.ShaderModel)' == ''">5_0</ShaderModel>
+            </SrcFiles>
+            <SrcFiles Include="@(_HullShaderWithTargetPath)">
+                <ShaderType>Hull</ShaderType>
+                <ShaderModel Condition="'%(_HullShaderWithTargetPath.ShaderModel)' == ''">5_0</ShaderModel>
+            </SrcFiles>
+            <SrcFiles Include="@(_DomainShaderWithTargetPath)">
+                <ShaderType>Domain</ShaderType>
+                <ShaderModel Condition="'%(_DomainShaderWithTargetPath.ShaderModel)' == ''">5_0</ShaderModel>
+            </SrcFiles>
+            <SrcFiles Include="@(_ComputeShaderWithTargetPath)">
+                <ShaderType>Compute</ShaderType>
+                <ShaderModel Condition="'%(_ComputeShaderWithTargetPath.ShaderModel)' == ''">5_0</ShaderModel>
+            </SrcFiles>
+            <SrcFiles Include="@(_TextureShaderWithTargetPath)">
+                <ShaderType>Texture</ShaderType>
+                <ShaderModel Condition="'%(_TextureShaderWithTargetPath.ShaderModel)' == ''">5_0</ShaderModel>
+            </SrcFiles>
+        </ItemGroup>
+        
+        <ItemGroup>
+            <SrcFiles>
+                <TargetDirectory>$([System.IO.Path]::GetDirectoryName(%(SrcFiles.TargetPath)))</TargetDirectory>
+                <ObjectFileOutput Condition=" '$(ObjectFileOutput)' == ''" >$(IntermediateOutputPath)$([System.IO.Path]::ChangeExtension(%(SrcFiles.TargetPath), '.cso'))</ObjectFileOutput>
+                <SuppressStartupBanner Condition=" '$(SuppressStartupBanner)' == ''" >true</SuppressStartupBanner>
+                <EntryPointName Condition=" '%(SrcFiles.EntryPointName)' == ''" >main</EntryPointName>
+                <ShaderModel Condition=" '$(ShaderModel)' != ''" >$(ShaderModel)</ShaderModel>
+            </SrcFiles>
+        </ItemGroup>
+        <ItemGroup>
+            <ReferenceCopyLocalPaths Include="@(SrcFiles->'%(ObjectFileOutput)'->'%(FullPath)')">
+                <DestinationSubDirectory Condition=" %(SrcFiles.TargetDirectory) != '' " >%(SrcFiles.TargetDirectory)\</DestinationSubDirectory>
+            </ReferenceCopyLocalPaths>
+        </ItemGroup>
+    </Target>
+
+
+    <PropertyGroup>
+        <DxcCompileShaderDependsOn>$(DxcCompileShaderDependsOn);AssignItemsFxCompile;</DxcCompileShaderDependsOn>
+        <AssignTargetPathsDependsOn>$(AssignTargetPathsDependsOn);AssignItemsFxCompile</AssignTargetPathsDependsOn>
+    </PropertyGroup>
+    
+    <Target Name="DxcGenerateShader" Condition=" '@(SrcFiles)' != '' "
+            Inputs="@(SrcFiles)" Outputs="@(SrcFiles->'%(ObjectFileOutput)')" >
+        <MakeDir Directories="@(SrcFiles->'%(ObjectFileOutput)'->DirectoryName())" />
+        <WriteLinesToFile File="@(SrcFiles->'%(ObjectFileOutput)')" Lines="@(SrcFiles->'%(FullPath)')" Overwrite="true" />
+        <ItemGroup>
+            <DxcGenerateOutput Include="@(SrcFiles->'%(ObjectFileOutput)')" />
+            <FileWrites Include="@(SrcFiles->'%(ObjectFileOutput)')" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="DxcCompileShader" Condition="'@(SrcFiles)' != '' "
+            Inputs="@(SrcFiles)" Outputs="@(SrcFiles->'%(ObjectFileOutput)')"
+            DependsOnTargets="$(DxcCompileShaderDependsOn);DxcGenerateShader;" >
+
+        <MakeDir Directories="@(SrcFiles->'%(ObjectFileOutput)'->DirectoryName())" />
+        
+        <DxcTool
+                Source="@(SrcFiles)"
+                EntryPoint="$(EntryPointName)"
+                ShaderType="$(ShaderType)"
+                ShaderModel="$(ShaderModel)"
+                AssemblerOutDir="$(TargetDirectory)"
+                AssemblerOutputFile="$(ObjectFileOutput)"
+                EnableDebuggingInfo="$(EnableDebuggingInfo)"
+                DisableOptimizations="$(DisableOptimizations)"
+                PreprocessorDefinitions="$(PreprocessorDefinitions)"
+                AdditionalIncludeDirectories="$(AdditionalIncludeDirectories)" />
+        <ItemGroup>
+            <DxcCompileOutput Include="@(SrcFiles->'%(ObjectFileOutput)')" />
+            <FileWrites Include="@(SrcFiles->'%(ObjectFileOutput)')" />
+        </ItemGroup>
+    </Target>
+</Project>

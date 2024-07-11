@@ -1,0 +1,70 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <!--Common Project Properties-->
+    <PropertyGroup Label="CommonProjectProps">
+        <UsingDxc>true</UsingDxc>
+        <DxcSupportedPlatforms>x64;arm64;AnyCPU;</DxcSupportedPlatforms>
+        <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+        <Platforms>$(DxcSupportedPlatforms)</Platforms>
+    </PropertyGroup>
+    
+    
+    <!-- Dependencies & References :: -->
+    <ItemGroup Label="ProjectRefs">
+      <ProjectReference Include="..\DXSharp\DXSharp.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup Label="ProjectPackageRefs">
+      <!-- Win32Metadata Package -->
+      <PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" 
+                        Version="$(WinMDVersion)" />
+      
+      <!-- CsWin32 Generator -->
+      <PackageReference Include="Microsoft.Windows.CsWin32" 
+                        Version="$(CsWin32Version)">
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
+    </ItemGroup>
+
+   <!-- <ItemGroup>
+        <Content Include="$(PkgXbim_Geometry)\build\x64\Xbim.Geometry.Engine64.dll">
+            <Link>x64\Xbim.Geometry.Engine64.dll</Link>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        </Content>
+        <Content Include="$(PkgXbim_Geometry)\build\x86\Xbim.Geometry.Engine32.dll">
+            <Link>x86\Xbim.Geometry.Engine32.dll</Link>
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        </Content>
+    </ItemGroup>-->
+
+    <ItemGroup>
+        <PackageReference Include="$(DxcPackageName)" Version="$(DxcVersion)" GeneratePathProperty="true"/>
+    </ItemGroup>
+    <PropertyGroup>
+        <DxcPackagePath>$(PkgMicrosoft_Direct3D_DXC)</DxcPackagePath>
+    </PropertyGroup>
+    
+    
+    <!-- Grab our native Dxc DLL dependencies: -->
+    <ItemGroup Label="CopyTheDxcDlls">
+        <!-- Resolve the path to the correct native DLLs for the current platform: 
+        <DxcTool Include="$(DxcCompilerToolExe)" />
+        <DxcDLLs Include="$(DxcPackagePath)\build\native\bin\$(NativePlatformName)\*.dll" />
+        
+        <None Include="@(DxcDLLs)" Label="CopyTheDlls">
+            <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+
+        <LocalDxcDLLs Include="@(DxcDLLs->'$(OutputPath)%(RecursiveDir)%(FileName)%(Extension)')" />
+        
+        &lt;!&ndash; Create native references to the DLLs in the output directory: &ndash;&gt;
+        <NativeReference Include="$(LocalDxcDLLs)" 
+                         Label="MakeNativeDxcRefs" >
+            <IsWin32Manifest>false</IsWin32Manifest>
+            <Name>%(Filename)%(Extension)</Name>
+            <HintPath>.\</HintPath>
+        </NativeReference>-->
+    </ItemGroup>
+</Project>

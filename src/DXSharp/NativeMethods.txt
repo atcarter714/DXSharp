@@ -1,66 +1,58 @@
-﻿// DirectX libraries:
-dxgi.*
-d3d12.*
-d3d11.*
-dxguid.*
+﻿// ------------------------------------------
+// Win32 Items:
+// ------------------------------------------
 
-// DXGI COM Interfaces:
-IDXGIFactory7
-IDXGIAdapter4
-IDXGIOutput6
-
-// DXGI Enumerations:
-DXGI_SWAP_CHAIN_FLAG
-DXGI_FEATURE_DATA_FORMAT_INFO
-
-
-
-// D3D12 Structures:
-D3D12_VIEWPORT					// NOTE: D3D12_RECT is just a typedef of RECT
-
-
-// D3D12 Interfaces:
-ID3D12Device
-ID3D12Device1
-ID3D12Device2
-ID3D12Device3
-ID3D12Device4
-ID3D12Device5
-ID3D12Device6
-ID3D12Device7
-ID3D12Device8
-ID3D12Device9
-
-ID3D12CommandQueue
-ID3D12CommandList
-ID3D12GraphicsCommandList1
-ID3D12GraphicsCommandList2
-ID3D12GraphicsCommandList3
-ID3D12GraphicsCommandList4
-ID3D12GraphicsCommandList5
-
-ID3D12Debug
-ID3D12Debug1
-ID3D12Debug2
-ID3D12Debug3
-ID3D12Debug4
-ID3D12Debug5
-
-IDXGISwapChain
-IDXGISwapChain1
-IDXGISwapChain2
-IDXGISwapChain3
-IDXGISwapChain4
-
-// Win32 API Stuff:
-IUnknown
 GetClientRect
 PeekMessage
 GetMessage
 TranslateMessage
 DispatchMessage
+SetWindowText
+CreateWindowEx
+DefWindowProc
+PostQuitMessage
+ShowWindow
+UpdateWindow
+RegisterClassEx
+CreateWindowEx
+DefWindowProc
+PostQuitMessage
+ShowWindow
+UpdateWindow
+RegisterClassExW
+CreateWindowExW
 
-// HRESULT constants:
+GetModuleHandle
+GlobalMemoryStatusEx
+GetPhysicallyInstalledSystemMemory
+GetLogicalProcessorInformation
+GetSystemInfo
+VirtualAlloc2
+GetCurrentProcess
+
+LoadCursorA
+LoadCursorW
+CommandLineToArgvW
+GetCommandLineA
+GetCommandLineW
+EnumDisplayDevicesA
+EnumDisplayDevicesW
+RegisterWindowMessageA
+RegisterWindowMessageW
+MulDiv
+QueryPerformanceCounter
+
+WNDCLASSEXA
+WNDCLASSEXW
+MEMORYSTATUSEX
+MEM_*
+RGBQUAD
+WM_*
+
+IStream
+
+
+// ------------------------------------------
 S_OK
 E_ABORT
 E_ACCESSDENIED
@@ -72,7 +64,66 @@ E_NOTIMPL
 E_OUTOFMEMORY
 E_POINTER
 E_UNEXPECTED
+// ==========================================
 
+
+// ------------------------------------------
+// DirectX libraries:
+// ------------------------------------------
+dxgi.*
+d3d12.*
+d3d11.*
+user32.*
+dxcompiler.*
+// ------------------------------------------
+
+// ------------------------------------------
+// DXGI Items:
+// ------------------------------------------
+//DXGIGetDebugInterface
+DXGIGetDebugInterface1
+
+IDXGIDebug
+IDXGIDebug1
+IDXGIInfoQueue
+IDXGIFactory7
+IDXGIAdapter4
+IDXGIOutput6
+IDXGISurface1
+IDXGISurface2
+ID3D12Heap1
+ID3D12GraphicsCommandList8
+ID3D12GraphicsCommandList9
+IDXGIDevice1
+IDXGIDevice2
+IDXGIDevice3
+IDXGIDevice4
+IDXGIFactoryMedia
+IDXGIDecodeSwapChain
+IDXGIResource1
+// ------------------------------------------
+// DXGI Enumerations:
+DXGI_SWAP_CHAIN_FLAG
+DXGI_OFFER_RESOURCE_FLAGS
+DXGI_DECODE_SWAP_CHAIN_DESC
+DXGI_MULTIPLANE_OVERLAY_YCbCr_FLAGS
+DXGI_OVERLAY_COLOR_SPACE_SUPPORT_FLAG
+DXGI_OVERLAY_SUPPORT_FLAG
+DXGI_HDR_METADATA_HDR10
+DXGI_SWAP_CHAIN_COLOR_SPACE_SUPPORT_FLAG
+DXGI_DEBUG_RLO_FLAGS
+DXGI_INFO_QUEUE_MESSAGE_CATEGORY
+DXGI_FORMAT
+DXGI_SAMPLE_DESC
+DXGI_HARDWARE_COMPOSITION_SUPPORT_FLAGS
+DXGI_GAMMA_CONTROL
+DXGI_ADAPTER_FLAG
+DXGI_ADAPTER_FLAG3
+DXGI_OFFER_RESOURCE_PRIORITY
+DXGI_OUTDUPL_POINTER_SHAPE_TYPE
+DXGI_INFO_QUEUE_FILTER
+
+// ------------------------------------------
 // DXGI HRESULT Error Codes:
 DXGI_ERROR_ACCESS_DENIED
 DXGI_ERROR_ACCESS_LOST
@@ -98,3 +149,170 @@ DXGI_ERROR_SESSION_DISCONNECTED
 DXGI_ERROR_UNSUPPORTED
 DXGI_ERROR_WAIT_TIMEOUT
 DXGI_ERROR_WAS_STILL_DRAWING
+DXGI_ERROR_DEVICE_REMOVED
+DXGI_ERROR_DEVICE_RESET
+DXGI_ERROR_DEVICE_HUNG
+// ==========================================
+
+
+
+// ------------------------------------------
+// D3D12 Items:
+// ------------------------------------------
+D3D12*
+D3D12_*
+D3D12_ERROR_*
+
+// D3D12 Structures:
+D3D12_VIEWPORT
+
+D3D12_FEATURE
+D3D12_FEATURE_DATA_ARCHITECTURE
+D3D12_FEATURE_DATA_ARCHITECTURE1
+D3D12_FEATURE_DATA_CROSS_NODE
+D3D12_FEATURE_DATA_FEATURE_LEVELS
+D3D12_FEATURE_DATA_D3D12_OPTIONS
+D3D12_FEATURE_DATA_D3D12_OPTIONS1
+D3D12_FEATURE_DATA_D3D12_OPTIONS2
+D3D12_FEATURE_DATA_D3D12_OPTIONS3
+D3D12_FEATURE_DATA_D3D12_OPTIONS4
+D3D12_FEATURE_DATA_D3D12_OPTIONS5
+D3D12_FEATURE_DATA_D3D12_OPTIONS6
+D3D12_FEATURE_DATA_D3D12_OPTIONS7
+D3D12_FEATURE_DATA_D3D12_OPTIONS8
+D3D12_FEATURE_DATA_D3D12_OPTIONS9
+D3D12_FEATURE_DATA_D3D12_OPTIONS10
+D3D12_FEATURE_DATA_D3D12_OPTIONS11
+D3D12_FEATURE_DATA_FORMAT_SUPPORT
+D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS
+D3D12_FEATURE_DATA_FORMAT_INFO
+D3D12_FEATURE_DATA_GPU_VIRTUAL_ADDRESS_SUPPORT
+D3D12_FEATURE_DATA_SHADER_MODEL
+D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_SUPPORT
+D3D12_FEATURE_DATA_ROOT_SIGNATURE
+D3D12_FEATURE_DATA_SHADER_CACHE
+D3D12_FEATURE_DATA_COMMAND_QUEUE_PRIORITY
+D3D12_FEATURE_DATA_EXISTING_HEAPS
+D3D12_FEATURE_DATA_SERIALIZATION
+D3D12_FEATURE_DATA_CROSS_NODE
+D3D12_FEATURE_DATA_DISPLAYABLE
+D3D12_FEATURE_DATA_QUERY_META_COMMAND
+D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPE_COUNT
+D3D12_FEATURE_DATA_PROTECTED_RESOURCE_SESSION_TYPES
+
+D3D12_COMMAND_QUEUE_PRIORITY
+D3D12_SHADER_COMPONENT_MAPPING
+
+D3D12_DRED_ENABLEMENT
+D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT
+D3D12_DRED_PAGE_FAULT_OUTPUT
+
+// ------------------------------------------
+// D3D12 Interfaces:
+ID3D12Device
+ID3D12Device1
+ID3D12Device2
+ID3D12Device3
+ID3D12Device4
+ID3D12Device5
+ID3D12Device6
+ID3D12Device7
+ID3D12Device8
+ID3D12Device9
+ID3D12Device10
+ID3D12Device11
+ID3D12Device12
+
+ID3D12CommandQueue
+ID3D12CommandList
+ID3D12GraphicsCommandList1
+ID3D12GraphicsCommandList2
+ID3D12GraphicsCommandList3
+ID3D12GraphicsCommandList4
+ID3D12GraphicsCommandList5
+
+ID3D12Debug
+ID3D12Debug1
+ID3D12Debug2
+ID3D12Debug3
+ID3D12Debug4
+ID3D12Debug5
+
+IDXGISwapChain
+IDXGISwapChain1
+IDXGISwapChain2
+IDXGISwapChain3
+IDXGISwapChain4
+ID3D12SwapChainAssistant
+
+ID3D12ShaderCacheSession
+ID3D12Resource
+ID3D12DescriptorHeap
+ID3D12CommandAllocator
+ID3D12RootSignature
+ID3D12PipelineState
+ID3D12Fence
+ID3D12PipelineLibrary
+ID3D12Resource1
+ID3D12Resource2
+
+ID3D12VersionedRootSignatureDeserializer
+ID3D12SDKConfiguration
+ID3D12Tools
+ID3D12StateObjectProperties
+ID3D12DeviceRemovedExtendedData
+ID3D12DeviceRemovedExtendedDataSettings
+ID3D12SharingContract
+
+D3DCreateBlob
+D3DCompileFromFile
+
+D3D12Experimental*
+D3D12TiledResourceTier4
+
+
+// ------------------------------------------
+// Additional D3D12/D3DX12 Items:
+// ------------------------------------------
+DXCoreCreateAdapterFactory
+IDXGIKeyedMutex
+ID3D12DebugCommandList
+ID3D12DebugCommandList1
+ID3D12Fence1
+ID3D12ProtectedResourceSession1
+ID3D12GraphicsCommandList6
+ID3D12GraphicsCommandList7
+ID3D12GraphicsCommandList8
+ID3D12LifetimeTracker
+ID3D12Device10
+ID3D12Device11
+ID3D12Device12
+ID3D12PipelineLibrary1
+ID3D12Debug6
+ID3D12FunctionReflection
+
+D3D12_TILED_RESOURCES_TIER
+D3D12_SHADER_VERSION_TYPE
+D3D_RESOURCE_RETURN_TYPE
+D3D12_SHADER_BUFFER_DESC
+D3D12_COLOR_WRITE_ENABLE
+D3D12_DEFAULT_STENCIL_READ_MASK
+D3D12_LIFETIME_STATE
+D3D12_RENDER_PASS_DEPTH_STENCIL_DESC
+D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT
+D3D12_PIPELINE_STATE_SUBOBJECT_TYPE
+D3D12_GPU_BASED_VALIDATION_FLAGS
+
+
+// ------------------------------------------
+// DXCore Items:
+// ------------------------------------------
+DXCoreCreateAdapterFactory
+IDXCoreAdapterFactory
+IDXCoreAdapterList
+IDXCoreAdapter
+DXCoreSegmentGroup
+DXCoreAdapterMemoryBudget
+DXCoreAdapterMemoryBudgetNodeSegmentGroup
+DXCoreHardwareID
+// ------------------------------------------

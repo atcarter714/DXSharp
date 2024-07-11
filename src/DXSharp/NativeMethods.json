@@ -1,11 +1,34 @@
 ﻿{
   "$schema": "https://aka.ms/CsWin32.schema.json",
   "emitSingleFile": false,
-
+  "public": true,
+  
   "comInterop": {
     "preserveSigMethods": [
-      "EnumAdapters",
-      "EnumAdapters1"
+      "IDXGIFactory.EnumAdapters",
+      "IDXGIFactory1.EnumAdapters1",
+      "IDXGIFactory4.EnumAdapterByLuid",
+      "IDXGIFactory4.EnumWarpAdapter",
+      "IDXGIFactory6.EnumAdapterByGpuPreference",
+      "IDXGIOutputDuplication.GetFrameDirtyRects",
+      
+      "ID3D12Device.GetDeviceRemovedReason",
+      "ID3D12Device.CheckFeatureSupport",
+      "ID3D12Device.GetDeviceRemovedReason",
+      "ID3D12Device.CreateCommandList",
+      
+      "ID3D12Debug.EnableDebugLayer",
+      "IDXGIOutput5.DuplicateOutput1",
+      "IDXGISwapChain3.ResizeBuffers1",
+      "IDXGIOutputDuplication.GetFrameDirtyRects",
+      "IDXGIOutputDuplication.GetFrameMoveRects",
+      "IDXGIDevice.GetAdapter",
+      "IDXGIDevice.CheckFeatureSupport",
+      "ID3D12SDKConfiguration.SetSDKVersion",
+      
+      "IUnknown.QueryInterface",
+      "IUnknown.AddRef",
+      "IUnknown.Release"
     ]
   }
 }

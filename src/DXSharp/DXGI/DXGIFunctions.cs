@@ -1,20 +1,19 @@
 ﻿#region Using Directives
-using global::System;
-using global::System.Runtime.CompilerServices;
-using global::System.Runtime.InteropServices;
+using System.Runtime.CompilerServices ;
+using System.Diagnostics.CodeAnalysis ;
+using System.Runtime.InteropServices ;
+using System.Runtime.Versioning ;
 
-using Windows.Win32.Foundation;
-using Windows.Win32.Graphics.Direct3D;
-using Windows.Win32.Graphics.Direct3D11;
-using Windows.Win32.Graphics.Direct3D12;
-using Windows.Win32.Graphics.Dxgi;
+using Windows.Win32.Graphics.Dxgi ;
+using Windows.Win32.Foundation ;
+using Windows.Win32 ;
 
-using global::Windows.Win32;
-using Win32 = global::Windows.Win32;
-using System.Runtime.Versioning;
+using DXSharp.DXGI.Debugging ;
+using DXSharp.Windows ;
+using static DXSharp.DXSharpUtils ;
 #endregion
+namespace DXSharp.DXGI ;
 
-namespace DXSharp.DXGI;
 
 /// <summary>
 /// Valid values include the DXGI_CREATE_FACTORY_DEBUG (0x01) flag, and zero.
@@ -27,17 +26,13 @@ namespace DXSharp.DXGI;
 /// for example using D3D11CreateDevice (or the swapchain method, or the 
 /// Direct3D 10 equivalents).
 /// </remarks>
-public enum FactoryCreateFlags: uint
-{
-	/// <summary>
-	/// No flags
-	/// </summary>
-	None = 0x00,
-	/// <summary>
-	/// Enable debug layer
-	/// </summary>
-	DEBUG = 0x01,
-};
+public enum FactoryCreateFlags: uint {
+	/// <summary>No flags</summary>
+	None  = 0x0000,
+	/// <summary>Enable debug layer</summary>
+	Debug = 0x0001,
+} ;
+
 
 
 /// <summary>
@@ -48,37 +43,323 @@ public enum FactoryCreateFlags: uint
 /// <a href="https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/d3d10-graphics-reference-dxgi-functions">DXGI functions</a> 
 /// for a complete list with additional information
 /// </remarks>
-public static partial class DXGIFunctions
-{
-	// Native Interop Signatures:
-	//HRESULT CreateDXGIFactory( in global::System.Guid riid, out object ppFactory );
-	//HRESULT CreateDXGIFactory( global::System.Guid* riid, [MarshalAs( UnmanagedType.IUnknown )] out object ppFactory );
-	//HRESULT CreateDXGIFactory1( in global::System.Guid riid, out object ppFactory );
-	//HRESULT CreateDXGIFactory1( global::System.Guid* riid, [MarshalAs( UnmanagedType.IUnknown )] out object ppFactory );
-	//HRESULT CreateDXGIFactory2( uint Flags, in global::System.Guid riid, out object ppFactory );
-	//HRESULT CreateDXGIFactory2( uint Flags, global::System.Guid* riid, [MarshalAs( UnmanagedType.IUnknown )] out object ppFactory );
+public static partial class DXGIFunctions {
+	// ---------------------------------------------------------------------------------------------------
+	//! PInvoke/External Functions:
+	// ---------------------------------------------------------------------------------------------------
+	//! For some reason, CsWin32 doesn't create this function in PInvoke class:
+	[DllImport("dxgi.dll", EntryPoint = "CreateDXGIFactory", 
+			   SetLastError = true, ExactSpelling = true)]
+	static extern unsafe HResult DXGIGetDebugInterface( 
+			Guid* riid,
+			[MarshalAs( UnmanagedType.IUnknown )] out object? debugInterface // void** ppDebug
+		) ;
+	// ---------------------------------------------------------------------------------------------------
 
-	//HRESULT DXGIGetDebugInterface1( uint Flags, in global::System.Guid riid, out object pDebug );
-	//HRESULT DXGIGetDebugInterface1( uint Flags, global::System.Guid* riid, [MarshalAs( UnmanagedType.IUnknown )] out object pDebug );
-	//HRESULT DXGIDeclareAdapterRemovalSupport();
+	
+	// ---------------------------------------------------------------------------------------------------
+	//! Factory creation functions:
+	[SuppressMessage( "Interoperability", "CA1416:Validate platform compatibility" )] 
+	static readonly Dictionary< Guid, Func< IDXGIFactory, IInstantiable > > _factoryCreators = new( ) {
+		{ IFactory.IID, (f) => new Factory(f) },
+		{ IFactory1.IID, (f) => new Factory1( (f as IDXGIFactory1)! ) },
+		{ IFactory2.IID, (f) => new Factory2( (f as IDXGIFactory2)! ) },
+		{ IFactory3.IID, (f) => new Factory3( (f as IDXGIFactory3)! ) },
+		{ IFactory4.IID, (f) => new Factory4( (f as IDXGIFactory4)! ) },
+		{ IFactory5.IID, (f) => new Factory5( (f as IDXGIFactory5)! ) },
+		{ IFactory6.IID, (f) => new Factory6( (f as IDXGIFactory6)! ) },
+		{ IFactory7.IID, (f) => new Factory7( (f as IDXGIFactory7)! ) },
+	} ;
+	// ---------------------------------------------------------------------------------------------------
+	
+	
+	
+	// ---------------------------------------------------------------------------------------------------
+	//! DXGICreateFactoryX Functions/Overloads:
+	// ---------------------------------------------------------------------------------------------------
+	
+	public static HResult CreateFactory< T >( out T? factory ) where T : IFactory, IInstantiable {
+		var riid = T.Guid ;
+		var hr = CreateFactory( riid, out var _f ) ;
+		factory = (T?) _f ;
+		return hr ;
+	}
 
-	#region Internal Methods
+	public static HResult CreateFactory( in Guid riid, out IFactory? factory ) {
+		HResult hr   = PInvoke.CreateDXGIFactory( in riid, out var _fact ) ;
+		
+		var dxgiFactory = _fact as IDXGIFactory
+#if DEBUG || DEBUG_COM || DEV_BUILD
+						  ?? throw new DirectXComError( $"The object returned from {nameof(CreateDXGIFactory)} is invalid!" )
+#endif
+		;
+		
+		#region Debug Checks
+#if !STRIP_CHECKS
+		if( hr.Failed ) {
+#if DEBUG_COM || DEV_BUILD
+			hr.SetAsLastErrorForThread( ) ;
+			
+			var hrB = hr.ThrowOnFailure( ) ;
+			hrB.SetAsLastErrorForThread( ) ;
+#endif
+			factory = default ;
+			return hr ;
+		}
+#endif
+		
+		//! Verify the type argument is a wrapper of `IDXGIFactory`:
+#if !STRIP_CHECKS
+		if( !_factoryCreators.ContainsKey(riid) ) {
+#if DEBUG_COM
+			throw new DirectXComError( $"No such interface is supported.", 
+									   new( $"\"{nameof(riid)}\" is not a recognized " +
+											$"{nameof(IDXGIFactory)} interface identifier.",
+											HResult.E_NOINTERFACE ) ) ;
+#else
+			factory = default ;
+			return HResult.E_NOINTERFACE ;
+#endif
+		}
+#endif
+		#endregion
+		
+		var _createWrapperFn = _factoryCreators[ riid ] ;
+		
+		factory = (IFactory) _createWrapperFn( dxgiFactory! ) ;
+		return hr ;
+	}
 
+	[SupportedOSPlatform( "windows6.1" )]
+	public static HResult CreateFactory1< T >( out T? factory ) where T: IFactory1, IInstantiable {
+		var riid  = T.Guid ;
+		var hr = CreateFactory1( riid, out var _f1 ) ;
+		factory = (T?) _f1 ;
+		return hr ;
+	}
+
+	[SupportedOSPlatform( "windows6.1" )]
+	public static HResult CreateFactory1( in Guid riid, out IFactory1? factory ) {
+		
+		HResult hr   = PInvoke.CreateDXGIFactory1( in riid, out var _fact ) ;
+		
+		var dxgiFactory = _fact as IDXGIFactory1
+#if DEBUG || DEBUG_COM || DEV_BUILD
+						  ?? throw new DirectXComError( $"The object returned from {nameof(CreateDXGIFactory1)} is invalid!" )
+#endif
+		;
+		
+		#region Debug Checks
+#if !STRIP_CHECKS
+		if( hr.Failed ) {
+#if DEBUG_COM || DEV_BUILD
+			hr.SetAsLastErrorForThread( ) ;
+			
+			var hrB = hr.ThrowOnFailure( ) ;
+			hrB.SetAsLastErrorForThread( ) ;
+#endif
+			factory = default ;
+			return hr ;
+		}
+#endif
+				
+		//! Verify the type argument is a wrapper of `IDXGIFactory`:
+#if !STRIP_CHECKS
+		if( !_factoryCreators.ContainsKey(riid) ) {
+#if DEBUG_COM
+			throw new DirectXComError( $"No such interface is supported.",
+									   new( $"\"{nameof(riid)}\" is not a recognized " +
+											$"{nameof(IDXGIFactory)} interface identifier.",
+											HResult.E_NOINTERFACE ) ) ;
+#else
+			factory = default ;
+			return HResult.E_NOINTERFACE ;
+#endif
+		}
+#endif
+		#endregion
+		
+		var _createWrapperFn = _factoryCreators[ riid ] ;
+		
+		factory = (IFactory1) _createWrapperFn( dxgiFactory! ) ;
+		return hr ;
+	}
+
+	[SupportedOSPlatform( "windows8.1" )]
+	public static HResult CreateFactory2< T >( out T factory,
+											   FactoryCreateFlags flags = FactoryCreateFlags.None )
+																		where T: IFactory2, IInstantiable {
+		var riid = T.Guid ;
+		var hr = CreateFactory2( riid, out var _f2, flags ) ;
+		factory = (T) _f2 ;
+		return hr ;
+	}
+
+	[SupportedOSPlatform( "windows8.1" )]
+	public static HResult CreateFactory2( in Guid riid, out IFactory2 factory,
+										  FactoryCreateFlags flags = FactoryCreateFlags.None ) {
+		
+#if DEBUG || DEBUG_COM || DEV_BUILD
+		if ( !_factoryCreators.ContainsKey( riid ) )
+			throw new ArgumentException( $"Unrecognized GUID value: " +
+										 $"{riid.ToString()}", nameof( riid ) ) ;
+#endif
+		
+		HResult hr = PInvoke.CreateDXGIFactory2( (uint)flags, riid, out var factoryObj ) ;
+		hr.SetAsLastErrorForThread( ) ;
+
+		// Convert RCW object to IDXGIFactory:
+		var dxgiFactoryBase = factoryObj as IDXGIFactory2
+#if DEBUG || DEBUG_COM || DEV_BUILD
+							  ?? throw new DirectXComError( $"The object returned from {nameof(CreateFactory2)} is invalid!" )
+#else
+			!
+#endif
+			;
+		
+		factory = (IFactory2)_factoryCreators[ riid ]( dxgiFactoryBase ) ;
+		return hr ;
+	}
+
+	
+	// ---------------------------------------------------------------------------------------------------
+	//! DXGI Utility Functions/Overloads:
+	// ---------------------------------------------------------------------------------------------------
+	
+	[SupportedOSPlatform("windows10.0.17134")]
+	public static HResult DeclareAdapterRemovalSupport( ) => PInvoke.DXGIDeclareAdapterRemovalSupport( ) ;
+	
+	[SupportedOSPlatform("windows10.0.17134")]
+	public static HResult DisableVBlankVirtualization( ) => PInvoke.DXGIDeclareAdapterRemovalSupport( ) ;
+
+
+	// ---------------------------------------------------------------------------------------------------
+	//! DXGIGetDebugInterfaceX Functions/Overloads:
+	// ---------------------------------------------------------------------------------------------------
+
+	[SupportedOSPlatform( "windows8.0" )]
+	public static HResult GetDebugInterface( in Guid riid, out IDebug? debugInterface ) {
+		unsafe {
+			fixed ( Guid* _riid = &riid ) {
+				var hr = DXGIGetDebugInterface( _riid, out var _dbgObj ) ;
+				
+				hr.SetAsLastErrorForThread( ) ;
+				var _dbg = _dbgObj as IDXGIDebug ;
+
+#if !STRIP_CHECKS
+				hr.ThrowOnFailure( ) ;
+				
+				if ( _dbg is null ) {
+					debugInterface = default ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
+					throw new DirectXComError( $"The RCW object returned from " +
+											   $"{nameof(DXGIGetDebugInterface)} is invalid!" ) ;
+#else
+					return hr ;
+#endif
+				}
+				
+				// Check if the given GUID is a recognized interface identifier:
+				if ( !IDebug._layerCreationFunctions.ContainsKey(riid)
+					 && !IInfoQueue._infoQueueCreationFunctions.ContainsKey(riid) ) {
+					debugInterface = default ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
+					throw new DirectXComError( $"Unrecognized or unsupported {nameof(Guid)} " +
+											   $"used as interface identifier (IID)!" ) ;
+#else
+					return ;
+#endif
+				}
+#endif
+				
+				var _createFn = IDebug._layerCreationFunctions[ riid ] ;
+				debugInterface = (IDebug) _createFn( _dbg ) ;
+				
+				return hr ;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Retrieves an interface that Windows Store apps use for debugging the Microsoft DirectX Graphics Infrastructure (DXGI).
+	/// </summary>
+	/// <param name="riid">
+	/// The globally unique identifier (GUID) of the requested interface type, which can be the identifier for the
+	/// IDXGIDebug, IDXGIDebug1, or IDXGIInfoQueue interfaces.
+	/// </param>
+	/// <param name="debugInterface"></param>
+	[SupportedOSPlatform( "windows8.1" )]
+	public static HResult GetDebugInterface1( in Guid riid, out IDebug1? debugInterface ) {
+		unsafe {
+			fixed ( Guid* _riid = &riid ) {
+				HResult hr = PInvoke.DXGIGetDebugInterface1( 0x00, _riid, out object _dbgObj ) ;
+				hr.SetAsLastErrorForThread( ) ;
+				var _dbg = _dbgObj as IDXGIDebug ;
+#if !STRIP_CHECKS
+				hr.ThrowOnFailure( ) ;
+				
+				if ( _dbg is null ) {
+#if DEBUG || DEBUG_COM || DEV_BUILD
+					throw new DirectXComError( $"The RCW object returned from " +
+											   $"{nameof(PInvoke.DXGIGetDebugInterface1)} is invalid!" ) ;
+#else
+					debugInterface = default ;
+					return hr ;
+#endif
+				}
+				
+				// Check if the given GUID is a recognized interface identifier:
+				if ( !IDebug._layerCreationFunctions.ContainsKey(riid)
+					 && !IInfoQueue._infoQueueCreationFunctions.ContainsKey(riid) ) {
+					debugInterface = default ;
+#if DEBUG || DEBUG_COM || DEV_BUILD
+					throw new DirectXComError( $"Unrecognized or unsupported {nameof(Guid)} " +
+											   $"used as interface identifier (IID)!" ) ;
+#else
+					return ;
+#endif
+				}
+#endif
+								
+				var _createFn = IDebug._layerCreationFunctions[ riid ] ;
+				debugInterface = (IDebug1) _createFn( _dbg ) ;
+				
+				return hr ;
+			}
+		}
+	}
+	
+	// ---------------------------------------------------------------------------------------------------
+	
+	#region Old Methods (To be Deprecated & Removed)
+	internal static unsafe TFactory? CreateDXGIFactory< TFactory >( Guid riid, out HRESULT hr ) {
+		hr = PInvoke.CreateDXGIFactory( &riid, out object? factoryObj ) ;
+		return hr.Succeeded ? (TFactory)factoryObj : default ;
+	}
+
+	[SupportedOSPlatform( "windows6.1" )]
+	internal static unsafe TFactory? CreateDXGIFactory1< TFactory >( Guid riid, out HRESULT hr ) 
+																	 where TFactory: IDXGIFactory1 {
+		hr = PInvoke.CreateDXGIFactory1( &riid, out object? factoryObj ) ;
+		return hr.Succeeded ? (TFactory)factoryObj : default ;
+	}
+
+	[SupportedOSPlatform( "windows8.1" )]
+	internal static unsafe TFactory? CreateDXGIFactory2< TFactory >( FactoryCreateFlags Flags, Guid riid, out HRESULT hr ) 
+																	 where TFactory: IDXGIFactory2 {
+		hr = PInvoke.CreateDXGIFactory2( (uint)Flags, &riid, out object? factoryObj ) ;
+		return hr.Succeeded ? (TFactory)factoryObj : default ;
+	}
+	
+	
 	/// <summary>
 	/// Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
 	/// </summary>
 	/// <typeparam name="T">Type of DXGIFactoryX</typeparam>
 	/// <param name="hr">HRESULT to capture the result and indicate success/failure</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
-	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
-	internal static T? CreateDXGIFactory<T>( out HRESULT hr ) where T : IDXGIFactory
-	{
-		unsafe
-		{
-			var riid = typeof( T ).GUID;
-			hr = PInvoke.CreateDXGIFactory( &riid, out var factoryObj );
-			return hr.Succeeded ? (T) factoryObj : default( T );
-		}
+	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory< T >( out HRESULT hr ) where T: IDXGIFactory {
+		return DXGIFunctions.CreateDXGIFactory< T >( typeof(T).GUID, out hr ) ;
 	}
 
 	/// <summary>
@@ -87,29 +368,23 @@ public static partial class DXGIFunctions
 	/// <typeparam name="T">Type of DXGIFactoryX</typeparam>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	/// <exception cref="COMException">Thrown if the call fails and contains detailed error information</exception>
-	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
-	internal static T? CreateDXGIFactory<T>() where T : IDXGIFactory {
-		var factory = DXGIFunctions.CreateDXGIFactory<T>( out var hr );
-		hr.ThrowOnFailure();
-		return factory;
+	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory< T >( ) where T : IDXGIFactory {
+		var factory = DXGIFunctions.CreateDXGIFactory< T >( typeof(T).GUID, out var hr ) ;
+		_ = hr.ThrowOnFailure( ) ;
+		return factory ;
 	}
-
-
+	
 	/// <summary>
 	/// Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
 	/// </summary>
-	/// <typeparam name="T">Type of DXGIFactoryX</typeparam>
+	/// <typeparam name="TFactory">Type of DXGIFactoryX</typeparam>
 	/// <param name="hr">HRESULT to capture the result and indicate success/failure</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
-	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
-	internal static T? CreateDXGIFactory1<T>( out HRESULT hr ) where T : IDXGIFactory
-	{
-		unsafe
-		{
-			var riid = typeof( T ).GUID;
-			hr = PInvoke.CreateDXGIFactory1( &riid, out var factoryObj );
-			return hr.Succeeded ? (T) factoryObj : default( T );
-		}
+	[MethodImpl(_MAXOPT_)] [SupportedOSPlatform( "windows6.1" )]
+	internal static TFactory? CreateDXGIFactory1< TFactory >( out HRESULT hr ) where TFactory : IDXGIFactory1 {
+		hr = PInvoke.CreateDXGIFactory1( typeof( TFactory ).GUID, out var factory ) ;
+		_ = hr.ThrowOnFailure( ) ;
+		return (TFactory)factory ;
 	}
 
 	/// <summary>
@@ -118,14 +393,12 @@ public static partial class DXGIFunctions
 	/// <typeparam name="T">Type of DXGIFactoryX</typeparam>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
 	/// <exception cref="COMException">Thrown if the call fails and contains detailed error information</exception>
-	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
-	internal static T? CreateDXGIFactory1<T>() where T : IDXGIFactory
-	{
-		var factory = CreateDXGIFactory1<T>( out var hr );
-		hr.ThrowOnFailure();
+	[SupportedOSPlatform( "windows6.1" )]
+	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory1< T >( ) where T : IDXGIFactory1 {
+		var factory = CreateDXGIFactory1< T >( out var hr ) ;
+		_ = hr.ThrowOnFailure( ) ;
 		return factory;
 	}
-
 
 	/// <summary>
 	/// Creates a DXGIFactoryX COM object you can use to generate other DXGI objects
@@ -134,14 +407,11 @@ public static partial class DXGIFunctions
 	/// <param name="Flags">Creation flags</param>
 	/// <param name="hr">HRESULT to capture the result and indicate success/failure</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
-	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
-	internal static T? CreateDXGIFactory2<T>( FactoryCreateFlags Flags, out HRESULT hr ) where T : IDXGIFactory2 {
-		unsafe
-		{
-			var riid = typeof( T ).GUID;
-			hr = PInvoke.CreateDXGIFactory2( (uint)Flags, &riid, out var factoryObj );
-			return hr.Succeeded ? (T) factoryObj : default( T );
-		}
+	[SupportedOSPlatform( "windows8.1" )]
+	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory2< T >( FactoryCreateFlags Flags, out HRESULT hr ) 
+																							where T : IDXGIFactory2 {
+		var factory2 = CreateDXGIFactory2< T >( Flags, typeof(T).GUID, out hr ) ;
+		return (T)factory2! ;
 	}
 
 	/// <summary>
@@ -150,202 +420,15 @@ public static partial class DXGIFunctions
 	/// <typeparam name="T">Type of DXGIFactoryX</typeparam>
 	/// <param name="Flags">Creation flags</param>
 	/// <returns>A DXGIFactoryX object  of specified type T, or potentially null</returns>
-	[MethodImpl( MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization )]
-	internal static T? CreateDXGIFactory2<T>( FactoryCreateFlags Flags ) where T : IDXGIFactory2 {
-		var factory = CreateDXGIFactory2<T>( Flags, out var hr );
-		hr.ThrowOnFailure();
-		return factory;
+	[SupportedOSPlatform( "windows8.1" )]
+	[MethodImpl(_MAXOPT_)] internal static T? CreateDXGIFactory2< T >( FactoryCreateFlags Flags ) where T : IDXGIFactory2 {
+		var factory = CreateDXGIFactory2< T >( Flags, out var hr ) ;
+		_ = hr.ThrowOnFailure( ) ;
+		return factory ;
 	}
-
 	#endregion
 	
+	// ===================================================================================================
+}
 
-};
-
-
-//public interface IFactory: IObject
-//{
-//	/// <summary>Enumerates the adapters (video cards).</summary>
-//	/// <param name="Adapter">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The index of the adapter to enumerate.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <param name="ppAdapter">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a>**</b> The address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> interface at the position specified by the <i>Adapter</i> parameter.  This parameter must not be <b>NULL</b>.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <returns>
-//	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; otherwise, returns <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_NOT_FOUND</a> if the index is greater than or equal to the number of adapters in the local system, or <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a> if <i>ppAdapter</i> parameter is <b>NULL</b>.</para>
-//	/// </returns>
-//	/// <remarks>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters">Learn more about this API from docs.microsoft.com</see>.</para>
-//	/// </remarks>
-//	void EnumAdapters(uint Adapter, out DXSharp.DXGI.IAdapter ppAdapter);
-
-//	/// <summary>Allows DXGI to monitor an application's message queue for the alt-enter key sequence (which causes the application to switch from windowed to full screen or vice versa).</summary>
-//	/// <param name="WindowHandle">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a></b> The handle of the window that is to be monitored. This parameter can be <b>NULL</b>; but only if *Flags* is also 0.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-makewindowassociation#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <param name="Flags">Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b></param>
-//	/// <returns>
-//	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a> if <i>WindowHandle</i> is invalid, or E_OUTOFMEMORY.</para>
-//	/// </returns>
-//	/// <remarks>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-makewindowassociation">Learn more about this API from docs.microsoft.com</see>.</para>
-//	/// </remarks>
-//	void MakeWindowAssociation(HWND WindowHandle, uint Flags);
-
-//	/// <summary>Get the window through which the user controls the transition to and from full screen.</summary>
-//	/// <param name="pWindowHandle">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a>*</b> A pointer to a window handle.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-getwindowassociation#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <returns>
-//	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns a code that indicates success or failure. <b>S_OK</b> indicates success, <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a> indicates <i>pWindowHandle</i> was passed in as <b>NULL</b>.</para>
-//	/// </returns>
-//	/// <remarks>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-getwindowassociation">Learn more about this API from docs.microsoft.com</see>.</para>
-//	/// </remarks>
-//	void GetWindowAssociation(in HWND pWindowHandle);
-
-//	/// <summary>Creates a swap chain.</summary>
-//	/// <param name="pDevice">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/unknwn/nn-unknwn-iunknown">IUnknown</a>*</b> For Direct3D 11, and earlier versions of Direct3D, this is a pointer to the Direct3D device for the swap chain. For Direct3D 12 this is a pointer to a direct command queue (refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12commandqueue">ID3D12CommandQueue</a>) . This parameter cannot be <b>NULL</b>.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <param name="pDesc">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_swap_chain_desc">DXGI_SWAP_CHAIN_DESC</a>*</b> A pointer to a  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_swap_chain_desc">DXGI_SWAP_CHAIN_DESC</a> structure for the swap-chain description. This parameter cannot be <b>NULL</b>.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <param name="ppSwapChain">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiswapchain">IDXGISwapChain</a>**</b> A pointer to a variable that receives a pointer to the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiswapchain">IDXGISwapChain</a> interface for the swap chain that <b>CreateSwapChain</b> creates.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <returns>
-//	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b></para>
-//	/// <para><a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a>  if <i>pDesc</i> or <i>ppSwapChain</i> is <b>NULL</b>, DXGI_STATUS_OCCLUDED if you request full-screen mode and it is unavailable, or E_OUTOFMEMORY. Other error codes defined by the type of device passed in may also be returned.</para>
-//	/// </returns>
-//	/// <remarks>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain">Learn more about this API from docs.microsoft.com</see>.</para>
-//	/// </remarks>
-//	HRESULT CreateSwapChain(object pDevice, in SwapChainDescription pDesc, out DXSharp.DXGI.ISwapChain ppSwapChain);
-
-//	/// <summary>Create an adapter interface that represents a software adapter.</summary>
-//	/// <param name="Module">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HMODULE</a></b> Handle to the software adapter's dll. HMODULE can be obtained with <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-getmodulehandlea">GetModuleHandle</a> or <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-loadlibrarya">LoadLibrary</a>.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createsoftwareadapter#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <param name="ppAdapter">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a>**</b> Address of a pointer to an adapter (see <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a>).</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createsoftwareadapter#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <returns>
-//	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> A <a href="/windows/desktop/direct3ddxgi/dxgi-error">return code</a> indicating success or failure.</para>
-//	/// </returns>
-//	/// <remarks>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createsoftwareadapter">Learn more about this API from docs.microsoft.com</see>.</para>
-//	/// </remarks>
-//	void CreateSoftwareAdapter( HINSTANCE Module, out DXSharp.DXGI.IAdapter ppAdapter ) { }
-//};
-
-
-//public class DXGIFunctions
-//{
-//	IDXGIFactory factory;
-
-//	/// <summary>
-//	/// Gets the GUID of the underlying COM interface IDXGIFactory
-//	/// </summary>
-//	public static Guid COM_GUID => typeof( IDXGIFactory ).GUID;
-
-//	public virtual void Dispose() { }
-
-//	public void SetPrivateData<T>( uint DataSize, IntPtr pData ) { }
-//	public void SetPrivateDataInterface<T>( object pUnknown ) { }
-//	public void GetPrivateData<T>( in uint pDataSize, IntPtr pData ) { }
-//	//public void GetParent<T>( out object ppParent ) { }
-
-//	/// <summary>Enumerates the adapters (video cards).</summary>
-//	/// <param name="Adapter">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b> The index of the adapter to enumerate.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <param name="ppAdapter">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a>**</b> The address of a pointer to an <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a> interface at the position specified by the <i>Adapter</i> parameter.  This parameter must not be <b>NULL</b>.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <returns>
-//	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns S_OK if successful; otherwise, returns <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_NOT_FOUND</a> if the index is greater than or equal to the number of adapters in the local system, or <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a> if <i>ppAdapter</i> parameter is <b>NULL</b>.</para>
-//	/// </returns>
-//	/// <remarks>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-enumadapters">Learn more about this API from docs.microsoft.com</see>.</para>
-//	/// </remarks>
-//	//public void EnumAdapters( uint Adapter, out DXSharp.DXGI.IAdapter ppAdapter ) { }
-
-//	/// <summary>Allows DXGI to monitor an application's message queue for the alt-enter key sequence (which causes the application to switch from windowed to full screen or vice versa).</summary>
-//	/// <param name="WindowHandle">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a></b> The handle of the window that is to be monitored. This parameter can be <b>NULL</b>; but only if *Flags* is also 0.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-makewindowassociation#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <param name="Flags">Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">UINT</a></b></param>
-//	/// <returns>
-//	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a> if <i>WindowHandle</i> is invalid, or E_OUTOFMEMORY.</para>
-//	/// </returns>
-//	/// <remarks>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-makewindowassociation">Learn more about this API from docs.microsoft.com</see>.</para>
-//	/// </remarks>
-//	public void MakeWindowAssociation( HWND WindowHandle, uint Flags ) { }
-
-//	/// <summary>Get the window through which the user controls the transition to and from full screen.</summary>
-//	/// <param name="pWindowHandle">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HWND</a>*</b> A pointer to a window handle.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-getwindowassociation#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <returns>
-//	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> Returns a code that indicates success or failure. <b>S_OK</b> indicates success, <a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a> indicates <i>pWindowHandle</i> was passed in as <b>NULL</b>.</para>
-//	/// </returns>
-//	/// <remarks>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-getwindowassociation">Learn more about this API from docs.microsoft.com</see>.</para>
-//	/// </remarks>
-//	public void GetWindowAssociation( in HWND pWindowHandle ) { }
-
-//	/// <summary>Creates a swap chain.</summary>
-//	/// <param name="pDevice">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/unknwn/nn-unknwn-iunknown">IUnknown</a>*</b> For Direct3D 11, and earlier versions of Direct3D, this is a pointer to the Direct3D device for the swap chain. For Direct3D 12 this is a pointer to a direct command queue (refer to <a href="https://docs.microsoft.com/windows/desktop/api/d3d12/nn-d3d12-id3d12commandqueue">ID3D12CommandQueue</a>) . This parameter cannot be <b>NULL</b>.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <param name="pDesc">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_swap_chain_desc">DXGI_SWAP_CHAIN_DESC</a>*</b> A pointer to a  <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/ns-dxgi-dxgi_swap_chain_desc">DXGI_SWAP_CHAIN_DESC</a> structure for the swap-chain description. This parameter cannot be <b>NULL</b>.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <param name="ppSwapChain">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiswapchain">IDXGISwapChain</a>**</b> A pointer to a variable that receives a pointer to the <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiswapchain">IDXGISwapChain</a> interface for the swap chain that <b>CreateSwapChain</b> creates.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <returns>
-//	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b></para>
-//	/// <para><a href="/windows/desktop/direct3ddxgi/dxgi-error">DXGI_ERROR_INVALID_CALL</a>  if <i>pDesc</i> or <i>ppSwapChain</i> is <b>NULL</b>, DXGI_STATUS_OCCLUDED if you request full-screen mode and it is unavailable, or E_OUTOFMEMORY. Other error codes defined by the type of device passed in may also be returned.</para>
-//	/// </returns>
-//	/// <remarks>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createswapchain">Learn more about this API from docs.microsoft.com</see>.</para>
-//	/// </remarks>
-//	//public HRESULT CreateSwapChain( object pDevice, in SwapChainDescription pDesc, out DXSharp.DXGI.ISwapChain ppSwapChain ) { }
-
-//	/// <summary>Create an adapter interface that represents a software adapter.</summary>
-//	/// <param name="Module">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/WinProg/windows-data-types">HMODULE</a></b> Handle to the software adapter's dll. HMODULE can be obtained with <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-getmodulehandlea">GetModuleHandle</a> or <a href="https://docs.microsoft.com/windows/desktop/api/libloaderapi/nf-libloaderapi-loadlibrarya">LoadLibrary</a>.</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createsoftwareadapter#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <param name="ppAdapter">
-//	/// <para>Type: <b><a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a>**</b> Address of a pointer to an adapter (see <a href="https://docs.microsoft.com/windows/desktop/api/dxgi/nn-dxgi-idxgiadapter">IDXGIAdapter</a>).</para>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createsoftwareadapter#parameters">Read more on docs.microsoft.com</see>.</para>
-//	/// </param>
-//	/// <returns>
-//	/// <para>Type: <b><a href="/windows/win32/com/structure-of-com-error-codes">HRESULT</a></b> A <a href="/windows/desktop/direct3ddxgi/dxgi-error">return code</a> indicating success or failure.</para>
-//	/// </returns>
-//	/// <remarks>
-//	/// <para><see href="https://docs.microsoft.com/windows/win32/api//dxgi/nf-dxgi-idxgifactory-createsoftwareadapter">Learn more about this API from docs.microsoft.com</see>.</para>
-//	/// </remarks>
-//	//public void CreateSoftwareAdapter( HINSTANCE Module, out DXSharp.DXGI.IAdapter ppAdapter ) { }
-//}
+// ---------------------------------------------------------------------------------------------------

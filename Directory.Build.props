@@ -1,36 +1,128 @@
 ﻿<Project>
 	<PropertyGroup>
+		<IsDXSLibrary>true</IsDXSLibrary>
+	</PropertyGroup>
+	
+	<!-- Include the shared props file in builds folder :: -->
+	<Import Project=".\build\msbuild\DXSharpShared.Build.props"
+			Condition=" '$(DXSSharedPropsImported)' != 'true' " />
+	
+	<ItemGroup Label="CommonSDKItems" >
+		<YamlPipelines Include="$(RepoRootPath)*.yml" />
+		<CsWin32Configs Include="$(MSBuildProjectDirectory)*NativeMethods*.*" />
+		<SdkConfigs Include="$(RepoRootPath)Resources\*sdkconf*.json" />
+	</ItemGroup>
+	<PropertyGroup Label="CommonSDKProps">
+		<BuildInParallel>false</BuildInParallel>
+		<IsMultiTargeting>true</IsMultiTargeting>
+		<NugetCacheDir>$(NuGetPackageRoot)</NugetCacheDir>
+		<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+		
+		
+		<!-- Fallbacks for critical properties: -->
+		<TargetCPUs Condition=" '$(TargetCPUs)'=='' ">AnyCPU;x64;x86</TargetCPUs>
+		<RepoRootPath Condition=" '$(RepoRootPath)'=='' ">$(MSBuildThisFileDirectory)</RepoRootPath>
+		<DotNetTargets Condition=" '$(DotNetTargets)'=='' ">net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0</DotNetTargets>
+		
+		<!-- Make sure there's a configuration name and base output path: -->
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-		<RepoRootPath>$(MSBuildThisFileDirectory)</RepoRootPath>
-		<BaseIntermediateOutputPath>$(RepoRootPath)obj\$([MSBuild]::MakeRelative($(RepoRootPath), $(MSBuildProjectDirectory)))\</BaseIntermediateOutputPath>
 		<BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(RepoRootPath)bin\$(MSBuildProjectName)\</BaseOutputPath>
-		<PackageOutputPath>$(RepoRootPath)bin\Packages\$(Configuration)\</PackageOutputPath>
-		<LangVersion>latest</LangVersion>
-		<ImplicitUsings>true</ImplicitUsings>
+		<PackageOutputPath Condition=" '$(PackageOutputPath)' == '' ">$(RepoRootPath)bin\Packages\$(Configuration)\</PackageOutputPath>
+		<BaseIntermediateOutputPath>$(RepoRootPath)obj\$([MSBuild]::MakeRelative($(RepoRootPath), $(MSBuildProjectDirectory)))\</BaseIntermediateOutputPath>
+		
+		<!-- Assembly Signing/Keys & Advanced Settings: -->
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>$(RepoRootPath)file\keys\strongname.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+	
+	
+	<!-- Compilation & Assembly Generation Properties :: -->
+	<PropertyGroup Label="CompilerConfig">
+		<OutputType Condition=" '$(OutputType)' == '' ">Library</OutputType>
+		
+		<!-- Make sure valid platforms and target frameworks are set:
+			 (Projects override this with their own values if needed)
+		  -->
+		<Platforms Condition=" '$(Platforms)' == '' ">$(TargetCPUs)</Platforms>
+		<TargetFrameworks Condition=" '$(TargetFrameworks)' == '' ">$(DotNetTargets);</TargetFrameworks>
+		
 		<Nullable>enable</Nullable>
-		<AnalysisLevel>latest</AnalysisLevel>
-		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<LangVersion>latest</LangVersion>
+		<Deterministic>true</Deterministic>
+		<ImplicitUsings>true</ImplicitUsings>
+		<AnalysisLevel>preview</AnalysisLevel>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-		<!--<TargetFrameworks>net6.0;net7.0;</TargetFrameworks>-->
-
-		<!-- This entire repo has just one version.json file, so compute the version once and share with all projects in a large build. -->
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	</PropertyGroup>
+	
+	
+	<!-- Properties for DevOps & CI Pipelines :: -->
+	<PropertyGroup Label="DevOpsConfig">
+		<CI>true</CI>
+		<AZ_BUILD>true</AZ_BUILD>
+		<AzureDevOps>true</AzureDevOps>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/atcarter714/DXSharp</RepositoryUrl>
+		<PowershellScriptsDir>$(RepoRootPath)build\pwsh</PowershellScriptsDir>
+		
+		<!-- This entire repo has just one version.json file, so compute the 
+			 version once and share with all projects in a large build ... -->
 		<GitVersionBaseDirectory>$(MSBuildThisFileDirectory)</GitVersionBaseDirectory>
-
+		
 		<!-- Local builds should embed PDBs so we never lose them when a subsequent build occurs. -->
 		<DebugType Condition=" '$(CI)' != 'true' and '$(TF_BUILD)' != 'true' ">embedded</DebugType>
-
-		<SignAssembly>true</SignAssembly>
-		<AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)file\keys\strongname.snk</AssemblyOriginatorKeyFile>
-
-		<Company>ATC</Company>
-		<Authors>Aaron T. Carter</Authors>
-		<Copyright>© Aaron T. Carter. All rights reserved.</Copyright>
-		<PackageProjectUrl>https://github.com/atcarter714/DXSharp</PackageProjectUrl>
-		<!--<PublishRepositoryUrl>true</PublishRepositoryUrl>-->
+		<DebugType Condition=" '$(AzureDevOps)' != 'true' or '$(AZ_BUILD)' != 'true' ">embedded</DebugType>
+	</PropertyGroup>
+	
+	
+	<!-- Properties for Package Generation :: -->
+	<PropertyGroup Label="NuGetPackProperties">
+		<FileVersion>1.0.1</FileVersion>
+		<AssemblyVersion>0.3.3</AssemblyVersion>
+		
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>DXSharp_Logo_00_512.png</PackageIcon>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		
+		<Company>Arkaen Solutions</Company>
+		<Authors>Aaron T. Carter, $(Company), Contributors</Authors>
+		<Copyright>Copyright © Aaron T. Carter, Arkaen Solutions. All rights reserved.</Copyright>
+		
+		
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<PackageProjectUrl>https://github.com/atcarter714/DXSharp</PackageProjectUrl>
+		
+		<!--<SymbolPackageFormat>snupkg</SymbolPackageFormat>-->
 		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
-		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		
+		<PackageTags>directx; dxsharp; interop; wrapper; 2d; 3d; graphics; d3d; d3d12; dxgi; win32; com; gamedev; arkaen; dxs;</PackageTags>
+		<PackageReleaseNotes>Early preview: NOT intended for production use!</PackageReleaseNotes>
+	</PropertyGroup>
+	
+	
+	<!-- Roslyn Generator Setup Properties :: -->
+	<PropertyGroup Label="CodeGenSettings">
+		<UsingCsWin32 Condition=" '$(UsingCsWin32)' == '' ">true</UsingCsWin32>
+		<CsWin32Version Condition=" '$(UsingCsWin32)' == 'true' ">[0.3.49-beta,)</CsWin32Version>
+		
+		<UsingWinMD Condition=" '$(UsingWinMD)' == '' ">true</UsingWinMD>
+		<WinMDVersion Condition=" '$(UsingWinMD)' == 'true' ">[56.0.13-preview,)</WinMDVersion>
+	</PropertyGroup>
+	
+	
+	<!-- Compiler Symbols & Configurations :: -->
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<DefineConstants>TRACE, DEBUG_COM, DEV_BUILD, CACHE_SIZE_NORMAL</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+		<DefineConstants>TRACE, DEV_BUILD, CACHE_SIZE_LARGE, STRIP_CHECKS, DXS_FAST</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(NativePlatformName)' != '' ">
+		<DefineConstants Condition=" '$(NativePlatformName)' == 'x86' and '$(No32Bit)' != 'true' ">_WIN_32, X86</DefineConstants>
+		<DefineConstants Condition=" '$(NativePlatformName)' == 'arm' and '$(No32Bit)' != 'true' ">_WIN_32, ARM</DefineConstants>
+		<DefineConstants Condition=" '$(NativePlatformName)' == 'x64' ">_WIN_64, X64</DefineConstants>
+		<DefineConstants Condition=" '$(NativePlatformName)' == 'arm64' ">_WIN_64, ARM64</DefineConstants>
 	</PropertyGroup>
 </Project>

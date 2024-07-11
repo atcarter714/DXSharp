@@ -1,0 +1,55 @@
+<!-- Notes:
+    _____________________________________________________________
+    DevOps ::
+    The yaml files for the Azure DevOps pipeline are included by
+    the import of the DevOps.Tools.Pipelines.targets file from
+    the ".\devops\pipelines\" folder ... this is to make them a
+    bit easier to see and manage/edit, but they have no effect on
+    any local builds. It just made sense to put them here, since
+    this is the "build tools" project, and the pipeline yaml files
+    are used to build the solution and the tools projects in it.
+    _____________________________________________________________
+        -->
+
+<Project Sdk="Microsoft.NET.Sdk" >
+    <ImportGroup>
+        <Import Project="$(SolutionDir)devops\DevOps.Pipelines.targets" 
+                Condition="DXSSharedPropsImported != 'true'" />
+    </ImportGroup>
+    
+    <PropertyGroup>
+        <Platforms>AnyCPU</Platforms>
+        <DotNetTargets>netstandard2.0</DotNetTargets>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Update="NETStandard.Library" Version="2.0.3" />
+        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.8.3" />
+        <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    </ItemGroup>
+    
+    
+    <Choose>
+        <When Condition=" '$(Configuration)' == 'InlineTasks' or '$(BuildingInlineTasks)' == 'true' " >
+            <PropertyGroup>
+                <!--<InlineTaskSrc>$(MSBuildThisFileDirectory)InlineTasks\</InlineTaskSrc>-->
+            </PropertyGroup>
+        </When>
+    </Choose>
+    
+    <ItemGroup>
+        <!-- Really just making sure the items link and appear in projects
+              that import the DevOps.Pipelines.targets file ...
+             -->
+        <PipelinesInit Include="@( PipelineInitFile )" />
+        
+        <AzurePipelines Include="@( AzurePipeline )" />
+        <AzurePipelineIncludes Include="@( AzurePipelineInclude )" />
+        <YamlFiles Include="@( YamlFile )" />
+        <PwshScripts Include="@( PwshScript )" />
+        
+        <!-- Make sure the project knows to update whenever a .targets file is modified ... -->
+        <!--<UpToDateCheckInput Include="@( InlineTaskSrc -> '%(FullFilename)%(TargetsExt)' );@(Content)" />-->
+    </ItemGroup>
+</Project>

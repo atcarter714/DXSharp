@@ -1,0 +1,121 @@
+<Project>
+    <!-- Import the necessary shared targets for DXSharp builds: -->
+    <ImportGroup Label="SharedTargets">
+        <Import Project=".\build\msbuild\DXSharpShared.Build.targets"
+                Condition=" '$(DXSSharedTargetsImported)' != 'true'" />
+        
+        <Import Project=".\build\msbuild\AgilityNative.Build.targets" 
+                Condition=" '$(UsingAgility)'=='true' and '$(AgilityNativeTargetsImported)'!='true' " />
+        <Import Project=".\build\msbuild\DxcNative.Build.targets" 
+                Condition=" '$(UsingDxc)'=='true' " />
+        
+        <Import Project=".\build\msbuild\DxcTool.Build.targets" 
+                Condition=" '$(UsingDxcCompiler)'=='true' " />
+    </ImportGroup>
+    
+    
+    <!-- Define pre-build event actions: -->
+    <PropertyGroup>
+        <DXSCorePrebuildDependsOn>
+            $(DXSCorePrebuildDependsOn);
+        </DXSCorePrebuildDependsOn>
+    </PropertyGroup>
+    <Target Name="DXSCorePreBuild" BeforeTargets="PreBuildEvent" >
+        <Message Text="Pre-build event invoked: '$(SolutionName)' -> '$(ProjectName)':
+        DXS SDK Core Targets loaded ..."
+                 Importance="high" />
+        
+        <Message Text="Agility Build: $(UsingAgility)" 
+                 Condition=" '$(UsingAgility)'=='true' " Importance="high" />
+        <Message Text="Agility Build: false"
+                 Condition=" '$(UsingAgility)'!='true' " Importance="high" />
+        
+        <Message Text="Dxc Build: $(UsingDxc)"
+                 Condition=" '$(UsingDxc)'=='true' " Importance="high" />
+        <Message Text="Dxc Build: false"
+                 Condition=" '$(UsingDxc)'!='true' " Importance="high" />
+        
+        <Message Text="DirectX Native Runtime: $(NativePlatformName)" 
+                 Importance="high" Condition=" '$(NativePlatformName)'!='' " />
+    </Target>
+    
+    
+    <!-- Log startup info: -->
+    <Target Name="LogBuildStartMessage" BeforeTargets="Build" >
+        <Message Text="DXS SDK Targets :: DXSharp SDK build process started @ '$(CurrentTime)' ..." Importance="high" />
+        <Message Text="Building        :: '$(MSBuildProjectFile)' in: '$(MSBuildProjectDirectory)'..." Importance="high" />
+        <Message Text="Output File     :: '$(AssemblyOutputFullPath)'" Importance="high" />
+        <Message Text="SDK Targets     :: '$(DotNetTargets)'" Importance="high" />
+        <Message Text="Native Platform :: $(PlatformNameStr)" Importance="high" />
+        <Message Text="Target Framework : $(TargetFramework)" Importance="high" />
+        <Message Text="Target Processor : $(PlatformName)" Importance="high" />
+    </Target>
+    
+    
+    
+    <!-- Run custom Powershell startup scripts: 
+            This enables any kind of custom startup logic you want to happen ... 
+            Edit the code in the Powershell script to run things and do any kind
+            of extra work/processing you want or need ... -->
+    <Target Name="RunToolsAtStartup" BeforeTargets="Build" 
+            Condition=" '$(RunStartupTools)'=='true' " >
+        <PropertyGroup Condition=" '$(DISABLE_PWSH)'!='true' ">
+            <StartupScriptName Condition=" '$(StartupScriptName)'=='' ">DXSBuildStartup.ps1</StartupScriptName>
+            <LogFileNamePrefix>$(MSBuildProjectName)_$(Configuration)_$(Platform)_Build</LogFileNamePrefix>
+            <ScriptLocation Condition=" '$(ScriptLocation)'=='' ">$(PowershellScriptsDir)\$(StartupScriptName)</ScriptLocation>
+            <LogFileLocation Condition=" '$(LogFileLocation)'=='' ">$(RepoRootPath)build\logs\$(LogFileNamePrefix)_PreBuildToolsLog.log</LogFileLocation>
+            
+            <!-- Select Powershell version to use and set it to $(PwshExe) property: -->
+            <!--<UseCustomPowershellInstall>true</UseCustomPowershellInstall>-->
+            <UseCustomPowershellInstall Condition=" '$(UseCustomPowershellInstall)'=='' ">false</UseCustomPowershellInstall>
+            
+            <PWSH_VER Condition=" '$(PWSH_VER)'=='' ">7</PWSH_VER>
+            <CustomPowershellPath>"C:\Program Files\PowerShell\$(PWSH_VER)\pwsh.exe"</CustomPowershellPath>
+            <PwshExe Condition=" '$(UseCustomPowershellInstall)'=='true' ">$(CustomPowershellPath)</PwshExe>
+            <PwshExe Condition=" '$(UseCustomPowershellInstall)'=='false' ">pwsh.exe</PwshExe>
+            <!-- ................................................................... -->
+
+
+            <!-- Create log message for build tool: -->
+            <RunPwshExe>$(PwshExe)</RunPwshExe>
+            
+            <StartupScriptArg Condition=" '$(StartupScriptArg)'=='' ">$(ProjectName)</StartupScriptArg>
+            <Arg3 Condition=" '$(StartupScriptArg)'!='' ">&apos;$(StartupScriptArg)&apos; </Arg3>
+        </PropertyGroup>
+                
+        <!-- Run the startup Powershell script: -->
+        <Message Text="Running Startup Scripts @ '$(ScriptLocation)'" Importance="high" />
+        <!--<Exec Command="$(RunPwshExe) -ExecutionPolicy Bypass -File $(ScriptLocation) -Argument1 $(LogFileLocation) -Argument2 $(AssemblyName) -Argument3 $(PlatformNameStr)" />-->
+        <Exec Command="$(RunPwshExe) -command &quot;&amp; { $(ScriptLocation) &apos;$(LogFileLocation)&apos; $(Arg3)} &quot;" />
+    </Target>
+
+    
+    <!-- Log build completion info: -->
+    <Target Name="LogBuildCompletionMessage" 
+            AfterTargets="Build" DependsOnTargets="DefineSuccessOrFailure" >
+        <PropertyGroup>
+            <CompletionMsgText>DXSharp SDK library build process completed for: '$(MSBuildProjectName)'.</CompletionMsgText>
+            <ResultText>Result: $(BuildResult)</ResultText>
+        </PropertyGroup>
+        
+        <!-- Print the build result code and info: -->
+        <Message Importance="high" Text="--------------------------------------" />
+        <Message Importance="high" Text="$(CompletionMsgText)" />
+        <Message Importance="high" Text="$(ResultText)" />
+        <Message Importance="high" Text="--------------------------------------" />
+        
+        <OnError ExecuteTargets="FailedBuildMessage" />
+    </Target>
+    
+    
+    <!-- Failure Targets: -->
+    <Target Name="FailedBuildMessage">
+        <PropertyGroup>
+            <FailureMsgText>SDK library build failed for $(MSBuildProjectName)!</FailureMsgText>
+        </PropertyGroup>
+        
+        <Message Text="$(FailureMsgText)" 
+                 Importance="high" />
+    </Target>
+</Project>
+

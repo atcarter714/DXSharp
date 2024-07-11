@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType Condition=" '$(Configuration)' == 'Debug' ">Exe</OutputType>
+        <OutputType Condition=" '$(Configuration)' == 'Release' ">WinExe</OutputType>
+        
+        <Platforms>$(TargetCPUs);</Platforms>
+        <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup Label="DXSReferences" >
+      <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
+    </ItemGroup>
+
+    
+    <!-- Import the DXSharp.Samples.Shared project items: -->
+    <Import Project="..\shared\DXSharp.Samples.Shared\DXSharp.Samples.Shared.projitems" Label="Shared" />
+
+</Project>

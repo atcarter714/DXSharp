@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Platforms>$(TargetCPUs);</Platforms>
+        <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+        <UsingDxcCompiler>false</UsingDxcCompiler>
+        <UsingAgility>true</UsingAgility>
+        <UsingDxc>true</UsingDxc>
+    </PropertyGroup>
+
+    <ItemGroup Label="ProjectRefs">
+      <ProjectReference Include="..\DXSharp.Dxc\DXSharp.Dxc.csproj" />
+      <ProjectReference Include="..\DXSharp\DXSharp.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="Applications\" />
+      <Folder Include="XTensions\DX12\" />
+    </ItemGroup>
+
+</Project>

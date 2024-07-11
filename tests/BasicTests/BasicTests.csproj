@@ -1,30 +1,64 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
 	
-	<!--<TargetFrameworks>net6.0-windows;net7.0-windows</TargetFrameworks>-->
-    <TargetFrameworks>net6.0-windows10.0.22621.0;net7.0-windows10.0.22621.0;</TargetFrameworks>
-	<!--<SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>-->
-	 
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <IsPackable>false</IsPackable>
-    <BaseOutputPath>$(RepoRootPath)bin\Tests\$(MSBuildProjectName)\</BaseOutputPath>
-
-	  
-	      
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
-    <PackageReference Include="NUnit" Version="3.13.3" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
-    <PackageReference Include="NUnit.Analyzers" Version="3.3.0" />
-    <PackageReference Include="coverlet.collector" Version="3.1.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
-  </ItemGroup>
-
+	<PropertyGroup Label="TestProjBuildConfig">
+		<BaseOutputPath>$(RepoRootPath)bin\Tests\$(MSBuildProjectName)\$(Platform)\</BaseOutputPath>
+		<TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+		<Platforms>$(TargetCPUs);</Platforms>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+	
+	
+	<ItemGroup Label="TestingPackageReferences">
+	<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
+	<PackageReference Include="NUnit" Version="3.14.0" />
+	<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+	<PackageReference Include="NUnit.Analyzers" Version="3.9.0">
+	  <PrivateAssets>all</PrivateAssets>
+	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	</PackageReference>
+	<PackageReference Include="coverlet.collector" Version="6.0.0">
+	  <PrivateAssets>all</PrivateAssets>
+	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	</PackageReference>
+	</ItemGroup>
+	
+	
+	<ItemGroup Label="DXSReferences">
+		<ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
+		<!--<ProjectReference Include="..\..\tools\DXSharp.Tools.Builds\DXSharp.Tools.Builds.csproj" />-->
+	</ItemGroup>
+	
+	<PropertyGroup>
+		<AssetsFolder>Assets</AssetsFolder>
+		<ShadersFolder>Assets\Shaders</ShadersFolder>
+		<DxShadersFolder>Assets\Shaders\dxs</DxShadersFolder>
+	</PropertyGroup>
+	<ItemGroup Label="ConfigurationFileIncludes">
+		<None Include="..\..\.editorconfig" Link=".editorconfig" />
+		
+		
+		<Folder Include="DXGI\" />
+		<Folder Include="D3D12\" />
+		<Folder Include="$(AssetsFolder)" />
+		<Folder Include="$(ShadersFolder)" />
+	</ItemGroup>
+	
+	
+	<ItemGroup Label="ShaderIncludes">
+		
+		<Shader Include="Assets\Shaders\tests_shader_0.hlsl" >
+			<Name>%(Filename)_%(Extension)</Name>
+			<ShaderType>Fragment</ShaderType>
+			<EntryPoint>ps_main</EntryPoint>
+			<ShaderModel>6.0</ShaderModel>
+		</Shader>
+		
+		<DxShader Include="Assets\Shaders\dxs\*.dxs" >
+			<Name>%(Filename)_%(Extension)</Name>
+			<ShaderType>DxShader</ShaderType>
+			<ShaderModel>6.8</ShaderModel>
+			<EntryPoint>main</EntryPoint>
+		</DxShader>		
+	</ItemGroup>
+	
 </Project>

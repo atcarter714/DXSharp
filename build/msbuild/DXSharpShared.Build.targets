@@ -1,0 +1,128 @@
+﻿<Project>
+    <Import Project=".\DXSharpShared.Build.props" 
+            Condition=" '$(DXSSharedPropsImported)'!='true' "/>
+    <PropertyGroup>
+        <DXSSharedTargetsImported>true</DXSSharedTargetsImported>
+    </PropertyGroup>
+
+    
+    <!-- Initialization target before builds: -->
+    <Target Name="PrebuildPropGeneration" BeforeTargets="PreBuildEvent" >
+        <PropertyGroup Label="CommonBuildStartupProps" >
+            <BuildIDHash>$([System.Guid]::NewGuid().ToString())</BuildIDHash>
+            <CurrentTime>$([System.DateTime]::Now)</CurrentTime>
+            <BuildStartTime>$(CurrentTime)</BuildStartTime>
+            <UtcNow>$([System.DateTime]::UtcNow)</UtcNow>
+            <LocalNow>$(CurrentTime)</LocalNow>
+            
+            <!-- The $(PlatfromNameStr) helps resolve the path to the native package dependencies
+                 for things like the Agility SDK, Dxc Compiler, etc, which are platform-specific.
+                 For x64 builds, this will be "x64", for arm64 builds, this will be "arm64", etc ...
+                 x86/arm 32-bit builds are not supported by Dxc, so you cannot build for those platforms
+                 when using the Dxc Compiler libraries ...
+             -->
+            <PlatformNameStr>$(NativePlatformName)</PlatformNameStr>
+            <OutputFileExt Condition=" '$(OutputType)' == '' ">dll</OutputFileExt>
+            <OutputFileExt Condition=" '$(OutputType)' == 'Exe' ">exe</OutputFileExt>
+            <OutputFileExt Condition=" '$(OutputType)' == 'Library' ">dll</OutputFileExt>
+            <OutputFileExt Condition=" '$(OutputType)' == 'InlineTask' ">targets</OutputFileExt>
+            <AssemblyOutputFullPath>$(OutputPath)$(AssemblyName).$(OutputFileExt)</AssemblyOutputFullPath>
+            <AssemblyOutputFullPath Condition=" '$(OutputType)' == 'InlineTask' " >$(OutputPath)Tools.$(OutputFileExt)</AssemblyOutputFullPath>
+        </PropertyGroup>
+    </Target>
+
+
+    <!-- Write startup message showing target frameworks: -->
+    <Target Name="StartupMessageTargets" BeforeTargets="Build" >
+        <Message Importance="high"
+                 Text="DX# Shared Targets :: Build process initialized with ID: $(BuildIDHash)" />
+        
+        <CallTarget Targets="DefaultStartupMessages" 
+                    Condition=" '$(IsToolsProject)'!='true' " />
+        <CallTarget Targets="ToolsBuildStartupMessages"
+                    Condition=" '$(IsToolsProject)'=='true' " />
+    </Target>
+    <Target Name="DefaultStartupMessages"
+            DependsOnTargets="GetTargetFrameworksAsItems" >
+        <Message Importance="high" Condition=" '$(IsMultiTargeting)'=='true' " 
+                 Text="DX# Shared Targets :: Multi-Targeting Build - Target Platform List:" />
+        <Message Importance="high" Condition=" '$(IsMultiTargeting)'=='true' "
+                 Text="-    %(TargetFrameworksAsItems.Identity) " />
+    </Target>
+    <Target Name="ToolsBuildStartupMessages"
+            DependsOnTargets="GetTargetFrameworksAsItems" >
+        <Message Importance="high" Condition=" '$(IsMultiTargeting)'=='true' "
+                 Text="DX# Shared Targets :: DXSharp Tools multi-targeting build initialized - Platform List:" />
+        <Message Importance="high" Condition=" '$(IsMultiTargeting)'=='true' "
+                 Text="-    %(TargetFrameworksAsItems.Identity) " />
+        
+        <Message Importance="high" Condition=" '$(IsMultiTargeting)'!='true' "
+                 Text="DX# Shared Targets :: DXSharp Tools build initialized - Platform:" />
+        <Message Importance="high" Condition=" '$(IsMultiTargeting)'!='true' "
+                 Text="-    $(TargetFramework)" />
+    </Target>
+    
+    
+    <!-- Defines results and result message text for builds: -->
+    <Target Name="DefineSuccessOrFailure" AfterTargets="Build" >
+        <!-- Get the build results from MSBuild properties: -->
+        <PropertyGroup>
+            <Succeeded Condition=" '$(MSBuildLastTaskResult)'=='true' ">true</Succeeded>
+            <Succeeded Condition=" '$(MSBuildLastTaskResult)'!='true' ">false</Succeeded>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='' ">Unknown</BuildResult>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'=='true' ">Success</BuildResult>
+            <BuildResult Condition=" '$(MSBuildLastTaskResult)'!='true' ">Failed</BuildResult>
+        </PropertyGroup>
+    </Target>
+    <!-- Displays a success message for successfully completed builds: -->
+    <Target Name="LogBuildOutputFilename"
+            AfterTargets="DefineSuccessOrFailure"
+            Condition=" '$(Succeeded)'=='true' "
+            DependsOnTargets="DefineSuccessOrFailure" >
+        <Message Text="Assembly output to: $(AssemblyOutputFullPath)" Importance="high"  />
+    </Target>
+
+
+    
+    <!-- ........................................................................................................... -->
+
+    <!-- Utility/Helper targets: -->
+    <ItemGroup>
+        <CPUList Include="@(TargetCPUs)" />
+        <SupportedCPUs Include="%(CPUList.Split(';'))" />
+    </ItemGroup>
+    <Target Name="GetTargetCPUsAsItems" 
+            BeforeTargets="InitialTargets" >
+        <Message Text="DX# Shared Targets :: CPU List: @(CPUList->'%(Identity)')" Importance="high" />
+        <Message Text="DX# Shared Targets :: Supported CPUs: $(SupportedCPUs)" Importance="high" />
+    </Target>
+    
+    <!-- This target adds the generated deps.json file to our package output -->
+    <Target Name="AddBuildDependencyFileToBuiltProjectOutputGroupOutput"
+            BeforeTargets="BuiltProjectOutputGroup"
+            Condition=" '$(GenerateDependencyFile)' == 'true' and '$(AddBuildDepsToOutput)' == 'true' " >
+        <ItemGroup>
+            <BuiltProjectOutputGroupOutput
+                    Include="$(ProjectDepsFilePath)"
+                    TargetPath="$(ProjectDepsFileName)"
+                    FinalOutputPath="$(ProjectDepsFilePath)" />
+        </ItemGroup>
+    </Target>
+    <Target Name="AddRuntimeDependenciesToContent"
+            BeforeTargets="GetCopyToOutputDirectoryItems"
+            Condition=" '$(TargetFrameworkIdentifier)' == '.NETCoreApp' and '$(AddRuntimeDepsToContent)' == 'true' "
+            DependsOnTargets="GenerateBuildDependencyFile; GenerateBuildRuntimeConfigurationFiles" >
+        <ItemGroup>
+            <ContentWithTargetPath Include="$(ProjectDepsFilePath)"
+                                   Condition="'$(GenerateDependencyFile)' == 'true'"
+                                   CopyToOutputDirectory="PreserveNewest" TargetPath="$(ProjectDepsFileName)" />
+
+            <ContentWithTargetPath Include="$(ProjectRuntimeConfigFilePath)"
+                                   Condition="'$(GenerateRuntimeConfigurationFiles)' == 'true'"
+                                   CopyToOutputDirectory="PreserveNewest" TargetPath="$(ProjectRuntimeConfigFileName)" />
+        </ItemGroup>
+    </Target>
+    
+    
+    <!-- ........................................................................................................... -->
+</Project>

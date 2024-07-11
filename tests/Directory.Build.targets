@@ -1,0 +1,39 @@
+﻿<Project>
+    <!-- Import the shared props file (up one level): -->
+    <Import Project="$(SolutionDir)build\msbuild\DXSharpShared.Build.targets" 
+            Condition=" '$(DXSSharedTargetsImported)' != 'true' " />
+    
+    <!-- Before Build: -->
+    <Target Name="StartupBaseTarget" BeforeTargets="Build" >
+        <PropertyGroup>
+            <DXSTestGuid>$([System.Guid]::NewGuid())</DXSTestGuid>
+        </PropertyGroup>
+        <Message Text="SDK Tests project build process started @ local: $(LocalNow) ..." Importance="high" />
+        <Message Text="Test GUID: $(DXSTestGuid) ..." Importance="high" />
+        <Message Text="$(MSBuildNodeCount) cores available for parallel build ..." 
+                 Importance="high" />
+    </Target>
+
+    
+    
+    <!-- After Build: -->
+    <Target Name="StartupBaseTarget" AfterTargets="Build" 
+            DependsOnTargets="DefineSuccessOrFailure" >
+        <!-- Print the build result code and info: -->
+        <Message Text="-------------------------------" Importance="high" />
+        <Message Text="SDK Tests project build process finished @ local: $(LocalNow) ..." Importance="high" />
+        <Message Text="Result :: $(BuildResultText)" Importance="high" />
+        <Message Text="-------------------------------" Importance="high" />
+        
+        <OnError ExecuteTargets="FailedBuildMessage" />
+    </Target>
+
+
+
+    <!-- Failure Targets: -->
+    <Target Name="FailedBuildMessage">
+        <Message Text="Failed Project: $(MSBuildProjectName)"
+                 Importance="high" />
+        <Message Text="Reason: $(ErrorText)" Importance="high" />
+    </Target>
+</Project>

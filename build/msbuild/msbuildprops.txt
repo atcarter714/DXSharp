@@ -1,0 +1,142 @@
+CustomNugetCache		Can be overridden to set a custom NuGet Package Cache directory for builds.
+DXSSharedPropsImported		Will be 'true' if the file "DXSharpShared.Build.props" has already been imported.
+DXSSharedTargetsImported	Will be 'true' if the file "DXSharpShared.Build.targets" has already been imported.
+DXSHasExtraNuGetDeps		Custom property/item - If defined as 'true', provides a hint to "DXSharpShared.Build.targets" 
+				that other NuGet package dependencies are in use apart from SDK/native dependencies ...
+
+
+SDKProjectName		The name of the main SDK-style solution/project (i.e., "DXSharp")
+TargetCPUs		Semicolon delimited list of CPU platform targets for compilation
+TargetFrameworks	Semicolon delimited list of .NET Framework versions to target (i.e., "net#.#windows10.X.X.X")
+TargetPlatformMinVersion Minimum Windows OS version allowed
+WindowsOnly		Indicates the build is only for Windows machines
+WinSDKVersion		The version of the Windows SDK used for the build
+WinSDKMinVersion	The minimum allowed version of the Windows SDK for the build
+DotNetTargets		Semicolon delimited list of the .NET platforms being multi-targeted in the build.
+DxcMinWinSDKVersion	The minimum Windows SDK version supported by the Dxc package (from Dxc package documentation)
+
+DXSBasePath		The base repo/solution path for DXSharp
+DXSBinDir		The base repo/solution "\bin" output folder for DXSharp
+DXSBuildDir		The base repo/solution "\build" scripts folder for DXSharp
+DXSDocsDir		The base repo/solution "\doc" folder for DXSharp documentation and documents
+DXSObjDir		The base intermediate build output folder for DXSharp
+DXSSamplesDir		The sample application projects directory for DXSharp
+DXSSourceDir		The base repo/solution projects and source folder for the DXSharp SDK libraries
+DXSTestsDir		The base repo/solution projects and source folder for unit testing projects in DXSharp
+
+CSharpScriptTool	The path to the chosen "csi.exe" C# script engine (By default, set to one in Roslyn SDK folder)
+CSXRun			The path set in $(CSharpScriptTool) wrapped in "" quotes (i.e., &quot;) for commands executing the tool
+
+SamplesRootPath		Alias for the "\samples" folder
+
+
+
+- UsingCsWin32		True if the current build is using the CsWin32 generator package (otherwise false or empty/null).
+- CsWin32Version	The CsWin32 NuGet package version number (string) for the PackageReference (chooses package version).
+
+- UsingWinMD		True if the current build is using the Win32Metadata package (otherwise false or empty/null).
+- WinMDVersion		The Win32Metadata NuGet package version number (string) for the PackageReference (chooses package version).
+
+- AgilityVersionDefault Override-able property in DXSharpShared.Build.props which specifies a default Agility SDK package version fallback.
+- DxcVersionDefault	Override-able property in DXSharpShared.Build.props which specifies a default Dxc Compiler package version fallback.
+			(NOTE: These versions are only used if no 'AgilityVersion' or 'DxcVersion' properties are specified in the project(s) ...)
+
+- UsingAgility		True if the current build is using the Agility SDK package (otherwise false or empty/null).
+- AgilityVersion	The Agility SDK NuGet package version number (string) for the PackageReference (chooses package version).
+- AgilityPackagePath	Path to the Agility SDK NuGet package: must be defined by the file referencing the package.
+			If $(UsingAgility) is set to 'true', the defaults are used for package reference (package name, version, etc).
+
+- UsingDxc		True if the current build is using the Dxc Compiler package (otherwise false or empty/null).
+- DxcVersion		The Dxc NuGet package version number (string) for the PackageReference (chooses package version).
+- DxcPackagePath	Path to the Dxc Compiler NuGet package: must be defined by the file referencing the package.
+			If $(UsingDxc) is set to 'true', the defaults are used for package reference (package name, version, etc).
+- DxcBinPlatformPath	Defined by the file/project importing the package (or DxcNative.Build.targets): the path to the package's
+			Binaries (i.e., DLLs) for the current build's platform.
+
+- DxcCompilerToolExe	The path to the 'dxc.exe' compiler tool (when '$(UsingDxcCompiler)' == 'true' ...)
+- DXCNativeImported	Defined by "DxcNative.Build.props" to indicate if the file has been imported to the build yet or not
+- DxcToolingPlatformName	Defined by "DxcNative.Build.props" to indicate the path to the DXC Shader Compiler tool for the build host platform.
+- UsingDxcCompiler	Indicates if the project will use the Dxc Compiler tool (dxc.exe) to build/process shaders
+- CopyDxcDebugSymbols	If defined as 'true' (such as when in 'Debug' configurations or $(D3DDebug) defined as 'true', Dxc DLL's PDB files are deployed
+
+------------------------------------------------------------------------------
+(*) 	These props can be overridden to specify custom handling for the 
+	Microsoft.D3D.Dxc (Dxc Compiler) package ...
+------------------------------------------------------------------------------
+- DefaultDxcPackagePrivateAssets 
+- DefaultDxcPackageIncludeAssets
+- DefaultDxcPackageExcludeAssets
+	(NOTE: Used in <PackageReference> to control package contents ...)
+
+- DxcPackageAlias	- Alias generated for package (i.e., 'extern' refs)
+- DxcPackageName	- Name of the package (override for custom packages)
+------------------------------------------------------------------------------
+
+
+DXC_COMPILE		If set to 'false', disables the dxc.exe shader compiler tool.
+
+
+Is32BitHost		Indicates if build is running on a 32-bit machine
+Is64BitHost		Indicates if build is running on a 64-bit machine
+No32Bit			Indicates 32-bit build platforms are not supported (must be skipped)
+No32Bit			Indicates "AnyCPU" build platforms are not supported (must be skipped)
+DISABLE_PWSH		Disables Powershell tools when set to 'true'
+MachineArchitecture	Value of the InteropServices "ProcessorArchitecture" enum for local host/machine
+MachineCPUArchitecture	The name (string) form of the build host architecture (for resolving dxc.exe)
+
+CSharpScriptTool	Path to Roslyn csi.exe tool (C# Script Engine / "C# Interactive")
+CSXScriptDir		Path to csx (C# script) files in the solution's "\build" folder
+CSXRun			Alias for the name/path to the csi.exe tool for using in custom commands
+
+
+DEPLOY_DXC_TOOL			Makes MSBuild copy the dxc.exe tool from the NuGet package to output directory
+DxcToolPlatformFolderName 	Name of the folder containing the correct dxc.exe tool for the local machine
+NugetNativePlatformFolderName 	Name of the NuGet package folder containing the correct native DLLs for the local machine
+				(This applies to the Agility SDK and Dxc packages ...)
+
+AzureDevOps		Indicates if current project(s) can be compiled via AzureDevOps
+AZ_BUILD		Indicates if the current build is being run on AzureDevOps
+CI			Indicates if a CI/CD pipeline is in use
+
+DxcMinWinSDKVersion		Minimum Windows SDK version required by the Dxc Shader Compiler
+DxcToolPlatformFolderName	Name of the Dxc NuGet package folder with the correct tool for the local build host/machine CPU
+
+DxcCompilerToolTargets	The path to the .targets file for the DXCompiler tool
+DxcNativeTargets	The path to the .targets file for the native Dxc Compiler package DLLs
+AgilitySDKTargets	The path to the .targets file for the native Agility SDK package DLLs
+
+
+
+COPY_DXC_PDBS		When set to 'true' for DXC package builds, PDB (debugger symbol) files for Dxc libraries are copied even if not debugging
+OMIT_DXC_PDBS		When set to 'true' for DXC package builds, PDB (debugger symbol) files for Dxc libraries are not deployed.
+
+
+
+$(CustomDxcExePath)	When using the Dxc Shader Compiler tool, assigning a valid path to this property replaces the default Dxc.exe compiler
+			tool with a custom tool (located at the path specified in the property) ...
+
+--------------------------------------------------------------------
+DXSExtras.Build.targets -- Extra tools and utilities for builds ...
+--------------------------------------------------------------------
+
+
+AddHLSLCsPackage	Target to call to automatically add the Microsoft.HLSL.CSharpVB package, final version
+UsingHLSLCs		This adds support for the old FxCompiler tools.
+
+
+
+--------------------------------------------------------------------
+DxcTool.Build.targets -- Targets for building shaders with Dxc
+--------------------------------------------------------------------
+
+ShaderFolder		"\Assets\Shaders" by default, unless overidden with custom value.
+			Specifies the folder(s) that shaders live in within the project.
+ShaderIncDir		An (optional) list of include directories for shader compilation
+			"\inc" and "\include" are considered include directories by default if they exist
+ShaderOutDir		Default: "$(OutputPath)assets\shaders\"
+			Specifies where shader build output from compilation will be output.
+ShaderIntermediateOutDir	Specifies the intermediate output directory for the compiler.
+
+DXCContinueOnShaderErrorsCondition	Determines if the rest of the build continues if a shader fails to compile.
+					(Default: true)
+

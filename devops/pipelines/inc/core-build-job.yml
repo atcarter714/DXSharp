@@ -1,0 +1,46 @@
+﻿# ------`CoreBuild` Job Template  ------------------------------------------------
+# This template defines a "Core Build" job for DXSharp "core" projects.
+# ................................................................................
+
+# Parameters:
+parameters:
+  - name:     solution
+    type:     string
+    default: 'DXSharp.sln'
+
+  - name:     buildPlatform
+    type:     string
+    default:  'Any CPU'
+
+  - name:     buildConfiguration
+    type:     string
+    default:  'Debug'
+
+
+# ------- Jobs :: --------------------------------------------------------------
+jobs: 
+  
+  job: CoreBuild
+  displayName: 'Core DXSharp Build Job'
+  steps:
+      - pwsh:   |
+          Write-Host "Building for configuration: ${{ parameters.buildConfiguration }} on platform: ${{ parameters.buildPlatform }}"
+          Write-Host "Solution: $(solution)"
+          Write-Host "Build Platform: ${{ parameters.buildPlatform }}"
+          Write-Host "Build Configuration: ${{ parameters.buildConfiguration }}"
+          Write-Host "Pool Name: ${{ parameters.poolName }}"
+          Write-Host "Builds Path: $(buildsPath)"
+          Write-Host "Output Path: $(outputPath)"
+
+      - task: NuGetToolInstaller@1
+      - task: NuGetCommand@2
+        inputs:
+          restoreSolution:  '$(solution)'
+
+      - task: VSBuild@1
+        inputs:
+          solution:         '$(solution)'
+          platform:         '$(buildPlatform)'
+          configuration:    '$(buildConfiguration)'
+        
+# ................................................................................

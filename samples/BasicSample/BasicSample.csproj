@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <Platforms>$(TargetCPUs);</Platforms>
+        <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <None Update="shader1.hlsl">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
+    </ItemGroup>
+
+</Project>

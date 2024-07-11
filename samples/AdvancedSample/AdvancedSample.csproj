@@ -1,0 +1,78 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <!-- Common Project Properties :: -->
+    <PropertyGroup Label="CommonProjectProperties">
+        <UsingDxcCompiler>true</UsingDxcCompiler>
+        <OutputType Condition=" '$(Configuration)' == 'Debug' ">Exe</OutputType>
+        <OutputType Condition=" '$(Configuration)' == 'Release' ">WinExe</OutputType>
+        <FileVersion>0.1.0</FileVersion>
+        <AssemblyVersion>0.1.0</AssemblyVersion>
+        
+        <Product>Advanced DXSharp Sample</Product>
+        <RootNamespace>AdvancedDXS</RootNamespace>
+        <ApplicationIcon>Assets\DXSharp_ICON_256.ico</ApplicationIcon>
+
+        <Platforms>$(TargetCPUs);</Platforms>
+        <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+    </PropertyGroup>
+    
+    
+    
+    <!-- References :: -->
+    <ItemGroup Label="ProjectRefs">
+        <ProjectReference Include="..\..\src\DXSharp.Dxc\DXSharp.Dxc.csproj" />
+        <ProjectReference Include="..\..\src\DXSharp.Framework\DXSharp.Framework.csproj" />
+        <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
+    </ItemGroup>
+
+
+    <ImportGroup>
+        <!-- Import "DxcTool.Build.targets" when using Dxc compilation ... -->
+        <Import Project="$(DXSBuildDir)msbuild\DxcTool.Build.targets"
+                Condition=" '$(UsingDxcCompiler)'=='true' and '$(DXCNativeImported)' != 'true' " />
+    </ImportGroup>
+    
+    <ItemGroup Label="ProjectContentProperties" 
+               Condition=" '$(DXC_COMPILE)'!='false' ">
+        <Content Include="Assets\Shaders\*.hlsl"
+                 CopyToOutputDirectory="PreserveNewest" />
+        
+        <DxcShaderIncludes Include="Assets\Shaders\include\*.h" />
+        <DxcShaderIncludes Include="Assets\Shaders\include\*.inc" />
+        <DxcShaderFiles Include="Assets\Shaders\src\*.hlsl" />
+        <DxcShaderFiles Include="Assets\Shaders\src\*.compute" />
+        
+        <DxcShaderBlobs Include="Assets\Shaders\obj\*.blob" />
+        <DxcShaderBlobs Include="Assets\Shaders\obj\*.cso" />
+        
+        <DxcFragmentShader Include="Assets\Shaders\src\*.ps" />
+        <DxcVertexShader Include="Assets\Shaders\src\*.vs" />
+        <DxcGeometryShader Include="Assets\Shaders\src\*.geo" />
+        <DxcComputeShader Include="Assets\Shaders\src\*.compute" />
+        
+        <DxcShader Include="@(DxcShaderFiles)">
+            <OutputHeader>Assets\Shaders\obj\%(Filename).blob</OutputHeader>
+            <OutputBlob>Assets\Shaders\obj\%(Filename).cso</OutputBlob>
+            <ShaderModel>5_0</ShaderModel> <!-- Default Shader Model -->
+            <ShaderTypes>vs;ps;</ShaderTypes>
+        </DxcShader>
+    </ItemGroup>
+    
+    <ItemGroup Label="ContentFolderItemsGroup">
+        <Folder Include="Assets\Meshes\" />
+        <Folder Include="Assets\Textures\" />
+        
+        <Folder Include="Assets\Shaders\include\" />
+        <Folder Include="Assets\Shaders\src\" />
+        <Folder Include="Assets\Shaders\obj\" />
+    </ItemGroup>
+    
+    
+    <!-- Advanced Project Properties :: -->
+    <PropertyGroup Label="AdvancedProjectProperties">
+        <ApplicationManifest>./app.manifest</ApplicationManifest>
+        <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+        <!-- NOTE: Currently, trimming and NativeAOT is not supported! -->
+        <!--<PublishTrimmed>true</PublishTrimmed>-->
+    </PropertyGroup>
+</Project>

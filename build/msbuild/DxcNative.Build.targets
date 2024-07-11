@@ -1,0 +1,292 @@
+﻿<Project InitialTargets="StartDxcBuild" DefaultTargets="StartDxcBuild" >
+    <!-- Imports DXSharp shared props & targets if not already imported ... -->
+    <ImportGroup Label="SharedPropsAndTargetsImports" >
+        <Import Project="$(RepoRootPath)build\msbuild\DXSharpShared.Build.props"
+                Condition="$(DXSSharedPropsImported) != 'true'" />
+        <Import Project="$(RepoRootPath)build\msbuild\DXSharpShared.Build.targets"
+                Condition="$(DXSSharedTargetsImported) != 'true'" />
+    </ImportGroup>
+    
+    <PropertyGroup Label="DxcNativeGlobalProps">
+        <DXCNativeImported>true</DXCNativeImported>
+        
+        <!-- Default Properties for Dxc Package:
+                These can be overridden in a project or props/targets file by specifying a value before importing this file.
+                If the property is not defined (as it isn't by default), then the default value specified here will be used ...
+          -->
+        <DxcVersion Condition=" '$(DxcVersion)' == '' " >1.8.2306.6-preview</DxcVersion>
+        <DxcPackageName Condition=" '$(DxcPackageName)' == '' " >Microsoft.Direct3D.Dxc</DxcPackageName>
+        <DxcToolingPlatformName Condition=" '$(DxcToolingPlatformName)' == '' " >$(MachineCPUArchitecture)</DxcToolingPlatformName>
+        <DefaultDxcPackagePrivateAssets Condition=" '$(DefaultDxcPackagePrivateAssets)' == '' " >none</DefaultDxcPackagePrivateAssets>
+        <DefaultDxcPackageExcludeAssets Condition=" '$(DefaultDxcPackageExcludeAssets)' == '' " >none</DefaultDxcPackageExcludeAssets>
+        <DefaultDxcPackageIncludeAssets Condition=" '$(DefaultDxcPackageIncludeAssets)' == '' " >compile;build;buildMultitargeting;buildTransitive;runtime;native</DefaultDxcPackageIncludeAssets>
+        <DXCDLLName>dxc</DXCDLLName>
+        <DXILDLLName>dxil</DXILDLLName>
+        <DXCompilerDLLName>dxcompiler</DXCompilerDLLName>
+        <DXCToolName>dxc</DXCToolName>
+        
+        <DXCDLLFileName>$(DXCDLLName).dll</DXCDLLFileName>
+        <DXILDLLFileName>$(DXILDLLName).dll</DXILDLLFileName>
+        <DXCompilerDLLFileName>$(DXCompilerDLLName).dll</DXCompilerDLLFileName>
+        <DXCToolFileName>$(DXCToolName).exe</DXCToolFileName>
+        
+        <DxcLibraryPdbFileNames>$(DXCompilerDLLName).pdb;$(DXCDLLName).pdb</DxcLibraryPdbFileNames>
+        <RequiredDxcPackageDllNames>$(DXCDLLFileName);$(DXILDLLFileName);$(DXCompilerDLLFileName)</RequiredDxcPackageDllNames>
+        
+        <RequiredDxcPackageBinaryNames Condition=" '$(UsingDxc)' == 'true' ">$(RequiredDxcPackageDllNames)</RequiredDxcPackageBinaryNames>
+        <RequiredDxcPackageBinaryNames Condition=" '$(UsingDxc)' != 'true' and '$(UsingDxcCompiler)' == 'true' ">$(DXCToolFileName)</RequiredDxcPackageBinaryNames>
+        <RequiredDxcPackageBinaryNames Condition=" '$(UsingDxc)' == 'true' and '$(UsingDxcCompiler)' == 'true' ">$(RequiredDxcPackageDllNames);$(DXCToolFileName)</RequiredDxcPackageBinaryNames>
+        
+        <RequiredDxcPackageBinaryNames Condition=" '$(UsingDxcCompiler)' == 'true' ">$(RequiredDxcPackageDllNames);$(DXCCompilerToolFileName)</RequiredDxcPackageBinaryNames>
+        
+        <CopyDxcDebugSymbols Condition=" '$(D3DDebug)'=='true' or '$(Configuration'=='Debug' or '$(COPY_DXC_PDBS)' == 'true' ">true</CopyDxcDebugSymbols>
+        <CopyDxcDebugSymbols Condition=" '$(CopyDxcDebugSymbols)' == '' or '$(OMIT_DXC_PDBS)' == 'true'  ">false</CopyDxcDebugSymbols>
+
+        <DxcPackageAlias Condition=" '$(DxcPackageAlias)' == '' " >DxcPackage</DxcPackageAlias>
+        <DxcPackagePath Condition=" '$(DxcPackagePath)'=='' and '$(PkgMicrosoft_Direct3D_DXC)'!='' " >$(PkgMicrosoft_Direct3D_DXC)</DxcPackagePath>
+        <DxcBinPlatformPath Condition=" '$(DxcPackagePath)'!='' ">$(DxcPackagePath)\build\native\bin\$(NativePlatformName)</DxcBinPlatformPath>
+        <DxcCompilerToolExe Condition=" '$(DxcCompilerToolExe)'!='' ">$(DxcPackagePath)\build\native\bin\$(DxcToolingPlatformName)\dxc.exe</DxcCompilerToolExe>
+        
+        <DxcTargetsMsgPrefix>Dxc Native Targets ::</DxcTargetsMsgPrefix>
+        <DxcTargetsErrorPrefix>(!) ERROR -- $(DxcTargetsMsgPrefix)</DxcTargetsErrorPrefix>
+        <DxcNativeWarningPrefix>(!) Warning -- $(DxcTargetsMsgPrefix)</DxcNativeWarningPrefix>
+    </PropertyGroup>
+    
+    
+    
+    <Target Name="GetRequiredPackageFilesAsItems"
+            Returns="@(RequiredPackageFilesAsItems)"
+            Condition=" '$(UsingDxc)'=='true' or '$(UsingDxcCompiler)'=='true' " >
+        <!-- Determine the full list of names of required files: -->
+        <Message Text="Resolving Dxc Shader Compiler package requirements ..." Importance="high" />
+        <ItemGroup Label="DetermineRequiredDxcFilesList"
+                   Condition=" '$(RequiredDxcPackageBinaryNames)'!='' " >
+            <_reqFiles Include="@(RequiredDxcPackageBinaryNames)" />
+            <_reqFiles Include="@(DxcLibraryPdbFileNames)" 
+                       Condition=" '$(CopyDxcDebugSymbols)'=='true' and '$(DxcLibraryPdbFileNames)'!='' " />
+        </ItemGroup>
+        <Error Condition=" '$(RequiredDxcPackageBinaryNames)' == '' "
+               Text="$(DxcTargetsErrorPrefix) Dxc Package requirements and dependencies not defined!" />
+        
+        
+        <!-- Remove any duplicate names from the list: -->
+        <RemoveDuplicates Inputs="@(_reqFiles)"
+                          Condition=" '$(_reqFiles)' != '' " >
+            <Output TaskParameter="Filtered" 
+                    ItemName="RequiredPackageFilesAsItems" />
+            <Output TaskParameter="HadAnyDuplicates" 
+                    PropertyName="_hadDuplicateDxcFiles" />
+        </RemoveDuplicates>
+        
+        <!-- Log info about the target for build issue diagnosis: -->
+        <Message Condition=" '$(RequiredPackageFilesAsItems)' == '' "
+                 Text="$(DxcNativeWarningPrefix) No file dependencies could be resolved for '$(DxcPackageName)' ..." />
+        
+        <Message Condition=" '$(RequiredPackageFilesAsItems)'!='' "
+                 Text="Required Dxc Native package files: %(RequiredPackageFilesAsItems.Identity, ', ') " />
+        <Message Condition=" '$(_hadDuplicateDxcFiles)'=='true' "
+                 Text="(!) Warning: Dxc Native Targets :: Duplicate Dxc Package Files: %(RequiredPackageFilesAsItems.Identity, ', ') " />
+    </Target>
+    
+    
+    <Target Name="ResolveDxcPackageReferences" 
+            Returns="$(DxcPackagePath)"
+            BeforeTargets="DxcDllResolution"
+            AfterTargets="GetRequiredPackageFilesAsItems"
+            DependsOnTargets="GetRequiredPackageFilesAsItems"
+            Condition=" ('$(UsingDxc)'=='true' or '$(UsingDxcCompiler)'=='true') and '$(DxcPackagePath)' == '' " >
+        <ItemGroup Label="DirectXDxcPackageReference" >
+            <PackageReference Include="$(DxcPackageName)" >
+                <PrivateAssets Condition=" '$(DefaultDxcPackagePrivateAssets)'!='' ">$(DefaultDxcPackagePrivateAssets)</PrivateAssets>
+                <ExcludeAssets Condition=" '$(DefaultDxcPackageExcludeAssets)'!='' ">$(DefaultDxcPackageExcludeAssets)</ExcludeAssets>
+                <IncludeAssets Condition=" '$(DefaultDxcPackageIncludeAssets)'!='' ">$(DefaultDxcPackageIncludeAssets)</IncludeAssets>
+                <GeneratePathProperty>true</GeneratePathProperty>
+                <Alias>$(DxcPackageAlias)</Alias>
+                <Version>$(DxcVersion)</Version>
+            </PackageReference>
+        </ItemGroup>
+        
+        <!-- Ensure the path properties are correctly formed: -->
+        <PropertyGroup>
+            <DxcReferenceAppliedAuto>true</DxcReferenceAppliedAuto>
+            <DxcPackagePath>$(PkgMicrosoft_Direct3D_DXC)</DxcPackagePath>
+            <DxcBinPlatformPath>$(DxcPackagePath)\build\native\bin\$(NativePlatformName)</DxcBinPlatformPath>
+            
+            <DxcCompilerToolFolder>$(DxcPackagePath)\build\native\bin\$(DxcToolingPlatformName)</DxcCompilerToolFolder>
+            <DxcCompilerToolExe>$(DxcCompilerToolFolder)\dxc.exe</DxcCompilerToolExe>
+        </PropertyGroup>
+        
+        <!--<Error Condition=" '$(DxcPackagePath)' == '' "
+               Text="$(DxcTargetsErrorPrefix) 'DxcPackagePath' could not be resolved!" />-->
+        <Message Text="$(DxcTargetsMsgPrefix) 'PkgMicrosoft_Direct3D_DXC' = 
+        '$(PkgMicrosoft_Direct3D_DXC)' ..." />
+        
+        <Message Condition=" '$(PkgMicrosoft_Direct3D_DXC)'=='' "
+                 Text="$(DxcTargetsWarningPrefix) 'PkgMicrosoft_Direct3D_DXC' property for build not generated!"  />
+        <Message Condition=" '$(DxcPackagePath)' == '' "
+                 Text="$(DxcTargetsWarningPrefix) Dxc Shader Compiler Package was not located ..."  />
+        
+        <Message Condition=" '$(DxcPackagePath)' != '' "
+                 Text="$(DxcTargetsMsgPrefix) Dxc Shader Compiler Package '$(DxcPackageName)' located ..."  />
+        <Message Condition=" '$(DxcReferenceAppliedAuto)' == 'true' "
+                 Text="Dxc Shader Compiler Package auto-referenced in package resolution stage for '$(MSBuildProjectFile)' ... 
+                    Path: $(DxcPackagePath)" />
+    </Target>
+    
+    
+    <!-- Resolve native refs for Dxc DLLs if we're building against Dxc: -->
+    <Target Name="DxcDllResolution" 
+            BeforeTargets="Build" 
+            Outputs="@(DxcPackageFiles)"
+            Condition=" '$(UsingDxc)'=='true' " >
+        <!-- If $(DxcPackagePath) is empty, we need to reference the package ... -->
+        <CallTarget Targets="ResolveDxcPackageReferences"
+                    Condition=" '$(DxcPackagePath)' == '' " />
+
+        <!--<Error  Condition=" '$(DxcPackagePath)' == '' "
+                Text="$(DxcTargetsErrorPrefix) 'DxcPackagePath' could not be resolved!" />-->
+        
+        <!-- Resolve the Dxc DLLs for the current platform: -->
+        <ItemGroup Condition=" '$(DxcPackagePath)' != '' " Label="LocateDxcPackageFileItems" >
+            <_reqDxcPackFilenames Include="@(RequiredPackageFilesAsItems)" />
+            <_reqDxcPackFiles Include="$(DxcBinPlatformPath)\%(_reqDxcPackFilenames.Identity)" />
+            <_reqDxcPackDLLs Include="@(_reqDxcPackFiles)" Condition=" '%(Extension)'=='.dll' " />
+            <_reqDxcPackEXEs Include="@(_reqDxcPackFiles)" Condition=" '%(Extension)'=='.exe' " />
+            <_reqDxcPackPDBs Include="@(_reqDxcPackFiles)" Condition=" '%(Extension)'=='.pdb' " />
+        </ItemGroup>
+        <ItemGroup>
+            <DxcPackageDlls Include="@(_reqDxcPackDLLs)"
+                            Condition=" '$(_reqDxcPackFiles)' != '' and '%(Extension)'=='.dll' " />
+            <DxcPackageEXEs Include="@(_reqDxcPackEXEs)"
+                            Condition=" '$(_reqDxcPackFiles)' != '' and '%(Extension)'=='.exe' " />
+            <DxcPackagePDBs Include="@(_reqDxcPackPDBs)"
+                            Condition=" '$(_reqDxcPackFiles)' != '' and '%(Extension)'=='.pdb'" />
+            
+            <DxcPackageFiles Include="@(_reqDxcPackFiles)"
+                            Condition=" '$(_reqDxcPackFiles)' != '' " />
+        </ItemGroup>
+        
+        
+        <!-- We need to grab the PBDs for the native Dxc DLLs in debug builds: -->
+        <PropertyGroup Condition=" '$(Configuration)'=='Debug' or '$(COPY_DXC_PBDS)'=='true' " >
+            <CopyDxcDebugSymbols Condition=" '$(OMIT_DXC_PBDS)'!='true' ">true</CopyDxcDebugSymbols>
+            <CopyDxcDebugSymbols Condition=" '$(OMIT_DXC_PBDS)'=='true' ">false</CopyDxcDebugSymbols>
+        </PropertyGroup>
+        <PropertyGroup Condition=" '$(Configuration)'!='Debug' or '$(OMIT_DXC_PBDS)'=='true' " >
+            <CopyDxcDebugSymbols>false</CopyDxcDebugSymbols>
+        </PropertyGroup>
+        
+        <ItemGroup Condition=" '$(CopyDxcDebugSymbols)'=='true' " >
+            <None Include="@(DxcPackagePDBs)" 
+                  Label="CopyDxcPBDsInDebugMode" 
+                  Condition=" '$(DxcPackagePDBs)'!='' " >
+                <Link>%(Filename)%(Extension)</Link>
+                <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            </None>
+        </ItemGroup>
+        
+        <!-- Display the console messages for linking the native DLLs: -->
+        <Message Condition=" '$(CopyDxcDebugSymbols)'=='true' and '$(DxcPBDs)'!='' "
+                 Text="Copying Dxc library symbols to output directory: @(DxcPBDs->'%(Identity)', ', ' )" />
+        <CallTarget Targets="DxcConsoleMessages" />
+    </Target>
+    
+    
+    <!-- Output log messages to build process to indicate
+         that we're linking to native Dxc DLLs and copying
+         things, so that it's easy to understand what happened: -->
+    <Target Name="DxcConsoleMessages" >
+        <Message Importance="High"
+                 Text="Linking native Dxc DLLs for $(ProjectName) - $(NativePlatformName) ..." />
+        <Message Importance="High" Condition=" '$(DeployedDxcDLLs)'!='' "
+                 Text="Linking: @(DeployedDxcDLLs->'%(Identity)')" />
+        
+        <Message Importance="High"
+                 Condition=" '$(CopyDxcDebugSymbols)'=='true' "
+                 Text="$(Configuration) build - copying native library PBDs ..." />
+        <Message Importance="High"
+                 Condition=" '$(CopyDxcDebugSymbols)'=='true' and '$(DxcPBDs)'!='' "
+                 Text="Copying: @(DxcPBDs->'%(Identity)')" />
+    </Target>
+
+    
+    
+    <Target Name="StartDxcBuild" 
+            BeforeTargets="Build"
+            Condition=" '$(UsingDxc)'=='true' or '$(UsingDxcCompiler)'=='true' " >
+        <!-- If $(DxcPackagePath) is empty, we need to reference the package ... -->
+        <CallTarget Targets="ResolveDxcPackageReferences"
+                    Condition=" '$(DxcPackagePath)' == '' " />
+        
+        <ItemGroup>
+            <RequiredPackageFilesAsItems Include="@(RequiredPackageFilesAsItems)" />
+            <DxcPackageDlls Include="$(DxcBinPackagePath)\%(RequiredPackageFilesAsItems.Identity)" />
+            <DxcPackageCompilerTool Condition=" '$(UsingDxcCompiler)'=='true' and '$(DxcPackagePath)'!='' "
+                                    Include="$(DxcPackagePath)\build\native\bin\$(MachineCPUArchitecture)\dxc.exe" />
+        </ItemGroup>
+
+        <Message Text="Building with native Dxc Compiler library linkage ..."
+                 Importance="high" />
+        
+        
+        <!-- Show package info: -->
+        <Message Condition=" '$(DxcPackagePath)'!='' "
+                 Text="DxcPackagePath: $(DxcPackagePath)"
+                 Importance="high" />
+        <Message Condition=" '$(DxcBinPlatformPath)'!='' "
+                 Text="Dxc Package Path: $(DxcBinPlatformPath)"
+                 Importance="high" />
+
+        <!-- Show package contents for diagnosing build issues: -->
+        <Message Condition=" '$(DxcBinPlatformPath)'!='' and $(DxcPackageDlls)!='' "
+                 Text="Dxc Package Libraries Found: @(DxcPackageDlls->'%(Identity)', ', ')"
+                 Importance="high" />
+
+        <Message Condition=" '$(UsingDxcCompiler)'!='' and '$(DxcPackagePath)'!='' "
+                 Text="Dxc Compiler Tool: $(DxcPackagePath)\bin\$(PlatformNameStr)\dxc.exe"
+                 Importance="high" />
+
+        <Message Condition=" '$(UsingDxcCompiler)'!='' and '$(DxcPackagePath)'!='' "
+                 Text="Dxc Compiler Tool: @(DxcPackageCompilerTool)"
+                 Importance="high" />
+    </Target>
+
+    <Target Name="CopyDxcFileDependenciesToOutput"
+            Inputs="@(DxcPackageFiles)"
+            DependsOnTargets="DxcDllResolution;StartDxcBuild"
+            Condition=" '$(UsingDxc)'=='true' " >
+        <Message Text="Copying Dxc Package Files to output directory ..." Importance="high" />
+        <ItemGroup>
+            <DxcPackageFiles Include="@(DxcPackageFiles)" />
+        </ItemGroup>
+        <Copy SourceFiles="@(DxcPackageFiles)"
+              DestinationFolder="$(OutputPath)"
+              SkipUnchangedFiles="true">
+            <Output TaskParameter="CopiedFiles"
+                    ItemName="DeployedDxcDLLs" />
+        </Copy>
+        <Message Condition=" '$(UsingDxc)'=='true' and '$(DeployedDxcDLLs)'!='' "
+                 Text="Dxc Package deployment complete for: @(DeployedDxcDLLs->'%(Identity)', ', ')" />
+    </Target>
+    
+</Project>
+
+        <!-- Resolve the path to the correct native DLLs for the current platform: -->
+<!--
+<DxcTool Include="$(DxcCompilerToolExe)" />
+<DxcDLLs Include="$(DxcPackagePath)\build\native\bin\$(NativePlatformName)\*.dll" />
+
+<None Include="@(DxcDLLs)" Label="CopyTheDlls">
+<Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+</None>
+
+<LocalDxcDLLs Include="@(DxcDLLs->'$(OutputPath)%(RecursiveDir)%(FileName)%(Extension)')" />
+
+        &lt;!&ndash; Create native references to the DLLs in the output directory: &ndash;&gt;
+<NativeReference Include="$(LocalDxcDLLs)"
+                 Label="MakeNativeDxcRefs" >
+<IsWin32Manifest>false</IsWin32Manifest>
+<Name>%(Filename)%(Extension)</Name>
+<HintPath>.\</HintPath>
+</NativeReference>-->

@@ -1,0 +1,20 @@
+﻿{
+  "bindingConfigs": [
+    {
+      "packagePath": "C:\\Users\\**\\.nuget\\packages\\microsoft.direct3d.d3d12\\1.711.3-preview\\build\\native\\bin\\x64",
+      "loaderClass": "DXSharp.SDKManager",
+      "packageAlias": "AgilitySDK",
+      "fileName": "D3D12Core.dll",
+      "name": "Agility SDK",
+      "bindingType": {
+        "moduleType": "dll",
+        "tag":        "native"
+      },
+      "autoload": "true",
+      "version": "*",
+      
+      "description": "The Agility SDK version of D3D12Core.dll to replace the built-in Windows SDK version.",
+      "remarks": "This is required for the very latest D3D12 features to work."
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+﻿<Project>
+	<ImportGroup>
+		<Import Project="..\build\msbuild\DXSharpShared.Build.props"
+				Condition="$(DXSSharedPropsImported) != 'true'" />
+	</ImportGroup>
+
+	
+	<!-- Defines the shared common props for sample projects :: -->
+	<PropertyGroup Label="CommonSampleProps">
+		<BuildInParallel>true</BuildInParallel>
+		<SamplesRootPath>$(MSBuildThisFileDirectory)</SamplesRootPath>
+		
+		<!-- Make sure there's a configuration name and base output path: -->
+		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+		<BaseOutputPath Condition=" '$(BaseOutputPath)' == '' ">$(SamplesRootPath)bin\$(MSBuildProjectName)\$(Platform)\</BaseOutputPath>
+		<BaseIntermediateOutputPath>$(SamplesRootPath)obj\$([MSBuild]::MakeRelative($(SamplesRootPath), $(MSBuildProjectDirectory)))\</BaseIntermediateOutputPath>
+		
+		<No32Bit Condition=" '$(No32Bit)' == '' ">false</No32Bit>
+		<NoAnyCPU Condition=" '$(NoAnyCPU)' == '' ">false</NoAnyCPU>
+		<UsingDxc Condition=" '$(UsingDxc)' == '' ">false</UsingDxc>
+		<UsingAgility Condition=" '$(UsingAgility)' == '' ">false</UsingAgility>
+		<UsingDxcCompiler Condition=" '$(UsingDxcCompiler)' == '' ">false</UsingDxcCompiler>
+	</PropertyGroup>
+	
+	
+	<!-- Properties for assembly output files :: -->
+	<PropertyGroup Label="AssemblyGenInfo">
+		<Company>Arkaen Solutions</Company>
+		<Authors>Aaron T. Carter, $(Company)</Authors>
+		<Copyright>© $(Authors). All rights reserved.</Copyright>
+		<Title Condition=" '$(Title)'=='' ">$(ProjectName)</Title>
+		<Product Condition=" '$(Product)'=='' ">$(ProjectName)</Product>
+		<RootNamespace Condition=" '$(RootNamespace)'=='' ">$(ProjectName)</RootNamespace>
+		<Description Condition=" '$(Description)'=='' ">Sample application for the DXSharp SDK libraries ...</Description>
+	</PropertyGroup>
+	
+	
+	<!-- Compilation & Assembly Generation Properties :: -->
+	<PropertyGroup Label="CompilerConfig">
+		<OutputType Condition=" '$(OutputType)' == '' ">Library</OutputType>
+
+		<!-- Make sure valid platforms and target frameworks are set: -->
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<Deterministic>true</Deterministic>
+		<ImplicitUsings>true</ImplicitUsings>
+		<AnalysisLevel>latest</AnalysisLevel>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		
+		<TargetPlatformMinVersion>10.0</TargetPlatformMinVersion>
+		<TargetCPUs Condition=" '$(UsingDxc)' != 'true' ">AnyCPU;x64;x86;</TargetCPUs>
+		<TargetCPUs Condition=" '$(UsingDxc)' or '$(No32Bit)' ">AnyCPU;x64;</TargetCPUs>
+		<DotNetTargets>net7.0-windows10.0.22621.0;net8.0-windows10.0.22621.0</DotNetTargets>
+		<Platforms Condition=" '$(Platforms)' == '' ">$(TargetCPUs)</Platforms>
+		<TargetFrameworks Condition=" '$(TargetFrameworks)' == '' ">$(DotNetTargets);</TargetFrameworks>
+	</PropertyGroup>
+	
+	
+	<!-- Properties for DevOps & CI Pipelines :: -->
+	<PropertyGroup Label="DevOpsConfig">
+		<CI>false</CI>
+		<AZ_BUILD>false</AZ_BUILD>
+		<AzureDevOps>true</AzureDevOps>
+		<RepositoryType>git</RepositoryType>
+		<RepositoryUrl>https://github.com/atcarter714/DXSharp</RepositoryUrl>
+		
+		<!-- Local builds should embed PDBs so we never lose them when a subsequent build occurs. -->
+		<DebugType Condition=" '$(CI)' != 'true' and '$(TF_BUILD)' != 'true' ">embedded</DebugType>
+		<DebugType Condition=" '$(AzureDevOps)' != 'true' or '$(AZ_BUILD)' != 'true' ">embedded</DebugType>
+		
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<IncludeSymbols Condition=" '$(DebugType)' != 'embedded' ">true</IncludeSymbols>
+	</PropertyGroup>
+	
+	
+	<!-- Debug/Release Configuration Properties :: -->
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' " 
+				   Label="DebugConfigurationProperties" >
+		<DefineConstants>TRACE, DEBUG_COM, DEV_BUILD</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release' " 
+				   Label="ReleaseConfigurationProperties" >
+		<DefineConstants>TRACE, STRIP_CHECKS, DXS_FAST</DefineConstants>
+	</PropertyGroup>
+</Project>

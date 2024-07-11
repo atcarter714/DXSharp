@@ -1,52 +1,97 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1">
-  <Class Name="DXSharp.Windows.COM.COMBaseObject&lt;T&gt;">
-    <Position X="4" Y="0.5" Width="1.5" />
-    <Members>
-      <Field Name="disposedValue" Hidden="true" />
-    </Members>
-    <TypeIdentifier>
-      <HashCode>AAAAAAIAACAAAIAAAAAABAAAAAAAAAAAAAAAAgACAAA=</HashCode>
-      <FileName>Windows\COM\COMBaseObject.cs</FileName>
-    </TypeIdentifier>
-    <Lollipop Position="0.2" />
-  </Class>
-  <Class Name="DXSharp.Windows.COM.ComPtr&lt;T&gt;">
-    <Position X="2.25" Y="0.5" Width="1.5" />
-    <TypeIdentifier>
-      <HashCode>AABAAAIAACAAAIAAAABABAAAAAAAAAAAAAAAAgACAAA=</HashCode>
-      <FileName>Windows\COM\ComPtr.cs</FileName>
-    </TypeIdentifier>
-    <Lollipop Position="0.2" />
-  </Class>
+  <Comment CommentText="&quot;DXGIFunctions&quot; helper class wraps some of the native C/COM functions of DirectX for the creation of DXGI resources (i.e., Adapters, Outputs, Factory, etc)">
+    <Position X="11.494" Y="0.53" Height="0.935" Width="2.968" />
+  </Comment>
   <Class Name="DXSharp.DXGI.Object" Collapsed="true">
-    <Position X="2.25" Y="5.5" Width="1.5" />
+    <Position X="15.5" Y="4" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAKAACQIAIAACAAAAAAAAAAAAEAAAAAAAgQCAAA=</HashCode>
+      <HashCode>AAAAAAKAACQIAIAACAAAAAAAAEAAAEAAAAAAAgQCAAA=</HashCode>
       <FileName>DXGI\IDXGIObjects.cs</FileName>
     </TypeIdentifier>
     <Lollipop Position="0.2" />
   </Class>
-  <Interface Name="DXSharp.Windows.COM.IUnknown">
-    <Position X="0.5" Y="0.5" Width="1.5" />
+  <Class Name="DXSharp.DXGI.DXGIFunctions">
+    <Position X="11.5" Y="1.75" Width="3" />
     <TypeIdentifier>
-      <HashCode>AAAAAAIAAAAABAAAAAAAAAAAAAAAgAAAAAAAABACAAA=</HashCode>
+      <HashCode>AAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DXGI\DXGIFunctions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="DXSharp.Windows.COM.ComPtr&lt;T&gt;">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Fields" Collapsed="true" />
+      <Compartment Name="Properties" Collapsed="true" />
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Windows\COM\ComPtr.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="DXSharp.Windows.COM.IUnknown">
+    <Position X="7" Y="0.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Properties" Collapsed="true" />
+      <Compartment Name="Methods" Collapsed="true" />
+    </Compartments>
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAABAAAAAAAAAAAAAAAgAAAAAAAABAAAAA=</HashCode>
       <FileName>Windows\COM\IUnknown.cs</FileName>
     </TypeIdentifier>
   </Interface>
-  <Interface Name="DXSharp.Windows.COM.IUnknown&lt;T&gt;">
-    <Position X="0.5" Y="3.25" Width="1.5" />
+  <Interface Name="DXSharp.Windows.COM.IUnknown&lt;T&gt;" Collapsed="true">
+    <Position X="7" Y="2.5" Width="1.5" />
+    <Compartments>
+      <Compartment Name="Properties" Collapsed="true" />
+    </Compartments>
     <TypeIdentifier>
       <HashCode>AAAAAAIAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Windows\COM\IUnknown.cs</FileName>
     </TypeIdentifier>
   </Interface>
   <Interface Name="DXSharp.DXGI.IObject" Collapsed="true">
-    <Position X="0.5" Y="5.5" Width="1.5" />
+    <Position X="7" Y="4.75" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAACAAAAIAAAACAAAAAAAAAAAAAAAAAAAAAQAAAA=</HashCode>
       <FileName>DXGI\IDXGIObjects.cs</FileName>
     </TypeIdentifier>
   </Interface>
+  <Interface Name="DXSharp.DXGI.IAdapter" Collapsed="true">
+    <Position X="4.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DXGI\DXGIAdapters.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="DXSharp.DXGI.ISwapChain" Collapsed="true">
+    <Position X="4.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DXGI\DXGISwapchains.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="DXSharp.DXGI.IObject&lt;T&gt;" Collapsed="true">
+    <Position X="9" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DXGI\IDXGIObjects.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Enum Name="DXSharp.DXGI.MWAFlags">
+    <Position X="15.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAgAAAAAAAAAAAAAAAAAAQAAAAAAAgABAEAAAA=</HashCode>
+      <FileName>DXGI\DXGIFactories.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="DXSharp.DXGI.FactoryCreateFlags">
+    <Position X="14.75" Y="2.25" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAA=</HashCode>
+      <FileName>DXGI\DXGIFunctions.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
   <Font Name="Segoe UI" Size="9" />
 </ClassDiagram>

@@ -2,7 +2,12 @@
   "profiles": {
     "DXSharp": {
       "commandName": "Project",
-      "nativeDebugging": true
+      "nativeDebugging": true,
+      "environmentVariables": {
+        "Dx_SDK_DIR":           "C:\\Windows\\System32",
+        "Agility_SDK_DIR":      ".\\sdk"
+      },
+      "commandLineArgs": "-debug -log"
     }
   }
 }

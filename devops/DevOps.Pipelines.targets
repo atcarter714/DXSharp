@@ -1,0 +1,141 @@
+<Project>
+    <PropertyGroup>
+        <!-- Note: The `$(DevOpsPath)` property tells us where our dev-ops files/folders are ... -->
+        <DevOpsPath Condition=" '$(DevOpsPath)' == '' " >$(SolutionDir)devops</DevOpsPath>
+        
+        <!-- Note: The `$(PipelinesPath)` property is relative to the ".\devops" folder ... -->
+        <PipelinesPath Condition=" '$(PipelinesPath)' == '' " >\pipelines</PipelinesPath>
+        
+        <!-- Note: The `pipelines.init` file is expected to be located at:
+                $(PipelinesPath)\pipelines.init
+            By default, this is:
+                <root>\devops\pipelines\pipelines.init
+                
+            If you want to change the location of the `pipelines.init` file or $(PipelinesPath), 
+            you can set the `PipelinesInitFilePath` or `PipelinesPath` properties to the path of 
+            your choice ... but you must do so before importing this file. The purpose of this file
+            is to centralize the definition of Windows SDK and .NET target framework versions for the
+            entire solution's devops pipelines. Rather than independently re-define/hardcode the default 
+            values all over the place, and end up in hot water when you need to change them, we fetch the
+            same values from one `pipelines.init` file and feed that to the pipelines during runs ... this
+            allows us to simply change the .init file and have changes reflected everywhere.
+            -->
+        <PipelinesInitFilePath 
+                Condition=" '$(PipelinesInitFilePath)' == '' " >$(DevOpsPath)$(PipelinesPath)\pipelines.init</PipelinesInitFilePath>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PipelineInitFilter>$(PipelinesInitFilePath)</PipelineInitFilter>
+        <_scriptsSearchPath Condition=" '$(_scriptsSearchPath)' == '' " >$(DevOpsPath)$(PipelinesPath)\**\scripts\**</_scriptsSearchPath>
+        <_scriptsSearchPaths Condition=" '$(_scriptsSearchPath)' != '' " >
+            $(_scriptsSearchPath)\*.ps1;$(_scriptsSearchPath)\*.csx;$(_scriptsSearchPath)\*.py
+        </_scriptsSearchPaths>
+        
+        <DefaultYamlFilter>$(SolutionDir)**\devops\**\*.yml</DefaultYamlFilter>
+        <DefaultPipelineFilter>$(SolutionDir)**\devops\**$(PipelinesPath)\**\*pipeline*.yml</DefaultPipelineFilter>
+        <DefaultPipelineIncludeFilter>$(SolutionDir)**\devops\**$(PipelinesPath)\*\**\*.yml</DefaultPipelineIncludeFilter>
+    </PropertyGroup>
+
+    <!-- Define the special items for devops: -->
+    <ItemDefinitionGroup>
+        <YamlFile>
+            <FullYamlPath>%(Identity)</FullYamlPath>
+            <YamlFileName>%(Filename)</YamlFileName>
+            <YamlFile>%(Filename)%(Extension)</YamlFile>
+            
+            <Link>devops\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <Visible>true</Visible>
+        </YamlFile>
+        
+        <PipelineInitFile>
+            <InitFileName>pipelines</InitFileName>
+            <FullInitPath>%(Identity)</FullInitPath>
+            
+            <Link>devops\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <Visible>true</Visible>
+        </PipelineInitFile>
+        
+        <AzurePipeline>
+            <PipelineName>%(Filename)</PipelineName>
+            <FullPipelinePath>%(Identity)</FullPipelinePath>
+            <PipelineFileName>$([System.IO.Path]::GetFileNameWithoutExtension( '%(Identity)' ))</PipelineFileName>
+            
+            <Link>devops\pipelines\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <Visible>true</Visible>
+        </AzurePipeline>
+        
+        <PwshScript>
+            <ExecuteCommand>pwsh -ExecutionPolicy Bypass -File "%(Identity)"</ExecuteCommand>
+            <Link>devops\pipelines\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <FullScriptPath>%(Identity)</FullScriptPath>
+            <ScriptName>%(Filename)</ScriptName>
+            
+            <Visible>true</Visible>
+        </PwshScript>
+    </ItemDefinitionGroup>
+    
+    <ItemGroup>
+        <Folder Include="$(DevOpsPath)\**$(PipelinesPath)\**\scripts">
+            <Link>devops\pipelines\%(RecursiveDir)</Link>
+            <Visible>true</Visible>
+        </Folder>
+    </ItemGroup>
+
+
+    <!-- Capture the devops files and link them so project can simply include: -->
+    <ItemGroup>
+        <YamlFile Include="$(DefaultYamlFilter)"
+                  Condition=" '$(DefaultYamlFilter)' != '' "  >
+            <YamlFile>$([System.IO.Path]::GetFullPath( '%(Identity)' ))</YamlFile>
+            <Visible>true</Visible>
+        </YamlFile>
+        <!-- Exclude any file under the pipelines path -->
+        <YamlFile Remove="$(DefaultPipelineFilter)" />
+        <!-- Exclude any file under the pipelines include paths -->
+        <YamlFile Remove="$(DefaultPipelineIncludeFilter)" />
+        
+        
+        <AzurePipeline Include="$(DefaultPipelineFilter)" Exclude="**\inc\**"
+                       Condition=" '$(DefaultPipelineFilter)' != '' "  >
+            <YamlFile>$([System.IO.Path]::GetFullPath( '%(Identity)' ))</YamlFile>
+            <Visible>true</Visible>
+        </AzurePipeline>
+        
+        <AzurePipelineInclude Include="$(DefaultPipelineIncludeFilter)"
+                              Condition=" '$(DefaultPipelineIncludeFilter)' != '' " >
+            <YamlFile>$([System.IO.Path]::GetFullPath( '%(Identity)' ))</YamlFile>
+            <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <Visible>true</Visible>
+        </AzurePipelineInclude>
+        <AzurePipeline Remove="@( AzurePipelineInclude )" />
+
+        <YamlFile Update="@( AzurePipeline );@( AzurePipelineInclude )">
+            <Visible>false</Visible>
+        </YamlFile>
+        
+        <PipelineInitFile Include="$(PipelinesInitFilePath)"
+                          Condition=" '$(PipelinesInitFilePath)' != '' " >
+            <InitFile>$([System.IO.Path]::GetFullPath( '%(Identity)' ))</InitFile>
+            <Link>devops\pipelines\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <Visible>true</Visible>
+        </PipelineInitFile>
+        
+        <PipelineScript Include="$(_scriptsSearchPaths)"
+                        Condition=" '$(_scriptsSearchPaths)' != '' " >
+            <ScriptFile>$([System.IO.Path]::GetFullPath( '%(Identity)' ))</ScriptFile>
+            <Link>devops\pipelines\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <Visible>false</Visible>
+            <Ext>%(Extension)</Ext>
+        </PipelineScript>
+        
+        <PwshScript Include="@( PipelineScript )">
+            <ExecuteCommand>pwsh -ExecutionPolicy Bypass -File "%(ScriptFile)"</ExecuteCommand>
+            <Link>devops\pipelines\%(RecursiveDir)%(Filename)%(Extension)</Link>
+            <FullScriptPath>%(ScriptFile)</FullScriptPath>
+            <ScriptName>%(Filename)</ScriptName>
+            <Visible>true</Visible>
+        </PwshScript>
+        <PwshScript Remove="*.csx;*.py" />
+    </ItemGroup>
+    
+</Project>
