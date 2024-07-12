@@ -151,9 +151,9 @@ internal class Device: Object,
 	}
 	
 	
-	public void CreateRootSignature( uint                nodeMask,
-									 nint                pBlobWithRootSignature,
-									 nuint               blobLengthInBytes, in Guid riid,
+	public void CreateRootSignature( uint nodeMask,
+									 nint pBlobWithRootSignature,
+									 nuint blobLengthInBytes, in Guid riid,
 									 out IRootSignature? ppvRootSignature ) {
 		var device = ComObject ?? throw new NullReferenceException( ) ;
 		unsafe {

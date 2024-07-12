@@ -227,14 +227,17 @@ public abstract class ComPtr: DisposableObject {//IDisposable {
 		_comObjectRef = newComObject ;
 	}
 	
-	internal static nint[ ] GetAllAllocations( ) =>
-		_allPtrs.Where( p => p.IsValid() && !IsDestroyed(p) )
-					.ToArray( ) ;
+	internal static nint[ ] GetAllAllocations( ) {
+		lock( _allPtrs ) return _allPtrs.Where( p => p.IsValid() && !IsDestroyed( p ) )
+				   .ToArray();
+	}
 	
 	internal static void TrackPointer( nint ptr ) {
-		if( ptr.IsValid() ) _allPtrs?.Add( ptr ) ;
+		if( ptr.IsValid() ) {
+			lock( _allPtrs ) { _allPtrs?.Add( ptr ); }
+		}
 	}
-	internal static void UntrackPointer( nint ptr ) => _allPtrs?.Remove( ptr ) ;
+	internal static void UntrackPointer( nint ptr ) { lock( _allPtrs ) _allPtrs?.Remove( ptr ); }
 	// ----------------------------------------------------------
 	
 	

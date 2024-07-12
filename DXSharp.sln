@@ -67,35 +67,35 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "csscript", "csscript", "{B2
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{2761D5CC-DD83-4C5D-87A4-D607413369D5}"
 	ProjectSection(SolutionItems) = preProject
-		build\csscript\include\DirectoryHelper.csx = build\csscript\include\DirectoryHelper.csx
 		build\csscript\include\ArchitectureLogs.csx = build\csscript\include\ArchitectureLogs.csx
+		build\csscript\include\DirectoryHelper.csx = build\csscript\include\DirectoryHelper.csx
 		build\csscript\include\LogHelpers.csx = build\csscript\include\LogHelpers.csx
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{68D56704-A6CB-4F41-9F4B-2603568B5C29}"
 	ProjectSection(SolutionItems) = preProject
-		build\msbuild\DXSharpShared.Build.targets = build\msbuild\DXSharpShared.Build.targets
 		build\msbuild\AgilityNative.Build.targets = build\msbuild\AgilityNative.Build.targets
 		build\msbuild\DxcNative.Build.targets = build\msbuild\DxcNative.Build.targets
 		build\msbuild\DxcTool.Build.targets = build\msbuild\DxcTool.Build.targets
 		build\msbuild\DXSExtras.Build.targets = build\msbuild\DXSExtras.Build.targets
+		build\msbuild\DXSharpShared.Build.targets = build\msbuild\DXSharpShared.Build.targets
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pwsh", "pwsh", "{AF59EB78-E6BC-45DB-8B32-D38F62E1EFF4}"
 	ProjectSection(SolutionItems) = preProject
+		build\pwsh\CallDxcExe.ps1 = build\pwsh\CallDxcExe.ps1
 		build\pwsh\DXSBuildStartup.ps1 = build\pwsh\DXSBuildStartup.ps1
 		build\pwsh\DXSPreBuild.ps1 = build\pwsh\DXSPreBuild.ps1
 		build\pwsh\FetchDxcFromGitHub.ps1 = build\pwsh\FetchDxcFromGitHub.ps1
-		build\pwsh\CallDxcExe.ps1 = build\pwsh\CallDxcExe.ps1
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pipelines", "Pipelines", "{60DAF7CD-8C68-4BDF-9940-5ACBF49620D3}"
 	ProjectSection(SolutionItems) = preProject
-		devops\azure-pipelines.yml = devops\azure-pipelines.yml
 		devops\azure-pipelines-1.yml = devops\azure-pipelines-1.yml
 		devops\azure-pipelines-2.yml = devops\azure-pipelines-2.yml
-		devops\pipelines\dxs-core-pipeline.yml = devops\pipelines\dxs-core-pipeline.yml
+		devops\azure-pipelines.yml = devops\azure-pipelines.yml
 		devops\DevOps.Pipelines.targets = devops\DevOps.Pipelines.targets
+		devops\pipelines\dxs-core-pipeline.yml = devops\pipelines\dxs-core-pipeline.yml
 		devops\pipelines\pipelines.init = devops\pipelines\pipelines.init
 	EndProjectSection
 EndProject
@@ -105,7 +105,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{AF35E6EE
 		tools\Directory.Build.targets = tools\Directory.Build.targets
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DXSharp.Tools.Builds", "tools\DXSharp.Tools.Builds\DXSharp.Tools.Builds.csproj", "{2362EB4B-6F3D-4274-A836-C5394A9660FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DXSharp.Tools.Builds", "tools\DXSharp.Tools.Builds\DXSharp.Tools.Builds.csproj", "{2362EB4B-6F3D-4274-A836-C5394A9660FC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "msbuild", "msbuild", "{9AA76EA1-7D92-40CF-A170-B38DEEB87396}"
 	ProjectSection(SolutionItems) = preProject
@@ -119,11 +119,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{3FEF
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "inc", "inc", "{301D517A-3852-4BEC-911A-EAF7F421F3EB}"
 	ProjectSection(SolutionItems) = preProject
-		devops\pipelines\inc\global-varz.yml = devops\pipelines\inc\global-varz.yml
-		devops\pipelines\inc\core-build-stage.yml = devops\pipelines\inc\core-build-stage.yml
 		devops\pipelines\inc\core-build-job.yml = devops\pipelines\inc\core-build-job.yml
+		devops\pipelines\inc\core-build-stage.yml = devops\pipelines\inc\core-build-stage.yml
 		devops\pipelines\inc\core-test-job.yml = devops\pipelines\inc\core-test-job.yml
 		devops\pipelines\inc\core-test-stage.yml = devops\pipelines\inc\core-test-stage.yml
+		devops\pipelines\inc\global-varz.yml = devops\pipelines\inc\global-varz.yml
 	EndProjectSection
 EndProject
 Global
@@ -184,14 +184,18 @@ Global
 		{F3C57F0F-8540-4E97-B28D-A34091C53755}.Release|x64.Build.0 = Release|x64
 		{F3C57F0F-8540-4E97-B28D-A34091C53755}.Release|x86.ActiveCfg = Release|x86
 		{F3C57F0F-8540-4E97-B28D-A34091C53755}.Release|x86.Build.0 = Release|x86
-		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Debug|x64.ActiveCfg = Debug|x64
-		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Debug|x64.Build.0 = Debug|x64
-		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Release|x64.ActiveCfg = Release|x64
-		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Release|x64.Build.0 = Release|x64
 		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Debug|x64.ActiveCfg = Debug|x64
+		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Debug|x64.Build.0 = Debug|x64
+		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Debug|x86.Build.0 = Debug|Any CPU
 		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Release|x64.ActiveCfg = Release|x64
+		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Release|x64.Build.0 = Release|x64
+		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE7A1499-C24D-4C17-93C0-0C907F5A7D53}.Release|x86.Build.0 = Release|Any CPU
 		{5AA13E5B-574A-4651-A172-AB3EDA13DEC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5AA13E5B-574A-4651-A172-AB3EDA13DEC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5AA13E5B-574A-4651-A172-AB3EDA13DEC2}.Debug|x64.ActiveCfg = Debug|x64
@@ -214,10 +218,18 @@ Global
 		{4B5C9C89-A4A4-4081-8508-6E26388817F8}.Release|x64.Build.0 = Release|x64
 		{4B5C9C89-A4A4-4081-8508-6E26388817F8}.Release|x86.ActiveCfg = Release|x86
 		{4B5C9C89-A4A4-4081-8508-6E26388817F8}.Release|x86.Build.0 = Release|x86
-		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Debug|Any CPU.ActiveCfg = InlineTasks|Any CPU
 		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Debug|Any CPU.Build.0 = InlineTasks|Any CPU
+		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Debug|x64.Build.0 = Debug|Any CPU
+		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Debug|x86.Build.0 = Debug|Any CPU
+		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Release|x64.ActiveCfg = Release|Any CPU
+		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Release|x64.Build.0 = Release|Any CPU
+		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Release|x86.ActiveCfg = Release|Any CPU
+		{2362EB4B-6F3D-4274-A836-C5394A9660FC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
