@@ -1,0 +1,44 @@
+name: .NET 10 build baseline
+
+on:
+  push:
+    branches: [main, 'migration/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows ${{ matrix.configuration }}
+    runs-on: windows-2025
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+      - name: Restore, build, baseline tests, pack, and consume packages
+        shell: pwsh
+        run: ./build.ps1 -Configuration ${{ matrix.configuration }}
+      - name: Upload build evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-${{ matrix.configuration }}
+          path: |
+            artifacts/build.binlog
+            artifacts/test-results/**
+            artifacts/packages/**
+          if-no-files-found: warn

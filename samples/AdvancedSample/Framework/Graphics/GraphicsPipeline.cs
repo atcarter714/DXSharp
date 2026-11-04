@@ -296,7 +296,7 @@ public class GraphicsPipeline: DXGraphics {
 		PopulateCommandList( ) ;
 		
 		// Execute the command list:
-		_cmdQueue!.ExecuteCommandLists< IGraphicsCommandList >( (uint)_commandLists.Length, _commandLists ) ;
+		_cmdQueue!.ExecuteCommandLists< IGraphicsCommandList9 >( (uint)_commandLists.Length, _commandLists ) ;
 		
 		// Present the frame:
 		SwapChain!.Present( 1, 0 ) ;

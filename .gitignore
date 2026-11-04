@@ -359,3 +359,6 @@ healthchecksdb
 MigrationBackup/
 
 .idea/.idea.DXSharp/.idea/
+
+# SDK-style build baseline outputs
+artifacts/
