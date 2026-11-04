@@ -13,7 +13,7 @@ using Windows.Win32.Graphics.Dxgi.Common ;
 using DXSharp.DXGI ;
 using DXSharp.Windows ;
 using static DXSharp.InteropUtils ;
-using IDisposable = ABI.System.IDisposable ;
+using IDisposable = System.IDisposable ;
 
 #endregion
 namespace DXSharp.Direct3D12 ;

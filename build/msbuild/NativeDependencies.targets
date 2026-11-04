@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <DXSharpNativeArchitecture Condition="'$(DXSharpNativeArchitecture)' == ''">x64</DXSharpNativeArchitecture>
+    <DXSharpNativeArchitecture Condition="'$(PlatformTarget)' == 'x86' or '$(RuntimeIdentifier)' == 'win-x86'">x86</DXSharpNativeArchitecture>
+    <DXSharpNativeArchitecture Condition="'$(PlatformTarget)' == 'ARM64' or '$(Platform)' == 'ARM64' or '$(RuntimeIdentifier)' == 'win-arm64'">arm64</DXSharpNativeArchitecture>
+    <_AgilityArchitecture>$(DXSharpNativeArchitecture)</_AgilityArchitecture>
+    <_AgilityArchitecture Condition="'$(DXSharpNativeArchitecture)' == 'x86'">win32</_AgilityArchitecture>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(PkgMicrosoft_Direct3D_D3D12)' != ''">
+    <None Include="$(PkgMicrosoft_Direct3D_D3D12)/build/native/bin/$(_AgilityArchitecture)/D3D12Core.dll;$(PkgMicrosoft_Direct3D_D3D12)/build/native/bin/$(_AgilityArchitecture)/D3D12StateObjectCompiler.dll"
+          Link="D3D12/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(PkgMicrosoft_Direct3D_D3D12)/build/native/bin/$(_AgilityArchitecture)/d3d12SDKLayers.dll"
+          Condition="'$(Configuration)' == 'Debug'"
+          Link="D3D12/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PkgMicrosoft_Direct3D_DXC)' != ''">
+    <None Include="$(PkgMicrosoft_Direct3D_DXC)/build/native/bin/$(DXSharpNativeArchitecture)/dxcompiler.dll;$(PkgMicrosoft_Direct3D_DXC)/build/native/bin/$(DXSharpNativeArchitecture)/dxil.dll"
+          Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

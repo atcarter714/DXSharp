@@ -1,11 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType Condition=" '$(Configuration)' == 'Debug' ">Exe</OutputType>
         <OutputType Condition=" '$(Configuration)' == 'Release' ">WinExe</OutputType>
         
         <Platforms>$(TargetCPUs);</Platforms>
-        <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+        <TargetFramework>$(DotNetTargets)</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup Label="DXSReferences" >

@@ -2,7 +2,7 @@
 
 ![DXSharp](./file/img/DXSharp_Logo_00_512.png)
 
-**Modern DirectX 12 for .NET 7 & 8**
+**DirectX 12 for .NET — .NET 10 migration in progress**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![.NET 8](https://img.shields.io/badge/.NET-8.0-purple)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 
@@ -38,15 +38,22 @@
 ## Getting Started 🌟
 
 ### Prerequisites
-- **.NET 8 SDK** installed
-- **Windows 10/11** with DirectX 12 capable hardware
+- **.NET 10 SDK** selected by [global.json](global.json)
+- **PowerShell 7** for the build entry point
+- **Windows** for test execution; DirectX 12 capable hardware for graphics samples
 
 ### Installation
 
 1. **Clone the repository:**
     - git clone https://github.com/atcarter714/DXSharp.git
 
-2. Once you've checked out the repo, you can simply build the solution and run the "Hello Triangle" sample application.
+2. Build and validate the migration baseline:
+
+   ```powershell
+   ./build.ps1 -Configuration Debug
+   ```
+
+   See [the .NET 10 build baseline](doc/NET10-Build-Baseline.md) for Release builds, locked dependencies, test scope, package checks, and current limitations. The original proof-of-concept architecture described below is being migrated incrementally; compilation does not establish production readiness.
 
 ## Roadmap 🛤️
 

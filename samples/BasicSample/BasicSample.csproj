@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Platforms>$(TargetCPUs);</Platforms>
-        <TargetFrameworks>$(DotNetTargets);</TargetFrameworks>
+        <TargetFramework>$(DotNetTargets)</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
