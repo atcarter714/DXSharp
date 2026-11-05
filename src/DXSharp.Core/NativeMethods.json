@@ -1,0 +1,12 @@
+{
+  "$schema": "https://aka.ms/CsWin32.schema.json",
+  "allowMarshaling": true,
+  "emitSingleFile": false,
+  "public": false,
+  "comInterop": {
+    "useComSourceGenerators": true,
+    "autoWinRTMarshalling": false,
+    "useIntPtrForComOutPointers": true,
+    "preserveSigMethods": ["*"]
+  }
+}

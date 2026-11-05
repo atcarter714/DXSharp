@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0-windows10.0.26100": {
+      "Microsoft.Direct3D.D3D12": {
+        "type": "Direct",
+        "requested": "[1.620.1, 1.620.1]",
+        "resolved": "1.620.1",
+        "contentHash": "oQCFTys3PZ0IHtS3I/u0/1IWgpuG7aQa+84AGiraqc8bMOCM8QpDLwLBshEbJ1J7LmuctZReXhF8c0eCiu2Xcw=="
+      },
+      "Microsoft.Direct3D.DXC": {
+        "type": "Direct",
+        "requested": "[1.9.2609.5, 1.9.2609.5]",
+        "resolved": "1.9.2609.5",
+        "contentHash": "jTWr7a2bMpqV+b0Uc7oxOo8ualplaUw3fsQ+p0kp9TwlWvvmREvt3SA4+Drl2Y0M31iscqZolrL3vpdnLoPpdg=="
+      },
+      "Microsoft.Windows.CsWin32": {
+        "type": "Direct",
+        "requested": "[0.3.367, )",
+        "resolved": "0.3.367",
+        "contentHash": "C4JVE3wmVjCvzpdBzC+HK/boVU6g4ZRDEZ7uDmMJHCkgjFHhiMb9vhe2+wffzWzyNNObpCsIAW4G1t+1CAIEWw==",
+        "dependencies": {
+          "Microsoft.Windows.SDK.Win32Docs": "0.1.42-alpha",
+          "Microsoft.Windows.SDK.Win32Metadata": "71.0.37-preview",
+          "Microsoft.Windows.WDK.Win32Metadata": "0.13.25-experimental"
+        }
+      },
+      "Microsoft.Windows.SDK.Win32Metadata": {
+        "type": "Direct",
+        "requested": "[71.0.37-preview, )",
+        "resolved": "71.0.37-preview",
+        "contentHash": "0y4uKnOzE+k2zUCxcTOJTOuRuOFiW01A+j1GpjyN11saEjkESLW9XrWkGYG/zdlAAb8oRk4oLdokkcx0X2z7yA=="
+      },
+      "Microsoft.Windows.SDK.Win32Docs": {
+        "type": "Transitive",
+        "resolved": "0.1.42-alpha",
+        "contentHash": "Z/9po23gUA9aoukirh2ItMU2ZS9++Js9Gdds9fu5yuMojDrmArvY2y+tq9985tR3cxFxpZO1O35Wjfo0khj5HA=="
+      },
+      "Microsoft.Windows.WDK.Win32Metadata": {
+        "type": "Transitive",
+        "resolved": "0.13.25-experimental",
+        "contentHash": "IM50tb/+UIwBr9FMr6ZKcZjCMW+Axo6NjGqKxgjUfyCY8dRnYUfrJEXxAaXoWtYP4X8EmASmC1Jtwh4XucseZg==",
+        "dependencies": {
+          "Microsoft.Windows.SDK.Win32Metadata": "63.0.31-preview"
+        }
+      }
+    }
+  }
+}
