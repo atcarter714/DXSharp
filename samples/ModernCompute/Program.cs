@@ -2,8 +2,14 @@ using DXSharp.Graphics;
 using DXSharp.MachineLearning;
 using DXSharp.Shaders;
 
+#if DEBUG
+const bool debugLayer = true;
+#else
+const bool debugLayer = false;
+#endif
+
 using var device = GraphicsDevice.Create( new( ) {
-    UseWarp = args.Contains( "--warp" ), UseAgility = !args.Contains( "--system-runtime" ), EnableDebugLayer = !args.Contains( "--no-debug" )
+    UseWarp = args.Contains( "--warp" ), UseAgility = !args.Contains( "--system-runtime" ), EnableDebugLayer = debugLayer && !args.Contains( "--no-debug" )
 } );
 Console.WriteLine( device.AdapterName );
 try {

@@ -106,7 +106,7 @@ internal sealed unsafe partial class IncludeHandler( Func<string, ReadOnlyMemory
                 var blob = new ShaderSourceBlob( resolver( filename.ToString( ) ).Span );
                 _sources.Add( blob ); source = blob; return new HRESULT( 0 );
             }
-        } catch ( Exception error ) { return new HRESULT( Marshal.GetHRForException( error ) ); }
+        } catch ( Exception error ) { return new HRESULT( error.HResult < 0 ? error.HResult : unchecked((int)0x80004005) ); }
     }
     public void Dispose( ) { lock ( _sources ) { foreach ( var source in _sources ) source.Dispose( ); _sources.Clear( ); } }
 }

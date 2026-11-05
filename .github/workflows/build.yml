@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: build-${{ github.workflow }}-${{ github.ref }}
+  group: build-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -70,7 +70,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          dotnet run --project samples/ModernCompute -c Release -- --warp --directml
+          dotnet run --project samples/ModernCompute -c Debug -- --warp --directml
           if ($LASTEXITCODE -ne 0) { throw 'JIT numerical qualification failed.' }
           dotnet publish samples/ModernCompute -c Release -r win-x64 -p:PublishAot=true -o artifacts/modern-compute-aot
           if ($LASTEXITCODE -ne 0) { throw 'NativeAOT compute publish failed.' }

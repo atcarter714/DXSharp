@@ -24,9 +24,14 @@ internal static class Program {
         try {
             int frameLimit = int.Parse( GetOption( args, "--frames=" ) ?? "0" );
             if ( frameLimit < 0 ) throw new ArgumentOutOfRangeException( nameof(frameLimit) );
+#if DEBUG
+            const bool debugLayer = true;
+#else
+            const bool debugLayer = false;
+#endif
             device = GraphicsDevice.Create( new( ) {
                 UseWarp = args.Contains( "--warp" ), UseAgility = !args.Contains( "--system-runtime" ),
-                EnableDebugLayer = !args.Contains( "--no-debug" )
+                EnableDebugLayer = debugLayer && !args.Contains( "--no-debug" )
             } );
             Console.WriteLine( device.AdapterName );
             WriteDiagnostics( device, evidence );
