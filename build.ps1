@@ -38,6 +38,7 @@ try {
         if ([int] $trx.TestRun.ResultSummary.Counters.executed -lt 1) {
             throw 'The baseline test filter executed no tests.'
         }
+        & (Join-Path $PSScriptRoot 'build/VerifyInterop.ps1') -Configuration $Configuration
         if ($RunGraphicsTests) {
             Invoke-DotNet -Arguments @('test', 'tests/BasicTests/BasicTests.csproj', '--configuration', $Configuration,
                 '--no-build', '--no-restore', '--filter', 'TestCategory!=BuildBaseline',

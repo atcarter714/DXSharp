@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <!-- Match Directory.Packages.props; native SDK packages are runtime dependencies. -->
+    <PkgMicrosoft_Direct3D_D3D12 Condition="'$(PkgMicrosoft_Direct3D_D3D12)' == ''">$(NuGetPackageRoot)/microsoft.direct3d.d3d12/1.620.1</PkgMicrosoft_Direct3D_D3D12>
+    <PkgMicrosoft_Direct3D_DXC Condition="'$(PkgMicrosoft_Direct3D_DXC)' == ''">$(NuGetPackageRoot)/microsoft.direct3d.dxc/1.9.2609.5</PkgMicrosoft_Direct3D_DXC>
+  </PropertyGroup>
+  <Import Project="$(MSBuildThisFileDirectory)DXSharp.NativeAssets.targets" />
+</Project>

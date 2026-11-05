@@ -55,6 +55,8 @@
 
    See [the .NET 10 build baseline](doc/NET10-Build-Baseline.md) for Release builds, locked dependencies, test scope, package checks, and current limitations. The original proof-of-concept architecture described below is being migrated incrementally; compilation does not establish production readiness.
 
+The [generated COM foundation](doc/Generated-Com-Foundation.md) adds the modern `DXSharp.Core` and optional `DXSharp.DirectML` path, native ownership qualification, DXC compilation, and bounded graphics/compute samples. The coverage matrix distinguishes working implementations from the remaining port and records what has actually been executed.
+
 ## Roadmap 🛤️
 
 - [x] Initial DirectX 12 support
