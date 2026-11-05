@@ -30,7 +30,8 @@ try {
     $project = 'tests/InteropQualification/InteropQualification.csproj'
     Invoke-Checked 'dotnet' @('restore', $project, '--locked-mode', '-m:1')
     Invoke-Checked 'dotnet' @('build', $project, '-c', $Configuration, '--no-restore', '-m:1', "-p:DXSharpNativeFixture=$fixture")
-    $managed = Join-Path $repoRoot "artifacts/bin/InteropQualification/$Configuration/net10.0-windows10.0.26100.0/InteropQualification.dll"
+    $managed = (& dotnet msbuild $project "-p:Configuration=$Configuration" -getProperty:TargetPath -nologo | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $managed)) { throw 'Unable to locate the built qualification assembly.' }
     Invoke-Checked 'dotnet' @($managed)
     if ($PublishAot) {
         $publish = Join-Path $repoRoot "artifacts/qualification-aot/$rid"

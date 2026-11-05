@@ -60,7 +60,8 @@ System.Console.WriteLine(typeof(DXSharp.MachineLearning.DirectMlDevice).Assembly
         if ($LASTEXITCODE -ne 0) { throw 'Package consumer restore failed.' }
         & dotnet build Consumer.csproj --configuration $Configuration --no-restore
         if ($LASTEXITCODE -ne 0) { throw 'Package consumer build failed.' }
-        $output = Join-Path $consumerDirectory "bin/$Configuration/net10.0-windows10.0.26100.0/win-x64"
+        $output = (& dotnet msbuild Consumer.csproj "-p:Configuration=$Configuration" -getProperty:TargetDir -nologo | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path $output)) { throw 'Unable to locate the package consumer output.' }
         $native = @{
             'D3D12/D3D12Core.dll' = 'microsoft.direct3d.d3d12/1.620.1/build/native/bin/x64/D3D12Core.dll'
             'D3D12/D3D12StateObjectCompiler.dll' = 'microsoft.direct3d.d3d12/1.620.1/build/native/bin/x64/D3D12StateObjectCompiler.dll'
