@@ -55,7 +55,7 @@ Set `RuntimeIdentifier` to `win-x64`, `win-x86`, or `win-arm64` for deployment. 
 | Diagnostics | Bounded InfoQueue snapshot, device-removed HRESULT, operation-preserving exceptions, sample evidence, ProcDump launcher | DRED setup and breadcrumb/page-fault decoding; live-object regression gates; device-recovery policy |
 | Samples | ModernTriangle with resize, bounded frames and GC stress; ModernCompute with numerical DXC and optional DirectML checks | Texture, async upload, multi-frame synchronization, mesh/raytracing, richer DirectML workloads |
 
-Declaring newer native interfaces in the generation manifest does not mean their friendly APIs or runtime paths have been qualified. General API completeness, zero-allocation hot paths and performance parity still require measured gates. `IsAotCompatible` is deliberately not advertised on the packages before the Windows execution matrix passes. The WinForms triangle itself is not an AOT sample; ModernCompute is the console candidate.
+Declaring newer native interfaces in the generation manifest does not mean their friendly APIs or runtime paths have been qualified. General API completeness, zero-allocation hot paths and performance parity still require measured gates. `IsAotCompatible` is not yet advertised on the packages: the passing AOT console workloads qualify their exercised paths, while broader public API coverage remains part of the port. The WinForms triangle itself is not an AOT sample; ModernCompute is the console candidate.
 
 ## Build and qualification
 
@@ -84,7 +84,11 @@ CI adds Windows/Linux JIT and AOT native-fixture runs, Windows WARP compute/Dire
 - Native fixture JIT and Linux NativeAOT: **2,288 checks passed per run**, **2,004 native fixture objects destroyed per run**, **zero remaining native fixture objects**. This includes the generated DXC include/blob callback path, not actual DXC compilation on Linux.
 - Linux NativeAOT publishing required a development-host workaround for MSB4216: an external, uncommitted MSBuild import ran the ILLink tasks in process instead of the failing out-of-process task host. The resulting native ELF executable passed the same suite. No workaround or warning suppression is shipped in the repository.
 - Debug and Release packing and isolated consumer build/single-file publish passed, including deployed native hashes and debug-layer exclusion.
-- Windows presentation, DXC compilation, DirectML numerical execution, Windows structure-return ABI, and Windows AOT remain pending execution of their corresponding gates. The earlier baseline sample's Windows success was reported by the maintainer; the later CLR crash remains undiagnosed.
+- GitHub Actions [run 41980630248](https://github.com/atcarter714/DXSharp/actions/runs/41980630248), implementation commit `222112ad1f968dbad12693f6a7e1a1972bcd1ca5`: all four jobs passed. Windows Debug/Release built the full solution, passed the three baseline tests and 2,288 native-fixture checks, packed the SDK, and verified isolated package build/publish output. Windows and Linux both passed the fixture under JIT and NativeAOT. No local task-host workaround was needed in CI.
+- Windows WARP, JIT with validation enabled: DXC compute/readback returned `1234`; DirectML Add returned `[11, 22, 33, 44]`. The published Windows NativeAOT console repeated both numerical checks successfully. These runs also exercised early public-owner disposal, scoped mapping and forced GC.
+- Windows interactive presentation, resize and long-duration rendering remain to be qualified on a desktop. The earlier baseline sample's Windows success was reported by the maintainer; the later CLR crash remains undiagnosed.
+
+The Windows gates caught two defects during this slice. Verifiers now query MSBuild for output paths rather than assuming the absence of a platform subdirectory. The include callback returns the exception's failing HRESULT directly: `Marshal.GetHRForException` had left thread-local COM error information that changed a later unsupported-interface exception. Debug builds enable validation by default; Release samples use retail configuration. The Windows JIT numerical job deliberately uses Debug so the matching packaged SDK layers are available.
 
 ## Crash investigation
 
@@ -102,6 +106,8 @@ With Sysinternals ProcDump available, launch either sample under full-dump captu
   -ProcDumpPath C:/Tools/ProcDump/procdump64.exe `
   -Arguments @('--frames=100000', '--gc-stress')
 ```
+
+If Developer PowerShell selects an `x64` platform subdirectory, use the matching executable path. MSBuild can report the assembly path with `dotnet msbuild <project.csproj> -p:Configuration=Debug -getProperty:TargetPath`; the apphost is beside it with an `.exe` extension.
 
 The launcher records the executable hash, arguments, OS, architecture and SDK/runtime inventory, and asks ProcDump to launch only that executable and capture a full dump on an unhandled exception. It does not change global crash settings. ModernTriangle also writes `diagnostics.json` and managed failures under its evidence directory. Next investigation requires the crashing native instruction, native/managed stacks, loaded-module versions and device-removal evidence from that exact run.
 
