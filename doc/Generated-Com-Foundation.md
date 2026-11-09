@@ -112,3 +112,15 @@ If Developer PowerShell selects an `x64` platform subdirectory, use the matching
 The launcher records the executable hash, arguments, OS, architecture and SDK/runtime inventory, and asks ProcDump to launch only that executable and capture a full dump on an unhandled exception. It does not change global crash settings. ModernTriangle also writes `diagnostics.json` and managed failures under its evidence directory. Next investigation requires the crashing native instruction, native/managed stacks, loaded-module versions and device-removal evidence from that exact run.
 
 Primary references: [source-generated COM](https://learn.microsoft.com/dotnet/standard/native-interop/comwrappers-source-generation), [unique ComObject.FinalRelease](https://learn.microsoft.com/dotnet/api/system.runtime.interopservices.marshalling.comobject.finalrelease), [DirectML binding](https://learn.microsoft.com/windows/ai/directml/dml-binding), [Microsoft's HelloDirectML](https://github.com/microsoft/DirectML/blob/master/Samples/HelloDirectML/main.cpp), [ProcDump](https://learn.microsoft.com/sysinternals/downloads/procdump).
+
+## Desktop samples
+
+`DXSharp.Framework.Desktop` hosts the WinForms window, frame timing, back buffers, resize, optional depth target, presentation, and shutdown. The caller owns its device, shaders, pipelines, and scene resources. The draw callback records into the frame's borrowed command list. The host currently uses one allocator and waits for each draw submission.
+
+- **ModernTriangle** exercises the shared host, including its existing `--resize-test`.
+- **HelloTexture** ports the checkerboard triangle from [Microsoft's D3D12 Hello Texture](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12HelloWorld/src/HelloTexture). It uploads a single-mip RGBA8 texture with row padding and samples it through an SRV and static sampler.
+- **AdvancedSample** exercises per-frame matrices, lighting, and a D32 depth target with a rotating cube. See [the sample README](../samples/AdvancedSample/readme.md).
+
+Run either new sample with `--warp --frames=4` for the bounded Windows software-adapter check. With no arguments, the sample uses the hardware adapter and runs until its window closes.
+
+The next Microsoft port candidates are [Hello Frame Buffering](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12HelloWorld/src/HelloFrameBuffering) for multiple frames in flight, [ExecuteIndirect](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12ExecuteIndirect) for GPU-driven draws, and [D3D12 Multithreading](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12Multithreading) for a shadow pass and parallel recording.

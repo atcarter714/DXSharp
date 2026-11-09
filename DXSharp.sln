@@ -138,6 +138,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModernTriangle", "samples\M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModernCompute", "samples\ModernCompute\ModernCompute.csproj", "{2BB6521A-B6BC-4BD3-AC2E-67E8042386E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DXSharp.Framework.Desktop", "src\DXSharp.Framework.Desktop\DXSharp.Framework.Desktop.csproj", "{2ABFBD91-D516-4267-88F3-F232D822D38B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -302,6 +304,18 @@ Global
 		{2BB6521A-B6BC-4BD3-AC2E-67E8042386E4}.Release|x64.Build.0 = Release|x64
 		{2BB6521A-B6BC-4BD3-AC2E-67E8042386E4}.Release|x86.ActiveCfg = Release|x86
 		{2BB6521A-B6BC-4BD3-AC2E-67E8042386E4}.Release|x86.Build.0 = Release|x86
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Debug|x64.ActiveCfg = Debug|x64
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Debug|x64.Build.0 = Debug|x64
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Debug|x86.ActiveCfg = Debug|x86
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Debug|x86.Build.0 = Debug|x86
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Release|x64.ActiveCfg = Release|x64
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Release|x64.Build.0 = Release|x64
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Release|x86.ActiveCfg = Release|x86
+		{2ABFBD91-D516-4267-88F3-F232D822D38B}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -333,12 +347,12 @@ Global
 		{6D81F5A7-1D01-49DF-8D02-ECD9183FDF6F} = {4A52D278-0251-4FD5-BF3A-5C52C294480A}
 		{AA296E18-E027-4E92-A7D7-42FC5086A052} = {AEE84FD5-7441-42CF-AA6C-5805B759E1F8}
 		{2BB6521A-B6BC-4BD3-AC2E-67E8042386E4} = {AEE84FD5-7441-42CF-AA6C-5805B759E1F8}
+		{2ABFBD91-D516-4267-88F3-F232D822D38B} = {29411031-4490-4542-B2D1-02D223BFD605}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C4990EC-248E-49D5-A254-EA8AD214C338}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		samples\shared\DXSharp.Samples.Shared\DXSharp.Samples.Shared.projitems*{29e67012-6798-43e1-befe-f9270f595779}*SharedItemsImports = 13
-		samples\shared\DXSharp.Samples.Shared\DXSharp.Samples.Shared.projitems*{f3c57f0f-8540-4e97-b28d-a34091c53755}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

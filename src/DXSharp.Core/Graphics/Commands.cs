@@ -79,6 +79,35 @@ public sealed unsafe class GraphicsCommandList : GraphicsObject {
         Track( source ); Track( destination );
         Native.Interface.CopyBufferRegion( destination.Native.Interface, destinationOffset, source.Native.Interface, sourceOffset, size );
     }
+    internal void CopyTextureFromUpload( GpuResource upload, GpuResource texture, D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint ) {
+        Recording( );
+        Track( upload );
+        Track( texture );
+        using var uploadLease = upload.Native.Borrow( );
+        using var textureLease = texture.Native.Borrow( );
+        D3D12_TEXTURE_COPY_LOCATION source = new( ) {
+            pResource = (ID3D12Resource_unmanaged*)uploadLease.Pointer,
+            Type = D3D12_TEXTURE_COPY_TYPE.D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT
+        };
+        source.Anonymous.PlacedFootprint = footprint;
+        D3D12_TEXTURE_COPY_LOCATION target = new( ) {
+            pResource = (ID3D12Resource_unmanaged*)textureLease.Pointer,
+            Type = D3D12_TEXTURE_COPY_TYPE.D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX
+        };
+        Native.Interface.CopyTextureRegion( target, 0, 0, 0, source, null );
+    }
+
+    /// <summary>Binds t0 for a graphics pipeline created with a texture root signature.
+    /// This replaces the current shader-visible CBV/SRV/UAV heap.</summary>
+    public void SetGraphicsTexture( SampledTexture2D texture ) {
+        ArgumentNullException.ThrowIfNull( texture );
+        Recording( );
+        Track( texture.Resource );
+        Track( texture.Heap );
+        Native.Interface.SetDescriptorHeaps( 1, [texture.Heap.Native.Interface] );
+        Native.Interface.SetGraphicsRootDescriptorTable( 0, texture.Heap.Native.Interface.GetGPUDescriptorHandleForHeapStart( ) );
+    }
+
     /// <summary>Sets a viewport and scissor rectangle.</summary>
     public void SetViewport( uint width, uint height ) {
         Recording( ); if ( width == 0 || height == 0 ) throw new ArgumentOutOfRangeException( nameof(width) );
@@ -98,6 +127,29 @@ public sealed unsafe class GraphicsCommandList : GraphicsObject {
         var handle = target.Handle;
         Native.Interface.OMSetRenderTargets( 1, &handle, false, null );
     }
+    /// <summary>Binds a color target and a D32 depth target, optionally clearing depth to 1.</summary>
+    public void SetRenderTarget( RenderTargetView target, DepthTarget depth, bool clearDepth = false ) {
+        ArgumentNullException.ThrowIfNull( depth );
+        Recording( );
+        Track( target.Heap );
+        Track( target.Resource );
+        Track( depth.Heap );
+        Track( depth.Resource );
+        var colorHandle = target.Handle;
+        var depthHandle = depth.Heap.CpuHandle( 0 );
+        if ( clearDepth )
+            Native.Interface.ClearDepthStencilView( depthHandle, D3D12_CLEAR_FLAGS.D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, null );
+        Native.Interface.OMSetRenderTargets( 1, &colorHandle, false, &depthHandle );
+    }
+
+    /// <summary>Copies inline values to b0 for a graphics pipeline with a graphics constants root signature.</summary>
+    public void SetGraphicsConstants( ReadOnlySpan<uint> values ) {
+        Recording( );
+        if ( values.Length is 0 or > 64 ) throw new ArgumentOutOfRangeException( nameof(values) );
+        fixed ( uint* pointer = values )
+            Native.Interface.SetGraphicsRoot32BitConstants( 0, (uint)values.Length, pointer, 0 );
+    }
+
     /// <summary>Binds a graphics root signature and pipeline.</summary>
     public void SetGraphicsPipeline( PipelineState pipeline ) {
         Recording( ); if ( pipeline.IsCompute ) throw new ArgumentException( "A graphics pipeline is required." );

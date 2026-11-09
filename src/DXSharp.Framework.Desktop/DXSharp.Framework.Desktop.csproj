@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(DotNetTargets)</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Description>WinForms desktop frame hosting for the modern DXSharp graphics API.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DXSharp.Core/DXSharp.Core.csproj" />
+  </ItemGroup>
+</Project>
