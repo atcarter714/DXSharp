@@ -16,6 +16,8 @@ public sealed record DesktopGameOptions {
     public bool EnableDepth { get; init; }
     /// <summary>Close after this many presentations. Zero runs until the window closes.</summary>
     public int FrameLimit { get; init; }
+    /// <summary>Number of frame slots. One waits for rendering before presenting. Two waits on slot reuse.</summary>
+    public int FramesInFlight { get; init; } = 1;
 }
 
 /// <summary>A frame whose command list and render target are borrowed for the draw callback.</summary>
@@ -24,7 +26,7 @@ public readonly record struct DesktopFrame( GraphicsCommandList Commands, Render
 /// <summary>Totals from a desktop run.</summary>
 public readonly record struct DesktopRunResult( int Frames, int Resizes );
 
-/// <summary>Runs a synchronous WinForms frame loop with a single allocator and two back buffers.</summary>
+/// <summary>Runs a WinForms frame loop with two back buffers and one or two frame slots.</summary>
 public static class DesktopGame {
     /// <summary>Runs on the calling STA thread. The host owns the window, submission and presentation.
     /// The caller owns the device and scene resources. Record draw commands only during the draw callback.</summary>
@@ -33,7 +35,7 @@ public static class DesktopGame {
         ArgumentNullException.ThrowIfNull( device );
         ArgumentNullException.ThrowIfNull( options );
         ArgumentNullException.ThrowIfNull( draw );
-        if ( options.ClientSize.Width <= 0 || options.ClientSize.Height <= 0 || options.FrameLimit < 0 )
+        if ( options.ClientSize.Width <= 0 || options.ClientSize.Height <= 0 || options.FrameLimit < 0 || options.FramesInFlight is < 1 or > 2 )
             throw new ArgumentOutOfRangeException( nameof(options) );
         if ( Thread.CurrentThread.GetApartmentState( ) != ApartmentState.STA )
             throw new InvalidOperationException( "The desktop game must run on an STA thread." );
@@ -42,9 +44,8 @@ public static class DesktopGame {
         window.Show( );
         Size size = window.ClientSize;
         using var queue = device.CreateCommandQueue( );
-        using var allocator = device.CreateCommandAllocator( );
-        using var commands = device.CreateCommandList( allocator );
-        commands.Close( );
+        using var first = new FrameSlot( device );
+        using var second = options.FramesInFlight == 2 ? new FrameSlot( device ) : null;
         using var swap = device.CreateSwapChain( queue, window.Handle, (uint)size.Width, (uint)size.Height );
         using var heap = device.CreateRenderTargetHeap( swap.BufferCount );
         using var timer = new System.Windows.Forms.Timer { Interval = 1 };
@@ -69,8 +70,9 @@ public static class DesktopGame {
                 timer.Stop( );
                 bool resized = clientSize != size;
                 if ( resized ) queue.WaitIdle( );
-                allocator.Reset( );
-                commands.Reset( allocator );
+                var slot = second is not null && (frames & 1) != 0 ? second : first;
+                if ( slot.Completion != 0 ) queue.Wait( slot.Completion );
+                var commands = slot.Begin( );
                 if ( resized ) {
                     ReleaseBuffers( );
                     swap.Resize( (uint)clientSize.Width, (uint)clientSize.Height );
@@ -92,7 +94,8 @@ public static class DesktopGame {
                 previous = now;
                 commands.Transition( buffer, ResourceState.RenderTarget, ResourceState.Present );
                 commands.Close( );
-                queue.Wait( queue.Submit( commands ) );
+                slot.Completion = queue.Submit( commands );
+                if ( second is null ) queue.Wait( slot.Completion );
                 swap.Present( );
                 ++frames;
                 framePresented?.Invoke( window, new( frames, resizes ) );
@@ -123,6 +126,32 @@ public static class DesktopGame {
             foreach ( var buffer in buffers ) buffer?.Dispose( );
             Array.Clear( buffers );
             Array.Clear( targets );
+        }
+    }
+
+    private sealed class FrameSlot : IDisposable {
+        private readonly CommandAllocator _allocator;
+        private readonly GraphicsCommandList _commands;
+        internal ulong Completion;
+
+        internal FrameSlot( GraphicsDevice device ) {
+            _allocator = device.CreateCommandAllocator( );
+            try {
+                _commands = device.CreateCommandList( _allocator );
+                try { _commands.Close( ); }
+                catch { _commands.Dispose( ); throw; }
+            } catch { _allocator.Dispose( ); throw; }
+        }
+
+        internal GraphicsCommandList Begin( ) {
+            _allocator.Reset( );
+            _commands.Reset( _allocator );
+            return _commands;
+        }
+
+        public void Dispose( ) {
+            _commands.Dispose( );
+            _allocator.Dispose( );
         }
     }
 }

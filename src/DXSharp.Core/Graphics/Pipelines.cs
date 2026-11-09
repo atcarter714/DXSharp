@@ -33,23 +33,22 @@ public sealed unsafe partial class GraphicsDevice {
     private static partial int SerializeRoot( in D3D12_VERSIONED_ROOT_SIGNATURE_DESC description, out nint blob, out nint errors );
 
     /// <summary>Creates an empty graphics signature, or a compute signature with root UAVs u0 through uN.</summary>
-    public RootSignature CreateRootSignature( uint computeBufferCount = 0 ) {
+    public RootSignature CreateRootSignature( uint computeBufferCount = 0 ) => CreateRootSignature( computeBufferCount, 0 );
+
+    /// <summary>Creates a compute signature with root UAVs followed by inline DWORD constants at b0.</summary>
+    public RootSignature CreateRootSignature( uint computeBufferCount, uint computeConstantCount ) {
         if ( computeBufferCount > 32 ) throw new ArgumentOutOfRangeException( nameof(computeBufferCount) );
-        Span<D3D12_ROOT_PARAMETER> parameters = stackalloc D3D12_ROOT_PARAMETER[checked((int)computeBufferCount)];
+        if ( computeConstantCount > 64 - 2 * computeBufferCount ) throw new ArgumentOutOfRangeException( nameof(computeConstantCount) );
+        uint count = computeBufferCount + (computeConstantCount == 0 ? 0u : 1u);
+        Span<D3D12_ROOT_PARAMETER> parameters = stackalloc D3D12_ROOT_PARAMETER[(int)count];
         parameters.Clear( );
         for ( uint i = 0; i < computeBufferCount; ++i ) {
             parameters[(int)i].ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_UAV;
             parameters[(int)i].Anonymous.Descriptor.ShaderRegister = i;
         }
-        fixed ( D3D12_ROOT_PARAMETER* pointer = parameters ) {
-            D3D12_VERSIONED_ROOT_SIGNATURE_DESC description = default;
-            description.Version = D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1_0;
-            description.Anonymous.Desc_1_0 = new( ) {
-                NumParameters = computeBufferCount, pParameters = pointer,
-                Flags = computeBufferCount == 0 ? D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT : 0
-            };
-            return CreateRootSignature( description );
-        }
+        if ( computeConstantCount != 0 ) parameters[^1] = InlineConstants( computeConstantCount );
+        return CreateRootSignature( parameters, count == 0
+            ? D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT : 0 );
     }
 
     /// <summary>Creates a graphics root signature with a pixel shader texture at t0 and a point-clamp sampler at s0.</summary>
@@ -80,14 +79,31 @@ public sealed unsafe partial class GraphicsDevice {
     /// <summary>Creates a graphics root signature with up to 64 inline DWORDs at b0.</summary>
     public RootSignature CreateGraphicsConstantsRootSignature( uint valueCount ) {
         if ( valueCount is 0 or > 64 ) throw new ArgumentOutOfRangeException( nameof(valueCount) );
-        D3D12_ROOT_PARAMETER parameter = new( ) {
-            ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS
-        };
-        parameter.Anonymous.Constants.Num32BitValues = valueCount;
-        D3D12_VERSIONED_ROOT_SIGNATURE_DESC description = default;
-        description.Version = D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1_0;
-        description.Anonymous.Desc_1_0 = new( ) { NumParameters = 1, pParameters = &parameter };
-        return CreateRootSignature( description );
+        return CreateRootSignature( [InlineConstants( valueCount )] );
+    }
+
+    /// <summary>Creates a graphics signature with constants at b0 and a vertex shader buffer at t0.</summary>
+    public RootSignature CreateGraphicsBufferRootSignature( uint valueCount ) {
+        if ( valueCount is 0 or > 62 ) throw new ArgumentOutOfRangeException( nameof(valueCount) );
+        return CreateRootSignature( [InlineConstants( valueCount ), new( ) {
+            ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_SRV,
+            ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_VERTEX
+        }] );
+    }
+
+    private static D3D12_ROOT_PARAMETER InlineConstants( uint count ) {
+        D3D12_ROOT_PARAMETER parameter = new( ) { ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS };
+        parameter.Anonymous.Constants.Num32BitValues = count;
+        return parameter;
+    }
+
+    private RootSignature CreateRootSignature( ReadOnlySpan<D3D12_ROOT_PARAMETER> parameters, D3D12_ROOT_SIGNATURE_FLAGS flags = 0 ) {
+        fixed ( D3D12_ROOT_PARAMETER* pointer = parameters ) {
+            D3D12_VERSIONED_ROOT_SIGNATURE_DESC description = default;
+            description.Version = D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1_0;
+            description.Anonymous.Desc_1_0 = new( ) { NumParameters = (uint)parameters.Length, pParameters = pointer, Flags = flags };
+            return CreateRootSignature( description );
+        }
     }
 
     private RootSignature CreateRootSignature( in D3D12_VERSIONED_ROOT_SIGNATURE_DESC description ) {

@@ -51,7 +51,10 @@ internal static class Program {
                 Size initialSize = default;
                 int previousResizes = 0;
                 bool stressGc = args.Contains( "--gc-stress" );
-                var result = DesktopGame.Run( device, new( ) { Title = "DXSharp · Generated COM · .NET 10", FrameLimit = frameLimit }, frame => {
+                var result = DesktopGame.Run( device, new( ) {
+                    Title = "DXSharp · Generated COM · .NET 10", FrameLimit = frameLimit,
+                    FramesInFlight = args.Contains( "--buffered" ) ? 2 : 1
+                }, frame => {
                     frame.Commands.SetGraphicsPipeline( pipeline );
                     frame.Commands.Draw( 3 );
                 }, ( window, progress ) => {

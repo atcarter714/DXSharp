@@ -66,28 +66,10 @@ jobs:
       - name: Native fixture and managed/AOT ownership qualification
         shell: pwsh
         run: ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
-      - name: WARP swap-chain resize qualification
+      - name: WARP sample qualification
         if: runner.os == 'Windows'
         shell: pwsh
-        run: dotnet run --project samples/ModernTriangle -c Debug -- --warp --resize-test --evidence=artifacts/triangle-resize
-      - name: WARP texture and depth samples
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          foreach ($sample in 'HelloTexture', 'InstancedGrid', 'LitCube', 'PlanarShadows') {
-            dotnet run --project "samples/$sample" -c Debug -- --warp --frames=4
-            if ($LASTEXITCODE -ne 0) { throw "$sample failed." }
-          }
-      - name: WARP compute and DirectML numerical qualification
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          dotnet run --project samples/ModernCompute -c Debug -- --warp --directml
-          if ($LASTEXITCODE -ne 0) { throw 'JIT numerical qualification failed.' }
-          dotnet publish samples/ModernCompute -c Release -r win-x64 -p:PublishAot=true -o artifacts/modern-compute-aot
-          if ($LASTEXITCODE -ne 0) { throw 'NativeAOT compute publish failed.' }
-          & ./artifacts/modern-compute-aot/ModernCompute.exe --warp --directml --no-debug
-          if ($LASTEXITCODE -ne 0) { throw 'NativeAOT numerical qualification failed.' }
+        run: ./build/VerifySamples.ps1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -96,4 +78,5 @@ jobs:
             artifacts/qualification-aot/**
             artifacts/modern-compute-aot/**
             artifacts/triangle-resize/**
+            artifacts/sample-results/**
           if-no-files-found: warn

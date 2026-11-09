@@ -150,6 +150,15 @@ public sealed unsafe class GraphicsCommandList : GraphicsObject {
             Native.Interface.SetGraphicsRoot32BitConstants( 0, (uint)values.Length, pointer, 0 );
     }
 
+    /// <summary>Binds a structured or raw buffer to t0 for a graphics buffer root signature.</summary>
+    public void SetGraphicsShaderBuffer( GpuResource buffer ) {
+        Recording( );
+        if ( buffer.SizeInBytes == 0 || buffer.Memory == BufferMemory.Readback )
+            throw new ArgumentException( "A shader-readable buffer is required.", nameof(buffer) );
+        Track( buffer );
+        Native.Interface.SetGraphicsRootShaderResourceView( 1, buffer.GpuAddress );
+    }
+
     /// <summary>Binds a graphics root signature and pipeline.</summary>
     public void SetGraphicsPipeline( PipelineState pipeline ) {
         Recording( ); if ( pipeline.IsCompute ) throw new ArgumentException( "A graphics pipeline is required." );
@@ -171,6 +180,14 @@ public sealed unsafe class GraphicsCommandList : GraphicsObject {
     public void SetComputeBuffer( uint parameterIndex, GpuResource buffer ) {
         Recording( ); Track( buffer ); Native.Interface.SetComputeRootUnorderedAccessView( parameterIndex, buffer.GpuAddress );
     }
+    /// <summary>Copies inline values to the specified compute root constant parameter.</summary>
+    public void SetComputeConstants( uint parameterIndex, ReadOnlySpan<uint> values ) {
+        Recording( );
+        if ( values.Length is 0 or > 64 ) throw new ArgumentOutOfRangeException( nameof(values) );
+        fixed ( uint* pointer = values )
+            Native.Interface.SetComputeRoot32BitConstants( parameterIndex, (uint)values.Length, pointer, 0 );
+    }
+
     /// <summary>Draws a triangle-list vertex sequence.</summary>
     public void Draw( uint vertexCount, uint instanceCount = 1 ) { Recording( ); Native.Interface.DrawInstanced( vertexCount, instanceCount, 0, 0 ); }
     /// <summary>Records a compute dispatch.</summary>

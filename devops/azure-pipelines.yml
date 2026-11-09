@@ -1,98 +1,116 @@
-# ===   DXSharp .NET Desktop Pipeline   ======================================
-# Performs a routine, full-solution build of the DXSharp solution projects.
-# Starting with the main DXSharp.csproj, followed by the dependent SDK class
-# libraries, and finally the test projects, samples and tools which can be
-# built in parallel. The build is followed by a test run of all the unit 
-# tests in the ".\Tests" folder ... and finally, a code coverage report is
-# generated and published to the build artifacts.
-# ---------------------------------------------------------------------------
+name: DXSharp_$(Date:yyyyMMdd).$(Rev:r)
 
 trigger:
-- main
-  
-parameters:
-  - name: buildPlatforms
-    type: string
-    default: 'Any CPU; x86; x64; arm; arm64'
+  batch: true
+  branches:
+    include:
+      - main
+      - stability/com-ownership
+      - ci/azure-qualification
 
-  - name: buildConfiguration
-    type: string
-    default: 'Release'
+# Azure Repos uses a Build validation branch policy for pull requests.
+pr: none
 
-  - name: solution
-    type: string
-    default: 'DXSharp.sln'
+jobs:
+- job: Windows
+  displayName: Windows x64 SDK
+  pool:
+    vmImage: windows-2025
+  strategy:
+    matrix:
+      Debug:
+        configuration: Debug
+      Release:
+        configuration: Release
+  timeoutInMinutes: 35
+  steps:
+  - checkout: self
+    clean: true
+  - task: UseDotNet@2
+    displayName: Install the SDK pinned in global.json
+    inputs:
+      packageType: sdk
+      useGlobalJson: true
+      workingDirectory: $(Build.SourcesDirectory)
+  - pwsh: |
+      $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+      $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+      if ($LASTEXITCODE -ne 0 -or -not $vs) { throw 'MSVC x64 build tools were not found.' }
+      & (Join-Path $vs 'Common7/Tools/Launch-VsDevShell.ps1') -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
+      Get-Command cl.exe -ErrorAction Stop | Out-Null
+      New-Item -ItemType Directory -Force artifacts | Out-Null
+      @(
+        "commit=$env:BUILD_SOURCEVERSION"
+        "source=$env:BUILD_SOURCEBRANCH"
+        "run=$env:BUILD_BUILDID"
+        "configuration=$(configuration)"
+        "sdk=$(& dotnet --version)"
+      ) | Set-Content artifacts/build-info.txt
+      ./build.ps1 -Configuration $(configuration)
+      if ('$(configuration)' -eq 'Release') {
+        ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
+        ./build/VerifySamples.ps1
+      }
+    workingDirectory: $(Build.SourcesDirectory)
+    displayName: Build, test, pack and qualify
+  - task: PublishTestResults@2
+    displayName: Publish Windows test results
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: VSTest
+      searchFolder: $(Build.SourcesDirectory)/artifacts/test-results
+      testResultsFiles: '**/*.trx'
+      testRunTitle: DXSharp Windows x64 $(configuration)
+      failTaskOnFailedTests: true
+  - task: CopyFiles@2
+    displayName: Collect build and qualification evidence
+    condition: succeededOrFailed()
+    inputs:
+      SourceFolder: $(Build.SourcesDirectory)/artifacts
+      Contents: |
+        build-info.txt
+        build.binlog
+        test-results/**
+        sample-results/**
+        triangle-resize/**
+      TargetFolder: $(Build.ArtifactStagingDirectory)/evidence
+  - task: PublishPipelineArtifact@1
+    displayName: Retain Windows evidence with this run
+    condition: succeededOrFailed()
+    inputs:
+      targetPath: $(Build.ArtifactStagingDirectory)/evidence
+      artifact: windows-$(configuration)-evidence
+  - task: PublishPipelineArtifact@1
+    displayName: Publish NuGet and symbol packages
+    inputs:
+      targetPath: $(Build.SourcesDirectory)/artifacts/packages/$(configuration)
+      artifact: windows-$(configuration)-packages
+  - task: PublishPipelineArtifact@1
+    displayName: Publish Windows NativeAOT qualification programs
+    condition: and(succeeded(), eq(variables['configuration'], 'Release'))
+    inputs:
+      targetPath: $(Build.SourcesDirectory)/artifacts/qualification-aot/win-x64
+      artifact: windows-x64-native-interop
 
-  - name: testFilter
-    type: string
-    default: '.\tests\**\*[Tt][Ee][Ss][Tt]*.csproj'
-
-  - name: testDllFilter
-    type: string
-    default: '.\tests\**\*[Tt][Ee][Ss][Tt]*.dll'
-
-  - name: testSettings
-    type: string
-    default: ''
-
-  - name: publishTestResults
-    type: boolean
-    default: true
-
-  - name: codeCoverageEnabled
-    type: boolean
-    default: true
-
-
-pool: 
-   name: default
-
-variables:
-  - template: devops/pipelines/inc/global-varz.yml
-
-
-steps:
-- task: NuGetToolInstaller@1
-  condition: not(exists('$(NuGetExePath)'))
-- task: NuGetCommand@2
-  inputs:
-    restoreSolution: '$(solution)'
-
-- stage: Build
-  displayName: 'Build stage'
-  jobs:
-  - job: Build
-    displayName: 'Build job'
-    steps:
-    - task: VSBuild@1
-      inputs:
-        solution: '$(solution)'
-        platform: '$(buildPlatform)'
-        configuration: '$(buildConfiguration)'
-
-# ---------------------------------------------------------------------------
-# BUILD SOLUTION ::
-# ---------------------------------------------------------------------------
-
-- task: VSBuild@1
-  inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
-
-
-# ---------------------------------------------------------------------------
-# RUN TESTS ::
-# ---------------------------------------------------------------------------
-# Make the VSTest step smarter:
-# Look for any .dll inside the \tests directory with "Test" in the name ...
-
-- task: VSTest@2
-  inputs:
-    testAssemblyVer2: |
-      [Bb]in\[Tt]ests\**\*[Tt]est*.dll
-      !**\*TestAdapter.dll
-      !**\obj\**
-    searchFolder: '$(System.DefaultWorkingDirectory)\bin\Tests'
-    codeCoverageEnabled: true
-
+- job: LinuxInterop
+  displayName: Linux x64 native interop
+  pool:
+    vmImage: ubuntu-24.04
+  timeoutInMinutes: 25
+  steps:
+  - checkout: self
+    clean: true
+  - task: UseDotNet@2
+    displayName: Install the SDK pinned in global.json
+    inputs:
+      packageType: sdk
+      useGlobalJson: true
+      workingDirectory: $(Build.SourcesDirectory)
+  - pwsh: ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
+    workingDirectory: $(Build.SourcesDirectory)
+    displayName: Run native ABI and lifetime tests in JIT and NativeAOT
+  - task: PublishPipelineArtifact@1
+    displayName: Publish Linux NativeAOT qualification program
+    inputs:
+      targetPath: $(Build.SourcesDirectory)/artifacts/qualification-aot/linux-x64
+      artifact: linux-x64-native-interop
