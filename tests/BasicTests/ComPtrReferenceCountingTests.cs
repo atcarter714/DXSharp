@@ -25,7 +25,7 @@ internal class ComPtrReferenceCountingTests {
     public void ManagedOwnerClearsAllStateOnDispose() {
         using var ptr = new ComPtr<IDXGIFactory7>(_factory);
         Assert.That(ptr.RefCount, Is.EqualTo(1));
-        Assert.That(ptr.Interface!.IsCurrent(), Is.True);
+        Assert.That((bool)ptr.Interface!.IsCurrent(), Is.True);
 
         ptr.Dispose();
         ptr.Dispose();
@@ -42,7 +42,7 @@ internal class ComPtrReferenceCountingTests {
         try {
             using (var ptr = new ComPtr<IDXGIFactory7>(input)) {
                 Assert.That(ptr.BaseAddress, Is.EqualTo(input));
-                Assert.That(ptr.Interface!.IsCurrent(), Is.True);
+                Assert.That((bool)ptr.Interface!.IsCurrent(), Is.True);
             }
             COMUtility.QueryInterface<IDXGIFactory7>(input, out nint result).ThrowOnFailure();
             Marshal.Release(result);
@@ -57,7 +57,7 @@ internal class ComPtrReferenceCountingTests {
         Assert.That(original.RefCount, Is.EqualTo(1));
         Assert.That(clone.BaseAddress, Is.EqualTo(original.BaseAddress));
         original.Dispose();
-        Assert.That(clone.Interface!.IsCurrent(), Is.True);
+        Assert.That((bool)clone.Interface!.IsCurrent(), Is.True);
         Assert.That(ComPtr.GetAllAllocations(), Does.Contain(clone.BaseAddress));
     }
 
@@ -66,7 +66,7 @@ internal class ComPtrReferenceCountingTests {
         using var ptr = new ComPtr<IDXGIFactory7>(_factory);
         Assert.That(ptr.IncrementReferences(), Is.EqualTo(2));
         Assert.That(ptr.ReleaseReference(), Is.EqualTo(1));
-        Assert.That(ptr.Interface!.IsCurrent(), Is.True);
+        Assert.That((bool)ptr.Interface!.IsCurrent(), Is.True);
         Assert.That(ptr.ReleaseReference(), Is.Zero);
         Assert.That(ptr.Disposed, Is.True);
         Assert.Throws<ObjectDisposedException>(() => ptr.ReleaseReference());
@@ -76,7 +76,7 @@ internal class ComPtrReferenceCountingTests {
     public void AttachInitializesTheTypedPointer() {
         using var ptr = new ComPtr<IDXGIFactory7>();
         ptr.Attach(_factory);
-        Assert.That(ptr.Interface!.IsCurrent(), Is.True);
+        Assert.That((bool)ptr.Interface!.IsCurrent(), Is.True);
         Assert.Throws<InvalidOperationException>(() => ptr.Attach(_factory));
         Assert.That(ptr.RefCount, Is.EqualTo(1));
     }
@@ -107,15 +107,15 @@ internal class ComPtrReferenceCountingTests {
         using var cast = original.Cast<IDXGIFactory4>();
         Assert.That(cast.BaseAddress, Is.EqualTo(original.BaseAddress));
         original.Dispose();
-        Assert.That(cast.Interface!.IsCurrent(), Is.True);
+        Assert.That((bool)cast.Interface!.IsCurrent(), Is.True);
     }
 
     [Test]
     public void FailedCastLeavesTheSourceUsable() {
         using var original = new ComPtr<IDXGIFactory7>(_factory);
-        Assert.Throws<InvalidCastException>(() => original.Cast<ID3D12Device>());
+        Assert.That(Assert.Catch(() => original.Cast<ID3D12Device>())!.HResult, Is.EqualTo(unchecked((int)0x80004002)));
         Assert.That(original.RefCount, Is.EqualTo(1));
-        Assert.That(original.Interface!.IsCurrent(), Is.True);
+        Assert.That((bool)original.Interface!.IsCurrent(), Is.True);
     }
 
     [Test]
@@ -124,7 +124,7 @@ internal class ComPtrReferenceCountingTests {
         using var unsupported = new ComPtr<IDXGIFactory7>();
         Assert.Throws<ArgumentNullException>(() => ptr.Set(unsupported.InterfaceVPtr));
         Assert.That(ptr.RefCount, Is.EqualTo(1));
-        Assert.That(ptr.Interface!.IsCurrent(), Is.True);
+        Assert.That((bool)ptr.Interface!.IsCurrent(), Is.True);
     }
 
     [Test]
@@ -135,7 +135,7 @@ internal class ComPtrReferenceCountingTests {
         source.Swap(destination);
         Assert.That(source.Disposed, Is.True);
         Assert.That(destination.RefCount, Is.EqualTo(2));
-        Assert.That(destination.Interface!.IsCurrent(), Is.True);
+        Assert.That((bool)destination.Interface!.IsCurrent(), Is.True);
     }
 
     [Test]

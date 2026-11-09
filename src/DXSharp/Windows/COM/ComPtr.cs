@@ -256,15 +256,16 @@ public sealed class ComPtr<T> : ComPtr where T : IUnknown {
 
     public ComPtr(nint interfaceVPtr, T @interface) {
         ArgumentNullException.ThrowIfNull(@interface);
-        Bind(interfaceVPtr, null, replace: false);
-        if (!ReferenceEquals(Interface, @interface)) {
-            nint identity = Marshal.GetIUnknownForObject(@interface);
+        nint expected = Marshal.GetIUnknownForObject(@interface);
+        try {
+            COMUtility.QueryInterface<IUnknown>(interfaceVPtr, out nint identity).ThrowOnFailure();
             try {
-                if (identity != BaseAddress) throw new ArgumentException("The pointer and interface identify different COM objects.", nameof(@interface));
+                if (identity != expected) throw new ArgumentException("The pointer and interface identify different COM objects.", nameof(@interface));
+                Bind(interfaceVPtr, @interface, replace: false);
             }
-            catch { Dispose(); throw; }
             finally { Marshal.Release(identity); }
         }
+        finally { Marshal.Release(expected); }
     }
 
     internal int IncrementReferences() => AcquireReference();
@@ -285,7 +286,11 @@ public sealed class ComPtr<T> : ComPtr where T : IUnknown {
     public ComPtr<TOut> Cast<TOut>() where TOut : IUnknown => QueryOwner<TOut>();
 
     internal ComPtr<TOut> QueryOwner<TOut>() where TOut : IUnknown {
-        lock (Gate) return new ComPtr<TOut>(RequirePointer());
+        lock (Gate) {
+            var owner = new ComPtr<TOut>();
+            owner.Bind(RequirePointer(), InterfaceObjectRef, replace: false);
+            return owner;
+        }
     }
 
     /// <summary>Returns a method address for a borrowed interface of this owner.</summary>
@@ -307,12 +312,12 @@ public sealed class ComPtr<T> : ComPtr where T : IUnknown {
 
 	public static explicit operator ComPtr< IUnknown >?( ComPtr< T >? other ) {
 		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
-		return new( other.BaseAddress ) ;
+		return other.QueryOwner<IUnknown>() ;
 	}
 
 	public static explicit operator ComPtr< T >?( ComPtr< IUnknown >? other ) {
 		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
-		if( other.Interface is T _interface ) return new( other.BaseAddress ) ;
+		if( other.Interface is T ) return other.QueryOwner<T>() ;
 		
 		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
 										$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
@@ -332,7 +337,7 @@ public sealed class ComPtr<T> : ComPtr where T : IUnknown {
 		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
 		
 		if( typeof(T).IsAssignableFrom(typeof(IDXGIObject))
-			&& other.Interface is T _interface ) return new( other.BaseAddress ) ;
+			&& other.Interface is T ) return other.QueryOwner<T>() ;
 
 		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
 										$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
@@ -352,7 +357,7 @@ public sealed class ComPtr<T> : ComPtr where T : IUnknown {
 		ArgumentNullException.ThrowIfNull( other, nameof(other) ) ;
 		
 		if( typeof(T).IsAssignableFrom(typeof(ID3D12Object))
-			&& other.Interface is T _interface ) return new( other.BaseAddress ) ;
+			&& other.Interface is T ) return other.QueryOwner<T>() ;
 
 		throw new InvalidCastException( $"{nameof(ComPtr<T>)} :: Invalid cast! " +
 										$"The COM interface type {other.InterfaceType.Name} cannot be cast to {nameof(T)}!" ) ;
