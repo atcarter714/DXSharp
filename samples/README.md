@@ -9,7 +9,7 @@ Open `DXSharp.sln` or run a project with `dotnet run --project samples/<name> -c
 | [InstancedGrid](InstancedGrid) | 256 animated quads in one instanced draw |
 | [LitCube](LitCube) | Transforms, lighting and a D32 depth buffer |
 | [PlanarShadows](PlanarShadows) | Orbiting camera, multiple pipelines and projected shadows |
-| [ModernCompute](ModernCompute) | DXC compute, GPU readback and optional DirectML |
+| [ModernCompute](ModernCompute) | DXC compute readback, DirectML Add, and matrix inference with fused ReLU |
 | [NBodyGravity](NBodyGravity) | Ping-pong GPU simulation, instanced drawing, and a seeded CPU reference |
 | [DxrHelloWorld](DxrHelloWorld) | DXR acceleration structures, shader table, and image readback |
 

@@ -112,8 +112,9 @@ internal static class Program {
         using var root = device.CreateRootSignature( 1 );
         var shader = compiler.Compile( "RWStructuredBuffer<uint> output : register(u0); [numthreads(1,1,1)] void Main() { output[0] = 1234; }", "Main", "cs_6_0" ).RequireSuccess( );
         using var pipeline = device.CreateComputePipeline( root, shader );
-        using var output = device.CreateBuffer( 4, initialState: ResourceState.UnorderedAccess, unorderedAccess: true );
+        using var output = device.CreateBuffer( 4, unorderedAccess: true );
         using var readback = device.CreateBuffer( 4, BufferMemory.Readback );
+        commands.Transition( output, ResourceState.Common, ResourceState.UnorderedAccess );
         commands.SetComputePipeline( pipeline ); commands.SetComputeBuffer( 0, output ); commands.Dispatch( 1 );
         commands.UavBarrier( output ); commands.Transition( output, ResourceState.UnorderedAccess, ResourceState.CopySource );
         commands.CopyBuffer( output, readback, 4 ); commands.Close( );

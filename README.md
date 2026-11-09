@@ -16,10 +16,10 @@ The current SDK is a preview for Windows x64. The repository pins the .NET 10 SD
 git clone https://github.com/atcarter714/DXSharp.git
 cd DXSharp
 dotnet run --project samples/ModernTriangle -c Debug -- --warp --frames=4
-dotnet run --project samples/ModernCompute -c Debug -- --warp --directml
+dotnet run --project samples/ModernCompute -c Debug -- --warp --directml --gemm
 ```
 
-The first command presents four frames and exits. The second verifies GPU compute readback and a DirectML tensor operation. For a clean package consumer, start with [Create your first DXSharp application](doc/tutorials/01-get-started.md).
+The first command presents four frames and exits. The second verifies GPU compute readback and DirectML tensor addition and matrix inference. For a clean package consumer, start with [Create your first DXSharp application](doc/tutorials/01-get-started.md).
 
 ## Architecture
 

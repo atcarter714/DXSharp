@@ -21,15 +21,14 @@ The generated COM path has its own ownership and GPU retirement tests. A success
 
 Every public ownership transition and every handwritten ABI boundary needs direct coverage. Exercise generated forwarding methods by interface family and ABI shape, with representative real calls across inherited slots. Track behavior and uncovered risk in the support matrix rather than setting one solution-wide line coverage target. Keep hardware-dependent checks separately runnable with evidence and require them for the features they qualify.
 
-## Sample sequence
+## Sample qualification
 
-The [sample index](../samples/README.md) lists runnable projects. The next ports should each introduce a distinct SDK capability and include a bounded verification mode.
+The [sample index](../samples/README.md) lists the runnable projects. Every port should have a bounded verification mode that exercises the capability it introduces.
 
-| Port | Scope | Acceptance |
+| Path | Automated evidence | Remaining qualification |
 | --- | --- | --- |
-| [Hello Frame Buffering](https://learn.microsoft.com/en-us/samples/microsoft/directx-graphics-samples/d3d12-hello-world-samples-win32/) | Per-frame allocators and fence values, two or more frames in flight | Render through repeated resize and close with outstanding work, verify retirement and no debug errors |
-| [N-Body Gravity](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12nBodyGravity) | Ping-pong structured buffers, compute/graphics queues, particle draw | Compare a seeded small step with a CPU reference, then qualify multi-frame queue synchronization |
-| [Raytracing Hello World](https://learn.microsoft.com/en-us/samples/microsoft/directx-graphics-samples/d3d12-raytracing-samples-win32/) | BLAS, TLAS, shader table, ray dispatch and output presentation | Check capability and alignment, validate a small image on DXR hardware, exercise resize and rebuild |
-| [Multithreading](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12Multithreading) | Shadow map, frame resources and parallel command recording | Validate depth and shadow results and stress frame resource reuse |
-
-Frame buffering comes first because it establishes the frame lifetime contract used by the larger samples. Keep the planar projection sample as a small rendering example alongside the eventual shadow-map port.
+| [Buffered rendering](tutorials/02-buffered-rendering.md) | Two frame slots, fence-guarded allocator reuse, repeated resize and close on WARP | Hardware resize, minimize and teardown soak |
+| [N-Body Gravity](../samples/NBodyGravity) | Seeded GPU/CPU agreement over several steps and a bounded particle render | Separate compute queue with GPU-side handoff fences |
+| [DirectML inference](tutorials/04-directml.md) | Add and GEMM with fused ReLU checked against expected values | Additional shapes, operators, and hardware |
+| [DXR Hello World](../samples/DxrHelloWorld) | DXIL compilation and capability check. Image comparison runs on DXR-capable adapters. | Require dispatch and image verification on a hardware runner. Exercise presentation and rebuild in a later windowed sample. |
+| [Multithreading](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12Multithreading) | Planned | Validate shadow-map output and stress parallel recording and frame resource reuse |

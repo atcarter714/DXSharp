@@ -7,6 +7,7 @@ trigger:
       - main
       - stability/com-ownership
       - ci/azure-qualification
+      - samples/dxr-hello-world
 
 # Azure Repos uses a Build validation branch policy for pull requests.
 pr: none
@@ -62,18 +63,17 @@ jobs:
       testResultsFiles: '**/*.trx'
       testRunTitle: DXSharp Windows x64 $(configuration)
       failTaskOnFailedTests: true
-  - task: CopyFiles@2
+  - pwsh: |
+      $target = Join-Path '$(Build.ArtifactStagingDirectory)' 'evidence'
+      New-Item -ItemType Directory -Force $target | Out-Null
+      "commit=$env:BUILD_SOURCEVERSION" | Set-Content (Join-Path $target 'source.txt')
+      foreach ($name in 'build-info.txt', 'build.binlog', 'test-results', 'sample-results', 'triangle-resize') {
+        $path = Join-Path 'artifacts' $name
+        if (Test-Path -LiteralPath $path) { Copy-Item -LiteralPath $path -Destination $target -Recurse }
+      }
+    workingDirectory: $(Build.SourcesDirectory)
     displayName: Collect build and qualification evidence
     condition: succeededOrFailed()
-    inputs:
-      SourceFolder: $(Build.SourcesDirectory)/artifacts
-      Contents: |
-        build-info.txt
-        build.binlog
-        test-results/**
-        sample-results/**
-        triangle-resize/**
-      TargetFolder: $(Build.ArtifactStagingDirectory)/evidence
   - task: PublishPipelineArtifact@1
     displayName: Retain Windows evidence with this run
     condition: succeededOrFailed()
@@ -91,6 +91,13 @@ jobs:
     inputs:
       targetPath: $(Build.SourcesDirectory)/artifacts/qualification-aot/win-x64
       artifact: windows-x64-native-interop
+
+  - task: PublishPipelineArtifact@1
+    displayName: Publish the Windows NativeAOT compute sample
+    condition: and(succeeded(), eq(variables['configuration'], 'Release'))
+    inputs:
+      targetPath: $(Build.SourcesDirectory)/artifacts/modern-compute-aot
+      artifact: windows-x64-native-compute
 
 - job: LinuxInterop
   displayName: Linux x64 native interop

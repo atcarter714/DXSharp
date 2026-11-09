@@ -26,24 +26,56 @@ public sealed unsafe class DirectMlDevice : GraphicsObject {
     public TensorAddOperator CompileAdd( TensorShape shape ) {
         ArgumentNullException.ThrowIfNull( shape );
         fixed ( uint* sizes = shape.Dimensions ) {
-            DML_BUFFER_TENSOR_DESC buffer = new( ) {
-                DataType = DML_TENSOR_DATA_TYPE.DML_TENSOR_DATA_TYPE_FLOAT32,
-                DimensionCount = (uint)shape.Rank, Sizes = sizes, TotalTensorSizeInBytes = shape.SizeInBytes
-            };
+            var buffer = Buffer( shape, sizes );
             DML_TENSOR_DESC tensor = new( ) { Type = DML_TENSOR_TYPE.DML_TENSOR_TYPE_BUFFER, Desc = &buffer };
             DML_ELEMENT_WISE_ADD_OPERATOR_DESC addition = new( ) { ATensor = &tensor, BTensor = &tensor, OutputTensor = &tensor };
             DML_OPERATOR_DESC description = new( ) { Type = DML_OPERATOR_TYPE.DML_OPERATOR_ELEMENT_WISE_ADD, Desc = &addition };
-            Guid operatorId = typeof(IDMLOperator).GUID;
-            nint pointer = 0;
-            Results.Check( Native.Interface.CreateOperator( &description, &operatorId, (void**)&pointer ), "DirectML.CreateOperator(Add)" );
-            using var op = ComOwner<IDMLOperator>.Adopt( pointer );
-            Guid compiledId = typeof(IDMLCompiledOperator).GUID;
-            Results.Check( Native.Interface.CompileOperator( op.Interface, 0, &compiledId, (void**)&pointer ), "DirectML.CompileOperator(Add)" );
-            var compiled = ComOwner<IDMLCompiledOperator>.Adopt( pointer );
-            try { return new( compiled, Native.Clone( ), Graphics.Clone( ), shape ) { DeviceIdentity = DeviceIdentity }; }
+            var compiled = CompileOperator( description );
+            try { return new( compiled, this, shape ); }
             catch { compiled.Dispose( ); throw; }
         }
     }
+
+    /// <summary>Compiles a row-major M×K by K×N Float32 product with an optional fused ReLU.</summary>
+    public TensorGemmOperator CompileGemm( uint rows, uint shared, uint columns, bool relu = false ) {
+        var leftShape = new TensorShape( 1, 1, rows, shared );
+        var rightShape = new TensorShape( 1, 1, shared, columns );
+        var outputShape = new TensorShape( 1, 1, rows, columns );
+        fixed ( uint* m = leftShape.Dimensions, k = rightShape.Dimensions, n = outputShape.Dimensions ) {
+            var leftBuffer = Buffer( leftShape, m );
+            var rightBuffer = Buffer( rightShape, k );
+            var outputBuffer = Buffer( outputShape, n );
+            DML_TENSOR_DESC left = new( ) { Type = DML_TENSOR_TYPE.DML_TENSOR_TYPE_BUFFER, Desc = &leftBuffer };
+            DML_TENSOR_DESC right = new( ) { Type = DML_TENSOR_TYPE.DML_TENSOR_TYPE_BUFFER, Desc = &rightBuffer };
+            DML_TENSOR_DESC output = new( ) { Type = DML_TENSOR_TYPE.DML_TENSOR_TYPE_BUFFER, Desc = &outputBuffer };
+            DML_ACTIVATION_RELU_OPERATOR_DESC activation = default;
+            DML_OPERATOR_DESC reluDescription = new( ) { Type = DML_OPERATOR_TYPE.DML_OPERATOR_ACTIVATION_RELU, Desc = &activation };
+            DML_GEMM_OPERATOR_DESC gemm = new( ) {
+                ATensor = &left, BTensor = &right, OutputTensor = &output, Alpha = 1,
+                FusedActivation = relu ? &reluDescription : null
+            };
+            DML_OPERATOR_DESC description = new( ) { Type = DML_OPERATOR_TYPE.DML_OPERATOR_GEMM, Desc = &gemm };
+            var compiled = CompileOperator( description );
+            try { return new( compiled, this, leftShape, rightShape, outputShape ); }
+            catch { compiled.Dispose( ); throw; }
+        }
+    }
+
+    private static DML_BUFFER_TENSOR_DESC Buffer( TensorShape shape, uint* sizes ) => new( ) {
+        DataType = DML_TENSOR_DATA_TYPE.DML_TENSOR_DATA_TYPE_FLOAT32, DimensionCount = (uint)shape.Rank,
+        Sizes = sizes, TotalTensorSizeInBytes = shape.SizeInBytes
+    };
+
+    private ComOwner<IDMLCompiledOperator> CompileOperator( DML_OPERATOR_DESC description ) {
+        Guid operatorId = typeof(IDMLOperator).GUID;
+        nint pointer = 0;
+        Results.Check( Native.Interface.CreateOperator( &description, &operatorId, (void**)&pointer ), $"DirectML.CreateOperator({description.Type})" );
+        using var op = ComOwner<IDMLOperator>.Adopt( pointer );
+        Guid compiledId = typeof(IDMLCompiledOperator).GUID;
+        Results.Check( Native.Interface.CompileOperator( op.Interface, 0, &compiledId, (void**)&pointer ), $"DirectML.CompileOperator({description.Type})" );
+        return ComOwner<IDMLCompiledOperator>.Adopt( pointer );
+    }
+
     /// <inheritdoc />
     public override void Dispose( ) { base.Dispose( ); Graphics.Dispose( ); }
 }

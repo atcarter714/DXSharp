@@ -15,6 +15,7 @@ Console.WriteLine( device.AdapterName );
 try {
     ShaderRoundTrip( );
     if ( args.Contains( "--directml" ) ) DirectMlRoundTrip( );
+    if ( args.Contains( "--gemm" ) ) InferenceRoundTrip( );
     var diagnostics = device.GetDiagnostics( );
     foreach ( string message in diagnostics.Messages ) Console.WriteLine( message );
     if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any( x => x.Contains( "SEVERITY_ERROR" ) || x.Contains( "SEVERITY_CORRUPTION" ) ) )
@@ -32,8 +33,9 @@ void ShaderRoundTrip( ) {
     using var queue = device.CreateCommandQueue( QueueKind.Compute ); using var allocator = device.CreateCommandAllocator( QueueKind.Compute );
     using var commands = device.CreateCommandList( allocator ); using var root = device.CreateRootSignature( 1 );
     using var pipeline = device.CreateComputePipeline( root, shader );
-    using var output = device.CreateBuffer( 4, initialState: ResourceState.UnorderedAccess, unorderedAccess: true );
+    using var output = device.CreateBuffer( 4, unorderedAccess: true );
     using var readback = device.CreateBuffer( 4, BufferMemory.Readback );
+    commands.Transition( output, ResourceState.Common, ResourceState.UnorderedAccess );
     commands.SetComputePipeline( pipeline ); commands.SetComputeBuffer( 0, output ); commands.Dispatch( 1 );
     commands.UavBarrier( output ); commands.Transition( output, ResourceState.UnorderedAccess, ResourceState.CopySource );
     commands.CopyBuffer( output, readback, 4 ); commands.Close( );
@@ -44,25 +46,68 @@ void ShaderRoundTrip( ) {
     Console.WriteLine( "PASS: DXC -> compute -> readback = 1234, after early owner disposal and GC." );
 }
 void DirectMlRoundTrip( ) {
-    using var ml = DirectMlDevice.Create( device ); using var add = ml.CompileAdd( new TensorShape( 1, 1, 1, 4 ) );
-    using var queue = device.CreateCommandQueue( ); using var allocator = device.CreateCommandAllocator( );
-    using var commands = device.CreateCommandList( allocator );
-    using var left = device.CreateBuffer( 16, initialState: ResourceState.CopyDestination, unorderedAccess: true );
-    using var right = device.CreateBuffer( 16, initialState: ResourceState.CopyDestination, unorderedAccess: true );
-    using var output = device.CreateBuffer( 16, initialState: ResourceState.UnorderedAccess, unorderedAccess: true );
-    using var upload = device.CreateBuffer( 32, BufferMemory.Upload );
-    using var readback = device.CreateBuffer( 16, BufferMemory.Readback );
-    upload.Write<float>( [1, 2, 3, 4, 10, 20, 30, 40] );
-    commands.CopyBuffer( upload, left, 16 ); commands.CopyBuffer( upload, right, 16, sourceOffset: 16 );
-    commands.Transition( left, ResourceState.CopyDestination, ResourceState.UnorderedAccess );
-    commands.Transition( right, ResourceState.CopyDestination, ResourceState.UnorderedAccess );
-    commands.Close( ); upload.Dispose( ); GC.Collect( ); queue.Wait( queue.Submit( commands ) );
-    // The operator owns its DirectML and graphics references independently of this facade.
-    ml.Dispose( ); add.Execute( queue, left, right, output );
-    allocator.Reset( ); commands.Reset( allocator );
-    commands.Transition( output, ResourceState.UnorderedAccess, ResourceState.CopySource );
-    commands.CopyBuffer( output, readback, 16 ); commands.Close( ); queue.Wait( queue.Submit( commands ) );
-    Span<float> values = stackalloc float[4]; readback.Read( values );
-    if ( !values.SequenceEqual( [11f, 22f, 33f, 44f] ) ) throw new InvalidOperationException( $"DirectML mismatch: {string.Join( ", ", values.ToArray( ) )}." );
+    using var ml = DirectMlDevice.Create( device );
+    using var add = ml.CompileAdd( new TensorShape( 1, 1, 1, 4 ) );
+    ml.Dispose( );
+    var values = ExecuteOperator( add, [1, 2, 3, 4], [10, 20, 30, 40] );
+    if ( !values.AsSpan( ).SequenceEqual( [11f, 22f, 33f, 44f] ) )
+        throw new InvalidOperationException( $"DirectML Add mismatch: {string.Join( ", ", values )}." );
     Console.WriteLine( "PASS: DirectML Add = [11, 22, 33, 44]." );
+}
+
+void InferenceRoundTrip( ) {
+    const int rows = 2, shared = 3, columns = 4;
+    ReadOnlySpan<float> features = [2, -1, 3, -2, 4, 1];
+    ReadOnlySpan<float> weights = [1, 2, -1, 0, 3, -2, 0, 1, -1, 1, 2, -2];
+    using var ml = DirectMlDevice.Create( device );
+    using var layer = ml.CompileGemm( rows, shared, columns, relu: true );
+    ml.Dispose( );
+    var values = ExecuteOperator( layer, features, weights );
+    for ( int row = 0; row < rows; ++row ) {
+        for ( int column = 0; column < columns; ++column ) {
+            float expected = 0;
+            for ( int k = 0; k < shared; ++k )
+                expected += features[row * shared + k] * weights[k * columns + column];
+            expected = Math.Max( 0, expected );
+            float actual = values[row * columns + column];
+            if ( !float.IsFinite( actual ) || MathF.Abs( actual - expected ) > 1e-5f )
+                throw new InvalidOperationException( $"DirectML GEMM+ReLU [{row}, {column}]: expected {expected}, got {actual}." );
+        }
+    }
+    Console.WriteLine( $"PASS: DirectML GEMM+ReLU = [{string.Join( ", ", values )}]." );
+}
+
+float[] ExecuteOperator( TensorBinaryOperator operation, ReadOnlySpan<float> leftValues, ReadOnlySpan<float> rightValues ) {
+    using var queue = device.CreateCommandQueue( );
+    using var allocator = device.CreateCommandAllocator( );
+    using var commands = device.CreateCommandList( allocator );
+    ulong leftSize = operation.LeftShape.SizeInBytes, rightSize = operation.RightShape.SizeInBytes, outputSize = operation.OutputShape.SizeInBytes;
+    if ( (ulong)leftValues.Length != operation.LeftShape.ElementCount || (ulong)rightValues.Length != operation.RightShape.ElementCount )
+        throw new ArgumentException( "Input data must match the compiled tensor shapes." );
+    using var left = device.CreateBuffer( leftSize, unorderedAccess: true );
+    using var right = device.CreateBuffer( rightSize, unorderedAccess: true );
+    using var output = device.CreateBuffer( outputSize, unorderedAccess: true );
+    using var upload = device.CreateBuffer( checked(leftSize + rightSize), BufferMemory.Upload );
+    using var readback = device.CreateBuffer( outputSize, BufferMemory.Readback );
+    upload.Write( leftValues );
+    upload.Write( rightValues, leftSize );
+    commands.Transition( left, ResourceState.Common, ResourceState.CopyDestination );
+    commands.Transition( right, ResourceState.Common, ResourceState.CopyDestination );
+    commands.CopyBuffer( upload, left, leftSize );
+    commands.CopyBuffer( upload, right, rightSize, sourceOffset: leftSize );
+    commands.Close( );
+    upload.Dispose( );
+    GC.Collect( );
+    queue.Wait( queue.Submit( commands ) );
+
+    operation.Execute( queue, left, right, output );
+    allocator.Reset( );
+    commands.Reset( allocator );
+    commands.Transition( output, ResourceState.Common, ResourceState.CopySource );
+    commands.CopyBuffer( output, readback, outputSize );
+    commands.Close( );
+    queue.Wait( queue.Submit( commands ) );
+    var values = new float[checked((int)operation.OutputShape.ElementCount)];
+    readback.Read<float>( values );
+    return values;
 }
