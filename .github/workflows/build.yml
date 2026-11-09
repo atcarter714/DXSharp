@@ -66,6 +66,10 @@ jobs:
       - name: Native fixture and managed/AOT ownership qualification
         shell: pwsh
         run: ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
+      - name: WARP swap-chain resize qualification
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: dotnet run --project samples/ModernTriangle -c Debug -- --warp --resize-test --evidence=artifacts/triangle-resize
       - name: WARP compute and DirectML numerical qualification
         if: runner.os == 'Windows'
         shell: pwsh
@@ -83,4 +87,5 @@ jobs:
           path: |
             artifacts/qualification-aot/**
             artifacts/modern-compute-aot/**
+            artifacts/triangle-resize/**
           if-no-files-found: warn

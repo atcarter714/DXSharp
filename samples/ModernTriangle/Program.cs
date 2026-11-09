@@ -22,8 +22,12 @@ internal static class Program {
         string evidence = Path.GetFullPath( GetOption( args, "--evidence=" ) ?? "artifacts/modern-triangle" );
         Directory.CreateDirectory( evidence );
         try {
-            int frameLimit = int.Parse( GetOption( args, "--frames=" ) ?? "0" );
+            bool resizeTest = args.Contains( "--resize-test" );
+            bool headless = args.Contains( "--headless" );
+            int frameLimit = int.Parse( GetOption( args, "--frames=" ) ?? (resizeTest ? "4" : "0") );
             if ( frameLimit < 0 ) throw new ArgumentOutOfRangeException( nameof(frameLimit) );
+            if ( resizeTest && (headless || frameLimit < 2) )
+                throw new ArgumentException( "--resize-test requires a window and at least two frames." );
 #if DEBUG
             const bool debugLayer = true;
 #else
@@ -38,7 +42,7 @@ internal static class Program {
             using var compiler = new ShaderCompiler( );
             QualifyCompiler( compiler );
             ComputeRoundTrip( device, compiler );
-            if ( !args.Contains( "--headless" ) ) {
+            if ( !headless ) {
                 Application.SetUnhandledExceptionMode( UnhandledExceptionMode.ThrowException );
                 ApplicationConfiguration.Initialize( );
                 using var window = new Form { Text = "DXSharp · Generated COM · .NET 10", ClientSize = new( 1024, 720 ) };
@@ -48,13 +52,20 @@ internal static class Program {
                 using var timer = new System.Windows.Forms.Timer { Interval = 1 };
                 timer.Tick += ( _, _ ) => {
                     if ( window.WindowState == FormWindowState.Minimized ) return;
-                    renderer.Render( );
+                    bool resized = renderer.Render( );
+                    if ( resizeTest && frames == 0 ) {
+                        window.ClientSize = new Size( window.ClientSize.Width + 64, window.ClientSize.Height + 48 );
+                    } else if ( resizeTest && frames == 1 ) {
+                        if ( !resized ) throw new InvalidOperationException( "The test window size change did not resize the swap chain." );
+                        Console.WriteLine( "PASS: rendered and presented after resizing the swap chain." );
+                    }
                     if ( args.Contains( "--gc-stress" ) && frames % 30 == 0 ) { GC.Collect( ); GC.WaitForPendingFinalizers( ); }
                     ++frames;
                     if ( frameLimit > 0 && frames >= frameLimit ) window.Close( );
                 };
                 // Propagate rendering failures to the outer evidence handler.
                 timer.Start( ); Application.Run( window ); timer.Stop( );
+                if ( resizeTest && frames < 2 ) throw new InvalidOperationException( "The window closed before the resize test completed." );
                 Console.WriteLine( $"Rendered {frames} frames." );
             }
             var diagnostics = WriteDiagnostics( device, evidence );
@@ -137,20 +148,28 @@ internal static class Program {
                 _views[i] = _device.CreateRenderTargetView( _buffers[i]!, _rtvHeap, i );
             }
         }
-        internal void Render( ) {
+        internal bool Render( ) {
             uint width = (uint)Math.Max( _window.ClientSize.Width, 1 ), height = (uint)Math.Max( _window.ClientSize.Height, 1 );
-            _queue.WaitIdle( );
-            if ( width != _width || height != _height ) {
-                foreach ( var buffer in _buffers ) buffer?.Dispose( ); Array.Clear( _buffers ); Array.Clear( _views );
-                _swap.Resize( width, height ); _width = width; _height = height; AcquireBuffers( );
+            bool resized = width != _width || height != _height;
+            if ( resized ) _queue.WaitIdle( );
+            _allocator.Reset( );
+            _commands.Reset( _allocator );
+            if ( resized ) {
+                foreach ( var buffer in _buffers ) buffer?.Dispose( );
+                Array.Clear( _buffers );
+                Array.Clear( _views );
+                _swap.Resize( width, height );
+                _width = width;
+                _height = height;
+                AcquireBuffers( );
             }
-            _allocator.Reset( ); _commands.Reset( _allocator );
             uint index = _swap.CurrentBackBufferIndex;
             _commands.Transition( _buffers[index]!, ResourceState.Present, ResourceState.RenderTarget );
             _commands.SetViewport( _width, _height ); _commands.Clear( _views[index], 0.025f, 0.035f, 0.065f );
             _commands.SetRenderTarget( _views[index] ); _commands.SetGraphicsPipeline( _pipeline ); _commands.Draw( 3 );
             _commands.Transition( _buffers[index]!, ResourceState.RenderTarget, ResourceState.Present );
             _commands.Close( ); _queue.Wait( _queue.Submit( _commands ) ); _swap.Present( );
+            return resized;
         }
         public void Dispose( ) {
             _queue.WaitIdle( ); _commands.Dispose( );

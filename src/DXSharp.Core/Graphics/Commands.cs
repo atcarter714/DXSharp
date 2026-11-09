@@ -197,8 +197,15 @@ public sealed class CommandQueue : GraphicsObject {
             RetireThrough( completed );
         }
     }
-    /// <summary>Drains all work submitted through this queue owner.</summary>
-    public void WaitIdle( ) { lock ( _gate ) Wait( _nextValue ); }
+    /// <summary>Signals a fresh fence and waits for earlier queue work, including swap-chain presents.</summary>
+    public void WaitIdle( ) {
+        lock ( _gate ) {
+            ulong value = checked(_nextValue + 1);
+            Results.Check( Native.Interface.Signal( _fence.Interface, value ), "CommandQueue.Signal(idle)" );
+            _nextValue = value;
+            Wait( value );
+        }
+    }
     private void PollCompletion( ) {
         if ( !Monitor.TryEnter( _gate ) ) return;
         try {

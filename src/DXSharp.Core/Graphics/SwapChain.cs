@@ -30,7 +30,8 @@ public sealed unsafe class SwapChain : GraphicsObject {
         if ( syncInterval > 4 ) throw new ArgumentOutOfRangeException( nameof(syncInterval) );
         int hr = _native.Interface.Present( syncInterval, 0 ); Results.Check( hr, "SwapChain.Present" ); return hr;
     }
-    /// <summary>Resizes after the caller drains pending work and releases all back-buffer references.</summary>
+    /// <summary>Resizes after the caller drains the presentation queue with <see cref="CommandQueue.WaitIdle"/>
+    /// and releases all back-buffer references.</summary>
     public void Resize( uint width, uint height ) {
         if ( width == 0 || height == 0 ) throw new ArgumentOutOfRangeException( nameof(width) );
         Results.Check( _native.Interface.ResizeBuffers( BufferCount, width, height, (DXGI_FORMAT)Format, 0 ), "SwapChain.ResizeBuffers" );
