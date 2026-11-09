@@ -8,13 +8,20 @@
   </PropertyGroup>
   <ItemGroup Condition="'$(PkgMicrosoft_Direct3D_D3D12)' != ''">
     <None Include="$(PkgMicrosoft_Direct3D_D3D12)/build/native/bin/$(_AgilityArchitecture)/D3D12Core.dll;$(PkgMicrosoft_Direct3D_D3D12)/build/native/bin/$(_AgilityArchitecture)/D3D12StateObjectCompiler.dll"
-          Link="D3D12/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+          Link="D3D12/%(Filename)%(Extension)" Pack="false" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Include="$(PkgMicrosoft_Direct3D_D3D12)/build/native/bin/$(_AgilityArchitecture)/d3d12SDKLayers.dll"
           Condition="'$(Configuration)' == 'Debug'"
-          Link="D3D12/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+          Link="D3D12/%(Filename)%(Extension)" Pack="false" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
   <ItemGroup Condition="'$(PkgMicrosoft_Direct3D_DXC)' != ''">
     <None Include="$(PkgMicrosoft_Direct3D_DXC)/build/native/bin/$(DXSharpNativeArchitecture)/dxcompiler.dll;$(PkgMicrosoft_Direct3D_DXC)/build/native/bin/$(DXSharpNativeArchitecture)/dxil.dll"
-          Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+          Link="%(Filename)%(Extension)" Pack="false" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PkgMicrosoft_AI_DirectML)' != ''">
+    <None Include="$(PkgMicrosoft_AI_DirectML)/bin/$(DXSharpNativeArchitecture)-win/DirectML.dll"
+          Link="DirectML.dll" Pack="false" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(PkgMicrosoft_AI_DirectML)/bin/$(DXSharpNativeArchitecture)-win/DirectML.Debug.dll"
+          Condition="'$(Configuration)' == 'Debug'" Link="DirectML.Debug.dll" Pack="false"
+          ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
 </Project>

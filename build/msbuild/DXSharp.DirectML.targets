@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <PkgMicrosoft_AI_DirectML Condition="'$(PkgMicrosoft_AI_DirectML)' == ''">$(NuGetPackageRoot)/microsoft.ai.directml/1.15.4</PkgMicrosoft_AI_DirectML>
+    <DXSharpNativeArchitecture Condition="'$(DXSharpNativeArchitecture)' == ''">x64</DXSharpNativeArchitecture>
+    <DXSharpNativeArchitecture Condition="'$(PlatformTarget)' == 'x86' or '$(RuntimeIdentifier)' == 'win-x86'">x86</DXSharpNativeArchitecture>
+    <DXSharpNativeArchitecture Condition="'$(PlatformTarget)' == 'ARM64' or '$(RuntimeIdentifier)' == 'win-arm64'">arm64</DXSharpNativeArchitecture>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(PkgMicrosoft_AI_DirectML)/bin/$(DXSharpNativeArchitecture)-win/DirectML.dll"
+          Link="DirectML.dll" Pack="false" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(PkgMicrosoft_AI_DirectML)/bin/$(DXSharpNativeArchitecture)-win/DirectML.Debug.dll"
+          Condition="'$(Configuration)' == 'Debug'" Link="DirectML.Debug.dll" Pack="false"
+          ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+</Project>
