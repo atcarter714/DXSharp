@@ -26,8 +26,8 @@ internal static class Program {
             bool headless = args.Contains( "--headless" );
             int frameLimit = int.Parse( GetOption( args, "--frames=" ) ?? (resizeTest ? "4" : "0") );
             if ( frameLimit < 0 ) throw new ArgumentOutOfRangeException( nameof(frameLimit) );
-            if ( resizeTest && (headless || frameLimit < 2) )
-                throw new ArgumentException( "--resize-test requires a window and at least two frames." );
+            if ( resizeTest && (headless || frameLimit < 3) )
+                throw new ArgumentException( "--resize-test requires a window and at least three frames." );
 #if DEBUG
             const bool debugLayer = true;
 #else
@@ -49,23 +49,33 @@ internal static class Program {
                 window.Show( );
                 using var renderer = new Renderer( device, compiler, window );
                 int frames = 0;
+                Size initialSize = window.ClientSize;
                 using var timer = new System.Windows.Forms.Timer { Interval = 1 };
+                window.FormClosing += ( _, _ ) => timer.Stop( );
                 timer.Tick += ( _, _ ) => {
-                    if ( window.WindowState == FormWindowState.Minimized ) return;
-                    bool resized = renderer.Render( );
-                    if ( resizeTest && frames == 0 ) {
-                        window.ClientSize = new Size( window.ClientSize.Width + 64, window.ClientSize.Height + 48 );
-                    } else if ( resizeTest && frames == 1 ) {
-                        if ( !resized ) throw new InvalidOperationException( "The test window size change did not resize the swap chain." );
-                        Console.WriteLine( "PASS: rendered and presented after resizing the swap chain." );
+                    if ( window.Disposing || !window.IsHandleCreated || window.WindowState == FormWindowState.Minimized ) return;
+                    Size clientSize = window.ClientSize;
+                    if ( clientSize.Width <= 0 || clientSize.Height <= 0 ) return;
+                    // Native presentation can dispatch window messages. Do not render from a nested tick.
+                    timer.Stop( );
+                    bool resized = renderer.Render( clientSize );
+                    if ( resizeTest ) {
+                        if ( frames == 0 ) {
+                            window.ClientSize = new Size( initialSize.Width + 64, initialSize.Height + 48 );
+                        } else if ( frames is 1 or 2 ) {
+                            if ( !resized ) throw new InvalidOperationException( "The test window size change did not resize the swap chain." );
+                            if ( frames == 1 ) window.ClientSize = initialSize;
+                            else Console.WriteLine( "PASS: rendered and presented after both swap-chain resizes." );
+                        }
                     }
                     if ( args.Contains( "--gc-stress" ) && frames % 30 == 0 ) { GC.Collect( ); GC.WaitForPendingFinalizers( ); }
                     ++frames;
                     if ( frameLimit > 0 && frames >= frameLimit ) window.Close( );
+                    else if ( window.IsHandleCreated && !window.Disposing ) timer.Start( );
                 };
                 // Propagate rendering failures to the outer evidence handler.
                 timer.Start( ); Application.Run( window ); timer.Stop( );
-                if ( resizeTest && frames < 2 ) throw new InvalidOperationException( "The window closed before the resize test completed." );
+                if ( resizeTest && frames < 3 ) throw new InvalidOperationException( "The window closed before the resize test completed." );
                 Console.WriteLine( $"Rendered {frames} frames." );
             }
             var diagnostics = WriteDiagnostics( device, evidence );
@@ -120,7 +130,6 @@ internal static class Program {
     }
 
     private sealed class Renderer : IDisposable {
-        private readonly Form _window;
         private readonly GraphicsDevice _device;
         private readonly CommandQueue _queue;
         private readonly CommandAllocator _allocator;
@@ -133,7 +142,7 @@ internal static class Program {
         private readonly RenderTargetView[] _views = new RenderTargetView[2];
         private uint _width, _height;
         internal Renderer( GraphicsDevice device, ShaderCompiler compiler, Form window ) {
-            _window = window; _device = device;
+            _device = device;
             _width = (uint)window.ClientSize.Width; _height = (uint)window.ClientSize.Height;
             _queue = device.CreateCommandQueue( ); _allocator = device.CreateCommandAllocator( );
             _commands = device.CreateCommandList( _allocator ); _commands.Close( );
@@ -148,8 +157,8 @@ internal static class Program {
                 _views[i] = _device.CreateRenderTargetView( _buffers[i]!, _rtvHeap, i );
             }
         }
-        internal bool Render( ) {
-            uint width = (uint)Math.Max( _window.ClientSize.Width, 1 ), height = (uint)Math.Max( _window.ClientSize.Height, 1 );
+        internal bool Render( Size clientSize ) {
+            uint width = (uint)clientSize.Width, height = (uint)clientSize.Height;
             bool resized = width != _width || height != _height;
             if ( resized ) _queue.WaitIdle( );
             _allocator.Reset( );
@@ -158,6 +167,7 @@ internal static class Program {
                 foreach ( var buffer in _buffers ) buffer?.Dispose( );
                 Array.Clear( _buffers );
                 Array.Clear( _views );
+                Console.WriteLine( $"Resizing swap chain from {_width}x{_height} to {width}x{height}." );
                 _swap.Resize( width, height );
                 _width = width;
                 _height = height;
