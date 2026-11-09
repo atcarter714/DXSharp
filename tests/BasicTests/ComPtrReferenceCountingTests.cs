@@ -30,8 +30,8 @@ internal class ComPtrReferenceCountingTests {
         ptr.Dispose();
         ptr.Dispose();
         Assert.That(ptr.Disposed, Is.True);
-        Assert.That(ptr.BaseAddress, Is.Zero);
-        Assert.That(ptr.InterfaceVPtr, Is.Zero);
+        Assert.That(ptr.BaseAddress, Is.EqualTo(nint.Zero));
+        Assert.That(ptr.InterfaceVPtr, Is.EqualTo(nint.Zero));
         Assert.That(ptr.Interface, Is.Null);
         Assert.That(ptr.RefCount, Is.Zero);
     }
