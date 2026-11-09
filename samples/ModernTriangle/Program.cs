@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using DXSharp.Framework.Desktop;
 using DXSharp.Graphics;
 using DXSharp.Shaders;
 
@@ -45,38 +46,31 @@ internal static class Program {
             if ( !headless ) {
                 Application.SetUnhandledExceptionMode( UnhandledExceptionMode.ThrowException );
                 ApplicationConfiguration.Initialize( );
-                using var window = new Form { Text = "DXSharp · Generated COM · .NET 10", ClientSize = new( 1024, 720 ) };
-                window.Show( );
-                using var renderer = new Renderer( device, compiler, window );
-                int frames = 0;
-                Size initialSize = window.ClientSize;
-                using var timer = new System.Windows.Forms.Timer { Interval = 1 };
-                window.FormClosing += ( _, _ ) => timer.Stop( );
-                timer.Tick += ( _, _ ) => {
-                    if ( window.Disposing || !window.IsHandleCreated || window.WindowState == FormWindowState.Minimized ) return;
-                    Size clientSize = window.ClientSize;
-                    if ( clientSize.Width <= 0 || clientSize.Height <= 0 ) return;
-                    // Native presentation can dispatch window messages. Do not render from a nested tick.
-                    timer.Stop( );
-                    bool resized = renderer.Render( clientSize );
+                using var root = device.CreateRootSignature( );
+                using var pipeline = device.CreateGraphicsPipeline( root, compiler.Compile( Shader, "VS", "vs_6_0" ), compiler.Compile( Shader, "PS", "ps_6_0" ) );
+                Size initialSize = default;
+                int previousResizes = 0;
+                bool stressGc = args.Contains( "--gc-stress" );
+                var result = DesktopGame.Run( device, new( ) { Title = "DXSharp · Generated COM · .NET 10", FrameLimit = frameLimit }, frame => {
+                    frame.Commands.SetGraphicsPipeline( pipeline );
+                    frame.Commands.Draw( 3 );
+                }, ( window, progress ) => {
                     if ( resizeTest ) {
-                        if ( frames == 0 ) {
-                            window.ClientSize = new Size( initialSize.Width + 64, initialSize.Height + 48 );
-                        } else if ( frames is 1 or 2 ) {
-                            if ( !resized ) throw new InvalidOperationException( "The test window size change did not resize the swap chain." );
-                            if ( frames == 1 ) window.ClientSize = initialSize;
+                        if ( progress.Frames == 1 ) {
+                            initialSize = window.ClientSize;
+                            window.ClientSize = new( initialSize.Width + 64, initialSize.Height + 48 );
+                        } else if ( progress.Frames is 2 or 3 ) {
+                            if ( progress.Resizes == previousResizes )
+                                throw new InvalidOperationException( "The test window size change did not resize the swap chain." );
+                            if ( progress.Frames == 2 ) window.ClientSize = initialSize;
                             else Console.WriteLine( "PASS: rendered and presented after both swap-chain resizes." );
                         }
                     }
-                    if ( args.Contains( "--gc-stress" ) && frames % 30 == 0 ) { GC.Collect( ); GC.WaitForPendingFinalizers( ); }
-                    ++frames;
-                    if ( frameLimit > 0 && frames >= frameLimit ) window.Close( );
-                    else if ( window.IsHandleCreated && !window.Disposing ) timer.Start( );
-                };
-                // Propagate rendering failures to the outer evidence handler.
-                timer.Start( ); Application.Run( window ); timer.Stop( );
-                if ( resizeTest && frames < 3 ) throw new InvalidOperationException( "The window closed before the resize test completed." );
-                Console.WriteLine( $"Rendered {frames} frames." );
+                    previousResizes = progress.Resizes;
+                    if ( stressGc && (progress.Frames - 1) % 30 == 0 ) { GC.Collect( ); GC.WaitForPendingFinalizers( ); }
+                } );
+                if ( resizeTest && result.Frames < 3 ) throw new InvalidOperationException( "The window closed before the resize test completed." );
+                Console.WriteLine( $"Rendered {result.Frames} frames." );
             }
             var diagnostics = WriteDiagnostics( device, evidence );
             if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any( x => x.Contains( "SEVERITY_ERROR" ) || x.Contains( "SEVERITY_CORRUPTION" ) ) )
@@ -129,62 +123,4 @@ internal static class Program {
         Console.WriteLine( "PASS: compute/readback = 1234; native dependencies survived public disposal and GC." );
     }
 
-    private sealed class Renderer : IDisposable {
-        private readonly GraphicsDevice _device;
-        private readonly CommandQueue _queue;
-        private readonly CommandAllocator _allocator;
-        private readonly GraphicsCommandList _commands;
-        private readonly SwapChain _swap;
-        private readonly DescriptorHeap _rtvHeap;
-        private readonly RootSignature _root;
-        private readonly PipelineState _pipeline;
-        private readonly GpuResource?[] _buffers = new GpuResource?[2];
-        private readonly RenderTargetView[] _views = new RenderTargetView[2];
-        private uint _width, _height;
-        internal Renderer( GraphicsDevice device, ShaderCompiler compiler, Form window ) {
-            _device = device;
-            _width = (uint)window.ClientSize.Width; _height = (uint)window.ClientSize.Height;
-            _queue = device.CreateCommandQueue( ); _allocator = device.CreateCommandAllocator( );
-            _commands = device.CreateCommandList( _allocator ); _commands.Close( );
-            _swap = device.CreateSwapChain( _queue, window.Handle, _width, _height );
-            _rtvHeap = device.CreateRenderTargetHeap( 2 ); _root = device.CreateRootSignature( );
-            _pipeline = device.CreateGraphicsPipeline( _root, compiler.Compile( Shader, "VS", "vs_6_0" ), compiler.Compile( Shader, "PS", "ps_6_0" ) );
-            AcquireBuffers( );
-        }
-        private void AcquireBuffers( ) {
-            for ( uint i = 0; i < 2; ++i ) {
-                _buffers[i] = _swap.AcquireBackBuffer( i );
-                _views[i] = _device.CreateRenderTargetView( _buffers[i]!, _rtvHeap, i );
-            }
-        }
-        internal bool Render( Size clientSize ) {
-            uint width = (uint)clientSize.Width, height = (uint)clientSize.Height;
-            bool resized = width != _width || height != _height;
-            if ( resized ) _queue.WaitIdle( );
-            _allocator.Reset( );
-            _commands.Reset( _allocator );
-            if ( resized ) {
-                foreach ( var buffer in _buffers ) buffer?.Dispose( );
-                Array.Clear( _buffers );
-                Array.Clear( _views );
-                Console.WriteLine( $"Resizing swap chain from {_width}x{_height} to {width}x{height}." );
-                _swap.Resize( width, height );
-                _width = width;
-                _height = height;
-                AcquireBuffers( );
-            }
-            uint index = _swap.CurrentBackBufferIndex;
-            _commands.Transition( _buffers[index]!, ResourceState.Present, ResourceState.RenderTarget );
-            _commands.SetViewport( _width, _height ); _commands.Clear( _views[index], 0.025f, 0.035f, 0.065f );
-            _commands.SetRenderTarget( _views[index] ); _commands.SetGraphicsPipeline( _pipeline ); _commands.Draw( 3 );
-            _commands.Transition( _buffers[index]!, ResourceState.RenderTarget, ResourceState.Present );
-            _commands.Close( ); _queue.Wait( _queue.Submit( _commands ) ); _swap.Present( );
-            return resized;
-        }
-        public void Dispose( ) {
-            _queue.WaitIdle( ); _commands.Dispose( );
-            foreach ( var buffer in _buffers ) buffer?.Dispose( ); Array.Clear( _views );
-            _pipeline.Dispose( ); _root.Dispose( ); _rtvHeap.Dispose( ); _swap.Dispose( ); _allocator.Dispose( ); _queue.Dispose( );
-        }
-    }
 }

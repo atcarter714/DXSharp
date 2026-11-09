@@ -8,7 +8,7 @@ public enum QueueKind { Direct = 0, Compute = 2, Copy = 3 }
 [Flags]
 public enum ResourceState : uint {
     Common = 0, Present = 0, VertexAndConstantBuffer = 1, RenderTarget = 4, UnorderedAccess = 8,
-    CopyDestination = 0x400, CopySource = 0x800, GenericRead = 0xac3
+    PixelShaderResource = 0x80, CopyDestination = 0x400, CopySource = 0x800, GenericRead = 0xac3
 }
 /// <summary>CPU/GPU buffer placement.</summary>
 public enum BufferMemory { Default = 1, Upload = 2, Readback = 3 }

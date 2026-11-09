@@ -16,7 +16,7 @@ try {
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($version)) {
         throw 'Unable to evaluate the package version.'
     }
-    foreach ($name in @('DXSharp', 'DXSharp.Dxc', 'DXSharp.Framework', 'DXSharp.Core', 'DXSharp.DirectML')) {
+    foreach ($name in @('DXSharp', 'DXSharp.Dxc', 'DXSharp.Framework', 'DXSharp.Framework.Desktop', 'DXSharp.Core', 'DXSharp.DirectML')) {
         if (-not (Test-Path (Join-Path $packageDirectory "$name.$version.nupkg"))) {
             throw "Missing package: $name.$version.nupkg"
         }
@@ -34,6 +34,7 @@ try {
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="DXSharp.Framework" Version="$version" />
+    <PackageReference Include="DXSharp.Framework.Desktop" Version="$version" />
     <PackageReference Include="DXSharp.DirectML" Version="$version" />
   </ItemGroup>
 </Project>
@@ -42,6 +43,7 @@ try {
 System.Console.WriteLine(typeof(DXSharp.Direct3D12.IDevice).Assembly.FullName);
 System.Console.WriteLine(typeof(DXSharp.Dxc.ShaderBuilder).Assembly.FullName);
 System.Console.WriteLine(typeof(DXSharp.Graphics.GraphicsDevice).Assembly.FullName);
+System.Console.WriteLine(typeof(DXSharp.Framework.Desktop.DesktopGame).Assembly.FullName);
 System.Console.WriteLine(typeof(DXSharp.MachineLearning.DirectMlDevice).Assembly.FullName);
 '@ | Set-Content (Join-Path $consumerDirectory 'Program.cs')
     @"

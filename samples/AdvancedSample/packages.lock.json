@@ -2,21 +2,30 @@
   "version": 2,
   "dependencies": {
     "net10.0-windows10.0.26100": {
-      "dxsharp": {
-        "type": "Project"
-      },
-      "dxsharp.dxc": {
+      "dxsharp.core": {
         "type": "Project",
         "dependencies": {
-          "DXSharp": "[0.4.0-net10-preview.1, )"
+          "Microsoft.Direct3D.D3D12": "[1.620.1, 1.620.1]",
+          "Microsoft.Direct3D.DXC": "[1.9.2609.5, 1.9.2609.5]"
         }
       },
-      "dxsharp.framework": {
+      "dxsharp.framework.desktop": {
         "type": "Project",
         "dependencies": {
-          "DXSharp": "[0.4.0-net10-preview.1, )",
-          "DXSharp.Dxc": "[0.4.0-net10-preview.1, )"
+          "DXSharp.Core": "[0.4.0-net10-preview.1, )"
         }
+      },
+      "Microsoft.Direct3D.D3D12": {
+        "type": "CentralTransitive",
+        "requested": "[1.620.1, )",
+        "resolved": "1.620.1",
+        "contentHash": "oQCFTys3PZ0IHtS3I/u0/1IWgpuG7aQa+84AGiraqc8bMOCM8QpDLwLBshEbJ1J7LmuctZReXhF8c0eCiu2Xcw=="
+      },
+      "Microsoft.Direct3D.DXC": {
+        "type": "CentralTransitive",
+        "requested": "[1.9.2609.5, )",
+        "resolved": "1.9.2609.5",
+        "contentHash": "jTWr7a2bMpqV+b0Uc7oxOo8ualplaUw3fsQ+p0kp9TwlWvvmREvt3SA4+Drl2Y0M31iscqZolrL3vpdnLoPpdg=="
       }
     }
   }

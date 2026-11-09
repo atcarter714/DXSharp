@@ -48,24 +48,73 @@ public sealed unsafe partial class GraphicsDevice {
                 NumParameters = computeBufferCount, pParameters = pointer,
                 Flags = computeBufferCount == 0 ? D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT : 0
             };
-            int hr = SerializeRoot( description, out nint blobPointer, out nint errorPointer );
-            try {
-                Results.Check( hr, "SerializeVersionedRootSignature" );
-                nint owned = blobPointer; blobPointer = 0;
-                using var blob = ComOwner<ID3DBlob>.Adopt( owned );
-                Guid id = typeof(ID3D12RootSignature).GUID;
-                Results.Check( Native.Interface.CreateRootSignature( 0, blob.Interface.GetBufferPointer( ), blob.Interface.GetBufferSize( ), &id, out nint rootPointer ), "CreateRootSignature" );
-                return new( ComOwner<ID3D12RootSignature>.Adopt( rootPointer ) ) { DeviceIdentity = DeviceIdentity };
-            } finally {
-                if ( blobPointer != 0 ) UnknownCalls.Release( blobPointer );
-                if ( errorPointer != 0 ) UnknownCalls.Release( errorPointer );
-            }
+            return CreateRootSignature( description );
+        }
+    }
+
+    /// <summary>Creates a graphics root signature with a pixel shader texture at t0 and a point-clamp sampler at s0.</summary>
+    public RootSignature CreateTextureRootSignature( ) {
+        D3D12_DESCRIPTOR_RANGE range = new( ) { RangeType = D3D12_DESCRIPTOR_RANGE_TYPE.D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NumDescriptors = 1 };
+        D3D12_ROOT_PARAMETER parameter = new( ) {
+            ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
+            ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_PIXEL
+        };
+        parameter.Anonymous.DescriptorTable = new( ) { NumDescriptorRanges = 1, pDescriptorRanges = &range };
+        var clamp = D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        D3D12_STATIC_SAMPLER_DESC sampler = new( ) {
+            Filter = D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_POINT,
+            AddressU = clamp, AddressV = clamp, AddressW = clamp,
+            MaxAnisotropy = 1, MaxLOD = float.MaxValue,
+            ComparisonFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS,
+            ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_PIXEL
+        };
+        D3D12_VERSIONED_ROOT_SIGNATURE_DESC description = default;
+        description.Version = D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1_0;
+        description.Anonymous.Desc_1_0 = new( ) {
+            NumParameters = 1, pParameters = &parameter,
+            NumStaticSamplers = 1, pStaticSamplers = &sampler
+        };
+        return CreateRootSignature( description );
+    }
+
+    /// <summary>Creates a graphics root signature with up to 64 inline DWORDs at b0.</summary>
+    public RootSignature CreateGraphicsConstantsRootSignature( uint valueCount ) {
+        if ( valueCount is 0 or > 64 ) throw new ArgumentOutOfRangeException( nameof(valueCount) );
+        D3D12_ROOT_PARAMETER parameter = new( ) {
+            ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS
+        };
+        parameter.Anonymous.Constants.Num32BitValues = valueCount;
+        D3D12_VERSIONED_ROOT_SIGNATURE_DESC description = default;
+        description.Version = D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1_0;
+        description.Anonymous.Desc_1_0 = new( ) { NumParameters = 1, pParameters = &parameter };
+        return CreateRootSignature( description );
+    }
+
+    private RootSignature CreateRootSignature( in D3D12_VERSIONED_ROOT_SIGNATURE_DESC description ) {
+        int hr = SerializeRoot( description, out nint blobPointer, out nint errorPointer );
+        try {
+            Results.Check( hr, "SerializeVersionedRootSignature" );
+            nint owned = blobPointer;
+            blobPointer = 0;
+            using var blob = ComOwner<ID3DBlob>.Adopt( owned );
+            Guid id = typeof(ID3D12RootSignature).GUID;
+            Results.Check( Native.Interface.CreateRootSignature( 0, blob.Interface.GetBufferPointer( ),
+                blob.Interface.GetBufferSize( ), &id, out nint rootPointer ), "CreateRootSignature" );
+            return new( ComOwner<ID3D12RootSignature>.Adopt( rootPointer ) ) { DeviceIdentity = DeviceIdentity };
+        } finally {
+            if ( blobPointer != 0 ) UnknownCalls.Release( blobPointer );
+            if ( errorPointer != 0 ) UnknownCalls.Release( errorPointer );
         }
     }
 
     /// <summary>Creates a triangle-list graphics pipeline for SV_VertexID-generated vertices.</summary>
     public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
-        PixelFormat targetFormat = PixelFormat.Rgba8Unorm ) {
+        PixelFormat targetFormat = PixelFormat.Rgba8Unorm ) =>
+        CreateGraphicsPipeline( root, vertex, pixel, targetFormat, depthEnabled: false );
+
+    /// <summary>Creates a triangle-list graphics pipeline with optional D32_FLOAT depth testing and writes.</summary>
+    public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
+        PixelFormat targetFormat, bool depthEnabled ) {
         RequireSameDevice( root );
         vertex.RequireSuccess( ); pixel.RequireSuccess( );
         if ( vertex.Bytecode.IsEmpty || pixel.Bytecode.IsEmpty ) throw new ArgumentException( "Both compiled shader objects are required." );
@@ -85,6 +134,12 @@ public sealed unsafe partial class GraphicsDevice {
                 LogicOp = D3D12_LOGIC_OP.D3D12_LOGIC_OP_NOOP, RenderTargetWriteMask = 15
             };
             description.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS;
+            if ( depthEnabled ) {
+                description.DSVFormat = DXGI_FORMAT.DXGI_FORMAT_D32_FLOAT;
+                description.DepthStencilState.DepthEnable = true;
+                description.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK.D3D12_DEPTH_WRITE_MASK_ALL;
+                description.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_LESS;
+            }
             description.DepthStencilState.StencilReadMask = byte.MaxValue;
             description.DepthStencilState.StencilWriteMask = byte.MaxValue;
             description.DepthStencilState.FrontFace = new( ) {

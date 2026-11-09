@@ -9,6 +9,12 @@
           "Microsoft.Direct3D.DXC": "[1.9.2609.5, 1.9.2609.5]"
         }
       },
+      "dxsharp.framework.desktop": {
+        "type": "Project",
+        "dependencies": {
+          "DXSharp.Core": "[0.4.0-net10-preview.1, )"
+        }
+      },
       "Microsoft.Direct3D.D3D12": {
         "type": "CentralTransitive",
         "requested": "[1.620.1, )",
