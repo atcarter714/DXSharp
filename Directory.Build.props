@@ -17,6 +17,8 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <BaseOutputPath>$(RepoRootPath)artifacts/bin/$(MSBuildProjectName)/</BaseOutputPath>
     <BaseIntermediateOutputPath>$(RepoRootPath)artifacts/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+    <!-- Keep project-local build outputs out of SDK item globs after redirecting the active output paths. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/bin/**;**/obj/**;**/artifacts/**</DefaultItemExcludes>
     <PackageOutputPath>$(RepoRootPath)artifacts/packages/$(Configuration)/</PackageOutputPath>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
