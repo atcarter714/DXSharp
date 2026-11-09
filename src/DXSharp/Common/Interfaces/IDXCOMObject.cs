@@ -41,15 +41,12 @@ public interface IInstantiable {
 														   $"Failed cast from {_rcwObj.GetType().Name} " +
 														   $"to {nameof(IUnknown)}." ) ;
 
-		unsafe {
-			ref var rUnknown = ref IUnknownUnsafe.CreateUnsafeRef( pUnknown ) ;
-			rUnknown.QueryInterface( W.Guid, out void* ppv ) ;
-			W _wrapper = (W?) W.Instantiate( (nint)ppv )
-				?? throw new InvalidCastException( $"{nameof(_rcwObj)}: " +
-												   $"Failed cast from {nameof(IUnknown)} " +
-												   $"to {typeof(W).Name}." ) ;
-			return _wrapper ;
+		pUnknown.QueryInterface(W.Guid, out nint pointer).ThrowOnFailure();
+		try {
+			return (W?)W.Instantiate(pointer)
+				?? throw new InvalidCastException($"The COM object does not implement {typeof(W).Name}.");
 		}
+		finally { System.Runtime.InteropServices.Marshal.Release(pointer); }
 	}
 } ;
 

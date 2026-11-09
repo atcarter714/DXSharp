@@ -44,20 +44,23 @@
 	
 	
 	<ItemGroup Label="ShaderIncludes">
-		
+
 		<Shader Include="Assets\Shaders\tests_shader_0.hlsl" >
 			<Name>%(Filename)_%(Extension)</Name>
 			<ShaderType>Fragment</ShaderType>
 			<EntryPoint>ps_main</EntryPoint>
 			<ShaderModel>6.0</ShaderModel>
 		</Shader>
-		
+
 		<DxShader Include="Assets\Shaders\dxs\*.dxs" >
 			<Name>%(Filename)_%(Extension)</Name>
 			<ShaderType>DxShader</ShaderType>
 			<ShaderModel>6.8</ShaderModel>
 			<EntryPoint>main</EntryPoint>
-		</DxShader>		
+		</DxShader>
+
+		<!-- Copy Assets folder structure to output -->
+		<Content Include="Assets\Shaders\**\*" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 	
 </Project>

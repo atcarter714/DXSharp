@@ -1,35 +1,32 @@
-﻿using System.Runtime.InteropServices ;
-using Windows.Win32 ;
-using Windows.Win32.Graphics.Direct3D ;
-using Windows.Win32.Graphics.Direct3D12 ;
-using DXSharp.Windows.COM ;
+using System.Runtime.InteropServices;
+using DXSharp.Windows.COM;
+using Windows.Win32;
+using Windows.Win32.Graphics.Dxgi;
 
-namespace BasicTests.COM ;
+namespace BasicTests.COM;
 
-[TestFixture( Author = "Aaron T. Carter", 
-			  Description = "Tests proxy interfaces/structs for native COM IUnknown interface." )]
+[TestFixture, Category("BuildBaseline")]
 public class Test_IUnknown_Proxies {
-	static ID3D12Device1? testDevice = null ;
+    [Test]
+    public void Test_IUnknown_QueryInterface() {
+        PInvoke.CreateDXGIFactory2(0, typeof(IDXGIFactory7).GUID, out object? factory).ThrowOnFailure();
+        try {
+            var unknown = (IUnknown)factory!;
+            unknown.QueryInterface(typeof(IDXGIFactory4).GUID, out nint pointer).ThrowOnFailure();
+            try {
+                Assert.That(pointer, Is.Not.EqualTo(nint.Zero));
+                Assert.That(Marshal.GetObjectForIUnknown(pointer), Is.InstanceOf<IDXGIFactory4>());
+            }
+            finally {
+                if (pointer != 0) Marshal.Release(pointer);
+            }
 
-	[SetUp] public void Setup( ) {
-		Guid riid = typeof( ID3D12Device1 ).GUID ;
-		var hr = PInvoke.D3D12CreateDevice( null, D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_11_0, 
-								   riid, out var _rcw ) ;
-		hr.ThrowOnFailure( ) ;
-		testDevice = (ID3D12Device1)_rcw ;
-	}
-
-	[TearDown] public void TearDown( ) {
-		if( testDevice != null ) {
-			Marshal.FinalReleaseComObject( testDevice ) ;
-		}
-	}
-	
-	[Test] public void Test_IUnknown_QueryInterface( ) {
-		var riid = typeof( ID3D12Device ).GUID ;
-		var hr = testDevice!.QueryInterface( riid, out nint _ppv ) ;
-		
-		hr.ThrowOnFailure( ) ;
-		Assert.That( _ppv.IsValid( ) ) ;
-	}
-} ;
+            var result = unknown.QueryInterface(Guid.NewGuid(), out pointer);
+            Assert.That(result.Value, Is.EqualTo(unchecked((int)0x80004002)));
+            Assert.That(pointer, Is.EqualTo(nint.Zero));
+        }
+        finally {
+            Marshal.ReleaseComObject(factory!);
+        }
+    }
+}

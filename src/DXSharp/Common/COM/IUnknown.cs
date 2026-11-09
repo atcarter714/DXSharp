@@ -1,50 +1,31 @@
-﻿#region Using Directives
+using System.Runtime.InteropServices;
 
-using System.Runtime.CompilerServices ;
-using System.Runtime.InteropServices ;
-using System.Runtime.InteropServices.ComTypes ;
-using System.Runtime.InteropServices.Marshalling ;
+namespace DXSharp.Windows.COM;
 
-#endregion
-namespace DXSharp.Windows.COM ;
-
-
-// -----------------------------------------------------------------
-// COM RCW Interfaces:
-// -----------------------------------------------------------------
-//! TODO: Figure out why calling any of these methods causes AccessViolationException
-
-
+// The CLR provides the three IUnknown slots for an InterfaceIsIUnknown RCW.
 [NativeLibrary(null, "IUnknown", "unknwn.h", "COM")]
-[ComImport, System.Runtime.InteropServices.Guid("00000000-0000-0000-C000-000000000046"),
- InterfaceType(ComInterfaceType.InterfaceIsIUnknown), ]
-public interface IUnknown {
-	
-	[UnmanagedCallConv( CallConvs = new[ ] {
-		typeof( CallConvStdcall ),
-		typeof( CallConvThiscall ),
-		typeof( CallConvMemberFunction ),
-	} )]
-	[PreserveSig]
-	public uint AddRef( ) ;
-	
-	[UnmanagedCallConv( CallConvs = new[ ] {
-		typeof( CallConvStdcall ),
-		typeof( CallConvMemberFunction ),
-	} )]
-	[PreserveSig]
-	public uint Release( ) ;
-	
-	[UnmanagedCallConv( CallConvs = new[ ] {
-		typeof( CallConvStdcall ),
-		typeof( CallConvMemberFunction ),
-	} )]
-	[PreserveSig]
-	public HResult QueryInterface( ref Guid riid,
-								   [MarshalAs(UnmanagedType.IUnknown)] 
-								   out nint ppvObject ) ;
-} ;
+[ComImport, Guid("00000000-0000-0000-C000-000000000046")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+public interface IUnknown { }
 
-// -----------------------------------------------------------------
+public static class IUnknownExtensions {
+    public static uint AddRef(this IUnknown obj) {
+        nint unknown = Marshal.GetIUnknownForObject(obj);
+        // GetIUnknownForObject already acquired the requested reference.
+        return unchecked((uint)COMUtility.GetRefCount(unknown));
+    }
+
+    public static uint Release(this IUnknown obj) {
+        nint unknown = Marshal.GetIUnknownForObject(obj);
+        Marshal.Release(unknown);
+        return unchecked((uint)Marshal.Release(unknown));
+    }
 
 
+    /// <summary>Queries a COM object. The caller must release the returned interface on success.</summary>
+    public static HResult QueryInterface(this IUnknown obj, in Guid iid, out nint pointer) {
+        nint unknown = Marshal.GetIUnknownForObject(obj);
+        try { return (HResult)Marshal.QueryInterface(unknown, in iid, out pointer); }
+        finally { Marshal.Release(unknown); }
+    }
+}

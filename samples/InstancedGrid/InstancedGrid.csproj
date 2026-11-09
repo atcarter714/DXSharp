@@ -2,13 +2,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(DotNetTargets)</TargetFramework>
-    <RootNamespace>AdvancedDXS</RootNamespace>
-    <ApplicationIcon>Assets/DXSharp_ICON_256.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/DXSharp.Framework.Desktop/DXSharp.Framework.Desktop.csproj" />
-    <!-- Keep the earlier shadow-map and scene experiments available as reference source. -->
-    <Compile Remove="Framework/**/*.cs;Assets/AssetManager.cs" />
   </ItemGroup>
 </Project>

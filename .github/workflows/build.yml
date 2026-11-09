@@ -74,10 +74,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          dotnet run --project samples/HelloTexture -c Debug -- --warp --frames=4
-          if ($LASTEXITCODE -ne 0) { throw 'HelloTexture failed.' }
-          dotnet run --project samples/AdvancedSample -c Debug -- --warp --frames=4
-          if ($LASTEXITCODE -ne 0) { throw 'AdvancedSample failed.' }
+          foreach ($sample in 'HelloTexture', 'InstancedGrid', 'LitCube', 'PlanarShadows') {
+            dotnet run --project "samples/$sample" -c Debug -- --warp --frames=4
+            if ($LASTEXITCODE -ne 0) { throw "$sample failed." }
+          }
       - name: WARP compute and DirectML numerical qualification
         if: runner.os == 'Windows'
         shell: pwsh

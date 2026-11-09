@@ -4,7 +4,7 @@ using DXSharp.Framework.Desktop;
 using DXSharp.Graphics;
 using DXSharp.Shaders;
 
-namespace AdvancedDXS;
+namespace LitCube;
 
 internal static class Program {
     private const string Shader = """
@@ -65,7 +65,7 @@ internal static class Program {
         var view = Matrix4x4.CreateLookAt( new Vector3( 0, 1.4f, 5.8f ), Vector3.Zero, Vector3.UnitY );
         float angle = 0.65f;
         var result = DesktopGame.Run( device, new( ) {
-            Title = "DXSharp · Advanced Sample · Lit Cube", FrameLimit = frameLimit, EnableDepth = true
+            Title = "DXSharp · Lit Cube", FrameLimit = frameLimit, EnableDepth = true
         }, frame => {
             angle += Math.Min( (float)frame.Elapsed.TotalSeconds, 0.1f ) * 0.9f;
             var world = Matrix4x4.CreateRotationX( 0.45f ) * Matrix4x4.CreateRotationY( angle );
@@ -79,7 +79,7 @@ internal static class Program {
         foreach ( string message in diagnostics.Messages ) Console.WriteLine( message );
         if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any( x => x.Contains( "SEVERITY_ERROR" ) || x.Contains( "SEVERITY_CORRUPTION" ) ) ) return 1;
         if ( frameLimit > 0 && result.Frames != frameLimit ) return 1;
-        Console.WriteLine( $"AdvancedSample closed cleanly after {result.Frames} frames." );
+        Console.WriteLine( $"LitCube closed cleanly after {result.Frames} frames." );
         return 0;
     }
 }

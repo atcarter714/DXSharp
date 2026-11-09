@@ -119,7 +119,7 @@ Primary references: [source-generated COM](https://learn.microsoft.com/dotnet/st
 
 - **ModernTriangle** exercises the shared host, including its existing `--resize-test`.
 - **HelloTexture** ports the checkerboard triangle from [Microsoft's D3D12 Hello Texture](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/Samples/Desktop/D3D12HelloWorld/src/HelloTexture). It uploads a single-mip RGBA8 texture with row padding and samples it through an SRV and static sampler.
-- **AdvancedSample** exercises per-frame matrices, lighting, and a D32 depth target with a rotating cube. See [the sample README](../samples/AdvancedSample/readme.md).
+- **LitCube** exercises per-frame matrices, lighting, and a D32 depth target with a rotating cube. See [the sample README](../samples/LitCube/readme.md).
 
 Run either new sample with `--warp --frames=4` for the bounded Windows software-adapter check. With no arguments, the sample uses the hardware adapter and runs until its window closes.
 

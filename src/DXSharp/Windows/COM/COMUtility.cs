@@ -88,10 +88,7 @@ public static partial class COMUtility {
 	//! TODO: Decide which of these versions (Exists vs IsDestroyed) to keep ...
 	[MethodImpl(MethodImplOptions.AggressiveOptimization)]
 	public static bool Exists( nint pUnknown ) {
-		bool valid =
-			GetRCWObject( pUnknown ) is IUnknown ;
-		if( valid ) Release( pUnknown ) ;
-		return valid ;
+		return GetRCWObject( pUnknown ) is IUnknown ;
 	}
 	
 	[MethodImpl(_MAXOPT_)] public static bool IsDestroyed( nint pUnknown ) {
@@ -171,21 +168,14 @@ public static partial class COMUtility {
 	[MethodImpl(_MAXOPT_)]
 	public static nint GetPtrToInterface< T, TInterface >( [NotNull] in T iObj )
 															where TInterface: IUnknown {
-		if( !typeof(TInterface).IsCOMObject ) throw new
-			TypeAccessException( $"{nameof(COMUtility)} :: " +
-								  $"The type '{typeof(TInterface).FullName}' " +
-									$"is not a valid COM object type." ) ;
-		if ( !IsCOMObject(iObj) )
-			throw new ArgumentException( $"{nameof( COMUtility )} :: " +
-										 $"The object '{iObj}' is not a COM object.", nameof( iObj ) ) ;
-		if( iObj is null ) throw new ArgumentNullException( nameof(iObj) ) ;
-		
-		var pUnknownForObject = Marshal.GetIUnknownForObject( iObj ) ;
-		if( !pUnknownForObject.IsValid() ) return NULL_PTR ;
-		
-		var _hr = QueryInterface< TInterface >( pUnknownForObject, out nint pInterface ) ;
-		_lastHResult = _hr ;
-		return pInterface ;
+		ArgumentNullException.ThrowIfNull(iObj);
+		nint unknown = Marshal.GetIUnknownForObject(iObj);
+		try {
+			var hr = QueryInterface<TInterface>(unknown, out nint pointer);
+			hr.ThrowOnFailure();
+			return pointer;
+		}
+		finally { Marshal.Release(unknown); }
 	}
 	
 	[MethodImpl(_MAXOPT_)]
@@ -212,13 +202,16 @@ public static partial class COMUtility {
 	
 	[MethodImpl(_MAXOPT_)]
 	public static ComPtr< T > GetComPtrIUnknown< T >( [NotNull] in T iObj )
-													where T: IUnknown =>
-														new( GetAddressIUnknown(iObj) ) ;
+													where T: IUnknown => new(iObj);
+
 	[MethodImpl(_MAXOPT_)]
-	public static ComPtr< T > GetComPtrTo< T, TInterface >( [NotNull] in T iObj )
-																	where T: IUnknown
-																	where TInterface: IUnknown =>
-														new( GetPtrToInterface<T, TInterface>(iObj) ) ;
+	public static ComPtr<T> GetComPtrTo<T, TInterface>(in T iObj)
+		where T : IUnknown where TInterface : IUnknown {
+		nint pointer = GetPtrToInterface<T, TInterface>(iObj);
+		try { return new ComPtr<T>(pointer); }
+		finally { Marshal.Release(pointer); }
+	}
+
 	
 	[MethodImpl(_MAXOPT_)]
 	public static bool IsCOMObject( in object obj ) => Marshal.IsComObject( obj ) ;
@@ -259,14 +252,12 @@ public static partial class COMUtility {
 	[MethodImpl(MethodImplOptions.AggressiveOptimization)]
 	public static HResult QueryInterface< TInterface >( nint pUnknown, out TInterface comObj )
 																		where TInterface: IUnknown {
-		var hr = QueryInterface< TInterface >( pUnknown, out nint pInterface ) ;
-		int count = Marshal.Release( pUnknown ) ;
-		
-		object? comObjectRef = Marshal.GetObjectForIUnknown( pInterface ) ;
-		comObj = (TInterface)comObjectRef ;
-		_lastHResult = hr ;
-		
-		return hr ;
+		var hr = QueryInterface<TInterface>(pUnknown, out nint pointer);
+		comObj = default!;
+		if (hr.Failed) return hr;
+		try { comObj = (TInterface)Marshal.GetObjectForIUnknown(pointer); }
+		finally { Marshal.Release(pointer); }
+		return hr;
 	}
 	
 	#endregion

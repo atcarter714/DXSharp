@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(DotNetTargets)</TargetFramework>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/DXSharp.Framework.Desktop/DXSharp.Framework.Desktop.csproj" />
+  </ItemGroup>
+</Project>
