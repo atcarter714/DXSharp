@@ -23,6 +23,8 @@ try {
         '--warp', '--buffered', '--frames=8', '--resize-test', '--evidence=artifacts/triangle-resize/buffered')
     Invoke-Sample 'NBodyGravity-numerical' @('run', '--project', 'samples/NBodyGravity', '-c', 'Debug', '--', '--warp', '--verify', '--bodies=65', '--steps=5')
     Invoke-Sample 'NBodyGravity-window' @('run', '--project', 'samples/NBodyGravity', '-c', 'Debug', '--', '--warp', '--bodies=129', '--frames=6')
+    Invoke-Sample 'DxrHelloWorld' @('run', '--project', 'samples/DxrHelloWorld', '-c', 'Debug', '--',
+        '--warp', '--output=artifacts/sample-results/dxr-hello-world.ppm')
     Invoke-Sample 'ModernCompute' @('run', '--project', 'samples/ModernCompute', '-c', 'Debug', '--', '--warp', '--directml')
     Invoke-Sample 'ModernCompute-publish' @('publish', 'samples/ModernCompute', '-c', 'Release', '-r', 'win-x64',
         '-p:PublishAot=true', '-o', 'artifacts/modern-compute-aot')

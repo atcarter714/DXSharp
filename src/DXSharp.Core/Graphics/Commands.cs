@@ -21,7 +21,7 @@ public sealed class CommandAllocator : GraphicsObject {
 }
 
 /// <summary>A generated-COM command list. Recording is single-threaded per list; independent lists share no scratch state.</summary>
-public sealed unsafe class GraphicsCommandList : GraphicsObject {
+public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
     internal readonly ComOwner<ID3D12GraphicsCommandList> Native;
     internal CommandAllocator Allocator;
     internal QueueKind Kind => Allocator.Kind;

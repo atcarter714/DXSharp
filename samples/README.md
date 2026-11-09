@@ -11,5 +11,6 @@ Open `DXSharp.sln` or run a project with `dotnet run --project samples/<name> -c
 | [PlanarShadows](PlanarShadows) | Orbiting camera, multiple pipelines and projected shadows |
 | [ModernCompute](ModernCompute) | DXC compute, GPU readback and optional DirectML |
 | [NBodyGravity](NBodyGravity) | Ping-pong GPU simulation, instanced drawing, and a seeded CPU reference |
+| [DxrHelloWorld](DxrHelloWorld) | DXR acceleration structures, shader table, and image readback |
 
 [BasicSample](BasicSample) remains a standalone legacy crash reproduction outside the sample solution. The original [AdvancedSample](AdvancedSample) experiments are available as reference source.

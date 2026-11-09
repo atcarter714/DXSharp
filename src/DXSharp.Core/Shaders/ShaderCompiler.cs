@@ -34,9 +34,24 @@ public sealed unsafe class ShaderCompiler : IDisposable {
     /// <summary>Compiles UTF-8 HLSL. Includes are resolved by the supplied callback; each output owns its bytes.</summary>
     public ShaderCompilation Compile( string source, string entryPoint, string profile, IEnumerable<string>? arguments = null,
         Func<string, ReadOnlyMemory<byte>>? includeResolver = null ) {
+        ArgumentException.ThrowIfNullOrWhiteSpace( entryPoint );
+        return CompileCore( source, entryPoint, profile, arguments, includeResolver );
+    }
+
+    /// <summary>Compiles a DXIL library with exported entry points, such as DXR shaders.</summary>
+    public ShaderCompilation CompileLibrary( string source, string profile = "lib_6_3",
+        IEnumerable<string>? arguments = null, Func<string, ReadOnlyMemory<byte>>? includeResolver = null ) {
+        ArgumentException.ThrowIfNullOrWhiteSpace( profile );
+        if ( !profile.StartsWith( "lib_", StringComparison.Ordinal ) ) throw new ArgumentException( "A library profile is required.", nameof(profile) );
+        return CompileCore( source, null, profile, arguments, includeResolver );
+    }
+
+    private ShaderCompilation CompileCore( string source, string? entryPoint, string profile, IEnumerable<string>? arguments,
+        Func<string, ReadOnlyMemory<byte>>? includeResolver ) {
         ArgumentNullException.ThrowIfNull( source );
-        ArgumentException.ThrowIfNullOrWhiteSpace( entryPoint ); ArgumentException.ThrowIfNullOrWhiteSpace( profile );
-        var options = new List<string>( ) { "-E", entryPoint, "-T", profile };
+        ArgumentException.ThrowIfNullOrWhiteSpace( profile );
+        var options = new List<string>( ) { "-T", profile };
+        if ( entryPoint is not null ) options.AddRange( ["-E", entryPoint] );
         if ( arguments is not null ) options.AddRange( arguments );
         if ( options.Any( value => string.IsNullOrEmpty( value ) || value.Contains( '\0' ) ) ) throw new ArgumentException( "Compiler arguments cannot be empty or contain NUL." );
         byte[] bytes = Encoding.UTF8.GetBytes( source );
