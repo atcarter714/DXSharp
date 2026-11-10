@@ -35,6 +35,14 @@ jobs:
       - name: Restore, build, ABI tests, pack, and consume packages
         shell: pwsh
         run: ./build.ps1 -Configuration ${{ matrix.configuration }}
+      - name: Verify the preview release package set
+        if: matrix.configuration == 'Release'
+        shell: pwsh
+        run: |
+          $version = (dotnet msbuild src/DXSharp.Core/DXSharp.Core.csproj -getProperty:PackageVersion -nologo | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to evaluate the package version.' }
+          python build/release_packages.py artifacts/release-candidate --version $version --commit $env:GITHUB_SHA --stage-from artifacts/packages/Release
+          if ($LASTEXITCODE -ne 0) { throw 'Release package verification failed.' }
       - name: Upload build evidence
         if: always()
         uses: actions/upload-artifact@v4

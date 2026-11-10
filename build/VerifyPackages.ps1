@@ -70,6 +70,14 @@ System.Console.WriteLine(typeof(DXSharp.MachineLearning.DirectMlDevice).Assembly
     <add key="local" value="$([System.Security.SecurityElement]::Escape($packageDirectory))" />
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
   </packageSources>
+  <packageSourceMapping>
+    <packageSource key="local">
+      <package pattern="DXSharp*" />
+    </packageSource>
+    <packageSource key="nuget.org">
+      <package pattern="*" />
+    </packageSource>
+  </packageSourceMapping>
 </configuration>
 "@ | Set-Content (Join-Path $consumerDirectory 'NuGet.Config')
     Push-Location $consumerDirectory

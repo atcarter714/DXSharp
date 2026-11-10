@@ -71,6 +71,23 @@ public sealed unsafe partial class GraphicsDevice : GraphicsObject {
         return new( ComOwner<ID3D12Device>.Adopt( devicePointer ), options, name );
     }
 
+    /// <summary>Queries the highest Shader Model supported by this adapter and runtime, up to 6.10.</summary>
+    /// <returns>The reported major and minor version. Shader compilation is a separate capability.</returns>
+    public Version GetHighestShaderModel( ) {
+        const int invalidArgument = unchecked((int)0x80070057);
+        for ( int model = (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_6_10; model >= (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_5_1;
+              model = model == (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_6_0 ? (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_5_1 : model - 1 ) {
+            var data = new D3D12_FEATURE_DATA_SHADER_MODEL { HighestShaderModel = (D3D_SHADER_MODEL)model };
+            int result = Native.Interface.CheckFeatureSupport( D3D12_FEATURE.D3D12_FEATURE_SHADER_MODEL, &data,
+                (uint)sizeof(D3D12_FEATURE_DATA_SHADER_MODEL) );
+            if ( result == invalidArgument ) continue;
+            Results.Check( result, "CheckFeatureSupport(SHADER_MODEL)" );
+            int reported = (int)data.HighestShaderModel;
+            return new( reported >> 4, reported & 0xF );
+        }
+        throw new GraphicsException( "CheckFeatureSupport(SHADER_MODEL)", invalidArgument );
+    }
+
     /// <summary>Creates a command allocator. Reset it only after all submissions using it complete.</summary>
     public CommandAllocator CreateCommandAllocator( QueueKind kind = QueueKind.Direct ) {
         Guid id = typeof(ID3D12CommandAllocator).GUID;

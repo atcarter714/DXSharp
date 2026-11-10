@@ -13,7 +13,7 @@ using var device = GraphicsDevice.Create( new( ) {
 } );
 Console.WriteLine( device.AdapterName );
 try {
-    ShaderRoundTrip( );
+    ShaderRoundTrip( args.Contains( "--latest-shader-model" ) );
     if ( args.Contains( "--directml" ) ) DirectMlRoundTrip( );
     if ( args.Contains( "--gemm" ) ) InferenceRoundTrip( );
     var diagnostics = device.GetDiagnostics( );
@@ -27,9 +27,24 @@ try {
     return 1;
 }
 
-void ShaderRoundTrip( ) {
+void ShaderRoundTrip( bool latestShaderModel ) {
+    const string source = "RWStructuredBuffer<uint> values : register(u0); [numthreads(1,1,1)] void Main() { values[0] = 1234; }";
     using var compiler = new ShaderCompiler( );
-    var shader = compiler.Compile( "RWStructuredBuffer<uint> values : register(u0); [numthreads(1,1,1)] void Main() { values[0] = 1234; }", "Main", "cs_6_0" ).RequireSuccess( );
+    string profile = "cs_6_0";
+    if ( latestShaderModel ) {
+        Version retailCompilerCeiling = new( 6, 9 );
+        Version supported = device.GetHighestShaderModel( );
+        if ( supported < new Version( 6, 0 ) )
+            throw new NotSupportedException( $"This sample requires Shader Model 6.0. The device reports {supported}." );
+        Version selected = supported < retailCompilerCeiling ? supported : retailCompilerCeiling;
+        profile = $"cs_{selected.Major}_{selected.Minor}";
+        if ( selected != retailCompilerCeiling ) {
+            // Compile the retail ceiling even when this adapter cannot execute it.
+            _ = compiler.Compile( source, "Main", "cs_6_9" ).RequireSuccess( );
+        }
+        Console.WriteLine( $"Device Shader Model {supported}. Qualifying DXC 6.9 and dispatching {profile}." );
+    }
+    var shader = compiler.Compile( source, "Main", profile ).RequireSuccess( );
     using var queue = device.CreateCommandQueue( QueueKind.Compute ); using var allocator = device.CreateCommandAllocator( QueueKind.Compute );
     using var commands = device.CreateCommandList( allocator ); using var root = device.CreateRootSignature( 1 );
     using var pipeline = device.CreateComputePipeline( root, shader );

@@ -8,6 +8,7 @@ trigger:
       - stability/com-ownership
       - ci/azure-qualification
       - samples/dxr-hello-world
+      - release/automation
 
 # Azure Repos uses a Build validation branch policy for pull requests.
 pr: none
@@ -51,6 +52,10 @@ jobs:
       if ('$(configuration)' -eq 'Release') {
         ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
         ./build/VerifySamples.ps1
+        $version = (dotnet msbuild src/DXSharp.Core/DXSharp.Core.csproj -getProperty:PackageVersion -nologo | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0) { throw 'Unable to evaluate the package version.' }
+        python build/release_packages.py artifacts/release-candidate --version $version --commit $env:BUILD_SOURCEVERSION --stage-from artifacts/packages/Release
+        if ($LASTEXITCODE -ne 0) { throw 'Release package verification failed.' }
       }
     workingDirectory: $(Build.SourcesDirectory)
     displayName: Build, test, pack and qualify
@@ -85,6 +90,12 @@ jobs:
     inputs:
       targetPath: $(Build.SourcesDirectory)/artifacts/packages/$(configuration)
       artifact: windows-$(configuration)-packages
+  - task: PublishPipelineArtifact@1
+    displayName: Retain the qualified public preview package set
+    condition: and(succeeded(), eq(variables['configuration'], 'Release'))
+    inputs:
+      targetPath: $(Build.SourcesDirectory)/artifacts/release-candidate
+      artifact: release-candidate
   - task: PublishPipelineArtifact@1
     displayName: Publish Windows NativeAOT qualification programs
     condition: and(succeeded(), eq(variables['configuration'], 'Release'))

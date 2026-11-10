@@ -6,7 +6,7 @@ DXSharp exposes D3D12 devices, queues, resources, pipelines, and swap chains thr
 
 ![DXSharp logo](file/img/DXSharp_Logo_00_512.png)
 
-[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [MIT license](LICENSE.md)
+[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [Preview releases](doc/Publishing-Previews.md) · [MIT license](LICENSE.md)
 
 ## Start here
 
@@ -44,6 +44,8 @@ From an x64 Visual Studio Developer PowerShell with the C++ build tools and Wind
 ```
 
 The build uses locked dependencies, runs the Windows test gate and a native COM fixture, then packs and validates a fresh consumer. Windows CI also runs WARP graphics and numerical workloads. The native interop fixture runs with JIT and NativeAOT on Windows and Linux x64. The [release checklist](doc/SDK-Release-Qualification.md) tracks hardware validation and remaining API coverage. See [Azure Pipelines](devops/readme.md) for the CI definition and artifact retention.
+
+For shader capability checks, run `ModernCompute` with `--latest-shader-model`. It checks the bundled compiler's Shader Model 6.9 target and dispatches at a profile supported by both the compiler and the selected device. The [shader and fleet roadmap](doc/FleetBattler.md) covers preview Shader Model support and the flagship sample.
 
 ## History
 
