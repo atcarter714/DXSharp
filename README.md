@@ -4,9 +4,9 @@
 
 DXSharp exposes D3D12 devices, queues, resources, pipelines, and swap chains through typed .NET APIs. Use it to build a renderer, an engine, a graphics tool, or a GPU compute application with explicit control over command recording and resource lifetimes.
 
-![DXSharp logo](file/img/DXSharp_Logo_00_512.png)
+![DXSharp logo](https://raw.githubusercontent.com/atcarter714/DXSharp/main/file/img/DXSharp_Logo_00_512.png)
 
-[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [Preview releases](doc/Publishing-Previews.md) · [MIT license](LICENSE.md)
+[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [Preview release](doc/releases/0.4.0-net10-preview.1.md) · [Publishing](doc/Publishing-Previews.md) · [MIT license](LICENSE.md)
 
 ## Start here
 
