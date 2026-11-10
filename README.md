@@ -45,6 +45,15 @@ From an x64 Visual Studio Developer PowerShell with the C++ build tools and Wind
 
 The build uses locked dependencies, runs the Windows test gate and a native COM fixture, then packs and validates a fresh consumer. Windows CI also runs WARP graphics and numerical workloads. The native interop fixture runs with JIT and NativeAOT on Windows and Linux x64. The [release checklist](doc/SDK-Release-Qualification.md) tracks hardware validation and remaining API coverage. See [Azure Pipelines](devops/readme.md) for the CI definition and artifact retention.
 
+For an IDE build, open `DXSharp.sln` from the checkout root and restore with `dotnet restore DXSharp.sln --locked-mode`. Compatibility wrappers and Core use different CsWin32 and Win32 metadata versions. If an IDE reports missing D3D12 entry points or COM argument mismatches after switching branches, close the IDE and try the following from the checkout root.
+
+```powershell
+dotnet restore DXSharp.sln --locked-mode --force
+dotnet build DXSharp.sln -c Debug --no-restore -m:1
+```
+
+If the errors persist, compare the commit and build output from a fresh worktree. Start with the first error in `DXSharp`. Missing reference DLLs in dependent projects follow a failed build of that assembly.
+
 For shader capability checks, run `ModernCompute` with `--latest-shader-model`. It checks the bundled compiler's Shader Model 6.9 target and dispatches at a profile supported by both the compiler and the selected device. The [shader and fleet roadmap](doc/FleetBattler.md) covers preview Shader Model support and the flagship sample.
 
 ## History

@@ -163,6 +163,13 @@ D3D12*
 D3D12_*
 D3D12_ERROR_*
 
+// Entry points referenced directly by the legacy wrappers:
+D3D12CreateDevice
+D3D12GetDebugInterface
+D3D12EnableExperimentalFeatures
+D3D12SerializeRootSignature
+D3D12SerializeVersionedRootSignature
+
 // D3D12 Structures:
 D3D12_VIEWPORT
 

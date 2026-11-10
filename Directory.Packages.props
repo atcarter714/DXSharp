@@ -3,9 +3,9 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Freeze the existing projection for this baseline. Upgrade it in the generated-COM qualification step. -->
-    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.49-beta" />
-    <PackageVersion Include="Microsoft.Windows.SDK.Win32Metadata" Version="56.0.13-preview" />
+    <!-- The compatibility wrappers depend on these exact generated signatures. -->
+    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="[0.3.49-beta]" />
+    <PackageVersion Include="Microsoft.Windows.SDK.Win32Metadata" Version="[56.0.13-preview]" />
     <PackageVersion Include="Microsoft.Direct3D.D3D12" Version="1.620.1" />
     <PackageVersion Include="Microsoft.Direct3D.DXC" Version="1.9.2609.5" />
     <PackageVersion Include="Microsoft.AI.DirectML" Version="1.15.4" />
