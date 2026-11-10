@@ -51,10 +51,19 @@ public static class DesktopGame {
         if ( Thread.CurrentThread.GetApartmentState( ) != ApartmentState.STA )
             throw new InvalidOperationException( "The desktop game must run on an STA thread." );
 
-        using var window = new Form { Text = options.Title, ClientSize = options.ClientSize, StartPosition = FormStartPosition.CenterScreen };
+        using var window = new GameWindow { Text = options.Title, ClientSize = options.ClientSize, StartPosition = FormStartPosition.CenterScreen };
         window.Show( );
+        var queue = device.CreateCommandQueue( );
+        Task? drain = null;
+        try { return RunWindow( device, options, draw, framePresented, window, queue, Drain ); }
+        finally { if ( drain is null ) queue.Dispose( ); }
+
+        Task Drain( ) => drain ??= Task.Run( queue.Dispose );
+    }
+
+    private static DesktopRunResult RunWindow( GraphicsDevice device, DesktopGameOptions options, Action<DesktopFrame> draw,
+        Action<Form, DesktopRunResult>? framePresented, GameWindow window, CommandQueue queue, Func<Task> drainQueue ) {
         Size size = window.ClientSize;
-        using var queue = device.CreateCommandQueue( );
         using var first = new FrameSlot( device );
         using var second = options.FramesInFlight == 2 ? new FrameSlot( device ) : null;
         using var swap = device.CreateSwapChain( queue, window.Handle, (uint)size.Width, (uint)size.Height );
@@ -66,11 +75,23 @@ public static class DesktopGame {
         var clock = Stopwatch.StartNew( );
         int frames = 0, resizes = 0;
         TimeSpan previous = TimeSpan.Zero;
+        Exception? frameFailure = null;
 
         try {
             AcquireBuffers( );
-            window.FormClosing += ( _, _ ) => timer.Stop( );
             timer.Tick += ( _, _ ) => {
+                if ( window.CloseRequested ) {
+                    // Keep the HWND and its message pump alive until the presentation queue drains.
+                    var drain = drainQueue( );
+                    if ( !drain.IsCompleted ) return;
+                    timer.Stop( );
+                    if ( drain.IsCompletedSuccessfully ) {
+                        ReleaseBuffers( );
+                        swap.Dispose( );
+                    }
+                    window.FinishClose( );
+                    return;
+                }
                 if ( window.Disposing || !window.IsHandleCreated || window.WindowState == FormWindowState.Minimized ) {
                     previous = clock.Elapsed;
                     return;
@@ -79,48 +100,56 @@ public static class DesktopGame {
                 if ( clientSize.Width <= 0 || clientSize.Height <= 0 ) return;
                 // Native presentation can dispatch messages. Keep nested timer ticks out of the frame.
                 timer.Stop( );
-                bool resized = clientSize != size;
-                if ( resized ) queue.WaitIdle( );
-                var slot = second is not null && (frames & 1) != 0 ? second : first;
-                if ( slot.Completion != 0 ) queue.Wait( slot.Completion );
-                var commands = slot.Begin( );
-                if ( resized ) {
-                    ReleaseBuffers( );
-                    swap.Resize( (uint)clientSize.Width, (uint)clientSize.Height );
-                    size = clientSize;
-                    AcquireBuffers( );
-                    ++resizes;
+                try {
+                    bool resized = clientSize != size;
+                    if ( resized ) queue.WaitIdle( );
+                    var slot = second is not null && (frames & 1) != 0 ? second : first;
+                    if ( slot.Completion != 0 ) queue.Wait( slot.Completion );
+                    var commands = slot.Begin( );
+                    if ( resized ) {
+                        ReleaseBuffers( );
+                        swap.Resize( (uint)clientSize.Width, (uint)clientSize.Height );
+                        size = clientSize;
+                        AcquireBuffers( );
+                        ++resizes;
+                    }
+                    uint index = swap.CurrentBackBufferIndex;
+                    var buffer = buffers[index]!;
+                    var target = targets[index];
+                    commands.Transition( buffer, ResourceState.Present, ResourceState.RenderTarget );
+                    commands.SetViewport( (uint)size.Width, (uint)size.Height );
+                    Vector4 clear = options.ClearColor;
+                    commands.Clear( target, clear.X, clear.Y, clear.Z, clear.W );
+                    if ( depth is null ) commands.SetRenderTarget( target );
+                    else commands.SetRenderTarget( target, depth, clearDepth: true );
+                    TimeSpan now = clock.Elapsed;
+                    draw( new( commands, target, size, now - previous ) );
+                    previous = now;
+                    commands.Transition( buffer, ResourceState.RenderTarget, ResourceState.Present );
+                    commands.Close( );
+                    slot.Completion = queue.Submit( commands );
+                    if ( second is null ) queue.Wait( slot.Completion );
+                    swap.Present( );
+                    ++frames;
+                    framePresented?.Invoke( window, new( frames, resizes ) );
+                    if ( !window.CloseRequested && window.IsHandleCreated && !window.Disposing &&
+                         options.FrameLimit > 0 && frames >= options.FrameLimit ) window.Close( );
+                } finally {
+                    if ( window.IsHandleCreated && !window.Disposing ) timer.Start( );
                 }
-                uint index = swap.CurrentBackBufferIndex;
-                var buffer = buffers[index]!;
-                var target = targets[index];
-                commands.Transition( buffer, ResourceState.Present, ResourceState.RenderTarget );
-                commands.SetViewport( (uint)size.Width, (uint)size.Height );
-                Vector4 clear = options.ClearColor;
-                commands.Clear( target, clear.X, clear.Y, clear.Z, clear.W );
-                if ( depth is null ) commands.SetRenderTarget( target );
-                else commands.SetRenderTarget( target, depth, clearDepth: true );
-                TimeSpan now = clock.Elapsed;
-                draw( new( commands, target, size, now - previous ) );
-                previous = now;
-                commands.Transition( buffer, ResourceState.RenderTarget, ResourceState.Present );
-                commands.Close( );
-                slot.Completion = queue.Submit( commands );
-                if ( second is null ) queue.Wait( slot.Completion );
-                swap.Present( );
-                ++frames;
-                framePresented?.Invoke( window, new( frames, resizes ) );
-                if ( window.IsDisposed || window.Disposing || !window.IsHandleCreated ) return;
-                if ( options.FrameLimit > 0 && frames >= options.FrameLimit ) window.Close( );
-                else timer.Start( );
             };
             timer.Start( );
             Application.Run( window );
             return new( frames, resizes );
+        } catch ( Exception error ) {
+            frameFailure = error;
+            throw;
         } finally {
             timer.Stop( );
-            try { queue.WaitIdle( ); }
-            finally { ReleaseBuffers( ); }
+            try { drainQueue( ).GetAwaiter( ).GetResult( ); }
+            catch ( Exception drainFailure ) when ( frameFailure is not null ) {
+                throw new AggregateException( "Rendering and presentation queue shutdown both failed.", frameFailure, drainFailure );
+            } finally { ReleaseBuffers( ); }
         }
 
         void AcquireBuffers( ) {
@@ -137,6 +166,29 @@ public static class DesktopGame {
             foreach ( var buffer in buffers ) buffer?.Dispose( );
             Array.Clear( buffers );
             Array.Clear( targets );
+        }
+    }
+
+    private sealed class GameWindow : Form {
+        internal bool CloseRequested { get; private set; }
+        private bool _drained;
+
+        internal void FinishClose( ) {
+            _drained = true;
+            Close( );
+        }
+
+        protected override void OnFormClosing( FormClosingEventArgs e ) {
+            if ( _drained ) {
+                e.Cancel = false;
+                return;
+            }
+            if ( !CloseRequested ) {
+                base.OnFormClosing( e );
+                if ( e.Cancel ) return;
+                CloseRequested = true;
+            }
+            e.Cancel = true;
         }
     }
 

@@ -44,21 +44,21 @@ public readonly struct HModule: IEquatable< HModule >,
 	public override int GetHashCode( ) => Value.GetHashCode( ) ;
 	public bool Equals( HModule other ) => Value == other.Value ;
 	public override bool Equals( object? obj ) => obj is HModule other && Equals( other ) ;
-	public bool Equals( HMODULE other ) => Value == other.Value ;
+	public bool Equals( HMODULE other ) => Value == (nint)other ;
 	 
 	public static implicit operator nint( HModule hModule ) => hModule.Value ;
 	public static implicit operator HModule( nint value ) => new( value ) ;
-	public static implicit operator HModule( in HMODULE hModule ) => new( hModule.Value ) ;
+	public static implicit operator HModule( in HMODULE hModule ) => new( (nint)hModule ) ;
 	public static implicit operator HMODULE( HModule hModule ) => new( hModule.Value ) ;
 	
 	public static bool operator ==( HModule left, nint right ) => left.Value == right ;
 	public static bool operator !=( HModule left, nint right ) => left.Value != right ;
 	public static bool operator ==( HModule left, HModule right ) => left.Value == right.Value ;
 	public static bool operator !=( HModule left, HModule right ) => left.Value != right.Value ;
-	public static bool operator ==( HModule left, HMODULE right ) => left.Value == right.Value ;
-	public static bool operator !=( HModule left, HMODULE right ) => left.Value != right.Value ;
-	public static bool operator ==( HMODULE left, HModule right ) => left.Value == right.Value ;
-	public static bool operator !=( HMODULE left, HModule right ) => left.Value != right.Value ;
+	public static bool operator ==( HModule left, HMODULE right ) => left.Equals( right ) ;
+	public static bool operator !=( HModule left, HMODULE right ) => !left.Equals( right ) ;
+	public static bool operator ==( HMODULE left, HModule right ) => right.Equals( left ) ;
+	public static bool operator !=( HMODULE left, HModule right ) => !right.Equals( left ) ;
 } ;
 
 

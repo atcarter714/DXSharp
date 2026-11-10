@@ -77,6 +77,9 @@ internal static class Program {
                     commands.Draw(6, (uint)count);
                     commands.Transition(destination, ResourceState.NonPixelShaderResource, ResourceState.Common);
                     (source, destination) = (destination, source);
+                }, (window, progress) => {
+                    if (frames > 0 && progress.Frames == frames)
+                        Console.WriteLine($"Presented {frames} frames. Draining the presentation queue.");
                 });
                 if (frames > 0 && result.Frames != frames)
                     throw new InvalidOperationException($"Expected {frames} presented frames, got {result.Frames}.");

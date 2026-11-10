@@ -257,10 +257,11 @@ public sealed class CommandQueue : GraphicsObject {
                 new HANDLE( _event.SafeWaitHandle.DangerousGetHandle( ) ) ), "Fence.SetEventOnCompletion" );
             while ( completed < value ) {
                 double remaining = duration.TotalMilliseconds - (Environment.TickCount64 - started);
-                if ( remaining <= 0 || !_event.WaitOne( TimeSpan.FromMilliseconds( Math.Max( 0, remaining ) ) ) )
-                    throw new TimeoutException( $"GPU fence {value} did not complete; submission resources are still retained." );
-                // A previous timed-out wait may have left an older registration on this event.
+                bool signaled = remaining > 0 && _event.WaitOne( TimeSpan.FromMilliseconds( remaining ) );
+                // A previous wait can signal this event, or completion can race a timed-out wait.
                 completed = _fence.Interface.GetCompletedValue( );
+                if ( !signaled && completed < value )
+                    throw new TimeoutException( $"GPU fence {value} did not complete (last completed: {completed}); submission resources are still retained." );
             }
             if ( completed == ulong.MaxValue ) throw new GraphicsException( "Fence/device removed", _device.Interface.GetDeviceRemovedReason( ).Value );
             RetireThrough( completed );
