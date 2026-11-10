@@ -1,86 +1,63 @@
-# DXSharp 🖥️🎮
+# DXSharp
 
-![DXSharp](./file/img/DXSharp_Logo_00_512.png)
+**Direct3D 12, GPU compute, and DirectML for C# and .NET 10.**
 
-**Modern DirectX 12 for .NET 7 & 8**
+DXSharp exposes D3D12 devices, queues, resources, pipelines, and swap chains through typed .NET APIs. Use it to build a renderer, an engine, a graphics tool, or a GPU compute application with explicit control over command recording and resource lifetimes.
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![.NET 8](https://img.shields.io/badge/.NET-8.0-purple)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+![DXSharp logo](https://raw.githubusercontent.com/atcarter714/DXSharp/main/file/img/DXSharp_Logo_00_512.png)
 
----
+[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [Preview release](doc/releases/0.4.0-net10-preview.1.md) · [Publishing](doc/Publishing-Previews.md) · [MIT license](LICENSE.md)
 
-> **Disclaimer:**  
-> DXSharp is currently in an experimental stage of development. 
-> While it serves as a proof of concept and a powerful tool for graphics experimentation, API coverage is incomplete, and it is **not yet recommended for production** use. Contributions, feedback, and testing are greatly appreciated as we move toward a more mature release. This project will require support from others to be fully brought to fruition!
+## Start here
 
-"DXSharp" can be viewed as a large-scale set of messy but successful graphics experiments with DirectX 12 and .NET. It is massive in size and was inspired by the "glory days" of projects like [SlimDX](https://github.com/SlimDX/slimdx) and [SharpDX](https://github.com/sharpdx/SharpDX) which attempted to provide idiomatic and elegant C#/.NET bindings for DirectX. These experiments were built and conducted by a single developer ([Aaron Carter](https://github.com/atcarter714)) with a limited amount of time. It is far from perfect but serves as a proof of concept for a future vision of DirectX 12 programming with C#, for things such as game/engine development, simulation and even machine-learning.
+The current SDK is a preview for Windows x64. The repository pins the .NET 10 SDK in [global.json](global.json) and includes the Agility SDK, DXC, and optional DirectML runtime through package dependencies. Use Windows Graphics Tools for debug-layer validation. The `--warp` examples use Microsoft's software adapter.
 
----
+```powershell
+git clone https://github.com/atcarter714/DXSharp.git
+cd DXSharp
+dotnet run --project samples/ModernTriangle -c Debug -- --warp --frames=4
+dotnet run --project samples/ModernCompute -c Debug -- --warp --directml --gemm
+```
 
-## Overview 🚀
+The first command presents four frames and exits. The second verifies GPU compute readback and DirectML tensor addition and matrix inference. For a clean package consumer, start with [Create your first DXSharp application](doc/tutorials/01-get-started.md).
 
-**DXSharp** is a lightweight C# wrapper for the DirectX 12 API, designed specifically for .NET 8. This project provides high-performance access to DirectX for real-time 3D applications, game engines, and more. Originally started as a prototype under the codename *DXSharp*, this library bridges the gap for experienced .NET developers looking to work directly with modern graphics APIs while taking full advantage of .NET's powerful features. It leverages the power of the [CsWin32](https://github.com/microsoft/CsWin32) code generator packages, to generate interop signatures and type definitions which can be hand-crafted into a well-organized, idiomatic wrapper library.
+## Architecture
 
-## Why DXSharp? 🤔
+| Package | Responsibility |
+| --- | --- |
+| `DXSharp.Core` | D3D12, DXGI, DXC, and generated COM interop |
+| `DXSharp.Framework.Desktop` | WinForms presentation loop, swap-chain resize, and frame-slot retirement |
+| `DXSharp.DirectML` | Device and operator ownership, tensor binding, and DirectML execution |
+| `DXSharp`, `DXSharp.Framework`, `DXSharp.Dxc` | Compatibility packages for the original RCW-based SDK |
 
-- **⚡ Lightweight & Modern:** Tailored for .NET 8 and C# programmers, DXSharp aims to use modern language features and implement a lightweight and modular design. Modern .NET performance has made the idea of using C# and .NET in the game industry something worthy of serious consideration!
-- **🔗 Discontinuations:** With the discontinuation of **SharpDX**, **SlimDX**, **XNA**, and **Managed DirectX**, more contemporary DirectX 12 solutions are desired in the .NET ecosystem.
-- **🛠️ Low-Level Graphics Access:** For developers who want full control over rendering pipelines without the overhead of heavy game engines like Unity or Unreal.
-- **📚 Learning & Experimentation:** Encourages developers to dive into 3D programming and low-level graphics development—something often abstracted away by mainstream commercial engines.
-- **🚀 Build Faster Engines:** Create faster, more streamlined game engines, rendering systems, and tools with C# and DirectX 12.
+The modern API uses CsWin32 declarations and .NET source-generated COM projections. Managed owners release their native references deterministically. A command list takes its own references to the objects it records, and the queue holds them through fence completion. This lets applications give resources explicit lifetimes even when work is still in flight.
 
-## Key Features ✨
+DXC returns owned compilation output and diagnostics. The desktop host supplies a small presentation loop while applications retain control of render and compute commands. The [SDK architecture](doc/SDK-Architecture.md) explains the binding, ownership and package boundaries, and the next rendering and tooling slices. See [interop qualification](doc/Generated-Com-Foundation.md) for the native validation matrix.
 
-- Support for most of the **DirectX 12 API** needed for 3D applications and games.
-- High-performance managed code interface 🎯
-- Direct access to Direct3D, DXGI, and more
-- 🚧 *In Development*: Support for DirectCompute, Raytracing, and DXC compiler, more samples and a high-level framework for fast development of custom engines and 3D apps.
+## Build and qualification
 
-## Getting Started 🌟
+From an x64 Visual Studio Developer PowerShell with the C++ build tools and Windows SDK installed, run:
 
-### Prerequisites
-- **.NET 8 SDK** installed
-- **Windows 10/11** with DirectX 12 capable hardware
+```powershell
+./build.ps1 -Configuration Release
+./build/VerifySamples.ps1
+```
 
-### Installation
+The build uses locked dependencies, runs the Windows test gate and a native COM fixture, then packs and validates a fresh consumer. Windows CI also runs WARP graphics and numerical workloads. The native interop fixture runs with JIT and NativeAOT on Windows and Linux x64. The [release checklist](doc/SDK-Release-Qualification.md) tracks hardware validation and remaining API coverage. See [Azure Pipelines](devops/readme.md) for the CI definition and artifact retention.
 
-1. **Clone the repository:**
-    - git clone https://github.com/atcarter714/DXSharp.git
+For an IDE build, open `DXSharp.sln` from the checkout root and restore with `dotnet restore DXSharp.sln --locked-mode`. Compatibility wrappers and Core use different CsWin32 and Win32 metadata versions. If an IDE reports missing D3D12 entry points or COM argument mismatches after switching branches, close the IDE and try the following from the checkout root.
 
-2. Once you've checked out the repo, you can simply build the solution and run the "Hello Triangle" sample application.
+```powershell
+dotnet restore DXSharp.sln --locked-mode --force
+dotnet build DXSharp.sln -c Debug --no-restore -m:1
+```
 
-## Roadmap 🛤️
+If the errors persist, compare the commit and build output from a fresh worktree. Start with the first error in `DXSharp`. Missing reference DLLs in dependent projects follow a failed build of that assembly.
 
-- [x] Initial DirectX 12 support
-- [x] DXGI support
-- [x] Azure DevOps build pipelines and scripts
-- [ ] DXC Advanced Shader support
-- [ ] Extensive sample projects (game engine demos, tools, etc.)
+For shader capability checks, run `ModernCompute` with `--latest-shader-model`. It checks the bundled compiler's Shader Model 6.9 target and dispatches at a profile supported by both the compiler and the selected device. The [shader and fleet roadmap](doc/FleetBattler.md) covers preview Shader Model support and the flagship sample.
 
-## Contributing 🤝
+## History
 
-Contributions are welcome! Please read the [contributing guidelines](CONTRIBUTING.md) before submitting a pull request. If you are unable to contribute directly to development but would like to see this become a production-ready DirectX solution for the .NET ecosystem, please reach out to discuss possibilities of sponsorship and/or donation.
+Aaron Carter started DXSharp to prove that C# could support a full Direct3D 12 workflow with the feel of SlimDX and SharpDX. The original project brought up a broad set of DirectX bindings, examples, and build tools. Its hand-maintained COM wrappers also showed where ownership and interface projection needed to be simpler. The .NET 10 SDK builds on that experience with generated interop, explicit lifetimes, and repeatable GPU checks.
 
-## License 📄
-
-This project is licensed under the [MIT License](./license.md).
-
----
-
-</br>
-
-**Note from the developer**: 
-
-DXSharp was an attempt to prove that a full-scale DirectX 12 solution for C#/.NET would be feasible and that it could be implemented in a familiar and idiomatic style for .NET developers. It includes tons of supplementary features, ranging from an Azure DevOps build pipelines, local scripts (Powershell, CSX, etc), customized MSBuid processes and scripts and more. Although there are some flaws in the initial design and approach and things are a bit messy, I feel like it was overwhelmingly successful as an experimental proof of concept. DirectX 12 is absolutely massive, a highly complex beast, and this project required a deep understanding of both C/C++ and C# for the interoperation. With the help of modern .NET capabilities and packages like CsWin32, I was able to tame it single-handedly and create the sort of proof of concept I was after.
-
-DXSharp has a few design flaws that must be addressed to turn it into a production-ready solution. In my haste to get it working, I took an admittedly bad approach in the way the DirectX/DXGI interfaces are designed and then implemented by wrapper classes. It was a choice I came to regret as it grew uglier and more difficult to work on. While it does work just fine, this will have to be addressed to continue development longer-term. I had plans to do this myself before releasing the solution, but as a single father staying at home with a 2.5-year-old son, my financial and domestic situation has gotten in the way. Thus, I decided to just make the project public "as-is" and let it fly. I hope that it will at least be a valuable learning resource for others, or possible find a small community of people interested in turning it into a serious building block for game engines and games in the .NET ecosystem.
-
-If able to continue development on this project, I have several plans in mind, including:
-- Train a SLM ("small language model") on DirectX 12 and the code base
-- Utilize .NET 8's new COM interop features
-- Cleaner and more optimized implementation
-- Create custom Roslyn generators/analyzers
-- Provide unmanaged struct implementations
-
-___
-
-
+For contributions, open an issue or a pull request with a small reproduction and the adapter, runtime, and validation details. DXSharp is [MIT licensed](LICENSE.md).

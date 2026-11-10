@@ -1,0 +1,90 @@
+name: .NET 10 SDK qualification
+
+on:
+  push:
+    branches: [main, 'migration/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows ${{ matrix.configuration }}
+    runs-on: windows-2025
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Restore, build, ABI tests, pack, and consume packages
+        shell: pwsh
+        run: ./build.ps1 -Configuration ${{ matrix.configuration }}
+      - name: Verify the preview release package set
+        if: matrix.configuration == 'Release'
+        shell: pwsh
+        run: |
+          $version = (dotnet msbuild src/DXSharp.Core/DXSharp.Core.csproj -getProperty:PackageVersion -nologo | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to evaluate the package version.' }
+          python build/release_packages.py artifacts/release-candidate --version $version --commit $env:GITHUB_SHA --stage-from artifacts/packages/Release
+          if ($LASTEXITCODE -ne 0) { throw 'Release package verification failed.' }
+      - name: Upload build evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-${{ matrix.configuration }}
+          path: |
+            artifacts/build.binlog
+            artifacts/test-results/**
+            artifacts/packages/**
+          if-no-files-found: warn
+
+  interop-aot:
+    name: Native COM JIT and AOT (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+        with:
+          arch: x64
+      - name: Native fixture and managed/AOT ownership qualification
+        shell: pwsh
+        run: ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
+      - name: WARP sample qualification
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./build/VerifySamples.ps1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: interop-${{ matrix.os }}
+          path: |
+            artifacts/qualification-aot/**
+            artifacts/modern-compute-aot/**
+            artifacts/triangle-resize/**
+            artifacts/sample-results/**
+          if-no-files-found: warn

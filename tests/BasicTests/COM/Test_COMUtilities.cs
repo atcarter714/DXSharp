@@ -17,7 +17,7 @@ namespace BasicTests.COM ;
 
 
 [TestFixture(Author = "Aaron T. Carter",
-			 Category = "COM", Description = "Tests COM Utilities")]
+			 Category = "BuildBaseline", Description = "Tests COM Utilities")]
 public class Test_COMUtilities {
 	// ----------------------------------------------------------------------------------------------------
 	
@@ -37,13 +37,12 @@ public class Test_COMUtilities {
 	static IUnknownWrapper< IDXGIFactory4 > _wrapper4 =>
 		( _factory4 as IUnknownWrapper< IDXGIFactory4 > ?? throw new NullReferenceException( ) ) ;
 	// ----------------------------------------------------------------------------------------------------
-	static List< IDisposable >? _cleanUpList ;
+
 	
 	
 	[OneTimeSetUp]
 	public void Setup( ) {
-		_cleanUpList = new( ) ;
-		DXGIFunctions.CreateFactory1( IFactory1.IID, out _factory ) ;
+		DXGIFunctions.CreateFactory1( IFactory1.IID, out _factory ).ThrowOnFailure() ;
 	}
 	
 	[OneTimeTearDown]
@@ -115,96 +114,30 @@ public class Test_COMUtilities {
 		Assert.That( baseAddr.IsValid( ) && vTableAddr.IsValid( ) ) ;
 		
 		
-		// Test query for IDXGIFactory1:
-		var _hr1 = QueryInterface< IDXGIFactory1 >( vTableAddr,
-															   out nint ppvFactory1 ) ;
-		Assert.Multiple( ( ) => {
-							 Assert.That( _hr1.Succeeded ) ;
-							 Assert.That( ppvFactory1, Is.Not.Zero ) ;
-						 } ) ;
-		
-		// Test query for IUnknown:
-		var _hr2 = QueryInterface< IUnknown >( vTableAddr, 
-																	  out nint ppvUnknown ) ;
-		Assert.Multiple( ( ) => {
-							 Assert.That( _hr2.Succeeded ) ;
-							 Assert.That( ppvUnknown, Is.Not.Zero ) ;
-							 Assert.That( ppvUnknown  == baseAddr ) ;
-							 Assert.That( ppvFactory1 == vTableAddr ) ;
-						 } ) ;
-		
-		// Release the queried pointers:
-		int unknownReleaseCount = Release( ppvUnknown ) ;
-		int fact1ReleaseCount   = Release( ppvFactory1 ) ;
-		
-		
-		// Check count on queried pointers:
-		int unknownRefCount = GetRefCount( ppvUnknown ) ;
-		int fact1RefCount   = GetRefCount( ppvFactory1 ) ;
-		Assert.Multiple(( ) => {
-			Assert.That( unknownRefCount, Is.Not.Zero ) ;
-			Assert.That( fact1RefCount, Is.Not.Zero ) ;
-		}) ;
-
-
-		// Now try downcasting to IDXGIFactory4:
-		_factory4 = Cast< IFactory1, IFactory4 >( _factory! ) ;
-		Assert.That( _factory4, Is.Not.Null ) ;
-		
-		// Get the object references for wrapper and COM object:
-		var dxgiF1 = _comRef1!.ComObject! ;
-		var dxgiF4 = _comRef4.ComObject! ;
-		
-		
-		/* -------------------------------------------------------------------------------------------------------------
-		 * WTF NOTES ::
-		 * -------------------------------------------------------------------------------------------------------------
-		 * A v-table is an array (pointer to a collection/buffer) of function pointers.
-		 * A COM object is really just a pointer to a v-table, in terms of memory ...
-		 * So, if we steal the address of the managed RCW object, we can steal the v-table address!
-		 * Since the "v-table" field of type `void**` (pointer to pointer or "pointer to array"),
-		 * We can consider the managed object as a pointer to a pointer to a pointer ... ?!!!
-		 * Yes, it's a little confusing, but it's just a pointer to a pointer to a pointer!
-		 * So we reinterpret the managed object pointer* as a "pointer* to a pointer-pointer**",
-		 * and dereference it to get the "pointer-pointer" value (i.e., the v-table address) ...
-		 * It's less confusing when you bear in mind that the "v-table pointer" is just a *number* (or "address")
-		 * that we are after, because that number is the RAM location of the v-table function pointer list ...
-		 * -------------------------------------------------------------------------------------------------------------
-		 */
-		unsafe {
-			var _pf4 = *(void ***)( (IDXGIFactory4 *)( &dxgiF4 ) ) ;
-			var _vtb = (IUnknownUnsafe.VTable *)_pf4 ;
-			nint _method0 = ( *_vtb )[ 0 ],
-				 _method1 = ( *_vtb )[ 1 ],
-				 _method2 = ( *_vtb )[ 2 ] ;
-			
-			// Do likewise for the IDXGIFactory1 object:
-			var _pF1  = *(void ***)( (IDXGIFactory1 *)( &dxgiF1 ) ) ;
-			var _vtb1 = (IUnknownUnsafe.VTable *)_pF1 ;
-			nint _method0_1 = ( *_vtb1 )[ 0 ],
-				 _method1_1 = ( *_vtb1 )[ 1 ],
-				 _method2_1 = ( *_vtb1 )[ 2 ] ;
-			
-			Assert.Multiple( ( ) => {
-								 Assert.That( _method0_1, Is.EqualTo( _method0 ) ) ; //! Same COM object/method: true!
-								 Assert.That( _method1_1, Is.EqualTo( _method1 ) ) ;
-								 Assert.That( _method2_1, Is.EqualTo( _method2 ) ) ;
-							 } ) ;
-			// -----------------------------------------------------------------
-
-			// Use InteropUtils to pin & get pointer + handle:
-			// (This gives us the address of the managed RCW object in RAM ...)
-			nint f4ManagedAddress = InteropUtils.GetManagedAddress( dxgiF4, out var hF4 ) ;
-			nint f1ManagedAddress = InteropUtils.GetManagedAddress( dxgiF1, out var hF1 ) ;
-			_cleanUpList!.AddRange( hF1, hF4 ) ;
+		QueryInterface<IDXGIFactory1>(vTableAddr, out nint factory).ThrowOnFailure();
+		try {
+			QueryInterface<IUnknown>(factory, out nint identity).ThrowOnFailure();
+			try { Assert.That(identity, Is.EqualTo(baseAddr)); }
+			finally { Release(identity); }
 		}
+		finally { Release(factory); }
+
+		_factory4 = Cast<IFactory1, IFactory4>(_factory!);
+		var dxgiF4 = _comRef4.ComObject!;
+
 		Assert.That( _factory4, Is.Not.Null ) ;
 		Assert.That( dxgiF4 is not null ) ;
 		
-		ref IUnknownUnsafe @unsafe = ref IUnknownUnsafe.CreateUnsafeRef( dxgiF4! ) ;
-		uint c1 = @unsafe.AddRef( ),
-			 c2 = @unsafe.Release( ) ;
-		
+		nint pointer = GetIUnknownForObject(dxgiF4);
+		try {
+			unsafe {
+				var native = (IUnknownUnmanaged*)pointer;
+				native->AddRef();
+				native->Release();
+			}
+		}
+		finally { Release(pointer); }
+
 		// Call some methods on it and make sure it works:
 		var creationFlags = _factory4!.GetCreationFlags( ) ;
 		var current   = _factory4!.IsCurrent( ) ;
@@ -231,34 +164,3 @@ public class Test_COMUtilities {
 	// ====================================================================================================
 } ;
 
-
-
-/*int counter00 = Marshal.AddRef( baseAddr ) ;
-int counter01 = Marshal.AddRef( vTableAddr ) ;
-int counter02 = Marshal.Release( baseAddr ) ;
-int counter03 = Marshal.Release( vTableAddr ) ;
-unsafe {
-	var _marshalStyleCall =
-		( (delegate* unmanaged< nint, uint >)( *( *(void ***)vTableAddr + 1) ) ) ;
-		/* +1 is for the IUnknown.AddRef slot #1#
-	uint r = _marshalStyleCall( vTableAddr ) ;
-	Assert.That( r != 0 ) ;
-
-	var cswinUnknown = *(Windows.Win32.System.Com.IUnknown *)baseAddr ;
-	r = cswinUnknown.AddRef( ) ;
-}
-_factoryObj!.ComObject!.AddRef( ) ;*/
-
-
-
-		/*uint c1 = dxgiFactory4.AddRef( ),
-			 c2 = dxgiFactory4.Release( ) ;*/
-		/*
-		Assert.Multiple( ( ) => {
-			Assert.That(c1, Is.Not.EqualTo(0));
-			Assert.That(c2, Is.Not.EqualTo(0));
-			Assert.That( c2 == c1 - 1 ) ;
-			Assert.That( c2 == 1 ) ;
-		} ) ;*/
-		
-		

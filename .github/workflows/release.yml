@@ -1,0 +1,197 @@
+name: DXSharp preview release
+
+on:
+  push:
+    branches: [main]
+    paths: ['doc/releases/*.md']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact PackageVersion committed to Directory.Build.props
+        required: true
+        type: string
+      publish:
+        description: Publish to NuGet.org and create a GitHub prerelease
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dxsharp-preview-release
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    name: Build and qualify the release candidate
+    runs-on: windows-2025
+    timeout-minutes: 35
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Check the requested version and source branch
+        id: version
+        shell: pwsh
+        env:
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          if ($env:PUBLISH -eq 'true' -and $env:GITHUB_REF -cne 'refs/heads/main') {
+            throw 'Publishing is restricted to main.'
+          }
+          $version = (dotnet msbuild src/DXSharp.Core/DXSharp.Core.csproj -getProperty:PackageVersion -nologo | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or
+              ($env:RELEASE_VERSION -and $version -cne $env:RELEASE_VERSION) -or
+              $version -cnotmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-net10-preview\.[1-9][0-9]*$') {
+            throw "Expected the committed preview package version: $version"
+          }
+          if (-not (Test-Path "doc/releases/$version.md")) { throw 'Missing versioned release notes.' }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+      - name: Qualify SDK, packages, WARP, and NativeAOT
+        shell: pwsh
+        run: |
+          ./build.ps1 -Configuration Release
+          ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
+          ./build/VerifySamples.ps1
+          python build/release_packages.py artifacts/release-candidate --version $env:RELEASE_VERSION --commit $env:GITHUB_SHA --stage-from artifacts/packages/Release
+          if ($LASTEXITCODE -ne 0) { throw 'Release package verification failed.' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate
+          path: artifacts/release-candidate
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-evidence
+          path: |
+            artifacts/build.binlog
+            artifacts/test-results/**
+            artifacts/sample-results/**
+            artifacts/triangle-resize/**
+          if-no-files-found: warn
+
+  linux-interop:
+    name: Qualify native COM ownership on Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - shell: pwsh
+        run: ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
+
+  release:
+    name: Publish GitHub prerelease assets
+    if: (github.event_name == 'push' || inputs.publish) && github.ref == 'refs/heads/main'
+    needs: [qualify, linux-interop]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      RELEASE_VERSION: ${{ needs.qualify.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-candidate
+          path: candidate
+      - name: Verify the release assets
+        run: python3 build/release_packages.py candidate --version "$RELEASE_VERSION" --commit "$GITHUB_SHA"
+      - name: Publish the notes and exact qualified assets
+        run: |
+          if [[ -n "$(git ls-remote --refs --tags origin "refs/tags/v$RELEASE_VERSION")" ]]; then
+            echo "::error::Release tag v$RELEASE_VERSION already exists. Review its artifacts before resuming."
+            exit 1
+          fi
+          gh release create "v$RELEASE_VERSION" candidate/* --target "$GITHUB_SHA" \
+            --title "DXSharp $RELEASE_VERSION" --prerelease --latest=false \
+            --notes-file "doc/releases/$RELEASE_VERSION.md"
+
+  publish:
+    name: Publish the qualified preview to NuGet.org
+    if: (github.event_name == 'push' || inputs.publish) && github.ref == 'refs/heads/main'
+    needs: [qualify, release]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: nuget
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      RELEASE_VERSION: ${{ needs.qualify.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-candidate
+          path: candidate
+      - name: Verify the downloaded candidate and check version availability
+        run: |
+          python3 build/release_packages.py candidate --version "$RELEASE_VERSION" --commit "$GITHUB_SHA"
+          tag_commit=$(git ls-remote --refs --tags origin "refs/tags/v$RELEASE_VERSION" | cut -f1)
+          if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+            echo "::error::The release tag does not point to the qualified commit."
+            exit 1
+          fi
+          for id in dxsharp.core dxsharp.directml dxsharp.framework.desktop; do
+            url="https://api.nuget.org/v3-flatcontainer/$id/$RELEASE_VERSION/$id.$RELEASE_VERSION.nupkg"
+            status=$(curl --silent --show-error --head --max-time 30 --output /dev/null --write-out '%{http_code}' "$url")
+            if [[ "$status" != 404 ]]; then
+              echo "::error::Expected $id $RELEASE_VERSION to be unpublished, got HTTP $status."
+              exit 1
+            fi
+          done
+      - name: Check the NuGet publishing identity
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+        run: |
+          if [[ -z "$NUGET_USER" ]]; then
+            echo "::error::Set NUGET_USER in the nuget environment and configure the NuGet.org Trusted Publishing policy for release.yml."
+            exit 1
+          fi
+      - name: Request a temporary NuGet.org publishing key
+        id: nuget
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Push the packages and symbols
+        env:
+          NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
+        run: |
+          for id in DXSharp.Core DXSharp.DirectML DXSharp.Framework.Desktop; do
+            dotnet nuget push "candidate/$id.$RELEASE_VERSION.nupkg" \
+              --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json
+          done
+      - name: Record successful NuGet upload on the release
+        run: |
+          cp "doc/releases/$RELEASE_VERSION.md" published-notes.md
+          printf '\nNuGet.org accepted the three packages and their symbols from [this publishing run](%s/%s/actions/runs/%s). Feed indexing and symbol validation may take additional time.\n' \
+            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> published-notes.md
+          gh release edit "v$RELEASE_VERSION" --notes-file published-notes.md

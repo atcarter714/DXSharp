@@ -14,6 +14,7 @@
 using System.Diagnostics.Contracts ;
 using System.Text ;
 using System.Runtime.CompilerServices ;
+using System.Runtime.InteropServices ;
 
 using Windows.Win32 ;
 using Windows.Win32.Foundation ;
@@ -396,29 +397,19 @@ public class ShaderBuilder: DisposableObject {
 
 	
 	// --------------------------------------------------------------------------------------------------
-	protected override async ValueTask DisposeUnmanaged( ) {
-		unsafe {
-			//! This ugliness is necessary because the CsWin32-generated code does not implement IDisposable
-			//! and does not inherit from DXSharp.Win32.COM.IUknown, thus has no `Release` method ...
-			//! This is something we will soon address ... pun intended, if you get my pointer ... ;-)
-			IUnknownUnsafe* unsafeCompiler = null ;
-			fixed( void* compilerPtr = &pCompiler ) {
-				unsafeCompiler = *(IUnknownUnsafe**)compilerPtr ;
-				unsafeCompiler->Release( ) ;
-			}
-			IUnknownUnsafe* unsafeUtils = null ;
-			fixed( void* utilsPtr = &pUtils ) {
-				unsafeUtils = *(IUnknownUnsafe**)utilsPtr ;
-				unsafeUtils->Release( ) ;
-			}
-			IUnknownUnsafe* unsafeIncludeHandler = null ;
-			fixed( void* includeHandlerPtr = &pIncludeHandler ) {
-				unsafeIncludeHandler = *(IUnknownUnsafe**)includeHandlerPtr ;
-				unsafeIncludeHandler->Release( ) ;
-			}
+	protected override ValueTask DisposeUnmanaged() {
+		ReleaseRcw(ref pIncludeHandler);
+		ReleaseRcw(ref pUtils);
+		ReleaseRcw(ref pCompiler);
+		ReleaseRcw(ref pMalloc);
+		return ValueTask.CompletedTask;
+
+		static void ReleaseRcw<T>(ref T value) where T : class {
+			var rcw = Interlocked.Exchange(ref value, null!);
+			if (rcw is not null) Marshal.ReleaseComObject(rcw);
 		}
-		pMalloc.Release( ) ;
 	}
+
 	// ==================================================================================================
 } ;
 

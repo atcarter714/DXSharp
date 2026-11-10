@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
+    <Description>DirectML tensor operators for the DXSharp generated-COM foundation.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DXSharp.Core/DXSharp.Core.csproj" />
+    <PackageReference Include="Microsoft.AI.DirectML" VersionOverride="[1.15.4]" GeneratePathProperty="true" IncludeAssets="runtime;native" />
+    <None Include="../../build/msbuild/DXSharp.DirectML.targets" Pack="true" PackagePath="buildTransitive/DXSharp.DirectML.targets" />
+  </ItemGroup>
+</Project>

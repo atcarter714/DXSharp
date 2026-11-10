@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
+    <CsWin32RunAsBuildTask>true</CsWin32RunAsBuildTask>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)$(Configuration)/generated</CompilerGeneratedFilesOutputPath>
+    <Description>Source-generated DirectX foundation and deterministic ownership for DXSharp.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.CsWin32" VersionOverride="[0.3.367]" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Windows.SDK.Win32Metadata" VersionOverride="[71.0.37-preview]" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Direct3D.D3D12" VersionOverride="[1.620.1]" GeneratePathProperty="true" IncludeAssets="runtime;native" />
+    <PackageReference Include="Microsoft.Direct3D.DXC" VersionOverride="[1.9.2609.5]" GeneratePathProperty="true" IncludeAssets="runtime;native" />
+    <InternalsVisibleTo Include="InteropQualification" Key="0024000004800000940000000602000000240000525341310004000001000100894fae0919aeb23bddcca2687ce855f3649b017c69bbb5f494a7261763dcd01937ebf398222f41977837a77af70995d7a4b7a8ffc6f3dd031ffd6804134c3678af91e99348f25a4fb7125e03ac5d16de4d1944c70a248b27c91a5a75715d856f321be121bd547a4a098a28be8e1b600b7d4136946e7ed1033a692c34495900cc" />
+    <InternalsVisibleTo Include="DXSharp.DirectML" Key="0024000004800000940000000602000000240000525341310004000001000100894fae0919aeb23bddcca2687ce855f3649b017c69bbb5f494a7261763dcd01937ebf398222f41977837a77af70995d7a4b7a8ffc6f3dd031ffd6804134c3678af91e99348f25a4fb7125e03ac5d16de4d1944c70a248b27c91a5a75715d856f321be121bd547a4a098a28be8e1b600b7d4136946e7ed1033a692c34495900cc" />
+    <None Include="../../build/msbuild/DXSharp.Core.targets" Pack="true" PackagePath="buildTransitive/DXSharp.Core.targets" />
+    <None Include="../../build/msbuild/NativeDependencies.targets" Pack="true" PackagePath="buildTransitive/DXSharp.NativeAssets.targets" />
+  </ItemGroup>
+</Project>

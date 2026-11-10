@@ -359,3 +359,10 @@ healthchecksdb
 MigrationBackup/
 
 .idea/.idea.DXSharp/.idea/
+
+# SDK-style build baseline outputs
+artifacts/
+
+# Versioned release notes are source documentation.
+!/doc/releases/
+!/doc/releases/*.md

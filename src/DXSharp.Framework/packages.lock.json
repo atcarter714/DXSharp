@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0-windows10.0.26100": {
+      "dxsharp": {
+        "type": "Project"
+      },
+      "dxsharp.dxc": {
+        "type": "Project",
+        "dependencies": {
+          "DXSharp": "[0.4.0-net10-preview.1, )"
+        }
+      }
+    }
+  }
+}

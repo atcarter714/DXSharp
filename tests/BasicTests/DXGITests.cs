@@ -31,6 +31,7 @@ DXSharp.DXGI;
 namespace BasicTests;
 
 
+[Category( "BuildBaseline" )]
 [TestFixture( Author = "Aaron T. Carter", Category = "DXGI Interop",
 	Description = "Testing DXSharp.DXGI interop code", TestName = "DXSharp.DXGI" )]
 internal class DXGITests

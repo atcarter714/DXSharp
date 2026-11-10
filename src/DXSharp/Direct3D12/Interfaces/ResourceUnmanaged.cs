@@ -8,6 +8,7 @@ using Windows.Win32 ;
 using Windows.Win32.Foundation ;
 using Windows.Win32.Graphics.Direct3D12 ;
 
+using DXSharp.Windows.COM;
 using WinCom = Windows.Win32.System.Com ;
 using static DXSharp.InteropUtils ;
 #endregion
@@ -30,7 +31,7 @@ public unsafe struct ResourceUnmanaged: IComIID {
 
 	public ResourceUnmanaged( ID3D12Resource d3D12Resource ) {
 		Guid riid = IID_Guid ;
-		d3D12Resource.QueryInterface( ref riid, out var pVtbl ) ;
+		d3D12Resource.QueryInterface( riid, out var pVtbl ).ThrowOnFailure() ;
 		this.lpVtbl = (void **)pVtbl ;
 	}
 	
