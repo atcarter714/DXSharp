@@ -75,7 +75,9 @@ public sealed unsafe partial class GraphicsDevice : GraphicsObject {
     /// <returns>The reported major and minor version. Shader compilation is a separate capability.</returns>
     public Version GetHighestShaderModel( ) {
         const int invalidArgument = unchecked((int)0x80070057);
-        for ( int model = (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_6_10; model >= (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_5_1;
+        // The Agility header defines 6.10 as 0x6A. Older Win32 metadata omits the enum member.
+        const int shaderModel6_10 = 0x6A;
+        for ( int model = shaderModel6_10; model >= (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_5_1;
               model = model == (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_6_0 ? (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_5_1 : model - 1 ) {
             var data = new D3D12_FEATURE_DATA_SHADER_MODEL { HighestShaderModel = (D3D_SHADER_MODEL)model };
             int result = Native.Interface.CheckFeatureSupport( D3D12_FEATURE.D3D12_FEATURE_SHADER_MODEL, &data,
