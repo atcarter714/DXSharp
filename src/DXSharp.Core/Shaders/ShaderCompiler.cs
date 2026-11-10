@@ -8,7 +8,11 @@ using DXSharp.Interop;
 
 namespace DXSharp.Shaders;
 
-/// <summary>Copied, independently owned compilation outputs. Diagnostics include warnings on success.</summary>
+/// <summary>Copied compilation outputs whose storage is independent of the compiler.</summary>
+/// <param name="Status">The compiler HRESULT, including failures reported by DXC.</param>
+/// <param name="Bytecode">The compiled object, or an empty buffer when no object was emitted.</param>
+/// <param name="Diagnostics">Compiler errors and warnings, including warnings from successful compilations.</param>
+/// <param name="Outputs">Available named outputs, such as object code, errors and reflection data.</param>
 public sealed record ShaderCompilation( int Status, ReadOnlyMemory<byte> Bytecode, string Diagnostics, IReadOnlyDictionary<string, ReadOnlyMemory<byte>> Outputs ) {
     /// <summary>Whether HLSL compilation succeeded.</summary>
     public bool Succeeded => Status >= 0;

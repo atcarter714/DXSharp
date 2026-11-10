@@ -32,7 +32,7 @@ The first command presents four frames and exits. The second verifies GPU comput
 
 The modern API uses CsWin32 declarations and .NET source-generated COM projections. Managed owners release their native references deterministically. A command list takes its own references to the objects it records, and the queue holds them through fence completion. This lets applications give resources explicit lifetimes even when work is still in flight.
 
-DXC returns owned compilation output and diagnostics. The desktop host supplies a small presentation loop while applications retain control of render and compute commands. The [interop design](doc/Generated-Com-Foundation.md) explains the ownership model, the native runtime selection, and the qualification matrix.
+DXC returns owned compilation output and diagnostics. The desktop host supplies a small presentation loop while applications retain control of render and compute commands. The [SDK architecture](doc/SDK-Architecture.md) explains the binding, ownership and package boundaries, and the next rendering and tooling slices. See [interop qualification](doc/Generated-Com-Foundation.md) for the native validation matrix.
 
 ## Build and qualification
 

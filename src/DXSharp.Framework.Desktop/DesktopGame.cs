@@ -21,15 +21,26 @@ public sealed record DesktopGameOptions {
 }
 
 /// <summary>A frame whose command list and render target are borrowed for the draw callback.</summary>
+/// <param name="Commands">The open command list. The host closes and submits it after the callback.</param>
+/// <param name="Target">The current back buffer's render-target view.</param>
+/// <param name="Size">The current renderable client area in pixels.</param>
+/// <param name="Elapsed">Elapsed time since the previous draw, excluding time spent minimized.</param>
 public readonly record struct DesktopFrame( GraphicsCommandList Commands, RenderTargetView Target, Size Size, TimeSpan Elapsed );
 
-/// <summary>Totals from a desktop run.</summary>
+/// <summary>Totals from a desktop run or a presentation callback.</summary>
+/// <param name="Frames">Number of completed present calls.</param>
+/// <param name="Resizes">Number of back-buffer size changes after initialization.</param>
 public readonly record struct DesktopRunResult( int Frames, int Resizes );
 
 /// <summary>Runs a WinForms frame loop with two back buffers and one or two frame slots.</summary>
 public static class DesktopGame {
-    /// <summary>Runs on the calling STA thread. The host owns the window, submission and presentation.
-    /// The caller owns the device and scene resources. Record draw commands only during the draw callback.</summary>
+    /// <summary>Runs a windowed render loop on the calling STA thread until the window closes.</summary>
+    /// <param name="device">A caller-owned device that stays alive for the duration of the run.</param>
+    /// <param name="options">Window dimensions, depth, presentation limit and number of frame slots.</param>
+    /// <param name="draw">Records scene commands into the borrowed frame before submission.</param>
+    /// <param name="framePresented">Optional callback on the calling thread after each present call.</param>
+    /// <returns>Presentation and resize totals.</returns>
+    /// <exception cref="InvalidOperationException">The calling thread is outside an STA.</exception>
     public static DesktopRunResult Run( GraphicsDevice device, DesktopGameOptions options, Action<DesktopFrame> draw,
         Action<Form, DesktopRunResult>? framePresented = null ) {
         ArgumentNullException.ThrowIfNull( device );

@@ -17,9 +17,26 @@ try {
         throw 'Unable to evaluate the package version.'
     }
     foreach ($name in @('DXSharp', 'DXSharp.Dxc', 'DXSharp.Framework', 'DXSharp.Framework.Desktop', 'DXSharp.Core', 'DXSharp.DirectML')) {
-        if (-not (Test-Path (Join-Path $packageDirectory "$name.$version.nupkg"))) {
-            throw "Missing package: $name.$version.nupkg"
-        }
+        $path = Join-Path $packageDirectory "$name.$version.nupkg"
+        if (-not (Test-Path $path)) { throw "Missing package: $path" }
+        $archive = [System.IO.Compression.ZipFile]::OpenRead($path)
+        try {
+            $assemblies = @($archive.Entries | Where-Object FullName -CLike "lib/*/$name.dll")
+            if ($assemblies.Count -eq 0) { throw "No library assembly found in $path" }
+            foreach ($assembly in $assemblies) {
+                $docPath = [System.IO.Path]::ChangeExtension($assembly.FullName, '.xml')
+                $entry = $archive.GetEntry($docPath)
+                if ($null -eq $entry) { throw "Missing $docPath in $path" }
+                $reader = [System.IO.StreamReader]::new($entry.Open())
+                try {
+                    [xml] $documentation = $reader.ReadToEnd()
+                    if ($documentation.SelectSingleNode('/doc/assembly/name').InnerText -cne $name -or
+                        $null -eq $documentation.SelectSingleNode('/doc/members/member')) {
+                        throw "Empty or mismatched XML documentation: $docPath in $path"
+                    }
+                } finally { $reader.Dispose() }
+            }
+        } finally { $archive.Dispose() }
     }
     @"
 <Project Sdk="Microsoft.NET.Sdk">
