@@ -70,6 +70,12 @@ Represent CPU jobs and GPU submissions as distinct dependency domains. Introduce
 
 Build an image-to-image sample with a deterministic convolution and activation chain. Show the input, processed image, and CPU/GPU error view side by side. Use small fixed fixtures for numerical comparison, then validate the same graph at interactive sizes. That slice needs convolution/graph compilation, a GPU texture-to-tensor path, and a way to display results from GPU-resident memory. Reuse the current DirectML validation pattern and reserve CPU readback for checks, diagnostics, and capture.
 
+### Local model inference
+
+Keep the DirectML Add/GEMM samples as coverage for explicit D3D12 resource binding, command scheduling, and numerical results. Microsoft has moved new Windows ONNX deployment work to Windows ML. Its ONNX Runtime surface can provision hardware-specific execution providers and has a CPU provider for a portable baseline. Execution-provider choice depends on the model export, driver, and installed provider. Benchmark the NVIDIA Windows ML provider on RTX separately from CPU. [DirectML status](https://learn.microsoft.com/windows/ai/directml/) · [Windows ML execution providers](https://learn.microsoft.com/windows/ai/new-windows-ml/supported-execution-providers)
+
+A separate opt-in `LocalInference` sample can stream tokens from Microsoft's Phi-4-mini-instruct INT4 ONNX export. Pin the model revision and GenAI package and accept an explicit local model directory. Start with CPU, then qualify a GPU export and provider on a workstation. Report the selected provider, model load time, time to first token, generation tokens per second, and peak memory. Keep the generation loop off the render thread and report fallback explicitly. The C# ONNX Runtime GenAI integration for Windows ML is a preview. The separate native Windows ML Runtime API is experimental and currently has C++ and Python support. Its D3D12-device targeting is a candidate for a later interop experiment. [Phi-4-mini-instruct ONNX](https://huggingface.co/microsoft/Phi-4-mini-instruct-onnx) · [Windows ML GenAI](https://learn.microsoft.com/windows/ai/new-windows-ml/run-genai-onnx-models) · [Windows ML Runtime](https://learn.microsoft.com/windows/ai/new-windows-ml/runtime/overview)
+
 ### Embedding and presentation
 
 Split frame-slot management and presentation from the WinForms message loop. Define host responsibilities for scheduling, physical pixel size and DPI, visibility, input, and surface recreation. Keep frame submission and resource retirement under the renderer.
@@ -82,6 +88,10 @@ Split frame-slot management and presentation from the WinForms message loop. Def
 | Headless | The same renderer into offscreen targets with readback and no UI dispatcher |
 
 Qualify resize, DPI changes, host teardown, and device removal in each adapter. Embedded WinUI composition is a separate surface kind from the HWND swap chain available today. [WinUI SwapChainPanel](https://learn.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.swapchainpanel) · [WPF HWND hosting](https://learn.microsoft.com/dotnet/desktop/wpf/advanced/hosting-win32-content-in-wpf) · [Avalonia native Windows controls](https://docs.avaloniaui.net/docs/platform-specific-guides/windows)
+
+### NoesisGUI adapter
+
+An opt-in integration belongs in its own repository and package. The adapter can own XAML views, input translation, and DPI handling, with DXSharp providing an explicit frame-composition boundary. Define the adapter contract around a borrowed D3D12 device, command list and target, resource-state handoff, and fence-based retirement. Qualify offscreen rendering and the final overlay across resize, focus, and device teardown. Fleet Battler's in-engine HUD uses the same simulation commands and status as its keyboard and mouse inputs. [NoesisGUI integration guide](https://www.noesisengine.com/docs/Gui.Core.SDKGuide.html)
 
 ## Qualification evidence
 

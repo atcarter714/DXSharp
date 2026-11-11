@@ -15,6 +15,16 @@ internal sealed class CommandSelection {
     internal FleetSelection Focus( FleetSimulation fleet ) =>
         Primary >= 0 ? new( fleet.SquadronOf( Primary ), Count == 1 ? Primary : -1 ) : new( 0 );
 
+    internal FleetSelection? SurveyUnit( FleetSimulation fleet ) {
+        if ( Primary < 0 ) return null;
+        int squad = fleet.SquadronOf( Primary );
+        if ( Count == 1 ) return new( squad, Primary );
+        if ( Count != fleet.ShipCount( squad ) ) return null;
+        for ( int ship = Primary + 1; ship < fleet.Count; ++ship )
+            if ( _ships[ship] && fleet.SquadronOf( ship ) != squad ) return null;
+        return new( squad );
+    }
+
     internal void Clear( ) {
         Array.Clear( _ships );
         Count = 0;
@@ -56,23 +66,23 @@ internal sealed class CommandSelection {
         Prune( fleet );
     }
 
-    internal void Box( FleetSimulation fleet, Vector4 rectangle, Matrix4x4 viewProjection, Vector2 dimensions, SelectionMode mode ) {
+    internal void Box( FleetSimulation fleet, Vector4 rectangle, Matrix4x4 viewProjection, Vector2 dimensions, SelectionMode mode, float interpolation = 1 ) {
         if ( mode == SelectionMode.Replace ) Clear( );
         for ( int i = 0; i < fleet.Count; ++i ) {
             if ( !fleet.Alive( i ) || fleet.SideOf( i ) != 0 ) continue;
-            var pixel = Project( fleet.Positions[i], viewProjection, dimensions );
+            var pixel = Project( fleet.VisualPosition( i, interpolation ), viewProjection, dimensions );
             if ( pixel.X >= rectangle.X && pixel.X <= rectangle.Z && pixel.Y >= rectangle.Y && pixel.Y <= rectangle.W )
                 Include( i, mode );
         }
         Prune( fleet );
     }
 
-    internal static int Hit( FleetSimulation fleet, Vector2 pixel, Matrix4x4 viewProjection, Vector2 dimensions, int faction ) {
+    internal static int Hit( FleetSimulation fleet, Vector2 pixel, Matrix4x4 viewProjection, Vector2 dimensions, int faction, float interpolation = 1 ) {
         float best = MathF.Pow( MathF.Max( 11, dimensions.Y * 0.013f ), 2 );
         int result = -1;
         for ( int i = 0; i < fleet.Count; ++i ) {
             if ( !fleet.Alive( i ) || fleet.SideOf( i ) != faction ) continue;
-            float distance = Vector2.DistanceSquared( pixel, Project( fleet.Positions[i], viewProjection, dimensions ) );
+            float distance = Vector2.DistanceSquared( pixel, Project( fleet.VisualPosition( i, interpolation ), viewProjection, dimensions ) );
             if ( distance >= best ) continue;
             best = distance;
             result = i;

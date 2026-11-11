@@ -10,6 +10,26 @@ internal readonly record struct FleetSelection( int Squad, int Ship = -1 ) {
     internal bool IsShip => Ship >= 0;
 }
 
+internal enum FlightOrder { Idle, Move, Orbit, Survey, Attack }
+internal readonly record struct FlightPlan( FlightOrder Order, Vector2 Destination, int Body, int Target );
+
+internal sealed class FleetClock {
+    private double _remaining;
+    internal float Interpolation => (float)(_remaining / FleetSimulation.StepSeconds);
+    internal void Reset( ) => _remaining = 0;
+
+    internal float Advance( FleetSimulation fleet, double elapsed, int speed, bool paused ) {
+        if ( paused ) return 0;
+        double scaled = Math.Clamp( elapsed, 0, 0.125 ) * (speed * 0.25);
+        _remaining += scaled;
+        while ( _remaining >= FleetSimulation.StepSeconds ) {
+            fleet.Step( );
+            _remaining -= FleetSimulation.StepSeconds;
+        }
+        return (float)scaled;
+    }
+}
+
 internal sealed partial class FleetSimulation {
     internal const int MaxShips = 10_000;
     internal const int DefaultShips = 72;
@@ -24,7 +44,7 @@ internal sealed partial class FleetSimulation {
     private readonly Order[] _shipOrders;
     private readonly float[] _thrust;
     private readonly BodyPose[] _bodies = new BodyPose[CelestialSystem.BodyCount];
-    private readonly Vector2[] _positions, _velocities, _headings, _offsets;
+    private readonly Vector2[] _positions, _previousPositions, _velocities, _headings, _previousHeadings, _offsets;
     private readonly Squad[] _squads = new Squad[2 * SquadsPerFaction + WingGoal];
     private readonly bool _rivalPatrol;
     private readonly float _targetLimit;
@@ -42,7 +62,7 @@ internal sealed partial class FleetSimulation {
         internal float Phase;
         internal byte Body;
         internal int Enemy;
-        internal bool Detached;
+        internal bool Detached, Survey;
     }
 
     internal FleetSimulation( int ships, uint seed, bool rivalPatrol = false, int system = 0, bool battle = false ) {
@@ -57,8 +77,10 @@ internal sealed partial class FleetSimulation {
         _incoming = new byte[capacity];
         _nextShot = new int[capacity];
         _positions = new Vector2[capacity];
+        _previousPositions = new Vector2[capacity];
         _velocities = new Vector2[capacity];
         _headings = new Vector2[capacity];
+        _previousHeadings = new Vector2[capacity];
         _offsets = new Vector2[capacity];
         _shipOrders = new Order[capacity];
         _squadOfShip = new int[capacity];
@@ -84,7 +106,6 @@ internal sealed partial class FleetSimulation {
     internal float BoardRadius { get; }
     internal Vector2 Site { get; }
     internal float SiteRadius { get; }
-    internal Vector2 Shipyard => new( -0.59f * BoardRadius, 0.62f * BoardRadius );
     internal int Count { get; private set; }
     internal int Capacity => _positions.Length;
     internal int SquadCount { get; private set; }
@@ -105,14 +126,40 @@ internal sealed partial class FleetSimulation {
     internal Vector2 Center( int squad ) => _squads[squad].Center;
     internal Vector2 Target( int squad ) => _squads[squad].Anchor;
     internal Vector2 Center( FleetSelection selected ) => selected.IsShip ? _positions[selected.Ship] : Center( selected.Squad );
-    internal Vector2 Target( FleetSelection selected ) =>
-        selected.IsShip && _shipOrders[selected.Ship].Detached ? _shipOrders[selected.Ship].Target : Target( selected.Squad );
-    internal bool Orbiting( FleetSelection selected ) => (selected.IsShip && _shipOrders[selected.Ship].Detached
-        ? _shipOrders[selected.Ship].Body : _squads[selected.Squad].Order.Body) != 0;
+    internal Vector2 VisualPosition( int ship, float interpolation ) => Vector2.Lerp( _previousPositions[ship], _positions[ship], interpolation );
+    internal Vector2 VisualCenter( FleetSelection selected, float interpolation ) {
+        if ( selected.IsShip ) return VisualPosition( selected.Ship, interpolation );
+        ref readonly var squad = ref _squads[selected.Squad];
+        var sum = Vector2.Zero;
+        for ( int ship = squad.First; ship < squad.First + squad.Count; ++ship )
+            if ( Alive( ship ) ) sum += VisualPosition( ship, interpolation );
+        return squad.Alive == 0 ? squad.Center : sum / squad.Alive;
+    }
+
+    private Order EffectiveOrder( FleetSelection selected ) => selected.IsShip && _shipOrders[selected.Ship].Detached
+        ? _shipOrders[selected.Ship] : _squads[selected.Squad].Order;
+
+    internal bool Orbiting( FleetSelection selected ) => EffectiveOrder( selected ).Body != 0;
+
+    internal FlightPlan Plan( FleetSelection selected ) {
+        var order = EffectiveOrder( selected );
+        if ( order.Enemy != 0 && Alive( order.Enemy - 1 ) )
+            return new( FlightOrder.Attack, _positions[order.Enemy - 1], -1, order.Enemy - 1 );
+        if ( order.Body != 0 ) {
+            int body = order.Body - 1;
+            int count = selected.IsShip && order.Detached ? 1 : Math.Max( 1, ShipCount( selected.Squad ) );
+            var (sin, cos) = MathF.SinCos( order.Phase );
+            var destination = _bodies[body].Center + new Vector2( cos, sin ) * OrbitRadius( body, count );
+            return new( order.Survey ? FlightOrder.Survey : FlightOrder.Orbit, destination, body, -1 );
+        }
+        var target = order.Target;
+        if ( selected.IsShip && !order.Detached )
+            target += RotateSlot( _offsets[selected.Ship], _squads[selected.Squad].Direction );
+        return new( Vector2.DistanceSquared( Center( selected ), target ) > 1 ? FlightOrder.Move : FlightOrder.Idle, target, -1, -1 );
+    }
     internal int ShipCount( int squad ) => _squads[squad].Alive;
     internal bool IsPlayerSquad( int squad ) => _squads[squad].Faction == 0;
     internal bool IsScoutSquad( int squad ) => IsPlayerSquad( squad ) && squad is 0 or 3;
-    internal bool CanBuildWing => Ore >= WingCost && WingsBuilt < WingGoal && !Lost;
 
     internal int FindSquad( Vector2 point ) {
         int closest = 0;
@@ -151,12 +198,18 @@ internal sealed partial class FleetSimulation {
 
     internal void Orbit( FleetSelection selected, int body ) {
         if ( (uint)body >= CelestialSystem.BodyCount ) throw new ArgumentOutOfRangeException( nameof(body) );
+        SetOrder( selected, OrbitalOrder( selected, body, survey: false ) );
+    }
+
+    private Order OrbitalOrder( FleetSelection selected, int body, bool survey ) {
         var delta = Center( selected ) - _bodies[body].Center;
-        SetOrder( selected, new Order { Body = (byte)(body + 1), Phase = MathF.Atan2( delta.Y, delta.X ), Detached = selected.IsShip } );
+        return new( ) { Body = (byte)(body + 1), Phase = MathF.Atan2( delta.Y, delta.X ), Detached = selected.IsShip, Survey = survey };
     }
 
     internal void Rejoin( FleetSelection selected ) {
-        if ( selected.IsShip ) _shipOrders[selected.Ship] = default;
+        if ( !selected.IsShip ) return;
+        _shipOrders[selected.Ship] = default;
+        RefreshSurveys( );
     }
 
     private void SetOrder( FleetSelection selected, Order order ) {
@@ -165,6 +218,7 @@ internal sealed partial class FleetSimulation {
             throw new ArgumentOutOfRangeException( nameof(selected) );
         if ( selected.IsShip ) {
             _shipOrders[selected.Ship] = order;
+            RefreshSurveys( );
             return;
         }
         ref var squad = ref _squads[selected.Squad];
@@ -172,20 +226,11 @@ internal sealed partial class FleetSimulation {
         if ( order.Body == 0 && Vector2.DistanceSquared( order.Target, squad.Center ) > 0.25f )
             squad.Direction = Vector2.Normalize( order.Target - squad.Center );
         _shipOrders.AsSpan( squad.First, squad.Count ).Clear( );
+        RefreshSurveys( );
     }
 
     internal float OrbitRadius( int body, int count ) =>
         _bodies[body].Radius * (body == 2 ? 2.4f : 1.35f) + 6 + (count == 1 ? 0 : MathF.Sqrt( count ) * Pitch * 0.55f);
-
-    internal int BuildWing( ) {
-        if ( !CanBuildWing ) return -1;
-        int index = SquadCount;
-        var arrival = Shipyard + new Vector2( WingsBuilt * 13, 0 );
-        AddSquad( WingSize, 0, arrival );
-        Ore -= WingCost;
-        ++WingsBuilt;
-        return index;
-    }
 
     internal void Step( ) {
         UpdateRival( );
@@ -217,6 +262,8 @@ internal sealed partial class FleetSimulation {
             int end = squad.First + squad.Count;
             for ( int ship = squad.First; ship < end; ++ship ) {
                 if ( !Alive( ship ) ) continue;
+                _previousPositions[ship] = _positions[ship];
+                _previousHeadings[ship] = _headings[ship];
                 ref var solo = ref _shipOrders[ship];
                 var goal = solo.Detached
                     ? solo.Enemy != 0 ? Chase( ref solo, _positions[ship], squad.Faction, out _ ) : Resolve( ref solo, 1, out _ )
@@ -253,6 +300,7 @@ internal sealed partial class FleetSimulation {
         }
         AdvanceSite( cyan, amber );
         AdvancePlanets( );
+        AdvanceProduction( );
         ++Tick;
     }
 
@@ -327,7 +375,7 @@ internal sealed partial class FleetSimulation {
     }
 
     internal int FillInstances( Span<ShipInstance> destination, FleetSelection selected, ReadOnlySpan<bool> selection = default,
-        bool groupHulls = false ) {
+        bool groupHulls = false, float interpolation = 1 ) {
         if ( destination.Length != ActiveCount ) throw new ArgumentException( "Instance span must match the active ship count.", nameof(destination) );
         int corvettes = ActiveCount;
         if ( groupHulls ) {
@@ -346,7 +394,8 @@ internal sealed partial class FleetSimulation {
                 bool highlighted = selection.IsEmpty ? ship == selected.Ship || !selected.IsShip && i == selected.Squad : selection[ship];
                 var color = tint;
                 if ( highlighted ) color.W = 1.66f;
-                destination[scout ? scoutIndex++ : index++] = new( _positions[ship], _headings[ship], color,
+                destination[scout ? scoutIndex++ : index++] = new( VisualPosition( ship, interpolation ),
+                    interpolation == 1 ? _headings[ship] : Vector2.Normalize( Vector2.Lerp( _previousHeadings[ship], _headings[ship], interpolation ) ), color,
                     new Vector4( _thrust[ship], (ship % 173) * 0.618f, scout ? 0.75f : 1, (float)_hull[ship] / HullCapacity + (highlighted ? 2 : 0) ) );
             }
         }
@@ -357,8 +406,11 @@ internal sealed partial class FleetSimulation {
         ulong hash = 14695981039346656037;
         Append( (uint)SystemIndex ); Append( (uint)Tick ); Append( (uint)Count ); Append( (uint)SquadCount ); Append( _seed );
         Append( (uint)Owner ); Append( (uint)Capturing ); Append( (uint)CaptureTicks ); Append( Contested ? 1u : 0u );
-        Append( (uint)ShotsFired ); Append( (uint)ShipsLost ); Append( (uint)Science ); Append( WeaponUpgrade ? 1u : 0u ); Append( (uint)_surveyRequests );
+        Append( (uint)ShotsFired ); Append( (uint)ShipsLost ); Append( (uint)Science ); Append( WeaponUpgrade ? 1u : 0u ); Append( (uint)_yardBody ); Append( (uint)_yardReadyTick ); Append( IndustryUpgrade ? 1u : 0u );
+        Append( (uint)_wingFinishTick ); Append( (uint)QueuedWings );
+        for ( int i = 0; i < QueuedWings; ++i ) Append( (uint)_queuedWingTicks[i] );
         for ( int body = 0; body < _bodies.Length; ++body ) {
+            Append( (uint)(_surveyUnits[body]?.Squad ?? -1) ); Append( (uint)(_surveyUnits[body]?.Ship ?? -1) );
             Append( (uint)_survey[body] ); Append( (uint)_mines[body] ); Append( (uint)_labs[body] );
         }
         Append( (uint)Ore ); Append( (uint)WingsBuilt ); Append( (uint)_incomeTicks ); Append( _rivalPatrol ? 1u : 0u ); Append( _battle ? 1u : 0u );
@@ -376,7 +428,7 @@ internal sealed partial class FleetSimulation {
 
         void AppendOrder( Order order ) {
             AppendVector( order.Target ); Append( BitConverter.SingleToUInt32Bits( order.Phase ) );
-            Append( order.Body ); Append( order.Detached ? 1u : 0u ); Append( (uint)order.Enemy );
+            Append( order.Body ); Append( order.Detached ? 1u : 0u ); Append( order.Survey ? 1u : 0u ); Append( (uint)order.Enemy );
         }
 
         void AppendVector( Vector2 value ) {
@@ -415,10 +467,10 @@ internal sealed partial class FleetSimulation {
         mean /= count;
         for ( int i = Count; i < Count + count; ++i ) {
             _offsets[i] -= mean;
-            _positions[i] = center + RotateSlot( _offsets[i], heading );
+            _previousPositions[i] = _positions[i] = center + RotateSlot( _offsets[i], heading );
             _squadOfShip[i] = SquadCount;
             _hull[i] = HullCapacity;
-            _headings[i] = heading;
+            _previousHeadings[i] = _headings[i] = heading;
         }
         _squads[SquadCount++] = new( ) { First = Count, Count = count, Alive = count, Faction = faction, Home = center, Center = center,
             Anchor = center, Direction = heading, Order = new Order { Target = center } };
