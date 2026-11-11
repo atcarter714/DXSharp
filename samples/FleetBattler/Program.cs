@@ -39,8 +39,8 @@ internal static class Program {
         if ( viewTest && frameLimit is > 0 and < 8 )
             throw new ArgumentException( "View qualification requires at least eight frames." );
         if ( viewTest && frameLimit == 0 ) frameLimit = 8;
-        int trafficCount = int.Parse( Option( args, "--traffic=", "192" ) );
-        int debrisCount = int.Parse( Option( args, "--debris=", "384" ) );
+        int trafficCount = int.Parse( Option( args, "--traffic=", ComputeTraffic.DefaultAgents.ToString( ) ) );
+        int debrisCount = int.Parse( Option( args, "--debris=", ComputeTraffic.DefaultDebris.ToString( ) ) );
 
         Application.SetUnhandledExceptionMode( UnhandledExceptionMode.ThrowException );
         ApplicationConfiguration.Initialize( );

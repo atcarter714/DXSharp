@@ -128,7 +128,7 @@ internal sealed class FleetHud {
         float bottom = logicalHeight - 68;
         Rect( 14, bottom, logicalWidth - 28, 54, Panel, 1 );
         Rect( 14, bottom, 2, 54, SpaceDraw.Cyan );
-        string instruction = fleet.Lost ? "DEFEAT - CYAN FLEET LOST" : fleet.Won ? "VICTORY - SYSTEM SECURED"
+        string instruction = fleet.Lost ? "DEFEAT - CYAN FLEET LOST" : fleet.Won ? fleet.AmberCount == 0 ? "VICTORY - AMBER DEFEATED" : "VICTORY - REINFORCEMENT GOAL MET"
             : notice ?? (fleet.InBattle ? "ENGAGEMENT - RIGHT CLICK AMBER TO ATTACK"
             : selectionCount != 0 && fleet.Orbiting( selected ) ? "ORBIT ORDER ACTIVE"
             : oreShort && fleet.Ore < FleetSimulation.WingCost ? "NEED 60 ORE TO BUILD"

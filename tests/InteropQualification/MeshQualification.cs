@@ -240,7 +240,7 @@ internal static unsafe class MeshQualification {
         using var queue = device.CreateCommandQueue( );
         using var allocator = device.CreateCommandAllocator( );
         using var commands = device.CreateCommandList( allocator );
-        using var traffic = new ComputeTraffic( device, compiler, 192, 384 );
+        using var traffic = new ComputeTraffic( device, compiler, ComputeTraffic.DefaultAgents, ComputeTraffic.DefaultDebris );
         var meshes = new Mesh[model.Primitives.Length];
         try {
             FleetDraw.RecordUploads( device, commands, model, meshes );

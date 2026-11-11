@@ -6,6 +6,7 @@ using DXSharp.Shaders;
 namespace FleetBattler;
 
 internal sealed class ComputeTraffic : IDisposable {
+    internal const int DefaultAgents = 32, DefaultDebris = 256;
     internal const int MaxAgents = 65_536, MaxDebris = 16_384;
     private const uint GroupSize = 64;
     private readonly PipelineState? _orbits, _steering, _debrisPipeline, _freighters;
