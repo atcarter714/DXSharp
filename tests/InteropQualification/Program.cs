@@ -135,6 +135,7 @@ internal static class Program {
             Check( Native.InvokeCallback( 17 ) == 51, "native-held generated callback survives GC" );
             Native.RetainCallback( 0 );
             Check( Native.Destroyed( ) >= 2004, "native destructor accounting" );
+            if ( OperatingSystem.IsWindows( ) ) MeshQualification.Run( );
             Console.WriteLine( $"PASS: {_checks} checks; {Native.Destroyed( )} native objects destroyed; no live objects." );
             return 0;
         } catch ( Exception exception ) { Console.Error.WriteLine( exception ); return 1; }

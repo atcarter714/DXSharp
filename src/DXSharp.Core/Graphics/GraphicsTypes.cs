@@ -27,6 +27,8 @@ public enum ResourceState : uint {
     Present = 0,
     /// <summary>Read as a vertex buffer or constant buffer.</summary>
     VertexAndConstantBuffer = 1,
+    /// <summary>Read as an input-assembler index buffer.</summary>
+    IndexBuffer = 2,
     /// <summary>Write as a color render target.</summary>
     RenderTarget = 4,
     /// <summary>Access through an unordered-access view.</summary>
