@@ -164,7 +164,7 @@ internal static class SpaceDraw {
             float selectionRadius = max(Selected.z, Viewport.w*11);
             float selectionRing = Line(length(selectionDelta)-selectionRadius, Viewport.w*0.65);
             float bracket = step(0.7, max(abs(normalize(selectionDelta + 0.0001).x),abs(normalize(selectionDelta + 0.0001).y)));
-            sky = lerp(sky,float3(0.28,0.92,1),selectionRing*bracket*0.8);
+            sky = lerp(sky,float3(0.28,0.92,1),selectionRing*bracket*0.8*Selected.w);
             float2 orderVector = Order.xy - Selected.xy;
             float orderT = dot(selectionDelta,orderVector) / max(dot(orderVector,orderVector),0.0001);
             float commandDash = step(0.35,frac(orderT*length(orderVector)/(Viewport.w*12)));
@@ -181,7 +181,7 @@ internal static class SpaceDraw {
             compiler.Compile( Shader, "PS", "ps_6_0" ), PixelFormat.Rgba8Unorm, depthEnabled: true );
 
     internal static void Record( GraphicsCommandList commands, PipelineState pipeline, FleetSimulation fleet, FleetSelection selected,
-        Matrix4x4 viewProjection, Matrix4x4 inverse, int width, int height, float halfHeight ) {
+        Matrix4x4 viewProjection, Matrix4x4 inverse, int width, int height, float halfHeight, bool showSelection = true ) {
         float r = fleet.BoardRadius;
         double seconds = fleet.Tick * FleetSimulation.StepSeconds;
         var bodies = fleet.Bodies;
@@ -200,8 +200,8 @@ internal static class SpaceDraw {
         values[10] = new( bodies[1].Center.X, bodies[1].Center.Y, CelestialSystem.MoonAxis * r, r );
         values[11] = new( fleet.Site.X, fleet.Site.Y, fleet.SiteRadius, progress );
         values[12] = tint;
-        values[13] = new( center.X, center.Y, selected.IsShip ? 2.8f : 3.5f + MathF.Sqrt( fleet.ShipCount( selected.Squad ) ) * 2.3f, 0 );
-        values[14] = new( target.X, target.Y, Vector2.DistanceSquared( center, target ) > 1 ? 1 : 0, 0 );
+        values[13] = new( center.X, center.Y, selected.IsShip ? 2.8f : 3.5f + MathF.Sqrt( fleet.ShipCount( selected.Squad ) ) * 2.3f, showSelection ? 1 : 0 );
+        values[14] = new( target.X, target.Y, showSelection && Vector2.DistanceSquared( center, target ) > 1 ? 1 : 0, 0 );
         Draw( commands, pipeline, values );
     }
 

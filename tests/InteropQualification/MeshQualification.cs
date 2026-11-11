@@ -236,17 +236,21 @@ internal static unsafe class MeshQualification {
     private static void RenderSystem( GraphicsDevice device, ShaderCompiler compiler ) {
         const uint width = 640, height = 400;
         var model = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "Patrol.gltf" ) );
-        var fleet = new FleetSimulation( FleetSimulation.DefaultShips, 37 );
+        var fleet = new FleetSimulation( FleetSimulation.DefaultShips, 37, battle: true );
         using var queue = device.CreateCommandQueue( );
         using var allocator = device.CreateCommandAllocator( );
         using var commands = device.CreateCommandList( allocator );
-        using var traffic = new ComputeTraffic( device, compiler, 192, 384 );
+        using var traffic = new ComputeTraffic( device, compiler, ComputeTraffic.DefaultAgents, ComputeTraffic.DefaultDebris );
         var meshes = new Mesh[model.Primitives.Length];
         try {
             FleetDraw.RecordUploads( device, commands, model, meshes );
             using var fleetRoot = device.CreateGraphicsConstantsRootSignature( 16 );
             using var thrustRoot = device.CreateGraphicsConstantsRootSignature( 20 );
             using var thrust = FleetDraw.CreateThrusters( device, thrustRoot, compiler );
+            using var battleRoot = device.CreateGraphicsConstantsRootSignature( BattleDraw.ConstantCount );
+            using var effects = BattleDraw.CreateEffects( device, battleRoot, compiler );
+            using var markers = BattleDraw.CreateMarkers( device, battleRoot, compiler );
+            using var effectData = device.CreateBuffer( FleetSimulation.EffectCapacity * BattleDraw.EffectStride, BufferMemory.Upload );
             using var spaceRoot = device.CreateGraphicsConstantsRootSignature( SpaceDraw.Constants );
             using var hudRoot = device.CreateGraphicsConstantsRootSignature( 4 );
             using var fleetPipeline = FleetDraw.CreatePipeline( device, fleetRoot, compiler, depthEnabled: true );
@@ -254,9 +258,14 @@ internal static unsafe class MeshQualification {
             using var hudPipeline = FleetHud.CreatePipeline( device, hudRoot, compiler );
             using var glyphs = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
             using var instances = device.CreateBuffer( (uint)fleet.Count * FleetDraw.InstanceStride, BufferMemory.Upload );
-            var ships = new ShipInstance[fleet.Count];
-            fleet.Move( 0, fleet.Site );
-            for ( int i = 0; i < 54; ++i ) fleet.Step( );
+            fleet.Move( 0, fleet.Site + new Vector2( -5, 0 ) );
+            fleet.Move( 6, fleet.Site + new Vector2( 5, 0 ) );
+            for ( int i = 0; i < 480 && fleet.ShotsFired < 6; ++i ) fleet.Step( );
+            var pulses = new BattleEffect[FleetSimulation.EffectCapacity];
+            int pulseCount = fleet.FillEffects( pulses );
+            if ( pulseCount == 0 ) throw new InvalidOperationException( "The WARP fixture did not produce a skirmish." );
+            effectData.Write<BattleEffect>( pulses.AsSpan( 0, pulseCount ) );
+            var ships = new ShipInstance[fleet.ActiveCount];
             fleet.FillInstances( ships, new( 0 ) );
             instances.Write<ShipInstance>( ships );
             using var target = CreateTarget( device, width, height );
@@ -279,14 +288,17 @@ internal static unsafe class MeshQualification {
             traffic.RecordCompute( commands, fleet, 1f / 60 );
             SpaceDraw.Record( commands, skyPipeline, fleet, new( 0 ), matrix, inverse, (int)width, (int)height, halfHeight );
             traffic.RecordDebris( commands, matrix, (int)width, (int)height, halfHeight );
-            FleetDraw.Record( commands, fleetPipeline, meshes, traffic.Instances, traffic.ShipCount, matrix );
+            traffic.RecordFreighters( commands, matrix );
             traffic.Finish( commands );
             FleetDraw.RecordThrusters( commands, thrust, instances, (uint)ships.Length, matrix, (float)(fleet.Tick * FleetSimulation.StepSeconds) );
             FleetDraw.Record( commands, fleetPipeline, meshes, instances, (uint)ships.Length, matrix );
+            BattleDraw.Record( commands, markers, instances, (uint)ships.Length, matrix, (int)width, (int)height, halfHeight, effects: false );
+            BattleDraw.Record( commands, effects, effectData, (uint)pulseCount, matrix, (int)width, (int)height, halfHeight, effects: true );
             Span<Vector4> bodyLabels = stackalloc Vector4[CelestialSystem.BodyCount];
             for ( int i = 0; i < bodyLabels.Length; ++i )
                 bodyLabels[i] = CelestialSystem.Project( fleet.Bodies[i], radius, matrix, (int)width, (int)height, halfHeight );
-            new FleetHud( ).Record( commands, hudPipeline, glyphs, fleet, new( 0 ), (int)width, (int)height, false, bodyLabels );
+            new FleetHud( ).Record( commands, hudPipeline, glyphs, fleet, new( 0 ), (int)width, (int)height, false, bodyLabels,
+                selectionCount: fleet.ShipCount( 0 ), planet: 1, beacon: CommandSelection.Project( fleet.Site, matrix, new( width, height ) ) );
             commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
             CopyPixels( commands, target, readback, footprint );
             commands.Close( );
@@ -315,7 +327,7 @@ internal static unsafe class MeshQualification {
                 file.Write( "P6\n640 400\n255\n"u8 );
                 file.Write( rgb );
             }
-            Console.WriteLine( $"PASS: rendered fleet system and HUD ({sun} stellar, {title} title, {sky} sky pixels)." );
+            Console.WriteLine( $"PASS: rendered fleet skirmish, freighters, and planet HUD ({pulseCount} pulses, {sun} stellar, {title} title, {sky} sky pixels)." );
         } finally {
             foreach ( var mesh in meshes ) mesh?.Dispose( );
         }

@@ -5,9 +5,11 @@ using DXSharp.Shaders;
 
 namespace FleetBattler;
 
+internal enum PlanetAction { None, Survey, Mine, Lab, Research }
+
 internal sealed class FleetHud {
     private const uint Stride = 48;
-    internal const uint BufferBytes = 512 * Stride;
+    internal const uint BufferBytes = 768 * Stride;
     private static readonly Vector4 Panel = new( 0.029f, 0.052f, 0.091f, 1 );
     private static readonly Vector4 Label = new( 0.65f, 0.76f, 0.87f, 1 );
     private static readonly Vector4 White = new( 0.94f, 0.97f, 1.0f, 1 );
@@ -58,7 +60,8 @@ internal sealed class FleetHud {
             ], depthEnabled: true );
 
     internal void Record( GraphicsCommandList commands, PipelineState pipeline, GpuResource upload, FleetSimulation fleet,
-        FleetSelection selected, int width, int height, bool oreShort, ReadOnlySpan<Vector4> bodies = default ) {
+        FleetSelection selected, int width, int height, bool oreShort, ReadOnlySpan<Vector4> bodies = default,
+        int selectionCount = -1, int planet = -1, string? notice = null, Vector4? drag = null, Vector2? beacon = null ) {
         if ( width < 350 || height < 240 ) return;
         Begin( width, height );
         float logicalWidth = width / _scale, logicalHeight = height / _scale;
@@ -69,12 +72,14 @@ internal sealed class FleetHud {
         Rect( 14, 14, 2, 55, SpaceDraw.Cyan );
         Text( "FLEET COMMAND", 23, 23, 1.6f, White );
         int length;
-        if ( selected.IsShip ) text.TryWrite( $"SHIP {selected.Ship + 1:D2}    SQUAD {selected.Squad + 1:D2}", out length );
+        if ( selectionCount == 0 ) text.TryWrite( $"CYAN {fleet.CyanCount}   AMBER {fleet.AmberCount}", out length );
+        else if ( selectionCount > 1 ) text.TryWrite( $"{selectionCount} SHIPS SELECTED", out length );
+        else if ( selected.IsShip ) text.TryWrite( $"SHIP {selected.Ship + 1:D2}    SQUAD {selected.Squad + 1:D2}", out length );
         else text.TryWrite( $"SQUAD {selected.Squad + 1:D2}   {fleet.ShipCount( selected.Squad )} SHIPS", out length );
         Text( text[..length], 23, 49, 1, SpaceDraw.Cyan );
 
-        Rect( right, 14, 151, 80, Panel, 1 );
-        Rect( right, 14, 2, 80, siteTint );
+        Rect( right, 14, 151, 92, Panel, 1 );
+        Rect( right, 14, 2, 92, siteTint );
         Text( "MINING BEACON", right + 9, 23, 1.35f, White );
         var site = fleet.Contested ? "CONTESTED" : fleet.Capturing == 0 ? "CYAN CAPTURING"
             : fleet.Capturing == 1 ? "AMBER CAPTURING" : fleet.Owner == 0 ? "CYAN CONTROL"
@@ -84,7 +89,9 @@ internal sealed class FleetHud {
         Text( text[..length], right + 9, 62, 1, Label );
         float fraction = fleet.CaptureTicks > 0 ? (float)fleet.CaptureTicks / FleetSimulation.CaptureDuration
             : Math.Clamp( (float)fleet.Ore / FleetSimulation.WingCost, 0, 1 );
-        if ( fraction > 0 ) Rect( right + 9, 78, 130 * fraction, 2, siteTint );
+        if ( fraction > 0 ) Rect( right + 9, 76, 130 * fraction, 2, siteTint );
+        text.TryWrite( $"SCI {fleet.Science:D3}  AMBER {fleet.AmberCount}", out length );
+        Text( text[..length], right + 9, 88, 1, Label );
 
         for ( int i = 0; i < bodies.Length; ++i ) {
             var body = bodies[i] / _scale;
@@ -92,22 +99,94 @@ internal sealed class FleetHud {
             float x = body.X - name.Length * 3, y = body.Y + body.Z + 9;
             if ( x < 0 || x + name.Length * 6 > logicalWidth || y < 3 || y > logicalHeight - 75 ) continue;
             Rect( x - 4, y - 3, name.Length * 6 + 8, 13, Panel, 1 );
-            Text( name, x, y, 1, i == 0 ? SpaceDraw.Amber : Label );
+            Text( name, x, y, 1, i == planet ? SpaceDraw.Cyan : i == 0 ? SpaceDraw.Amber : Label );
+            if ( i > 0 ) {
+                var status = fleet.Planet( i );
+                if ( status.MineRemaining >= 0 ) FacilityMarker( body.X - body.Z - 6, body.Y - 4, status.MineRemaining, SpaceDraw.Amber );
+                if ( status.LabRemaining >= 0 ) FacilityMarker( body.X + body.Z + 1, body.Y - 4, status.LabRemaining, SpaceDraw.Cyan );
+            }
+        }
+
+        if ( beacon is { } beaconPixel ) {
+            var p = beaconPixel / _scale;
+            if ( p.X >= 30 && p.X <= logicalWidth - 30 && p.Y > 16 && p.Y < logicalHeight - 85 ) {
+                Rect( p.X - 22, p.Y + 6, 44, 12, Panel, 1 );
+                Text( "BEACON", p.X - 18, p.Y + 9, 1, siteTint );
+            }
+        }
+
+        if ( planet >= 0 && logicalHeight >= 330 ) PlanetPanel( fleet, planet, right );
+        if ( drag is { } box ) {
+            box /= _scale;
+            float w = box.Z - box.X, h = box.W - box.Y;
+            Rect( box.X, box.Y, w, 1, SpaceDraw.Cyan );
+            Rect( box.X, box.W, w, 1, SpaceDraw.Cyan );
+            Rect( box.X, box.Y, 1, h, SpaceDraw.Cyan );
+            Rect( box.Z, box.Y, 1, h, SpaceDraw.Cyan );
         }
 
         float bottom = logicalHeight - 68;
         Rect( 14, bottom, logicalWidth - 28, 54, Panel, 1 );
         Rect( 14, bottom, 2, 54, SpaceDraw.Cyan );
-        string instruction = fleet.Orbiting( selected ) ? "ORBIT ORDER ACTIVE" : fleet.WingsBuilt == FleetSimulation.WingGoal ? "OBJECTIVE COMPLETE"
+        string instruction = fleet.Lost ? "DEFEAT - CYAN FLEET LOST" : fleet.Won ? fleet.AmberCount == 0 ? "VICTORY - AMBER DEFEATED" : "VICTORY - REINFORCEMENT GOAL MET"
+            : notice ?? (fleet.InBattle ? "ENGAGEMENT - RIGHT CLICK AMBER TO ATTACK"
+            : selectionCount != 0 && fleet.Orbiting( selected ) ? "ORBIT ORDER ACTIVE"
             : oreShort && fleet.Ore < FleetSimulation.WingCost ? "NEED 60 ORE TO BUILD"
             : fleet.Ore >= FleetSimulation.WingCost ? "PRESS B TO LAUNCH A WING"
-            : fleet.Owner == 0 ? "HOLD THE BEACON TO MINE ORE" : "SEND CYAN SQUADS TO THE BEACON";
-        Text( instruction, 23, bottom + 8, 1.25f, fleet.WingsBuilt == FleetSimulation.WingGoal ? SpaceDraw.Cyan : White );
-        Text( logicalWidth >= 460 ? "L CLICK SHIP   SHIFT CLICK SQUAD   R CLICK MOVE OR ORBIT"
-            : "L CLICK SHIP   SHIFT GROUP   R CLICK MOVE", 23, bottom + 27, 1, Label );
-        Text( logicalWidth >= 460 ? "G GALAXY   F11 FULLSCREEN   B BUILD   R REJOIN   WHEEL ZOOM"
-            : "G MAP  F11 FULLSCREEN  B BUILD  R REJOIN", 23, bottom + 39, 1, Label );
+            : fleet.Owner == 0 ? "HOLD THE BEACON TO MINE ORE" : "CAPTURE THE BEACON OR DEFEAT AMBER");
+        Text( instruction, 23, bottom + 8, 1.25f, fleet.Won ? SpaceDraw.Cyan : fleet.Lost ? SpaceDraw.Amber : White );
+        Text( logicalWidth >= 470 ? "DRAG SELECT   SHIFT ADD   CTRL TOGGLE   RIGHT CLICK ORDER"
+            : "DRAG SELECT   SHIFT ADD   CTRL TOGGLE", 23, bottom + 27, 1, Label );
+        Text( logicalWidth >= 470 ? "CLICK WORLD TO DEVELOP   B WING   G GALAXY   F11 FULLSCREEN"
+            : "B WING  G MAP  F11 FULLSCREEN", 23, bottom + 39, 1, Label );
         Submit( commands, pipeline, upload, width, height );
+    }
+
+    private void PlanetPanel( FleetSimulation fleet, int planet, float right ) {
+        Rect( right, 113, 151, planet == 0 ? 43 : 123, Panel, 1 );
+        Rect( right, 113, 2, planet == 0 ? 43 : 123, SpaceDraw.Cyan );
+        Text( CelestialSystem.Name( fleet.SystemIndex, planet ), right + 9, 121, 1.25f, White );
+        if ( planet == 0 ) {
+            Text( "STELLAR BODY", right + 9, 139, 1, Label );
+            return;
+        }
+
+        var status = fleet.Planet( planet );
+        Span<char> line = stackalloc char[32];
+        if ( status.Surveyed ) Text( "SURVEY COMPLETE", right + 9, 139, 1, SpaceDraw.Cyan );
+        else {
+            line.TryWrite( $"SURVEY {status.Survey * 100 / FleetSimulation.SurveyDuration} PCT", out int length );
+            Text( line[..length], right + 9, 139, 1, Label );
+        }
+        Button( right, 153, "E SURVEY", !status.Surveyed );
+        Button( right, 173, status.MineRemaining == 0 ? "MINE ACTIVE" : status.MineRemaining > 0 ? "MINE BUILDING" : "N MINE 35 ORE",
+            status.Surveyed && status.MineRemaining < 0 && fleet.Ore >= FleetSimulation.MineCost );
+        Button( right, 193, status.LabRemaining == 0 ? "LAB ACTIVE" : status.LabRemaining > 0 ? "LAB BUILDING" : "L LAB 45 ORE",
+            status.Surveyed && status.LabRemaining < 0 && fleet.Ore >= FleetSimulation.LabCost );
+        Button( right, 213, fleet.WeaponUpgrade ? "WEAPONS UPGRADED" : "T WEAPONS 30 SCI",
+            !fleet.WeaponUpgrade && fleet.Science >= FleetSimulation.UpgradeCost );
+    }
+
+    private void Button( float right, float top, string label, bool enabled ) {
+        Rect( right + 8, top, 134, 17, new( 0.065f, 0.112f, 0.178f, 1 ) );
+        Text( label, right + 13, top + 5, 1, enabled ? SpaceDraw.Cyan : Label );
+    }
+
+    private void FacilityMarker( float x, float y, int remaining, Vector4 color ) {
+        Rect( x, y, 7, 7, Panel, 1 );
+        Rect( x + 1, y + 1, 5, 5, remaining == 0 ? color : Label );
+        Rect( x - 2, y + 3, 2, 1, color );
+        Rect( x + 7, y + 3, 2, 1, color );
+    }
+
+    internal static PlanetAction ActionAt( Vector2 pixel, int width, int height, int planet ) {
+        if ( planet <= 0 ) return PlanetAction.None;
+        float scale = HudScale( width, height ), right = width / scale - 165;
+        var logical = pixel / scale;
+        if ( height / scale < 330 || logical.X < right + 8 || logical.X > right + 142 ) return PlanetAction.None;
+        float y = logical.Y - 153;
+        if ( y < 0 || y >= 80 || y % 20 >= 17 ) return PlanetAction.None;
+        return (PlanetAction)(1 + (int)(y / 20));
     }
 
     internal void RecordGalaxy( GraphicsCommandList commands, PipelineState pipeline, GpuResource upload,
@@ -133,8 +212,10 @@ internal sealed class FleetHud {
 
     private void Begin( int width, int height ) {
         _count = 0;
-        _scale = Math.Clamp( MathF.Min( height / 640f, width / 700f ), 1, 3 );
+        _scale = HudScale( width, height );
     }
+
+    private static float HudScale( int width, int height ) => Math.Clamp( MathF.Min( height / 640f, width / 700f ), 1, 3 );
 
     private void Submit( GraphicsCommandList commands, PipelineState pipeline, GpuResource upload, int width, int height ) {
         upload.Write<Glyph>( _glyphs.AsSpan( 0, _count ) );
