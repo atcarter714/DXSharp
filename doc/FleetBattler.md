@@ -2,7 +2,7 @@
 
 The flagship sample starts with one star system, two factions, and a playable fleet skirmish. Scout a resource site, claim it, spend its output on reinforcements, then send ships to intercept a rival fleet. Use a fixed tick and seeded scenario so the same command stream can drive a replay, a headless test, or the visual sample.
 
-The [Fleet Battler sample](../samples/FleetBattler) implements the first steering and rendering slice. The default scenario packs 1,024 ships into a single instance stream and draws the patrol mesh in three indexed instanced calls. It supports fleet selection, movement orders, camera zoom, a CPU benchmark, and a bounded WARP resize run.
+The [Fleet Battler sample](../samples/FleetBattler) starts 72 ships in twelve independently steered squadrons. Send cyan squadrons to the mining beacon, keep a majority against the Amber patrol, and spend ore on two reinforcement wings. The tactical scene has a star, two planets, a moon, elliptical orbit guides, and a HUD for the objective. The renderer uses three indexed instanced ship draws, a sky pass, and an instanced HUD. The stress mode accepts 10,000 starting ships.
 
 | Slice | Implementation | Acceptance |
 | --- | --- | --- |

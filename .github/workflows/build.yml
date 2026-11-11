@@ -73,6 +73,8 @@ jobs:
           arch: x64
       - name: Native fixture and managed/AOT ownership qualification
         shell: pwsh
+        env:
+          DXSHARP_FLEET_EVIDENCE: artifacts/sample-results/fleet-system.ppm
         run: ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
       - name: WARP sample qualification
         if: runner.os == 'Windows'
