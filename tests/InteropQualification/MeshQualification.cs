@@ -168,6 +168,8 @@ internal static unsafe class MeshQualification {
         queue.Wait( queue.Submit( commands ) );
         var bytes = new byte[checked((int)size)];
         readback.Read<byte>( bytes );
+        ulong offsetBytes = footprint.Offset;
+        uint rowPitch = footprint.Footprint.RowPitch;
         Check( 12, 12, 55, 0 );
         Check( 12, 32, 0, 55 );
         Check( 48, 12, 128, 0 );
@@ -181,7 +183,7 @@ internal static unsafe class MeshQualification {
         }
 
         void Check( uint x, uint y, int red, int green ) {
-            int offset = checked((int)(footprint.Offset + y * footprint.Footprint.RowPitch + x * 4));
+            int offset = checked((int)(offsetBytes + y * rowPitch + x * 4));
             if ( Math.Abs( bytes[offset] - red ) > 1 || Math.Abs( bytes[offset + 1] - green ) > 1 ||
                  bytes[offset + 2] != 0 || bytes[offset + 3] != 255 )
                 throw new InvalidOperationException( $"Sampled texture at ({x},{y}) was {bytes[offset]},{bytes[offset + 1]},{bytes[offset + 2]},{bytes[offset + 3]}." );
