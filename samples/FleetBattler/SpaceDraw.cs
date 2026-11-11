@@ -7,8 +7,6 @@ namespace FleetBattler;
 
 internal static class SpaceDraw {
     internal const uint Constants = 60;
-    internal const float RockyAxis = 0.45f, GiantAxis = 0.91f, MoonAxis = 0.145f;
-    internal const float RockyEccentricity = 0.16f, GiantEccentricity = 0.12f, MoonEccentricity = 0.08f;
     internal static readonly Vector4 Cyan = new( 0.20f, 0.83f, 1.0f, 1 );
     internal static readonly Vector4 Amber = new( 1.0f, 0.58f, 0.24f, 1 );
     internal static readonly Vector4 Neutral = new( 0.81f, 0.88f, 0.66f, 1 );
@@ -108,6 +106,13 @@ internal static class SpaceDraw {
             return sky;
         }
 
+        float3 MapNode(float2 pixel, float4 node) {
+            float d = length(pixel - node.xy) / max(1, Viewport.y / 720);
+            float disk = 1 - smoothstep(4.5,6,d);
+            float border = (1 - smoothstep(1,2,abs(d-13))) * (0.38 + node.z*0.55);
+            return lerp(float3(0.34,0.52,0.93),float3(0.21,0.88,1),node.z) * (disk+border+0.34*exp(-d*0.14));
+        }
+
         float4 PS(float4 position : SV_Position) : SV_Target {
             float2 pixel = position.xy;
             float2 p = (pixel - 0.5*Viewport.xy) / Viewport.y;
@@ -117,6 +122,14 @@ internal static class SpaceDraw {
             float3 sky = float3(0.018,0.026,0.055) + float3(0.12,0.092,0.22)*nebula*band
                        + float3(0.016,0.058,0.081)*saturate(1-length(p+float2(0.36,-0.23)));
             sky += Stars(p, 68, 0.69)*0.39 + Stars(p+0.19, 29, 0.88)*0.74;
+
+            if (Viewport.w == 0) {
+                float arm = atan2(p.y,p.x) + length(p)*9.4;
+                float spiral = pow(saturate(0.53 + 0.47*sin(3*arm)),3) * exp(-length(p)*4);
+                sky += float3(0.10,0.15,0.27) * spiral * (0.45 + 0.55*Noise(p*36));
+                sky += MapNode(pixel, Star) + MapNode(pixel, Rocky) + MapNode(pixel, Giant);
+                return float4(saturate(sky),1);
+            }
 
             float2 ndc = pixel / Viewport.xy * float2(2,-2) + float2(-1,1);
             float3 nearPoint = mul(float4(ndc,0,1), InverseViewProjection).xyz;
@@ -167,14 +180,11 @@ internal static class SpaceDraw {
         device.CreateGraphicsPipeline( root, compiler.Compile( Shader, "VS", "vs_6_0" ),
             compiler.Compile( Shader, "PS", "ps_6_0" ), PixelFormat.Rgba8Unorm, depthEnabled: true );
 
-    internal static void Record( GraphicsCommandList commands, PipelineState pipeline, FleetSimulation fleet, int selected,
+    internal static void Record( GraphicsCommandList commands, PipelineState pipeline, FleetSimulation fleet, FleetSelection selected,
         Matrix4x4 viewProjection, Matrix4x4 inverse, int width, int height, float halfHeight ) {
         float r = fleet.BoardRadius;
         double seconds = fleet.Tick * FleetSimulation.StepSeconds;
-        var sun = new Vector2( -0.31f, -0.33f ) * r;
-        var rocky = sun + OrbitPoint( RockyAxis * r, RockyEccentricity, 0.24 + seconds / 115 );
-        var giant = sun + OrbitPoint( GiantAxis * r, GiantEccentricity, 0.98 + seconds / 310 );
-        var moon = rocky + OrbitPoint( MoonAxis * r, MoonEccentricity, 0.21 + seconds / 39 );
+        var bodies = fleet.Bodies;
         float worldPerPixel = halfHeight * 2 / height;
         var center = fleet.Center( selected );
         var target = fleet.Target( selected );
@@ -184,32 +194,30 @@ internal static class SpaceDraw {
         Span<Vector4> values = stackalloc Vector4[15];
         MemoryMarshal.CreateReadOnlySpan( ref inverse, 1 ).CopyTo( MemoryMarshal.Cast<Vector4, Matrix4x4>( values[..4] ) );
         values[4] = new( width, height, (float)seconds, worldPerPixel );
-        values[5] = Project( sun, 0.117f * r );
-        values[6] = Project( rocky, 0.064f * r );
-        values[7] = Project( giant, 0.103f * r );
-        values[8] = Project( moon, 0.026f * r );
-        values[9] = new( sun.X, sun.Y, RockyAxis * r, GiantAxis * r );
-        values[10] = new( rocky.X, rocky.Y, MoonAxis * r, r );
+        for ( int i = 0; i < bodies.Length; ++i )
+            values[5 + i] = CelestialSystem.Project( bodies[i], r, viewProjection, width, height, halfHeight );
+        values[9] = new( bodies[0].Center.X, bodies[0].Center.Y, CelestialSystem.RockyAxis * r, CelestialSystem.GiantAxis * r );
+        values[10] = new( bodies[1].Center.X, bodies[1].Center.Y, CelestialSystem.MoonAxis * r, r );
         values[11] = new( fleet.Site.X, fleet.Site.Y, fleet.SiteRadius, progress );
         values[12] = tint;
-        values[13] = new( center.X, center.Y, 3.5f + MathF.Sqrt( fleet.ShipCount( selected ) ) * 2.3f, 0 );
+        values[13] = new( center.X, center.Y, selected.IsShip ? 2.8f : 3.5f + MathF.Sqrt( fleet.ShipCount( selected.Squad ) ) * 2.3f, 0 );
         values[14] = new( target.X, target.Y, Vector2.DistanceSquared( center, target ) > 1 ? 1 : 0, 0 );
+        Draw( commands, pipeline, values );
+    }
+
+    internal static void RecordGalaxy( GraphicsCommandList commands, PipelineState pipeline, int currentSystem, int width, int height ) {
+        Span<Vector4> values = stackalloc Vector4[15];
+        values.Clear( );
+        values[4] = new( width, height, 0, 0 );
+        var points = CelestialSystem.MapPositions;
+        for ( int i = 0; i < points.Length; ++i )
+            values[5 + i] = new( points[i].X * width, points[i].Y * height, i == currentSystem ? 1 : 0, 0 );
+        Draw( commands, pipeline, values );
+    }
+
+    private static void Draw( GraphicsCommandList commands, PipelineState pipeline, ReadOnlySpan<Vector4> values ) {
         commands.SetGraphicsPipeline( pipeline );
         commands.SetGraphicsConstants( MemoryMarshal.Cast<Vector4, uint>( values ) );
         commands.Draw( 3 );
-
-        Vector4 Project( Vector2 point, float radius ) {
-            var clip = Vector4.Transform( new Vector4( point.X, -r * 0.11f, point.Y, 1 ), viewProjection );
-            return new( (clip.X / clip.W + 1) * width * 0.5f, (1 - clip.Y / clip.W) * height * 0.5f, radius / worldPerPixel, 0 );
-        }
-    }
-
-    internal static Vector2 OrbitPoint( float axis, float eccentricity, double phase ) {
-        double mean = (phase - Math.Floor( phase )) * Math.Tau;
-        double anomaly = mean;
-        for ( int i = 0; i < 5; ++i )
-            anomaly -= (anomaly - eccentricity * Math.Sin( anomaly ) - mean) / (1 - eccentricity * Math.Cos( anomaly ));
-        return new( (float)(axis * (Math.Cos( anomaly ) - eccentricity)),
-            (float)(axis * Math.Sqrt( 1 - eccentricity * eccentricity ) * Math.Sin( anomaly )) );
     }
 }

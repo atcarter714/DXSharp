@@ -14,6 +14,9 @@
     <Compile Include="../../samples/FleetBattler/FleetDraw.cs" Link="FleetDraw.cs" />
     <Compile Include="../../samples/FleetBattler/SpaceDraw.cs" Link="SpaceDraw.cs" />
     <Compile Include="../../samples/FleetBattler/FleetHud.cs" Link="FleetHud.cs" />
+    <Compile Include="../../samples/FleetBattler/CelestialSystem.cs" Link="CelestialSystem.cs" />
+    <Compile Include="../../samples/FleetBattler/ComputeTraffic.cs" Link="ComputeTraffic.cs" />
+    <Compile Include="../../samples/FleetBattler/SynthAudio.cs" Link="SynthAudio.cs" />
     <None Include="../../samples/StaticModelViewer/Models/Patrol.gltf" Link="Models/Patrol.gltf"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
