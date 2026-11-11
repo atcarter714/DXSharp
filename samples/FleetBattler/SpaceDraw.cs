@@ -2,6 +2,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using DXSharp.Graphics;
 using DXSharp.Shaders;
+using StbImageSharp;
 
 namespace FleetBattler;
 
@@ -12,6 +13,8 @@ internal static class SpaceDraw {
     internal static readonly Vector4 Neutral = new( 0.81f, 0.88f, 0.66f, 1 );
 
     private const string Shader = """
+        Texture2D<float4> MoonMap : register(t0);
+        SamplerState MoonSampler : register(s0);
         cbuffer Scene : register(b0) {
             row_major float4x4 InverseViewProjection;
             float4 Viewport;
@@ -65,13 +68,17 @@ internal static class SpaceDraw {
 
         float3 Body(float3 sky, float2 pixel, float4 body, uint kind) {
             float2 p = (pixel - body.xy) / body.z;
-            [branch] if (any(abs(p) > 2.5)) return sky;
+            [branch] if (any(abs(p) > (kind == 0 ? 3.6 : 2.5))) return sky;
             float d = length(p);
             if (kind == 0) {
                 float a = atan2(p.y, p.x);
                 float corona = exp(-max(d - 0.94, 0) * 6.5) *
                     (0.77 + 0.23 * sin(a * 23 + Noise(p*7)*4 + Viewport.z*0.35));
-                sky += float3(1,0.35,0.065) * corona * 0.49;
+                float limb = max(d - 0.95, 0);
+                float nearGlow = exp(-limb*limb*14.5);
+                float farGlow = exp(-limb*limb*1.55) * (1-smoothstep(3.1,3.55,d));
+                sky += float3(1,0.35,0.065) * (corona*0.37 + nearGlow*0.16);
+                sky += float3(1,0.49,0.16) * farGlow * 0.12;
                 float granules = Noise(p*21 + Viewport.z*0.08);
                 return lerp(sky, lerp(float3(0.98,0.38,0.08),float3(1,0.94,0.64),0.58 + granules*0.42),
                             1 - smoothstep(0.95, 1.01, d));
@@ -98,6 +105,10 @@ internal static class SpaceDraw {
             } else if (kind == 2) {
                 float bands = 0.5 + 0.5*sin(n.y*27 + Noise(n.xy*5)*2.4 + n.x*0.8);
                 albedo = lerp(float3(0.58,0.34,0.28),float3(0.97,0.78,0.56),bands);
+            } else if (MoonOrbit.w > 0) {
+                float2 uv = float2(0.5 + atan2(n.x,max(n.z,0.0001)) / 6.2831853, acos(clamp(n.y,-1,1)) / 3.14159265);
+                albedo = MoonMap.SampleLevel(MoonSampler,float2(frac(uv.x+Viewport.z*0.005),clamp(uv.y,0.002,0.998)),0).rgb;
+                return lerp(sky,pow(saturate(albedo*diffuse),1.0/2.2),1-smoothstep(0.97,1.015,d));
             } else {
                 albedo = float3(0.69,0.73,0.79) * (0.47 + 0.48*Noise(p*11));
             }
@@ -156,10 +167,6 @@ internal static class SpaceDraw {
             sky = lerp(sky, SiteTint.rgb, saturate(ring*(segment*0.45 + progress*0.60) + crossMark*pulse));
             sky += SiteTint.rgb * (1 - saturate(distanceToSite/Site.z)) * 0.085;
 
-            float2 home = abs(world - MoonOrbit.ww * float2(-0.59,-0.62));
-            float homeLine = Line(max(home.x,home.y)-Viewport.w*8, Viewport.w*0.7);
-            sky = lerp(sky, float3(0.18,0.64,0.80), homeLine*0.55);
-
             float2 selectionDelta = world - Selected.xy;
             float selectionRadius = max(Selected.z, Viewport.w*11);
             float selectionRing = Line(length(selectionDelta)-selectionRadius, Viewport.w*0.65);
@@ -168,26 +175,42 @@ internal static class SpaceDraw {
             float2 orderVector = Order.xy - Selected.xy;
             float orderT = dot(selectionDelta,orderVector) / max(dot(orderVector,orderVector),0.0001);
             float commandDash = step(0.35,frac(orderT*length(orderVector)/(Viewport.w*12)));
-            float route = Line(length(selectionDelta - orderVector*saturate(orderT)), Viewport.w*0.38) *
-                         step(selectionRadius,length(selectionDelta))*step(0,orderT)*step(orderT,1)*commandDash;
-            float destination = Line(length(world-Order.xy)-Viewport.w*7, Viewport.w*0.8);
-            sky = lerp(sky,float3(0.30,0.87,0.96),saturate((route*0.5+destination*0.85)*Order.z));
+            float route = Line(length(selectionDelta - orderVector*saturate(orderT)), Viewport.w*0.68) *
+                         step(0,orderT)*step(orderT,1)*commandDash;
+            float2 destinationOffset = abs(world-Order.xy);
+            float destination = Line(destinationOffset.x+destinationOffset.y-Viewport.w*9, Viewport.w*0.95);
+            float3 orderTint = Order.w == 4 ? float3(1,0.48,0.21) : Order.w == 3 ? float3(0.62,1,0.63) : float3(0.30,0.87,0.96);
+            sky = lerp(sky,orderTint,saturate((route*0.73+destination)*Order.z));
             return float4(saturate(sky),1);
         }
         """;
+
+    internal static SampledTexture2D LoadMoon( GraphicsDevice device, GraphicsCommandList commands, string? path ) {
+        if ( path is null ) return device.CreateSampledTexture2D( commands, 1, 1, [255, 255, 255, 255], srgb: true );
+        using var stream = File.OpenRead( path );
+        var info = ImageInfo.FromStream( stream );
+        if ( info is not { Width: > 0 and <= 4096, Height: > 0 and <= 2048 } size || size.Width != 2 * size.Height )
+            throw new InvalidDataException( "The Moon map must be a 2:1 equirectangular image no larger than 4096 by 2048." );
+        stream.Position = 0;
+        var pixels = ImageResult.FromStream( stream, ColorComponents.RedGreenBlueAlpha );
+        if ( pixels.Width != size.Width || pixels.Height != size.Height )
+            throw new InvalidDataException( "The Moon map dimensions changed during decoding." );
+        return device.CreateSampledTexture2D( commands, (uint)pixels.Width, (uint)pixels.Height, pixels.Data, srgb: true );
+    }
 
     internal static PipelineState CreatePipeline( GraphicsDevice device, RootSignature root, ShaderCompiler compiler ) =>
         device.CreateGraphicsPipeline( root, compiler.Compile( Shader, "VS", "vs_6_0" ),
             compiler.Compile( Shader, "PS", "ps_6_0" ), PixelFormat.Rgba8Unorm, depthEnabled: true );
 
-    internal static void Record( GraphicsCommandList commands, PipelineState pipeline, FleetSimulation fleet, FleetSelection selected,
-        Matrix4x4 viewProjection, Matrix4x4 inverse, int width, int height, float halfHeight, bool showSelection = true ) {
+    internal static void Record( GraphicsCommandList commands, PipelineState pipeline, SampledTexture2D moon, bool useMoonMap, FleetSimulation fleet, FleetSelection selected,
+        Matrix4x4 viewProjection, Matrix4x4 inverse, int width, int height, float halfHeight, bool showSelection = true, float interpolation = 1 ) {
         float r = fleet.BoardRadius;
         double seconds = fleet.Tick * FleetSimulation.StepSeconds;
         var bodies = fleet.Bodies;
         float worldPerPixel = halfHeight * 2 / height;
-        var center = fleet.Center( selected );
-        var target = fleet.Target( selected );
+        var center = fleet.VisualCenter( selected, interpolation );
+        var plan = fleet.Plan( selected );
+        var target = plan.Target >= 0 ? fleet.VisualPosition( plan.Target, interpolation ) : plan.Destination;
         int side = fleet.Capturing >= 0 ? fleet.Capturing : fleet.Owner;
         var tint = side switch { 0 => Cyan, 1 => Amber, _ => Neutral };
         float progress = fleet.CaptureTicks > 0 ? (float)fleet.CaptureTicks / FleetSimulation.CaptureDuration : fleet.Owner >= 0 ? 1 : 0;
@@ -197,27 +220,28 @@ internal static class SpaceDraw {
         for ( int i = 0; i < bodies.Length; ++i )
             values[5 + i] = CelestialSystem.Project( bodies[i], r, viewProjection, width, height, halfHeight );
         values[9] = new( bodies[0].Center.X, bodies[0].Center.Y, CelestialSystem.RockyAxis * r, CelestialSystem.GiantAxis * r );
-        values[10] = new( bodies[1].Center.X, bodies[1].Center.Y, CelestialSystem.MoonAxis * r, r );
+        values[10] = new( bodies[1].Center.X, bodies[1].Center.Y, CelestialSystem.MoonAxis * r, useMoonMap ? 1 : 0 );
         values[11] = new( fleet.Site.X, fleet.Site.Y, fleet.SiteRadius, progress );
         values[12] = tint;
         values[13] = new( center.X, center.Y, selected.IsShip ? 2.8f : 3.5f + MathF.Sqrt( fleet.ShipCount( selected.Squad ) ) * 2.3f, showSelection ? 1 : 0 );
-        values[14] = new( target.X, target.Y, showSelection && Vector2.DistanceSquared( center, target ) > 1 ? 1 : 0, 0 );
-        Draw( commands, pipeline, values );
+        values[14] = new( target.X, target.Y, showSelection && plan.Order != FlightOrder.Idle ? 1 : 0, (float)plan.Order );
+        Draw( commands, pipeline, moon, values );
     }
 
-    internal static void RecordGalaxy( GraphicsCommandList commands, PipelineState pipeline, int currentSystem, int width, int height ) {
+    internal static void RecordGalaxy( GraphicsCommandList commands, PipelineState pipeline, SampledTexture2D moon, int currentSystem, int width, int height ) {
         Span<Vector4> values = stackalloc Vector4[15];
         values.Clear( );
         values[4] = new( width, height, 0, 0 );
         var points = CelestialSystem.MapPositions;
         for ( int i = 0; i < points.Length; ++i )
             values[5 + i] = new( points[i].X * width, points[i].Y * height, i == currentSystem ? 1 : 0, 0 );
-        Draw( commands, pipeline, values );
+        Draw( commands, pipeline, moon, values );
     }
 
-    private static void Draw( GraphicsCommandList commands, PipelineState pipeline, ReadOnlySpan<Vector4> values ) {
+    private static void Draw( GraphicsCommandList commands, PipelineState pipeline, SampledTexture2D moon, ReadOnlySpan<Vector4> values ) {
         commands.SetGraphicsPipeline( pipeline );
         commands.SetGraphicsConstants( MemoryMarshal.Cast<Vector4, uint>( values ) );
+        commands.SetGraphicsTexture( moon, 1 );
         commands.Draw( 3 );
     }
 }

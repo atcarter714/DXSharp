@@ -18,11 +18,13 @@ internal static class FleetQualification {
         VerifyIndividualOrders( );
         VerifySkirmish( );
         VerifySelection( );
+        VerifySurveyOrders( );
+        VerifyClock( );
         VerifyPlanetEconomy( );
         VerifyEconomy( );
         VerifyOrbits( );
         VerifyAudio( );
-        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, planetary development, capture and reinforcement, and zero-allocation updates ({first.AfterOrder:X16})." );
+        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, owned surveys, simulation pacing, orbital production, capture, and zero-allocation updates ({first.AfterOrder:X16})." );
     }
 
     private static void VerifyFormations( ) {
@@ -121,14 +123,19 @@ internal static class FleetQualification {
         var amberStart = rival.Center( 6 );
         rival.Move( 0, rival.Site );
         rival.Move( 2, rival.Site );
-        rival.BeginSurvey( 1 );
-        rival.Orbit( new( 4 ), 1 );
-        bool mine = false, lab = false;
-        for ( int tick = 0; tick < 2_200 && !rival.Lost && (!rival.Won || !rival.WeaponUpgrade); ++tick ) {
+        Require( rival.BeginSurvey( new( 4 ), 1 ), "rival skirmish survey assignment" );
+        bool mine = false, lab = false, yard = false;
+        int launched = 0;
+        for ( int tick = 0; tick < 4_800 && !rival.Lost && (rival.WingsBuilt < FleetSimulation.WingGoal || !rival.WeaponUpgrade); ++tick ) {
             rival.Step( );
             if ( !mine ) mine = rival.BuildFacility( 1, PlanetFacility.Mine );
             if ( mine && !lab ) lab = rival.BuildFacility( 1, PlanetFacility.Lab );
-            if ( lab && rival.BuildWing( ) is >= 0 and var wing ) rival.Move( wing, rival.Site );
+            if ( lab && !yard ) yard = rival.BuildYard( 1 );
+            if ( yard ) rival.QueueWing( );
+            if ( launched != rival.WingsBuilt ) {
+                launched = rival.WingsBuilt;
+                rival.Move( rival.SquadCount - 1, rival.Site );
+            }
             if ( !rival.WeaponUpgrade ) rival.ResearchWeapons( );
             if ( tick == 900 ) rival.Move( 1, rival.Site );
             if ( tick == 1_320 ) rival.Move( 3, rival.Site );
@@ -164,14 +171,72 @@ internal static class FleetQualification {
             "HUD routes buttons, squad rows and panel gaps without issuing scene orders" );
         Require( FleetHud.Hit( new( 1_020, 358 ), 1_280, 800, fleet, 1 ) == new HudHit( HudAction.Planet, (int)PlanetAction.Mine ),
             "HUD scales its hit regions with the viewport" );
+        var popup = new BodyMenu( new( 320, 200 ), 1 );
+        Require( FleetHud.Hit( new( 348, 263 ), 640, 400, fleet, 1, popup ) ==
+            new HudHit( HudAction.Context, (int)PlanetAction.Survey ) &&
+            FleetHud.Hit( new( 510, 179 ), 640, 400, fleet, 1, popup ).Action == HudAction.None,
+            "context menu takes precedence over world and panel input" );
+    }
+
+    private static void VerifySurveyOrders( ) {
+        var fleet = new FleetSimulation( 72, 37 );
+        const int body = 1;
+        var selection = new CommandSelection( fleet.Capacity );
+        selection.Squadron( fleet, 0, SelectionMode.Replace );
+        Require( selection.SurveyUnit( fleet ) == new FleetSelection( 0 ), "whole squad is a survey unit" );
+        selection.Squadron( fleet, 1, SelectionMode.Add );
+        Require( selection.SurveyUnit( fleet ) is null, "multi-squad selection needs an explicit survey unit" );
+        selection.Click( fleet, 0, false, SelectionMode.Replace );
+        Require( selection.SurveyUnit( fleet ) == new FleetSelection( 0, 0 ), "single ship is a survey unit" );
+
+        fleet.Orbit( new( 2 ), body );
+        AdvanceUntil( fleet, () => Vector2.Distance( fleet.Center( 2 ), fleet.Bodies[body].Center ) < fleet.OrbitRadius( body, fleet.ShipCount( 2 ) ) + 2,
+            "unassigned bystander arrives near the world" );
+        Require( fleet.Planet( body ).Survey == 0, "orbiting alone earns no progress" );
+
+        var scout = new FleetSelection( 0, 0 );
+        Require( fleet.BeginSurvey( scout, body ) && fleet.Plan( scout ) is { Order: FlightOrder.Survey, Body: body } &&
+            fleet.Planet( body ).SurveyUnit == scout && !fleet.BeginSurvey( new( 2 ), body ),
+            "survey owns one explicit ship and an immediate flight plan" );
+        fleet.Step( );
+        Require( fleet.Planet( body ).Survey == 0, "an orbiting bystander cannot scan for an assigned scout" );
+        AdvanceUntil( fleet, () => fleet.Planet( body ).Survey > 0, "assigned scout arrives" );
+        int progress = fleet.Planet( body ).Survey;
+        fleet.Step( );
+        Require( fleet.Planet( body ).Survey == progress + 2, "scout scans at twice the normal rate" );
+        fleet.Move( scout, Vector2.Zero );
+        Require( fleet.Planet( body ).SurveyUnit is null && fleet.Plan( scout ).Order == FlightOrder.Move, "overriding a survey releases its assignment" );
+        int retained = fleet.Planet( body ).Survey;
+        for ( int i = 0; i < 30; ++i ) fleet.Step( );
+        Require( fleet.Planet( body ).Survey == retained, "unassigned survey progress remains paused" );
+        Require( fleet.BeginSurvey( new( 2 ), body ) && fleet.CancelSurvey( body ) &&
+            fleet.Plan( new( 2 ) ).Order == FlightOrder.Orbit && fleet.Planet( body ).SurveyUnit is null, "explicit cancellation retains orbit only" );
+        Require( fleet.BeginSurvey( new( 2 ), body ), "reassignment resumes survey progress" );
+        AdvanceUntil( fleet, () => fleet.Planet( body ).Surveyed, "assigned corvette squad completes the survey" );
+        Require( fleet.CompletedSurveys == 1 && fleet.LastSurveyBody == body && fleet.LastSurveyUnit == new FleetSelection( 2 ) &&
+            fleet.Planet( body ).SurveyUnit is null && fleet.Ore == 40, "completion is attributed once and pays the reward" );
+    }
+
+    private static void VerifyClock( ) {
+        var fleet = new FleetSimulation( 12, 37 );
+        var clock = new FleetClock( );
+        fleet.Move( new FleetSelection( 0, 0 ), Vector2.Zero );
+        for ( int frame = 0; frame < 120; ++frame ) clock.Advance( fleet, 1.0 / 60, 1, paused: false );
+        Require( fleet.Tick is 29 or 30 && clock.Interpolation is >= 0 and <= 1 &&
+            fleet.VisualPosition( 0, 0 ) != fleet.VisualPosition( 0, 1 ), "1x advances at quarter speed with a presentation interval" );
+        int before = fleet.Tick;
+        float interpolation = clock.Interpolation;
+        clock.Advance( fleet, 1, 4, paused: true );
+        Require( fleet.Tick == before && clock.Interpolation == interpolation, "pause freezes both simulation and interpolated presentation" );
+        for ( int frame = 0; frame < 120; ++frame ) clock.Advance( fleet, 1.0 / 60, 4, paused: false );
+        Require( fleet.Tick - before is 119 or 120, "4x reaches the original simulation speed" );
     }
 
     private static void VerifyPlanetEconomy( ) {
         var fleet = new FleetSimulation( 12, 37 );
         const int body = 1;
         Require( !fleet.BuildFacility( body, PlanetFacility.Mine ), "construction needs exploration" );
-        fleet.BeginSurvey( body );
-        fleet.Orbit( new( 2 ), body );
+        Require( fleet.BeginSurvey( new( 2 ), body ), "ship group receives survey order" );
         AdvanceUntil( fleet, () => fleet.Planet( body ).Surveyed, "survey completes while the team follows the planet" );
         Require( fleet.Ore == 40 && !fleet.BuildFacility( 0, PlanetFacility.Mine ), "survey payout and star construction exclusion" );
         Require( fleet.BuildFacility( body, PlanetFacility.Mine ) && !fleet.BuildFacility( body, PlanetFacility.Mine ) &&
@@ -213,33 +278,47 @@ internal static class FleetQualification {
 
     private static void VerifyEconomy( ) {
         var fleet = new FleetSimulation( 12, 37 );
-        Require( fleet.BuildWing( ) < 0 && fleet.Count == 12 && fleet.Owner == -1, "neutral start and insufficient ore" );
+        Require( !fleet.QueueWing( ) && fleet.Count == 12 && fleet.Owner == -1, "shipyard gate at neutral start" );
         fleet.Move( 0, fleet.Site );
         AdvanceUntil( fleet, () => fleet.Capturing == 0, "cyan enters the beacon" );
         Require( fleet.CaptureTicks == 1 && fleet.Owner == -1, "capture requires sustained presence" );
         AdvanceUntil( fleet, () => fleet.Owner == 0, "cyan captures the beacon" );
         AdvanceUntil( fleet, () => fleet.Ore >= FleetSimulation.WingCost, "owned beacon generates ore" );
-        int before = fleet.Ore;
-        int firstWing = fleet.BuildWing( );
-        Require( firstWing == 12 && fleet.Count == 18 && fleet.ShipCount( firstWing ) == FleetSimulation.WingSize &&
-            fleet.Center( firstWing ) == fleet.Shipyard && fleet.Ore == before - FleetSimulation.WingCost, "wing purchase and shipyard spawn" );
+        Require( !fleet.QueueWing( ) && !fleet.BuildYard( 1 ), "ore alone cannot build wings or bypass the survey" );
+        Require( fleet.BeginSurvey( new( 2 ), 1 ), "survey crew dispatched" );
+        AdvanceUntil( fleet, () => fleet.Planet( 1 ).Surveyed, "site survey completes" );
+        int bank = fleet.Ore;
+        Require( fleet.BuildYard( 1 ) && fleet.Ore == bank - FleetSimulation.YardCost &&
+            fleet.YardRemaining == FleetSimulation.YardDuration && !fleet.QueueWing( ) && !fleet.BuildYard( 1 ),
+            "a single shipyard costs ore and must finish construction" );
+        Require( fleet.BuildFacility( 1, PlanetFacility.Lab ), "lab starts before production research" );
+        AdvanceUntil( fleet, () => fleet.YardRemaining == 0 && fleet.Ore >= FleetSimulation.WingCost, "yard online and funds available" );
+
+        bank = fleet.Ore;
+        Require( fleet.QueueWing( ) && fleet.Ore == bank - FleetSimulation.WingCost && fleet.QueuedWings == 1 &&
+            fleet.WingRemaining == FleetSimulation.StandardWingDuration && fleet.Count == 12 && !fleet.Won,
+            "queue debits ore immediately and reserves capacity without spawning" );
+        AdvanceUntil( fleet, () => fleet.Science >= FleetSimulation.IndustryCost && fleet.Ore >= FleetSimulation.ImprovedWingCost,
+            "lab and relay fund the production upgrade" );
+        Require( fleet.WingsBuilt == 0 && fleet.ResearchIndustry( ) &&
+            fleet.ActiveWingDuration == FleetSimulation.StandardWingDuration, "industry upgrades future jobs while preserving active contract" );
+        bank = fleet.Ore;
+        Require( fleet.QueueWing( ) && fleet.Ore == bank - FleetSimulation.ImprovedWingCost && fleet.QueuedWings == 2 &&
+            !fleet.QueueWing( ), "improved wing costs less and waits behind active production" );
+        AdvanceUntil( fleet, () => fleet.WingsBuilt == 1, "first wing launches" );
+        int firstWing = 12;
+        Require( fleet.Count == 18 && fleet.ShipCount( firstWing ) == FleetSimulation.WingSize &&
+            Vector2.Distance( fleet.Center( firstWing ), fleet.Shipyard ) < 4.01f && fleet.QueuedWings == 1 &&
+            fleet.WingRemaining == FleetSimulation.ImprovedWingDuration && !fleet.Won, "wing launches from orbit before next job begins" );
 
         fleet.Move( 6, fleet.Site );
         AdvanceUntil( fleet, () => fleet.Contested, "amber contests the beacon" );
-        int bank = fleet.Ore;
-        for ( int i = 0; i < 120; ++i ) fleet.Step( );
-        Require( fleet.Contested && fleet.Ore == bank && fleet.Owner == 0 && fleet.Capturing == -1, "equal presence stalls control and income" );
-        fleet.Move( 0, fleet.Shipyard );
-        AdvanceUntil( fleet, () => fleet.Owner == 1, "amber captures the abandoned beacon" );
-        fleet.Move( 0, fleet.Site );
-        fleet.Move( firstWing, fleet.Site );
-        AdvanceUntil( fleet, () => fleet.Owner == 0, "cyan retakes the beacon with the new squad" );
-        AdvanceUntil( fleet, () => fleet.Ore >= FleetSimulation.WingCost, "income resumes after recapture" );
-        Require( fleet.BuildWing( ) == 13 && fleet.Count == fleet.Capacity && fleet.WingsBuilt == FleetSimulation.WingGoal &&
-            fleet.BuildWing( ) < 0, "two-wing objective and spawn capacity" );
-
-        var rival = new FleetSimulation( 2, 37, rivalPatrol: true );
-        AdvanceUntil( rival, () => rival.Owner == 1, "rival patrol claims an undefended site", 1200 );
+        bank = fleet.Ore;
+        for ( int i = 0; i < 60; ++i ) fleet.Step( );
+        Require( fleet.Contested && fleet.Ore == bank && fleet.Owner == 0 && fleet.Capturing == -1, "equal presence stalls relay income" );
+        AdvanceUntil( fleet, () => fleet.WingsBuilt == FleetSimulation.WingGoal, "upgraded wing finishes" );
+        Require( fleet.Count == fleet.Capacity && fleet.QueuedWings == 0 && fleet.Won && !fleet.QueueWing( ),
+            "victory counts completed wings and respects spawn capacity" );
     }
 
     private static void AdvanceUntil( FleetSimulation fleet, Func<bool> condition, string name, int limit = 900 ) {

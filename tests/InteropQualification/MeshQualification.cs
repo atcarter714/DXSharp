@@ -320,7 +320,8 @@ internal static unsafe class MeshQualification {
         using var effects = BattleDraw.CreateEffects( device, battleRoot, compiler );
         using var markers = BattleDraw.CreateMarkers( device, battleRoot, compiler );
         using var effectData = device.CreateBuffer( FleetSimulation.EffectCapacity * BattleDraw.EffectStride, BufferMemory.Upload );
-        using var spaceRoot = device.CreateGraphicsConstantsRootSignature( SpaceDraw.Constants );
+        using var spaceRoot = device.CreateTextureRootSignature( SpaceDraw.Constants, linearWrap: true );
+        using var moon = device.CreateSampledTexture2D( commands, 2, 1, [180, 170, 155, 255, 135, 140, 160, 255], srgb: true );
         using var hudRoot = device.CreateGraphicsConstantsRootSignature( 4 );
         using var fleetPipeline = FleetDraw.CreatePipeline( device, fleetRoot, compiler, depthEnabled: true );
         using var skyPipeline = SpaceDraw.CreatePipeline( device, spaceRoot, compiler );
@@ -330,6 +331,7 @@ internal static unsafe class MeshQualification {
         fleet.Move( 0, fleet.Site + new Vector2( -5, 0 ) );
         fleet.Move( 6, fleet.Site + new Vector2( 5, 0 ) );
         for ( int i = 0; i < 480 && fleet.ShotsFired < 6; ++i ) fleet.Step( );
+        if ( !fleet.BeginSurvey( new( 1 ), 1 ) ) throw new InvalidOperationException( "Survey route fixture could not assign its squad." );
         var pulses = new BattleEffect[FleetSimulation.EffectCapacity];
         int pulseCount = fleet.FillEffects( pulses );
         if ( pulseCount == 0 ) throw new InvalidOperationException( "The WARP fixture did not produce a skirmish." );
@@ -357,7 +359,7 @@ internal static unsafe class MeshQualification {
         var matrix = camera * projection;
         Matrix4x4.Invert( matrix, out var inverse );
         traffic.RecordCompute( commands, fleet, 1f / 60 );
-        SpaceDraw.Record( commands, skyPipeline, fleet, new( 0 ), matrix, inverse, (int)width, (int)height, halfHeight );
+        SpaceDraw.Record( commands, skyPipeline, moon, true, fleet, new( 1 ), matrix, inverse, (int)width, (int)height, halfHeight );
         traffic.RecordDebris( commands, matrix, (int)width, (int)height, halfHeight );
         traffic.RecordFreighters( commands, fleetPipeline, freighters, matrix, height / (2 * halfHeight) );
         traffic.Finish( commands );
@@ -370,8 +372,9 @@ internal static unsafe class MeshQualification {
         Span<Vector4> bodyLabels = stackalloc Vector4[CelestialSystem.BodyCount];
         for ( int i = 0; i < bodyLabels.Length; ++i )
             bodyLabels[i] = CelestialSystem.Project( fleet.Bodies[i], radius, matrix, (int)width, (int)height, halfHeight );
-        new FleetHud( ).Record( commands, hudPipeline, glyphs, fleet, new( 0 ), (int)width, (int)height, false, bodyLabels,
-            selectionCount: fleet.ShipCount( 0 ), planet: 1, beacon: CommandSelection.Project( fleet.Site, matrix, new( width, height ) ) );
+        new FleetHud( ).Record( commands, hudPipeline, glyphs, fleet, new( 1 ), (int)width, (int)height, false, bodyLabels,
+            selectionCount: fleet.ShipCount( 1 ), planet: 1, beacon: CommandSelection.Project( fleet.Site, matrix, new( width, height ) ),
+            surveyUnit: new FleetSelection( 1 ), menu: new BodyMenu( new( 287, 255 ), 1 ) );
         commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
         CopyPixels( commands, target, readback, footprint );
         commands.Close( );
