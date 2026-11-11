@@ -78,7 +78,7 @@ internal sealed class FleetHud {
             : fleet.Owner == 1 ? "AMBER CONTROL" : "UNCLAIMED";
 
         PanelAt( 14, 12, layout.Width - 28, 41, SpaceDraw.Cyan );
-        Text( CelestialSystem.Systems[fleet.SystemIndex], 23, 23, 1.65f, White );
+        Text( CelestialSystem.Systems[fleet.SystemIndex], 23, 20, 1.9f, White );
         text.TryWrite( $"ORE {fleet.Ore:D3}   SCI {fleet.Science:D3}", out int length );
         Text( text[..length], 23, 39, 1.05f, Label );
         Button( layout.ClockX, 19, 64, paused ? "RESUME" : "PAUSE", true, paused );
@@ -114,10 +114,11 @@ internal sealed class FleetHud {
         for ( int i = 0; i < bodies.Length; ++i ) {
             var body = bodies[i] / _scale;
             var name = CelestialSystem.Name( fleet.SystemIndex, i );
-            float x = body.X - name.Length * 3, y = body.Y + body.Z + 9;
-            if ( x < 0 || x + name.Length * 6 > layout.Width || y < 3 || y > layout.Bottom - 12 ||
+            float textWidth = TextWidth( name.Length, 1 );
+            float x = body.X - textWidth / 2, y = body.Y + body.Z + 9;
+            if ( x < 0 || x + textWidth > layout.Width || y < 3 || y > layout.Bottom - 12 ||
                 layout.Blocks( new( body.X, y ), fleet, planet ) ) continue;
-            Rect( x - 4, y - 3, name.Length * 6 + 8, 13, Panel, 1 );
+            Rect( x - 4, y - 3, textWidth + 8, 7 * GlyphPitch( 1 ) / _scale + 6, Panel, 1 );
             Text( name, x, y, 1, i == planet ? SpaceDraw.Cyan : i == 0 ? SpaceDraw.Amber : Label );
             if ( i > 0 ) {
                 var status = fleet.Planet( i );
@@ -130,7 +131,7 @@ internal sealed class FleetHud {
             var p = beaconPixel / _scale;
             if ( p.X >= 30 && p.X <= layout.Width - 30 && p.Y > 16 && p.Y < layout.Bottom - 15 && !layout.Blocks( p, fleet, planet ) ) {
                 Rect( p.X - 22, p.Y + 6, 44, 12, Panel, 1 );
-                Text( "RELAY", p.X - 15, p.Y + 9, 1, siteTint );
+                Text( "RELAY", p.X - TextWidth( 5, 1 ) / 2, p.Y + 9, 1, siteTint );
             }
         }
 
@@ -161,7 +162,10 @@ internal sealed class FleetHud {
             : selectionCount != 0 && fleet.Orbiting( selected ) ? "ORBIT ORDER ACTIVE"
             : oreShort && fleet.Ore < FleetSimulation.WingCost ? "NEED 60 ORE TO BUILD"
             : fleet.Owner == 0 ? "HOLD THE RELAY TO MINE ORE" : "CAPTURE THE RELAY OR DEFEAT AMBER");
-        Text( instruction, 23, layout.Bottom + 9, layout.Width < 530 ? 1 : 1.16f, fleet.Won ? SpaceDraw.Cyan : fleet.Lost ? SpaceDraw.Amber : White );
+        float instructionScale = layout.Width < 530 ? 1 : 1.16f;
+        int instructionCapacity = (int)((layout.Width - 159) / TextWidth( 1, instructionScale ));
+        Text( instruction.AsSpan( 0, Math.Min( instruction.Length, instructionCapacity ) ), 23, layout.Bottom + 9, instructionScale,
+            fleet.Won ? SpaceDraw.Cyan : fleet.Lost ? SpaceDraw.Amber : White );
         Text( layout.Width >= 585 ? "DRAG SELECT  /  SHIFT ADD  /  CTRL TOGGLE  /  RIGHT CLICK ORDER"
             : "DRAG SELECT  /  RIGHT CLICK ORDER", 23, layout.Bottom + 31, 1, Label );
         Button( layout.Width - 127, layout.Bottom + 14, 104, "BUILD WING", fleet.CanBuildWing );
@@ -271,8 +275,9 @@ internal sealed class FleetHud {
         for ( int i = 0; i < CelestialSystem.Systems.Length; ++i ) {
             var center = CelestialSystem.MapPositions[i] * new Vector2( logicalWidth, logicalHeight );
             string name = CelestialSystem.Systems[i];
-            float left = center.X - name.Length * 4;
-            Rect( left - 6, center.Y + 19, name.Length * 8 + 12, 20, Panel, 1 );
+            float textWidth = TextWidth( name.Length, 1.3f );
+            float left = center.X - textWidth / 2;
+            Rect( left - 6, center.Y + 19, textWidth + 12, 7 * GlyphPitch( 1.3f ) / _scale + 10, Panel, 1 );
             Text( name, left, center.Y + 24, 1.3f, i == currentSystem ? SpaceDraw.Cyan : White );
         }
         Rect( 14, logicalHeight - 43, logicalWidth - 28, 29, Panel, 1 );
@@ -304,7 +309,13 @@ internal sealed class FleetHud {
     private void Rect( float x, float y, float width, float height, Vector4 color, uint layer = 2 ) =>
         _glyphs[_count++] = new( new Vector4( x, y, width, height ) * _scale, color, uint.MaxValue, 7, layer, 0 );
 
+    private float GlyphPitch( float size ) => MathF.Max( 1, MathF.Round( size * _scale ) );
+    private float TextWidth( int count, float size ) => count * 6 * GlyphPitch( size ) / _scale;
+
     private void Text( ReadOnlySpan<char> text, float x, float y, float scale, Vector4 tint ) {
+        // Align each bitmap cell to complete screen pixels, including at fractional HUD scales.
+        float pitch = GlyphPitch( scale );
+        float pixelX = MathF.Round( x * _scale ), pixelY = MathF.Round( y * _scale );
         foreach ( char c in text ) {
             uint[]? rows = null;
             int index = c switch {
@@ -316,9 +327,9 @@ internal sealed class FleetHud {
             if ( rows is not null ) {
                 ulong bits = 0;
                 for ( int row = 0; row < 7; ++row ) bits |= (ulong)rows[row] << (row * 5);
-                _glyphs[_count++] = new( new Vector4( x, y, 5 * scale, 7 * scale ) * _scale, tint, (uint)bits, (uint)(bits >> 32), 0, 0 );
+                _glyphs[_count++] = new( new Vector4( pixelX, pixelY, 5 * pitch, 7 * pitch ), tint, (uint)bits, (uint)(bits >> 32), 0, 0 );
             }
-            x += 6 * scale;
+            pixelX += 6 * pitch;
         }
     }
 
