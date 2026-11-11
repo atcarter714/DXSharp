@@ -30,7 +30,7 @@ dotnet run --project samples/FleetBattler -c Release -- --ships=10000 --traffic=
 dotnet run --project samples/FleetBattler -c Release -- --ships=10000 --benchmark-ticks=600
 ```
 
-The fixed-tick CPU simulation owns combat, movement orders, casualties, and the economy. Damage resolves after each tick's volley. Rendering packs living ships and keeps their original selection IDs. GPU compute steers the civilian freighters and evaluates the asteroid field. Living tactical ships draw in batches by hull class. Civilian freighters use their own textured mesh and read the compute-generated instance buffer directly. Asteroids use irregular faceted silhouettes. The compute shaders are in [Shaders](Shaders).
+The fixed-tick CPU simulation owns combat, movement orders, casualties, and the economy. Damage resolves after each tick's volley. Rendering packs living ships and keeps their original selection IDs. GPU compute steers the civilian freighters and evaluates the asteroid field. Living tactical ships draw in batches by hull class. Civilian freighters read the compute-generated instance buffer directly. Distant or dense traffic uses a 24-vertex silhouette to bound draw cost. Asteroids use irregular faceted silhouettes. The compute shaders are in [Shaders](Shaders).
 
 The [jukebox configuration](Music/README.md) includes system, galaxy, engagement, and victory playlists. The original procedural tracks play by default. The sample includes order, capture, launch, and combat effects.
 

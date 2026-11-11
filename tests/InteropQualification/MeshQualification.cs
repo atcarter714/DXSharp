@@ -359,7 +359,7 @@ internal static unsafe class MeshQualification {
         traffic.RecordCompute( commands, fleet, 1f / 60 );
         SpaceDraw.Record( commands, skyPipeline, fleet, new( 0 ), matrix, inverse, (int)width, (int)height, halfHeight );
         traffic.RecordDebris( commands, matrix, (int)width, (int)height, halfHeight );
-        FleetDraw.Record( commands, fleetPipeline, freighters, traffic.Instances, traffic.ShipCount, matrix );
+        traffic.RecordFreighters( commands, fleetPipeline, freighters, matrix, height / (2 * halfHeight) );
         traffic.Finish( commands );
         FleetDraw.RecordThrusters( commands, thrust, instances, active, matrix, (float)(fleet.Tick * FleetSimulation.StepSeconds) );
         FleetDraw.Record( commands, fleetPipeline, relay, instances, 1, matrix, active );

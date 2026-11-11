@@ -189,7 +189,7 @@ internal static class Program {
                 viewport.Width, viewport.Height, halfHeight, showSelection: selection.Count == 1 );
             if ( computeActive ) {
                 traffic.RecordDebris( frame.Commands, viewProjection, viewport.Width, viewport.Height, halfHeight );
-                FleetDraw.Record( frame.Commands, pipeline, freighters, traffic.Instances, traffic.ShipCount, viewProjection );
+                traffic.RecordFreighters( frame.Commands, pipeline, freighters, viewProjection, viewport.Height / (2 * halfHeight) );
                 traffic.Finish( frame.Commands );
             }
 
