@@ -24,8 +24,8 @@ internal static class Program {
         }
         float4 PS(Vertex input) : SV_Target {
             float diffuse = saturate(dot(normalize(input.normal), normalize(float3(-0.55, 0.8, 0.35))));
-            float3 linear = saturate(input.color * (0.24 + 0.76 * diffuse));
-            return float4(pow(linear, 1.0 / 2.2), 1);
+            float3 litColor = saturate(input.color * (0.24 + 0.76 * diffuse));
+            return float4(pow(litColor, 1.0 / 2.2), 1);
         }
         """;
 
