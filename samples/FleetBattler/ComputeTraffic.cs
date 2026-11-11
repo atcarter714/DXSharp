@@ -9,7 +9,7 @@ internal sealed class ComputeTraffic : IDisposable {
     internal const int DefaultAgents = 32, DefaultDebris = 256;
     internal const int MaxAgents = 65_536, MaxDebris = 16_384;
     private const uint GroupSize = 64;
-    private readonly PipelineState? _orbits, _steering, _debrisPipeline, _freighters;
+    private readonly PipelineState? _orbits, _steering, _debrisPipeline;
     private readonly GpuResource? _agents, _instances, _bodies;
     private readonly int _bodyCount;
     private int _lastSystem = -1;
@@ -53,14 +53,6 @@ internal sealed class ComputeTraffic : IDisposable {
             using var debrisRoot = device.CreateGraphicsBufferRootSignature( 20 );
             _debrisPipeline = device.CreateGraphicsPipeline( debrisRoot, compiler.Compile( DebrisShader, "VS", "vs_6_0" ),
                 compiler.Compile( DebrisShader, "PS", "ps_6_0" ), PixelFormat.Rgba8Unorm, depthEnabled: true );
-            string freighter = File.ReadAllText( Path.Combine( AppContext.BaseDirectory, "Shaders", "Freighter.hlsl" ) );
-            using var freighterRoot = device.CreateGraphicsConstantsRootSignature( 16 );
-            _freighters = device.CreateGraphicsPipeline( freighterRoot, compiler.Compile( freighter, "VS", "vs_6_0" ),
-                compiler.Compile( freighter, "PS", "ps_6_0" ), [
-                    new( "TEXCOORD", VertexFormat.Float2, 0, 0, 1, 1 ),
-                    new( "TEXCOORD", VertexFormat.Float2, 8, 1, 1, 1 ),
-                    new( "TEXCOORD", VertexFormat.Float4, 32, 3, 1, 1 )
-                ], depthEnabled: true );
             _agents = device.CreateBuffer( (ulong)Math.Max( ships, 1 ) * 16, unorderedAccess: true );
             _instances = device.CreateBuffer( (ulong)Math.Max( ships, 1 ) * FleetDraw.InstanceStride, unorderedAccess: true );
             _bodies = device.CreateBuffer( (ulong)_bodyCount * 16, unorderedAccess: true );
@@ -128,15 +120,6 @@ internal sealed class ComputeTraffic : IDisposable {
         commands.Draw( 6, DebrisCount );
     }
 
-    internal void RecordFreighters( GraphicsCommandList commands, Matrix4x4 viewProjection ) {
-        if ( ShipCount == 0 ) return;
-        ReadOnlySpan<Matrix4x4> constants = [viewProjection];
-        commands.SetGraphicsPipeline( _freighters! );
-        commands.SetGraphicsConstants( MemoryMarshal.Cast<Matrix4x4, uint>( constants ) );
-        commands.SetVertexBuffer( 1, Instances, FleetDraw.InstanceStride );
-        commands.Draw( 24, ShipCount );
-    }
-
     internal void Finish( GraphicsCommandList commands ) {
         commands.Transition( Instances, ResourceState.VertexAndConstantBuffer, ResourceState.Common );
         commands.Transition( Bodies, ResourceState.NonPixelShaderResource, ResourceState.Common );
@@ -147,7 +130,6 @@ internal sealed class ComputeTraffic : IDisposable {
         _instances?.Dispose( );
         _agents?.Dispose( );
         _debrisPipeline?.Dispose( );
-        _freighters?.Dispose( );
         _steering?.Dispose( );
         _orbits?.Dispose( );
     }

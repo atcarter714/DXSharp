@@ -7,6 +7,7 @@
     <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../samples/Shared/StaticMeshSet.cs" Link="StaticMeshSet.cs" />
     <ProjectReference Include="../../src/DXSharp.Core/DXSharp.Core.csproj" />
     <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
@@ -16,6 +17,7 @@
     <Compile Include="../../samples/FleetBattler/FleetHud.cs" Link="FleetHud.cs" />
     <Compile Include="../../samples/FleetBattler/CelestialSystem.cs" Link="CelestialSystem.cs" />
     <Compile Include="../../samples/FleetBattler/ComputeTraffic.cs" Link="ComputeTraffic.cs" />
+    <Compile Include="../../samples/FleetBattler/Jukebox.cs" Link="Jukebox.cs" />
     <Compile Include="../../samples/FleetBattler/SynthAudio.cs" Link="SynthAudio.cs" />
     <Compile Include="../../samples/FleetBattler/FleetCombat.cs" Link="FleetCombat.cs" />
     <Compile Include="../../samples/FleetBattler/PlanetEconomy.cs" Link="PlanetEconomy.cs" />
@@ -24,6 +26,8 @@
     <None Include="../../samples/FleetBattler/Shaders/*.hlsl" Link="Shaders/%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Include="../../samples/StaticModelViewer/Models/Patrol.gltf" Link="Models/Patrol.gltf"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../../samples/FleetBattler/Models/*.gltf" Link="Models/%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <Target Name="CopyNativeFixture" AfterTargets="Build" Condition="'$(DXSharpNativeFixture)' != ''">

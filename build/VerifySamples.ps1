@@ -19,6 +19,8 @@ try {
     foreach ($sample in 'HelloTexture', 'InstancedGrid', 'LitCube', 'PlanarShadows', 'StaticModelViewer') {
         Invoke-Sample $sample @('run', '--project', "samples/$sample", '-c', 'Debug', '--', '--warp', '--frames=4')
     }
+    Invoke-Sample 'StaticModelViewer-textured' @('run', '--project', 'samples/StaticModelViewer', '-c', 'Debug', '--',
+        '--warp', '--frames=4', '--model=samples/FleetBattler/Models/Freighter.gltf')
     Invoke-Sample 'FleetBattler' @('run', '--project', 'samples/FleetBattler', '-c', 'Debug', '--',
         '--warp', '--mute', '--ships=129', '--frames=7', '--resize-test')
     Invoke-Sample 'FleetBattler-views' @('run', '--project', 'samples/FleetBattler', '-c', 'Debug', '--',

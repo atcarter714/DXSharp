@@ -1,14 +1,18 @@
-# Fleet Battler jukebox
+# Add your music to Fleet Battler
 
-Put your own tracks in this folder and list them in `jukebox.json`. Paths are relative to this folder and can include subdirectories. Each playlist plays in order and repeats. The Windows media player handles file decoding.
+1. Copy a track such as `theme.mp3` into `samples/FleetBattler/Music/`. For an already built copy, use the `Music` folder beside `FleetBattler.exe`.
+2. Open `jukebox.json` in that same folder. Change the `system` list from `["@survey"]` to `["theme.mp3"]`. Keep the other entries as shipped.
+3. Rebuild if you edited the source folder, then launch the game. Fleet Battler reads the settings at startup.
 
-| Playlist | Plays when |
+The theme keeps playing when you enter combat, win, or open the galaxy map. Add more filenames to the list to play them in order. Paths are relative to `Music`, so `["Ambient/theme.mp3", "patrol.wav"]` works if those files are present.
+
+| Playlist | When it takes over if you give it its own track |
 | --- | --- |
-| `system` | Viewing a system during routine operations |
-| `galaxy` | Viewing the galaxy map |
-| `contested` | Both factions have a presence at the mining beacon |
-| `victory` | Both reinforcement wings have launched |
+| `system` | Routine system operations |
+| `galaxy` | Galaxy map |
+| `contested` | A contested relay or active combat |
+| `victory` | The system is won |
 
-The `@` entries name original procedural tracks generated as PCM WAV files on first use. For example, change the system list to `["survey.mp3", "patrol.wav", "@survey"]` and copy the named files here. Set music and effects volume independently from 0 to 1. The sample copies this directory to its build and publish outputs.
+Tracks beginning with `@` are the bundled procedural cues. With a custom system playlist, untouched contextual lists inherit it. Set `"useProceduralTransitions": true` to retain the stock cue changes. If an explicit playlist fails to play, Fleet Battler logs the failure and falls back to a procedural cue. Use MP3 or PCM WAV to avoid depending on optional Windows media codecs.
 
-Press **M** to toggle audio in the game. Run with `--mute` to start silent.
+`musicVolume` and `effectsVolume` run from 0 to 1. Press **M** to toggle audio or start with `--mute`.

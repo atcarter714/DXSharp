@@ -5,12 +5,13 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/StaticMeshSet.cs" Link="StaticMeshSet.cs" />
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" />
     <None Update="Shaders/**/*.hlsl" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Update="Music/**/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
     <ProjectReference Include="../../src/DXSharp.Framework.Desktop/DXSharp.Framework.Desktop.csproj" />
-    <None Include="../StaticModelViewer/Models/Patrol.gltf" Link="Models/Patrol.gltf"
+    <None Update="Models/*.gltf"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

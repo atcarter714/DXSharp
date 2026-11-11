@@ -1,6 +1,6 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
-using DXSharp.Assets;
+using DXSharp.Samples;
 using DXSharp.Graphics;
 using DXSharp.Shaders;
 
@@ -11,7 +11,10 @@ internal static class FleetDraw {
 
     private const string Shader = """
         cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; };
+        Texture2D BaseColor : register(t0);
+        SamplerState SurfaceSampler : register(s0);
         struct Input {
+            float2 uv : TEXCOORD4;
             float3 position : POSITION;
             float3 normal : NORMAL;
             float3 color : COLOR;
@@ -20,7 +23,7 @@ internal static class FleetDraw {
             float4 tint : TEXCOORD2;
             float4 motion : TEXCOORD3;
         };
-        struct Output { float4 position : SV_Position; float3 color : COLOR; };
+        struct Output { float4 position : SV_Position; float3 color : COLOR; float2 uv : TEXCOORD0; };
         Output VS(Input input) {
             float2 right = float2(-input.heading.y, input.heading.x);
             float scale = input.motion.z > 0 ? input.motion.z : 1;
@@ -31,10 +34,11 @@ internal static class FleetDraw {
             Output output;
             output.position = mul(float4(xz.x, input.position.y * scale, xz.y, 1), ViewProjection);
             output.color = input.color * input.tint.rgb * (light * input.tint.a);
+            output.uv = input.uv;
             return output;
         }
         float4 PS(Output input) : SV_Target {
-            return float4(pow(saturate(input.color), 1.0 / 2.2), 1);
+            return float4(pow(saturate(input.color * BaseColor.Sample(SurfaceSampler,input.uv).rgb), 1.0 / 2.2), 1);
         }
         """;
 
@@ -44,6 +48,7 @@ internal static class FleetDraw {
                 new( "POSITION", VertexFormat.Float3, 0 ),
                 new( "NORMAL", VertexFormat.Float3, 12 ),
                 new( "COLOR", VertexFormat.Float3, 24 ),
+                new( "TEXCOORD", VertexFormat.Float2, 36, 4 ),
                 new( "TEXCOORD", VertexFormat.Float2, 0, 0, 1, 1 ),
                 new( "TEXCOORD", VertexFormat.Float2, 8, 1, 1, 1 ),
                 new( "TEXCOORD", VertexFormat.Float4, 16, 2, 1, 1 ),
@@ -70,7 +75,7 @@ internal static class FleetDraw {
             float flutter = sin(Time.x * 31.0 + input.motion.y * 31.7 + engine * 3.5);
             float plumeLength = (0.43 + 1.9 * input.motion.x) * (1 + 0.13 * flutter);
             float2 right = float2(-input.heading.y,input.heading.x);
-            float2 world = input.center + right*(engine + uv.x*0.29) - input.heading*(1.12 + uv.y*plumeLength);
+            float2 world = input.center + (right*(engine + uv.x*0.29) - input.heading*(1.12 + uv.y*plumeLength)) * input.motion.z;
             Output output;
             output.position = mul(float4(world.x,0.026,world.y,1),ViewProjection);
             output.uv = uv;
@@ -107,25 +112,13 @@ internal static class FleetDraw {
         commands.Draw( 12, count );
     }
 
-    internal static void RecordUploads( GraphicsDevice device, GraphicsCommandList commands, StaticModel model, Span<Mesh> meshes ) {
-        for ( int i = 0; i < meshes.Length; ++i ) {
-            var primitive = model.Primitives[i];
-            if ( primitive.Vertices.Length <= ushort.MaxValue + 1 ) {
-                var indices = new ushort[primitive.Indices.Length];
-                for ( int j = 0; j < indices.Length; ++j ) indices[j] = (ushort)primitive.Indices[j];
-                meshes[i] = device.CreateMesh( commands, primitive.Vertices, indices );
-            } else {
-                meshes[i] = device.CreateMesh( commands, primitive.Vertices, primitive.Indices );
-            }
-        }
-    }
-
-    internal static void Record( GraphicsCommandList commands, PipelineState pipeline, ReadOnlySpan<Mesh> meshes,
-        GpuResource instances, uint count, Matrix4x4 viewProjection ) {
+    internal static void Record( GraphicsCommandList commands, PipelineState pipeline, StaticMeshSet meshes,
+        GpuResource instances, uint count, Matrix4x4 viewProjection, uint start = 0 ) {
+        if ( count == 0 ) return;
         commands.SetGraphicsPipeline( pipeline );
         ReadOnlySpan<Matrix4x4> constants = [viewProjection];
         commands.SetGraphicsConstants( MemoryMarshal.Cast<Matrix4x4, uint>( constants ) );
         commands.SetVertexBuffer( 1, instances, InstanceStride );
-        foreach ( var mesh in meshes ) commands.DrawMesh( mesh, count );
+        for ( int i = 0; i < meshes.Count; ++i ) meshes.Draw( commands, i, count, start );
     }
 }

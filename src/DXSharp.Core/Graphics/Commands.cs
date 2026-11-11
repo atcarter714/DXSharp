@@ -99,13 +99,18 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
 
     /// <summary>Binds t0 for a graphics pipeline created with a texture root signature.
     /// This replaces the current shader-visible CBV/SRV/UAV heap.</summary>
-    public void SetGraphicsTexture( SampledTexture2D texture ) {
+    public void SetGraphicsTexture( SampledTexture2D texture ) => SetGraphicsTexture( texture, 0 );
+
+    /// <summary>Binds a sampled texture and replaces the current shader-visible CBV/SRV/UAV heap.</summary>
+    /// <param name="texture">The texture uploaded on this device.</param>
+    /// <param name="parameterIndex">The root signature's texture table index.</param>
+    public void SetGraphicsTexture( SampledTexture2D texture, uint parameterIndex ) {
         ArgumentNullException.ThrowIfNull( texture );
-        Recording( );
+        RequireDirectRecording( );
         Track( texture.Resource );
         Track( texture.Heap );
         Native.Interface.SetDescriptorHeaps( 1, [texture.Heap.Native.Interface] );
-        Native.Interface.SetGraphicsRootDescriptorTable( 0, texture.Heap.Native.Interface.GetGPUDescriptorHandleForHeapStart( ) );
+        Native.Interface.SetGraphicsRootDescriptorTable( parameterIndex, texture.Heap.Native.Interface.GetGPUDescriptorHandleForHeapStart( ) );
     }
 
     /// <summary>Sets a viewport and scissor rectangle.</summary>

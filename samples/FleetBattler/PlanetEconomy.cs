@@ -48,14 +48,15 @@ internal sealed partial class FleetSimulation {
     private void AdvancePlanets( ) {
         for ( int body = 1; body < _bodies.Length; ++body ) {
             if ( (_surveyRequests & (1 << body)) != 0 && _survey[body] < SurveyDuration ) {
-                bool present = false;
+                int surveyRate = 0;
                 float range = OrbitRadius( body, 1 ) + 8;
-                for ( int i = 0; i < Count && !present; ++i ) {
-                    if ( !Alive( i ) || SideOf( i ) != 0 ) continue;
-                    present = Vector2.DistanceSquared( _positions[i], _bodies[body].Center ) <= range * range;
+                for ( int i = 0; i < Count && surveyRate < 2; ++i ) {
+                    if ( !Alive( i ) || SideOf( i ) != 0 ||
+                         Vector2.DistanceSquared( _positions[i], _bodies[body].Center ) > range * range ) continue;
+                    surveyRate = IsScoutSquad( SquadronOf( i ) ) ? 2 : 1;
                 }
-                if ( !present ) _survey[body] = 0;
-                else if ( ++_survey[body] == SurveyDuration ) Ore = Math.Min( 999, Ore + 40 );
+                _survey[body] = surveyRate == 0 ? 0 : Math.Min( SurveyDuration, _survey[body] + surveyRate );
+                if ( _survey[body] == SurveyDuration ) Ore = Math.Min( 999, Ore + 40 );
             }
             if ( (Tick + 1) % IncomeInterval != 0 ) continue;
             if ( _mines[body] > 0 && _mines[body] <= Tick + 1 ) Ore = Math.Min( 999, Ore + 8 );

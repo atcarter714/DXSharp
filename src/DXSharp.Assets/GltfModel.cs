@@ -1,14 +1,17 @@
 using System.Numerics;
 using SharpGLTF.Schema2;
 using SharpGLTF.Validation;
+using StbImageSharp;
 
 namespace DXSharp.Assets;
 
 /// <summary>Imports self-contained glTF 2.0 and GLB files as static triangle meshes.</summary>
 /// <remarks>
 /// The importer uses the default scene, or the first scene if no default is declared. It preserves
-/// local geometry, node transforms, and linear base colors for opaque materials. Materials are reduced
-/// to base color. Textures, skinning, animation, morph targets, and required extensions are unsupported.
+/// local geometry, node transforms, and base color factors and embedded PNG/JPEG images for opaque
+/// materials. This path uses one UV set per primitive and linear repeat sampling without mipmaps.
+/// Other texture channels, texture transforms, skinning, animation, morph targets, and required
+/// extensions are outside the supported static format.
 /// </remarks>
 public static class GltfModel {
     /// <summary>Loads a self-contained model from disk.</summary>
@@ -49,6 +52,7 @@ public static class GltfModel {
         var scene = model.DefaultScene ?? model.LogicalScenes.FirstOrDefault( )
             ?? throw new InvalidDataException( "The glTF asset does not contain a scene." );
         var primitives = new List<StaticModelPrimitive>( );
+        var images = new Dictionary<SharpGLTF.Schema2.Image, StaticTexture>( ReferenceEqualityComparer.Instance );
         var bounds = new List<(Vector3 Min, Vector3 Max)>( );
         var instances = new List<StaticModelInstance>( );
         var primitiveIndices = new Dictionary<MeshPrimitive, int>( ReferenceEqualityComparer.Instance );
@@ -74,7 +78,7 @@ public static class GltfModel {
             foreach ( var primitive in mesh.Primitives ) {
                 if ( !primitiveIndices.TryGetValue( primitive, out int index ) ) {
                     index = primitives.Count;
-                    var geometry = ReadPrimitive( primitive );
+                    var geometry = ReadPrimitive( primitive, images );
                     primitives.Add( geometry );
                     primitiveIndices.Add( primitive, index );
                     var localMin = new Vector3( float.PositiveInfinity );
@@ -106,14 +110,30 @@ public static class GltfModel {
         return new( primitives.ToArray( ), instances.ToArray( ), min, max );
     }
 
-    private static StaticModelPrimitive ReadPrimitive( MeshPrimitive primitive ) {
+    private static StaticModelPrimitive ReadPrimitive( MeshPrimitive primitive, Dictionary<SharpGLTF.Schema2.Image, StaticTexture> images ) {
         if ( primitive.DrawPrimitiveType != PrimitiveType.TRIANGLES || primitive.MorphTargetsCount != 0 )
             throw new NotSupportedException( "Static glTF meshes require triangle lists without morph targets." );
 
         var material = primitive.Material;
-        if ( material is not null && (material.Alpha != AlphaMode.OPAQUE || material.Channels.Any( x => x.Texture is not null )) )
-            throw new NotSupportedException( "Static glTF meshes require opaque, untextured materials." );
-        var tint = material?.FindChannel( "BaseColor" )?.Color ?? Vector4.One;
+        if ( material is not null && (material.Alpha != AlphaMode.OPAQUE || material.Channels.Any( x => x.Key != "BaseColor" && x.Texture is not null )) )
+            throw new NotSupportedException( "Static glTF meshes support only opaque base color materials." );
+        var channel = material?.FindChannel( "BaseColor" );
+        var tint = channel?.Color ?? Vector4.One;
+        StaticTexture? image = null;
+        IList<Vector2>? sourceUv = null;
+        if ( channel is { Texture: { } texture } binding ) {
+            if ( binding.TextureTransform is not null || texture.Sampler is { } sampler &&
+                ((int)sampler.WrapS != 10497 || (int)sampler.WrapT != 10497 ||
+                 (int)sampler.MinFilter is not (0 or 9729) || (int)sampler.MagFilter is not (0 or 9729)) )
+                throw new NotSupportedException( "Base color textures require linear repeat sampling without a UV transform or mipmaps." );
+            sourceUv = primitive.GetVertexAccessor( $"TEXCOORD_{binding.TextureCoordinate}" )?.AsVector2Array( )
+                ?? throw new InvalidDataException( "A base color texture is missing its UV accessor." );
+            var sourceImage = texture.PrimaryImage;
+            if ( !images.TryGetValue( sourceImage, out image ) ) {
+                image = DecodeBaseColor( sourceImage );
+                images.Add( sourceImage, image );
+            }
+        }
 
         var positions = primitive.GetVertexAccessor( "POSITION" )?.AsVector3Array( )
             ?? throw new InvalidDataException( "A glTF primitive is missing POSITION data." );
@@ -132,9 +152,12 @@ public static class GltfModel {
         }
 
         var vertices = new ModelVertex[normals is null ? indices.Length : positions.Count];
+        var uv = sourceUv is null ? null : new Vector2[vertices.Length];
         if ( normals is not null ) {
-            for ( int i = 0; i < vertices.Length; ++i )
+            for ( int i = 0; i < vertices.Length; ++i ) {
                 vertices[i] = new( positions[i], normals[i], BaseColor( i ) );
+                if ( uv is not null ) uv[i] = sourceUv![i];
+            }
         } else {
             for ( int i = 0; i < indices.Length; i += 3 ) {
                 var a = positions[(int)indices[i]];
@@ -148,16 +171,43 @@ public static class GltfModel {
                 vertices[i] = new( a, normal, BaseColor( (int)indices[i] ) );
                 vertices[i + 1] = new( b, normal, BaseColor( (int)indices[i + 1] ) );
                 vertices[i + 2] = new( c, normal, BaseColor( (int)indices[i + 2] ) );
+                if ( uv is not null ) {
+                    uv[i] = sourceUv![(int)indices[i]];
+                    uv[i + 1] = sourceUv[(int)indices[i + 1]];
+                    uv[i + 2] = sourceUv[(int)indices[i + 2]];
+                }
                 indices[i] = (uint)i;
                 indices[i + 1] = (uint)(i + 1);
                 indices[i + 2] = (uint)(i + 2);
             }
         }
-        return new( vertices, indices );
+        return new( vertices, indices, uv, image );
 
         Vector3 BaseColor( int index ) {
             var rgba = tint * (colors is null ? Vector4.One : colors[index]);
             return new( rgba.X, rgba.Y, rgba.Z );
+        }
+    }
+
+    private static StaticTexture DecodeBaseColor( SharpGLTF.Schema2.Image image ) {
+        const int maxDimension = 8192;
+        const long maxPixels = 16 * 1024 * 1024;
+        var content = image.Content;
+        if ( !content.IsPng && !content.IsJpg )
+            throw new NotSupportedException( "Base color images require embedded PNG or JPEG data." );
+        try {
+            using var stream = content.Open( );
+            var info = ImageInfo.FromStream( stream );
+            if ( info is not { Width: > 0 and <= maxDimension, Height: > 0 and <= maxDimension } size ||
+                (long)size.Width * size.Height > maxPixels )
+                throw new InvalidDataException( "Invalid base color image or dimensions above the import budget." );
+            stream.Position = 0;
+            var pixels = ImageResult.FromStream( stream, ColorComponents.RedGreenBlueAlpha );
+            if ( pixels.Width != size.Width || pixels.Height != size.Height || pixels.Data.Length != size.Width * size.Height * 4 )
+                throw new InvalidDataException( "Base color image dimensions changed during decoding." );
+            return new( pixels.Width, pixels.Height, pixels.Data );
+        } catch ( InvalidOperationException error ) {
+            throw new InvalidDataException( "The base color image could not be decoded.", error );
         }
     }
 

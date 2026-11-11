@@ -53,17 +53,29 @@ public sealed unsafe partial class GraphicsDevice {
     }
 
     /// <summary>Creates a graphics root signature with a pixel shader texture at t0 and a point-clamp sampler at s0.</summary>
-    public RootSignature CreateTextureRootSignature( ) {
+    public RootSignature CreateTextureRootSignature( ) => CreateTextureRootSignature( 0, false );
+
+    /// <summary>Creates a graphics signature with optional b0 constants and one pixel shader texture at t0.</summary>
+    /// <param name="constantCount">Number of inline DWORDs. Zero omits the constant parameter.</param>
+    /// <param name="linearWrap">Uses a linear repeat sampler at s0 when true and point clamp when false.</param>
+    /// <returns>The owning root signature. Bind the texture at parameter one when constants are present.</returns>
+    public RootSignature CreateTextureRootSignature( uint constantCount, bool linearWrap ) {
+        if ( constantCount > 63 ) throw new ArgumentOutOfRangeException( nameof(constantCount) );
         D3D12_DESCRIPTOR_RANGE range = new( ) { RangeType = D3D12_DESCRIPTOR_RANGE_TYPE.D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NumDescriptors = 1 };
         D3D12_ROOT_PARAMETER parameter = new( ) {
             ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
             ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_PIXEL
         };
         parameter.Anonymous.DescriptorTable = new( ) { NumDescriptorRanges = 1, pDescriptorRanges = &range };
-        var clamp = D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        D3D12_ROOT_PARAMETER* parameters = stackalloc D3D12_ROOT_PARAMETER[2];
+        int textureSlot = constantCount == 0 ? 0 : 1;
+        if ( constantCount != 0 ) parameters[0] = InlineConstants( constantCount );
+        parameters[textureSlot] = parameter;
+        var address = linearWrap ? D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_WRAP
+            : D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
         D3D12_STATIC_SAMPLER_DESC sampler = new( ) {
-            Filter = D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_POINT,
-            AddressU = clamp, AddressV = clamp, AddressW = clamp,
+            Filter = linearWrap ? D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_LINEAR : D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_POINT,
+            AddressU = address, AddressV = address, AddressW = address,
             MaxAnisotropy = 1, MaxLOD = float.MaxValue,
             ComparisonFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS,
             ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_PIXEL
@@ -71,7 +83,7 @@ public sealed unsafe partial class GraphicsDevice {
         D3D12_VERSIONED_ROOT_SIGNATURE_DESC description = default;
         description.Version = D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1_0;
         description.Anonymous.Desc_1_0 = new( ) {
-            NumParameters = 1, pParameters = &parameter,
+            NumParameters = (uint)textureSlot + 1, pParameters = parameters,
             Flags = D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT,
             NumStaticSamplers = 1, pStaticSamplers = &sampler
         };

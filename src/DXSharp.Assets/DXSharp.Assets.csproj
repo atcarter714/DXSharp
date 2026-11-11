@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="SharpGLTF.Core" />
+    <PackageReference Include="StbImageSharp" />
   </ItemGroup>
 </Project>
