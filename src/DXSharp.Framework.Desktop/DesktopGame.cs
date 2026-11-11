@@ -25,7 +25,10 @@ public sealed record DesktopGameOptions {
 /// <param name="Target">The current back buffer's render-target view.</param>
 /// <param name="Size">The current renderable client area in pixels.</param>
 /// <param name="Elapsed">Elapsed time since the previous draw, excluding time spent minimized.</param>
-public readonly record struct DesktopFrame( GraphicsCommandList Commands, RenderTargetView Target, Size Size, TimeSpan Elapsed );
+public readonly record struct DesktopFrame( GraphicsCommandList Commands, RenderTargetView Target, Size Size, TimeSpan Elapsed ) {
+    /// <summary>The frame slot whose prior submission has retired. Use it to select per-slot upload storage.</summary>
+    public int FrameSlotIndex { get; init; }
+}
 
 /// <summary>Totals from a desktop run or a presentation callback.</summary>
 /// <param name="Frames">Number of completed present calls.</param>
@@ -103,7 +106,8 @@ public static class DesktopGame {
                 try {
                     bool resized = clientSize != size;
                     if ( resized ) queue.WaitIdle( );
-                    var slot = second is not null && (frames & 1) != 0 ? second : first;
+                    int slotIndex = second is null ? 0 : frames & 1;
+                    var slot = slotIndex == 0 ? first : second!;
                     if ( slot.Completion != 0 ) queue.Wait( slot.Completion );
                     var commands = slot.Begin( );
                     if ( resized ) {
@@ -123,7 +127,7 @@ public static class DesktopGame {
                     if ( depth is null ) commands.SetRenderTarget( target );
                     else commands.SetRenderTarget( target, depth, clearDepth: true );
                     TimeSpan now = clock.Elapsed;
-                    draw( new( commands, target, size, now - previous ) );
+                    draw( new( commands, target, size, now - previous ) { FrameSlotIndex = slotIndex } );
                     previous = now;
                     commands.Transition( buffer, ResourceState.RenderTarget, ResourceState.Present );
                     commands.Close( );

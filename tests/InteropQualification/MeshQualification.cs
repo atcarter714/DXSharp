@@ -1,9 +1,11 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using DXSharp;
+using DXSharp.Assets;
 using DXSharp.Graphics;
 using DXSharp.Interop;
 using DXSharp.Shaders;
+using FleetBattler;
 using Windows.Win32.Graphics.Direct3D12;
 using Windows.Win32.Graphics.Dxgi.Common;
 
@@ -44,6 +46,7 @@ internal static unsafe class MeshQualification {
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: true );
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: false );
         Render( device, vertex, pixel, instanceStepRate: 2, splitIndexFormats: false );
+        RenderFleet( device, compiler );
         var diagnostics = device.GetDiagnostics( );
         if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any(
             message => message.Contains( "SEVERITY_ERROR" ) || message.Contains( "SEVERITY_CORRUPTION" ) ) )
@@ -112,6 +115,67 @@ internal static unsafe class MeshQualification {
         var bytes = new byte[checked((int)readbackBytes)];
         readback.Read<byte>( bytes );
         ValidatePixels( bytes, footprint );
+    }
+
+    private static void RenderFleet( GraphicsDevice device, ShaderCompiler compiler ) {
+        var model = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "Patrol.gltf" ) );
+        using var queue = device.CreateCommandQueue( );
+        using var uploadAllocator = device.CreateCommandAllocator( );
+        using var uploads = device.CreateCommandList( uploadAllocator );
+        var meshes = new Mesh[model.Primitives.Length];
+        try {
+            FleetDraw.RecordUploads( device, uploads, model, meshes );
+            uploads.Close( );
+            using var root = device.CreateGraphicsConstantsRootSignature( 16 );
+            using var pipeline = FleetDraw.CreatePipeline( device, root, compiler, depthEnabled: true );
+            using var instances = device.CreateBuffer( 2 * FleetDraw.InstanceStride, BufferMemory.Upload );
+            instances.Write<ShipInstance>( [
+                new( new( -5, 0 ), Vector2.UnitX, new( 0.2f, 0.55f, 2.15f, 1 ) ),
+                new( new( 5, 0 ), -Vector2.UnitX, new( 2.55f, 0.55f, 0.18f, 1 ) )
+            ] );
+            using var target = CreateTarget( device );
+            using var heap = device.CreateRenderTargetHeap( 1 );
+            var view = device.CreateRenderTargetView( target, heap, 0 );
+            using var depth = device.CreateDepthTarget( Width, Height );
+            var description = target.Native.Interface.GetDesc( );
+            D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+            ulong readbackBytes;
+            device.Native.Interface.GetCopyableFootprints( &description, 0, 1, 0, &footprint, null, null, &readbackBytes );
+            using var readback = device.CreateBuffer( readbackBytes, BufferMemory.Readback );
+            using var allocator = device.CreateCommandAllocator( );
+            using var commands = device.CreateCommandList( allocator );
+            commands.SetViewport( Width, Height );
+            commands.Clear( view, 0, 0, 0 );
+            commands.SetRenderTarget( view, depth, clearDepth: true );
+            var camera = Matrix4x4.CreateLookAt( new( 0, 20, 0 ), Vector3.Zero, -Vector3.UnitZ );
+            var projection = Matrix4x4.CreateOrthographic( 18, 12, 0.1f, 40 );
+            FleetDraw.Record( commands, pipeline, meshes, instances, 2, camera * projection );
+            commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
+            CopyPixels( commands, target, readback, footprint );
+            commands.Close( );
+            queue.Submit( uploads );
+            queue.Wait( queue.Submit( commands ) );
+            var bytes = new byte[checked((int)readbackBytes)];
+            readback.Read<byte>( bytes );
+
+            int cyan = 0, amber = 0;
+            for ( uint y = 0; y < Height; ++y ) {
+                for ( uint x = 0; x < Width; ++x ) {
+                    int offset = checked((int)(footprint.Offset + y * footprint.Footprint.RowPitch + x * 4));
+                    byte r = bytes[offset], g = bytes[offset + 1], b = bytes[offset + 2];
+                    if ( (r | g | b) == 0 ) continue;
+                    if ( x < Width / 2 - 4 && b > r + 24 ) ++cyan;
+                    if ( x > Width / 2 + 4 && r > b + 24 ) ++amber;
+                    if ( x >= Width / 2 - 4 && x <= Width / 2 + 4 )
+                        throw new InvalidOperationException( "Fleet pixels crossed the clear gap between instances." );
+                }
+            }
+            if ( cyan < 24 || amber < 24 )
+                throw new InvalidOperationException( $"Missing tinted fleet geometry: {cyan} cyan, {amber} amber pixels." );
+            Console.WriteLine( $"PASS: patrol fleet indexed instancing read back {cyan} cyan and {amber} amber pixels." );
+        } finally {
+            foreach ( var mesh in meshes ) mesh?.Dispose( );
+        }
     }
 
     private static GpuResource CreateTarget( GraphicsDevice device ) {
