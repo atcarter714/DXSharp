@@ -8,72 +8,10 @@ namespace FleetBattler;
 internal sealed class ComputeTraffic : IDisposable {
     internal const int MaxAgents = 65_536, MaxDebris = 16_384;
     private const uint GroupSize = 64;
-    private readonly PipelineState? _orbits, _steering, _debrisPipeline;
+    private readonly PipelineState? _orbits, _steering, _debrisPipeline, _freighters;
     private readonly GpuResource? _agents, _instances, _bodies;
     private readonly int _bodyCount;
     private int _lastSystem = -1;
-
-    private const string Compute = """
-        struct Agent { float2 center; float2 velocity; };
-        struct Ship { float2 center; float2 heading; float4 tint; float4 motion; };
-        RWStructuredBuffer<Agent> Agents : register(u0);
-        RWStructuredBuffer<Ship> Ships : register(u1);
-        RWStructuredBuffer<float4> Bodies : register(u2);
-        cbuffer Scene : register(b0) {
-            uint ShipCount; uint BodyCount; uint Reset; float Delta;
-            float Time; float Radius; uint SectorIndex; float Pad;
-            float4 MajorBodies[4];
-        };
-
-        uint Mix(uint x) {
-            x ^= x >> 16;
-            x *= 0x7feb352d;
-            x ^= x >> 15;
-            x *= 0x846ca68b;
-            return x ^ (x >> 16);
-        }
-        float Unit(uint x) { return float(Mix(x) >> 8) * (1.0 / 16777216.0); }
-
-        [numthreads(64,1,1)]
-        void OrbitField(uint3 threadId : SV_DispatchThreadID) {
-            uint id = threadId.x;
-            if (id >= BodyCount) return;
-            if (id < 4) { Bodies[id] = MajorBodies[id]; return; }
-            uint seed = id + SectorIndex*16381;
-            float a = Unit(seed*13) * 6.2831853 + Time*(0.027 + Unit(seed*17)*0.12);
-            float lane = Radius*(0.56 + 0.27*Unit(seed*7));
-            float2 center = MajorBodies[0].xy + float2(cos(a)*lane, sin(a)*lane*0.79);
-            Bodies[id] = float4(center, 0.09 + pow(Unit(seed*23),3)*0.52, Unit(seed*31));
-        }
-
-        [numthreads(64,1,1)]
-        void Steering(uint3 threadId : SV_DispatchThreadID) {
-            uint id = threadId.x;
-            if (id >= ShipCount) return;
-            uint seed = id + SectorIndex*21611;
-            uint bodyIndex = 1 + (Mix(seed + 41) % (BodyCount-1));
-            float4 body = Bodies[bodyIndex];
-            float phase = Unit(seed*5+7)*6.2831853 + Time*(0.28+Unit(seed*13+1)*0.21);
-            float orbitRadius = body.z*1.68 + 2.8 + Unit(seed*17+9)*6.8;
-            float2 target = body.xy + float2(cos(phase),sin(phase))*orbitRadius;
-            Agent agent;
-            if (Reset != 0) {
-                agent.center = target + float2(Unit(seed*19+3)-0.5,Unit(seed*23+3)-0.5)*2.4;
-                agent.velocity = float2(-sin(phase),cos(phase))*orbitRadius*0.32;
-            } else agent = Agents[id];
-            float2 desired = (target-agent.center)*2.3;
-            desired *= min(1,9 / max(length(desired),0.01));
-            agent.velocity = lerp(agent.velocity,desired,saturate(Delta*3.2));
-            agent.center += agent.velocity*Delta;
-            Agents[id] = agent;
-            Ship ship;
-            ship.center = agent.center;
-            ship.heading = length(agent.velocity) > 0.001 ? normalize(agent.velocity) : float2(-sin(phase),cos(phase));
-            ship.tint = float4(0.58,0.66,0.76,0.68);
-            ship.motion = float4(0,Unit(seed),0.28,0);
-            Ships[id] = ship;
-        }
-        """;
 
     private const string DebrisShader = """
         cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; float4 Viewport; };
@@ -90,10 +28,13 @@ internal sealed class ComputeTraffic : IDisposable {
             return output;
         }
         float4 PS(Output input) : SV_Target {
-            float radius = abs(input.uv.x)*0.89 + abs(input.uv.y)*0.74;
-            clip(0.94-radius);
-            float3 tint = lerp(float3(0.14,0.18,0.25),float3(0.53,0.45,0.35),input.shade);
-            return float4(tint * (0.6+0.4*saturate(1-input.uv.x)),1);
+            float a = atan2(input.uv.y,input.uv.x);
+            float edge = 0.69 + 0.10*sin(a*3 + input.shade*13) + 0.08*cos(a*5 - input.shade*11);
+            clip(edge-length(input.uv));
+            float facet = 0.45 + 0.48 * saturate(0.55 - input.uv.x*0.57 + input.uv.y*0.31)
+                        + 0.15 * sin(floor(a*2.2)*4.7 + input.shade*5);
+            float3 tint = lerp(float3(0.18,0.20,0.26),float3(0.53,0.45,0.35),input.shade);
+            return float4(tint * facet,1);
         }
         """;
 
@@ -104,12 +45,21 @@ internal sealed class ComputeTraffic : IDisposable {
         DebrisCount = (uint)debris;
         _bodyCount = CelestialSystem.BodyCount + debris;
         try {
+            string compute = File.ReadAllText( Path.Combine( AppContext.BaseDirectory, "Shaders", "Traffic.hlsl" ) );
             using var computeRoot = device.CreateRootSignature( 3, 24 );
-            _orbits = device.CreateComputePipeline( computeRoot, compiler.Compile( Compute, "OrbitField", "cs_6_0" ) );
-            _steering = device.CreateComputePipeline( computeRoot, compiler.Compile( Compute, "Steering", "cs_6_0" ) );
+            _orbits = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "OrbitField", "cs_6_0" ) );
+            _steering = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "Steering", "cs_6_0" ) );
             using var debrisRoot = device.CreateGraphicsBufferRootSignature( 20 );
             _debrisPipeline = device.CreateGraphicsPipeline( debrisRoot, compiler.Compile( DebrisShader, "VS", "vs_6_0" ),
                 compiler.Compile( DebrisShader, "PS", "ps_6_0" ), PixelFormat.Rgba8Unorm, depthEnabled: true );
+            string freighter = File.ReadAllText( Path.Combine( AppContext.BaseDirectory, "Shaders", "Freighter.hlsl" ) );
+            using var freighterRoot = device.CreateGraphicsConstantsRootSignature( 16 );
+            _freighters = device.CreateGraphicsPipeline( freighterRoot, compiler.Compile( freighter, "VS", "vs_6_0" ),
+                compiler.Compile( freighter, "PS", "ps_6_0" ), [
+                    new( "TEXCOORD", VertexFormat.Float2, 0, 0, 1, 1 ),
+                    new( "TEXCOORD", VertexFormat.Float2, 8, 1, 1, 1 ),
+                    new( "TEXCOORD", VertexFormat.Float4, 32, 3, 1, 1 )
+                ], depthEnabled: true );
             _agents = device.CreateBuffer( (ulong)Math.Max( ships, 1 ) * 16, unorderedAccess: true );
             _instances = device.CreateBuffer( (ulong)Math.Max( ships, 1 ) * FleetDraw.InstanceStride, unorderedAccess: true );
             _bodies = device.CreateBuffer( (ulong)_bodyCount * 16, unorderedAccess: true );
@@ -177,6 +127,15 @@ internal sealed class ComputeTraffic : IDisposable {
         commands.Draw( 6, DebrisCount );
     }
 
+    internal void RecordFreighters( GraphicsCommandList commands, Matrix4x4 viewProjection ) {
+        if ( ShipCount == 0 ) return;
+        ReadOnlySpan<Matrix4x4> constants = [viewProjection];
+        commands.SetGraphicsPipeline( _freighters! );
+        commands.SetGraphicsConstants( MemoryMarshal.Cast<Matrix4x4, uint>( constants ) );
+        commands.SetVertexBuffer( 1, Instances, FleetDraw.InstanceStride );
+        commands.Draw( 24, ShipCount );
+    }
+
     internal void Finish( GraphicsCommandList commands ) {
         commands.Transition( Instances, ResourceState.VertexAndConstantBuffer, ResourceState.Common );
         commands.Transition( Bodies, ResourceState.NonPixelShaderResource, ResourceState.Common );
@@ -187,6 +146,7 @@ internal sealed class ComputeTraffic : IDisposable {
         _instances?.Dispose( );
         _agents?.Dispose( );
         _debrisPipeline?.Dispose( );
+        _freighters?.Dispose( );
         _steering?.Dispose( );
         _orbits?.Dispose( );
     }

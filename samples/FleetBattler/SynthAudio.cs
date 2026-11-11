@@ -29,11 +29,11 @@ internal static class SynthAudio {
 
     private static int Track( string name ) => name switch {
         "survey" => 0, "cartography" => 1, "signal" => 2, "arrival" => 3,
-        "order" => 4, "launch" => 5, "capture" => 6, _ => throw new ArgumentException( "Unknown procedural audio name.", nameof(name) )
+        "order" => 4, "launch" => 5, "capture" => 6, "laser" => 7, "burst" => 8, _ => throw new ArgumentException( "Unknown procedural audio name.", nameof(name) )
     };
 
     private static void WriteWave( Stream stream, int track ) {
-        int count = track < 4 ? SampleRate * 12 : SampleRate * (track == 4 ? 16 : 42) / 100;
+        int count = track < 4 ? SampleRate * 12 : SampleRate * (track is 4 or 7 ? 16 : 42) / 100;
         using var writer = new BinaryWriter( stream, System.Text.Encoding.UTF8, leaveOpen: true );
         writer.Write( "RIFF"u8 ); writer.Write( 36 + 2 * count ); writer.Write( "WAVEfmt "u8 );
         writer.Write( 16 ); writer.Write( (short)1 ); writer.Write( (short)1 );
@@ -62,8 +62,8 @@ internal static class SynthAudio {
     }
 
     private static double Cue( int track, double time, double duration ) {
-        double pitch = track == 4 ? 440 : track == 5 ? 280 : 525;
-        double rate = track == 4 ? 750 : 950;
+        double pitch = track switch { 4 => 440, 5 => 280, 7 => 890, 8 => 160, _ => 525 };
+        double rate = track switch { 4 => 750, 7 => -1500, 8 => -120, _ => 950 };
         double phase = Math.Tau * (pitch * time + rate * time * time);
         double fall = 1 - time / duration;
         return (Math.Sin( phase ) * 0.46 + Math.Sin( phase * 1.5 ) * 0.20) * fall * fall;

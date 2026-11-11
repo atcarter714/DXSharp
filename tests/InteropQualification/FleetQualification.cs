@@ -15,10 +15,13 @@ internal static class FleetQualification {
 
         VerifyFormations( );
         VerifyIndividualOrders( );
+        VerifySkirmish( );
+        VerifySelection( );
+        VerifyPlanetEconomy( );
         VerifyEconomy( );
         VerifyOrbits( );
         VerifyAudio( );
-        Console.WriteLine( $"PASS: fleet replay, individual and squad orders, moving orbits, capture and reinforcement, synthesized audio, and zero-allocation updates ({first.AfterOrder:X16})." );
+        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, planetary development, capture and reinforcement, and zero-allocation updates ({first.AfterOrder:X16})." );
     }
 
     private static void VerifyFormations( ) {
@@ -90,8 +93,72 @@ internal static class FleetQualification {
             "squadron steers as a group around the ringed planet" );
     }
 
+    private static void VerifySkirmish( ) {
+        var fleet = new FleetSimulation( 18, 37, battle: true );
+        int target = 9;
+        var selection = new CommandSelection( fleet.Capacity );
+        selection.All( fleet );
+        selection.Issue( fleet, fleet.Site, hostile: target );
+        var pulses = new BattleEffect[FleetSimulation.EffectCapacity];
+        AdvanceUntil( fleet, () => fleet.ShotsFired > 0, "explicit attack closes weapon range" );
+        Require( fleet.InBattle && fleet.FillEffects( pulses ) > 0, "live weapon pulses" );
+        AdvanceUntil( fleet, () => !fleet.Alive( target ), "focused enemy ship is destroyed" );
+        Require( fleet.ActiveCount < fleet.Count && fleet.ShipsLost == fleet.Count - fleet.ActiveCount, "stable IDs and casualty accounting" );
+        Require( fleet.FillEffects( pulses ) > 0 && pulses.Any( x => x.Style.Z == 1 ), "destruction burst" );
+        var data = new ShipInstance[fleet.ActiveCount];
+        selection.Prune( fleet );
+        fleet.FillInstances( data, selection.Focus( fleet ), selection.Ships );
+        Require( selection.Count == fleet.CyanCount && data.All( x => x.Motion.W > 0 ), "dead ships excluded from selection and rendering" );
+
+        var rival = new FleetSimulation( 72, 37, rivalPatrol: true, battle: true );
+        var amberStart = rival.Center( 6 );
+        rival.Move( 0, rival.Site );
+        rival.Move( 2, rival.Site );
+        AdvanceUntil( rival, () => rival.ShotsFired >= 12 && rival.ShipsLost > 0, "rival intercepts and returns fire", 1_800 );
+        Require( Vector2.DistanceSquared( rival.Center( 6 ), amberStart ) > 30 &&
+            Enumerable.Range( 0, 36 ).Any( i => rival.Hull( i ) < FleetSimulation.HullCapacity ), "rival squad advances and lands damage" );
+    }
+
+    private static void VerifySelection( ) {
+        var fleet = new FleetSimulation( 72, 37 );
+        var selection = new CommandSelection( fleet.Capacity );
+        var dimensions = new Vector2( 1_280, 800 );
+        var matrix = Matrix4x4.CreateLookAt( new( 0, 145, 80 ), Vector3.Zero, Vector3.UnitY ) *
+            Matrix4x4.CreateOrthographic( 250, 165, 0.1f, 380 );
+        var p = CommandSelection.Project( fleet.Positions[0], matrix, dimensions );
+        Require( CommandSelection.Hit( fleet, p, matrix, dimensions, 0 ) == 0, "point picking uses camera projection" );
+        selection.Box( fleet, new( p.X - 2, p.Y - 2, p.X + 2, p.Y + 2 ), matrix, dimensions, SelectionMode.Replace );
+        Require( selection.Count == 1 && selection.Primary == 0, "drag replaces selection" );
+        selection.Click( fleet, 1, false, SelectionMode.Add );
+        selection.Click( fleet, 0, false, SelectionMode.Toggle );
+        Require( selection.Count == 1 && selection.Primary == 1, "shift adds and control toggles" );
+        selection.Click( fleet, 1, true, SelectionMode.Replace );
+        Require( selection.Count == 6 && selection.Focus( fleet ).Squad == 0, "double click selects a squad" );
+        selection.Box( fleet, new( 0, 0, dimensions.X, dimensions.Y ), matrix, dimensions, SelectionMode.Add );
+        Require( selection.Count == fleet.CyanCount, "box selection excludes hostile units" );
+        Require( FleetHud.ActionAt( new( 498, 178 ), 640, 400, 1 ) == PlanetAction.Mine, "mine button hit test" );
+    }
+
+    private static void VerifyPlanetEconomy( ) {
+        var fleet = new FleetSimulation( 12, 37 );
+        const int body = 1;
+        Require( !fleet.BuildFacility( body, PlanetFacility.Mine ), "construction needs exploration" );
+        fleet.BeginSurvey( body );
+        fleet.Orbit( new( 2 ), body );
+        AdvanceUntil( fleet, () => fleet.Planet( body ).Surveyed, "survey completes while the team follows the planet" );
+        Require( fleet.Ore == 40 && !fleet.BuildFacility( 0, PlanetFacility.Mine ), "survey payout and star construction exclusion" );
+        Require( fleet.BuildFacility( body, PlanetFacility.Mine ) && !fleet.BuildFacility( body, PlanetFacility.Mine ) &&
+            fleet.Ore == 5 && fleet.Planet( body ).MineRemaining == FleetSimulation.FacilityDuration, "mine cost and construction queue" );
+        AdvanceUntil( fleet, () => fleet.Ore >= FleetSimulation.LabCost, "active mine generates ore" );
+        Require( fleet.BuildFacility( body, PlanetFacility.Lab ) && fleet.Science == 0, "lab begins construction" );
+        AdvanceUntil( fleet, () => fleet.Science >= FleetSimulation.UpgradeCost, "active lab produces science" );
+        int bank = fleet.Science;
+        Require( fleet.ResearchWeapons( ) && fleet.WeaponUpgrade && fleet.Science == bank - FleetSimulation.UpgradeCost &&
+            !fleet.ResearchWeapons( ), "one-time science-funded weapons upgrade" );
+    }
+
     private static void VerifyAudio( ) {
-        foreach ( string name in new[] { "survey", "cartography", "signal", "arrival", "order", "launch", "capture" } ) {
+        foreach ( string name in new[] { "survey", "cartography", "signal", "arrival", "order", "launch", "capture", "laser", "burst" } ) {
             using var stream = new MemoryStream( );
             SynthAudio.WriteWave( stream, name );
             var data = stream.GetBuffer( ).AsSpan( 0, (int)stream.Length );
