@@ -7,7 +7,7 @@ Open `DXSharp.sln` or run a project with `dotnet run --project samples/<name> -c
 | [ModernTriangle](ModernTriangle) | Minimal graphics pipeline and resize qualification |
 | [HelloTexture](HelloTexture) | Texture upload, SRV and sampler |
 | [InstancedGrid](InstancedGrid) | 256 animated quads in one instanced draw |
-| [LitCube](LitCube) | Transforms, lighting and a D32 depth buffer |
+| [LitCube](LitCube) | Indexed mesh upload, vertex input layouts, lighting and D32 depth |
 | [PlanarShadows](PlanarShadows) | Orbiting camera, multiple pipelines and projected shadows |
 | [ModernCompute](ModernCompute) | DXC compute readback, DirectML Add, and matrix inference with fused ReLU |
 | [NBodyGravity](NBodyGravity) | Ping-pong GPU simulation, instanced drawing, and a seeded CPU reference |

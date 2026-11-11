@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Direct3D;
 using Windows.Win32.Graphics.Direct3D12;
 using Windows.Win32.Graphics.Dxgi.Common;
@@ -71,6 +72,7 @@ public sealed unsafe partial class GraphicsDevice {
         description.Version = D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1_0;
         description.Anonymous.Desc_1_0 = new( ) {
             NumParameters = 1, pParameters = &parameter,
+            Flags = D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT,
             NumStaticSamplers = 1, pStaticSamplers = &sampler
         };
         return CreateRootSignature( description );
@@ -79,7 +81,7 @@ public sealed unsafe partial class GraphicsDevice {
     /// <summary>Creates a graphics root signature with up to 64 inline DWORDs at b0.</summary>
     public RootSignature CreateGraphicsConstantsRootSignature( uint valueCount ) {
         if ( valueCount is 0 or > 64 ) throw new ArgumentOutOfRangeException( nameof(valueCount) );
-        return CreateRootSignature( [InlineConstants( valueCount )] );
+        return CreateRootSignature( [InlineConstants( valueCount )], D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT );
     }
 
     /// <summary>Creates a graphics signature with constants at b0 and a vertex shader buffer at t0.</summary>
@@ -88,7 +90,7 @@ public sealed unsafe partial class GraphicsDevice {
         return CreateRootSignature( [InlineConstants( valueCount ), new( ) {
             ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_SRV,
             ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_VERTEX
-        }] );
+        }], D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT );
     }
 
     private static D3D12_ROOT_PARAMETER InlineConstants( uint count ) {
@@ -130,46 +132,84 @@ public sealed unsafe partial class GraphicsDevice {
 
     /// <summary>Creates a triangle-list graphics pipeline with optional D32_FLOAT depth testing and writes.</summary>
     public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
-        PixelFormat targetFormat, bool depthEnabled ) {
+        PixelFormat targetFormat, bool depthEnabled ) =>
+        CreateGraphicsPipeline( root, vertex, pixel, ReadOnlySpan<VertexElement>.Empty, targetFormat, depthEnabled );
+
+    /// <summary>Creates a triangle-list pipeline with explicit vertex/instance input elements and optional D32 depth testing.</summary>
+    /// <remarks>Every element offset is relative to its stream's start. Bind buffers whose stride and storage match this layout.</remarks>
+    public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
+        ReadOnlySpan<VertexElement> inputLayout, PixelFormat targetFormat = PixelFormat.Rgba8Unorm, bool depthEnabled = false ) {
         RequireSameDevice( root );
         vertex.RequireSuccess( ); pixel.RequireSuccess( );
         if ( vertex.Bytecode.IsEmpty || pixel.Bytecode.IsEmpty ) throw new ArgumentException( "Both compiled shader objects are required." );
-        using var lease = root.Native.Borrow( );
-        fixed ( byte* vs = vertex.Bytecode.Span, ps = pixel.Bytecode.Span ) {
-            D3D12_GRAPHICS_PIPELINE_STATE_DESC description = default;
-            description.pRootSignature = (ID3D12RootSignature_unmanaged*)lease.Pointer;
-            description.VS = new( ) { pShaderBytecode = vs, BytecodeLength = (nuint)vertex.Bytecode.Length };
-            description.PS = new( ) { pShaderBytecode = ps, BytecodeLength = (nuint)pixel.Bytecode.Length };
-            description.SampleMask = uint.MaxValue;
-            description.RasterizerState.FillMode = D3D12_FILL_MODE.D3D12_FILL_MODE_SOLID;
-            description.RasterizerState.CullMode = D3D12_CULL_MODE.D3D12_CULL_MODE_NONE;
-            description.RasterizerState.DepthClipEnable = true;
-            description.BlendState.RenderTarget.AsSpan( )[0] = new( ) {
-                SrcBlend = D3D12_BLEND.D3D12_BLEND_ONE, DestBlend = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOp = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
-                SrcBlendAlpha = D3D12_BLEND.D3D12_BLEND_ONE, DestBlendAlpha = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOpAlpha = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
-                LogicOp = D3D12_LOGIC_OP.D3D12_LOGIC_OP_NOOP, RenderTargetWriteMask = 15
-            };
-            description.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS;
-            if ( depthEnabled ) {
-                description.DSVFormat = DXGI_FORMAT.DXGI_FORMAT_D32_FLOAT;
-                description.DepthStencilState.DepthEnable = true;
-                description.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK.D3D12_DEPTH_WRITE_MASK_ALL;
-                description.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_LESS;
+        if ( inputLayout.Length > 32 ) throw new ArgumentOutOfRangeException( nameof(inputLayout) );
+        var names = new Utf8String?[inputLayout.Length];
+        Span<D3D12_INPUT_ELEMENT_DESC> elements = stackalloc D3D12_INPUT_ELEMENT_DESC[inputLayout.Length];
+        elements.Clear( );
+        try {
+            for ( int i = 0; i < inputLayout.Length; ++i ) {
+                var element = inputLayout[i];
+                if ( string.IsNullOrEmpty( element.Semantic ) || element.Semantic.Any( c => c == 0 || c > 127 ) )
+                    throw new ArgumentException( "Input semantics require nonempty ASCII names without null characters.", nameof(inputLayout) );
+                uint width = element.Format switch {
+                    VertexFormat.Float2 => 8,
+                    VertexFormat.Float3 => 12,
+                    VertexFormat.Float4 or VertexFormat.UInt4 => 16,
+                    VertexFormat.Unorm8x4 => 4,
+                    _ => throw new ArgumentException( "Unsupported vertex format.", nameof(inputLayout) )
+                };
+                if ( element.Slot >= 32 || element.Offset > 2048 - width )
+                    throw new ArgumentException( "An input element exceeds the slot or vertex stride limit.", nameof(inputLayout) );
+                names[i] = new Utf8String( element.Semantic );
+                elements[i] = new( ) {
+                    SemanticName = new PCSTR( names[i]!.Pointer ), SemanticIndex = element.SemanticIndex,
+                    Format = (DXGI_FORMAT)element.Format, InputSlot = element.Slot, AlignedByteOffset = element.Offset,
+                    InputSlotClass = element.InstanceStepRate == 0 ? D3D12_INPUT_CLASSIFICATION.D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA
+                        : D3D12_INPUT_CLASSIFICATION.D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA,
+                    InstanceDataStepRate = element.InstanceStepRate
+                };
             }
-            description.DepthStencilState.StencilReadMask = byte.MaxValue;
-            description.DepthStencilState.StencilWriteMask = byte.MaxValue;
-            description.DepthStencilState.FrontFace = new( ) {
-                StencilFailOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
-                StencilDepthFailOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
-                StencilPassOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
-                StencilFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS
-            };
-            description.DepthStencilState.BackFace = description.DepthStencilState.FrontFace;
-            description.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE.D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-            description.NumRenderTargets = 1; description.RTVFormats.AsSpan( )[0] = (DXGI_FORMAT)targetFormat; description.SampleDesc.Count = 1;
-            Guid id = typeof(ID3D12PipelineState).GUID;
-            Results.Check( Native.Interface.CreateGraphicsPipelineState( description, &id, out nint pointer ), "CreateGraphicsPipelineState" );
-            return OwnPipeline( pointer, root, false );
+            using var lease = root.Native.Borrow( );
+            fixed ( D3D12_INPUT_ELEMENT_DESC* input = elements )
+            fixed ( byte* vs = vertex.Bytecode.Span, ps = pixel.Bytecode.Span ) {
+                D3D12_GRAPHICS_PIPELINE_STATE_DESC description = default;
+                description.pRootSignature = (ID3D12RootSignature_unmanaged*)lease.Pointer;
+                description.VS = new( ) { pShaderBytecode = vs, BytecodeLength = (nuint)vertex.Bytecode.Length };
+                description.PS = new( ) { pShaderBytecode = ps, BytecodeLength = (nuint)pixel.Bytecode.Length };
+                description.InputLayout = new( ) { pInputElementDescs = input, NumElements = (uint)elements.Length };
+                description.SampleMask = uint.MaxValue;
+                description.RasterizerState.FillMode = D3D12_FILL_MODE.D3D12_FILL_MODE_SOLID;
+                description.RasterizerState.CullMode = D3D12_CULL_MODE.D3D12_CULL_MODE_NONE;
+                description.RasterizerState.DepthClipEnable = true;
+                description.BlendState.RenderTarget.AsSpan( )[0] = new( ) {
+                    SrcBlend = D3D12_BLEND.D3D12_BLEND_ONE, DestBlend = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOp = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
+                    SrcBlendAlpha = D3D12_BLEND.D3D12_BLEND_ONE, DestBlendAlpha = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOpAlpha = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
+                    LogicOp = D3D12_LOGIC_OP.D3D12_LOGIC_OP_NOOP, RenderTargetWriteMask = 15
+                };
+                description.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS;
+                if ( depthEnabled ) {
+                    description.DSVFormat = DXGI_FORMAT.DXGI_FORMAT_D32_FLOAT;
+                    description.DepthStencilState.DepthEnable = true;
+                    description.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK.D3D12_DEPTH_WRITE_MASK_ALL;
+                    description.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_LESS;
+                }
+                description.DepthStencilState.StencilReadMask = byte.MaxValue;
+                description.DepthStencilState.StencilWriteMask = byte.MaxValue;
+                description.DepthStencilState.FrontFace = new( ) {
+                    StencilFailOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
+                    StencilDepthFailOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
+                    StencilPassOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
+                    StencilFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS
+                };
+                description.DepthStencilState.BackFace = description.DepthStencilState.FrontFace;
+                description.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE.D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+                description.NumRenderTargets = 1; description.RTVFormats.AsSpan( )[0] = (DXGI_FORMAT)targetFormat; description.SampleDesc.Count = 1;
+                Guid id = typeof(ID3D12PipelineState).GUID;
+                Results.Check( Native.Interface.CreateGraphicsPipelineState( description, &id, out nint pointer ), "CreateGraphicsPipelineState" );
+                return OwnPipeline( pointer, root, false );
+            }
+        } finally {
+            foreach ( var name in names ) name?.Dispose( );
         }
     }
 

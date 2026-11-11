@@ -28,6 +28,7 @@ The [sample index](../samples/README.md) lists the runnable projects. Every port
 
 | Path | Automated evidence | Remaining qualification |
 | --- | --- | --- |
+| [Indexed meshes](tutorials/06-indexed-meshes.md) | WARP pixel readback with both index widths, an index above 65,535, instancing, and early disposal in JIT and NativeAOT | Hardware mesh and instancing stress, imported model fixtures |
 | [Buffered rendering](tutorials/02-buffered-rendering.md) | Two frame slots, fence-guarded allocator reuse, repeated resize and close on WARP | Hardware resize, minimize and teardown soak |
 | [N-Body Gravity](../samples/NBodyGravity) | Seeded GPU/CPU agreement over several steps and a bounded particle render | Separate compute queue with GPU-side handoff fences |
 | [DirectML inference](tutorials/04-directml.md) | Add and GEMM with fused ReLU checked against expected values | Additional shapes, operators, and hardware |
