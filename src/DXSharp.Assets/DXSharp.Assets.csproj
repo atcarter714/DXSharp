@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Description>Portable model import for DXSharp.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="SharpGLTF.Core" />
+  </ItemGroup>
+</Project>

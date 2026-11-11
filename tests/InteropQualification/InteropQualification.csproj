@@ -6,7 +6,13 @@
     <IsTestProject>false</IsTestProject>
     <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
   </PropertyGroup>
-  <ItemGroup><ProjectReference Include="../../src/DXSharp.Core/DXSharp.Core.csproj" /><ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/DXSharp.Core/DXSharp.Core.csproj" />
+    <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
+    <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
+    <None Include="../../samples/StaticModelViewer/Models/Patrol.gltf" Link="Models/Patrol.gltf"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
   <Target Name="CopyNativeFixture" AfterTargets="Build" Condition="'$(DXSharpNativeFixture)' != ''">
     <Copy SourceFiles="$(DXSharpNativeFixture)" DestinationFolder="$(TargetDir)" />
   </Target>
