@@ -59,8 +59,8 @@ internal static class SpaceDraw {
             return 1 - smoothstep(thickness, thickness + Viewport.w * 1.4, abs(distance));
         }
 
-        float Orbit(float2 point, float2 focus, float axis, float eccentricity) {
-            float2 delta = point - focus + float2(axis * eccentricity, 0);
+        float Orbit(float2 worldPosition, float2 focus, float axis, float eccentricity) {
+            float2 delta = worldPosition - focus + float2(axis * eccentricity, 0);
             delta.y *= rsqrt(1 - eccentricity * eccentricity);
             return Line(length(delta) - axis, Viewport.w * 0.45);
         }
