@@ -48,7 +48,7 @@ The compatibility audit reported at least 3,945 missing comments at the qualifie
 
 ### Assets and rendering toolkit
 
-Start with reusable upload batches, frame-local allocation, descriptors, and indexed mesh drawing. LitCube uses explicit vertex/index buffers and a typed input layout. The mesh upload path batches copies into a caller-owned direct command list, and submission retirement retains staging and draw dependencies. The Static Model Viewer loads a patrol scene through the portable `DXSharp.Assets` project. It shares uploaded geometry across nodes and renders base colors under directional lighting. Continue with textures, richer materials, and multi-texture descriptors. Use [DirectXTK12's memory helpers](https://github.com/Microsoft/DirectXTK12/wiki/Memory-Management) as a reference for upload and retirement, and [MiniEngine's ModelViewer](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/MiniEngine/ModelViewer) as a reference workload for Sponza.
+Start with reusable upload batches, frame-local allocation, descriptors, and indexed mesh drawing. LitCube uses explicit vertex/index buffers and a typed input layout. The mesh upload path batches copies into a caller-owned direct command list, and submission retirement retains staging and draw dependencies. The Static Model Viewer loads a patrol scene through the portable `DXSharp.Assets` project. It shares uploaded geometry and base color textures across nodes. Meshes and sRGB textures can record into the same direct command list. The current texture API binds one view at a time. A shared descriptor allocator is the next dependency for multi-texture materials and large draw lists. Use [DirectXTK12's memory helpers](https://github.com/Microsoft/DirectXTK12/wiki/Memory-Management) as a reference for upload and retirement, and [MiniEngine's ModelViewer](https://github.com/microsoft/DirectX-Graphics-Samples/tree/master/MiniEngine/ModelViewer) as a reference workload for Sponza.
 
 Make asset processing a build feature with an explicit item type, such as `DXSharpAsset`. Give assets stable logical IDs and declare kind, source, and build options. Process shaders, textures, and meshes offline into the project's intermediate directory, with dependencies and per-item inputs and outputs for incremental MSBuild. Publish cooked assets with a versioned manifest containing IDs, hashes, relative paths, and source/license information. Validate duplicate IDs, missing dependencies, and clean versus incremental output equivalence. Exercise the package from an external project. [MSBuild incremental targets](https://learn.microsoft.com/en-us/visualstudio/msbuild/how-to-build-incrementally)
 
@@ -86,3 +86,17 @@ Qualify resize, DPI changes, host teardown, and device removal in each adapter. 
 ## Qualification evidence
 
 The baseline was qualified with Windows and Linux native interop, Windows WARP samples, and NuGet consumption in GitHub Actions. The supplied Azure run shows Windows Debug, Windows Release, and Linux native interop succeeded with seven published artifacts at `9897953`. On the RTX 3080 Ti, the supplied console output verifies the DXC compute readback and the DXR hit and miss pixels. The N-body screenshot shows the 1,024-body window running on the same adapter. The hardware compute log covers the shader dispatch path. DirectML Add and GEMM have WARP evidence from CI.
+
+
+## Toolkit parity
+
+| Capability | Qualified or usable path | Next implementation |
+| --- | --- | --- |
+| Upload and memory helpers | Caller-owned mesh and single-mip RGBA uploads with fence-retained staging | Reusable upload pages, descriptor arenas, batched texture subresources, deferred recycling |
+| Texture and material workflow | Embedded glTF PNG/JPEG base color, sRGB SRVs, indexed static meshes | DDS/WIC/TGA and BC formats, mip chains, sampler variants, metallic-roughness and normal maps |
+| Model and content workflow | Source-tree static asset library and MSBuild build/publish staging | Versioned incremental cooker, portable manifests, dependency tracking, FBX ingest, skeletons and animation |
+| Draw helpers | Typed vertex streams, instancing, depth, and sample-local HUD and effects | Shared sprite, font and primitive batches, standard effects and pipeline presets |
+| Game framework | Windows desktop loop, resize handling, sample-local music and selection | Input and audio toolkit APIs, embeddable hosts, reusable time and frame services |
+| Interop breadth | Generated COM and native lifetime qualification for the modern path | Inventory the legacy API by subsystem, add missing bindings and verify ABI and lifetime on supported architectures |
+
+Use the [DirectXTK12 component list](https://github.com/microsoft/DirectXTK12#documentation) to track toolkit capabilities and the legacy DXSharp surface to track native API coverage. Keep those acceptance criteria independent. A qualified asset workflow should ingest an authored scene, build it incrementally, package it, and render it from the packaged output on a clean consumer project.

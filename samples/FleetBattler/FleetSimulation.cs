@@ -97,6 +97,11 @@ internal sealed partial class FleetSimulation {
     internal int WingsBuilt { get; private set; }
     internal ReadOnlySpan<Vector2> Positions => _positions.AsSpan( 0, Count );
 
+    internal bool AnySelectedInSquad( int index, ReadOnlySpan<bool> selected ) {
+        ref readonly var squad = ref _squads[index];
+        return selected.Slice( squad.First, squad.Count ).Contains( true );
+    }
+
     internal Vector2 Center( int squad ) => _squads[squad].Center;
     internal Vector2 Target( int squad ) => _squads[squad].Anchor;
     internal Vector2 Center( FleetSelection selected ) => selected.IsShip ? _positions[selected.Ship] : Center( selected.Squad );
@@ -105,6 +110,9 @@ internal sealed partial class FleetSimulation {
     internal bool Orbiting( FleetSelection selected ) => (selected.IsShip && _shipOrders[selected.Ship].Detached
         ? _shipOrders[selected.Ship].Body : _squads[selected.Squad].Order.Body) != 0;
     internal int ShipCount( int squad ) => _squads[squad].Alive;
+    internal bool IsPlayerSquad( int squad ) => _squads[squad].Faction == 0;
+    internal bool IsScoutSquad( int squad ) => IsPlayerSquad( squad ) && squad is 0 or 3;
+    internal bool CanBuildWing => Ore >= WingCost && WingsBuilt < WingGoal && !Lost;
 
     internal int FindSquad( Vector2 point ) {
         int closest = 0;
@@ -170,7 +178,7 @@ internal sealed partial class FleetSimulation {
         _bodies[body].Radius * (body == 2 ? 2.4f : 1.35f) + 6 + (count == 1 ? 0 : MathF.Sqrt( count ) * Pitch * 0.55f);
 
     internal int BuildWing( ) {
-        if ( Ore < WingCost || WingsBuilt == WingGoal || Lost ) return -1;
+        if ( !CanBuildWing ) return -1;
         int index = SquadCount;
         var arrival = Shipyard + new Vector2( WingsBuilt * 13, 0 );
         AddSquad( WingSize, 0, arrival );
@@ -318,10 +326,17 @@ internal sealed partial class FleetSimulation {
         }
     }
 
-    internal void FillInstances( Span<ShipInstance> destination, FleetSelection selected, ReadOnlySpan<bool> selection = default ) {
+    internal int FillInstances( Span<ShipInstance> destination, FleetSelection selected, ReadOnlySpan<bool> selection = default,
+        bool groupHulls = false ) {
         if ( destination.Length != ActiveCount ) throw new ArgumentException( "Instance span must match the active ship count.", nameof(destination) );
-        int index = 0;
+        int corvettes = ActiveCount;
+        if ( groupHulls ) {
+            for ( int i = 0; i < SquadCount; ++i )
+                if ( IsScoutSquad( i ) ) corvettes -= ShipCount( i );
+        }
+        int index = 0, scoutIndex = corvettes;
         for ( int i = 0; i < SquadCount; ++i ) {
+            bool scout = groupHulls && IsScoutSquad( i );
             ref readonly var squad = ref _squads[i];
             var tint = squad.Faction == 0 ? new Vector4( 0.66f, 1.55f, 2.25f, 1.04f )
                 : new Vector4( 2.9f, 0.89f, 0.37f, 1.11f );
@@ -331,10 +346,11 @@ internal sealed partial class FleetSimulation {
                 bool highlighted = selection.IsEmpty ? ship == selected.Ship || !selected.IsShip && i == selected.Squad : selection[ship];
                 var color = tint;
                 if ( highlighted ) color.W = 1.66f;
-                destination[index++] = new( _positions[ship], _headings[ship], color,
-                    new Vector4( _thrust[ship], (ship % 173) * 0.618f, 1, (float)_hull[ship] / HullCapacity + (highlighted ? 2 : 0) ) );
+                destination[scout ? scoutIndex++ : index++] = new( _positions[ship], _headings[ship], color,
+                    new Vector4( _thrust[ship], (ship % 173) * 0.618f, scout ? 0.75f : 1, (float)_hull[ship] / HullCapacity + (highlighted ? 2 : 0) ) );
             }
         }
+        return corvettes;
     }
 
     internal ulong StateHash( ) {

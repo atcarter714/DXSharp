@@ -19,10 +19,14 @@ try {
     foreach ($sample in 'HelloTexture', 'InstancedGrid', 'LitCube', 'PlanarShadows', 'StaticModelViewer') {
         Invoke-Sample $sample @('run', '--project', "samples/$sample", '-c', 'Debug', '--', '--warp', '--frames=4')
     }
+    Invoke-Sample 'StaticModelViewer-textured' @('run', '--project', 'samples/StaticModelViewer', '-c', 'Debug', '--',
+        '--warp', '--frames=4', '--model=samples/FleetBattler/Models/Freighter.gltf')
     Invoke-Sample 'FleetBattler' @('run', '--project', 'samples/FleetBattler', '-c', 'Debug', '--',
         '--warp', '--mute', '--ships=129', '--frames=7', '--resize-test')
     Invoke-Sample 'FleetBattler-views' @('run', '--project', 'samples/FleetBattler', '-c', 'Debug', '--',
         '--warp', '--mute', '--traffic=257', '--debris=513', '--frames=9', '--view-test')
+    Invoke-Sample 'FleetBattler-dense-traffic' @('run', '--project', 'samples/FleetBattler', '-c', 'Debug', '--',
+        '--warp', '--mute', '--traffic=8193', '--debris=2049', '--frames=3')
     Invoke-Sample 'ModernTriangle-buffered' @('run', '--project', 'samples/ModernTriangle', '-c', 'Debug', '--',
         '--warp', '--buffered', '--frames=8', '--resize-test', '--evidence=artifacts/triangle-resize/buffered')
     Invoke-Sample 'NBodyGravity-numerical' @('run', '--project', 'samples/NBodyGravity', '-c', 'Debug', '--', '--warp', '--verify', '--bodies=65', '--steps=5')

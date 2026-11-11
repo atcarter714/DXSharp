@@ -4,10 +4,8 @@ using System.Windows.Media;
 namespace FleetBattler;
 
 internal sealed class FleetAudio : IDisposable {
-    private static readonly string[] Situations = ["system", "galaxy", "contested", "victory"];
-    private static readonly string[] Defaults = ["@survey", "@cartography", "@signal", "@arrival"];
     private readonly string _folder;
-    private readonly string[][] _tracks = new string[Situations.Length][];
+    private readonly Jukebox _jukebox;
     private readonly MediaPlayer _music = new( ), _effect = new( );
     private readonly bool _available;
     private int _situation = -1, _nextTrack, _consecutiveFailures;
@@ -16,30 +14,15 @@ internal sealed class FleetAudio : IDisposable {
     internal FleetAudio( bool muted ) {
         _muted = muted;
         _folder = Path.Combine( AppContext.BaseDirectory, "Music" );
-        float musicVolume = 0.24f, effectsVolume = 0.50f;
-        for ( int i = 0; i < _tracks.Length; ++i ) _tracks[i] = [Defaults[i]];
         try {
-            var path = Path.Combine( _folder, "jukebox.json" );
-            if ( File.Exists( path ) ) {
-                using var config = JsonDocument.Parse( File.ReadAllBytes( path ) );
-                var root = config.RootElement;
-                musicVolume = Volume( root, "musicVolume", musicVolume );
-                effectsVolume = Volume( root, "effectsVolume", effectsVolume );
-                if ( root.TryGetProperty( "playlists", out var lists ) ) {
-                    for ( int i = 0; i < _tracks.Length; ++i ) {
-                        if ( !lists.TryGetProperty( Situations[i], out var items ) ) continue;
-                        var files = items.EnumerateArray( ).Select( value => value.GetString( ) )
-                            .Where( value => !string.IsNullOrWhiteSpace( value ) ).Cast<string>( ).ToArray( );
-                        if ( files.Length > 0 ) _tracks[i] = files;
-                    }
-                }
-            }
-        } catch ( Exception error ) when ( error is IOException or JsonException or InvalidOperationException or UnauthorizedAccessException ) {
+            _jukebox = Jukebox.Read( Path.Combine( _folder, "jukebox.json" ) );
+        } catch ( Exception error ) when ( error is IOException or JsonException or UnauthorizedAccessException ) {
             Console.WriteLine( $"Jukebox configuration: {error.Message}" );
+            _jukebox = new( );
         }
         try {
-            _music.Volume = musicVolume;
-            _effect.Volume = effectsVolume;
+            _music.Volume = _jukebox.MusicVolume;
+            _effect.Volume = _jukebox.EffectsVolume;
             _music.MediaEnded += OnEnded;
             _music.MediaFailed += OnFailed;
             _effect.MediaFailed += ( _, error ) => Console.WriteLine( $"Fleet audio cue: {error.ErrorException.Message}" );
@@ -52,7 +35,9 @@ internal sealed class FleetAudio : IDisposable {
     internal void SetSituation( bool galaxy, bool contested, bool victory ) {
         int situation = galaxy ? 1 : victory ? 3 : contested ? 2 : 0;
         if ( situation == _situation ) return;
+        bool continuing = _situation >= 0 && _jukebox.Tracks( situation ).AsSpan( ).SequenceEqual( _jukebox.Tracks( _situation ) );
         _situation = situation;
+        if ( continuing ) return;
         _nextTrack = _consecutiveFailures = 0;
         if ( _available && !_muted ) PlayNext( );
     }
@@ -87,15 +72,16 @@ internal sealed class FleetAudio : IDisposable {
 
     private void OnFailed( object? sender, ExceptionEventArgs args ) {
         Console.WriteLine( $"Fleet music: {args.ErrorException.Message}" );
-        if ( ++_consecutiveFailures <= _tracks[_situation].Length ) PlayNext( );
+        if ( !_muted && _situation >= 0 && ++_consecutiveFailures <= _jukebox.Tracks( _situation ).Length ) PlayNext( );
     }
 
     private void PlayNext( ) {
         if ( _muted || !_available || _situation < 0 ) return;
-        var tracks = _tracks[_situation];
+        var tracks = _jukebox.Tracks( _situation );
         for ( int attempt = 0; attempt <= tracks.Length; ++attempt ) {
             string choice = attempt == tracks.Length || _consecutiveFailures >= tracks.Length
-                ? Defaults[_situation] : tracks[_nextTrack++ % tracks.Length];
+                ? _jukebox.Fallback( _situation ) : tracks[_nextTrack];
+            _nextTrack = (_nextTrack + 1) % tracks.Length;
             try {
                 string? file = Resolve( choice );
                 if ( file is null || !File.Exists( file ) ) {
@@ -119,10 +105,6 @@ internal sealed class FleetAudio : IDisposable {
         string relative = Path.GetRelativePath( _folder, path );
         return relative == ".." || relative.StartsWith( ".." + Path.DirectorySeparatorChar, StringComparison.Ordinal ) ? null : path;
     }
-
-    private static float Volume( JsonElement root, string name, float fallback ) =>
-        root.TryGetProperty( name, out var value ) && value.ValueKind == JsonValueKind.Number && value.TryGetSingle( out float level ) &&
-        float.IsFinite( level ) ? Math.Clamp( level, 0, 1 ) : fallback;
 
     public void Dispose( ) {
         if ( !_available ) return;

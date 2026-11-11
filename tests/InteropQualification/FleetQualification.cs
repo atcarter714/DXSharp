@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using FleetBattler;
 
 namespace InteropQualification;
@@ -49,10 +50,16 @@ internal static class FleetQualification {
             }
         }
 
+        int corvettes = fleet.FillInstances( instances, new( 0 ), groupHulls: true );
+        Require( corvettes == fleet.Count - fleet.ShipCount( 0 ) - fleet.ShipCount( 3 ) &&
+            instances.Take( corvettes ).All( item => item.Motion.Z == 1 ) &&
+            instances.Skip( corvettes ).All( item => item.Motion.Z == 0.75f ) &&
+            instances[corvettes].Center == fleet.Positions[0], "contiguous class batches preserve ship positions" );
+
         long start = GC.GetAllocatedBytesForCurrentThread( );
         for ( int i = 0; i < 120; ++i ) {
             fleet.Step( );
-            fleet.FillInstances( instances, new( 1 ) );
+            fleet.FillInstances( instances, new( 1 ), groupHulls: true );
         }
         Require( GC.GetAllocatedBytesForCurrentThread( ) == start, "steady-state stepping and packing allocate zero bytes" );
     }
@@ -149,7 +156,14 @@ internal static class FleetQualification {
         Require( selection.Count == 6 && selection.Focus( fleet ).Squad == 0, "double click selects a squad" );
         selection.Box( fleet, new( 0, 0, dimensions.X, dimensions.Y ), matrix, dimensions, SelectionMode.Add );
         Require( selection.Count == fleet.CyanCount, "box selection excludes hostile units" );
-        Require( FleetHud.ActionAt( new( 498, 178 ), 640, 400, 1 ) == PlanetAction.Mine, "mine button hit test" );
+        Require( FleetHud.Hit( new( 510, 179 ), 640, 400, fleet, 1 ) == new HudHit( HudAction.Planet, (int)PlanetAction.Mine ) &&
+            FleetHud.Hit( new( 30, 94 ), 640, 400, fleet, 1 ) == new HudHit( HudAction.Squad, 0 ) &&
+            FleetHud.Hit( new( 485, 23 ), 640, 400, fleet, 1 ).Action == HudAction.Pause &&
+            FleetHud.Hit( new( 510, 170 ), 640, 400, fleet, 1 ).Action == HudAction.Panel &&
+            FleetHud.Hit( new( 320, 200 ), 640, 400, fleet, 1 ).Action == HudAction.None,
+            "HUD routes buttons, squad rows and panel gaps without issuing scene orders" );
+        Require( FleetHud.Hit( new( 1_020, 358 ), 1_280, 800, fleet, 1 ) == new HudHit( HudAction.Planet, (int)PlanetAction.Mine ),
+            "HUD scales its hit regions with the viewport" );
     }
 
     private static void VerifyPlanetEconomy( ) {
@@ -171,6 +185,21 @@ internal static class FleetQualification {
     }
 
     private static void VerifyAudio( ) {
+        using var custom = JsonDocument.Parse( """
+            {"playlists":{"system":["system-theme.mp3"],"galaxy":["chart.wav"],"contested":["@signal"],"victory":["@arrival"]}}
+            """ );
+        var jukebox = Jukebox.Parse( custom.RootElement );
+        Require( ReferenceEquals( jukebox.Tracks( 0 ), jukebox.Tracks( 2 ) ) &&
+            ReferenceEquals( jukebox.Tracks( 0 ), jukebox.Tracks( 3 ) ) &&
+            jukebox.Tracks( 1 ).SequenceEqual( new[] { "chart.wav" } ) &&
+            jukebox.Fallback( 3 ) == "@survey", "custom music continues through default battle and victory playlists" );
+        using var optIn = JsonDocument.Parse( """
+            {"useProceduralTransitions":true,"playlists":{"system":["my-track.wav"],"contested":["@signal"]}}
+            """ );
+        Require( Jukebox.Parse( optIn.RootElement ).Tracks( 2 ).SequenceEqual( new[] { "@signal" } ),
+            "explicit procedural transitions still work" );
+        Require( new Jukebox( ).Tracks( 1 ).SequenceEqual( new[] { "@cartography" } ), "default soundtrack still has context" );
+
         foreach ( string name in new[] { "survey", "cartography", "signal", "arrival", "order", "launch", "capture", "laser", "burst" } ) {
             using var stream = new MemoryStream( );
             SynthAudio.WriteWave( stream, name );

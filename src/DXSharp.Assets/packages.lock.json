@@ -7,6 +7,12 @@
         "requested": "[1.0.7, 1.0.7]",
         "resolved": "1.0.7",
         "contentHash": "dZHCUl2jH1ViiLbAwyYbVfZnFqsF1e/9OhZAfLBoggOpqnsbgKQghldK3LnobmtNRp6GNZMyaNkPceqERkqmsQ=="
+      },
+      "StbImageSharp": {
+        "type": "Direct",
+        "requested": "[2.30.16, 2.30.16]",
+        "resolved": "2.30.16",
+        "contentHash": "qg1i+NHihXVKLKYacGKrauhSQIGL31eBWcTC4Vc7jnGmBFj87LkRuCdXB5aDZisWMRnB6x2mcfwYXQxMWEG/lw=="
       }
     }
   }

@@ -54,7 +54,38 @@ internal static class AssetQualification {
         document = JsonNode.Parse( json )!;
         document["materials"]![0]!["alphaMode"] = "BLEND";
         RequireUnsupported( document, "opaque" );
-        Console.WriteLine( "PASS: static glTF and GLB geometry, transforms, material colors, and unsupported resources validated." );
+        VerifyTexturedAssets( );
+        Console.WriteLine( "PASS: static glTF and GLB geometry, transforms, sRGB base color textures, and unsupported resources validated." );
+    }
+
+    private static void VerifyTexturedAssets( ) {
+        Require( Marshal.SizeOf<TexturedModelVertex>( ) == 44, "textured vertex ABI" );
+        foreach ( var (file, length) in new[] { ("SurveyScout", 28f), ("Corvette", 48f), ("Freighter", 96f), ("MiningRelay", 48f) } ) {
+            var model = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", file + ".gltf" ) );
+            var primitive = model.Primitives[0];
+            var image = primitive.BaseColorTexture;
+            Require( model.Instances.Length == 1 && model.Instances[0].WorldTransform == Matrix4x4.Identity &&
+                model.BoundsMax.Z - model.BoundsMin.Z == length, $"{file} source scale and origin" );
+            Require( image is { Width: 64, Height: 64 } && image.Pixels.Length == 64 * 64 * 4 &&
+                image.Pixels[3] == 255 && image.Pixels[0] == 194, $"{file} embedded PNG data" );
+            var vertices = new TexturedModelVertex[primitive.Vertices.Length];
+            primitive.CopyTexturedVertices( vertices );
+            Require( primitive.TexCoords.Length == vertices.Length &&
+                vertices[1].TexCoord == primitive.TexCoords[1] && vertices[1].Position == primitive.Vertices[1].Position,
+                $"{file} interleaved positions and UVs" );
+        }
+
+        var text = File.ReadAllText( Path.Combine( AppContext.BaseDirectory, "Models", "SurveyScout.gltf" ) );
+        var document = JsonNode.Parse( text )!;
+        var primitives = document["meshes"]![0]!["primitives"]!.AsArray( );
+        primitives.Add( primitives[0]!.DeepClone( ) );
+        primitives[1]!["attributes"]!.AsObject( ).Remove( "NORMAL" );
+        using var stream = new MemoryStream( Encoding.UTF8.GetBytes( document.ToJsonString( ) ) );
+        var shared = GltfModel.Read( stream );
+        var flat = shared.Primitives[1];
+        Require( ReferenceEquals( shared.Primitives[0].BaseColorTexture, flat.BaseColorTexture ) &&
+            flat.TexCoords.Length == flat.Indices.Length && flat.TexCoords[2] ==
+                shared.Primitives[0].TexCoords[(int)shared.Primitives[0].Indices[2]], "shared image and UVs survive flat normal expansion" );
     }
 
     private static MemoryStream CreateGlb( JsonNode document ) {

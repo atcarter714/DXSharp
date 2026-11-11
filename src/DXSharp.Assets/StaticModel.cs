@@ -10,18 +10,65 @@ namespace DXSharp.Assets;
 [StructLayout( LayoutKind.Sequential )]
 public readonly record struct ModelVertex( Vector3 Position, Vector3 Normal, Vector3 Color );
 
+/// <summary>Decoded sRGB base color pixels shared by the primitives that reference an image.</summary>
+public sealed class StaticTexture {
+    private readonly byte[] _pixels;
+
+    internal StaticTexture( int width, int height, byte[] pixels ) {
+        Width = width;
+        Height = height;
+        _pixels = pixels;
+    }
+
+    /// <summary>Gets the image width in pixels.</summary>
+    public int Width { get; }
+
+    /// <summary>Gets the image height in pixels.</summary>
+    public int Height { get; }
+
+    /// <summary>Gets tightly packed, top-to-bottom RGBA8 pixels with sRGB RGB channels.</summary>
+    public ReadOnlySpan<byte> Pixels => _pixels;
+}
+
+/// <summary>A model vertex extended with normalized base color texture coordinates.</summary>
+/// <param name="Position">The mesh-local position.</param>
+/// <param name="Normal">The mesh-local unit normal.</param>
+/// <param name="Color">The linear vertex and material tint.</param>
+/// <param name="TexCoord">The base color UV.</param>
+[StructLayout( LayoutKind.Sequential )]
+public readonly record struct TexturedModelVertex( Vector3 Position, Vector3 Normal, Vector3 Color, Vector2 TexCoord );
+
 /// <summary>Shared geometry for one triangle-list primitive.</summary>
 public sealed class StaticModelPrimitive {
     private readonly ModelVertex[] _vertices;
     private readonly uint[] _indices;
+    private readonly Vector2[]? _texCoords;
 
-    internal StaticModelPrimitive( ModelVertex[] vertices, uint[] indices ) {
+    internal StaticModelPrimitive( ModelVertex[] vertices, uint[] indices, Vector2[]? texCoords, StaticTexture? baseColor ) {
         _vertices = vertices;
         _indices = indices;
+        _texCoords = texCoords;
+        BaseColorTexture = baseColor;
     }
 
     /// <summary>Gets the mesh-local vertices.</summary>
     public ReadOnlySpan<ModelVertex> Vertices => _vertices;
+
+    /// <summary>Gets the base color coordinates parallel to <see cref="Vertices"/>, or an empty span.</summary>
+    public ReadOnlySpan<Vector2> TexCoords => _texCoords;
+
+    /// <summary>Gets the optional sRGB base color image. Sample with linear repeat filtering.</summary>
+    public StaticTexture? BaseColorTexture { get; }
+
+    /// <summary>Copies interleaved geometry suitable for a textured vertex stream.</summary>
+    /// <param name="destination">A destination of at least <see cref="Vertices"/> length.</param>
+    public void CopyTexturedVertices( Span<TexturedModelVertex> destination ) {
+        if ( destination.Length < _vertices.Length ) throw new ArgumentException( "Vertex destination is too short.", nameof(destination) );
+        for ( int i = 0; i < _vertices.Length; ++i ) {
+            var vertex = _vertices[i];
+            destination[i] = new( vertex.Position, vertex.Normal, vertex.Color, _texCoords is null ? Vector2.Zero : _texCoords[i] );
+        }
+    }
 
     /// <summary>Gets the zero-based triangle-list indices in glTF winding order.</summary>
     public ReadOnlySpan<uint> Indices => _indices;

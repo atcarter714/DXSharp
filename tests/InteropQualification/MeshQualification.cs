@@ -4,6 +4,7 @@ using DXSharp;
 using DXSharp.Assets;
 using DXSharp.Graphics;
 using DXSharp.Interop;
+using DXSharp.Samples;
 using DXSharp.Shaders;
 using FleetBattler;
 using Windows.Win32.Graphics.Direct3D12;
@@ -46,6 +47,7 @@ internal static unsafe class MeshQualification {
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: true );
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: false );
         Render( device, vertex, pixel, instanceStepRate: 2, splitIndexFormats: false );
+        RenderSampledTexture( device, compiler );
         RenderFleet( device, compiler );
         VerifyComputeTraffic( device, compiler );
         RenderSystem( device, compiler );
@@ -119,65 +121,132 @@ internal static unsafe class MeshQualification {
         ValidatePixels( bytes, footprint );
     }
 
+    private static void RenderSampledTexture( GraphicsDevice device, ShaderCompiler compiler ) {
+        const string shader = """
+            cbuffer Options : register(b0) { float Left; };
+            Texture2D Plate : register(t0);
+            SamplerState SurfaceSampler : register(s0);
+            float4 VS(uint id : SV_VertexID) : SV_Position {
+                const float2 vertices[6] = {float2(0,-1),float2(1,-1),float2(0,1),float2(0,1),float2(1,-1),float2(1,1)};
+                return float4(vertices[id] + float2(Left,0),0,1);
+            }
+            float4 PS(float4 pixel : SV_Position) : SV_Target {
+                return Plate.Sample(SurfaceSampler,float2(0.5,pixel.y < 23 ? 0.25 : 0.75));
+            }
+            """;
+        using var queue = device.CreateCommandQueue( );
+        using var allocator = device.CreateCommandAllocator( );
+        using var commands = device.CreateCommandList( allocator );
+        ReadOnlySpan<byte> pixels = [
+            0, 0, 0, 255, 128, 0, 0, 255, 0, 0, 0, 255,
+            0, 0, 0, 255, 0, 128, 0, 255, 0, 0, 0, 255
+        ];
+        using var srgb = device.CreateSampledTexture2D( commands, 3, 2, pixels, srgb: true );
+        using var linear = device.CreateSampledTexture2D( commands, 3, 2, pixels );
+        using var root = device.CreateTextureRootSignature( 1, linearWrap: true );
+        using var pipeline = device.CreateGraphicsPipeline( root, compiler.Compile( shader, "VS", "vs_6_0" ),
+            compiler.Compile( shader, "PS", "ps_6_0" ) );
+        using var target = CreateTarget( device );
+        using var heap = device.CreateRenderTargetHeap( 1 );
+        var view = device.CreateRenderTargetView( target, heap, 0 );
+        var description = target.Native.Interface.GetDesc( );
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+        ulong size;
+        device.Native.Interface.GetCopyableFootprints( &description, 0, 1, 0, &footprint, null, null, &size );
+        using var readback = device.CreateBuffer( size, BufferMemory.Readback );
+        commands.SetViewport( Width, Height );
+        commands.Clear( view, 0, 0, 0 );
+        commands.SetRenderTarget( view );
+        commands.SetGraphicsPipeline( pipeline );
+        Draw( srgb, -1 );
+        Draw( linear, 0 );
+        commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
+        CopyPixels( commands, target, readback, footprint );
+        commands.Close( );
+        srgb.Dispose( );
+        linear.Dispose( );
+        queue.Wait( queue.Submit( commands ) );
+        var bytes = new byte[checked((int)size)];
+        readback.Read<byte>( bytes );
+        ulong offsetBytes = footprint.Offset;
+        uint rowPitch = footprint.Footprint.RowPitch;
+        Check( 12, 12, 55, 0 );
+        Check( 12, 32, 0, 55 );
+        Check( 48, 12, 128, 0 );
+        Check( 48, 32, 0, 128 );
+        Console.WriteLine( "PASS: batched RGBA uploads preserved row alignment, sRGB sampling, descriptor switches, and early disposal." );
+
+        void Draw( SampledTexture2D texture, float left ) {
+            commands.SetGraphicsConstants( [BitConverter.SingleToUInt32Bits( left )] );
+            commands.SetGraphicsTexture( texture, 1 );
+            commands.Draw( 6 );
+        }
+
+        void Check( uint x, uint y, int red, int green ) {
+            int offset = checked((int)(offsetBytes + y * rowPitch + x * 4));
+            if ( Math.Abs( bytes[offset] - red ) > 1 || Math.Abs( bytes[offset + 1] - green ) > 1 ||
+                 bytes[offset + 2] != 0 || bytes[offset + 3] != 255 )
+                throw new InvalidOperationException( $"Sampled texture at ({x},{y}) was {bytes[offset]},{bytes[offset + 1]},{bytes[offset + 2]},{bytes[offset + 3]}." );
+        }
+    }
+
     private static void RenderFleet( GraphicsDevice device, ShaderCompiler compiler ) {
         var model = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "Patrol.gltf" ) );
         using var queue = device.CreateCommandQueue( );
         using var uploadAllocator = device.CreateCommandAllocator( );
         using var uploads = device.CreateCommandList( uploadAllocator );
-        var meshes = new Mesh[model.Primitives.Length];
-        try {
-            FleetDraw.RecordUploads( device, uploads, model, meshes );
-            uploads.Close( );
-            using var root = device.CreateGraphicsConstantsRootSignature( 16 );
-            using var pipeline = FleetDraw.CreatePipeline( device, root, compiler, depthEnabled: true );
-            using var instances = device.CreateBuffer( 2 * FleetDraw.InstanceStride, BufferMemory.Upload );
-            instances.Write<ShipInstance>( [
-                new( new( -5, 0 ), Vector2.UnitX, new( 0.2f, 0.55f, 2.15f, 1 ) ),
-                new( new( 5, 0 ), -Vector2.UnitX, new( 2.55f, 0.55f, 0.18f, 1 ) )
-            ] );
-            using var target = CreateTarget( device );
-            using var heap = device.CreateRenderTargetHeap( 1 );
-            var view = device.CreateRenderTargetView( target, heap, 0 );
-            using var depth = device.CreateDepthTarget( Width, Height );
-            var description = target.Native.Interface.GetDesc( );
-            D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
-            ulong readbackBytes;
-            device.Native.Interface.GetCopyableFootprints( &description, 0, 1, 0, &footprint, null, null, &readbackBytes );
-            using var readback = device.CreateBuffer( readbackBytes, BufferMemory.Readback );
-            using var allocator = device.CreateCommandAllocator( );
-            using var commands = device.CreateCommandList( allocator );
-            commands.SetViewport( Width, Height );
-            commands.Clear( view, 0, 0, 0 );
-            commands.SetRenderTarget( view, depth, clearDepth: true );
-            var camera = Matrix4x4.CreateLookAt( new( 0, 20, 0 ), Vector3.Zero, -Vector3.UnitZ );
-            var projection = Matrix4x4.CreateOrthographic( 18, 12, 0.1f, 40 );
-            FleetDraw.Record( commands, pipeline, meshes, instances, 2, camera * projection );
-            commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
-            CopyPixels( commands, target, readback, footprint );
-            commands.Close( );
-            queue.Submit( uploads );
-            queue.Wait( queue.Submit( commands ) );
-            var bytes = new byte[checked((int)readbackBytes)];
-            readback.Read<byte>( bytes );
+        using var meshes = new StaticMeshSet( device, uploads, model );
+        uploads.Close( );
+        using var root = device.CreateTextureRootSignature( 16, linearWrap: true );
+        using var pipeline = FleetDraw.CreatePipeline( device, root, compiler, depthEnabled: true );
+        using var instances = device.CreateBuffer( 2 * FleetDraw.InstanceStride, BufferMemory.Upload );
+        instances.Write<ShipInstance>( [
+            new( new( -5, 0 ), Vector2.UnitX, new( 0.2f, 0.55f, 2.15f, 1 ) ),
+            new( new( 5, 0 ), -Vector2.UnitX, new( 2.55f, 0.55f, 0.18f, 1 ) )
+        ] );
+        using var target = CreateTarget( device );
+        using var heap = device.CreateRenderTargetHeap( 1 );
+        var view = device.CreateRenderTargetView( target, heap, 0 );
+        using var depth = device.CreateDepthTarget( Width, Height );
+        var description = target.Native.Interface.GetDesc( );
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+        ulong readbackBytes;
+        device.Native.Interface.GetCopyableFootprints( &description, 0, 1, 0, &footprint, null, null, &readbackBytes );
+        using var readback = device.CreateBuffer( readbackBytes, BufferMemory.Readback );
+        using var allocator = device.CreateCommandAllocator( );
+        using var commands = device.CreateCommandList( allocator );
+        commands.SetViewport( Width, Height );
+        commands.Clear( view, 0, 0, 0 );
+        commands.SetRenderTarget( view, depth, clearDepth: true );
+        var camera = Matrix4x4.CreateLookAt( new( 0, 20, 0 ), Vector3.Zero, -Vector3.UnitZ );
+        var projection = Matrix4x4.CreateOrthographic( 18, 12, 0.1f, 40 );
+        FleetDraw.Record( commands, pipeline, meshes, instances, 2, camera * projection );
+        commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
+        CopyPixels( commands, target, readback, footprint );
+        commands.Close( );
+        meshes.Dispose( );
+        GC.Collect( );
+        GC.WaitForPendingFinalizers( );
+        queue.Submit( uploads );
+        queue.Wait( queue.Submit( commands ) );
+        var bytes = new byte[checked((int)readbackBytes)];
+        readback.Read<byte>( bytes );
 
-            int cyan = 0, amber = 0;
-            for ( uint y = 0; y < Height; ++y ) {
-                for ( uint x = 0; x < Width; ++x ) {
-                    int offset = checked((int)(footprint.Offset + y * footprint.Footprint.RowPitch + x * 4));
-                    byte r = bytes[offset], g = bytes[offset + 1], b = bytes[offset + 2];
-                    if ( (r | g | b) == 0 ) continue;
-                    if ( x < Width / 2 - 4 && b > r + 24 ) ++cyan;
-                    if ( x > Width / 2 + 4 && r > b + 24 ) ++amber;
-                    if ( x >= Width / 2 - 4 && x <= Width / 2 + 4 )
-                        throw new InvalidOperationException( "Fleet pixels crossed the clear gap between instances." );
-                }
+        int cyan = 0, amber = 0;
+        for ( uint y = 0; y < Height; ++y ) {
+            for ( uint x = 0; x < Width; ++x ) {
+                int offset = checked((int)(footprint.Offset + y * footprint.Footprint.RowPitch + x * 4));
+                byte r = bytes[offset], g = bytes[offset + 1], b = bytes[offset + 2];
+                if ( (r | g | b) == 0 ) continue;
+                if ( x < Width / 2 - 4 && b > r + 24 ) ++cyan;
+                if ( x > Width / 2 + 4 && r > b + 24 ) ++amber;
+                if ( x >= Width / 2 - 4 && x <= Width / 2 + 4 )
+                    throw new InvalidOperationException( "Fleet pixels crossed the clear gap between instances." );
             }
-            if ( cyan < 24 || amber < 24 )
-                throw new InvalidOperationException( $"Missing tinted fleet geometry: {cyan} cyan, {amber} amber pixels." );
-            Console.WriteLine( $"PASS: patrol fleet indexed instancing read back {cyan} cyan and {amber} amber pixels." );
-        } finally {
-            foreach ( var mesh in meshes ) mesh?.Dispose( );
         }
+        if ( cyan < 24 || amber < 24 )
+            throw new InvalidOperationException( $"Missing tinted fleet geometry: {cyan} cyan, {amber} amber pixels." );
+        Console.WriteLine( $"PASS: patrol fleet indexed instancing read back {cyan} cyan and {amber} amber pixels." );
     }
 
     private static void VerifyComputeTraffic( GraphicsDevice device, ShaderCompiler compiler ) {
@@ -235,102 +304,106 @@ internal static unsafe class MeshQualification {
 
     private static void RenderSystem( GraphicsDevice device, ShaderCompiler compiler ) {
         const uint width = 640, height = 400;
-        var model = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "Patrol.gltf" ) );
         var fleet = new FleetSimulation( FleetSimulation.DefaultShips, 37, battle: true );
         using var queue = device.CreateCommandQueue( );
         using var allocator = device.CreateCommandAllocator( );
         using var commands = device.CreateCommandList( allocator );
         using var traffic = new ComputeTraffic( device, compiler, ComputeTraffic.DefaultAgents, ComputeTraffic.DefaultDebris );
-        var meshes = new Mesh[model.Primitives.Length];
-        try {
-            FleetDraw.RecordUploads( device, commands, model, meshes );
-            using var fleetRoot = device.CreateGraphicsConstantsRootSignature( 16 );
-            using var thrustRoot = device.CreateGraphicsConstantsRootSignature( 20 );
-            using var thrust = FleetDraw.CreateThrusters( device, thrustRoot, compiler );
-            using var battleRoot = device.CreateGraphicsConstantsRootSignature( BattleDraw.ConstantCount );
-            using var effects = BattleDraw.CreateEffects( device, battleRoot, compiler );
-            using var markers = BattleDraw.CreateMarkers( device, battleRoot, compiler );
-            using var effectData = device.CreateBuffer( FleetSimulation.EffectCapacity * BattleDraw.EffectStride, BufferMemory.Upload );
-            using var spaceRoot = device.CreateGraphicsConstantsRootSignature( SpaceDraw.Constants );
-            using var hudRoot = device.CreateGraphicsConstantsRootSignature( 4 );
-            using var fleetPipeline = FleetDraw.CreatePipeline( device, fleetRoot, compiler, depthEnabled: true );
-            using var skyPipeline = SpaceDraw.CreatePipeline( device, spaceRoot, compiler );
-            using var hudPipeline = FleetHud.CreatePipeline( device, hudRoot, compiler );
-            using var glyphs = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
-            using var instances = device.CreateBuffer( (uint)fleet.Count * FleetDraw.InstanceStride, BufferMemory.Upload );
-            fleet.Move( 0, fleet.Site + new Vector2( -5, 0 ) );
-            fleet.Move( 6, fleet.Site + new Vector2( 5, 0 ) );
-            for ( int i = 0; i < 480 && fleet.ShotsFired < 6; ++i ) fleet.Step( );
-            var pulses = new BattleEffect[FleetSimulation.EffectCapacity];
-            int pulseCount = fleet.FillEffects( pulses );
-            if ( pulseCount == 0 ) throw new InvalidOperationException( "The WARP fixture did not produce a skirmish." );
-            effectData.Write<BattleEffect>( pulses.AsSpan( 0, pulseCount ) );
-            var ships = new ShipInstance[fleet.ActiveCount];
-            fleet.FillInstances( ships, new( 0 ) );
-            instances.Write<ShipInstance>( ships );
-            using var target = CreateTarget( device, width, height );
-            using var heap = device.CreateRenderTargetHeap( 1 );
-            var view = device.CreateRenderTargetView( target, heap, 0 );
-            using var depth = device.CreateDepthTarget( width, height );
-            var description = target.Native.Interface.GetDesc( );
-            D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
-            ulong readbackBytes;
-            device.Native.Interface.GetCopyableFootprints( &description, 0, 1, 0, &footprint, null, null, &readbackBytes );
-            using var readback = device.CreateBuffer( readbackBytes, BufferMemory.Readback );
-            commands.SetViewport( width, height );
-            commands.Clear( view, 0, 0, 0 );
-            commands.SetRenderTarget( view, depth, clearDepth: true );
-            float radius = fleet.BoardRadius, halfHeight = radius * 0.94f;
-            var camera = Matrix4x4.CreateLookAt( new( 0, radius * 1.6f, radius * 0.88f ), Vector3.Zero, Vector3.UnitY );
-            var projection = Matrix4x4.CreateOrthographic( 2 * halfHeight * width / height, 2 * halfHeight, 0.1f, 4 * radius );
-            var matrix = camera * projection;
-            Matrix4x4.Invert( matrix, out var inverse );
-            traffic.RecordCompute( commands, fleet, 1f / 60 );
-            SpaceDraw.Record( commands, skyPipeline, fleet, new( 0 ), matrix, inverse, (int)width, (int)height, halfHeight );
-            traffic.RecordDebris( commands, matrix, (int)width, (int)height, halfHeight );
-            traffic.RecordFreighters( commands, matrix );
-            traffic.Finish( commands );
-            FleetDraw.RecordThrusters( commands, thrust, instances, (uint)ships.Length, matrix, (float)(fleet.Tick * FleetSimulation.StepSeconds) );
-            FleetDraw.Record( commands, fleetPipeline, meshes, instances, (uint)ships.Length, matrix );
-            BattleDraw.Record( commands, markers, instances, (uint)ships.Length, matrix, (int)width, (int)height, halfHeight, effects: false );
-            BattleDraw.Record( commands, effects, effectData, (uint)pulseCount, matrix, (int)width, (int)height, halfHeight, effects: true );
-            Span<Vector4> bodyLabels = stackalloc Vector4[CelestialSystem.BodyCount];
-            for ( int i = 0; i < bodyLabels.Length; ++i )
-                bodyLabels[i] = CelestialSystem.Project( fleet.Bodies[i], radius, matrix, (int)width, (int)height, halfHeight );
-            new FleetHud( ).Record( commands, hudPipeline, glyphs, fleet, new( 0 ), (int)width, (int)height, false, bodyLabels,
-                selectionCount: fleet.ShipCount( 0 ), planet: 1, beacon: CommandSelection.Project( fleet.Site, matrix, new( width, height ) ) );
-            commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
-            CopyPixels( commands, target, readback, footprint );
-            commands.Close( );
-            queue.Wait( queue.Submit( commands ) );
-            var bytes = new byte[checked((int)readbackBytes)];
-            readback.Read<byte>( bytes );
-            var rgb = new byte[width * height * 3];
-            int sun = 0, title = 0, sky = 0;
-            for ( uint y = 0; y < height; ++y ) {
-                for ( uint x = 0; x < width; ++x ) {
-                    int source = checked((int)(footprint.Offset + y * footprint.Footprint.RowPitch + x * 4));
-                    int destination = checked((int)((y * width + x) * 3));
-                    bytes.AsSpan( source, 3 ).CopyTo( rgb.AsSpan( destination, 3 ) );
-                    byte r = bytes[source], g = bytes[source + 1], b = bytes[source + 2];
-                    if ( x > 160 && x < width - 165 && y > 80 && y < height - 65 && r > 220 && g > 130 && b < r - 40 ) ++sun;
-                    if ( x is >= 23 and < 152 && y is >= 23 and < 36 && r > 225 && g > 235 && b > 245 ) ++title;
-                    if ( y > 100 && y < 320 && b > r + 5 && r is > 0 and < 50 ) ++sky;
-                }
+        using var corvettes = Upload( "Corvette.gltf", 0.05f );
+        using var scouts = Upload( "SurveyScout.gltf", 0.083f );
+        using var freighters = Upload( "Freighter.gltf", 0.05f );
+        using var relay = Upload( "MiningRelay.gltf", 0.12f );
+        using var fleetRoot = device.CreateTextureRootSignature( 16, linearWrap: true );
+        using var thrustRoot = device.CreateGraphicsConstantsRootSignature( 20 );
+        using var thrust = FleetDraw.CreateThrusters( device, thrustRoot, compiler );
+        using var battleRoot = device.CreateGraphicsConstantsRootSignature( BattleDraw.ConstantCount );
+        using var effects = BattleDraw.CreateEffects( device, battleRoot, compiler );
+        using var markers = BattleDraw.CreateMarkers( device, battleRoot, compiler );
+        using var effectData = device.CreateBuffer( FleetSimulation.EffectCapacity * BattleDraw.EffectStride, BufferMemory.Upload );
+        using var spaceRoot = device.CreateGraphicsConstantsRootSignature( SpaceDraw.Constants );
+        using var hudRoot = device.CreateGraphicsConstantsRootSignature( 4 );
+        using var fleetPipeline = FleetDraw.CreatePipeline( device, fleetRoot, compiler, depthEnabled: true );
+        using var skyPipeline = SpaceDraw.CreatePipeline( device, spaceRoot, compiler );
+        using var hudPipeline = FleetHud.CreatePipeline( device, hudRoot, compiler );
+        using var glyphs = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
+        using var instances = device.CreateBuffer( (uint)(fleet.Count + 1) * FleetDraw.InstanceStride, BufferMemory.Upload );
+        fleet.Move( 0, fleet.Site + new Vector2( -5, 0 ) );
+        fleet.Move( 6, fleet.Site + new Vector2( 5, 0 ) );
+        for ( int i = 0; i < 480 && fleet.ShotsFired < 6; ++i ) fleet.Step( );
+        var pulses = new BattleEffect[FleetSimulation.EffectCapacity];
+        int pulseCount = fleet.FillEffects( pulses );
+        if ( pulseCount == 0 ) throw new InvalidOperationException( "The WARP fixture did not produce a skirmish." );
+        effectData.Write<BattleEffect>( pulses.AsSpan( 0, pulseCount ) );
+        uint active = (uint)fleet.ActiveCount;
+        var ships = new ShipInstance[active + 1];
+        uint corvetteCount = (uint)fleet.FillInstances( ships.AsSpan( 0, (int)active ), new( 0 ), groupHulls: true );
+        ships[active] = new( fleet.Site, Vector2.UnitX, Vector4.One );
+        instances.Write<ShipInstance>( ships );
+        using var target = CreateTarget( device, width, height );
+        using var heap = device.CreateRenderTargetHeap( 1 );
+        var view = device.CreateRenderTargetView( target, heap, 0 );
+        using var depth = device.CreateDepthTarget( width, height );
+        var description = target.Native.Interface.GetDesc( );
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+        ulong readbackBytes;
+        device.Native.Interface.GetCopyableFootprints( &description, 0, 1, 0, &footprint, null, null, &readbackBytes );
+        using var readback = device.CreateBuffer( readbackBytes, BufferMemory.Readback );
+        commands.SetViewport( width, height );
+        commands.Clear( view, 0, 0, 0 );
+        commands.SetRenderTarget( view, depth, clearDepth: true );
+        float radius = fleet.BoardRadius, halfHeight = radius * 0.94f;
+        var camera = Matrix4x4.CreateLookAt( new( 0, radius * 1.6f, radius * 0.88f ), Vector3.Zero, Vector3.UnitY );
+        var projection = Matrix4x4.CreateOrthographic( 2 * halfHeight * width / height, 2 * halfHeight, 0.1f, 4 * radius );
+        var matrix = camera * projection;
+        Matrix4x4.Invert( matrix, out var inverse );
+        traffic.RecordCompute( commands, fleet, 1f / 60 );
+        SpaceDraw.Record( commands, skyPipeline, fleet, new( 0 ), matrix, inverse, (int)width, (int)height, halfHeight );
+        traffic.RecordDebris( commands, matrix, (int)width, (int)height, halfHeight );
+        traffic.RecordFreighters( commands, fleetPipeline, freighters, matrix, height / (2 * halfHeight) );
+        traffic.Finish( commands );
+        FleetDraw.RecordThrusters( commands, thrust, instances, active, matrix, (float)(fleet.Tick * FleetSimulation.StepSeconds) );
+        FleetDraw.Record( commands, fleetPipeline, relay, instances, 1, matrix, active );
+        FleetDraw.Record( commands, fleetPipeline, corvettes, instances, corvetteCount, matrix );
+        FleetDraw.Record( commands, fleetPipeline, scouts, instances, active - corvetteCount, matrix, corvetteCount );
+        BattleDraw.Record( commands, markers, instances, active, matrix, (int)width, (int)height, halfHeight, effects: false );
+        BattleDraw.Record( commands, effects, effectData, (uint)pulseCount, matrix, (int)width, (int)height, halfHeight, effects: true );
+        Span<Vector4> bodyLabels = stackalloc Vector4[CelestialSystem.BodyCount];
+        for ( int i = 0; i < bodyLabels.Length; ++i )
+            bodyLabels[i] = CelestialSystem.Project( fleet.Bodies[i], radius, matrix, (int)width, (int)height, halfHeight );
+        new FleetHud( ).Record( commands, hudPipeline, glyphs, fleet, new( 0 ), (int)width, (int)height, false, bodyLabels,
+            selectionCount: fleet.ShipCount( 0 ), planet: 1, beacon: CommandSelection.Project( fleet.Site, matrix, new( width, height ) ) );
+        commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
+        CopyPixels( commands, target, readback, footprint );
+        commands.Close( );
+        queue.Wait( queue.Submit( commands ) );
+        var bytes = new byte[checked((int)readbackBytes)];
+        readback.Read<byte>( bytes );
+        var rgb = new byte[width * height * 3];
+        int sun = 0, title = 0, sky = 0;
+        for ( uint y = 0; y < height; ++y ) {
+            for ( uint x = 0; x < width; ++x ) {
+                int source = checked((int)(footprint.Offset + y * footprint.Footprint.RowPitch + x * 4));
+                int destination = checked((int)((y * width + x) * 3));
+                bytes.AsSpan( source, 3 ).CopyTo( rgb.AsSpan( destination, 3 ) );
+                byte r = bytes[source], g = bytes[source + 1], b = bytes[source + 2];
+                if ( x > 160 && x < width - 165 && y > 80 && y < height - 65 && r > 220 && g > 130 && b < r - 40 ) ++sun;
+                if ( x is >= 18 and < 140 && y is >= 18 and < 29 && r > 225 && g > 235 && b > 245 ) ++title;
+                if ( y > 100 && y < 320 && b > r + 5 && r is > 0 and < 50 ) ++sky;
             }
-            if ( sun < 500 || title < 100 || sky < 10_000 )
-                throw new InvalidOperationException( $"Missing fleet scene pixels: {sun} stellar, {title} HUD, {sky} sky." );
-            if ( Environment.GetEnvironmentVariable( "DXSHARP_FLEET_EVIDENCE" ) is { Length: > 0 } evidence ) {
-                string path = Path.GetFullPath( evidence );
-                Directory.CreateDirectory( Path.GetDirectoryName( path )! );
-                using var file = File.Create( path );
-                file.Write( "P6\n640 400\n255\n"u8 );
-                file.Write( rgb );
-            }
-            Console.WriteLine( $"PASS: rendered fleet skirmish, freighters, and planet HUD ({pulseCount} pulses, {sun} stellar, {title} title, {sky} sky pixels)." );
-        } finally {
-            foreach ( var mesh in meshes ) mesh?.Dispose( );
         }
+        if ( sun < 500 || title < 55 || sky < 10_000 )
+            throw new InvalidOperationException( $"Missing fleet scene pixels: {sun} stellar, {title} HUD, {sky} sky." );
+        if ( Environment.GetEnvironmentVariable( "DXSHARP_FLEET_EVIDENCE" ) is { Length: > 0 } evidence ) {
+            string path = Path.GetFullPath( evidence );
+            Directory.CreateDirectory( Path.GetDirectoryName( path )! );
+            using var file = File.Create( path );
+            file.Write( "P6\n640 400\n255\n"u8 );
+            file.Write( rgb );
+        }
+        Console.WriteLine( $"PASS: rendered fleet skirmish, freighters, and planet HUD ({pulseCount} pulses, {sun} stellar, {title} title, {sky} sky pixels)." );
+
+        StaticMeshSet Upload( string file, float scale ) =>
+            new( device, commands, GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", file ) ), scale );
     }
 
     private static GpuResource CreateTarget( GraphicsDevice device, uint width = Width, uint height = Height ) {

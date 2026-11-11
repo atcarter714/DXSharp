@@ -1,4 +1,4 @@
-// Compact cargo silhouettes for autonomous traffic. Tactical patrol geometry uses its own draw.
+// Low-detail cargo silhouettes for distant views and dense autonomous traffic.
 cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; };
 struct Input { float2 center : TEXCOORD0; float2 heading : TEXCOORD1; float4 motion : TEXCOORD3; };
 struct Output { float4 position : SV_Position; float3 tint : COLOR; };
@@ -14,7 +14,7 @@ Output VS(Input input, uint id : SV_VertexID) {
     float4 cargo = modules[id/6];
     float2 local = cargo.xy + corners[id%6]*cargo.zw;
     float2 right = float2(-input.heading.y,input.heading.x);
-    float2 world = input.center + (right*local.x + input.heading*local.y)*1.85;
+    float2 world = input.center + (right*local.x + input.heading*local.y)*0.96;
     Output output;
     output.position = mul(float4(world.x,0.08+float(id/6)*0.004,world.y,1),ViewProjection);
     output.tint = (id < 6 ? float3(0.37,0.79,0.69) : float3(0.36,0.52,0.48)) *

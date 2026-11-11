@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using DXSharp.Graphics;
+using DXSharp.Samples;
 using DXSharp.Shaders;
 
 namespace FleetBattler;
@@ -8,7 +9,7 @@ namespace FleetBattler;
 internal sealed class ComputeTraffic : IDisposable {
     internal const int DefaultAgents = 32, DefaultDebris = 256;
     internal const int MaxAgents = 65_536, MaxDebris = 16_384;
-    private const uint GroupSize = 64;
+    private const uint GroupSize = 64, DetailedFreighterLimit = 1024;
     private readonly PipelineState? _orbits, _steering, _debrisPipeline, _freighters;
     private readonly GpuResource? _agents, _instances, _bodies;
     private readonly int _bodyCount;
@@ -128,8 +129,13 @@ internal sealed class ComputeTraffic : IDisposable {
         commands.Draw( 6, DebrisCount );
     }
 
-    internal void RecordFreighters( GraphicsCommandList commands, Matrix4x4 viewProjection ) {
+    internal void RecordFreighters( GraphicsCommandList commands, PipelineState materialPipeline, StaticMeshSet mesh,
+        Matrix4x4 viewProjection, float pixelsPerUnit ) {
         if ( ShipCount == 0 ) return;
+        if ( ShipCount <= DetailedFreighterLimit && pixelsPerUnit >= 2.2f ) {
+            FleetDraw.Record( commands, materialPipeline, mesh, Instances, ShipCount, viewProjection );
+            return;
+        }
         ReadOnlySpan<Matrix4x4> constants = [viewProjection];
         commands.SetGraphicsPipeline( _freighters! );
         commands.SetGraphicsConstants( MemoryMarshal.Cast<Matrix4x4, uint>( constants ) );

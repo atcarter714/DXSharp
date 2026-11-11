@@ -5,8 +5,11 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/StaticMeshSet.cs" Link="StaticMeshSet.cs" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
     <ProjectReference Include="../../src/DXSharp.Framework.Desktop/DXSharp.Framework.Desktop.csproj" />
     <None Update="Models/Patrol.gltf" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../FleetBattler/Models/*.gltf" Link="Models/%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
