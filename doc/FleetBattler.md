@@ -2,6 +2,8 @@
 
 The flagship sample starts with one star system, two factions, and a playable fleet skirmish. Scout a resource site, claim it, spend its output on reinforcements, then send ships to intercept a rival fleet. Use a fixed tick and seeded scenario so the same command stream can drive a replay, a headless test, or the visual sample.
 
+The [Fleet Battler sample](../samples/FleetBattler) implements the first steering and rendering slice. The default scenario packs 1,024 ships into a single instance stream and draws the patrol mesh in three indexed instanced calls. It supports fleet selection, movement orders, camera zoom, a CPU benchmark, and a bounded WARP resize run.
+
 | Slice | Implementation | Acceptance |
 | --- | --- | --- |
 | Simulation and replay | Stable entity IDs and typed SoA storage for position, velocity, faction, and health. Keep orders, resource accounting, and combat on the CPU. Use contiguous spans for steering and a spatial grid for neighbor queries. | Replay the same commands to the same tick hash on the same build and architecture. Compare SIMD and scalar kernels within documented tolerances. |

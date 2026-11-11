@@ -10,6 +10,8 @@
     <ProjectReference Include="../../src/DXSharp.Core/DXSharp.Core.csproj" />
     <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
+    <Compile Include="../../samples/FleetBattler/FleetSimulation.cs" Link="FleetSimulation.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetDraw.cs" Link="FleetDraw.cs" />
     <None Include="../../samples/StaticModelViewer/Models/Patrol.gltf" Link="Models/Patrol.gltf"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
