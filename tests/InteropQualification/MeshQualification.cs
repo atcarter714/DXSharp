@@ -47,6 +47,7 @@ internal static unsafe class MeshQualification {
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: false );
         Render( device, vertex, pixel, instanceStepRate: 2, splitIndexFormats: false );
         RenderFleet( device, compiler );
+        RenderSystem( device, compiler );
         var diagnostics = device.GetDiagnostics( );
         if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any(
             message => message.Contains( "SEVERITY_ERROR" ) || message.Contains( "SEVERITY_CORRUPTION" ) ) )
@@ -178,10 +179,85 @@ internal static unsafe class MeshQualification {
         }
     }
 
-    private static GpuResource CreateTarget( GraphicsDevice device ) {
+    private static void RenderSystem( GraphicsDevice device, ShaderCompiler compiler ) {
+        const uint width = 640, height = 400;
+        var model = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "Patrol.gltf" ) );
+        var fleet = new FleetSimulation( FleetSimulation.DefaultShips, 37 );
+        using var queue = device.CreateCommandQueue( );
+        using var allocator = device.CreateCommandAllocator( );
+        using var commands = device.CreateCommandList( allocator );
+        var meshes = new Mesh[model.Primitives.Length];
+        try {
+            FleetDraw.RecordUploads( device, commands, model, meshes );
+            using var fleetRoot = device.CreateGraphicsConstantsRootSignature( 16 );
+            using var spaceRoot = device.CreateGraphicsConstantsRootSignature( SpaceDraw.Constants );
+            using var hudRoot = device.CreateGraphicsConstantsRootSignature( 4 );
+            using var fleetPipeline = FleetDraw.CreatePipeline( device, fleetRoot, compiler, depthEnabled: true );
+            using var skyPipeline = SpaceDraw.CreatePipeline( device, spaceRoot, compiler );
+            using var hudPipeline = FleetHud.CreatePipeline( device, hudRoot, compiler );
+            using var glyphs = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
+            using var instances = device.CreateBuffer( (uint)fleet.Count * FleetDraw.InstanceStride, BufferMemory.Upload );
+            var ships = new ShipInstance[fleet.Count];
+            fleet.FillInstances( ships, 0 );
+            instances.Write<ShipInstance>( ships );
+            using var target = CreateTarget( device, width, height );
+            using var heap = device.CreateRenderTargetHeap( 1 );
+            var view = device.CreateRenderTargetView( target, heap, 0 );
+            using var depth = device.CreateDepthTarget( width, height );
+            var description = target.Native.Interface.GetDesc( );
+            D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+            ulong readbackBytes;
+            device.Native.Interface.GetCopyableFootprints( &description, 0, 1, 0, &footprint, null, null, &readbackBytes );
+            using var readback = device.CreateBuffer( readbackBytes, BufferMemory.Readback );
+            commands.SetViewport( width, height );
+            commands.Clear( view, 0, 0, 0 );
+            commands.SetRenderTarget( view, depth, clearDepth: true );
+            float radius = fleet.BoardRadius, halfHeight = radius * 0.94f;
+            var camera = Matrix4x4.CreateLookAt( new( 0, radius * 1.6f, radius * 0.88f ), Vector3.Zero, Vector3.UnitY );
+            var projection = Matrix4x4.CreateOrthographic( 2 * halfHeight * width / height, 2 * halfHeight, 0.1f, 4 * radius );
+            var matrix = camera * projection;
+            Matrix4x4.Invert( matrix, out var inverse );
+            SpaceDraw.Record( commands, skyPipeline, fleet, 0, matrix, inverse, (int)width, (int)height, halfHeight );
+            FleetDraw.Record( commands, fleetPipeline, meshes, instances, (uint)ships.Length, matrix );
+            new FleetHud( ).Record( commands, hudPipeline, glyphs, fleet, 0, (int)width, (int)height, false );
+            commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
+            CopyPixels( commands, target, readback, footprint );
+            commands.Close( );
+            queue.Wait( queue.Submit( commands ) );
+            var bytes = new byte[checked((int)readbackBytes)];
+            readback.Read<byte>( bytes );
+            var rgb = new byte[width * height * 3];
+            int sun = 0, title = 0, sky = 0;
+            for ( uint y = 0; y < height; ++y ) {
+                for ( uint x = 0; x < width; ++x ) {
+                    int source = checked((int)(footprint.Offset + y * footprint.Footprint.RowPitch + x * 4));
+                    int destination = checked((int)((y * width + x) * 3));
+                    bytes.AsSpan( source, 3 ).CopyTo( rgb.AsSpan( destination, 3 ) );
+                    byte r = bytes[source], g = bytes[source + 1], b = bytes[source + 2];
+                    if ( x > 160 && x < width - 165 && y > 80 && y < height - 65 && r > 220 && g > 130 && b < r - 40 ) ++sun;
+                    if ( x is >= 23 and < 152 && y is >= 23 and < 36 && r > 225 && g > 235 && b > 245 ) ++title;
+                    if ( y > 100 && y < 320 && b > r + 5 && r is > 0 and < 50 ) ++sky;
+                }
+            }
+            if ( sun < 500 || title < 100 || sky < 10_000 )
+                throw new InvalidOperationException( $"Missing fleet scene pixels: {sun} stellar, {title} HUD, {sky} sky." );
+            if ( Environment.GetEnvironmentVariable( "DXSHARP_FLEET_EVIDENCE" ) is { Length: > 0 } evidence ) {
+                string path = Path.GetFullPath( evidence );
+                Directory.CreateDirectory( Path.GetDirectoryName( path )! );
+                using var file = File.Create( path );
+                file.Write( "P6\n640 400\n255\n"u8 );
+                file.Write( rgb );
+            }
+            Console.WriteLine( $"PASS: rendered fleet system and HUD ({sun} stellar, {title} title, {sky} sky pixels)." );
+        } finally {
+            foreach ( var mesh in meshes ) mesh?.Dispose( );
+        }
+    }
+
+    private static GpuResource CreateTarget( GraphicsDevice device, uint width = Width, uint height = Height ) {
         D3D12_RESOURCE_DESC description = new( ) {
             Dimension = D3D12_RESOURCE_DIMENSION.D3D12_RESOURCE_DIMENSION_TEXTURE2D,
-            Width = Width, Height = Height, DepthOrArraySize = 1, MipLevels = 1,
+            Width = width, Height = height, DepthOrArraySize = 1, MipLevels = 1,
             Format = DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM, SampleDesc = new( ) { Count = 1 },
             Flags = D3D12_RESOURCE_FLAGS.D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET
         };

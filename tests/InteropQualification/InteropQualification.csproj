@@ -12,6 +12,8 @@
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
     <Compile Include="../../samples/FleetBattler/FleetSimulation.cs" Link="FleetSimulation.cs" />
     <Compile Include="../../samples/FleetBattler/FleetDraw.cs" Link="FleetDraw.cs" />
+    <Compile Include="../../samples/FleetBattler/SpaceDraw.cs" Link="SpaceDraw.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetHud.cs" Link="FleetHud.cs" />
     <None Include="../../samples/StaticModelViewer/Models/Patrol.gltf" Link="Models/Patrol.gltf"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
