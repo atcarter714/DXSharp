@@ -14,9 +14,11 @@ internal static class FleetQualification {
             "a changed order first diverges after its tick" );
 
         VerifyFormations( );
+        VerifyIndividualOrders( );
         VerifyEconomy( );
         VerifyOrbits( );
-        Console.WriteLine( $"PASS: fleet replay, independent squads, capture and reinforcement, orbit math, and zero-allocation updates ({first.AfterOrder:X16})." );
+        VerifyAudio( );
+        Console.WriteLine( $"PASS: fleet replay, individual and squad orders, moving orbits, capture and reinforcement, synthesized audio, and zero-allocation updates ({first.AfterOrder:X16})." );
     }
 
     private static void VerifyFormations( ) {
@@ -28,7 +30,7 @@ internal static class FleetQualification {
         Require( fleet.FindSquad( fleet.Center( 0 ) ) == 0 && fleet.FindSquad( fleet.Center( 3 ) ) == 3, "independent cyan selection" );
         fleet.Move( 0, new( 8, -20 ) );
         for ( int i = 0; i < 420; ++i ) fleet.Step( );
-        fleet.FillInstances( instances, 0 );
+        fleet.FillInstances( instances, new( 0 ) );
         var moved = fleet.Positions[0] - previous[0];
         Require( moved.X > 35, "move order advances only the selected squad" );
         for ( int i = 0; i < fleet.Count; ++i ) {
@@ -36,7 +38,7 @@ internal static class FleetQualification {
             Require( instance.Center == fleet.Positions[i] && MathF.Abs( instance.Heading.LengthSquared( ) - 1 ) < 1e-5f,
                 "instance data preserves position and a normalized heading" );
             if ( i < movedCount ) {
-                Require( Vector2.DistanceSquared( fleet.Positions[i] - previous[i], moved ) < 1e-5f,
+                Require( MathF.Abs( Vector2.Distance( fleet.Positions[i], fleet.Positions[0] ) - Vector2.Distance( previous[i], previous[0] ) ) < 0.02f,
                     "the ordered squad preserves formation spacing" );
                 Require( instance.Tint.Z > instance.Tint.X && instance.Tint.W > 1.4f, "selected squad tint" );
             } else {
@@ -47,9 +49,57 @@ internal static class FleetQualification {
         long start = GC.GetAllocatedBytesForCurrentThread( );
         for ( int i = 0; i < 120; ++i ) {
             fleet.Step( );
-            fleet.FillInstances( instances, 1 );
+            fleet.FillInstances( instances, new( 1 ) );
         }
         Require( GC.GetAllocatedBytesForCurrentThread( ) == start, "steady-state stepping and packing allocate zero bytes" );
+    }
+
+    private static void VerifyIndividualOrders( ) {
+        var fleet = new FleetSimulation( 72, 37, system: 2 );
+        var old = fleet.Positions.ToArray( );
+        var selected = fleet.Pick( old[0], group: false, 1 );
+        Require( selected == new FleetSelection( 0, 0 ) && fleet.Pick( old[0], group: true, 1 ) == new FleetSelection( 0 ),
+            "pick an individual ship or its squad" );
+        var waypoint = old[0] + new Vector2( 18, 13 );
+        fleet.Move( selected, waypoint );
+        var shipData = new ShipInstance[fleet.Count];
+        for ( int i = 0; i < 25; ++i ) fleet.Step( );
+        fleet.FillInstances( shipData, selected );
+        Require( shipData[0].Motion.X > 0.12f && shipData[1].Motion.X == 0 && shipData[0].Heading.Y > 0.12f,
+            "individual steering turns and drives only the selected ship's thrusters" );
+        AdvanceUntil( fleet, () => Vector2.DistanceSquared( fleet.Positions[0], waypoint ) < 0.01f, "solo ship reaches its waypoint" );
+        Require( old.AsSpan( 1 ).SequenceEqual( fleet.Positions[1..] ), "remaining ships hold formation" );
+
+        fleet.Orbit( selected, 1 );
+        for ( int i = 0; i < 450; ++i ) fleet.Step( );
+        var a = fleet.Positions[0] - fleet.Bodies[1].Center;
+        for ( int i = 0; i < 45; ++i ) fleet.Step( );
+        var b = fleet.Positions[0] - fleet.Bodies[1].Center;
+        float radius = fleet.OrbitRadius( 1, 1 );
+        Require( fleet.Orbiting( selected ) && MathF.Abs( b.Length( ) - radius ) < 2.5f &&
+            Vector2.Distance( a, b ) > 3, "ship tracks a moving body's orbit" );
+        fleet.Rejoin( selected );
+        AdvanceUntil( fleet, () => Vector2.DistanceSquared( fleet.Positions[0], old[0] ) < 0.01f, "solo ship rejoins its slot" );
+        Require( !fleet.Orbiting( selected ), "rejoin clears the orbit order" );
+
+        var group = new FleetSelection( 0 );
+        fleet.Orbit( group, 2 );
+        for ( int i = 0; i < 600; ++i ) fleet.Step( );
+        Require( fleet.Orbiting( group ) &&
+            MathF.Abs( Vector2.Distance( fleet.Center( group ), fleet.Bodies[2].Center ) - fleet.OrbitRadius( 2, fleet.ShipCount( 0 ) ) ) < 4,
+            "squadron steers as a group around the ringed planet" );
+    }
+
+    private static void VerifyAudio( ) {
+        foreach ( string name in new[] { "survey", "cartography", "signal", "arrival", "order", "launch", "capture" } ) {
+            using var stream = new MemoryStream( );
+            SynthAudio.WriteWave( stream, name );
+            var data = stream.GetBuffer( ).AsSpan( 0, (int)stream.Length );
+            Require( data[..4].SequenceEqual( "RIFF"u8 ) && data.Slice( 8, 8 ).SequenceEqual( "WAVEfmt "u8 ) &&
+                System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian( data[24..] ) == SynthAudio.SampleRate &&
+                System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian( data[40..] ) == data.Length - 44 &&
+                data[44..].IndexOfAnyExcept( (byte)0 ) >= 0, "procedural cue or track is a non-silent PCM WAV" );
+        }
     }
 
     private static void VerifyEconomy( ) {
@@ -89,13 +139,13 @@ internal static class FleetQualification {
     }
 
     private static void VerifyOrbits( ) {
-        const float axis = 40, e = SpaceDraw.RockyEccentricity;
-        var near = SpaceDraw.OrbitPoint( axis, e, 0 );
-        var far = SpaceDraw.OrbitPoint( axis, e, 0.5 );
+        const float axis = 40, e = CelestialSystem.RockyEccentricity;
+        var near = CelestialSystem.OrbitPoint( axis, e, 0 );
+        var far = CelestialSystem.OrbitPoint( axis, e, 0.5 );
         Require( Vector2.Distance( near, new( axis * (1 - e), 0 ) ) < 0.00001f &&
             Vector2.Distance( far, new( -axis * (1 + e), 0 ) ) < 0.00001f, "ellipse apsides" );
-        var point = SpaceDraw.OrbitPoint( axis, e, 0.25 );
-        Require( Vector2.Distance( point, SpaceDraw.OrbitPoint( axis, e, -1.75 ) ) < 0.00001f && point.Y > 0,
+        var point = CelestialSystem.OrbitPoint( axis, e, 0.25 );
+        Require( Vector2.Distance( point, CelestialSystem.OrbitPoint( axis, e, -1.75 ) ) < 0.00001f && point.Y > 0,
             "normalized orbital phase wraps across negative and positive cycles" );
     }
 

@@ -47,6 +47,7 @@ internal static unsafe class MeshQualification {
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: false );
         Render( device, vertex, pixel, instanceStepRate: 2, splitIndexFormats: false );
         RenderFleet( device, compiler );
+        VerifyComputeTraffic( device, compiler );
         RenderSystem( device, compiler );
         var diagnostics = device.GetDiagnostics( );
         if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any(
@@ -179,6 +180,59 @@ internal static unsafe class MeshQualification {
         }
     }
 
+    private static void VerifyComputeTraffic( GraphicsDevice device, ShaderCompiler compiler ) {
+        const int ships = 8_193, debris = 2_049;
+        var fleet = new FleetSimulation( FleetSimulation.DefaultShips, 37 );
+        using var traffic = new ComputeTraffic( device, compiler, ships, debris );
+        using var queue = device.CreateCommandQueue( );
+        using var allocator = device.CreateCommandAllocator( );
+        using var commands = device.CreateCommandList( allocator );
+        ulong strideBytes = ships * FleetDraw.InstanceStride;
+        using var shipResults = device.CreateBuffer( 2 * strideBytes, BufferMemory.Readback );
+        using var bodyResults = device.CreateBuffer( (debris + CelestialSystem.BodyCount) * 16, BufferMemory.Readback );
+        traffic.RecordCompute( commands, fleet, 1f / 60 );
+        traffic.Finish( commands );
+        Copy( traffic.Instances, shipResults, strideBytes );
+        for ( int i = 0; i < 30; ++i ) fleet.Step( );
+        traffic.RecordCompute( commands, fleet, 1f / 60 );
+        traffic.Finish( commands );
+        Copy( traffic.Instances, shipResults, strideBytes, strideBytes );
+        Copy( traffic.Bodies, bodyResults, bodyResults.SizeInBytes );
+        commands.Close( );
+        queue.Wait( queue.Submit( commands ) );
+        var a = new ShipInstance[ships];
+        var b = new ShipInstance[ships];
+        var bodies = new Vector4[debris + CelestialSystem.BodyCount];
+        shipResults.Read<ShipInstance>( a );
+        shipResults.Read<ShipInstance>( b, strideBytes );
+        bodyResults.Read<Vector4>( bodies );
+        for ( int i = 0; i < fleet.Bodies.Length; ++i ) {
+            var body = fleet.Bodies[i];
+            if ( bodies[i] != new Vector4( body.Center.X, body.Center.Y, body.Radius, 0 ) )
+                throw new InvalidOperationException( $"Compute body {i} disagrees with the tactical body catalog." );
+        }
+        int moving = 0;
+        for ( int i = 0; i < b.Length; ++i ) {
+            var agent = b[i];
+            if ( !float.IsFinite( agent.Center.X + agent.Center.Y ) ||
+                MathF.Abs( agent.Heading.LengthSquared( ) - 1 ) > 0.0001f || agent.Motion.Z != 0.28f )
+                throw new InvalidOperationException( $"Invalid compute steering output for ship {i}." );
+            if ( Vector2.DistanceSquared( a[i].Center, agent.Center ) > 1e-7f ) ++moving;
+        }
+        for ( int i = CelestialSystem.BodyCount; i < bodies.Length; ++i )
+            if ( bodies[i].Z is < 0.09f or > 0.62f || !float.IsFinite( bodies[i].X + bodies[i].Y ) )
+                throw new InvalidOperationException( $"Invalid compute orbit output for debris {i}." );
+        if ( moving < ships * 0.98 || a[^1].Center == b[^1].Center )
+            throw new InvalidOperationException( $"Compute steering moved only {moving} ships." );
+        Console.WriteLine( $"PASS: compute orbit field and steering moved {moving} of {ships} ships around {debris} debris bodies." );
+
+        void Copy( GpuResource source, GpuResource destination, ulong size, ulong offset = 0 ) {
+            commands.Transition( source, ResourceState.Common, ResourceState.CopySource );
+            commands.CopyBuffer( source, destination, size, destinationOffset: offset );
+            commands.Transition( source, ResourceState.CopySource, ResourceState.Common );
+        }
+    }
+
     private static void RenderSystem( GraphicsDevice device, ShaderCompiler compiler ) {
         const uint width = 640, height = 400;
         var model = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "Patrol.gltf" ) );
@@ -186,10 +240,13 @@ internal static unsafe class MeshQualification {
         using var queue = device.CreateCommandQueue( );
         using var allocator = device.CreateCommandAllocator( );
         using var commands = device.CreateCommandList( allocator );
+        using var traffic = new ComputeTraffic( device, compiler, 192, 384 );
         var meshes = new Mesh[model.Primitives.Length];
         try {
             FleetDraw.RecordUploads( device, commands, model, meshes );
             using var fleetRoot = device.CreateGraphicsConstantsRootSignature( 16 );
+            using var thrustRoot = device.CreateGraphicsConstantsRootSignature( 20 );
+            using var thrust = FleetDraw.CreateThrusters( device, thrustRoot, compiler );
             using var spaceRoot = device.CreateGraphicsConstantsRootSignature( SpaceDraw.Constants );
             using var hudRoot = device.CreateGraphicsConstantsRootSignature( 4 );
             using var fleetPipeline = FleetDraw.CreatePipeline( device, fleetRoot, compiler, depthEnabled: true );
@@ -198,7 +255,9 @@ internal static unsafe class MeshQualification {
             using var glyphs = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
             using var instances = device.CreateBuffer( (uint)fleet.Count * FleetDraw.InstanceStride, BufferMemory.Upload );
             var ships = new ShipInstance[fleet.Count];
-            fleet.FillInstances( ships, 0 );
+            fleet.Move( 0, fleet.Site );
+            for ( int i = 0; i < 54; ++i ) fleet.Step( );
+            fleet.FillInstances( ships, new( 0 ) );
             instances.Write<ShipInstance>( ships );
             using var target = CreateTarget( device, width, height );
             using var heap = device.CreateRenderTargetHeap( 1 );
@@ -217,9 +276,17 @@ internal static unsafe class MeshQualification {
             var projection = Matrix4x4.CreateOrthographic( 2 * halfHeight * width / height, 2 * halfHeight, 0.1f, 4 * radius );
             var matrix = camera * projection;
             Matrix4x4.Invert( matrix, out var inverse );
-            SpaceDraw.Record( commands, skyPipeline, fleet, 0, matrix, inverse, (int)width, (int)height, halfHeight );
+            traffic.RecordCompute( commands, fleet, 1f / 60 );
+            SpaceDraw.Record( commands, skyPipeline, fleet, new( 0 ), matrix, inverse, (int)width, (int)height, halfHeight );
+            traffic.RecordDebris( commands, matrix, (int)width, (int)height, halfHeight );
+            FleetDraw.Record( commands, fleetPipeline, meshes, traffic.Instances, traffic.ShipCount, matrix );
+            traffic.Finish( commands );
+            FleetDraw.RecordThrusters( commands, thrust, instances, (uint)ships.Length, matrix, (float)(fleet.Tick * FleetSimulation.StepSeconds) );
             FleetDraw.Record( commands, fleetPipeline, meshes, instances, (uint)ships.Length, matrix );
-            new FleetHud( ).Record( commands, hudPipeline, glyphs, fleet, 0, (int)width, (int)height, false );
+            Span<Vector4> bodyLabels = stackalloc Vector4[CelestialSystem.BodyCount];
+            for ( int i = 0; i < bodyLabels.Length; ++i )
+                bodyLabels[i] = CelestialSystem.Project( fleet.Bodies[i], radius, matrix, (int)width, (int)height, halfHeight );
+            new FleetHud( ).Record( commands, hudPipeline, glyphs, fleet, new( 0 ), (int)width, (int)height, false, bodyLabels );
             commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
             CopyPixels( commands, target, readback, footprint );
             commands.Close( );

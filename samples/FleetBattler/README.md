@@ -1,25 +1,36 @@
 # Fleet Battler
 
-Command cyan squadrons in a small orbital system. Secure the mining beacon and launch two reinforcement wings from the shipyard. Amber patrols the beacon and can take it from you.
+Command cyan ships in a small sector. Secure a system's mining beacon and launch two reinforcement wings from its shipyard. The amber patrol can take the beacon from you.
 
-- **Left-click** near a cyan squadron to select it. **Right-click** to set a destination. The cyan bracket marks the selected squadron and the dashed line shows its order.
-- **Scroll** to zoom toward the pointer. **Middle-drag** to pan across the system.
-- Move squadrons inside the beacon's circle. The side with more squadrons inside takes control after 1.5 seconds. Equal presence contests the site.
-- Hold a cyan majority to earn 15 ore per second. Press **B** to spend 60 ore on a six-ship wing. The new wing spawns at the cyan shipyard and becomes selected.
+| Control | Action |
+| --- | --- |
+| Left-click a cyan ship | Select one ship |
+| Shift + left-click | Select its squadron |
+| Right-click space | Move the selected ship or squadron |
+| Right-click a labeled body | Order the selection into orbit |
+| R | Rejoin the formation with the selected ship |
+| B | Spend 60 ore to launch a six-ship wing |
+| Scroll / middle-drag | Zoom toward the pointer / pan |
+| G | Open the galaxy map or return to the current system |
+| F11 | Toggle borderless fullscreen on the current monitor |
+| M | Toggle music and effects |
+
+The side with more squadrons inside the beacon takes control after 1.5 seconds. A cyan majority earns 15 ore per second. Send two squadrons early so the rival patrol cannot stall the operation. In the galaxy map, click Helios, Caldera, or Nereid to enter that system. Each system keeps its own ships, orders, and ore during the session. Simulation time advances in the active system.
 
 ```powershell
 dotnet run --project samples/FleetBattler -c Release
-dotnet run --project samples/FleetBattler -c Release -- --ships=10000 --seed=37
-dotnet run --project samples/FleetBattler -c Debug -- --warp --ships=129 --frames=7 --resize-test
+dotnet run --project samples/FleetBattler -c Release -- --fullscreen --galaxy
+dotnet run --project samples/FleetBattler -c Release -- --ships=10000 --traffic=65536 --debris=16384 --mute
 dotnet run --project samples/FleetBattler -c Release -- --ships=10000 --benchmark-ticks=600
+dotnet run --project samples/FleetBattler -c Debug -- --warp --mute --frames=9 --view-test
 ```
 
-The default scenario has 72 ships in twelve six-ship wedges. The 60 Hz simulation uses seeded formation offsets and stable squad order. It preallocates space for two reinforcement wings. Replaying commands at the same ticks reproduces the state hash within a build and runtime.
+The sample opens at up to 1600 × 900 in windowed mode. The HUD scales with the viewport. The 72 starting command ships have individual acceleration, heading, braking, and local separation. Squadron orders rotate the formation and recall any detached ships. Orbit orders steer toward moving slots around the selected body. Animated engine plumes show the motion of command ships.
 
-The tactical view uses procedural stars and nebulae, a sun, a terrestrial world and its moon, and a ringed gas giant. The bodies follow fixed-tick elliptical orbits. The rendered bodies are shaded billboards below the tactical plane. The camera projects the orbital tracks, the beacon, and move orders in world space. A HUD reports ownership, ore, and the reinforcement objective.
+The CPU runs the 60 Hz command and economy simulation. Two compute passes update the orbital field and steer autonomous background ships. The results stay in GPU buffers for indexed instancing and debris rendering. Tactical and background traffic are separate populations. The CPU benchmark measures command-ship simulation and packing. Use `--traffic=0 --debris=0` to omit the GPU traffic layer.
 
-The renderer uploads three patrol mesh primitives once and issues three indexed instanced ship draws. It writes 32 bytes per active ship into a fence-retired frame slot. The sky and HUD each add one draw. The headless benchmark measures CPU stepping, instance packing, and allocation without creating a graphics device.
+The [jukebox configuration](Music/README.md) has system, galaxy, contested, and victory playlists, plus independent music and effects levels. The sample includes procedural tracks and cues. Copy your music into `Music/` and list the files in `Music/jukebox.json`.
 
-Qualification checks same-runtime replay, independent orders, contested capture, recapture, the complete reinforcement objective, and orbital positions. The Windows gate verifies both ship colors, reads back a complete tactical frame, and presents through two resizes. The `interop-windows-2025` CI artifact contains `fleet-system.ppm`.
+Qualification covers independent orders, regrouping, moving orbits, contested capture, both wing purchases, and procedural PCM output. WARP reads back the compute-steered ships and orbital field, renders the tactical scene, and exercises window resizes, fullscreen restoration, and system transitions. Find `fleet-system.ppm` in the Windows interop CI artifact.
 
-The ships use the original [patrol asset](../StaticModelViewer/Models/Patrol.gltf) under the repository's [MIT license](../../LICENSE.md). See the [fleet roadmap](../../doc/FleetBattler.md) for combat, authored star systems, and shared GPU effects.
+The ships use the original [patrol asset](../StaticModelViewer/Models/Patrol.gltf) under the repository's [MIT license](../../LICENSE.md). See the [fleet roadmap](../../doc/FleetBattler.md) for authored systems and fleet combat.
