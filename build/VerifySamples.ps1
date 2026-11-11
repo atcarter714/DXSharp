@@ -16,7 +16,7 @@ try {
 
     Invoke-Sample 'ModernTriangle' @('run', '--project', 'samples/ModernTriangle', '-c', 'Debug', '--',
         '--warp', '--resize-test', '--evidence=artifacts/triangle-resize')
-    foreach ($sample in 'HelloTexture', 'InstancedGrid', 'LitCube', 'PlanarShadows') {
+    foreach ($sample in 'HelloTexture', 'InstancedGrid', 'LitCube', 'PlanarShadows', 'StaticModelViewer') {
         Invoke-Sample $sample @('run', '--project', "samples/$sample", '-c', 'Debug', '--', '--warp', '--frames=4')
     }
     Invoke-Sample 'ModernTriangle-buffered' @('run', '--project', 'samples/ModernTriangle', '-c', 'Debug', '--',

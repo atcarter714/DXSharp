@@ -8,3 +8,4 @@ The sample projects are the runnable references for these lessons. Each lesson g
 4. [Run a DirectML operator](04-directml.md)
 5. [Trace a triangle and verify the image](05-raytracing.md)
 6. [Upload and draw an indexed mesh](06-indexed-meshes.md)
+7. [Load and draw a static model](07-static-models.md)
