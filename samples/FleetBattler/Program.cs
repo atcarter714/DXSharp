@@ -118,7 +118,9 @@ internal static class Program {
         float zoom = 0.85f;
         Vector2 cameraFocus = default;
         Point? panStart = null, dragStart = null;
-        Point dragEnd = default;
+        Point dragEnd = default, lastClickPoint = default;
+        int lastClickShip = -1;
+        long lastClickTime = 0;
         SelectionMode dragMode = SelectionMode.Replace;
         double lag = 0;
         Matrix4x4 inverseViewProjection = default, viewProjection = default;
@@ -291,14 +293,26 @@ internal static class Program {
                     if ( IsDrag( start, e.Location ) ) {
                         selection.Box( fleet, DragRect( start, e.Location ), viewProjection, dimensions, dragMode );
                         planet = -1;
+                        lastClickShip = -1;
                     } else {
                         int ship = CommandSelection.Hit( fleet, new( e.X, e.Y ), viewProjection, dimensions, 0 );
                         int hitBody = ship < 0 ? PickBody( e.Location ) : -1;
                         if ( hitBody >= 0 ) planet = hitBody;
                         else {
-                            selection.Click( fleet, ship, e.Clicks >= 2, dragMode );
+                            long now = Environment.TickCount64;
+                            var tolerance = SystemInformation.DoubleClickSize;
+                            bool squad = ship >= 0 && dragMode == SelectionMode.Replace && (e.Clicks >= 2 ||
+                                lastClickShip == ship && now - lastClickTime <= SystemInformation.DoubleClickTime &&
+                                Math.Abs( lastClickPoint.X - e.X ) <= tolerance.Width / 2 &&
+                                Math.Abs( lastClickPoint.Y - e.Y ) <= tolerance.Height / 2);
+                            selection.Click( fleet, ship, squad, dragMode );
+                            lastClickShip = squad || dragMode != SelectionMode.Replace ? -1 : ship;
+                            lastClickPoint = e.Location;
+                            lastClickTime = now;
                             planet = -1;
+                            return;
                         }
+                        lastClickShip = -1;
                     }
                 };
                 window.MouseWheel += ( _, e ) => {
@@ -331,6 +345,7 @@ internal static class Program {
                 unchecked(seed + (uint)index * 1177), rivalPatrol: true, system: index, battle: true );
             selection.Squadron( fleet, 0, SelectionMode.Replace );
             planet = -1;
+            lastClickShip = -1;
             notice = null;
             shotsHeard = fleet.ShotsFired;
             lossesHeard = fleet.ShipsLost;

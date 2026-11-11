@@ -114,9 +114,22 @@ internal static class FleetQualification {
         var amberStart = rival.Center( 6 );
         rival.Move( 0, rival.Site );
         rival.Move( 2, rival.Site );
-        AdvanceUntil( rival, () => rival.ShotsFired >= 12 && rival.ShipsLost > 0, "rival intercepts and returns fire", 1_800 );
-        Require( Vector2.DistanceSquared( rival.Center( 6 ), amberStart ) > 30 &&
+        rival.BeginSurvey( 1 );
+        rival.Orbit( new( 4 ), 1 );
+        bool mine = false, lab = false;
+        for ( int tick = 0; tick < 2_200 && !rival.Lost && (!rival.Won || !rival.WeaponUpgrade); ++tick ) {
+            rival.Step( );
+            if ( !mine ) mine = rival.BuildFacility( 1, PlanetFacility.Mine );
+            if ( mine && !lab ) lab = rival.BuildFacility( 1, PlanetFacility.Lab );
+            if ( lab && rival.BuildWing( ) is >= 0 and var wing ) rival.Move( wing, rival.Site );
+            if ( !rival.WeaponUpgrade ) rival.ResearchWeapons( );
+            if ( tick == 900 ) rival.Move( 1, rival.Site );
+            if ( tick == 1_320 ) rival.Move( 3, rival.Site );
+        }
+        Require( Vector2.DistanceSquared( rival.Center( 6 ), amberStart ) > 30 && rival.ShotsFired > 12 &&
             Enumerable.Range( 0, 36 ).Any( i => rival.Hull( i ) < FleetSimulation.HullCapacity ), "rival squad advances and lands damage" );
+        Require( rival.Won && rival.WingsBuilt == FleetSimulation.WingGoal && rival.WeaponUpgrade && rival.ShipsLost > 0,
+            "complete the default skirmish while developing a colony and fighting the rival" );
     }
 
     private static void VerifySelection( ) {

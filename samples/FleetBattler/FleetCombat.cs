@@ -14,7 +14,7 @@ internal sealed partial class FleetSimulation {
     private readonly int[] _nextShot;
     private readonly int[] _factionCount = new int[2];
     private readonly CombatEvent[] _events = new CombatEvent[EffectCapacity];
-    private int _eventCursor;
+    private int _eventCursor, _eventCount;
 
     private readonly record struct CombatEvent( Vector2 From, Vector2 To, int Tick, int Faction, bool Burst );
 
@@ -150,13 +150,14 @@ internal sealed partial class FleetSimulation {
     }
 
     private void Emit( Vector2 from, Vector2 to, int faction, bool burst ) {
-        _events[_eventCursor % EffectCapacity] = new( from, to, Tick, faction, burst );
-        ++_eventCursor;
+        _events[_eventCursor] = new( from, to, Tick, faction, burst );
+        _eventCursor = (_eventCursor + 1) % EffectCapacity;
+        _eventCount = Math.Min( _eventCount + 1, EffectCapacity );
     }
 
     internal int FillEffects( Span<BattleEffect> output ) {
         int count = 0;
-        for ( int i = 0; i < Math.Min( EffectCapacity, _eventCursor ) && count < output.Length; ++i ) {
+        for ( int i = 0; i < _eventCount && count < output.Length; ++i ) {
             var pulse = _events[i];
             int lifetime = pulse.Burst ? BurstDuration : ShotDuration;
             int age = Tick - pulse.Tick;

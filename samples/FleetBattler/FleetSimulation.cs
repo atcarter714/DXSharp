@@ -345,7 +345,7 @@ internal sealed partial class FleetSimulation {
         for ( int body = 0; body < _bodies.Length; ++body ) {
             Append( (uint)_survey[body] ); Append( (uint)_mines[body] ); Append( (uint)_labs[body] );
         }
-        Append( (uint)Ore ); Append( (uint)WingsBuilt ); Append( (uint)_incomeTicks ); Append( _rivalPatrol ? 1u : 0u );
+        Append( (uint)Ore ); Append( (uint)WingsBuilt ); Append( (uint)_incomeTicks ); Append( _rivalPatrol ? 1u : 0u ); Append( _battle ? 1u : 0u );
         for ( int i = 0; i < SquadCount; ++i ) {
             ref readonly var squad = ref _squads[i];
             Append( (uint)squad.Count ); Append( (uint)squad.Faction );
