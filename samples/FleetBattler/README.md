@@ -10,7 +10,7 @@ The Frontier scenario opens at Earth with one science scout, two constructors, 5
 | Merge / Split or J / Shift+J | Merge selected combat groups or split selected squadrons into independent groups |
 | Right-click | Plot a transfer, attack a hostile contact, or open a body's order menu |
 | Click a body | Open its inventory. **Build** opens the orbital catalog, and **Surface** switches to local construction |
-| F2 / Ctrl+F2 | Rename the inspected body or selected unit. Ctrl+F2 or right-click an outliner row renames a fleet |
+| F2 / Ctrl+F2 | Rename the inspected body or selected unit. Ctrl+F2 or right-click an outliner row renames a fleet. Simulation continues while the editor is open |
 | Click a yard or press B | Open its design catalog and build queue |
 | E / N / L / T | Assign a survey, dispatch a constructor for extraction or a lab, or open Research |
 | Q / V / Y / U | Cycle stance, flee, repair, or refit |
@@ -45,12 +45,14 @@ Keep fleet identity and travel events on a campaign clock. On departure, move an
 
 ### Remaining goals
 
+The [finish-line design](../../doc/FleetBattler.md) covers the campaign, tech progression, ship designer, rendering, and SDK toolkit milestones.
+
 | Priority | Remaining work |
 | --- | --- |
-| Primary | Implement interstellar departures and arrivals, a shared campaign clock, and save/load for fleets, names, and colonies. |
+| Primary | Add session menus and save/load. Complete the Sol campaign, ship designer, inspectors, alerts, and presentation pass. |
 | Primary | Tune the colony and trade economy through playtests, including population needs, housing, freight, pirate pressure, and additional faction decisions. |
 | Stretch | Add authored ship, habitat, surface, and faction art, more hulls and effects, and bespoke sound design. |
-| Stretch | Expand to richer colonization and exploration, repair tenders, larger megastructures, and a denser inhabited galaxy. |
+| Stretch | Make interstellar transit and arrivals playable on a shared campaign clock. Expand colonization and exploration, repair tenders, megastructures, and the inhabited galaxy. |
 
 ## Relay skirmish
 
@@ -77,7 +79,7 @@ dotnet run --project samples/FleetBattler -c Release -- --ships=10000 --benchmar
 
 The fixed-tick CPU simulation owns combat, movement orders, casualties, and the economy. Damage resolves after each tick's volley. Rendering packs living ships. Recycled slots carry generation IDs so replacement hulls do not inherit a destroyed ship’s selection. GPU compute steers the civilian freighters and evaluates the asteroid field as separate jobs over contiguous UAV buffers. `ComputeJobBatch` binds each kernel, rounds work to thread groups, and inserts UAV barriers for declared read/write hazards. The renderer owns resource transitions and command submission. Tactical combat and player commands run on the CPU. Living tactical ships draw in batches by hull class. Civilian freighters read the compute-generated instance buffer directly. Distant or dense traffic uses a 24-vertex silhouette to bound draw cost. Asteroids use irregular faceted silhouettes. The compute shaders are in [Shaders](Shaders).
 
-The [jukebox configuration](Music/README.md) includes system, galaxy, engagement, and victory playlists. The original procedural tracks play by default. The sample includes order, capture, launch, and combat effects.
+The [jukebox configuration](Music/README.md) includes system, galaxy, engagement, and victory playlists. The original procedural tracks play by default. The sample includes order, capture, launch, and combat effects. Incoming raids and Rival Command reinforcements display a hostile-contact alert and sound a two-tone alarm.
 
 ## Celestial textures
 

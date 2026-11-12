@@ -6,11 +6,14 @@ namespace FleetBattler;
 internal sealed class FleetAudio : IDisposable {
     private readonly string _folder;
     private readonly Jukebox _jukebox;
+    private readonly PlaylistRotation[] _rotations;
     private readonly MediaPlayer _music = new( ), _effect = new( );
     private readonly bool _available;
-    private int _situation = -1, _nextTrack, _consecutiveFailures;
+    private int _situation = -1;
+    private string? _lastPlayed;
     private bool _muted;
     private int _playRequest;
+    private long _alertUntil;
     private readonly HashSet<string> _badTracks = new( StringComparer.OrdinalIgnoreCase );
 
     internal FleetAudio( bool muted ) {
@@ -22,6 +25,7 @@ internal sealed class FleetAudio : IDisposable {
             Console.WriteLine( $"Jukebox configuration: {error.Message}" );
             _jukebox = new( );
         }
+        _rotations = _jukebox.CreateRotations( Random.Shared );
         try {
             _music.Volume = _jukebox.MusicVolume;
             _effect.Volume = _jukebox.EffectsVolume;
@@ -37,11 +41,13 @@ internal sealed class FleetAudio : IDisposable {
     internal void SetSituation( bool galaxy, bool contested, bool victory ) {
         int situation = galaxy ? 1 : victory ? 3 : contested ? 2 : 0;
         if ( situation == _situation ) return;
-        bool continuing = _situation >= 0 && _jukebox.Tracks( situation ).AsSpan( ).SequenceEqual( _jukebox.Tracks( _situation ) );
+        bool continuing = _situation >= 0 && _rotations[situation] == _rotations[_situation];
         _situation = situation;
         if ( continuing ) return;
-        _nextTrack = _consecutiveFailures = 0;
-        if ( _available && !_muted ) PlayNext( );
+        if ( _available && !_muted ) {
+            _music.Close( );
+            PlayNext( );
+        }
     }
 
     internal void Toggle( ) {
@@ -52,40 +58,41 @@ internal sealed class FleetAudio : IDisposable {
             _music.Close( );
             _effect.Close( );
         } else if ( _situation >= 0 ) {
-            _nextTrack = _consecutiveFailures = 0;
             PlayNext( );
         }
     }
 
     internal void Cue( string name ) {
         if ( !_available || _muted ) return;
+        bool alert = name == "hostile";
+        if ( !alert && Environment.TickCount64 < _alertUntil ) return;
         try {
             _effect.Close( );
             _effect.Open( new Uri( SynthAudio.PathFor( name ) ) );
             _effect.Play( );
+            if ( alert ) _alertUntil = Environment.TickCount64 + 500;
         } catch ( Exception error ) when ( error is IOException or UnauthorizedAccessException or InvalidOperationException or NotSupportedException ) {
             Console.WriteLine( $"Fleet audio cue: {error.Message}" );
         }
     }
 
     private void OnEnded( object? sender, EventArgs args ) {
-        _consecutiveFailures = 0;
         PlayNext( );
     }
 
     private void OnFailed( object? sender, ExceptionEventArgs args ) {
         Console.WriteLine( $"Fleet music: {args.ErrorException.Message}" );
-        if ( !_muted && _situation >= 0 && ++_consecutiveFailures <= _jukebox.Tracks( _situation ).Length ) PlayNext( );
+        if ( _lastPlayed is not null ) _badTracks.Add( _lastPlayed );
+        PlayNext( );
     }
 
     private async void PlayNext( ) {
         if ( _muted || !_available || _situation < 0 ) return;
         int request = ++_playRequest;
-        var tracks = _jukebox.Tracks( _situation );
-        for ( int attempt = 0; attempt <= tracks.Length; ++attempt ) {
-            string choice = attempt == tracks.Length || _consecutiveFailures >= tracks.Length
-                ? _jukebox.Fallback( _situation ) : tracks[_nextTrack];
-            _nextTrack = (_nextTrack + 1) % tracks.Length;
+        var rotation = _rotations[_situation];
+        int attempts = 2 * rotation.Count - 1;
+        for ( int attempt = 0; attempt <= attempts; ++attempt ) {
+            string choice = attempt == attempts ? _jukebox.Fallback( _situation ) : rotation.Next( _lastPlayed );
             if ( _badTracks.Contains( choice ) ) continue;
             try {
                 string? file = Resolve( choice );
@@ -99,6 +106,7 @@ internal sealed class FleetAudio : IDisposable {
                     if ( request != _playRequest ) return;
                 }
                 _music.Close( );
+                _lastPlayed = choice;
                 _music.Open( new Uri( file ) );
                 _music.Play( );
                 return;
