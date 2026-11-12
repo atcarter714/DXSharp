@@ -22,9 +22,10 @@ internal static class FleetQualification {
         VerifyClock( );
         VerifyPlanetEconomy( );
         VerifyEconomy( );
+        VerifyFrontier( );
         VerifyOrbits( );
         VerifyAudio( );
-        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, owned surveys, simulation pacing, orbital production, capture, and zero-allocation updates ({first.AfterOrder:X16})." );
+        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, owned surveys, simulation pacing, orbital production, frontier progression, capture, and zero-allocation updates ({first.AfterOrder:X16})." );
     }
 
     private static void VerifyFormations( ) {
@@ -249,13 +250,91 @@ internal static class FleetQualification {
             !fleet.ResearchWeapons( ), "one-time science-funded weapons upgrade" );
     }
 
+    private static void VerifyFrontier( ) {
+        const int prospect = 2;
+        var fleet = new FleetSimulation( 3, 37, battle: true, frontier: true );
+        var scout = new FleetSelection( 0, 0 );
+        var miner = new FleetSelection( 1, 1 );
+        Require( fleet.CyanCount == 3 && fleet.AmberCount == 0 && !fleet.Won && fleet.Planet( FleetSimulation.Homeworld ).Surveyed &&
+            fleet.Role( 0 ) == HullRole.Scout && fleet.Role( 1 ) == HullRole.Miner && fleet.Role( 2 ) == HullRole.Miner &&
+            fleet.Dispatch( 0 ) == FrontierEvent.Arrival, "homeworld, science ship and workers open in peacetime" );
+        Require( !fleet.QueueWing( ) && !fleet.BuildFacility( prospect, PlanetFacility.Mine, miner ) &&
+            !fleet.BeginSurvey( miner, prospect ) && fleet.BeginSurvey( scout, prospect ), "exploration and production gates enforce roles" );
+        Require( fleet.QueueWorker( ) && fleet.Ore == 30 && fleet.WorkerRemaining == FleetSimulation.WorkerDuration &&
+            !fleet.QueueWorker( ) && fleet.CyanCount == 3, "the homeworld charges and schedules a worker" );
+        AdvanceUntil( fleet, () => fleet.HasDeposit( prospect ), "scout reaches and surveys the hidden deposit", 1800 );
+        Require( fleet.DepositYield( prospect ) == 12 && fleet.Ore == 45 && fleet.Dispatch( 1 ) == FrontierEvent.Prospect &&
+            !fleet.BuildFacility( prospect, PlanetFacility.Mine, scout ), "the survey reveals a specific yield and miners alone can build" );
+        Require( fleet.BuildFacility( prospect, PlanetFacility.Mine, miner ) && fleet.Ore == 10 &&
+            fleet.MineEnRoute( prospect ), "placing a mine reserves ore and assigns a named worker" );
+        fleet.Step( );
+        Require( fleet.Planet( prospect ).MineRemaining == FleetSimulation.FacilityDuration, "travel does not consume construction time" );
+        fleet.Move( miner, new( -38, 10 ) );
+        fleet.Step( );
+        Require( fleet.Planet( prospect ).MineRemaining < 0 && fleet.Ore == 45 &&
+            fleet.BuildFacility( prospect, PlanetFacility.Mine, miner ), "reassigning a worker refunds the unfinished mine" );
+        AdvanceUntil( fleet, () => fleet.Planet( prospect ).MineRemaining == 0, "arrival starts and completes construction", 1800 );
+        Require( fleet.CyanCount == 4 && fleet.WorkerRemaining < 0 && fleet.Role( 3 ) == HullRole.Miner &&
+            fleet.Dispatch( 2 ) == FrontierEvent.Distress && fleet.AmberCount == 0, "workers launch after construction and mining triggers a warning" );
+        fleet.Move( scout, new( -70, 40 ) );
+        fleet.Move( miner, new( -70, 45 ) );
+        fleet.Move( 2, new( -70, 50 ) );
+        fleet.Move( 3, new( -70, 55 ) );
+        AdvanceUntil( fleet, () => fleet.Ore >= FleetSimulation.YardCost, "operating mine pays for a yard" );
+        int bank = fleet.Ore;
+        Require( fleet.BuildYard( FleetSimulation.Homeworld ) && fleet.YardRemaining == FleetSimulation.YardDuration &&
+            fleet.Ore == bank - FleetSimulation.YardCost && !fleet.QueueWing( ), "building a yard commits cost and blocks production during construction" );
+        fleet.ConfigureDesign( weapon: true );
+        ShipDesign design = fleet.Design;
+        AdvanceUntil( fleet, () => fleet.CanBuildWing, "mine funds the first corvette wing" );
+        bank = fleet.Ore;
+        int before = fleet.CyanCount;
+        Require( fleet.QueueWing( ) && fleet.Ore == bank - 60 && fleet.WingRemaining == 480 &&
+            fleet.CyanCount == before && fleet.ActiveWingDesign == design, "rail design is priced and captured when queued" );
+        fleet.ConfigureDesign( weapon: true );
+        fleet.ConfigureDesign( weapon: false );
+        AdvanceUntil( fleet, () => fleet.WingsBuilt == 1, "first queued wing launches" );
+        int corvette = Enumerable.Range( 0, fleet.Count ).First( ship => fleet.Loadout( ship ) == design );
+        Require( fleet.ActiveRaids == 1 && fleet.ShipCount( fleet.SquadronOf( corvette ) ) == 3 &&
+            fleet.Shield( corvette ) == 34 && fleet.Armor( corvette ) == 10 &&
+            fleet.CurrentWingCost == 68 && fleet.CurrentWingDuration == 540 && !fleet.Won, "the launch uses the queued loadout and the first raid is in play" );
+
+        bool sawRailBypass = false, sawPulseAbsorption = false;
+        int combatLimit = fleet.Tick + 3600;
+        while ( !fleet.Won && !fleet.Lost && fleet.Tick < combatLimit ) {
+            if ( fleet.CanBuildWing ) Require( fleet.QueueWing( ), "a second corvette wing can reinforce the defense" );
+            if ( fleet.Tick % 30 == 0 && fleet.AmberCount > 0 ) {
+                int target = Enumerable.Range( 0, fleet.Count ).First( ship => fleet.Alive( ship ) && fleet.SideOf( ship ) == 1 );
+                for ( int squad = 0; squad < fleet.SquadCount; ++squad )
+                    if ( fleet.IsPlayerSquad( squad ) && fleet.Role( squad ) == HullRole.Corvette && fleet.ShipCount( squad ) > 0 )
+                        fleet.Attack( new( squad ), target );
+            }
+            fleet.Step( );
+            for ( int ship = 0; ship < fleet.Count; ++ship ) {
+                if ( !fleet.Alive( ship ) || fleet.Role( fleet.SquadronOf( ship ) ) != HullRole.Corvette ) continue;
+                var loadout = fleet.Loadout( ship );
+                sawRailBypass |= fleet.SideOf( ship ) == 1 && fleet.Armor( ship ) < loadout.Armor && fleet.Shield( ship ) == loadout.Shield;
+                sawPulseAbsorption |= fleet.SideOf( ship ) == 0 && fleet.ActiveRaids == 1 &&
+                    fleet.Shield( ship ) < loadout.Shield && fleet.Armor( ship ) == loadout.Armor;
+            }
+        }
+        Require( sawRailBypass && sawPulseAbsorption, "rail bypasses shields and pulse strips them before reaching armor" );
+        Require( fleet.Won && fleet.ActiveRaids == 2 && fleet.Dispatch( fleet.DispatchCount - 1 ) == FrontierEvent.Secured,
+            "the player can overcome both escalating raids and secure the frontier" );
+        int squads = fleet.SquadCount;
+        Require( fleet.QueueWorker( ), "the homeworld can continue growing after victory" );
+        AdvanceUntil( fleet, () => fleet.SquadCount > squads, "a post-victory worker leaves the queue" );
+        Require( fleet.Role( squads ) == HullRole.Miner && fleet.ActiveRaids == 2, "post-victory production does not restart raids" );
+    }
+
     private static void VerifyAudio( ) {
         using var custom = JsonDocument.Parse( """
-            {"playlists":{"system":["system-theme.mp3"],"galaxy":["chart.wav"],"contested":["@signal"],"victory":["@arrival"]}}
+            {"playlists":{"system":["@system-theme.ogg"],"galaxy":["chart.wav"],"contested":["@signal"],"victory":["@arrival"]}}
             """ );
         var jukebox = Jukebox.Parse( custom.RootElement );
         Require( ReferenceEquals( jukebox.Tracks( 0 ), jukebox.Tracks( 2 ) ) &&
             ReferenceEquals( jukebox.Tracks( 0 ), jukebox.Tracks( 3 ) ) &&
+            jukebox.Tracks( 0 ).SequenceEqual( new[] { "system-theme.ogg" } ) &&
             jukebox.Tracks( 1 ).SequenceEqual( new[] { "chart.wav" } ) &&
             jukebox.Fallback( 3 ) == "@survey", "custom music continues through default battle and victory playlists" );
         using var optIn = JsonDocument.Parse( """
@@ -264,6 +343,15 @@ internal static class FleetQualification {
         Require( Jukebox.Parse( optIn.RootElement ).Tracks( 2 ).SequenceEqual( new[] { "@signal" } ),
             "explicit procedural transitions still work" );
         Require( new Jukebox( ).Tracks( 1 ).SequenceEqual( new[] { "@cartography" } ), "default soundtrack still has context" );
+
+        using var vorbis = File.OpenRead( Path.Combine( AppContext.BaseDirectory, "Audio", "TestTone.ogg" ) );
+        using var pcm = new MemoryStream( );
+        VorbisTrack.Decode( vorbis, pcm );
+        var wave = pcm.GetBuffer( ).AsSpan( 0, (int)pcm.Length );
+        Require( vorbis.CanRead && wave[..4].SequenceEqual( "RIFF"u8 ) && wave.Slice( 36, 4 ).SequenceEqual( "data"u8 ) &&
+            System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian( wave[24..] ) == 16000 &&
+            System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian( wave[40..] ) == 1920 * 2 &&
+            wave[44..].IndexOfAnyExcept( (byte)0 ) >= 0, "mono Vorbis decodes to a complete, non-silent 16 kHz PCM track" );
 
         foreach ( string name in new[] { "survey", "cartography", "signal", "arrival", "order", "launch", "capture", "laser", "burst" } ) {
             using var stream = new MemoryStream( );

@@ -11,6 +11,8 @@
     <ProjectReference Include="../../src/DXSharp.Core/DXSharp.Core.csproj" />
     <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
+    <Compile Include="../../samples/FleetBattler/FrontierHud.cs" Link="FrontierHud.cs" />
+    <Compile Include="../../samples/FleetBattler/Frontier.cs" Link="Frontier.cs" />
     <Compile Include="../../samples/FleetBattler/FleetSimulation.cs" Link="FleetSimulation.cs" />
     <Compile Include="../../samples/FleetBattler/FleetDraw.cs" Link="FleetDraw.cs" />
     <Compile Include="../../samples/FleetBattler/SpaceDraw.cs" Link="SpaceDraw.cs" />
@@ -18,6 +20,9 @@
     <Compile Include="../../samples/FleetBattler/CelestialSystem.cs" Link="CelestialSystem.cs" />
     <Compile Include="../../samples/FleetBattler/ComputeTraffic.cs" Link="ComputeTraffic.cs" />
     <Compile Include="../../samples/FleetBattler/Jukebox.cs" Link="Jukebox.cs" />
+    <Compile Include="../../samples/FleetBattler/VorbisTrack.cs" Link="VorbisTrack.cs" />
+    <PackageReference Include="NVorbis" />
+    <None Update="Audio/TestTone.ogg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Compile Include="../../samples/FleetBattler/SynthAudio.cs" Link="SynthAudio.cs" />
     <Compile Include="../../samples/FleetBattler/FleetCombat.cs" Link="FleetCombat.cs" />
     <Compile Include="../../samples/FleetBattler/PlanetEconomy.cs" Link="PlanetEconomy.cs" />

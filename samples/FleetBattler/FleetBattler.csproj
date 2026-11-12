@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Include="../Shared/StaticMeshSet.cs" Link="StaticMeshSet.cs" />
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" />
+    <PackageReference Include="NVorbis" />
     <None Update="Shaders/**/*.hlsl" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Update="Celestial/Moon.jpg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Update="Music/**/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

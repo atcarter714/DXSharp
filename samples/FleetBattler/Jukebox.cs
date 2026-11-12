@@ -27,7 +27,7 @@ internal sealed class Jukebox {
             for ( int i = 0; i < Situations.Length; ++i ) {
                 if ( !lists.TryGetProperty( Situations[i], out var items ) || items.ValueKind != JsonValueKind.Array ) continue;
                 var tracks = items.EnumerateArray( ).Where( item => item.ValueKind == JsonValueKind.String )
-                    .Select( item => item.GetString( )! ).Where( item => !string.IsNullOrWhiteSpace( item ) ).ToArray( );
+                    .Select( item => item.GetString( )! ).Where( item => !string.IsNullOrWhiteSpace( item ) ).Select( NormalizeTrack ).ToArray( );
                 if ( tracks.Length != 0 ) result._tracks[i] = tracks;
             }
         }
@@ -44,6 +44,9 @@ internal sealed class Jukebox {
 
     internal string[] Tracks( int situation ) => _tracks[situation];
     internal string Fallback( int situation ) => Defaults[ReferenceEquals( _tracks[situation], _tracks[0] ) ? 0 : situation];
+
+    private static string NormalizeTrack( string track ) => track.StartsWith( '@' ) &&
+        Path.GetExtension( track ).Equals( ".ogg", StringComparison.OrdinalIgnoreCase ) ? track[1..] : track;
 
     private static bool HasFiles( string[] tracks ) => Array.Exists( tracks, track => !track.StartsWith( '@' ) );
     private static float Volume( JsonElement root, string name, float fallback ) =>

@@ -10,6 +10,8 @@ internal sealed class FleetAudio : IDisposable {
     private readonly bool _available;
     private int _situation = -1, _nextTrack, _consecutiveFailures;
     private bool _muted;
+    private int _playRequest;
+    private readonly HashSet<string> _badTracks = new( StringComparer.OrdinalIgnoreCase );
 
     internal FleetAudio( bool muted ) {
         _muted = muted;
@@ -46,6 +48,7 @@ internal sealed class FleetAudio : IDisposable {
         if ( !_available ) return;
         _muted = !_muted;
         if ( _muted ) {
+            ++_playRequest;
             _music.Close( );
             _effect.Close( );
         } else if ( _situation >= 0 ) {
@@ -75,25 +78,33 @@ internal sealed class FleetAudio : IDisposable {
         if ( !_muted && _situation >= 0 && ++_consecutiveFailures <= _jukebox.Tracks( _situation ).Length ) PlayNext( );
     }
 
-    private void PlayNext( ) {
+    private async void PlayNext( ) {
         if ( _muted || !_available || _situation < 0 ) return;
+        int request = ++_playRequest;
         var tracks = _jukebox.Tracks( _situation );
         for ( int attempt = 0; attempt <= tracks.Length; ++attempt ) {
             string choice = attempt == tracks.Length || _consecutiveFailures >= tracks.Length
                 ? _jukebox.Fallback( _situation ) : tracks[_nextTrack];
             _nextTrack = (_nextTrack + 1) % tracks.Length;
+            if ( _badTracks.Contains( choice ) ) continue;
             try {
                 string? file = Resolve( choice );
                 if ( file is null || !File.Exists( file ) ) {
-                    Console.WriteLine( $"Fleet music track unavailable: {choice}" );
+                    if ( _badTracks.Add( choice ) ) Console.WriteLine( $"Fleet music track unavailable: {choice}" );
                     continue;
+                }
+                if ( Path.GetExtension( file ).Equals( ".ogg", StringComparison.OrdinalIgnoreCase ) ) {
+                    string source = file;
+                    file = await Task.Run( ( ) => VorbisTrack.Prepare( source ) );
+                    if ( request != _playRequest ) return;
                 }
                 _music.Close( );
                 _music.Open( new Uri( file ) );
                 _music.Play( );
                 return;
-            } catch ( Exception error ) when ( error is IOException or UnauthorizedAccessException or InvalidOperationException or NotSupportedException or ArgumentException ) {
-                Console.WriteLine( $"Fleet music track {choice}: {error.Message}" );
+            } catch ( Exception error ) when ( error is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or NotSupportedException or ArgumentException ) {
+                if ( request != _playRequest ) return;
+                if ( _badTracks.Add( choice ) ) Console.WriteLine( $"Fleet music track {choice}: {error.Message}" );
             }
         }
     }
@@ -109,6 +120,7 @@ internal sealed class FleetAudio : IDisposable {
     public void Dispose( ) {
         if ( !_available ) return;
         _muted = true;
+        ++_playRequest;
         _music.MediaEnded -= OnEnded;
         _music.MediaFailed -= OnFailed;
         _effect.Close( );

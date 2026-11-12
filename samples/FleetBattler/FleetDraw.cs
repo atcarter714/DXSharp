@@ -7,10 +7,10 @@ using DXSharp.Shaders;
 namespace FleetBattler;
 
 internal static class FleetDraw {
-    internal const uint InstanceStride = 48;
+    internal const uint InstanceStride = 48, MaterialConstants = 24;
 
     private const string Shader = """
-        cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; };
+        cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; float4 Surface; float4 Emissive; };
         Texture2D BaseColor : register(t0);
         SamplerState SurfaceSampler : register(s0);
         struct Input {
@@ -23,7 +23,7 @@ internal static class FleetDraw {
             float4 tint : TEXCOORD2;
             float4 motion : TEXCOORD3;
         };
-        struct Output { float4 position : SV_Position; float3 color : COLOR; float2 uv : TEXCOORD0; };
+        struct Output { float4 position : SV_Position; float3 color : COLOR; float2 uv : TEXCOORD0; nointerpolation float construction : TEXCOORD1; float3 normal : NORMAL; };
         Output VS(Input input) {
             float2 right = float2(-input.heading.y, input.heading.x);
             float scale = input.motion.z > 0 ? input.motion.z : 1;
@@ -35,10 +35,17 @@ internal static class FleetDraw {
             output.position = mul(float4(xz.x, input.position.y * scale, xz.y, 1), ViewProjection);
             output.color = input.color * input.tint.rgb * (light * input.tint.a);
             output.uv = input.uv;
+            output.construction = input.motion.w;
+            output.normal = normal;
             return output;
         }
         float4 PS(Output input) : SV_Target {
-            return float4(pow(saturate(input.color * BaseColor.Sample(SurfaceSampler,input.uv).rgb), 1.0 / 2.2), 1);
+            if (input.construction < 0) clip(frac((input.position.x+input.position.y)*0.2)-0.42);
+            float3 color = input.color * BaseColor.Sample(SurfaceSampler,input.uv).rgb;
+            float3 h = normalize(float3(-0.45,1.85,-0.35));
+            float gloss = pow(saturate(dot(normalize(input.normal),h)), lerp(64,4,Surface.y));
+            color = color*(1-Surface.x*0.10) + lerp(float3(0.04,0.04,0.04),color,Surface.x)*gloss*0.25 + Emissive.rgb;
+            return float4(pow(saturate(color), 1.0 / 2.2), 1);
         }
         """;
 
@@ -119,6 +126,6 @@ internal static class FleetDraw {
         ReadOnlySpan<Matrix4x4> constants = [viewProjection];
         commands.SetGraphicsConstants( MemoryMarshal.Cast<Matrix4x4, uint>( constants ) );
         commands.SetVertexBuffer( 1, instances, InstanceStride );
-        for ( int i = 0; i < meshes.Count; ++i ) meshes.Draw( commands, i, count, start );
+        for ( int i = 0; i < meshes.Count; ++i ) meshes.Draw( commands, i, 16, count, start );
     }
 }

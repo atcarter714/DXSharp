@@ -1,6 +1,6 @@
 # Fleet Battler
 
-Command Cyan in Helios, Caldera, or Nereid. Defeat Amber or launch two reinforcement wings to secure a system. Amber sends an opening squadron to the beacon, intercepts Cyan units near it, and commits reserves as the battle develops.
+The default Frontier scenario starts with a surveyed homeworld, one science scout, two miners, and 50 ore. Survey an outer body, build an extraction site, then defend the new settlement when Amber notices the operation. Helios, Caldera, and Nereid each retain their own scenario state when you switch systems.
 
 | Control | Action |
 | --- | --- |
@@ -12,11 +12,34 @@ Command Cyan in Helios, Caldera, or Nereid. Defeat Amber or launch two reinforce
 | R | Return selected ships to their formation slots |
 | Click a planet or moon | Inspect its survey and construction status |
 | E / N / L / T / I | Assign survey / build mine / build lab / research weapons / research industry |
-| B / Queue Wing | Pay for a six-corvette wing at an operational orbital shipyard |
+| Tab / Command | Open or close the Economy, Fleet, and Events tabs |
+| F4 | Open the latest Frontier dispatch |
+| B / Queue Wing | Order a wing from an operational orbital shipyard |
 | Scroll / middle-drag | Zoom toward the pointer / pan |
 | G / F11 / M | Galaxy map / fullscreen / mute |
 
-## Playing the skirmish
+## Playing Frontier
+
+1. Select the science scout in the fleet outliner. Right-click an unsurveyed body and assign the survey, or use the action in its inspection panel. The flight plan shows the assigned craft's course. A finished survey reveals the local deposit and pays 15 ore.
+2. Select a miner, inspect the surveyed body, and choose **Place Mine**. The miner travels to the construction site before the timer starts. The build reserves 35 ore. Reassigning the miner during construction cancels the build and refunds its cost. The completed mine runs independently.
+3. Use **Economy** to order another miner for 20 ore. Build a 55-ore orbital shipyard on a surveyed world. The site grows as it builds and the yard opens production after 24 seconds at 1×.
+4. Open **Fleet** to choose a weapon and defense package for the next three-corvette wing. Pulse cycles quickly and hits shields first. Rail fires farther and bypasses shields. A shield generator recovers after a lull. Heavy plating trades shield capacity for armor and adds 8 ore and four seconds at 1×.
+5. Follow the **Events** dispatches as extraction attracts an Amber raid. Richer deposits pay for defenses faster and draw an earlier response. Move miners and the scout clear, deploy escorts, and defeat both waves. An orbital lab generates science for weapons and industry research.
+
+| Order | Ore | Construction at 1× |
+| --- | ---: | ---: |
+| Homeworld miner | 20 | 16 s |
+| Mine | 35 | 12 s after miner arrival |
+| Lab | 45 | 12 s |
+| Orbital shipyard | 55 | 24 s |
+| Three-corvette wing | 60 | 32 s |
+| Wing after industry research | 42 | 20 s |
+
+The yard can produce two wings per scenario. The queue reserves ore and records the loadout and duration at order time.
+
+## Relay skirmish
+
+Launch with `--skirmish` or an explicit `--ships=<count>` to play the original relay scenario. Defeat Amber or launch two six-corvette wings to secure the system.
 
 1. Send squadrons toward the relay. A squadron contributes when at least half its survivors are in the zone. A Cyan majority captures it and produces ore. Right-click an Amber ship to focus fire, or right-click empty space to move. Ships can also return fire while following orders.
 2. Select one ship or one complete squadron, right-click a body, and choose the survey order bearing that unit’s ID. The planet panel shows the assigned unit and its scan progress. A green dashed course and destination diamond mark its rendezvous. Scouts scan twice as fast. Canceling a survey keeps the unit in orbit and preserves completed scan progress. A new move or attack order frees the old assignment.
@@ -53,11 +76,18 @@ Each file embeds its geometry and base color image. Import it into a Houdini geo
 
 | Reference file | Length | Role |
 | --- | ---: | --- |
-| [SurveyScout.gltf](Models/SurveyScout.gltf) | 28 m | Kestrel scout with side sensor booms. Cyan squads 01 and 04 survey at twice the standard rate |
+| [SurveyScout.gltf](Models/SurveyScout.gltf) | 28 m | Kestrel science scout with side sensor booms |
 | [Corvette.gltf](Models/Corvette.gltf) | 48 m | Lancer escort and reinforcement hull |
-| [Freighter.gltf](Models/Freighter.gltf) | 96 m | Mule hauler with six external cargo pods |
-| [MiningRelay.gltf](Models/MiningRelay.gltf) | 48 m | Capture site with panel wings and an ore processing spine |
+| [Freighter.gltf](Models/Freighter.gltf) | 96 m | Mule hauler with six external cargo pods. Also used as the temporary miner hull |
+| [MiningRelay.gltf](Models/MiningRelay.gltf) | 48 m | Capture site and temporary orbital facility hull |
 
-Use the Static Model Viewer to inspect each authored asset with an auto-fit camera and to check replacement exports. The Fleet Battler `--ship-model="C:\exports\Corvette.glb"` override draws the asset's mesh-local geometry as the corvette class. For that override, bake transforms and export a tactical hull about 2.4 units long with two thrusters about 0.9 units off center and 1.12 units aft. Keep an authored-scale copy for Houdini. See the [static model tutorial](../../doc/tutorials/07-static-models.md) for supported materials.
+Use the Static Model Viewer to inspect each authored asset with an auto-fit camera and to check replacement exports. Use `--ship-model`, `--scout-model`, `--miner-model`, `--freighter-model`, and `--station-model` to replace the corresponding placeholder with a `.glb` or `.gltf`. Include the mesh and texture sidecars if you export a separate glTF. The override uses the exported node transforms and dimensions. Export a tactical corvette about 2.4 units long, with thrusters about 0.9 units off center and 1.12 units aft. Keep an authored-scale copy for Houdini.
+
+```powershell
+blender -b --python-exit-code 1 --python tools/ConvertModel.py -- C:\exports\Corvette.fbx C:\exports\Corvette.glb
+dotnet run --project samples/FleetBattler -c Release -- --ship-model="C:\exports\Corvette.glb"
+```
+
+The FBX converter runs at authoring time. The game reads the resulting GLB. See the [static model tutorial](../../doc/tutorials/07-static-models.md) for material and format support.
 
 The assets use the repository's [MIT license](../../LICENSE.md). The [fleet roadmap](../../doc/FleetBattler.md) describes the larger game and content pipeline.

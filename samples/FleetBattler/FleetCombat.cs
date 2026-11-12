@@ -10,13 +10,15 @@ internal sealed partial class FleetSimulation {
     internal const int HullCapacity = 72, EffectCapacity = 512;
     private const int ShotDuration = 9, BurstDuration = 23;
     private readonly bool _battle;
-    private readonly byte[] _hull, _incoming;
+    private readonly byte[] _hull, _incoming, _shield, _armor;
+    private readonly ushort[] _railIncoming;
+    private readonly int[] _lastHit;
     private readonly int[] _nextShot;
     private readonly int[] _factionCount = new int[2];
     private readonly CombatEvent[] _events = new CombatEvent[EffectCapacity];
     private int _eventCursor, _eventCount;
 
-    private readonly record struct CombatEvent( Vector2 From, Vector2 To, int Tick, int Faction, bool Burst );
+    private readonly record struct CombatEvent( Vector2 From, Vector2 To, int Tick, int Faction, bool Burst, WeaponKind Weapon );
 
     internal int ActiveCount => CyanCount + AmberCount;
     internal int CyanCount => _factionCount[0];
@@ -25,15 +27,18 @@ internal sealed partial class FleetSimulation {
     internal int ShipsLost { get; private set; }
     internal int LastEngagementTick { get; private set; } = -10_000;
     internal bool InBattle => Tick - LastEngagementTick < 150;
-    internal bool Won => WingsBuilt == WingGoal || AmberCount == 0 && CyanCount > 0;
+    internal bool Won => Frontier ? _secured : WingsBuilt == WingGoal || AmberCount == 0 && CyanCount > 0;
     internal bool Lost => CyanCount == 0 && !Won;
 
     internal bool Alive( int ship ) => (uint)ship < (uint)Count && _hull[ship] > 0;
     internal int SquadronOf( int ship ) => _squadOfShip[ship];
     internal int SideOf( int ship ) => _squads[_squadOfShip[ship]].Faction;
     internal int Hull( int ship ) => _hull[ship];
+    internal int Shield( int ship ) => _shield[ship];
+    internal int Armor( int ship ) => _armor[ship];
 
     internal void Attack( FleetSelection selection, int target ) {
+        if ( Frontier && Role( selection.Squad ) != HullRole.Corvette ) return;
         if ( !Alive( target ) || _squads[selection.Squad].Faction == SideOf( target ) ) return;
         SetOrder( selection, new Order {
             Enemy = target + 1, Target = _positions[target], Detached = selection.IsShip
@@ -97,27 +102,50 @@ internal sealed partial class FleetSimulation {
     }
 
     private void ResolveVolley( ) {
-        if ( !_battle || CyanCount == 0 || AmberCount == 0 ) return;
+        if ( !_battle || CyanCount == 0 ) return;
+        if ( Frontier && Tick % 15 == 0 ) {
+            for ( int ship = 0; ship < Count; ++ship )
+                if ( Alive( ship ) && Role( SquadronOf( ship ) ) == HullRole.Corvette && Tick - _lastHit[ship] >= 180 )
+                    _shield[ship] = (byte)Math.Min( Loadout( ship ).Shield, _shield[ship] + 2 );
+        }
+        if ( AmberCount == 0 ) return;
         for ( int ship = 0; ship < Count; ++ship ) {
             if ( !Alive( ship ) || Tick < _nextShot[ship] || (Tick + ship) % 4 != 0 ) continue;
+            if ( Frontier && Role( SquadronOf( ship ) ) != HullRole.Corvette ) continue;
             int side = SideOf( ship );
-            float range = side == 0 && WeaponUpgrade ? 19 : 16;
+            var design = Loadout( ship );
+            var weapon = Frontier ? design.Weapon : WeaponKind.Pulse;
+            float range = Frontier ? design.Range + (side == 0 && WeaponUpgrade ? 3 : 0) : side == 0 && WeaponUpgrade ? 19 : 16;
             int preferred = (_shipOrders[ship].Detached ? _shipOrders[ship].Enemy : _squads[_squadOfShip[ship]].Order.Enemy) - 1;
             int target = Alive( preferred ) && Vector2.DistanceSquared( _positions[preferred], _positions[ship] ) <= range * range
                 ? preferred : ClosestHostile( ship, side, range );
             if ( target < 0 ) continue;
-            int damage = side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
-            _incoming[target] = (byte)Math.Min( HullCapacity, _incoming[target] + damage );
-            _nextShot[ship] = Tick + 38 + ship % 9;
+            int damage = Frontier ? design.Damage + (side == 0 && WeaponUpgrade ? 4 : 0) : side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
+            if ( weapon == WeaponKind.Rail ) _railIncoming[target] = (ushort)Math.Min( 512, _railIncoming[target] + damage );
+            else _incoming[target] = (byte)Math.Min( Frontier ? 255 : HullCapacity, _incoming[target] + damage );
+            _nextShot[ship] = Tick + (Frontier ? design.Reload : 38) + ship % 9;
             ++ShotsFired;
             LastEngagementTick = Tick;
-            Emit( _positions[ship], _positions[target], side, burst: false );
+            Emit( _positions[ship], _positions[target], side, burst: false, weapon );
         }
 
         for ( int ship = 0; ship < Count; ++ship ) {
             int damage = _incoming[ship];
-            if ( damage == 0 ) continue;
+            int rail = _railIncoming[ship];
+            if ( damage == 0 && rail == 0 ) continue;
             _incoming[ship] = 0;
+            _railIncoming[ship] = 0;
+            if ( Frontier ) {
+                _lastHit[ship] = Tick;
+                int shield = Math.Min( _shield[ship], damage );
+                _shield[ship] -= (byte)shield;
+                damage -= shield;
+                // Rail rounds bypass shields. Armor absorbs rail and residual pulse damage before hull.
+                damage += rail;
+                int armor = Math.Min( _armor[ship], damage );
+                _armor[ship] -= (byte)armor;
+                damage -= armor;
+            }
             _hull[ship] = (byte)Math.Max( 0, _hull[ship] - damage );
             if ( Alive( ship ) ) continue;
             ref var squad = ref _squads[_squadOfShip[ship]];
@@ -149,8 +177,8 @@ internal sealed partial class FleetSimulation {
         return target;
     }
 
-    private void Emit( Vector2 from, Vector2 to, int faction, bool burst ) {
-        _events[_eventCursor] = new( from, to, Tick, faction, burst );
+    private void Emit( Vector2 from, Vector2 to, int faction, bool burst, WeaponKind weapon = WeaponKind.None ) {
+        _events[_eventCursor] = new( from, to, Tick, faction, burst, weapon );
         _eventCursor = (_eventCursor + 1) % EffectCapacity;
         _eventCount = Math.Min( _eventCount + 1, EffectCapacity );
     }
@@ -163,7 +191,7 @@ internal sealed partial class FleetSimulation {
             int age = Tick - pulse.Tick;
             if ( age >= lifetime ) continue;
             output[count++] = new( new Vector4( pulse.From.X, pulse.From.Y, pulse.To.X, pulse.To.Y ),
-                new Vector4( (float)age / lifetime, pulse.Faction, pulse.Burst ? 1 : 0, 0 ) );
+                new Vector4( (float)age / lifetime, pulse.Faction, pulse.Burst ? 1 : 0, pulse.Weapon == WeaponKind.Rail ? 1 : 0 ) );
         }
         return count;
     }

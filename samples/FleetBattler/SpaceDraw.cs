@@ -164,8 +164,8 @@ internal static class SpaceDraw {
             float pulse = 0.65 + 0.35*sin(Viewport.z*3.4);
             float segment = step(0.18, frac(arc*12));
             float progress = step(arc, Site.w) * step(0.001,Site.w);
-            sky = lerp(sky, SiteTint.rgb, saturate(ring*(segment*0.45 + progress*0.60) + crossMark*pulse));
-            sky += SiteTint.rgb * (1 - saturate(distanceToSite/Site.z)) * 0.085;
+            sky = lerp(sky, SiteTint.rgb, saturate(ring*(segment*0.45 + progress*0.60) + crossMark*pulse)*SiteTint.w);
+            sky += SiteTint.rgb * (1 - saturate(distanceToSite/max(Site.z,0.001))) * 0.085;
 
             float2 selectionDelta = world - Selected.xy;
             float selectionRadius = max(Selected.z, Viewport.w*11);
@@ -222,7 +222,7 @@ internal static class SpaceDraw {
         values[9] = new( bodies[0].Center.X, bodies[0].Center.Y, CelestialSystem.RockyAxis * r, CelestialSystem.GiantAxis * r );
         values[10] = new( bodies[1].Center.X, bodies[1].Center.Y, CelestialSystem.MoonAxis * r, useMoonMap ? 1 : 0 );
         values[11] = new( fleet.Site.X, fleet.Site.Y, fleet.SiteRadius, progress );
-        values[12] = tint;
+        values[12] = fleet.Frontier ? Vector4.Zero : tint;
         values[13] = new( center.X, center.Y, selected.IsShip ? 2.8f : 3.5f + MathF.Sqrt( fleet.ShipCount( selected.Squad ) ) * 2.3f, showSelection ? 1 : 0 );
         values[14] = new( target.X, target.Y, showSelection && plan.Order != FlightOrder.Idle ? 1 : 0, (float)plan.Order );
         Draw( commands, pipeline, moon, values );

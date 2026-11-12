@@ -197,7 +197,7 @@ internal static unsafe class MeshQualification {
         using var uploads = device.CreateCommandList( uploadAllocator );
         using var meshes = new StaticMeshSet( device, uploads, model );
         uploads.Close( );
-        using var root = device.CreateTextureRootSignature( 16, linearWrap: true );
+        using var root = device.CreateTextureRootSignature( FleetDraw.MaterialConstants, linearWrap: true );
         using var pipeline = FleetDraw.CreatePipeline( device, root, compiler, depthEnabled: true );
         using var instances = device.CreateBuffer( 2 * FleetDraw.InstanceStride, BufferMemory.Upload );
         instances.Write<ShipInstance>( [
@@ -313,7 +313,7 @@ internal static unsafe class MeshQualification {
         using var scouts = Upload( "SurveyScout.gltf", 0.083f );
         using var freighters = Upload( "Freighter.gltf", 0.05f );
         using var relay = Upload( "MiningRelay.gltf", 0.12f );
-        using var fleetRoot = device.CreateTextureRootSignature( 16, linearWrap: true );
+        using var fleetRoot = device.CreateTextureRootSignature( FleetDraw.MaterialConstants, linearWrap: true );
         using var thrustRoot = device.CreateGraphicsConstantsRootSignature( 20 );
         using var thrust = FleetDraw.CreateThrusters( device, thrustRoot, compiler );
         using var battleRoot = device.CreateGraphicsConstantsRootSignature( BattleDraw.ConstantCount );

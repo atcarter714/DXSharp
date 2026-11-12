@@ -13,6 +13,8 @@ internal static class Program {
         cbuffer Scene : register(b0) {
             row_major float4x4 WorldViewProjection;
             row_major float4x4 NormalToWorld;
+            float4 Surface;
+            float4 Emissive;
         };
         Texture2D BaseColor : register(t0);
         SamplerState SurfaceSampler : register(s0);
@@ -28,7 +30,10 @@ internal static class Program {
         }
         float4 PS(Vertex input) : SV_Target {
             float diffuse = saturate(dot(normalize(input.normal), normalize(float3(-0.55, 0.8, 0.35))));
-            float3 litColor = saturate(input.color * BaseColor.Sample(SurfaceSampler,input.uv).rgb * (0.24 + 0.76 * diffuse));
+            float3 albedo = input.color * BaseColor.Sample(SurfaceSampler,input.uv).rgb;
+            float gloss = pow(saturate(dot(normalize(input.normal),normalize(float3(-0.55,1.8,0.35)))),lerp(64,4,Surface.y));
+            float3 litColor = saturate(albedo * (0.24 + 0.76 * diffuse) * (1-Surface.x*0.10) +
+                lerp(float3(0.04,0.04,0.04),albedo,Surface.x)*gloss*0.25 + Emissive.rgb);
             return float4(pow(litColor, 1.0 / 2.2), 1);
         }
         """;
@@ -65,7 +70,7 @@ internal static class Program {
         } );
         Console.WriteLine( device.AdapterName );
         using var compiler = new ShaderCompiler( );
-        using var root = device.CreateTextureRootSignature( 32, linearWrap: true );
+        using var root = device.CreateTextureRootSignature( 40, linearWrap: true );
         using var pipeline = device.CreateGraphicsPipeline( root, compiler.Compile( Shader, "VS", "vs_6_0" ),
             compiler.Compile( Shader, "PS", "ps_6_0" ), [
                 new( "POSITION", VertexFormat.Float3, 0 ),
@@ -120,7 +125,7 @@ internal static class Program {
                 matrices[0] = draw.World * viewProjection;
                 matrices[1] = draw.NormalToWorld;
                 frame.Commands.SetGraphicsConstants( MemoryMarshal.Cast<Matrix4x4, uint>( matrices ) );
-                meshes.Draw( frame.Commands, draw.Primitive );
+                meshes.Draw( frame.Commands, draw.Primitive, 32 );
             }
         } );
         return result.Frames;
