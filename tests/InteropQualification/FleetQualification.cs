@@ -254,80 +254,84 @@ internal static class FleetQualification {
     }
 
     private static void VerifyFrontier( ) {
-        const int prospect = 2;
+        const int home = FleetSimulation.Homeworld, prospect = 2;
         var fleet = new FleetSimulation( 3, 37, battle: true, frontier: true );
         var scout = new FleetSelection( 0, 0 );
         var miner = new FleetSelection( 1, 1 );
-        Require( fleet.CyanCount == 3 && fleet.AmberCount == 0 && !fleet.Won && fleet.Planet( FleetSimulation.Homeworld ).Surveyed &&
-            fleet.Role( 0 ) == HullRole.Scout && fleet.Role( 1 ) == HullRole.Miner && fleet.Role( 2 ) == HullRole.Miner &&
-            fleet.Dispatch( 0 ) == FrontierEvent.Arrival, "homeworld, science ship and workers open in peacetime" );
-        Require( !fleet.QueueWing( ) && !fleet.BuildFacility( prospect, PlanetFacility.Mine, miner ) &&
-            !fleet.BeginSurvey( miner, prospect ) && fleet.BeginSurvey( scout, prospect ), "exploration and production gates enforce roles" );
-        Require( fleet.QueueWorker( ) && fleet.Ore == 30 && fleet.WorkerRemaining == FleetSimulation.WorkerDuration &&
-            !fleet.QueueWorker( ) && fleet.CyanCount == 3, "the homeworld charges and schedules a worker" );
-        AdvanceUntil( fleet, () => fleet.HasDeposit( prospect ), "scout reaches and surveys the hidden deposit", 1800 );
-        Require( fleet.DepositYield( prospect ) == 12 && fleet.Ore == 45 && fleet.Dispatch( 1 ) == FrontierEvent.Prospect &&
-            !fleet.BuildFacility( prospect, PlanetFacility.Mine, scout ), "the survey reveals a specific yield and miners alone can build" );
-        Require( fleet.BuildFacility( prospect, PlanetFacility.Mine, miner ) && fleet.Ore == 10 &&
-            fleet.MineEnRoute( prospect ), "placing a mine reserves ore and assigns a named worker" );
-        fleet.Step( );
-        Require( fleet.Planet( prospect ).MineRemaining == FleetSimulation.FacilityDuration, "travel does not consume construction time" );
-        fleet.Move( miner, new( -38, 10 ) );
-        fleet.Step( );
-        Require( fleet.Planet( prospect ).MineRemaining < 0 && fleet.Ore == 45 &&
-            fleet.BuildFacility( prospect, PlanetFacility.Mine, miner ), "reassigning a worker refunds the unfinished mine" );
-        AdvanceUntil( fleet, () => fleet.Planet( prospect ).MineRemaining == 0, "arrival starts and completes construction", 1800 );
-        Require( fleet.CyanCount == 4 && fleet.WorkerRemaining < 0 && fleet.Role( 3 ) == HullRole.Miner &&
-            fleet.Dispatch( 2 ) == FrontierEvent.Distress && fleet.AmberCount == 0, "workers launch after construction and mining triggers a warning" );
-        fleet.Move( scout, new( -70, 40 ) );
-        fleet.Move( miner, new( -70, 45 ) );
-        fleet.Move( 2, new( -70, 50 ) );
-        fleet.Move( 3, new( -70, 55 ) );
-        AdvanceUntil( fleet, () => fleet.Ore >= FleetSimulation.YardCost, "operating mine pays for a yard" );
-        int bank = fleet.Ore;
-        Require( fleet.BuildYard( FleetSimulation.Homeworld ) && fleet.YardRemaining == FleetSimulation.YardDuration &&
-            fleet.Ore == bank - FleetSimulation.YardCost && !fleet.QueueWing( ), "building a yard commits cost and blocks production during construction" );
-        fleet.ConfigureDesign( weapon: true );
-        ShipDesign design = fleet.Design;
-        AdvanceUntil( fleet, () => fleet.CanBuildWing, "mine funds the first corvette wing" );
-        bank = fleet.Ore;
-        int before = fleet.CyanCount;
-        Require( fleet.QueueWing( ) && fleet.Ore == bank - 60 && fleet.WingRemaining == 480 &&
-            fleet.CyanCount == before && fleet.ActiveWingDesign == design, "rail design is priced and captured when queued" );
-        fleet.ConfigureDesign( weapon: true );
-        fleet.ConfigureDesign( weapon: false );
-        AdvanceUntil( fleet, () => fleet.WingsBuilt == 1, "first queued wing launches" );
-        int corvette = Enumerable.Range( 0, fleet.Count ).First( ship => fleet.Loadout( ship ) == design );
-        Require( fleet.ActiveRaids == 1 && fleet.ShipCount( fleet.SquadronOf( corvette ) ) == 3 &&
-            fleet.Shield( corvette ) == 34 && fleet.Armor( corvette ) == 10 &&
-            fleet.CurrentWingCost == 68 && fleet.CurrentWingDuration == 540 && !fleet.Won, "the launch uses the queued loadout and the first raid is in play" );
+        Require( fleet.Established && fleet.CyanCount == 3 && fleet.AmberCount == 0 && !fleet.Won &&
+            fleet.Planet( home ).Surveyed && fleet.Role( 0 ) == HullRole.Scout && fleet.Role( 1 ) == HullRole.Miner &&
+            fleet.Role( 2 ) == HullRole.Miner && fleet.Dispatch( 0 ) == FrontierEvent.Arrival && fleet.Energy == 25,
+            "Sol starts with the homeworld, scout, two constructors, and energy" );
+        for ( int system = 1; system < CelestialSystem.MapPositions.Length; ++system ) {
+            var remote = new FleetSimulation( 3, 37, system: system, battle: true, frontier: true );
+            for ( int i = 0; i < 180; ++i ) remote.Step( );
+            Require( !remote.Established && remote.CyanCount == 0 && remote.FirstPlayerSquad( ) == -1 &&
+                remote.MerchantCount == 1 && remote.ActiveCount == 1 && remote.FactionOf( 0 ) == FactionId.Merchants &&
+                remote.Ore == 0 && remote.Energy == 0 && remote.DispatchCount == 0 && !remote.Planet( home ).Surveyed &&
+                !remote.CanOpenYard( home ), "uncolonized systems have neutral traffic and no player assets" );
+        }
+        Require( Factions.Attitude( FactionId.Sol, FactionId.Merchants ) == Disposition.Neutral &&
+            Factions.Attitude( FactionId.Sol, FactionId.Raiders ) == Disposition.Hostile &&
+            Factions.Attitude( FactionId.Sol, FactionId.Rival ) == Disposition.Hostile, "factions distinguish neutral shipping from opponents" );
 
-        bool sawRailBypass = false, sawPulseAbsorption = false;
-        int combatLimit = fleet.Tick + 3600;
-        while ( !fleet.Won && !fleet.Lost && fleet.Tick < combatLimit ) {
-            if ( fleet.CanBuildWing ) Require( fleet.QueueWing( ), "a second corvette wing can reinforce the defense" );
+        Require( !fleet.QueueShip( home, HullBlueprint.Corvette ) && fleet.QueueShip( home, HullBlueprint.Miner ) &&
+            fleet.YardQueue( home ).Length == 1 && fleet.CyanCount == 3 && fleet.NavalReserved == 0 &&
+            !fleet.BeginSurvey( miner, prospect ) && fleet.BeginSurvey( scout, prospect ),
+            "the Earth dock builds civilian hulls while the scout discovers deposits" );
+        AdvanceUntil( fleet, () => fleet.HasDeposit( prospect ), "the scout reaches and surveys the hidden deposit", 1800 );
+        Require( fleet.DepositYield( prospect ) == 12 && fleet.Dispatch( 1 ) == FrontierEvent.Prospect &&
+            !fleet.BuildFacility( prospect, PlanetFacility.Mine, scout ), "the survey reveals a specific yield and scouts cannot construct" );
+        Require( fleet.BuildFacility( prospect, PlanetFacility.Mine, miner ), "mining is assigned to a constructor" );
+        AdvanceUntil( fleet, () => fleet.Planet( prospect ).MineRemaining == 0, "arrival starts and completes construction", 1800 );
+        Require( fleet.ActiveMiners( ) == 3 && fleet.YardQueue( home ).IsEmpty && fleet.Dispatch( 2 ) == FrontierEvent.Distress,
+            "the Earth order launches one constructor and mining triggers a warning" );
+        AdvanceUntil( fleet, () => fleet.CanAfford( FleetSimulation.Facility( PlanetFacility.Yard ).Cost ), "operating mine pays for an orbital yard" );
+        Require( fleet.BuildYard( home, new( 2 ) ) && fleet.YardRemaining == FleetSimulation.YardDuration &&
+            !fleet.QueueShip( home, HullBlueprint.Corvette ), "shipyard construction gates naval production" );
+        fleet.SetWeapon( WeaponKind.Rail );
+        ShipDesign design = fleet.Design;
+        AdvanceUntil( fleet, () => fleet.ShipOrderBlock( home, HullBlueprint.Corvette ) is null, "mine funds the first corvette" );
+        int before = fleet.CyanCount;
+        var hull = fleet.Hull( HullBlueprint.Corvette );
+        Require( fleet.QueueShip( home, HullBlueprint.Corvette ) && fleet.NavalReserved == 1 &&
+            fleet.ShipRemaining( home ) == hull.Duration && fleet.CyanCount == before &&
+            fleet.YardQueue( home )[0].Design == design, "purchase snapshots the design and reserves exactly one hull" );
+        fleet.SetWeapon( WeaponKind.Pulse );
+        fleet.SetPlating( true );
+        AdvanceUntil( fleet, () => fleet.CorvettesLaunched == 1, "first queued corvette launches" );
+        int corvette = fleet.LastLaunch.Ship;
+        Require( fleet.Loadout( corvette ) == design && fleet.ShipCount( fleet.SquadronOf( corvette ) ) == 1 &&
+            fleet.Shield( corvette ) == 34 && fleet.Armor( corvette ) == 10, "the launch uses the purchased loadout" );
+        foreach ( var facility in FleetSimulation.Facilities )
+            Require( fleet.ConstructionBlock( home, facility, new( fleet.SquadronOf( corvette ), corvette ) ) is not null,
+                "corvettes cannot construct Frontier facilities" );
+
+        bool sawRaiders = false, sawRival = false, sawRailBypass = false;
+        int combatLimit = fleet.Tick + 5200;
+        while ( !fleet.Won && fleet.Tick < combatLimit ) {
+            if ( fleet.ShipOrderBlock( home, HullBlueprint.Corvette ) is null )
+                Require( fleet.QueueShip( home, HullBlueprint.Corvette ), "the yard can reinforce the defense" );
             if ( fleet.Tick % 30 == 0 && fleet.AmberCount > 0 ) {
-                int target = Enumerable.Range( 0, fleet.Count ).First( ship => fleet.Alive( ship ) && fleet.SideOf( ship ) == 1 );
+                int target = Enumerable.Range( 0, fleet.Count ).First( ship => fleet.Alive( ship ) &&
+                    Factions.Attitude( FactionId.Sol, fleet.FactionOf( ship ) ) == Disposition.Hostile );
                 for ( int squad = 0; squad < fleet.SquadCount; ++squad )
                     if ( fleet.IsPlayerSquad( squad ) && fleet.Role( squad ) == HullRole.Corvette && fleet.ShipCount( squad ) > 0 )
                         fleet.Attack( new( squad ), target );
             }
             fleet.Step( );
             for ( int ship = 0; ship < fleet.Count; ++ship ) {
-                if ( !fleet.Alive( ship ) || fleet.Role( fleet.SquadronOf( ship ) ) != HullRole.Corvette ) continue;
+                if ( !fleet.Alive( ship ) ) continue;
+                var faction = fleet.FactionOf( ship );
                 var loadout = fleet.Loadout( ship );
-                sawRailBypass |= fleet.SideOf( ship ) == 1 && fleet.Armor( ship ) < loadout.Armor && fleet.Shield( ship ) == loadout.Shield;
-                sawPulseAbsorption |= fleet.SideOf( ship ) == 0 && fleet.ActiveRaids == 1 &&
-                    fleet.Shield( ship ) < loadout.Shield && fleet.Armor( ship ) == loadout.Armor;
+                sawRaiders |= faction == FactionId.Raiders;
+                sawRival |= faction == FactionId.Rival;
+                sawRailBypass |= fleet.Role( fleet.SquadronOf( ship ) ) == HullRole.Corvette &&
+                    fleet.Armor( ship ) < loadout.Armor && fleet.Shield( ship ) == loadout.Shield;
             }
         }
-        Require( sawRailBypass && sawPulseAbsorption, "rail bypasses shields and pulse strips them before reaching armor" );
-        Require( fleet.Won && fleet.ActiveRaids == 2 && fleet.Dispatch( fleet.DispatchCount - 1 ) == FrontierEvent.Secured,
-            "the player can overcome both escalating raids and secure the frontier" );
-        int miners = fleet.ActiveMiners( );
-        Require( fleet.QueueWorker( ), "the homeworld can continue growing after victory" );
-        AdvanceUntil( fleet, () => fleet.ActiveMiners( ) > miners, "a post-victory worker leaves the queue" );
-        Require( fleet.ActiveMiners( ) == miners + 1 && fleet.ActiveRaids == 2, "post-victory production does not restart raids" );
+        Require( sawRaiders && sawRival && sawRailBypass && fleet.Won && fleet.ActiveRaids == 2 &&
+            fleet.Dispatch( fleet.DispatchCount - 1 ) == FrontierEvent.Secured,
+            "pirates and rival military participate in both raids, piercing weapons work, and the frontier can be secured" );
     }
 
     private static void VerifyFleetRecovery( ) {
@@ -337,35 +341,43 @@ internal static class FleetQualification {
         AdvanceUntil( fleet, () => fleet.HasDeposit( prospect ), "recovery prospect surveyed", 1800 );
         Require( fleet.BuildFacility( prospect, PlanetFacility.Mine, new( 1 ) ), "recovery funding" );
         AdvanceUntil( fleet, () => fleet.Ore >= 235, "mine funds fleet and infrastructure", 3000 );
-        Require( fleet.BuildYard( home ) && fleet.BuildFacility( home, PlanetFacility.Depot ) &&
-            fleet.BuildYard( prospect ) && fleet.NavalCapacity == 0 && !fleet.CanBuildWing,
-            "incomplete infrastructure cannot grant capacity" );
-        AdvanceUntil( fleet, () => fleet.DepotCount == 1, "logistics depot constructed" );
-        Require( fleet.NavalCapacity == FleetSimulation.DepotNavalCapacity && !fleet.CanBuildWing, "depot alone supplies no shipyard" );
+        Require( fleet.BuildYard( home, new( 2 ) ) && fleet.BuildYard( prospect, new( 1 ) ) &&
+            !fleet.BuildFacility( home, PlanetFacility.Depot, new( 2 ) ) && fleet.NavalCapacity == 0,
+            "pending yards grant no capacity and a constructor can only have one assignment" );
         AdvanceUntil( fleet, () => fleet.YardCount == 2, "both yards constructed" );
-        Require( fleet.NavalCapacity == 15 && fleet.QueueWing( prospect ) && fleet.ActiveYard == prospect &&
-            fleet.QueueWing( home ) && fleet.NavalReserved == 6 && !fleet.CanBuildWing, "queue reserves actual hull slots and stores its yard" );
+        Require( fleet.BuildFacility( home, PlanetFacility.Depot, new( 2 ) ), "the free constructor can build logistics infrastructure" );
+        AdvanceUntil( fleet, () => fleet.DepotCount == 1, "logistics depot constructed" );
+        Require( fleet.NavalCapacity == 15 && fleet.QueueShip( prospect, HullBlueprint.Corvette ) &&
+            fleet.QueueShip( home, HullBlueprint.Corvette ) && fleet.NavalReserved == 2 &&
+            fleet.ShipRemaining( prospect ) == fleet.ShipRemaining( home ), "yards have independent, concurrent build queues" );
         for ( int ship = 0; ship < fleet.Count; ++ship )
             if ( fleet.SideOf( ship ) == 0 ) fleet.ApplyHullDamage( ship, FleetSimulation.HullCapacity );
-        Require( fleet.Recovering && !fleet.Lost && fleet.NavalReserved == 6, "total loss leaves infrastructure and queued orders intact" );
-        AdvanceUntil( fleet, () => fleet.WingsBuilt == 2, "both yards can fulfill work after a fleet wipe", 1300 );
-        Require( fleet.NavalUsed == 6 && fleet.NavalReserved == 0 && !fleet.Recovering, "launch converts reserved capacity to live hulls" );
+        Require( fleet.Recovering && !fleet.Lost && fleet.NavalReserved == 2, "total loss leaves infrastructure and queued orders intact" );
+        AdvanceUntil( fleet, () => fleet.ShipsLaunched == 2, "both yards can fulfill work after a fleet wipe", 1300 );
+        Require( fleet.NavalUsed == 2 && fleet.NavalReserved == 0 && !fleet.Recovering, "launch converts reserved capacity to live hulls" );
         var chosen = new CommandSelection( fleet.Capacity );
         chosen.All( fleet );
+        int first = fleet.FirstPlayerSquad( );
+        Require( fleet.MergeFleets( chosen.Ships ) && fleet.FleetStrength( first ) == 2, "two combat groups merge" );
+        chosen.Squadron( fleet, first, SelectionMode.Replace );
+        Require( chosen.Count == 2 && fleet.SplitFleets( chosen.Ships ) && fleet.FleetStrength( first ) == 1,
+            "selecting a merged fleet selects its members and split restores independent commands" );
         int storage = fleet.Count;
         for ( int iteration = 0; iteration < 35; ++iteration ) {
             for ( int ship = 0; ship < fleet.Count; ++ship )
                 if ( fleet.SideOf( ship ) == 0 ) fleet.ApplyHullDamage( ship, FleetSimulation.HullCapacity );
-            Require( fleet.NavalUsed == 0 && fleet.Recovering && fleet.QueueWing( home ), "losses release naval capacity for every replacement" );
-            int built = fleet.WingsBuilt;
-            AdvanceUntil( fleet, () => fleet.WingsBuilt > built, "replacement wing launches" );
+            Require( fleet.NavalUsed == 0 && fleet.Recovering && fleet.QueueShip( home, HullBlueprint.Corvette ),
+                "losses release naval capacity for every replacement" );
+            int built = fleet.ShipsLaunched;
+            AdvanceUntil( fleet, () => fleet.ShipsLaunched > built, "replacement hull launches" );
         }
         chosen.Prune( fleet );
-        Require( chosen.Count == 0 && fleet.Count == storage && fleet.NavalUsed == 3 && fleet.WingsBuilt == 37,
+        Require( chosen.Count == 0 && fleet.Count == storage && fleet.NavalUsed == 1 && fleet.ShipsLaunched == 37,
             "replacement recycles storage without inheriting a dead hull's selection" );
-        Require( fleet.QueueScout( ), "destroyed scout can be ordered from the homeworld" );
-        AdvanceUntil( fleet, () => fleet.WorkerRemaining < 0, "replacement scout launches" );
-        Require( fleet.CyanCount == 4 && fleet.IsScoutSquad( 0 ), "replacement civilian restores scouting without occupying naval capacity" );
+        Require( fleet.QueueShip( home, HullBlueprint.Scout ), "destroyed scout can be ordered from the homeworld" );
+        AdvanceUntil( fleet, () => fleet.YardQueue( home ).IsEmpty, "replacement scout launches" );
+        Require( fleet.CyanCount == 2 && fleet.Role( fleet.SquadronOf( fleet.LastLaunch.Ship ) ) == HullRole.Scout,
+            "replacement civilian restores scouting without occupying naval capacity" );
     }
 
     private static void VerifyOrbitalTransfers( ) {
@@ -375,9 +387,12 @@ internal static class FleetQualification {
         Require( fleet.Bodies.Length == 11 && fleet.BodyName( 1 ) == "EARTH" && fleet.BodyName( 10 ) == "NEPTUNE" &&
             SolarCatalog.Get( 3 ).Parent == FleetSimulation.Homeworld && !fleet.Orbit( scout, belt ) && !fleet.BeginSurvey( scout, belt ) &&
             !fleet.Move( scout, fleet.Bodies[belt].Center ), "base drive rejects out-of-range orders without changing the orbit" );
-        Require( fleet.BuildFacility( FleetSimulation.Homeworld, PlanetFacility.Lab ), "homeworld lab funds navigation research" );
+        Require( fleet.BuildFacility( FleetSimulation.Homeworld, PlanetFacility.Lab, new( 1 ) ), "homeworld lab funds navigation research" );
         AdvanceUntil( fleet, () => fleet.Science >= FleetSimulation.DriveCost, "lab produces drive research" );
-        Require( fleet.ResearchDrive( ) && fleet.BeginSurvey( scout, belt ), "long-burn drive unlocks belt rendezvous" );
+        Require( fleet.StartResearch( ResearchTopic.Drive ) && !fleet.DriveUpgrade && !fleet.BeginSurvey( scout, belt ),
+            "the drive does not unlock at purchase time" );
+        AdvanceUntil( fleet, () => fleet.DriveUpgrade, "long-burn drive finishes research" );
+        Require( fleet.BeginSurvey( scout, belt ), "long-burn drive unlocks belt rendezvous" );
         int end = fleet.Tick + fleet.RouteTicks( scout );
         Span<Vector2> route = stackalloc Vector2[17];
         Require( fleet.RoutePhase( scout ) == NavigationPhase.Burn && fleet.CopyRoute( scout, route, out var endpoint ) &&
@@ -409,7 +424,7 @@ internal static class FleetQualification {
         AdvanceUntil( fleet, () => fleet.HasDeposit( belt ), "survey completes from orbit" );
         Require( fleet.DepositYield( belt ) == 20 && MathF.Abs( Vector2.Distance( fleet.Center( scout ), fleet.Bodies[belt].Center ) - radius ) < 0.01f &&
             fleet.Orbit( scout, FleetSimulation.Homeworld ), "scout remains in host-relative orbit and can plot a return" );
-        Require( FleetHud.Hit( new( 465, 177 ), 640, 400, fleet, belt ) == new HudHit( HudAction.Planet, (int)PlanetAction.Mine ),
+        Require( FleetHud.Hit( new( 465, 218 ), 660, 500, fleet, belt ) == new HudHit( HudAction.BuildSite, (int)PlanetFacility.Mine ),
             "planet inspector site card matches the mine action" );
     }
 
@@ -418,35 +433,66 @@ internal static class FleetQualification {
         var fleet = new FleetSimulation( 3, 37, frontier: true );
         var scout = new FleetSelection( 0 );
         var miner = new FleetSelection( 1 );
-        int originalOre = fleet.Ore;
-        Require( fleet.QueueWorker( ) && fleet.CancelCivilian( ) && fleet.WorkerRemaining < 0 && fleet.Ore == originalOre &&
-            !fleet.CancelCivilian( ), "civilian cancellation refunds one order and releases its berth" );
-        Require( fleet.BuildFacility( home, PlanetFacility.Lab ) &&
-            FleetHud.Hit( new( 605, 208 ), 640, 400, fleet, home ) == new HudHit( HudAction.Planet, (int)PlanetAction.CancelLab ) &&
-            fleet.CancelSite( home, PlanetFacility.Lab ) && fleet.Ore == originalOre, "site card cancels construction and returns ore" );
+        int originalOre = fleet.Ore, originalEnergy = fleet.Energy;
+        Require( FleetHud.Hit( new( 300, 205 ), 660, 500, fleet, home, yardInspector: home ).Action == HudAction.BuildShip &&
+            FleetHud.Hit( new( 357, 205 ), 660, 500, fleet, home, yardInspector: home ).Action == HudAction.Panel,
+            "the shipyard design Add button and independent queue row have distinct hit regions" );
+        Require( fleet.QueueShip( home, HullBlueprint.Miner ) && fleet.CancelShip( home, 0 ) &&
+            fleet.YardQueue( home ).IsEmpty && fleet.Ore == originalOre && fleet.Energy == originalEnergy &&
+            !fleet.CancelShip( home, 0 ), "civilian cancellation refunds ore and energy and releases the slot" );
+        Require( !fleet.BuildFacility( home, PlanetFacility.Lab ) && !fleet.BuildFacility( home, PlanetFacility.Lab, scout ) &&
+            fleet.BuildFacility( home, PlanetFacility.Lab, miner ) &&
+            fleet.CancelSite( home, PlanetFacility.Lab ) && fleet.Ore == originalOre && fleet.Energy == originalEnergy,
+            "a lab needs a constructor and cancellation refunds both resources" );
+
         Require( fleet.BeginSurvey( scout, moon ), "survey the Moon to discover a construction site" );
         AdvanceUntil( fleet, () => fleet.HasDeposit( moon ), "Moon survey completes", 1800 );
         originalOre = fleet.Ore;
-        Require( fleet.BuildFacility( moon, PlanetFacility.Mine, miner ) && fleet.MineEnRoute( moon ), "mine assigns a traveling constructor" );
+        Require( fleet.BuildFacility( moon, PlanetFacility.Mine, miner ) && fleet.SiteEnRoute( moon, PlanetFacility.Mine ),
+            "mine assigns a traveling constructor" );
+        fleet.Step( );
+        Require( fleet.SiteRemaining( moon, PlanetFacility.Mine ) == FleetSimulation.FacilityDuration,
+            "travel does not consume construction time" );
+        fleet.Move( miner, new( -38, 10 ) );
+        fleet.Step( );
+        Require( fleet.SiteRemaining( moon, PlanetFacility.Mine ) < 0 && fleet.Ore == originalOre &&
+            fleet.BuildFacility( moon, PlanetFacility.Mine, miner ), "reassigning a constructor refunds the unfinished facility" );
         AdvanceUntil( fleet, () => fleet.StartedConstruction == 1, "mine starts when its constructor reaches the site" );
         var site = fleet.SitePosition( moon, PlanetFacility.Mine, 1 );
-        Require( fleet.SiteWorker( moon ) == miner && Vector2.Distance( site, fleet.Center( miner ) ) < 6 &&
-            fleet.CancelSite( moon, PlanetFacility.Mine ) && fleet.SiteWorker( moon ) is null &&
+        Require( fleet.SiteWorker( moon, PlanetFacility.Mine ) == miner && Vector2.Distance( site, fleet.Center( miner ) ) < 6 &&
+            fleet.CancelSite( moon, PlanetFacility.Mine ) && fleet.SiteWorker( moon, PlanetFacility.Mine ) is null &&
             fleet.Ore == originalOre && !fleet.CancelSite( moon, PlanetFacility.Mine ), "active mine stays near its builder and can be canceled" );
         Require( fleet.BuildFacility( moon, PlanetFacility.Mine, miner ), "canceled mine can be rebuilt" );
-        AdvanceUntil( fleet, () => fleet.Ore >= 205, "production cancellation test funds its yard and wings", 4000 );
-        Require( fleet.BuildYard( home ), "queue fixture has an orbital yard" );
-        AdvanceUntil( fleet, () => fleet.YardCount == 1, "orbital yard comes online" );
+        AdvanceUntil( fleet, () => fleet.Ore >= 205, "mine funds production and research", 4000 );
+        Require( fleet.BuildYard( home, new( 2 ) ) && fleet.BuildFacility( home, PlanetFacility.Solar, miner ), "build yard and solar array" );
+        AdvanceUntil( fleet, () => fleet.YardCount == 1 && fleet.EnergyIncome == 11, "the yard and additional energy income come online" );
+        Require( fleet.BuildFacility( home, PlanetFacility.Lab, new( 2 ) ), "build research lab" );
+        AdvanceUntil( fleet, () => fleet.CanResearch( ResearchTopic.Industry ), "lab produces science for timed research" );
+        int science = fleet.Science;
+        originalEnergy = fleet.Energy;
+        Require( fleet.StartResearch( ResearchTopic.Industry ) && !fleet.IndustryUpgrade &&
+            fleet.ResearchRemaining == FleetSimulation.Tech( ResearchTopic.Industry ).Duration &&
+            !fleet.StartResearch( ResearchTopic.Weapons ) && fleet.CancelResearch( ) && fleet.Science == science &&
+            fleet.Energy == originalEnergy, "research is timed and exclusive, and cancellation releases its budget" );
+
         fleet.SetPlating( true );
-        Require( fleet.QueueWing( ), "armored order queued" );
+        Require( fleet.QueueShip( home, HullBlueprint.Corvette ), "armored order queued" );
+        var armored = fleet.YardQueue( home )[0];
         fleet.SetPlating( false );
-        Require( fleet.QueueWing( ) && fleet.WingQueue[0].Cost == 68 && fleet.WingQueue[1].Cost == 60, "orders preserve purchase prices" );
+        Require( fleet.QueueShip( home, HullBlueprint.Corvette ) && fleet.YardQueue( home )[1].Cost.Ore == 20 &&
+            fleet.StartResearch( ResearchTopic.Industry ), "orders preserve purchase prices while research runs" );
         originalOre = fleet.Ore;
-        Require( fleet.CancelWing( 0 ) && fleet.Ore == originalOre + 68 && fleet.NavalReserved == 3 &&
-            fleet.WingRemaining == FleetSimulation.StandardWingDuration && fleet.WingQueue[0].Cost == 60,
-            "cancelling active work refunds its snapshot and starts the next job" );
-        Require( fleet.CancelWing( 0 ) && fleet.NavalReserved == 0 && fleet.WingRemaining < 0 && !fleet.CancelWing( 0 ) &&
-            !fleet.CancelSite( home, PlanetFacility.Yard ), "completed infrastructure and empty queues reject cancellation" );
+        originalEnergy = fleet.Energy;
+        Require( fleet.CancelShip( home, 0 ) && fleet.Ore == originalOre + armored.Cost.Ore &&
+            fleet.Energy == originalEnergy + armored.Cost.Energy && fleet.NavalReserved == 1 &&
+            fleet.ShipRemaining( home ) == 160 && fleet.YardQueue( home )[0].Cost.Ore == 20,
+            "canceling active work refunds its snapshot and starts the next job" );
+        Require( fleet.CancelShip( home, 0 ) && fleet.NavalReserved == 0 && fleet.YardQueue( home ).IsEmpty &&
+            !fleet.CancelShip( home, 0 ) && !fleet.CancelSite( home, PlanetFacility.Yard ),
+            "completed infrastructure and empty queues reject cancellation" );
+        AdvanceUntil( fleet, () => fleet.IndustryUpgrade, "industrial research completes" );
+        Require( fleet.Hull( HullBlueprint.Corvette ).Cost.Ore == 14 && fleet.Hull( HullBlueprint.Corvette ).Duration == 100,
+            "completed industry research reduces cost and time for new orders" );
     }
 
     private static void VerifyAudio( ) {

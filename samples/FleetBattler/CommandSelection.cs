@@ -59,8 +59,11 @@ internal sealed class CommandSelection {
 
     internal void Squadron( FleetSimulation fleet, int squad, SelectionMode mode ) {
         if ( mode == SelectionMode.Replace ) Clear( );
-        for ( int i = 0; i < fleet.Count; ++i )
-            if ( fleet.Alive( i ) && fleet.SideOf( i ) == 0 && fleet.SquadronOf( i ) == squad ) Include( fleet, i, mode );
+        if ( (uint)squad < (uint)fleet.SquadCount ) {
+            int id = fleet.FleetId( squad );
+            for ( int i = 0; i < fleet.Count; ++i )
+                if ( fleet.Alive( i ) && fleet.SideOf( i ) == 0 && fleet.FleetId( fleet.SquadronOf( i ) ) == id ) Include( fleet, i, mode );
+        }
         Prune( fleet );
     }
 
@@ -86,7 +89,9 @@ internal sealed class CommandSelection {
         float best = MathF.Pow( MathF.Max( 11, dimensions.Y * 0.013f ), 2 );
         int result = -1;
         for ( int i = 0; i < fleet.Count; ++i ) {
-            if ( !fleet.Alive( i ) || fleet.SideOf( i ) != faction ) continue;
+            if ( !fleet.Alive( i ) ) continue;
+            int side = fleet.SideOf( i );
+            if ( faction == -2 ? !fleet.IsHostile( (int)FactionId.Sol, side ) : faction >= 0 && side != faction ) continue;
             float distance = Vector2.DistanceSquared( pixel, Project( fleet.VisualPosition( i, interpolation ), viewProjection, dimensions ) );
             if ( distance >= best ) continue;
             best = distance;

@@ -9,7 +9,7 @@ internal static class BattleDraw {
     internal const uint EffectStride = 32;
     internal const uint ConstantCount = 20;
     internal const int RouteSegments = 48, RouteCapacity = RouteSegments + 1;
-    internal const int SiteEffectCapacity = 2 * CelestialSystem.BodyCount;
+    internal const int SiteEffectCapacity = (FleetSimulation.FacilityCount + 2) * CelestialSystem.BodyCount;
     private const int OrbitSegments = 72;
     internal const int SolarTrackCapacity = (CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount) * OrbitSegments;
 
