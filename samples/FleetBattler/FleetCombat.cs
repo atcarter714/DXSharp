@@ -14,15 +14,18 @@ internal sealed partial class FleetSimulation {
     private readonly ushort[] _railIncoming;
     private readonly int[] _lastHit;
     private readonly int[] _nextShot;
-    private readonly int[] _factionCount = new int[2];
+    private readonly int[] _factionCount = new int[(int)FactionId.Count];
     private readonly CombatEvent[] _events = new CombatEvent[EffectCapacity];
     private int _eventCursor, _eventCount;
 
     private readonly record struct CombatEvent( Vector2 From, Vector2 To, int Tick, int Faction, bool Burst, WeaponKind Weapon );
 
-    internal int ActiveCount => CyanCount + AmberCount;
+    internal int ActiveCount => CyanCount + AmberCount + MerchantCount;
     internal int CyanCount => _factionCount[0];
-    internal int AmberCount => _factionCount[1];
+    internal int AmberCount => _factionCount[(int)FactionId.Raiders] + _factionCount[(int)FactionId.Rival];
+    internal int MerchantCount => _factionCount[(int)FactionId.Merchants];
+    internal FactionId FactionOf( int ship ) => (FactionId)SideOf( ship );
+    internal bool IsHostile( int from, int toward ) => Factions.Attitude( (FactionId)from, (FactionId)toward ) == Disposition.Hostile;
     internal int ShotsFired { get; private set; }
     internal int ShipsLost { get; private set; }
     internal int LastEngagementTick { get; private set; } = -10_000;
@@ -39,7 +42,7 @@ internal sealed partial class FleetSimulation {
 
     internal void Attack( FleetSelection selection, int target ) {
         if ( Frontier && Role( selection.Squad ) != HullRole.Corvette ) return;
-        if ( !Alive( target ) || _squads[selection.Squad].Faction == SideOf( target ) ) return;
+        if ( !Alive( target ) || !IsHostile( _squads[selection.Squad].Faction, SideOf( target ) ) ) return;
         SetOrder( selection, new Order {
             Enemy = target + 1, Target = _positions[target], Detached = selection.IsShip
         } );
@@ -47,12 +50,12 @@ internal sealed partial class FleetSimulation {
 
     private Vector2 Chase( ref Order order, Vector2 from, int faction, out Vector2 facing ) {
         int target = order.Enemy - 1;
-        if ( !Alive( target ) ) {
+        if ( !Alive( target ) || !IsHostile( faction, SideOf( target ) ) ) {
             int squad = _squadOfShip[target];
             var unit = _squads[squad];
             target = -1;
             for ( int i = unit.First; i < unit.First + unit.Count; ++i ) {
-                    if ( !Alive( i ) ) continue;
+                if ( !Alive( i ) || !IsHostile( faction, SideOf( i ) ) ) continue;
                 target = i;
                 break;
             }
@@ -117,7 +120,7 @@ internal sealed partial class FleetSimulation {
             var weapon = Frontier ? design.Weapon : WeaponKind.Pulse;
             float range = Frontier ? design.Range + (side == 0 && WeaponUpgrade ? 3 : 0) : side == 0 && WeaponUpgrade ? 19 : 16;
             int preferred = (_shipOrders[ship].Detached ? _shipOrders[ship].Enemy : _squads[_squadOfShip[ship]].Order.Enemy) - 1;
-            int target = Alive( preferred ) && Vector2.DistanceSquared( _positions[preferred], _positions[ship] ) <= range * range
+            int target = Alive( preferred ) && IsHostile( side, SideOf( preferred ) ) && Vector2.DistanceSquared( _positions[preferred], _positions[ship] ) <= range * range
                 ? preferred : ClosestHostile( ship, side, range );
             if ( target < 0 ) continue;
             int damage = Frontier ? design.Damage + (side == 0 && WeaponUpgrade ? 4 : 0) : side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
@@ -163,8 +166,9 @@ internal sealed partial class FleetSimulation {
 
     private void ClearRetiredOrders( int squad, int first, int count ) {
         RefreshSurveys( );
-        for ( int body = 1; body < _constructionWorkers.Length; ++body )
-            if ( _constructionWorkers[body]?.Squad == squad ) AdvanceMine( body );
+        for ( int body = 1; body < _bodies.Length; ++body )
+            foreach ( var facility in Facilities )
+                if ( SiteWorker( body, facility )?.Squad == squad ) CancelSite( body, facility );
         for ( int i = 0; i < SquadCount; ++i ) ClearTarget( ref _squads[i].Order, _squads[i].Center );
         for ( int ship = 0; ship < Count; ++ship ) ClearTarget( ref _shipOrders[ship], _positions[ship] );
 
@@ -185,7 +189,7 @@ internal sealed partial class FleetSimulation {
             for ( int x = Math.Max( 1, cell.X - reach ); x <= Math.Min( _gridSide - 2, cell.X + reach ); ++x ) {
                 int other = _grid[y * _gridSide + x];
                 for ( int visited = 0; other >= 0 && visited < 8; ++visited, other = _next[other] ) {
-                    if ( SideOf( other ) == side ) continue;
+                    if ( !IsHostile( side, SideOf( other ) ) ) continue;
                     float d = Vector2.DistanceSquared( origin, _positions[other] );
                     if ( d >= best ) continue;
                     best = d;

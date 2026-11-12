@@ -10,7 +10,7 @@ namespace FleetBattler;
 
 internal static class Program {
     private const float DefaultTilt = 1.068f;
-    private const int StationSlots = 1 + 4 * (CelestialSystem.BodyCount - 1);
+    private const int StationSlots = 1 + FleetSimulation.FacilityCount * (CelestialSystem.BodyCount - 1);
 
     [STAThread]
     public static int Main( string[] args ) {
@@ -139,7 +139,7 @@ internal static class Program {
         var hud = new FleetHud( atlas );
         var display = new FullscreenToggle( );
         var selection = new CommandSelection( fleet.Capacity );
-        selection.Squadron( fleet, 0, SelectionMode.Replace );
+        selection.Squadron( fleet, fleet.FirstPlayerSquad( ), SelectionMode.Replace );
         var effects = new BattleEffect[FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity];
         int planet = initial.Frontier ? FleetSimulation.Homeworld : -1, shotsHeard = 0, lossesHeard = 0, nextCue = 0;
         long noticeUntil = 0;
@@ -150,6 +150,7 @@ internal static class Program {
         BodyMenu? menu = null;
         CommandTab commandTab = CommandTab.Hidden;
         int dispatch = 0, dispatchesSeen = initial.DispatchCount;
+        int yardInspector = -1, launchesSeen = 0, researchSeen = 0;
         var clock = new FleetClock( );
         bool paused = false;
         float zoom = initial.Solar ? 0.52f : 0.85f, tilt = DefaultTilt, yaw = 0;
@@ -211,13 +212,24 @@ internal static class Program {
             yardState = fleet.YardRemaining;
             if ( buildsHeard != fleet.StartedConstruction ) {
                 buildsHeard = fleet.StartedConstruction;
-                Notify( "MINER ON SITE / ASSEMBLING EXTRACTION RIG" );
+                Notify( $"CONSTRUCTOR ON SITE / ASSEMBLING {FleetHud.SiteName( fleet.LastStartedSite.Facility )}" );
                 audio.Cue( "order" );
             }
             if ( sitesHeard != fleet.CompletedSites ) {
                 sitesHeard = fleet.CompletedSites;
                 var site = fleet.LastCompletedSite;
                 Notify( $"{FleetHud.SiteName( site.Facility )} ONLINE / {fleet.BodyName( site.Body )}" );
+                audio.Cue( "launch" );
+            }
+            if ( launchesSeen != fleet.ShipsLaunched ) {
+                launchesSeen = fleet.ShipsLaunched;
+                var launch = fleet.LastLaunch;
+                Notify( $"{fleet.Hull( launch.Hull ).Name} LAUNCHED / {fleet.BodyName( launch.Body )}" );
+                audio.Cue( "launch" );
+            }
+            if ( researchSeen != fleet.CompletedResearch ) {
+                researchSeen = fleet.CompletedResearch;
+                Notify( $"{FleetSimulation.Tech( fleet.LastTechnology ).Name} RESEARCH COMPLETE" );
                 audio.Cue( "launch" );
             }
             if ( dispatchesSeen < fleet.DispatchCount ) {
@@ -266,26 +278,35 @@ internal static class Program {
             }
             Vector2? yardPixel = null;
             for ( int body = 1; body < fleet.Bodies.Length; ++body ) {
-                if ( fleet.YardAt( body ) >= 0 ) {
+                if ( !fleet.Frontier ) {
+                    if ( fleet.YardAt( body ) < 0 ) continue;
                     var yard = fleet.SitePosition( body, PlanetFacility.Yard, interpolation );
-                    if ( body == fleet.YardBody ) yardPixel = CommandSelection.Project( yard, viewProjection, new( viewport.Width, viewport.Height ) );
-                    RecordSite( body, PlanetFacility.Yard, 0.77f, FleetSimulation.YardDuration, new( 1.8f, 1.42f, 0.57f, 1 ) );
+                    yardPixel = CommandSelection.Project( yard, viewProjection, new( viewport.Width, viewport.Height ) );
+                    AddStation( yard, 0.77f, fleet.YardAt( body ), FleetSimulation.YardDuration, new( 1.8f, 1.42f, 0.57f, 1 ) );
+                    continue;
                 }
-                if ( !fleet.Frontier ) continue;
-                RecordSite( body, PlanetFacility.Mine, 0.50f, FleetSimulation.FacilityDuration, new( 1.8f, 1.12f, 0.47f, 1 ) );
-                RecordSite( body, PlanetFacility.Lab, 0.46f, FleetSimulation.FacilityDuration, new( 0.57f, 1.3f, 1.8f, 1 ) );
-                RecordSite( body, PlanetFacility.Depot, 0.55f, FleetSimulation.FacilityDuration, new( 0.63f, 1.9f, 1.35f, 1 ) );
+                foreach ( var facility in FleetSimulation.Facilities ) RecordSite( body, facility );
             }
 
-            void RecordSite( int body, PlanetFacility facility, float size, int duration, Vector4 tint ) {
+            void RecordSite( int body, PlanetFacility facility ) {
                 int remaining = fleet.SiteRemaining( body, facility );
-                if ( remaining < 0 ) return;
+                bool yard = facility == PlanetFacility.Yard && fleet.CanOpenYard( body );
+                if ( remaining < 0 && !yard ) return;
                 var position = fleet.SitePosition( body, facility, interpolation );
                 var pixel = CommandSelection.Project( position, viewProjection, new( viewport.Width, viewport.Height ) );
-                bool wing = facility == PlanetFacility.Yard && fleet.ActiveYard == body;
-                screenSites[siteCount++] = new( pixel, body, facility, wing ? fleet.WingRemaining : remaining,
-                    wing ? fleet.ActiveWingDuration : duration );
-                if ( facility != PlanetFacility.Mine || !fleet.MineEnRoute( body ) ) AddStation( position, size, remaining, duration, tint );
+                int duration = FleetSimulation.Facility( facility ).Duration;
+                int shipRemaining = yard ? fleet.ShipRemaining( body ) : 0;
+                bool producing = shipRemaining > 0;
+                screenSites[siteCount++] = new( pixel, body, facility, producing ? shipRemaining : remaining,
+                    producing ? fleet.YardQueue( body )[0].Duration : duration, producing );
+                var (size, tint) = facility switch {
+                    PlanetFacility.Yard => (0.77f, new Vector4( 1.8f, 1.42f, 0.57f, 1 )),
+                    PlanetFacility.Mine => (0.50f, new Vector4( 1.8f, 1.12f, 0.47f, 1 )),
+                    PlanetFacility.Lab => (0.46f, new Vector4( 0.57f, 1.3f, 1.8f, 1 )),
+                    PlanetFacility.Solar => (0.52f, new Vector4( 1.25f, 1.54f, 2f, 1 )),
+                    _ => (0.55f, new Vector4( 0.63f, 1.9f, 1.35f, 1 ))
+                };
+                if ( !fleet.SiteEnRoute( body, facility ) || yard ) AddStation( position, size, Math.Max( 0, remaining ), duration, tint );
             }
             var upload = uploads[frame.FrameSlotIndex];
             upload.Write<ShipInstance>( instances.AsSpan( 0, nextStation ) );
@@ -299,7 +320,7 @@ internal static class Program {
             if ( !active.IsEmpty ) {
                 FleetDraw.RecordThrusters( frame.Commands, thrust, upload, (uint)active.Length, viewProjection, (float)(fleet.Tick * FleetSimulation.StepSeconds) );
                 FleetDraw.Record( frame.Commands, pipeline, corvettes, upload, corvetteCount, viewProjection );
-                uint miners = fleet.Frontier ? (uint)fleet.ActiveMiners( ) : 0;
+                uint miners = fleet.Frontier ? (uint)(fleet.MerchantCount + fleet.ActiveMiners( )) : 0;
                 uint scoutsEnd = (uint)active.Length - miners;
                 FleetDraw.Record( frame.Commands, pipeline, scouts, upload, scoutsEnd - corvetteCount, viewProjection, corvetteCount );
                 FleetDraw.Record( frame.Commands, pipeline, minerMeshes, upload, miners, viewProjection, scoutsEnd );
@@ -311,8 +332,14 @@ internal static class Program {
             if ( fleet.Frontier ) {
                 float workTime = (fleet.Tick - 1 + interpolation) * (float)FleetSimulation.StepSeconds;
                 for ( int body = 1; body < fleet.Bodies.Length; ++body ) {
-                    if ( fleet.SiteWorker( body ) is { } worker && !fleet.MineEnRoute( body ) )
-                        WorkBeam( fleet.VisualCenter( worker, interpolation ), fleet.SitePosition( body, PlanetFacility.Mine, interpolation ), 0 );
+                    foreach ( var facility in FleetSimulation.Facilities )
+                        if ( fleet.SiteWorker( body, facility ) is { } worker && !fleet.SiteEnRoute( body, facility ) )
+                            WorkBeam( fleet.VisualCenter( worker, interpolation ), fleet.SitePosition( body, facility, interpolation ), 0 );
+                    if ( fleet.ShipRemaining( body ) > 0 ) {
+                        var yard = fleet.SitePosition( body, PlanetFacility.Yard, interpolation );
+                        var (sine, cosine) = MathF.SinCos( workTime * 2 );
+                        WorkBeam( yard, yard + new Vector2( cosine, sine ) * 3, 0 );
+                    }
                     if ( fleet.Planet( body ).SurveyUnit is { } scout && fleet.SurveyWorking( body ) )
                         WorkBeam( fleet.VisualCenter( scout, interpolation ), fleet.VisualBody( body, interpolation ).Center, 1 );
                 }
@@ -330,11 +357,10 @@ internal static class Program {
             var drag = dragStart is { } start && IsDrag( start, dragEnd ) ? DragRect( start, dragEnd ) : (Vector4?)null;
             MapHover hover = default;
             if ( fleet.Frontier && menu is null && panStart is null && dragStart is null && mouse is { } pointer &&
-                 FleetHud.Hit( new( pointer.X, pointer.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab ).Action == HudAction.None ) {
+                 FleetHud.Hit( new( pointer.X, pointer.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector ).Action == HudAction.None ) {
                 var pixel = new Vector2( pointer.X, pointer.Y );
                 var dimensions = new Vector2( viewport.Width, viewport.Height );
-                int ship = CommandSelection.Hit( fleet, pixel, viewProjection, dimensions, 0, interpolation );
-                if ( ship < 0 ) ship = CommandSelection.Hit( fleet, pixel, viewProjection, dimensions, 1, interpolation );
+                int ship = CommandSelection.Hit( fleet, pixel, viewProjection, dimensions, -1, interpolation );
                 if ( ship >= 0 )
                     hover = new( HoverKind.Ship, ship, CommandSelection.Project( fleet.VisualPosition( ship, interpolation ), viewProjection, dimensions ), pixel );
                 else if ( PickSite( pixel ) is >= 0 and var site )
@@ -345,7 +371,7 @@ internal static class Program {
             hud.Record( frame.Commands, hudPipeline, hudUpload, fleet, selected, viewport.Width, viewport.Height, oreShort, screenBodies.AsSpan( 0, fleet.Bodies.Length ),
                 selection.Count, planet, Environment.TickCount64 < noticeUntil ? notice : null, drag,
                 fleet.Frontier ? null : CommandSelection.Project( fleet.Site, viewProjection, new( viewport.Width, viewport.Height ) ),
-                selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch, screenSites.AsSpan( 0, siteCount ), hover );
+                selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch, screenSites.AsSpan( 0, siteCount ), hover, yardInspector );
         }, ( window, result ) => {
             if ( result.Frames == 1 ) {
                 if ( startFullscreen ) display.Toggle( window );
@@ -355,6 +381,7 @@ internal static class Program {
                         case Keys.F11: display.Toggle( window ); break;
                         case Keys.G: ToggleGalaxy( window ); break;
                         case Keys.Escape when menu is not null: menu = null; break;
+                        case Keys.Escape when yardInspector >= 0: yardInspector = -1; break;
                         case Keys.Escape when commandTab != CommandTab.Hidden: commandTab = CommandTab.Hidden; break;
                         case Keys.Escape when !galaxy: planet = -1; break;
                         case Keys.Home when !galaxy: ResetCamera( ); break;
@@ -386,7 +413,13 @@ internal static class Program {
                         case Keys.L when !galaxy: PlanetOrder( PlanetAction.Lab, planet ); break;
                         case Keys.T when !galaxy: PlanetOrder( PlanetAction.Research, planet ); break;
                         case Keys.I when !galaxy: PlanetOrder( PlanetAction.Industry, planet ); break;
+                        case Keys.B when !galaxy && fleet.Frontier:
+                            if ( fleet.CanOpenYard( planet ) ) OpenYard( planet );
+                            else if ( fleet.CanOpenYard( fleet.YardBody ) ) OpenYard( fleet.YardBody );
+                            else if ( fleet.Established ) OpenYard( FleetSimulation.Homeworld );
+                            break;
                         case Keys.B when !galaxy: QueueWing( ); break;
+                        case Keys.J when !galaxy && fleet.Frontier: OrganizeFleets( e.Shift ); break;
                         default: return;
                     }
                     e.SuppressKeyPress = true;
@@ -418,7 +451,7 @@ internal static class Program {
                             return;
                         }
                     }
-                    var hit = FleetHud.Hit( pointer, viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab );
+                    var hit = FleetHud.Hit( pointer, viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector );
                     if ( hit.Action != HudAction.None ) {
                         if ( e.Button == MouseButtons.Left ) {
                             switch ( hit.Action ) {
@@ -428,9 +461,23 @@ internal static class Program {
                                 case HudAction.Wing: QueueWing( ); break;
                                 case HudAction.Command: Command( (CommandAction)hit.Index ); break;
                                 case HudAction.Planet: PlanetOrder( (PlanetAction)hit.Index, planet ); break;
+                                case HudAction.OpenYard: OpenYard( hit.Index ); break;
+                                case HudAction.CloseYard: yardInspector = -1; break;
+                                case HudAction.BuildShip:
+                                    var hull = (HullBlueprint)hit.Index;
+                                    if ( fleet.QueueShip( yardInspector, hull ) ) {
+                                        Notify( $"{fleet.Hull( hull ).Name} QUEUED / {fleet.BodyName( yardInspector )}" );
+                                        audio.Cue( "order" );
+                                    }
+                                    break;
+                                case HudAction.CancelShip: CancelOrder( fleet.CancelShip( yardInspector, hit.Index ) ); break;
+                                case HudAction.BuildSite: BuildProject( planet, (PlanetFacility)hit.Index ); break;
+                                case HudAction.CancelSite: CancelOrder( fleet.CancelSite( planet, (PlanetFacility)hit.Index ) ); break;
+                                case HudAction.MergeFleets: OrganizeFleets( false ); break;
+                                case HudAction.SplitFleets: OrganizeFleets( true ); break;
                                 case HudAction.Squad when fleet.ShipCount( hit.Index ) > 0:
                                     selection.Squadron( fleet, hit.Index, ModifierSelection( ) );
-                                    planet = -1;
+                                    planet = yardInspector = -1;
                                     if ( e.Clicks >= 2 ) cameraFocus = ClampCamera( fleet.Center( hit.Index ) );
                                     break;
                             }
@@ -451,7 +498,7 @@ internal static class Program {
                     }
                     if ( e.Button != MouseButtons.Right ) return;
                     var dimensions = new Vector2( viewport.Width, viewport.Height );
-                    int enemy = selection.Count == 0 ? -1 : CommandSelection.Hit( fleet, pointer, viewProjection, dimensions, 1, interpolation );
+                    int enemy = selection.Count == 0 ? -1 : CommandSelection.Hit( fleet, pointer, viewProjection, dimensions, -2, interpolation );
                     if ( enemy >= 0 ) {
                         if ( fleet.Frontier && !HasArmedSelection( ) ) { Notify( "SELECT CORVETTES TO ATTACK" ); return; }
                         selection.Issue( fleet, default, hostile: enemy );
@@ -494,9 +541,14 @@ internal static class Program {
                         lastClickShip = -1;
                     } else {
                         int ship = CommandSelection.Hit( fleet, new( e.X, e.Y ), viewProjection, dimensions, 0, interpolation );
-                        int hitSite = ship < 0 && fleet.Frontier ? PickSite( new( e.X, e.Y ) ) : -1;
+                        int hitSite = fleet.Frontier ? PickSite( new( e.X, e.Y ) ) : -1;
+                        if ( hitSite >= 0 && screenSites[hitSite] is { Facility: PlanetFacility.Yard } yard && fleet.CanOpenYard( yard.Body ) ) {
+                            OpenYard( yard.Body );
+                            lastClickShip = -1;
+                            return;
+                        }
                         int hitBody = ship < 0 ? hitSite >= 0 ? screenSites[hitSite].Body : PickBody( e.Location ) : -1;
-                        if ( hitBody >= 0 ) planet = hitBody;
+                        if ( hitBody >= 0 ) { planet = hitBody; yardInspector = -1; }
                         else {
                             long now = Environment.TickCount64;
                             var tolerance = SystemInformation.DoubleClickSize;
@@ -515,7 +567,7 @@ internal static class Program {
                     }
                 };
                 window.MouseWheel += ( _, e ) => {
-                    if ( galaxy || menu is not null || FleetHud.Hit( new( e.X, e.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab ).Action != HudAction.None ) return;
+                    if ( galaxy || menu is not null || FleetHud.Hit( new( e.X, e.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector ).Action != HudAction.None ) return;
                     float nextZoom = Math.Clamp( zoom * MathF.Pow( 0.85f, e.Delta / 120f ), 0.12f, fleet.Solar ? 3.8f : fleet.Frontier ? 2.8f : 2.5f );
                     if ( TryPick( e.Location, viewport, inverseViewProjection, out var anchor ) )
                         cameraFocus = ClampCamera( cameraFocus + (anchor - cameraFocus) * (1 - nextZoom / zoom) );
@@ -528,7 +580,13 @@ internal static class Program {
                 if ( result.Frames == 2 ) { display.Toggle( window ); Enter( 2 ); }
                 if ( result.Frames == 4 ) display.Toggle( window );
                 if ( result.Frames == 5 ) galaxy = true;
-                if ( result.Frames == 6 ) Enter( 0 );
+                if ( result.Frames == 6 ) {
+                    Enter( 0 );
+                    OpenYard( FleetSimulation.Homeworld );
+                    if ( !fleet.QueueShip( FleetSimulation.Homeworld, HullBlueprint.Miner ) )
+                        throw new InvalidOperationException( "View qualification could not place the civilian dock order." );
+                }
+                if ( result.Frames == 7 ) SelectTab( CommandTab.Research );
             }
         } );
         if ( resizeTest && slotsUsed != 3 )
@@ -561,8 +619,8 @@ internal static class Program {
 
         void ChangeSpeed( ) => speed = speed == 4 ? 1 : speed * 2;
 
-        void QueueWing( int body = -1 ) {
-            if ( fleet.QueueWing( body ) ) {
+        void QueueWing( ) {
+            if ( fleet.QueueWing( ) ) {
                 oreShort = false;
                 Notify( $"CORVETTE WING QUEUED / {fleet.QueuedWings} IN PRODUCTION" );
                 audio.Cue( "order" );
@@ -571,9 +629,7 @@ internal static class Program {
             oreShort = fleet.Ore < fleet.CurrentWingCost;
             Notify( fleet.Lost ? "CYAN FLEET LOST" : fleet.YardRemaining < 0 ? "BUILD AN ORBITAL SHIPYARD FIRST"
                 : fleet.YardRemaining > 0 ? "SHIPYARD UNDER CONSTRUCTION"
-                : fleet.Frontier && fleet.QueuedWings >= FleetSimulation.WingGoal ? "YARD QUEUE FULL"
-                : fleet.Frontier && fleet.NavalUsed + fleet.NavalReserved + 3 > fleet.NavalCapacity ? "NAVAL CAPACITY FULL / BUILD YARD OR DEPOT"
-                : !fleet.Frontier && fleet.WingsBuilt + fleet.QueuedWings >= FleetSimulation.WingGoal ? "WING PRODUCTION LIMIT REACHED"
+                : fleet.WingsBuilt + fleet.QueuedWings >= FleetSimulation.WingGoal ? "WING PRODUCTION LIMIT REACHED"
                 : $"NEED {fleet.CurrentWingCost} ORE TO QUEUE A WING" );
         }
 
@@ -581,8 +637,11 @@ internal static class Program {
             int ships = initial.Frontier ? FleetSimulation.DefaultShips : initial.Capacity - FleetSimulation.WingSize * FleetSimulation.WingGoal;
             fleet = systems[index] ??= new FleetSimulation( ships, unchecked(seed + (uint)index * 1177),
                 rivalPatrol: true, system: index, battle: true, frontier: initial.Frontier );
-            selection.Squadron( fleet, 0, SelectionMode.Replace );
-            planet = fleet.Frontier ? FleetSimulation.Homeworld : -1;
+            selection.Squadron( fleet, fleet.FirstPlayerSquad( ), SelectionMode.Replace );
+            planet = fleet.Established ? FleetSimulation.Homeworld : -1;
+            yardInspector = -1;
+            launchesSeen = fleet.ShipsLaunched;
+            researchSeen = fleet.CompletedResearch;
             commandTab = CommandTab.Hidden;
             dispatchesSeen = fleet.DispatchCount;
             dispatch = Math.Max( 0, dispatchesSeen - 1 );
@@ -612,40 +671,59 @@ internal static class Program {
         void Command( CommandAction action ) {
             switch ( action ) {
                 case CommandAction.Toggle:
-                    commandTab = commandTab == CommandTab.Hidden ? CommandTab.Economy : CommandTab.Hidden;
+                    SelectTab( commandTab == CommandTab.Hidden ? CommandTab.Economy : commandTab );
                     break;
                 case CommandAction.Economy: SelectTab( CommandTab.Economy ); break;
                 case CommandAction.Fleet: SelectTab( CommandTab.Fleet ); break;
                 case CommandAction.Orders: SelectTab( CommandTab.Orders ); break;
                 case CommandAction.Events: SelectTab( CommandTab.Events ); break;
-                case CommandAction.Worker:
-                    if ( fleet.QueueWorker( ) ) {
-                        Notify( "MINER QUEUED AT HOMEWORLD" );
+                case CommandAction.Research: SelectTab( CommandTab.Research ); break;
+                case CommandAction.StartIndustry or CommandAction.StartWeapons or CommandAction.StartDrive:
+                    var tech = (ResearchTopic)(action - CommandAction.StartIndustry);
+                    if ( fleet.StartResearch( tech ) ) {
+                        Notify( $"{FleetSimulation.Tech( tech ).Name} RESEARCH STARTED" );
                         audio.Cue( "order" );
-                    } else Notify( fleet.WorkerRemaining > 0 ? "MINER ALREADY IN PRODUCTION"
-                        : fleet.Ore < FleetSimulation.WorkerCost ? "NEED 20 ORE FOR A MINER" : "MINER PRODUCTION LIMIT REACHED" );
+                    }
                     break;
-                case CommandAction.Scout:
-                    Notify( fleet.QueueScout( ) ? "SCOUT QUEUED AT HOMEWORLD" : "SCOUT REPLACEMENT NEEDS 24 ORE AND OPEN QUEUE" );
-                    break;
-                case CommandAction.Drive: PlanetOrder( PlanetAction.Drive, planet ); break;
-                case CommandAction.Wing: QueueWing( ); break;
+                case CommandAction.CancelResearch: CancelOrder( fleet.CancelResearch( ) ); break;
                 case CommandAction.Pulse: fleet.SetWeapon( WeaponKind.Pulse ); break;
                 case CommandAction.Rail: fleet.SetWeapon( WeaponKind.Rail ); break;
                 case CommandAction.Shield: fleet.SetPlating( false ); break;
                 case CommandAction.Plating: fleet.SetPlating( true ); break;
-                case CommandAction.CancelFirstWing: CancelOrder( fleet.CancelWing( 0 ) ); break;
-                case CommandAction.CancelSecondWing: CancelOrder( fleet.CancelWing( 1 ) ); break;
-                case CommandAction.CancelCivilian: CancelOrder( fleet.CancelCivilian( ) ); break;
                 case CommandAction.Earlier: dispatch = Math.Max( 0, dispatch - 1 ); break;
-                case CommandAction.Later: dispatch = Math.Min( fleet.DispatchCount - 1, dispatch + 1 ); break;
+                case CommandAction.Later: dispatch = Math.Clamp( dispatch + 1, 0, Math.Max( 0, fleet.DispatchCount - 1 ) ); break;
             }
         }
 
-        void SelectTab( CommandTab tab ) => commandTab = commandTab == tab ? CommandTab.Hidden : tab;
+        void SelectTab( CommandTab tab ) {
+            yardInspector = -1;
+            commandTab = commandTab == tab ? CommandTab.Hidden : tab;
+        }
+
+        void OpenYard( int body ) {
+            if ( !fleet.CanOpenYard( body ) ) return;
+            yardInspector = planet = body;
+            commandTab = CommandTab.Hidden;
+        }
+
+        void OrganizeFleets( bool split ) {
+            bool changed = split ? fleet.SplitFleets( selection.Ships ) : fleet.MergeFleets( selection.Ships );
+            Notify( split ? changed ? "FLEET SPLIT INTO INDEPENDENT UNITS" : "SELECT SHIPS IN A MERGED FLEET"
+                : changed ? "COMBAT GROUPS MERGED" : "SELECT TWO OR MORE COMBAT GROUPS" );
+            if ( changed ) audio.Cue( "order" );
+        }
+
+        void BuildProject( int body, PlanetFacility facility ) {
+            var builder = selection.SurveyUnit( fleet );
+            if ( fleet.ConstructionBlock( body, facility, builder ) is { } reason ) { Notify( reason ); return; }
+            if ( builder is { } unit && fleet.BuildFacility( body, facility, unit ) ) {
+                Notify( $"{UnitName( unit )} DISPATCHED / {FleetHud.SiteName( facility )}" );
+                audio.Cue( "order" );
+            }
+        }
         void CancelOrder( bool canceled ) {
             if ( !canceled ) return;
-            Notify( "ORDER CANCELED / ORE RETURNED" );
+            Notify( "ORDER CANCELED / COST RETURNED" );
             audio.Cue( "order" );
         }
 
@@ -658,21 +736,17 @@ internal static class Program {
         string SelectionName( ) => selection.SurveyUnit( fleet ) is { } unit ? UnitName( unit ) : $"{selection.Count} SHIPS";
 
         void PlanetOrder( PlanetAction action, int body ) {
-            if ( action == PlanetAction.Inspect ) { planet = body; return; }
-            if ( action == PlanetAction.Close ) { planet = -1; return; }
-            if ( action == PlanetAction.SiteWing ) { QueueWing( body ); return; }
-            if ( action is >= PlanetAction.CancelMine and <= PlanetAction.CancelDepot ) {
-                var facilityToCancel = action switch {
-                    PlanetAction.CancelMine => PlanetFacility.Mine,
-                    PlanetAction.CancelLab => PlanetFacility.Lab,
-                    PlanetAction.CancelYard => PlanetFacility.Yard, _ => PlanetFacility.Depot
-                };
-                CancelOrder( fleet.CancelSite( body, facilityToCancel ) );
+            if ( action == PlanetAction.Inspect ) { planet = body; yardInspector = -1; return; }
+            if ( action == PlanetAction.Close ) { planet = -1; yardInspector = -1; return; }
+            if ( fleet.Frontier && action is PlanetAction.Research or PlanetAction.Industry or PlanetAction.Drive ) {
+                SelectTab( CommandTab.Research );
                 return;
             }
-            if ( action == PlanetAction.Drive ) {
-                Notify( fleet.DriveUpgrade ? "LONG BURN DRIVE ONLINE" : fleet.ResearchDrive( ) ? "LONG BURN DRIVE ONLINE / OUTER BELT UNLOCKED"
-                    : "LONG BURN DRIVE NEEDS 36 SCIENCE" );
+            if ( fleet.Frontier && action is PlanetAction.Yard or PlanetAction.Mine or PlanetAction.Lab or PlanetAction.Depot ) {
+                BuildProject( body, action switch {
+                    PlanetAction.Yard => PlanetFacility.Yard, PlanetAction.Mine => PlanetFacility.Mine,
+                    PlanetAction.Lab => PlanetFacility.Lab, _ => PlanetFacility.Depot
+                } );
                 return;
             }
             if ( action == PlanetAction.Orbit ) {

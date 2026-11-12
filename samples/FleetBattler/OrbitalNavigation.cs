@@ -100,18 +100,19 @@ internal sealed partial class FleetSimulation {
         return true;
     }
 
-    private void Park( int squadIndex, int host ) {
+    private void Park( int squadIndex, int host, int tick = -1 ) {
+        if ( tick < 0 ) tick = Tick;
         ref var squad = ref _squads[squadIndex];
         var delta = squad.Center - _bodies[host].Center;
         squad.Order = new( ) { Body = (byte)(host + 1), Phase = MathF.Atan2( delta.Y, delta.X ), Radius = MathF.Max( delta.Length( ), OrbitRadius( host, squad.Alive ) ) };
-        squad.Order.Phase -= Tick * OrbitRate( squad.Order.Radius );
-        Vector2 center = Berth( squad.Order, Tick, out var tangent );
+        squad.Order.Phase -= tick * OrbitRate( squad.Order.Radius );
+        Vector2 center = Berth( squad.Order, tick, out var tangent );
         squad.Center = squad.Anchor = center;
         squad.Direction = tangent;
         for ( int i = squad.First; i < squad.First + squad.Count; ++i ) {
             _positions[i] = _previousPositions[i] = center + RotateSlot( _offsets[i], tangent );
             _headings[i] = _previousHeadings[i] = tangent;
-            _velocities[i] = (Berth( squad.Order, Tick + 1, out _ ) - center) / (float)StepSeconds;
+            _velocities[i] = (Berth( squad.Order, tick + 1, out _ ) - center) / (float)StepSeconds;
         }
     }
 

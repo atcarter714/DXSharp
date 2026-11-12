@@ -1,53 +1,56 @@
 # Fleet Battler
 
-The default Frontier scenario starts at Earth in the Solar System with one science scout, two miners, and 50 ore. Survey a moon or gas giant, build an extraction site, then defend the new settlement when Amber notices the operation. Sol, Caldera, and Nereid each retain their own scenario state when you switch systems.
+The default Frontier scenario starts at Earth with one science scout, two constructors, 50 ore, and 25 energy. Sol is the only system with player assets at the start. Caldera and Nereid are unclaimed systems where you can observe neutral Free Merchants. The galaxy map switches views and preserves each system's state. It does not transfer ships between systems.
 
 | Control | Action |
 | --- | --- |
-| Click or drag a box | Select Cyan ships. Double-click a ship to select its squadron |
-| Fleet outliner | Click a squadron to select it. Double-click to center the camera |
-| Time controls / Space / + | Pause or resume, and cycle 1×, 2×, and 4× simulation speed |
-| Shift / Ctrl | Add to / toggle the selection. Ctrl+A selects all living Cyan ships |
-| Right-click | Move in open space, attack an Amber ship, or open a body’s order menu |
+| Click or drag a box | Select Sol ships. Double-click a ship to select its command group |
+| Fleet outliner | Select a group. Double-click to center the camera |
+| Shift / Ctrl | Add to or toggle the selection. Ctrl+A selects all living Sol ships |
+| Merge / Split or J / Shift+J | Merge selected combat groups or split selected squadrons into independent groups |
+| Right-click | Plot a transfer, attack a hostile contact, or open a body’s order menu |
 | R | Return selected ships to their formation slots |
-| Click a planet or moon | Inspect its survey and construction status |
-| E / N / L / T / I | Assign survey / build mine / build lab / research weapons / research industry |
-| Colony / Design / Orders / Log | Build civilian ships and research, select the next wing loadout, manage live production, or review dispatches |
+| Click a planet or moon | Inspect the survey, orbital sites, and available actions |
+| Click a yard or press B | Open that yard’s design catalog and build queue. B falls back to the first available yard or Earth dock |
+| E / N / L / T | Assign a survey / dispatch a constructor for a rig / dispatch one for a lab / open Research |
+| Colony / Research / Design / Orders / Log | Inspect resource flows, run research, configure future corvettes, find production sites, and read dispatches |
 | Tab / Escape | Open Colony or close the current panel |
-| Hover a ship, body, or station | See status or combat stats. Click a station to open its body's inspector |
+| Hover a ship, body, or station | See its faction and disposition, survey status, or work in progress |
+| Space / + | Pause or resume, and cycle 1×, 2×, and 4× |
 | F4 | Open the latest Frontier dispatch |
-| B / Queue Wing | Order a wing from an operational orbital shipyard |
 | Scroll / middle-drag / arrow keys | Zoom toward the pointer / pan |
-| Shift + middle-drag / Home | Tilt and rotate within tactical limits / reset the camera to Earth in Sol |
-| F | Focus the inspected body or selected squad |
+| Shift + middle-drag / Home | Tilt and rotate / reset the camera |
+| F | Focus the inspected body or selected group |
 | G / F11 / M | Galaxy map / fullscreen / mute |
 
 ## Playing Frontier
 
-1. Select the science scout in the fleet outliner. Right-click an unsurveyed body and assign the survey, or use the action in its inspection panel. The flight plan shows the assigned craft's course. A finished survey reveals the local deposit and pays 15 ore.
-2. Select a miner, inspect the surveyed body, and choose the **Extraction Rig** card. The miner travels to the construction site before the timer starts. The build reserves 35 ore. Reassigning the miner during construction cancels the build and refunds its cost. The builder stays near the rig and shows a welding beam and progress bar during assembly. The completed mine runs independently.
-3. Use **Colony** to order another miner for 20 ore. Build a 55-ore orbital shipyard on a surveyed world. The site grows as it builds and the yard opens production after 24 seconds at 1×.
-4. Open **Design** to choose a weapon and defense package for the next three-corvette wing. Pulse cycles quickly and hits shields first. Rail fires farther and bypasses shields. A shield generator recovers after a lull. Heavy plating trades shield capacity for armor and adds 8 ore and four seconds at 1×.
-5. Follow the **Log** dispatches as extraction attracts an Amber raid. Richer deposits pay for defenses faster and draw an earlier response. Move miners and the scout clear, deploy escorts, and defeat both waves. An orbital lab generates science for weapons, industry, and drive research. Click a celestial body for site cards that show ore or science output, yard and depot capacity, construction progress, and local ship orders.
+1. Assign the science scout to survey a body. Completion reveals its deposit and pays 15 ore. Select a constructor, inspect the surveyed body, and order an **Extraction Rig**. Every facility requires a constructor. Work begins after arrival and shows a welding beam and progress bar. Cancel from the body inspector or redirect the constructor to release the assignment and return the reserved cost.
+2. Use Earth's **Civilian Dock** to replace scouts and constructors. Build an **Orbital Shipyard** to unlock corvette production. Select the station in orbit, click **Open** on its body card, or choose it from **Orders**.
+3. Select a hull in the shipyard catalog and click **Add**. Each order reserves its own resources and launches one ship. Each yard has four queue slots and works independently. The active row and in-world yard show progress. Canceling returns the order's reserved resources and starts the next job if needed.
+4. **Design** configures future corvettes. Pulse strips shields quickly. Rail fires farther and bypasses shields. Plating trades shield capacity for armor and costs 3 more ore, 2 more energy, and 20 more ticks. The yard captures the loadout, cost, and build time when you place an order.
+5. In **Research**, choose a project after bringing a lab online. The lab generates science. Each project reserves science and energy, runs on simulation time, and applies its effect at completion. Ore funds structures and hulls. Earth's colony and orbital solar arrays generate energy each income cycle.
+6. Follow **Log** as extraction attracts Amber Raiders, followed by Rival Command. Both are hostile to Sol. Free Merchants are neutral to Sol. Group escorts with **Merge** to select and issue orders together, or use **Split** to return them to independent control.
 
-| Order | Ore | Construction at 1× |
-| --- | ---: | ---: |
-| Homeworld miner | 20 | 16 s |
-| Replacement scout | 24 | 16 s |
-| Mine | 35 | 12 s after miner arrival |
-| Lab | 45 | 12 s |
-| Orbital shipyard | 55 | 24 s |
-| Logistics depot | 40 | 12 s |
-| Three-corvette wing | 60 | 32 s |
-| Wing after industry research | 42 | 20 s |
+| Order | Ore | Energy | Time at 1× |
+| --- | ---: | ---: | ---: |
+| Constructor | 20 | 5 | 16 s |
+| Scout | 24 | 6 | 16 s |
+| Extraction rig | 35 | 8 | 12 s after arrival |
+| Research lab | 45 | 10 | 12 s after arrival |
+| Orbital shipyard | 55 | 15 | 24 s after arrival |
+| Logistics depot | 40 | 9 | 12 s after arrival |
+| Solar array | 28 | 4 | 12 s after arrival |
+| Corvette with shield generator | 20 | 8 | 11 s |
+| Corvette after industry research | 14 | 8 | 7 s |
 
-Each completed shipyard adds six naval slots. Each completed logistics depot adds three. Only living combat hulls and queued wings occupy naval capacity. Click an online yard's card to order from that site. The system can hold two wing orders at once and produces them in order. The queue reserves ore and records the yard, loadout, price, and duration at order time. Cancel production in Orders or a site project from its inspector to return the reserved ore. After a fleet wipe, a surviving yard can launch replacements. The homeworld can replace the scout and miners independently.
+Each completed shipyard adds six naval slots and each completed depot adds three. Living and queued corvettes consume naval capacity. After a wipe, available yards can produce replacements using the same queue.
 
 ## Navigation
 
 Ships start and launch in host-relative parking orbits. An orbit or survey command targets an intercept on the destination body's future orbit. The dashed route samples the same transfer the ship flies. The diamond marks the rendezvous and the **Flight Plan** card shows the active flight phase and ETA at the current simulation speed. Open-space orders transfer into a stellar parking orbit at the chosen radius. Ships burn, coast, rotate for turnover, and brake before entering the destination orbit. Hull attitude and formation orientation update independently. The route uses fixed samples as the completed portion disappears.
 
-The round-trip operating envelope is enforced before accepting a route. Research **Long Burn Drive** in Economy for 36 science to expand it and reach the outer belt. The Kuiper Belt, Cinder Belt, and Dark Shoal each contain a high-yield prospect. Zoom out to find the outer track. The navigation model uses scaled orbital distances and bounded-burn guidance. Gravity assists and per-ship propellant accounting are future work.
+The round-trip operating envelope is enforced before accepting a route. Research **Long Burn Drive** in Research for 36 science and 20 energy to expand it and reach the outer belt. The Kuiper Belt, Cinder Belt, and Dark Shoal each contain a high-yield prospect. Zoom out to find the outer track. The navigation model uses scaled orbital distances and bounded-burn guidance. Gravity assists and per-ship propellant accounting are future work.
 
 Sol includes the Sun, eight planets, Earth's Moon, and a Kuiper Belt prospect. The catalog uses rounded planetary semimajor axes and eccentricities from the [JPL J2000 approximate elements](https://ssd.jpl.nasa.gov/planets/approx_pos.html). The tactical projection compresses distance logarithmically and uses illustrative starting phases, radii, and periods.
 

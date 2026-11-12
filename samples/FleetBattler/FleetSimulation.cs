@@ -54,7 +54,7 @@ internal sealed partial class FleetSimulation {
     private uint _seed;
 
     private struct Squad {
-        internal int First, Count, Faction, Alive;
+        internal int First, Count, Faction, Alive, FleetId;
         internal HullRole Role;
         internal ShipDesign Design;
         internal Vector2 Home, Center, Direction, Anchor;
@@ -111,7 +111,13 @@ internal sealed partial class FleetSimulation {
         _targetLimit = NavigationRadius - formationRadius * 0.6f;
         Site = new( BoardRadius * 0.14f, -BoardRadius * 0.07f );
         SiteRadius = MathF.Max( 8, BoardRadius * 0.093f );
-        if ( frontier ) OpenFrontier( );
+        if ( frontier ) {
+            if ( Solar ) OpenFrontier( );
+            else {
+                int merchant = AddSquad( 1, (int)FactionId.Merchants, _bodies[2].Center + new Vector2( 30, 5 ), HullRole.Freighter );
+                Park( merchant, 2 );
+            }
+        }
         else {
             AddFleet( cyan, 0 );
             _amberFirst = SquadCount;
@@ -188,8 +194,14 @@ internal sealed partial class FleetSimulation {
     internal int ActiveMiners( ) {
         int count = 0;
         for ( int i = 0; i < SquadCount; ++i )
-            if ( Role( i ) == HullRole.Miner ) count += ShipCount( i );
+            if ( IsPlayerSquad( i ) && Role( i ) == HullRole.Miner ) count += ShipCount( i );
         return count;
+    }
+
+    internal int FirstPlayerSquad( ) {
+        for ( int i = 0; i < SquadCount; ++i )
+            if ( IsPlayerSquad( i ) && ShipCount( i ) > 0 ) return i;
+        return -1;
     }
 
     internal int ShipCount( int squad ) => _squads[squad].Alive;
@@ -363,6 +375,7 @@ internal sealed partial class FleetSimulation {
         if ( !Frontier ) AdvanceSite( cyan, amber );
         AdvancePlanets( );
         AdvanceProduction( );
+        AdvanceIndustry( );
         ++Tick;
         AdvanceFrontier( );
     }
@@ -452,17 +465,16 @@ internal sealed partial class FleetSimulation {
         if ( groupHulls ) {
             for ( int i = 0; i < SquadCount; ++i ) {
                 if ( IsScoutSquad( i ) ) corvettes -= ShipCount( i );
-                if ( groupMiners && Role( i ) == HullRole.Miner ) miners += ShipCount( i );
+                if ( groupMiners && Role( i ) is HullRole.Miner or HullRole.Freighter ) miners += ShipCount( i );
             }
             corvettes -= miners;
         }
         int index = 0, scoutIndex = corvettes, minerIndex = ActiveCount - miners;
         for ( int i = 0; i < SquadCount; ++i ) {
             bool scout = groupHulls && IsScoutSquad( i );
-            bool miner = groupMiners && Role( i ) == HullRole.Miner;
+            bool miner = groupMiners && Role( i ) is HullRole.Miner or HullRole.Freighter;
             ref readonly var squad = ref _squads[i];
-            var tint = squad.Faction == 0 ? new Vector4( 0.66f, 1.55f, 2.25f, 1.04f )
-                : new Vector4( 2.9f, 0.89f, 0.37f, 1.11f );
+            var tint = Factions.ShipTint( (FactionId)squad.Faction );
             int end = squad.First + squad.Count;
             for ( int ship = squad.First; ship < end; ++ship ) {
                 if ( !Alive( ship ) ) continue;
@@ -480,16 +492,20 @@ internal sealed partial class FleetSimulation {
     internal ulong StateHash( ) {
         ulong hash = 14695981039346656037;
         if ( Frontier ) {
-            Append( (uint)_workerReadyTick ); Append( (uint)_civilianOrder ); Append( (uint)_raidTick );
-            Append( (uint)_raidsLaunched ); Append( (uint)_deposits ); Append( _secured ? 1u : 0u );
+            Append( (uint)_nextFleetId ); Append( (uint)_raidTick ); Append( (uint)_raidsLaunched ); Append( (uint)_deposits ); Append( _secured ? 1u : 0u );
             Append( DriveUpgrade ? 1u : 0u ); Append( (uint)Design.Weapon ); Append( Design.Plating ? 1u : 0u );
-            for ( int i = 0; i < QueuedWings; ++i ) {
-                var job = _wingQueue[i];
-                Append( (uint)job.Body ); Append( (uint)job.Cost ); Append( (uint)job.Design.Weapon ); Append( job.Design.Plating ? 1u : 0u );
-            }
-            for ( int i = 1; i < _constructionWorkers.Length; ++i ) {
-                Append( (uint)(_constructionWorkers[i]?.Squad ?? -1) );
-                Append( (uint)(_constructionWorkers[i]?.Ship ?? -1) ); AppendVector( _mineOrbits[i] );
+            Append( (uint)Energy ); Append( (uint)ShipsLaunched ); Append( (uint)CorvettesLaunched ); Append( (uint)_researchReady ); Append( ActiveResearch is { } topic ? (uint)topic + 1 : 0 );
+            for ( int body = 1; body < _bodies.Length; ++body ) {
+                Append( (uint)_yardShipReady[body] ); Append( (uint)_yardQueueSizes[body] );
+                foreach ( var order in YardQueue( body ) ) {
+                    Append( (uint)order.Hull ); Append( (uint)order.Design.Weapon ); Append( order.Design.Plating ? 1u : 0u );
+                    Append( (uint)order.Cost.Ore ); Append( (uint)order.Cost.Energy ); Append( (uint)order.Duration );
+                }
+                foreach ( var facility in Facilities ) {
+                    var site = Construction( body, facility );
+                    Append( (uint)(site.Worker?.Squad ?? -1) ); Append( (uint)(site.Worker?.Ship ?? -1) );
+                    AppendVector( site.Orbit ); Append( site.Working ? 1u : 0u );
+                }
             }
         }
         Append( (uint)SystemIndex ); Append( (uint)Tick ); Append( (uint)Count ); Append( (uint)SquadCount ); Append( _seed );
@@ -500,13 +516,13 @@ internal sealed partial class FleetSimulation {
         for ( int body = 0; body < _bodies.Length; ++body ) {
             Append( (uint)(_surveyUnits[body]?.Squad ?? -1) ); Append( (uint)(_surveyUnits[body]?.Ship ?? -1) );
             Append( (uint)_survey[body] ); Append( (uint)_mines[body] ); Append( (uint)_labs[body] );
-            if ( Frontier ) { Append( (uint)_yards[body] ); Append( (uint)_depots[body] ); }
+            if ( Frontier ) { Append( (uint)_yards[body] ); Append( (uint)_depots[body] ); Append( (uint)_solarArrays[body] ); }
         }
         Append( (uint)Ore ); Append( (uint)WingsBuilt ); Append( (uint)_incomeTicks ); Append( _rivalPatrol ? 1u : 0u ); Append( _battle ? 1u : 0u );
         for ( int i = 0; i < SquadCount; ++i ) {
             ref readonly var squad = ref _squads[i];
             Append( (uint)squad.Count ); Append( (uint)squad.Faction );
-            if ( Frontier ) { Append( (uint)squad.Role ); Append( (uint)squad.Design.Weapon ); Append( squad.Design.Plating ? 1u : 0u ); }
+            if ( Frontier ) { Append( (uint)squad.FleetId ); Append( (uint)squad.Role ); Append( (uint)squad.Design.Weapon ); Append( squad.Design.Plating ? 1u : 0u ); }
             AppendVector( squad.Home ); AppendVector( squad.Center ); AppendVector( squad.Direction ); AppendOrder( squad.Order );
         }
         for ( int i = 0; i < Count; ++i ) {
@@ -592,7 +608,7 @@ internal sealed partial class FleetSimulation {
             _previousHeadings[i] = _headings[i] = heading;
         }
         _squads[squadIndex] = new( ) { First = first, Count = count, Alive = count, Faction = faction, Home = center, Center = center,
-            Role = role, Design = design, Anchor = center, Direction = heading, Order = new Order { Target = center } };
+            FleetId = ++_nextFleetId, Role = role, Design = design, Anchor = center, Direction = heading, Order = new Order { Target = center } };
         if ( squadIndex == SquadCount ) {
             ++SquadCount;
             Count += count;

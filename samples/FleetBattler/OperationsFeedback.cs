@@ -2,27 +2,28 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal readonly record struct MapSite( Vector2 Pixel, int Body, PlanetFacility Facility, int Remaining, int Duration );
+internal readonly record struct MapSite( Vector2 Pixel, int Body, PlanetFacility Facility, int Remaining, int Duration, bool Producing = false );
 internal enum HoverKind { None, Ship, Site, Body }
 internal readonly record struct MapHover( HoverKind Kind, int Index, Vector2 Target, Vector2 Pointer );
 
 internal sealed partial class FleetHud {
-    internal static string SiteName( PlanetFacility facility ) => facility switch {
-        PlanetFacility.Mine => "EXTRACTION RIG", PlanetFacility.Lab => "RESEARCH LAB",
-        PlanetFacility.Depot => "LOGISTICS DEPOT", _ => "ORBITAL SHIPYARD"
-    };
+    internal static string SiteName( PlanetFacility facility ) => FleetSimulation.Facility( facility ).Name;
 
     private void OperationsFeedback( Layout layout, FleetSimulation fleet, ReadOnlySpan<Vector4> bodies,
         ReadOnlySpan<MapSite> sites, MapHover hover, int speed, int planet ) {
         foreach ( var site in sites ) {
-            if ( site.Remaining <= 0 ) continue;
+            if ( site.Remaining <= 0 ) {
+                if ( site.Facility == PlanetFacility.Yard )
+                    MapLabel( site.Pixel, fleet.YardAt( site.Body ) == 0 ? "SHIPYARD" : "CIVILIAN DOCK", layout, fleet, planet );
+                continue;
+            }
             var point = site.Pixel / _scale;
             if ( point.X < 28 || point.X >= layout.Width - 28 || point.Y < 70 || point.Y >= layout.Bottom - 17 ||
                  layout.Blocks( point, fleet, planet ) ) continue;
-            bool enRoute = site.Facility == PlanetFacility.Mine && fleet.MineEnRoute( site.Body );
+            bool enRoute = !site.Producing && fleet.SiteEnRoute( site.Body, site.Facility );
             Progress( point + new Vector2( -19, 12 ), 38, 1 - (float)site.Remaining / site.Duration, enRoute ? Label : SpaceDraw.Amber );
-            Text( enRoute ? "EN ROUTE" : site.Facility == PlanetFacility.Yard && fleet.ActiveYard == site.Body ? "YARD WORK" : "BUILD",
-                point.X - (enRoute ? 24 : 15), point.Y + 18, 1, enRoute ? Label : SpaceDraw.Amber );
+            string status = enRoute ? "EN ROUTE" : site.Producing ? "BUILDING SHIP" : "CONSTRUCTION";
+            Text( status, point.X - TextWidth( status.Length, 1 ) / 2, point.Y + 18, 1, enRoute ? Label : SpaceDraw.Amber );
         }
         for ( int body = 1; body < bodies.Length; ++body ) {
             var status = fleet.Planet( body );
@@ -42,14 +43,17 @@ internal sealed partial class FleetHud {
             case HoverKind.Ship:
                 int ship = hover.Index;
                 var role = fleet.Role( fleet.SquadronOf( ship ) );
-                tint = fleet.SideOf( ship ) == 0 ? SpaceDraw.Cyan : SpaceDraw.Amber;
-                title.TryWrite( $"{(fleet.SideOf( ship ) == 0 ? "CYAN" : "AMBER")} {(role == HullRole.Scout ? "SCOUT" : role == HullRole.Miner ? "MINER" : "CORVETTE")} {ship + 1}", out titleLength );
-                detail.TryWrite( $"HULL {fleet.Hull( ship )}  SHIELD {fleet.Shield( ship )}  ARMOR {fleet.Armor( ship )}", out detailLength );
+                var faction = fleet.FactionOf( ship );
+                var attitude = Factions.Attitude( FactionId.Sol, faction );
+                tint = attitude == Disposition.Allied ? SpaceDraw.Cyan : attitude == Disposition.Hostile ? SpaceDraw.Amber : SpaceDraw.Neutral;
+                title.TryWrite( $"{Factions.Name( faction )} / {role.ToString().ToUpperInvariant()}", out titleLength );
+                detail.TryWrite( $"{attitude.ToString().ToUpperInvariant()} / HULL {fleet.Hull( ship )}  SHIELD {fleet.Shield( ship )}  ARMOR {fleet.Armor( ship )}", out detailLength );
                 break;
             case HoverKind.Site:
                 var site = sites[hover.Index];
-                titleLength = CopyStatus( SiteName( site.Facility ), title );
-                if ( site.Facility == PlanetFacility.Mine && fleet.MineEnRoute( site.Body ) )
+                titleLength = CopyStatus( site.Facility == PlanetFacility.Yard && fleet.YardAt( site.Body ) != 0 && site.Remaining <= 0
+                    ? "CIVILIAN DOCK" : SiteName( site.Facility ), title );
+                if ( !site.Producing && fleet.SiteEnRoute( site.Body, site.Facility ) )
                     detailLength = CopyStatus( "CONSTRUCTOR EN ROUTE", detail );
                 else if ( site.Remaining > 0 )
                     detail.TryWrite( $"{Seconds( site.Remaining, speed )} SEC LEFT / {fleet.BodyName( site.Body )}", out detailLength );

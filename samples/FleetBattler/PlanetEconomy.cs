@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum PlanetFacility { Mine, Lab, Depot, Yard }
+internal enum PlanetFacility { Mine, Lab, Depot, Yard, Solar }
 internal readonly record struct WingOrder( int Body, ShipDesign Design, int Duration, int Cost );
 internal readonly record struct SiteOrder( int Body, PlanetFacility Facility );
 
@@ -55,7 +55,7 @@ internal sealed partial class FleetSimulation {
             return used;
         }
     }
-    internal int NavalReserved => QueuedWings * FrontierWingSize;
+    internal int NavalReserved => Frontier ? _navalReserved : QueuedWings * WingSize;
 
     private int Online( ReadOnlySpan<int> projects ) {
         int count = 0;
@@ -64,28 +64,15 @@ internal sealed partial class FleetSimulation {
         return count;
     }
 
-    private Vector2 YardPosition( int body, int tick ) {
-        var (sin, cos) = MathF.SinCos( tick * (float)StepSeconds * 0.23f - MathF.PI / 2 );
-        return _bodies[body].Center + new Vector2( cos, sin ) * (OrbitRadius( body, 1 ) + 4);
-    }
+    private Vector2 YardPosition( int body, int tick ) =>
+        SitePositionAt( body, PlanetFacility.Yard, tick, _bodies[body].Center );
     internal int QueuedWings { get; private set; }
     internal int WingRemaining => Remaining( _wingFinishTick );
-    internal int CurrentWingCost => (IndustryUpgrade ? ImprovedWingCost : WingCost) + (Frontier ? Design.Surcharge : 0);
-    internal int CurrentWingDuration => (IndustryUpgrade ? ImprovedWingDuration : StandardWingDuration) + (Frontier ? Design.BuildTicks : 0);
-    internal int ActiveYard => QueuedWings == 0 ? -1 : _wingQueue[0].Body;
-    internal int OrdersAt( int body ) {
-        int count = 0;
-        for ( int i = 0; i < QueuedWings; ++i )
-            if ( _wingQueue[i].Body == body ) ++count;
-        return count;
-    }
+    internal int CurrentWingCost => IndustryUpgrade ? ImprovedWingCost : WingCost;
+    internal int CurrentWingDuration => IndustryUpgrade ? ImprovedWingDuration : StandardWingDuration;
     internal int ActiveWingDuration => QueuedWings == 0 ? 0 : _wingQueue[0].Duration;
-    internal ShipDesign ActiveWingDesign => _wingQueue[0].Design;
-    internal bool CanBuildWing => CanQueueWing( YardBody );
-    internal bool CanQueueWing( int body ) => (uint)body < (uint)_bodies.Length && YardAt( body ) == 0 && Ore >= CurrentWingCost &&
-        (Frontier ? QueuedWings < _wingQueue.Length && NavalUsed + NavalReserved + FrontierWingSize <= NavalCapacity
-            : WingsBuilt + QueuedWings < WingGoal && !Lost);
-    internal ReadOnlySpan<WingOrder> WingQueue => _wingQueue.AsSpan( 0, QueuedWings );
+    internal bool CanBuildWing => !Frontier && YardRemaining == 0 && Ore >= CurrentWingCost &&
+        WingsBuilt + QueuedWings < WingGoal && !Lost;
     internal int CompletedSites { get; private set; }
     internal SiteOrder LastCompletedSite { get; private set; }
     internal int StartedConstruction { get; private set; }
@@ -136,32 +123,26 @@ internal sealed partial class FleetSimulation {
         return false;
     }
 
-    internal bool BuildYard( int body ) {
-        if ( body <= 0 || body >= _bodies.Length || _yards[body] != 0 || !Frontier && YardBody >= 0 || !Planet( body ).Surveyed || Lost || Ore < YardCost ) return false;
+    internal bool BuildYard( int body, FleetSelection? worker = null ) {
+        if ( Frontier ) return StartConstruction( body, PlanetFacility.Yard, worker );
+        if ( body <= 0 || body >= _bodies.Length || _yards[body] != 0 || YardBody >= 0 || !Planet( body ).Surveyed || Lost || Ore < YardCost ) return false;
         Ore -= YardCost;
         _yards[body] = Tick + YardDuration;
         return true;
     }
 
     internal bool ResearchIndustry( ) {
+        if ( Frontier ) return StartResearch( ResearchTopic.Industry );
         if ( IndustryUpgrade || Science < IndustryCost || Lost ) return false;
         Science -= IndustryCost;
         IndustryUpgrade = true;
         return true;
     }
 
-    internal bool ResearchDrive( ) {
-        if ( !Frontier || DriveUpgrade || Science < DriveCost ) return false;
-        Science -= DriveCost;
-        DriveUpgrade = true;
-        return true;
-    }
-
-    internal bool QueueWing( int body = -1 ) {
-        if ( body < 0 ) body = YardBody;
-        if ( !CanQueueWing( body ) ) return false;
+    internal bool QueueWing( ) {
+        if ( !CanBuildWing ) return false;
         int cost = CurrentWingCost;
-        _wingQueue[QueuedWings++] = new( body, Design, CurrentWingDuration, cost );
+        _wingQueue[QueuedWings++] = new( YardBody, Design, CurrentWingDuration, cost );
         Ore -= cost;
         if ( QueuedWings == 1 ) _wingFinishTick = Tick + _wingQueue[0].Duration;
         return true;
@@ -176,64 +157,47 @@ internal sealed partial class FleetSimulation {
         }
         if ( Tick + 1 < _wingFinishTick ) return;
         int body = _wingQueue[0].Body;
-        var arrival = YardPosition( body, Tick + 1 ) + new Vector2( 4 + (Frontier ? WingsBuilt % 2 : WingsBuilt) * 4, 0 );
-        int squad = AddSquad( Frontier ? FrontierWingSize : WingSize, 0, arrival, design: _wingQueue[0].Design );
-        if ( Frontier ) Park( squad, body );
+        var arrival = YardPosition( body, Tick + 1 ) + new Vector2( 4 + WingsBuilt * 4, 0 );
+        AddSquad( WingSize, 0, arrival );
         ++WingsBuilt;
-        RemoveWing( 0, Tick + 1 );
-    }
-
-    internal bool CancelWing( int index ) {
-        if ( !Frontier || (uint)index >= (uint)QueuedWings ) return false;
-        Refund( _wingQueue[index].Cost );
-        RemoveWing( index, Tick );
-        return true;
-    }
-
-    private void RemoveWing( int index, int start ) {
         --QueuedWings;
-        _wingQueue.AsSpan( index + 1, QueuedWings - index ).CopyTo( _wingQueue.AsSpan( index ) );
-        if ( index == 0 ) _wingFinishTick = QueuedWings == 0 ? 0 : start + _wingQueue[0].Duration;
+        _wingQueue.AsSpan( 1, QueuedWings ).CopyTo( _wingQueue );
+        _wingFinishTick = QueuedWings == 0 ? 0 : Tick + 1 + _wingQueue[0].Duration;
     }
 
     internal bool BuildFacility( int body, PlanetFacility facility, FleetSelection? worker = null ) {
+        if ( Frontier ) return StartConstruction( body, facility, worker );
         if ( facility == PlanetFacility.Yard ) return BuildYard( body );
-        if ( body <= 0 || body >= _bodies.Length || !Planet( body ).Surveyed || Lost ) return false;
-        if ( facility == PlanetFacility.Depot && !Frontier ) return false;
-        var (projects, cost) = SiteProjects( facility );
+        if ( body <= 0 || body >= _bodies.Length || !Planet( body ).Surveyed || Lost ||
+             facility is not (PlanetFacility.Mine or PlanetFacility.Lab) ) return false;
+        var projects = SiteDeadlines( facility );
+        int cost = Facility( facility ).Cost.Ore;
         if ( projects[body] != 0 || Ore < cost ) return false;
-        if ( Frontier && facility == PlanetFacility.Mine && !AssignMine( body, worker ) ) return false;
         Ore -= cost;
         projects[body] = Tick + FacilityDuration;
         return true;
     }
 
-    internal int SiteRemaining( int body, PlanetFacility facility ) => Remaining( SiteProjects( facility ).Deadlines[body] );
+    internal int SiteRemaining( int body, PlanetFacility facility ) => Remaining( SiteDeadlines( facility )[body] );
 
     internal bool CancelSite( int body, PlanetFacility facility ) {
         if ( !Frontier || body <= 0 || body >= _bodies.Length ) return false;
-        var (projects, cost) = SiteProjects( facility );
+        var projects = SiteDeadlines( facility );
         if ( projects[body] <= Tick ) return false;
         projects[body] = 0;
-        if ( facility == PlanetFacility.Mine ) {
-            _constructionWorkers[body] = null;
-            _buildingMines[body] = false;
-        }
-        Refund( cost );
+        Construction( body, facility ) = default;
+        Refund( Facility( facility ).Cost );
         return true;
     }
 
-    private (int[] Deadlines, int Cost) SiteProjects( PlanetFacility facility ) => facility switch {
-        PlanetFacility.Mine => (_mines, MineCost),
-        PlanetFacility.Lab => (_labs, LabCost),
-        PlanetFacility.Depot => (_depots, DepotCost),
-        PlanetFacility.Yard => (_yards, YardCost),
+    private int[] SiteDeadlines( PlanetFacility facility ) => facility switch {
+        PlanetFacility.Mine => _mines, PlanetFacility.Lab => _labs, PlanetFacility.Depot => _depots,
+        PlanetFacility.Yard => _yards, PlanetFacility.Solar => _solarArrays,
         _ => throw new ArgumentOutOfRangeException( nameof(facility) )
     };
 
-    private void Refund( int cost ) => Ore = Math.Min( 999, Ore + cost );
-
     internal bool ResearchWeapons( ) {
+        if ( Frontier ) return StartResearch( ResearchTopic.Weapons );
         if ( Science < UpgradeCost || WeaponUpgrade || Lost ) return false;
         Science -= UpgradeCost;
         WeaponUpgrade = true;
@@ -243,7 +207,6 @@ internal sealed partial class FleetSimulation {
     private void AdvancePlanets( ) {
         RefreshSurveys( );
         for ( int body = 1; body < _bodies.Length; ++body ) {
-            if ( Frontier ) AdvanceMine( body );
             if ( _surveyUnits[body] is { } unit && InSurveyRange( unit, body ) ) {
                 int rate = IsScoutSquad( unit.Squad ) ? 2 : 1;
                 _survey[body] = Math.Min( SurveyDuration, _survey[body] + rate );
@@ -257,10 +220,10 @@ internal sealed partial class FleetSimulation {
                 }
             }
             if ( Frontier ) {
-                MarkSite( body, PlanetFacility.Mine, _mines[body] );
-                MarkSite( body, PlanetFacility.Lab, _labs[body] );
-                MarkSite( body, PlanetFacility.Depot, _depots[body] );
-                MarkSite( body, PlanetFacility.Yard, _yards[body] );
+                foreach ( var facility in Facilities ) {
+                    AdvanceConstruction( body, facility );
+                    MarkSite( body, facility, SiteDeadlines( facility )[body] );
+                }
             }
             if ( (Tick + 1) % IncomeInterval != 0 ) continue;
             if ( _mines[body] > 0 && _mines[body] <= Tick + 1 ) Ore = Math.Min( 999, Ore + (Frontier ? DepositYield( body ) : 8) );
