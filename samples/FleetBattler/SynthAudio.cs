@@ -29,7 +29,7 @@ internal static class SynthAudio {
 
     private static int Track( string name ) => name switch {
         "survey" => 0, "cartography" => 1, "signal" => 2, "arrival" => 3,
-        "order" => 4, "launch" => 5, "capture" => 6, "laser" => 7, "burst" => 8, "survey-assign" => 9, "survey-complete" => 10, _ => throw new ArgumentException( "Unknown procedural audio name.", nameof(name) )
+        "order" => 4, "launch" => 5, "capture" => 6, "laser" => 7, "burst" => 8, "survey-assign" => 9, "survey-complete" => 10, "scan" => 11, "dispatch" => 12, _ => throw new ArgumentException( "Unknown procedural audio name.", nameof(name) )
     };
 
     private static void WriteWave( Stream stream, int track ) {
@@ -62,8 +62,8 @@ internal static class SynthAudio {
     }
 
     private static double Cue( int track, double time, double duration ) {
-        double pitch = track switch { 4 => 440, 5 => 280, 7 => 890, 8 => 160, 9 => 660, 10 => 900, _ => 525 };
-        double rate = track switch { 4 => 750, 7 => -1500, 8 => -120, 9 => -290, 10 => 790, _ => 950 };
+        double pitch = track switch { 4 => 440, 5 => 280, 7 => 890, 8 => 160, 9 => 660, 10 => 900, 11 => 455, 12 => 570, _ => 525 };
+        double rate = track switch { 4 => 750, 7 => -1500, 8 => -120, 9 => -290, 10 => 790, 11 => 410, 12 => 120, _ => 950 };
         double phase = Math.Tau * (pitch * time + rate * time * time);
         double fall = 1 - time / duration;
         return (Math.Sin( phase ) * 0.46 + Math.Sin( phase * 1.5 ) * 0.20) * fall * fall;

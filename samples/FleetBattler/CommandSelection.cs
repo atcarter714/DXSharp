@@ -126,7 +126,7 @@ internal sealed class CommandSelection {
         return issued;
 
         void Order( FleetSelection selection, Vector2 center ) {
-            if ( hostile >= 0 ) { fleet.Attack( selection, hostile ); issued = true; }
+            if ( hostile >= 0 ) { issued |= fleet.Attack( selection, hostile ); }
             else if ( orbit >= 0 ) issued |= fleet.Orbit( selection, orbit );
             else {
                 var offset = center - centroid;

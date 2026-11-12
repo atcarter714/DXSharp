@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum HudIcon { Ore, Energy, Science, Colony, Design, Orders, Log, Merge, Split, Yard }
+internal enum HudIcon { Ore, Energy, Science, Colony, Design, Orders, Log, Merge, Split, Yard, Build, Repair, Retreat }
 
 internal sealed partial class FleetHud {
     private static readonly Vector4 OreTint = new( 0.92f, 0.68f, 0.44f, 1 );
@@ -10,7 +10,7 @@ internal sealed partial class FleetHud {
     private static readonly Vector4 ScienceTint = new( 0.48f, 0.85f, 1, 1 );
     private static readonly ulong[] Icons = [
         0x020e3ae7ddf1c, 0x00820c7e30c30, 0x0d8e7793dce36, 0x1ff1e3eef8e08, 0x08b1f77c70e08,
-        0x1fe0dd83760ff, 0x0f913a44e913e, 0x02041cfe20a22, 0x088a08fe70408, 0x18f5ff55ff5e3
+        0x1fe0dd83760ff, 0x0f913a44e913e, 0x02041cfe20a22, 0x088a08fe70408, 0x18f5ff55ff5e3, 0x03c187f306180, 0x0437df1c7030c, 0x00020c3ffff00
     ];
 
     private void Icon( HudIcon icon, float x, float y, float size, Vector4 tint ) {
@@ -120,14 +120,23 @@ internal sealed partial class FleetHud {
         }
     }
 
-    private void ResearchPanel( float x, float y, FleetSimulation fleet, int speed ) {
+    private static ReadOnlySpan<ResearchTopic> ResearchTopics( bool secondPage ) => secondPage
+        ? [ResearchTopic.Habitation, ResearchTopic.Astrometry] : [ResearchTopic.Industry, ResearchTopic.Weapons, ResearchTopic.Drive];
+
+    private void ResearchPanel( float x, float y, FleetSimulation fleet, int speed, bool secondPage ) {
         Text( "RESEARCH PROJECTS", x + 11, y + 42, 1.25f, White );
-        Text( fleet.ScienceIncome == 0 ? "BUILD A RESEARCH LAB TO START" : "ONE ACTIVE PROJECT / COST RESERVED ON START", x + 11, y + 60, 1, Label );
-        Span<char> line = stackalloc char[40];
-        for ( int i = 0; i < 3; ++i ) {
-            var topic = (ResearchTopic)i;
+        Button( x + 266, y + 39, 69, secondPage ? "CORE" : "ADVANCED", true );
+        Span<char> line = stackalloc char[52];
+        if ( fleet.ResearchRate == 0 ) Text( "BUILD A LAB OR OBSERVATORY TO START", x + 11, y + 62, 1, Label );
+        else {
+            line.TryWrite( $"LAB THROUGHPUT {fleet.ResearchRate}X / {fleet.ScienceIncome} SCI PER CYCLE", out int n );
+            Text( line[..n], x + 11, y + 62, 1, Label );
+        }
+        var topics = ResearchTopics( secondPage );
+        for ( int i = 0; i < topics.Length; ++i ) {
+            var topic = topics[i];
             var tech = FleetSimulation.Tech( topic );
-            float row = y + 77 + i * 53;
+            float row = y + 82 + i * 54;
             Rect( x + 10, row, 330, 49, fleet.ActiveResearch == topic ? Active : Well );
             Text( tech.Name, x + 17, row + 6, 1.1f, White );
             Text( tech.Benefit, x + 17, row + 20, 1, Label );
@@ -138,11 +147,11 @@ internal sealed partial class FleetHud {
             if ( fleet.ActiveResearch == topic ) {
                 line.TryWrite( $"{Seconds( fleet.ResearchRemaining, speed )} SEC LEFT", out int length );
                 Text( line[..length], x + 17, row + 33, 1, ScienceTint );
-                Progress( new( x + 124, row + 36 ), 105, 1f - (float)fleet.ResearchRemaining / tech.Duration, ScienceTint );
+                Progress( new( x + 124, row + 36 ), 105, fleet.ResearchProgress, ScienceTint );
                 Button( x + 270, row + 25, 64, "CANCEL", true );
             } else {
                 Cost( tech.Cost, x + 17, row + 33 );
-                line.TryWrite( $"{Seconds( tech.Duration, speed )} SEC AT {speed}X", out int length );
+                line.TryWrite( $"{Seconds( (tech.Duration + Math.Max( 1, fleet.ResearchRate ) - 1) / Math.Max( 1, fleet.ResearchRate ), speed )} SEC AT {speed}X", out int length );
                 Text( line[..length], x + 104, row + 34, 1, Label );
                 Button( x + 270, row + 25, 64, "START", fleet.CanResearch( topic ) );
             }

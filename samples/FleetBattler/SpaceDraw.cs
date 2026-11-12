@@ -138,7 +138,8 @@ internal static class SpaceDraw {
                 float arm = atan2(p.y,p.x) + length(p)*9.4;
                 float spiral = pow(saturate(0.53 + 0.47*sin(3*arm)),3) * exp(-length(p)*4);
                 sky += float3(0.10,0.15,0.27) * spiral * (0.45 + 0.55*Noise(p*36));
-                sky += MapNode(pixel, Star) + MapNode(pixel, Rocky) + MapNode(pixel, Giant);
+                sky += MapNode(pixel, Star) + MapNode(pixel, Rocky) + MapNode(pixel, Giant)
+                     + MapNode(pixel, Moon) + MapNode(pixel, Orbits) + MapNode(pixel, MoonOrbit);
                 return float4(saturate(sky),1);
             }
 
@@ -235,7 +236,7 @@ internal static class SpaceDraw {
         values[12] = fleet.Solar ? new Vector4( 1, 0, 0, 0 ) : fleet.Frontier ? Vector4.Zero : tint;
         values[13] = new( center.X, center.Y, selected.IsShip ? 2.8f : 3.5f + MathF.Sqrt( fleet.ShipCount( selected.Squad ) ) * 2.3f, showSelection ? 1 : 0 );
         float orderMode = !showSelection || plan.Order == FlightOrder.Idle ? 0
-            : !fleet.Frontier || plan.Order == FlightOrder.Attack ? 1 : 0;
+            : !fleet.Frontier ? 1 : 0;
         values[14] = new( target.X, target.Y, orderMode, (float)plan.Order );
         Draw( commands, pipeline, moon, values );
     }

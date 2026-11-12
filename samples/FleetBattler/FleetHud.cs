@@ -5,9 +5,9 @@ using DXSharp.Shaders;
 
 namespace FleetBattler;
 
-internal enum PlanetAction { None, Survey, Mine, Lab, Research, Yard, Industry, CancelSurvey, Orbit, Inspect, Depot, Drive, Close }
+internal enum PlanetAction { None, Survey, Mine, Lab, Research, Yard, Industry, CancelSurvey, Orbit, Inspect, Depot, Drive, Close, Construction }
 internal readonly record struct BodyMenu( Vector2 Pixel, int Body );
-internal enum HudAction { None, Panel, Pause, Speed, Galaxy, Wing, Squad, Planet, Context, Command, OpenYard, CloseYard, BuildShip, CancelShip, BuildSite, CancelSite, MergeFleets, SplitFleets }
+internal enum HudAction { None, Panel, Pause, Speed, Galaxy, Wing, Squad, Planet, Context, Command, OpenYard, CloseYard, BuildShip, CancelShip, BuildSite, CancelSite, MergeFleets, SplitFleets, ToggleBuildCatalog, Stance, ShipService, CycleModule, ResearchPage, MerchantDecision }
 internal readonly record struct HudHit( HudAction Action, int Index = 0 );
 
 internal sealed partial class FleetHud {
@@ -96,7 +96,7 @@ internal sealed partial class FleetHud {
     internal void Record( GraphicsCommandList commands, PipelineState pipeline, GpuResource upload, FleetSimulation fleet,
         FleetSelection selected, int width, int height, bool oreShort, ReadOnlySpan<Vector4> bodies = default,
         int selectionCount = -1, int planet = -1, string? notice = null, Vector4? drag = null, Vector2? beacon = null,
-        ReadOnlySpan<bool> selectedShips = default, int speed = 1, bool paused = false, FleetSelection? surveyUnit = null, BodyMenu? menu = null, Vector2? yard = null, CommandTab commandTab = CommandTab.Hidden, int dispatch = 0, ReadOnlySpan<MapSite> sites = default, MapHover hover = default, int yardInspector = -1 ) {
+        ReadOnlySpan<bool> selectedShips = default, int speed = 1, bool paused = false, FleetSelection? surveyUnit = null, BodyMenu? menu = null, Vector2? yard = null, CommandTab commandTab = CommandTab.Hidden, int dispatch = 0, ReadOnlySpan<MapSite> sites = default, MapHover hover = default, int yardInspector = -1, bool buildCatalog = false, bool secondResearchPage = false ) {
         if ( width < 350 || height < 240 ) return;
         Begin( width, height );
         var layout = new Layout( width / _scale, height / _scale );
@@ -147,6 +147,7 @@ internal sealed partial class FleetHud {
             IconButton( 14, top, 76, HudIcon.Merge, "MERGE", fleet.CanMergeFleets( selectedShips ) );
             IconButton( 95, top, 76, HudIcon.Split, "SPLIT", fleet.CanSplitFleets( selectedShips ) );
         }
+        if ( fleet.Frontier && selectionCount > 0 ) DrawFleetOrders( layout, fleet, selectedShips );
         if ( fleet.Frontier && surveyUnit is { } navigator )
             FlightCard( layout, fleet, navigator, speed );
         float right = layout.Right;
@@ -198,7 +199,7 @@ internal sealed partial class FleetHud {
 
         if ( yard is { } yardPixel ) MapLabel( yardPixel, "YARD", layout, fleet, planet );
         if ( planet >= 0 && layout.PlanetVisible ) {
-            if ( fleet.Frontier ) InspectPlanet( layout, fleet, planet, surveyUnit, speed );
+            if ( fleet.Frontier ) InspectPlanet( layout, fleet, planet, surveyUnit, speed, buildCatalog );
             else PlanetPanel( fleet, planet, right, surveyUnit );
         }
         else if ( layout.PlanetVisible ) {
@@ -243,7 +244,7 @@ internal sealed partial class FleetHud {
             : fleet.InBattle ? "ENGAGEMENT / RIGHT CLICK HOSTILE TO ATTACK"
             : selectionCount != 0 && fleet.Orbiting( selected ) ? "ORBIT ORDER ACTIVE"
             : oreShort && fleet.Ore < fleet.CurrentWingCost ? "NEED ORE TO QUEUE A WING"
-            : fleet.Frontier ? !fleet.Established ? "FREE MERCHANTS / NO SOL PRESENCE" : fleet.CompletedSurveys == 0 ? "SELECT SCOUT / RIGHT CLICK A BODY TO SURVEY" : "SELECT A BODY FOR ITS SITE ORDERS"
+            : fleet.Frontier ? !fleet.Established ? "CHECK LOG FOR CONTACTS / NO SOL PRESENCE" : fleet.CompletedSurveys == 0 ? "SELECT SCOUT / RIGHT CLICK A BODY TO SURVEY" : "SELECT A BODY FOR ITS SITE ORDERS"
             : fleet.Owner == 0 ? "HOLD THE RELAY TO MINE ORE" : "CAPTURE THE RELAY OR DEFEAT AMBER"));
         float instructionScale = layout.Width < 530 ? 1 : 1.16f;
         int instructionCapacity = (int)((layout.Width - 159) / TextWidth( 1, instructionScale ));
@@ -253,7 +254,7 @@ internal sealed partial class FleetHud {
             : layout.Width >= 585 ? "MID PAN  /  SHIFT MID TILT  /  F FOCUS  /  HOME RESET"
             : "DRAG SELECT  /  RIGHT CLICK ORDER", 23, layout.Bottom + 31, 1, Label );
         Button( layout.Width - 127, layout.Bottom + 14, 104, fleet.Frontier ? "ORDERS" : "QUEUE WING", fleet.Frontier || fleet.CanBuildWing );
-        if ( fleet.Frontier ) CommandPanel( layout, fleet, commandTab, dispatch, speed );
+        if ( fleet.Frontier ) CommandPanel( layout, fleet, commandTab, dispatch, speed, secondResearchPage );
         if ( fleet.Frontier ) OperationsFeedback( layout, fleet, bodies, sites, hover, speed, planet );
         if ( yardInspector >= 0 && fleet.CanOpenYard( yardInspector ) ) DrawShipyard( layout, fleet, yardInspector, speed );
         if ( menu is { } popup ) ContextPanel( layout, fleet, popup, surveyUnit, selectionCount != 0 );
@@ -341,11 +342,8 @@ internal sealed partial class FleetHud {
             Span<char> text = stackalloc char[32];
             Button( area.X + 9, area.Y + 71, area.Z - 18, status.SurveyUnit is null ? SurveyLabel( status, unit, text ) : "CANCEL SURVEY",
                 status.SurveyUnit is not null || unit is { } selection && fleet.CanSurvey( selection, menu.Body ) );
-            Button( area.X + 9, area.Y + 95, area.Z - 18, fleet.Frontier ? "ASSIGN SHIPYARD PROJECT" : fleet.YardAt( menu.Body ) >= 0 ? "SHIPYARD ASSIGNED" : "SHIPYARD / 55 ORE",
-                fleet.Frontier ? fleet.ConstructionBlock( menu.Body, PlanetFacility.Yard, unit ) is null
-                    : fleet.YardBody < 0 && status.Surveyed && fleet.Ore >= FleetSimulation.YardCost && !fleet.Lost );
-            if ( fleet.Frontier ) Button( area.X + 9, area.Y + 119, area.Z - 18, "ASSIGN EXTRACTION RIG",
-                fleet.ConstructionBlock( menu.Body, PlanetFacility.Mine, unit ) is null );
+            Button( area.X + 9, area.Y + 95, area.Z - 18, fleet.Frontier ? "OPEN CONSTRUCTION CATALOG" : fleet.YardAt( menu.Body ) >= 0 ? "SHIPYARD ASSIGNED" : "SHIPYARD / 55 ORE",
+                fleet.Frontier || fleet.YardBody < 0 && status.Surveyed && fleet.Ore >= FleetSimulation.YardCost && !fleet.Lost );
         }
         _overlay = 0;
     }
@@ -368,7 +366,8 @@ internal sealed partial class FleetHud {
         Rect( x + 7, y + 3, 2, 1, color );
     }
 
-    internal static HudHit Hit( Vector2 pixel, int width, int height, FleetSimulation fleet, int planet, BodyMenu? menu = null, CommandTab commandTab = CommandTab.Hidden, int yardInspector = -1 ) {
+    internal static HudHit Hit( Vector2 pixel, int width, int height, FleetSimulation fleet, int planet, BodyMenu? menu = null, CommandTab commandTab = CommandTab.Hidden, int yardInspector = -1,
+        bool buildCatalog = false, bool hasSelection = false, int dispatch = 0, bool secondResearchPage = false ) {
         if ( width < 350 || height < 240 ) return default;
         float scale = HudScale( width, height );
         var layout = new Layout( width / scale, height / scale );
@@ -381,8 +380,7 @@ internal sealed partial class FleetHud {
                     var action = (int)(row / 24) switch {
                         0 => PlanetAction.Inspect, 1 => PlanetAction.Orbit,
                         2 when popup.Body > 0 => fleet.Planet( popup.Body ).SurveyUnit is null ? PlanetAction.Survey : PlanetAction.CancelSurvey,
-                        3 when popup.Body > 0 => PlanetAction.Yard,
-                        4 when popup.Body > 0 && fleet.Frontier => PlanetAction.Mine, _ => PlanetAction.None
+                        3 when popup.Body > 0 => fleet.Frontier ? PlanetAction.Construction : PlanetAction.Yard, _ => PlanetAction.None
                     };
                     if ( action != PlanetAction.None ) return new( HudAction.Context, (int)action );
                 }
@@ -395,17 +393,21 @@ internal sealed partial class FleetHud {
                 var yard = HitShipyard( layout, p, fleet, yardInspector );
                 if ( yard.Action != HudAction.None ) return yard;
             }
-            var command = HitCommand( layout, p, fleet, commandTab );
+            var command = HitCommand( layout, p, fleet, commandTab, dispatch, secondResearchPage );
             if ( command.Action != HudAction.None ) return command;
         }
         if ( fleet.Frontier && planet >= 0 && layout.PlanetVisible ) {
-            var inspector = HitInspector( layout, p, planet, fleet );
+            var inspector = HitInspector( layout, p, planet, fleet, buildCatalog );
             if ( inspector.Action != HudAction.None ) return inspector;
         }
         if ( fleet.Frontier && layout.FleetControls( fleet ) + 21 < layout.Bottom ) {
             float top = layout.FleetControls( fleet );
             if ( Contains( p, 14, top, 76, 21 ) ) return new( HudAction.MergeFleets );
             if ( Contains( p, 95, top, 76, 21 ) ) return new( HudAction.SplitFleets );
+        }
+        if ( fleet.Frontier && hasSelection ) {
+            var orders = HitFleetOrders( layout, p, fleet );
+            if ( orders.Action != HudAction.None ) return orders;
         }
         if ( !layout.Blocks( p, fleet, planet ) ) return default;
         if ( Contains( p, layout.ClockX, 19, 64, 21 ) ) return new( HudAction.Pause );
@@ -449,7 +451,7 @@ internal sealed partial class FleetHud {
 
         internal Vector4 Context( BodyMenu menu, float scale, bool frontier ) {
             const float width = 190;
-            float height = menu.Body == 0 ? 75 : frontier ? 147 : 123;
+            float height = menu.Body == 0 ? 75 : 123;
             var pos = Vector2.Clamp( menu.Pixel / scale + new Vector2( 9, 4 ), new( 6, 6 ), new( Width - width - 6, Height - height - 6 ) );
             return new( pos.X, pos.Y, width, height );
         }
@@ -485,7 +487,7 @@ internal sealed partial class FleetHud {
             Text( name, left, center.Y + 24, 1.3f, i == currentSystem ? SpaceDraw.Cyan : White );
         }
         Rect( 14, logicalHeight - 43, logicalWidth - 28, 29, Panel, 1 );
-        Text( "CLICK SYSTEM TO ENTER   G RETURN   F11 FULLSCREEN", 23, logicalHeight - 33, 1, Label );
+        Text( frontier ? "CLICK SYSTEM TO OBSERVE   G RETURN   F11 FULLSCREEN" : "CLICK SYSTEM TO ENTER   G RETURN   F11 FULLSCREEN", 23, logicalHeight - 33, 1, Label );
         Submit( commands, pipeline, upload, width, height );
     }
 

@@ -2,17 +2,18 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum PlanetFacility { Mine, Lab, Depot, Yard, Solar }
+internal enum PlanetFacility { Mine, Lab, Depot, Yard, Solar, Habitat, Observatory, Skimmer }
 internal readonly record struct WingOrder( int Body, ShipDesign Design, int Duration, int Cost );
 internal readonly record struct SiteOrder( int Body, PlanetFacility Facility );
 
-internal readonly record struct PlanetStatus( int Survey, int MineRemaining, int LabRemaining, FleetSelection? SurveyUnit ) {
-    internal bool Surveyed => Survey >= FleetSimulation.SurveyDuration;
+internal readonly record struct PlanetStatus( int Survey, int MineRemaining, int LabRemaining, FleetSelection? SurveyUnit, int SurveyRequired ) {
+    internal bool Surveyed => Survey >= SurveyRequired;
+    internal float SurveyProgress => (float)Survey / SurveyRequired;
 }
 
 internal sealed partial class FleetSimulation {
     internal const int SurveyDuration = 120, MineCost = 35, LabCost = 45, UpgradeCost = 30;
-    internal const int FacilityDuration = 180;
+    internal const int FacilityDuration = 180, FrontierSurveyDuration = 480;
     internal const int YardCost = 55, YardDuration = 360, IndustryCost = 24, DepotCost = 40;
     internal const int YardNavalCapacity = 6, DepotNavalCapacity = 3, DriveCost = 36;
     internal const int StandardWingDuration = 480, ImprovedWingDuration = 300, ImprovedWingCost = 42;
@@ -46,7 +47,8 @@ internal sealed partial class FleetSimulation {
     internal Vector2 YardAtPosition( int body ) => YardPosition( body, Tick );
     internal int YardCount => Online( _yards );
     internal int DepotCount => Online( _depots );
-    internal int NavalCapacity => YardCount * YardNavalCapacity + DepotCount * DepotNavalCapacity;
+    internal const int HabitatNavalCapacity = 4;
+    internal int NavalCapacity => YardCount * YardNavalCapacity + DepotCount * DepotNavalCapacity + Online( _habitats ) * HabitatNavalCapacity;
     internal int NavalUsed {
         get {
             int used = 0;
@@ -77,24 +79,30 @@ internal sealed partial class FleetSimulation {
     internal SiteOrder LastCompletedSite { get; private set; }
     internal int StartedConstruction { get; private set; }
     internal int CompletedSurveys { get; private set; }
+    internal int StartedScans { get; private set; }
     internal int LastSurveyBody { get; private set; }
     internal FleetSelection LastSurveyUnit { get; private set; }
 
     internal PlanetStatus Planet( int body ) =>
-        new( _survey[body], Remaining( _mines[body] ), Remaining( _labs[body] ), _surveyUnits[body] );
+        new( _survey[body], ExtractionRemaining( body ), Remaining( _labs[body] ), _surveyUnits[body], SurveyRequired );
+
+    private int SurveyRequired => Frontier ? FrontierSurveyDuration : SurveyDuration;
 
     private int Remaining( int deadline ) => deadline == 0 ? -1 : Math.Max( 0, deadline - Tick );
 
     internal bool SurveyWorking( int body ) => _surveyUnits[body] is { } unit && InSurveyRange( unit, body );
 
     internal bool CanSurvey( FleetSelection unit, int body ) =>
-        body > 0 && body < _bodies.Length && _survey[body] < SurveyDuration && _surveyUnits[body] is null &&
+        body > 0 && body < _bodies.Length && _survey[body] < SurveyRequired && _surveyUnits[body] is null &&
         (uint)unit.Squad < (uint)SquadCount && IsPlayerSquad( unit.Squad ) && (!Frontier || IsScoutSquad( unit.Squad )) &&
         (unit.IsShip ? Alive( unit.Ship ) && SquadronOf( unit.Ship ) == unit.Squad : ShipCount( unit.Squad ) > 0) && (!Frontier || CanReach( unit, body ));
 
     internal bool BeginSurvey( FleetSelection unit, int body ) {
         if ( !CanSurvey( unit, body ) ) return false;
-        SetOrder( unit, OrbitalOrder( unit, body, survey: true ) );
+        var order = OrbitalOrder( unit, body, survey: true );
+        order.Construction = 0;
+        order.Service = ServiceOrder.None;
+        SetOrder( unit, order );
         _surveyUnits[body] = unit;
         return true;
     }
@@ -192,7 +200,8 @@ internal sealed partial class FleetSimulation {
 
     private int[] SiteDeadlines( PlanetFacility facility ) => facility switch {
         PlanetFacility.Mine => _mines, PlanetFacility.Lab => _labs, PlanetFacility.Depot => _depots,
-        PlanetFacility.Yard => _yards, PlanetFacility.Solar => _solarArrays,
+        PlanetFacility.Yard => _yards, PlanetFacility.Solar => _solarArrays, PlanetFacility.Habitat => _habitats,
+        PlanetFacility.Observatory => _observatories, PlanetFacility.Skimmer => _skimmers,
         _ => throw new ArgumentOutOfRangeException( nameof(facility) )
     };
 
@@ -208,9 +217,10 @@ internal sealed partial class FleetSimulation {
         RefreshSurveys( );
         for ( int body = 1; body < _bodies.Length; ++body ) {
             if ( _surveyUnits[body] is { } unit && InSurveyRange( unit, body ) ) {
-                int rate = IsScoutSquad( unit.Squad ) ? 2 : 1;
-                _survey[body] = Math.Min( SurveyDuration, _survey[body] + rate );
-                if ( _survey[body] == SurveyDuration ) {
+                int rate = IsScoutSquad( unit.Squad ) ? AstrometryUpgrade ? 3 : 2 : 1;
+                if ( _survey[body] == 0 ) ++StartedScans;
+                _survey[body] = Math.Min( SurveyRequired, _survey[body] + rate );
+                if ( _survey[body] == SurveyRequired ) {
                     Ore = Math.Min( 999, Ore + (Frontier ? 15 : 40) );
                     if ( Frontier ) RevealProspect( body );
                     ++CompletedSurveys;
@@ -226,8 +236,10 @@ internal sealed partial class FleetSimulation {
                 }
             }
             if ( (Tick + 1) % IncomeInterval != 0 ) continue;
-            if ( _mines[body] > 0 && _mines[body] <= Tick + 1 ) Ore = Math.Min( 999, Ore + (Frontier ? DepositYield( body ) : 8) );
+            if ( _mines[body] > 0 && _mines[body] <= Tick + 1 || _skimmers[body] > 0 && _skimmers[body] <= Tick + 1 )
+                Ore = Math.Min( 999, Ore + (Frontier ? DepositYield( body ) : 8) );
             if ( _labs[body] > 0 && _labs[body] <= Tick + 1 ) Science = Math.Min( 999, Science + 6 );
+            if ( _observatories[body] > 0 && _observatories[body] <= Tick + 1 ) Science = Math.Min( 999, Science + 10 );
         }
     }
 
