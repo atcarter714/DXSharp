@@ -5,7 +5,6 @@ namespace FleetBattler;
 internal enum NavigationPhase { Parked, Burn, Coast, Brake, Intercept, Correction, Turnover }
 
 internal sealed partial class FleetSimulation {
-    private const float TransferSpeed = 24;
     private readonly record struct Transfer( int Start, int End, Vector2 From, Vector2 To, Vector2 Departure,
         Vector2 Arrival, Vector2 Bend ) {
         private const float BurnFraction = 0.30f;
@@ -67,14 +66,14 @@ internal sealed partial class FleetSimulation {
     }
 
     internal float NavigationRadius => BoardRadius * (Solar ? 3.04f : Frontier ? 2.28f : 1);
-    internal bool CanReach( FleetSelection unit, int body ) =>
-        !RequiresDrive( body ) || DriveUpgrade || !IsPlayerSquad( unit.Squad );
+    internal bool CanReach( FleetSelection unit, int body ) => !RequiresDrive( body ) || DriveUpgrade || !IsPlayerSquad( unit.Squad ) ||
+        Solar && body != CelestialSystem.OuterBelt && SolarCatalog.Get( body ).Axis <= 1.69f * Flight( unit.Squad ).Range;
 
     internal bool RequiresDrive( int body ) => body == CelestialSystem.OuterBelt || Solar && SolarCatalog.Get( body ).Axis > 1.69f;
 
     internal bool CanReach( FleetSelection unit, Vector2 target ) =>
         !Frontier || !IsPlayerSquad( unit.Squad ) ||
-        Vector2.DistanceSquared( target, _bodies[0].Center ) <= MathF.Pow( BoardRadius * (Solar ? DriveUpgrade ? 2.94f : 1.69f : DriveUpgrade ? 2.04f : 1.26f), 2 );
+        Vector2.DistanceSquared( target, _bodies[0].Center ) <= MathF.Pow( BoardRadius * (Solar ? DriveUpgrade ? 2.94f : 1.69f : DriveUpgrade ? 2.04f : 1.26f) * Flight( unit.Squad ).Range, 2 );
 
     internal int RouteTicks( FleetSelection unit ) => Math.Max( 0, EffectiveOrder( unit ).Transfer.End - Tick );
     internal NavigationPhase RoutePhase( FleetSelection unit ) {
@@ -86,17 +85,35 @@ internal sealed partial class FleetSimulation {
         return leg.Phase( progress );
     }
 
+    internal Vector2? TrackedRouteTarget( FleetSelection unit, float interpolation ) {
+        var order = EffectiveOrder( unit );
+        if ( Alive( order.Enemy - 1 ) ) return VisualPosition( order.Enemy - 1, interpolation );
+        return order.Body > 1 && order.Transfer.End > Tick
+            ? order.Service is ServiceOrder.Repair or ServiceOrder.Refit
+                ? SitePosition( order.Body - 1, PlanetFacility.Yard, interpolation )
+                : VisualBody( order.Body - 1, interpolation ).Center
+            : null;
+    }
+
     internal bool CopyRoute( FleetSelection unit, Span<Vector2> points, out Vector2 destination, float interpolation = 1 ) {
-        var leg = EffectiveOrder( unit ).Transfer;
+        var order = EffectiveOrder( unit );
+        var leg = order.Transfer;
         destination = leg.To;
-        if ( leg.End <= Tick || points.Length < 2 ) return false;
-        float start = Math.Clamp( (Tick - 1 + interpolation - leg.Start) / (leg.End - leg.Start), 0, 1 );
+        if ( points.Length < 2 ) return false;
         var origin = VisualCenter( unit, interpolation );
-        points[0] = origin;
-        for ( int i = 1; i < points.Length; ++i ) {
-            float sample = (float)i / (points.Length - 1);
-            points[i] = sample <= start ? origin : leg.Position( sample );
+        int target = order.Enemy - 1;
+        if ( Alive( target ) ) {
+            float standOff = IsPlayerSquad( unit.Squad ) && WeaponUpgrade ? 12 : 10;
+            destination = InterceptPoint( origin, VisualPosition( target, interpolation ), _velocities[target], Flight( unit.Squad ).Cruise, standOff );
+            for ( int i = 0; i < points.Length; ++i )
+                points[i] = Vector2.Lerp( origin, destination, (float)i / (points.Length - 1) );
+            return true;
         }
+        if ( leg.End <= Tick ) return false;
+        float start = Math.Clamp( (Tick - 1 + interpolation - leg.Start) / (leg.End - leg.Start), 0, 1 );
+        points[0] = origin;
+        for ( int i = 1; i < points.Length; ++i )
+            points[i] = leg.Position( float.Lerp( start, 1, (float)i / (points.Length - 1) ) );
         return true;
     }
 
@@ -116,27 +133,28 @@ internal sealed partial class FleetSimulation {
         }
     }
 
-    private Order PlotTransfer( FleetSelection unit, int host, bool survey, Vector2? waypoint = null ) {
+    private Order PlotTransfer( FleetSelection unit, int host, bool survey, Vector2? waypoint = null, Vector2? fixedBerth = null ) {
         var from = Center( unit );
         var previous = EffectiveOrder( unit );
-        if ( waypoint is null && previous.Body == host + 1 && !previous.Waypoint && (!unit.IsShip || previous.Detached) ) {
+        if ( waypoint is null && fixedBerth is null && previous.Body == host + 1 && !previous.Waypoint && (!unit.IsShip || previous.Detached) ) {
             previous.Survey = survey;
             return previous;
         }
         int count = unit.IsShip ? 1 : Math.Max( 1, ShipCount( unit.Squad ) );
         var local = (waypoint ?? from) - _bodies[host].Center;
-        float radius = waypoint is null ? OrbitRadius( host, count ) : MathF.Max( local.Length( ), OrbitRadius( 0, count ) );
+        float radius = fixedBerth?.X ?? (waypoint is null ? OrbitRadius( host, count ) : MathF.Max( local.Length( ), OrbitRadius( 0, count ) ));
         float distance = waypoint is null ? MathF.Abs( Vector2.Distance( from, _bodies[host].Center ) - radius ) : Vector2.Distance( from, waypoint.Value );
-        int arrival = Tick + (int)MathF.Ceiling( (2.1f + distance / TransferSpeed) / (float)StepSeconds );
+        var flight = Flight( unit.Squad );
+        int arrival = Tick + (int)MathF.Ceiling( (2.1f + distance / flight.Cruise) / (float)StepSeconds );
         var velocity = unit.IsShip ? _velocities[unit.Ship] : SquadVelocity( unit.Squad );
-        float maxAcceleration = DriveUpgrade && IsPlayerSquad( unit.Squad ) ? 80 : 55;
+        float maxAcceleration = flight.Acceleration;
         var order = new Order {
             Body = (byte)(host + 1), Radius = radius, Survey = survey, Detached = unit.IsShip, Waypoint = waypoint is not null
         };
         for ( int attempt = 0; ; ++attempt ) {
             var endpoint = BodyCenterAt( host, arrival );
             if ( waypoint is null ) local = from - endpoint;
-            order.Phase = MathF.Atan2( local.Y, local.X ) - OrbitRate( radius ) * arrival;
+            order.Phase = fixedBerth?.Y ?? (MathF.Atan2( local.Y, local.X ) - OrbitRate( radius ) * arrival);
             var to = Berth( order, arrival, out _ );
             float duration = (arrival - Tick) * (float)StepSeconds;
             var arrivalVelocity = (Berth( order, arrival + 1, out _ ) - to) / (float)StepSeconds;

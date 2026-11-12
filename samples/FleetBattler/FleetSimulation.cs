@@ -56,6 +56,7 @@ internal sealed partial class FleetSimulation {
     private struct Squad {
         internal int First, Count, Faction, Alive, FleetId;
         internal HullRole Role;
+        internal FleetStance Stance;
         internal ShipDesign Design;
         internal Vector2 Home, Center, Direction, Anchor;
         internal Order Order;
@@ -65,8 +66,9 @@ internal sealed partial class FleetSimulation {
         internal Vector2 Target;
         internal float Phase, Radius;
         internal Transfer Transfer;
-        internal byte Body;
-        internal int Enemy;
+        internal byte Body, Construction;
+        internal ServiceOrder Service;
+        internal int Enemy, ServiceTicks;
         internal bool Detached, Survey, Waypoint, Rejoining;
     }
 
@@ -82,6 +84,7 @@ internal sealed partial class FleetSimulation {
         int capacity = frontier ? FrontierCapacity : ships + WingGoal * WingSize;
         _squads = new Squad[frontier ? FrontierCapacity : 2 * SquadsPerFaction + WingGoal];
         _shipGeneration = new int[capacity];
+        _refitDesigns = frontier ? new ShipDesign[capacity] : [];
         _battle = battle;
         _hull = new byte[capacity];
         _shield = new byte[capacity];
@@ -114,8 +117,13 @@ internal sealed partial class FleetSimulation {
         if ( frontier ) {
             if ( Solar ) OpenFrontier( );
             else {
-                int merchant = AddSquad( 1, (int)FactionId.Merchants, _bodies[2].Center + new Vector2( 30, 5 ), HullRole.Freighter );
+                var contact = system switch { 3 => FactionId.Compact, 4 or 5 => FactionId.Consortium, _ => FactionId.Merchants };
+                int merchant = AddSquad( 1, (int)contact, _bodies[2].Center + new Vector2( 30, 5 ), HullRole.Freighter );
                 Park( merchant, 2 );
+                if ( system >= 3 ) {
+                    var visitor = contact == FactionId.Compact ? FactionId.Consortium : FactionId.Compact;
+                    Park( AddSquad( 1, (int)visitor, _bodies[1].Center + new Vector2( -17, 6 ), HullRole.Freighter ), 1 );
+                }
             }
         }
         else {
@@ -248,7 +256,10 @@ internal sealed partial class FleetSimulation {
     internal bool Orbit( FleetSelection selected, int body ) {
         if ( (uint)body >= (uint)_bodies.Length ) throw new ArgumentOutOfRangeException( nameof(body) );
         if ( Frontier && !CanReach( selected, body ) ) return false;
-        SetOrder( selected, OrbitalOrder( selected, body, survey: false ) );
+        var order = OrbitalOrder( selected, body, survey: false );
+        order.Construction = 0;
+        order.Service = ServiceOrder.None;
+        SetOrder( selected, order );
         return true;
     }
 
@@ -299,15 +310,20 @@ internal sealed partial class FleetSimulation {
             _grid[index] = ship;
         }
 
+        AdvanceAggressiveOrders( );
         ResolveVolley( );
         int cyan = 0, amber = 0;
         for ( int i = 0; i < SquadCount; ++i ) {
             ref var squad = ref _squads[i];
             if ( squad.Alive == 0 ) continue;
+            var flight = Frontier ? Flight( i ) : default;
+            float orbitalTurn = Frontier ? OrbitalTurnStep * flight.TurnRate : OrbitalTurnStep;
+            float localSpeed = Frontier ? 1.3f * flight.Cruise : MaxSpeed;
+            float localResponse = Frontier ? Math.Clamp( Response * flight.Acceleration / 55, 0.04f, 0.24f ) : Response;
             float squadDrive = 0;
             Vector2 squadAim = squad.Direction;
             if ( squad.Order.Enemy != 0 ) {
-                squad.Anchor = Chase( ref squad.Order, squad.Center, squad.Faction, out var facing );
+                squad.Anchor = Chase( ref squad.Order, squad.Center, i, out var facing );
                 squad.Direction = facing;
                 if ( Frontier && squad.Faction == 0 && squad.Order.Enemy == 0 )
                     squad.Order = PlotTransfer( new( i ), 0, false, squad.Center );
@@ -316,7 +332,7 @@ internal sealed partial class FleetSimulation {
                 squad.Anchor = Frontier && squad.Order.Body != 0 ? Navigate( ref squad.Order, out tangent, out squadAim, out squadDrive )
                     : Resolve( ref squad.Order, squad.Alive, out tangent );
                 if ( squad.Order.Body != 0 ) squad.Direction = Frontier
-                    ? TurnToward( squad.Direction, tangent, OrbitalTurnStep ) : tangent;
+                    ? TurnToward( squad.Direction, tangent, orbitalTurn ) : tangent;
             }
             var sum = Vector2.Zero;
             int inZone = 0;
@@ -332,7 +348,7 @@ internal sealed partial class FleetSimulation {
                 float thrust = squadDrive;
                 var aim = squadAim;
                 var goal = solo.Detached
-                    ? solo.Enemy != 0 ? Chase( ref solo, _positions[ship], squad.Faction, out _ )
+                    ? solo.Enemy != 0 ? Chase( ref solo, _positions[ship], i, out _ )
                         : onCourse ? Navigate( ref solo, out _, out aim, out thrust ) : Resolve( ref solo, 1, out _ )
                     : slot;
                 if ( Frontier && squad.Faction == 0 && solo.Detached && solo.Body == 0 && solo.Enemy == 0 )
@@ -340,7 +356,7 @@ internal sealed partial class FleetSimulation {
                 if ( onCourse ) {
                     _velocities[ship] = (goal - _positions[ship]) / (float)StepSeconds;
                     _positions[ship] = goal;
-                    _headings[ship] = TurnToward( _headings[ship], aim, OrbitalTurnStep );
+                    _headings[ship] = TurnToward( _headings[ship], aim, orbitalTurn );
                     float aligned = MathF.Max( 0, Vector2.Dot( _headings[ship], aim ) );
                     _thrust[ship] = float.Lerp( _thrust[ship], thrust * aligned * aligned, 0.18f );
                     sum += goal;
@@ -350,13 +366,13 @@ internal sealed partial class FleetSimulation {
                 var avoid = Separation( ship );
                 var desired = error * ApproachGain + avoid;
                 float speedSquared = desired.LengthSquared( );
-                if ( speedSquared > MaxSpeed * MaxSpeed ) desired *= MaxSpeed / MathF.Sqrt( speedSquared );
+                if ( speedSquared > localSpeed * localSpeed ) desired *= localSpeed / MathF.Sqrt( speedSquared );
                 if ( speedSquared > 0.25f ) {
                     var wish = Vector2.Normalize( desired );
-                    _headings[ship] = TurnToward( _headings[ship], wish, TurnStep );
+                    _headings[ship] = TurnToward( _headings[ship], wish, Frontier ? TurnStep * flight.TurnRate : TurnStep );
                     desired *= 0.22f + 0.78f * MathF.Max( Vector2.Dot( _headings[ship], wish ), 0 );
                 }
-                var velocity = Vector2.Lerp( _velocities[ship], desired, Response );
+                var velocity = Vector2.Lerp( _velocities[ship], desired, localResponse );
                 if ( error.LengthSquared( ) < 0.0001f && velocity.LengthSquared( ) < 0.0001f && avoid == Vector2.Zero ) {
                     _positions[ship] = goal;
                     velocity = Vector2.Zero;
@@ -376,6 +392,7 @@ internal sealed partial class FleetSimulation {
         AdvancePlanets( );
         AdvanceProduction( );
         AdvanceIndustry( );
+        AdvanceShipService( );
         ++Tick;
         AdvanceFrontier( );
     }
@@ -493,12 +510,14 @@ internal sealed partial class FleetSimulation {
         ulong hash = 14695981039346656037;
         if ( Frontier ) {
             Append( (uint)_nextFleetId ); Append( (uint)_raidTick ); Append( (uint)_raidsLaunched ); Append( (uint)_deposits ); Append( _secured ? 1u : 0u );
-            Append( DriveUpgrade ? 1u : 0u ); Append( (uint)Design.Weapon ); Append( Design.Plating ? 1u : 0u );
-            Append( (uint)Energy ); Append( (uint)ShipsLaunched ); Append( (uint)CorvettesLaunched ); Append( (uint)_researchReady ); Append( ActiveResearch is { } topic ? (uint)topic + 1 : 0 );
+            Append( DriveUpgrade ? 1u : 0u ); Append( HabitationUpgrade ? 1u : 0u ); Append( AstrometryUpgrade ? 1u : 0u );
+            AppendDesign( Design );
+            Append( (uint)MerchantAgreement ); Append( (uint)MerchantShipments );
+            Append( (uint)Energy ); Append( (uint)ShipsLaunched ); Append( (uint)CorvettesLaunched ); Append( (uint)_researchWork ); Append( ActiveResearch is { } topic ? (uint)topic + 1 : 0 );
             for ( int body = 1; body < _bodies.Length; ++body ) {
                 Append( (uint)_yardShipReady[body] ); Append( (uint)_yardQueueSizes[body] );
                 foreach ( var order in YardQueue( body ) ) {
-                    Append( (uint)order.Hull ); Append( (uint)order.Design.Weapon ); Append( order.Design.Plating ? 1u : 0u );
+                    Append( (uint)order.Hull ); AppendDesign( order.Design );
                     Append( (uint)order.Cost.Ore ); Append( (uint)order.Cost.Energy ); Append( (uint)order.Duration );
                 }
                 foreach ( var facility in Facilities ) {
@@ -516,28 +535,38 @@ internal sealed partial class FleetSimulation {
         for ( int body = 0; body < _bodies.Length; ++body ) {
             Append( (uint)(_surveyUnits[body]?.Squad ?? -1) ); Append( (uint)(_surveyUnits[body]?.Ship ?? -1) );
             Append( (uint)_survey[body] ); Append( (uint)_mines[body] ); Append( (uint)_labs[body] );
-            if ( Frontier ) { Append( (uint)_yards[body] ); Append( (uint)_depots[body] ); Append( (uint)_solarArrays[body] ); }
+            if ( Frontier )
+                foreach ( var facility in Facilities ) Append( (uint)SiteDeadlines( facility )[body] );
         }
         Append( (uint)Ore ); Append( (uint)WingsBuilt ); Append( (uint)_incomeTicks ); Append( _rivalPatrol ? 1u : 0u ); Append( _battle ? 1u : 0u );
         for ( int i = 0; i < SquadCount; ++i ) {
             ref readonly var squad = ref _squads[i];
             Append( (uint)squad.Count ); Append( (uint)squad.Faction );
-            if ( Frontier ) { Append( (uint)squad.FleetId ); Append( (uint)squad.Role ); Append( (uint)squad.Design.Weapon ); Append( squad.Design.Plating ? 1u : 0u ); }
+            if ( Frontier ) { Append( (uint)squad.FleetId ); Append( (uint)squad.Role ); Append( (uint)squad.Stance ); AppendDesign( squad.Design ); }
             AppendVector( squad.Home ); AppendVector( squad.Center ); AppendVector( squad.Direction ); AppendOrder( squad.Order );
         }
         for ( int i = 0; i < Count; ++i ) {
             AppendVector( _offsets[i] ); AppendVector( _positions[i] );
             AppendVector( _velocities[i] ); AppendVector( _headings[i] ); AppendOrder( _shipOrders[i] );
             Append( _hull[i] ); Append( (uint)_nextShot[i] );
-            if ( Frontier ) { Append( _shield[i] ); Append( _armor[i] ); Append( (uint)_lastHit[i] ); }
+            if ( Frontier ) {
+                Append( _shield[i] ); Append( _armor[i] ); Append( (uint)_lastHit[i] );
+                if ( _shipOrders[i].Service == ServiceOrder.Refit ) AppendDesign( _refitDesigns[i] );
+            }
         }
         return hash;
+
+        void AppendDesign( ShipDesign design ) {
+            Append( (uint)design.Weapon ); Append( design.Plating ? 1u : 0u ); Append( (uint)design.Shielding );
+            Append( (uint)design.Computer ); Append( (uint)design.Reactor ); Append( (uint)design.Drive );
+        }
 
         void AppendOrder( Order order ) {
             AppendVector( order.Target ); Append( BitConverter.SingleToUInt32Bits( order.Phase ) );
             if ( Frontier ) {
                 var leg = order.Transfer;
                 Append( BitConverter.SingleToUInt32Bits( order.Radius ) ); Append( order.Waypoint ? 1u : 0u ); Append( order.Rejoining ? 1u : 0u );
+                Append( order.Construction ); Append( (uint)order.Service ); Append( (uint)order.ServiceTicks );
                 Append( (uint)leg.Start ); Append( (uint)leg.End ); AppendVector( leg.From ); AppendVector( leg.To );
                 AppendVector( leg.Departure ); AppendVector( leg.Arrival ); AppendVector( leg.Bend );
             }

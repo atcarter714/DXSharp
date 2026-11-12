@@ -23,9 +23,10 @@ internal sealed partial class FleetSimulation {
     internal int ActiveCount => CyanCount + AmberCount + MerchantCount;
     internal int CyanCount => _factionCount[0];
     internal int AmberCount => _factionCount[(int)FactionId.Raiders] + _factionCount[(int)FactionId.Rival];
-    internal int MerchantCount => _factionCount[(int)FactionId.Merchants];
+    internal int MerchantCount => _factionCount[(int)FactionId.Merchants] + _factionCount[(int)FactionId.Compact] + _factionCount[(int)FactionId.Consortium];
+    internal int FactionCount( FactionId faction ) => _factionCount[(int)faction];
     internal FactionId FactionOf( int ship ) => (FactionId)SideOf( ship );
-    internal bool IsHostile( int from, int toward ) => Factions.Attitude( (FactionId)from, (FactionId)toward ) == Disposition.Hostile;
+    internal bool IsHostile( int from, int toward ) => Relationship( (FactionId)from, (FactionId)toward ) == Disposition.Hostile;
     internal int ShotsFired { get; private set; }
     internal int ShipsLost { get; private set; }
     internal int LastEngagementTick { get; private set; } = -10_000;
@@ -40,19 +41,28 @@ internal sealed partial class FleetSimulation {
     internal int Shield( int ship ) => _shield[ship];
     internal int Armor( int ship ) => _armor[ship];
 
-    internal void Attack( FleetSelection selection, int target ) {
-        if ( Frontier && Role( selection.Squad ) != HullRole.Corvette ) return;
-        if ( !Alive( target ) || !IsHostile( _squads[selection.Squad].Faction, SideOf( target ) ) ) return;
+    internal bool Attack( FleetSelection selection, int target ) {
+        if ( Frontier && Role( selection.Squad ) != HullRole.Corvette ) return false;
+        if ( !Alive( target ) || !IsHostile( _squads[selection.Squad].Faction, SideOf( target ) ) ) return false;
         SetOrder( selection, new Order {
             Enemy = target + 1, Target = _positions[target], Detached = selection.IsShip
         } );
+        return true;
     }
 
-    private Vector2 Chase( ref Order order, Vector2 from, int faction, out Vector2 facing ) {
+    private Vector2 InterceptPoint( Vector2 from, Vector2 target, Vector2 velocity, float speed, float standOff ) {
+        float seconds = Math.Clamp( (Vector2.Distance( from, target ) - standOff) / speed, 0, 1.5f );
+        var forecast = target + velocity * seconds;
+        var delta = forecast - from;
+        return delta.LengthSquared( ) > standOff * standOff ? forecast - Vector2.Normalize( delta ) * standOff : from;
+    }
+
+    private Vector2 Chase( ref Order order, Vector2 from, int squad, out Vector2 facing ) {
+        int faction = _squads[squad].Faction;
         int target = order.Enemy - 1;
         if ( !Alive( target ) || !IsHostile( faction, SideOf( target ) ) ) {
-            int squad = _squadOfShip[target];
-            var unit = _squads[squad];
+            int targetSquad = _squadOfShip[target];
+            var unit = _squads[targetSquad];
             target = -1;
             for ( int i = unit.First; i < unit.First + unit.Count; ++i ) {
                 if ( !Alive( i ) || !IsHostile( faction, SideOf( i ) ) ) continue;
@@ -70,7 +80,8 @@ internal sealed partial class FleetSimulation {
         float distance = delta.Length( );
         facing = distance > 0.01f ? delta / distance : Vector2.UnitX;
         float standOff = faction == 0 && WeaponUpgrade ? 12 : 10;
-        order.Target = _positions[target] - facing * standOff;
+        order.Target = Frontier ? InterceptPoint( from, _positions[target], _velocities[target], Flight( squad ).Cruise, standOff )
+            : _positions[target] - facing * standOff;
         return order.Target;
     }
 
@@ -120,8 +131,10 @@ internal sealed partial class FleetSimulation {
             var weapon = Frontier ? design.Weapon : WeaponKind.Pulse;
             float range = Frontier ? design.Range + (side == 0 && WeaponUpgrade ? 3 : 0) : side == 0 && WeaponUpgrade ? 19 : 16;
             int preferred = (_shipOrders[ship].Detached ? _shipOrders[ship].Enemy : _squads[_squadOfShip[ship]].Order.Enemy) - 1;
+            bool canAutoFire = !Frontier || _squads[SquadronOf( ship )].Stance != FleetStance.Passive &&
+                EffectiveOrder( new( SquadronOf( ship ), ship ) ).Service == ServiceOrder.None;
             int target = Alive( preferred ) && IsHostile( side, SideOf( preferred ) ) && Vector2.DistanceSquared( _positions[preferred], _positions[ship] ) <= range * range
-                ? preferred : ClosestHostile( ship, side, range );
+                ? preferred : canAutoFire ? ClosestHostile( ship, side, range ) : -1;
             if ( target < 0 ) continue;
             int damage = Frontier ? design.Damage + (side == 0 && WeaponUpgrade ? 4 : 0) : side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
             if ( weapon == WeaponKind.Rail ) _railIncoming[target] = (ushort)Math.Min( 512, _railIncoming[target] + damage );

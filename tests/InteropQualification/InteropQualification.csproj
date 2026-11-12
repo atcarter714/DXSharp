@@ -21,6 +21,10 @@
     <Compile Include="../../samples/FleetBattler/FleetGroups.cs" Link="FleetGroups.cs" />
     <Compile Include="../../samples/FleetBattler/Factions.cs" Link="Factions.cs" />
     <Compile Include="../../samples/FleetBattler/SiteConstruction.cs" Link="SiteConstruction.cs" />
+    <Compile Include="../../samples/FleetBattler/ShipModules.cs" Link="Fleet/ShipModules.cs" />
+    <Compile Include="../../samples/FleetBattler/ShipService.cs" Link="Fleet/ShipService.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetOrdersHud.cs" Link="Fleet/FleetOrdersHud.cs" />
+    <Compile Include="../../samples/FleetBattler/FrontierContracts.cs" Link="Fleet/FrontierContracts.cs" />
     <Compile Include="../../samples/FleetBattler/Industry.cs" Link="Industry.cs" />
     <Compile Include="../../samples/FleetBattler/Frontier.cs" Link="Frontier.cs" />
     <Compile Include="../../samples/FleetBattler/FleetSimulation.cs" Link="FleetSimulation.cs" />

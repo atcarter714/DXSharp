@@ -8,8 +8,8 @@ namespace FleetBattler;
 internal static class BattleDraw {
     internal const uint EffectStride = 32;
     internal const uint ConstantCount = 20;
-    internal const int RouteSegments = 48, RouteCapacity = RouteSegments + 1;
-    internal const int SiteEffectCapacity = (FleetSimulation.FacilityCount + 2) * CelestialSystem.BodyCount;
+    internal const int RouteSegments = 48, RouteCapacity = RouteSegments + 3;
+    internal const int SiteEffectCapacity = (FleetSimulation.FacilityCount + 3) * CelestialSystem.BodyCount;
     private const int OrbitSegments = 72;
     internal const int SolarTrackCapacity = (CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount) * OrbitSegments;
 
@@ -30,22 +30,35 @@ internal static class BattleDraw {
             float2 delta = (end.xy/end.w-start.xy/start.w)*screenScale;
             float2 right = float2(-delta.y,delta.x) / max(0.01,length(delta));
             float2 pos = lerp(start.xy/start.w,end.xy/end.w,uv.x) + right*uv.y*Viewport.z*2.4/screenScale;
-            if (input.style.z == 4) {
+            if (input.style.z == 4 || input.style.z == 8) {
                 uv.x = uv.x*2-1;
-                pos = start.xy/start.w + uv*8*Viewport.z/screenScale;
+                pos = start.xy/start.w + uv*(input.style.z == 8 ? 7 : 8)*Viewport.z/screenScale;
             } else if (input.style.z == 1) {
                 uv.x = uv.x*2-1;
                 pos = start.xy/start.w + uv*(3+input.style.x*18)*Viewport.z/screenScale;
             }
             Output output;
-            output.position = float4(pos,input.style.z == 5 ? 0.9995 : input.style.z == 2 || input.style.z == 4 ? 0.07 : 0.065,1);
+            output.position = float4(pos,input.style.z == 5 ? 0.9995 : input.style.z == 2 || input.style.z >= 7 || input.style.z == 4 ? 0.07 : 0.065,1);
             output.uv = uv;
             output.style = input.style;
             return output;
         }
         float4 PS(Output input) : SV_Target {
+            if (input.style.z == 8) {
+                float2 p = abs(input.uv);
+                clip(0.14-abs(max(p.x,p.y)-0.77));
+                clip(min(p.x,p.y)-0.37);
+                return float4(0.86,0.72,0.36,1);
+            }
+            if (input.style.z == 7) {
+                clip(0.26-abs(input.uv.y));
+                clip(frac(input.uv.x*9)-0.42);
+                return float4(0.56,0.46,0.27,1);
+            }
             if (input.style.z == 6) {
-                float spark = 0.32+0.68*pow(saturate(sin(input.uv.x*21-input.style.x*12)),4);
+                float scan = saturate(input.style.w);
+                float frequency = lerp(21,34,scan);
+                float spark = 0.32+0.68*pow(saturate(sin(input.uv.x*frequency-input.style.x*12)),4);
                 clip((1-abs(input.uv.y))*spark-0.22);
                 return float4(lerp(float3(1,0.55,0.16),float3(0.23,0.86,1),input.style.w)*spark,1);
             }
@@ -169,6 +182,11 @@ internal static class BattleDraw {
             var end = points[i + 1];
             if ( Vector2.DistanceSquared( start, end ) > 1e-6f )
                 output[count++] = new( new( start.X, start.Y, end.X, end.Y ), new( 0, 0, 2, 0 ) );
+        }
+        if ( fleet.TrackedRouteTarget( unit, interpolation ) is { } target ) {
+            if ( Vector2.DistanceSquared( destination, target ) > 0.05f )
+                output[count++] = new( new( destination.X, destination.Y, target.X, target.Y ), new( 0, 0, 7, 0 ) );
+            output[count++] = new( new( target.X, target.Y, target.X, target.Y ), new( 0, 0, 8, 0 ) );
         }
         output[count++] = new( new( destination.X, destination.Y, destination.X, destination.Y ), new( 0, 0, 4, 0 ) );
         return count;

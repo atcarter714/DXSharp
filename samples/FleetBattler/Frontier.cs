@@ -4,15 +4,7 @@ namespace FleetBattler;
 
 internal enum HullRole : byte { Corvette, Scout, Miner, Freighter }
 internal enum WeaponKind : byte { None, Pulse, Rail }
-internal enum FrontierEvent : byte { Arrival, Prospect, Distress, Raid, Counterattack, Secured }
-internal readonly record struct ShipDesign( WeaponKind Weapon, bool Plating ) {
-    internal int Shield => Plating ? 12 : 34;
-    internal int Armor => Plating ? 32 : 10;
-    internal int Range => Weapon == WeaponKind.Rail ? 21 : 16;
-    internal int Reload => Weapon == WeaponKind.Rail ? 64 : 38;
-    internal int Damage => Weapon == WeaponKind.Rail ? 22 : 13;
-}
-
+internal enum FrontierEvent : byte { Arrival, Prospect, Distress, Raid, Counterattack, Secured, MerchantOffer }
 internal sealed partial class FleetSimulation {
     internal const int Homeworld = 1;
     // A one-survivor wing can retain three storage slots while consuming one naval slot.
@@ -44,7 +36,7 @@ internal sealed partial class FleetSimulation {
     internal void SetPlating( bool plating ) => Design = Design with { Plating = plating };
 
     private void OpenFrontier( ) {
-        _survey[Homeworld] = SurveyDuration;
+        _survey[Homeworld] = SurveyRequired;
         Ore = 50;
         Energy = 25;
         Vector2 home = _bodies[Homeworld].Center + new Vector2( -OrbitRadius( Homeworld, 1 ), 0 );
@@ -57,7 +49,10 @@ internal sealed partial class FleetSimulation {
     private void RevealProspect( int body ) {
         ++_surveyedProspects;
         _deposits |= 1 << body;
-        if ( _surveyedProspects == 1 ) SendDispatch( FrontierEvent.Prospect );
+        if ( _surveyedProspects == 1 ) {
+            SendDispatch( FrontierEvent.Prospect );
+            SendDispatch( FrontierEvent.MerchantOffer );
+        }
     }
 
     private void AdvanceFrontier( ) {
@@ -98,13 +93,13 @@ internal sealed partial class FleetSimulation {
 
     private int FirstMineBody( ) {
         for ( int i = 1; i < _mines.Length; ++i )
-            if ( _mines[i] > 0 && _mines[i] <= Tick ) return i;
+            if ( ExtractionRemaining( i ) == 0 ) return i;
         return 0;
     }
 
     private Vector2 FirstMinePosition( ) {
         int body = FirstMineBody( );
-        return body == 0 ? _bodies[Homeworld].Center : SitePositionAt( body, PlanetFacility.Mine, Tick, _bodies[body].Center );
+        return body == 0 ? _bodies[Homeworld].Center : SitePositionAt( body, FitsBody( body, PlanetFacility.Mine ) ? PlanetFacility.Mine : PlanetFacility.Skimmer, Tick, _bodies[body].Center );
     }
 
     private void LaunchRaid( int count, FrontierEvent incident ) {

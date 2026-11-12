@@ -31,7 +31,7 @@ internal sealed partial class FleetHud {
             var p = new Vector2( bodies[body].X, bodies[body].Y + bodies[body].Z ) / _scale + new Vector2( 0, 22 );
             if ( p.X >= 20 && p.X < layout.Width - 20 && p.Y >= 55 && p.Y < layout.Bottom - 12 &&
                  !layout.Blocks( p, fleet, planet ) )
-                Progress( p + new Vector2( -16, 0 ), 32, (float)status.Survey / FleetSimulation.SurveyDuration, SpaceDraw.Cyan );
+                Progress( p + new Vector2( -16, 0 ), 32, status.SurveyProgress, SpaceDraw.Cyan );
         }
         if ( hover.Kind == HoverKind.None ) return;
 
@@ -44,7 +44,7 @@ internal sealed partial class FleetHud {
                 int ship = hover.Index;
                 var role = fleet.Role( fleet.SquadronOf( ship ) );
                 var faction = fleet.FactionOf( ship );
-                var attitude = Factions.Attitude( FactionId.Sol, faction );
+                var attitude = fleet.Relationship( FactionId.Sol, faction );
                 tint = attitude == Disposition.Allied ? SpaceDraw.Cyan : attitude == Disposition.Hostile ? SpaceDraw.Amber : SpaceDraw.Neutral;
                 title.TryWrite( $"{Factions.Name( faction )} / {role.ToString().ToUpperInvariant()}", out titleLength );
                 detail.TryWrite( $"{attitude.ToString().ToUpperInvariant()} / HULL {fleet.Hull( ship )}  SHIELD {fleet.Shield( ship )}  ARMOR {fleet.Armor( ship )}", out detailLength );
@@ -67,7 +67,7 @@ internal sealed partial class FleetHud {
                 if ( body == 0 ) detailLength = CopyStatus( "SYSTEM PRIMARY", detail );
                 else if ( fleet.RequiresDrive( body ) && !fleet.DriveUpgrade ) detailLength = CopyStatus( "REQUIRES LONG BURN DRIVE", detail );
                 else if ( status.SurveyUnit is not null )
-                    detail.TryWrite( $"SURVEY {status.Survey * 100 / FleetSimulation.SurveyDuration} PCT", out detailLength );
+                    detail.TryWrite( $"SURVEY {(int)(status.SurveyProgress * 100)} PCT", out detailLength );
                 else if ( fleet.HasDeposit( body ) )
                     detail.TryWrite( $"DEPOSIT  {fleet.DepositYield( body )} ORE PER CYCLE", out detailLength );
                 else detailLength = CopyStatus( status.Surveyed ? "SURVEYED / CLICK TO INSPECT" : "UNSURVEYED / SELECT A SCOUT", detail );

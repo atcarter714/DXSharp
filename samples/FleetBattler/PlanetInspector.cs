@@ -5,7 +5,7 @@ using StbImageSharp;
 namespace FleetBattler;
 
 internal sealed partial class FleetHud {
-    private const float InspectorTop = 147, SiteTop = 65, SiteHeight = 38;
+    private const float InspectorTop = 147, SiteTop = 92;
     private enum Tile : uint { Scout, Miner, Corvette, Yard, Mine, Lab }
 
     internal static SampledTexture2D LoadAtlas( GraphicsDevice device, GraphicsCommandList commands ) {
@@ -31,7 +31,7 @@ internal sealed partial class FleetHud {
     };
 
     private void FlightCard( Layout layout, FleetSimulation fleet, FleetSelection unit, int speed ) {
-        float top = layout.FleetControls( fleet ) + 26;
+        float top = layout.FleetControls( fleet ) + 82;
         if ( top + 80 >= layout.Bottom ) return;
         PanelAt( 14, top, 157, 74, SpaceDraw.Cyan );
         Text( "FLIGHT PLAN", 23, top + 8, 1.25f, White );
@@ -39,7 +39,12 @@ internal sealed partial class FleetHud {
         var phase = fleet.RoutePhase( unit );
         Text( plan.Body >= 0 ? fleet.BodyName( plan.Body ) :
             phase == NavigationPhase.Intercept ? "HOSTILE TARGET" : "STELLAR ORBIT", 23, top + 25, 1.05f, Label );
-        Text( PhaseName( phase ), 23, top + 41, 1, SpaceDraw.Cyan );
+        string status = fleet.Service( unit ) switch {
+            ServiceOrder.Repair => phase == NavigationPhase.Parked ? "AT YARD / REPAIR" : "TRANSFER / REPAIR",
+            ServiceOrder.Refit => phase == NavigationPhase.Parked ? "AT YARD / REFIT" : "TRANSFER / REFIT",
+            ServiceOrder.Retreat => "RETREATING", _ => PhaseName( phase )
+        };
+        Text( status, 23, top + 41, 1, SpaceDraw.Cyan );
         int remaining = fleet.RouteTicks( unit );
         if ( remaining == 0 ) return;
         Span<char> text = stackalloc char[24];
@@ -47,75 +52,106 @@ internal sealed partial class FleetHud {
         Text( text[..length], 23, top + 56, 1, Label );
     }
 
-    private void InspectPlanet( Layout layout, FleetSimulation fleet, int body, FleetSelection? unit, int speed ) {
+    private void InspectPlanet( Layout layout, FleetSimulation fleet, int body, FleetSelection? unit, int speed, bool catalog ) {
         float x = layout.InspectorX, y = InspectorTop, width = layout.InspectorWidth;
-        PanelAt( x, y, width, body == 0 ? 60 : layout.InspectorHeight, SpaceDraw.Cyan );
+        PanelAt( x, y, width, body == 0 ? 60 : layout.InspectorHeight, catalog ? EnergyTint : SpaceDraw.Cyan );
         Text( fleet.BodyName( body ), x + 10, y + 8, 1.6f, White );
         Button( x + width - 29, y + 6, 21, "X", true );
-        var kind = fleet.Solar ? SolarCatalog.Get( body ).Kind : body switch { 0 => "PRIMARY STAR", 1 => "HOMEWORLD", 2 => "GAS GIANT", 3 => "INNER MOON", _ => "OUTER BELT" };
-        var status = fleet.Planet( body );
+        var kind = fleet.Solar ? SolarCatalog.Get( body ).Kind : body switch {
+            0 => "PRIMARY STAR", 1 => "ROCKY PLANET", 2 => "GAS GIANT", 3 => "INNER MOON", _ => "OUTER BELT"
+        };
         Text( kind, x + 10, y + 28, 1.03f, Label );
         if ( body == 0 ) return;
-        Span<char> line = stackalloc char[40];
+
+        var status = fleet.Planet( body );
+        Span<char> text = stackalloc char[58];
         int length;
         if ( status.Surveyed )
-            line.TryWrite( $"SURVEYED / {(fleet.HasDeposit( body ) ? fleet.DepositYield( body ) : 0)} ORE POTENTIAL", out length );
-        else if ( fleet.RequiresDrive( body ) && !fleet.DriveUpgrade )
-            length = CopyStatus( "OUT OF RANGE / RESEARCH DRIVE", line );
-        else if ( status.SurveyUnit is { } scout )
-            line.TryWrite( $"SCOUT {scout.Squad + 1:D2} / {status.Survey * 100 / FleetSimulation.SurveyDuration} PCT", out length );
-        else length = CopyStatus( "UNSURVEYED / ASSIGN SCOUT", line );
-        Text( line[..length], x + 10, y + 45, 1.02f, status.Surveyed ? SpaceDraw.Cyan : Label );
+            text.TryWrite( $"SURVEYED / {fleet.DepositYield( body )} ORE POTENTIAL", out length );
+        else if ( status.SurveyUnit is { } scout ) {
+            text.TryWrite( $"SCOUT {scout.Squad + 1:D2} / {(fleet.SurveyWorking( body ) ? "SCANNING" : "EN ROUTE")} {(int)(status.SurveyProgress * 100)} PCT", out length );
+            Progress( new( x + 10, y + 56 ), width - 20, status.SurveyProgress, ScienceTint );
+        } else length = CopyStatus( fleet.RequiresDrive( body ) && !fleet.DriveUpgrade ? "OUT OF RANGE / RESEARCH DRIVE" : "UNSURVEYED / ASSIGN SCOUT", text );
+        Text( text[..length], x + 10, y + 45, 1, status.Surveyed ? SpaceDraw.Cyan : Label );
         if ( status.SurveyUnit is not null || !status.Surveyed && unit is { } selected && fleet.CanSurvey( selected, body ) )
             Button( x + width - 66, y + 24, 57, status.SurveyUnit is null ? "SCAN" : "CANCEL", true );
 
-        int index = 0;
-        Span<char> details = stackalloc char[48];
+        var slots = fleet.Slots( body );
+        int surface = fleet.OccupiedSlots( body, SiteLayer.Surface ), orbital = fleet.OccupiedSlots( body, SiteLayer.Orbit );
+        text.TryWrite( $"S {surface}/{slots.Surface}  O {orbital}/{slots.Orbit}", out length );
+        Text( text[..length], x + 10, y + 68, 1, Label );
+        IconButton( x + width - 66, y + 61, 57, catalog ? HudIcon.Orders : HudIcon.Build, catalog ? "SITES" : "BUILD", true );
+        if ( fleet.CanOpenYard( body ) && !catalog )
+            IconButton( x + width - 127, y + 61, 57, HudIcon.Yard, "YARD", true );
+        Text( catalog ? "CONSTRUCTION CATALOG" : "SITE INVENTORY", x + 10, y + 84, 1, catalog ? EnergyTint : SpaceDraw.Cyan );
+
+        int row = 0;
         foreach ( var facility in FleetSimulation.Facilities ) {
-            float top = y + SiteTop + index++ * layout.InspectorRow;
-            int remaining = fleet.SiteRemaining( body, facility );
+            if ( !ShowSite( fleet, body, facility, catalog ) ) continue;
             var plan = FleetSimulation.Facility( facility );
-            bool online = remaining == 0, project = remaining > 0;
-            bool dock = facility == PlanetFacility.Yard && fleet.CanOpenYard( body );
-            string? block = remaining < 0 ? fleet.ConstructionBlock( body, facility, unit ) : null;
-            bool available = remaining < 0 && block is null;
-            var tile = facility switch { PlanetFacility.Mine => Tile.Mine, PlanetFacility.Lab => Tile.Lab, _ => Tile.Yard };
-            Rect( x + 8, top, width - 16, layout.InspectorRow - 3, available || online ? Active : Well );
-            Art( tile, x + 9, top + 1, 42, layout.InspectorRow - 5, available || remaining >= 0 );
-            Text( plan.Name, x + 57, top + 4, 1, White );
-            int chars;
+            int remaining = fleet.SiteRemaining( body, facility );
+            float top = y + SiteTop + 5 + row++ * layout.InspectorRow;
+            string? block = catalog ? fleet.ConstructionBlock( body, facility, unit ) : null;
+            bool available = catalog && block is null, online = remaining == 0, project = remaining > 0;
+            var tile = facility switch {
+                PlanetFacility.Mine or PlanetFacility.Skimmer => Tile.Mine,
+                PlanetFacility.Lab or PlanetFacility.Observatory => Tile.Lab, _ => Tile.Yard
+            };
+            Rect( x + 8, top, width - 16, layout.InspectorRow - 2, available || online ? Active : Well );
+            Art( tile, x + 9, top + 1, 32, layout.InspectorRow - 4, available || remaining >= 0 );
+            Text( plan.Name, x + 45, top + 3, 1, White );
             if ( project ) {
                 var worker = fleet.SiteWorker( body, facility );
-                int id = worker is { IsShip: true } unitWorker ? unitWorker.Ship + 1 : (worker?.Squad ?? -1) + 1;
-                if ( fleet.SiteEnRoute( body, facility ) ) details.TryWrite( $"EN ROUTE / UNIT {id:D2}", out chars );
-                else details.TryWrite( $"UNIT {id:D2} / {Seconds( remaining, speed )} SEC", out chars );
-                Button( x + width - 30, top + 3, 20, "X", true );
+                int id = worker is { IsShip: true } assigned ? assigned.Ship + 1 : (worker?.Squad ?? -1) + 1;
+                if ( fleet.SiteEnRoute( body, facility ) ) text.TryWrite( $"EN ROUTE / UNIT {id:D2}", out length );
+                else text.TryWrite( $"UNIT {id:D2} / {Seconds( remaining, speed )} SEC", out length );
+                Rect( x + width - 28, top + 3, 18, layout.InspectorRow - 7, Well );
+                Text( "X", x + width - 23, top + 7, 1, SpaceDraw.Amber );
+                if ( !fleet.SiteEnRoute( body, facility ) )
+                    Progress( new( x + 45, top + layout.InspectorRow - 6 ), width - 77, 1f - (float)remaining / plan.Duration, SpaceDraw.Amber );
             } else if ( online ) {
-                if ( facility == PlanetFacility.Yard )
-                    details.TryWrite( $"+{FleetSimulation.YardNavalCapacity} NAVAL / {fleet.YardQueue( body ).Length} QUEUED", out chars );
-                else {
-                    var (amount, resource) = facility switch {
-                        PlanetFacility.Mine => (fleet.DepositYield( body ), "ORE"),
-                        PlanetFacility.Lab => (6, "SCI"),
-                        PlanetFacility.Solar => (FleetSimulation.SolarOutput, "ENERGY"),
-                        _ => (FleetSimulation.DepotNavalCapacity, "NAVAL")
-                    };
-                    details.TryWrite( $"+{amount} {resource}{(facility == PlanetFacility.Depot ? "" : " PER CYCLE")}", out chars );
-                }
-            } else {
-                if ( block is null ) chars = CopyStatus( "BUILD", details );
-                else chars = CopyStatus( block, details );
+                var (amount, kindText) = facility switch {
+                    PlanetFacility.Mine or PlanetFacility.Skimmer => (fleet.DepositYield( body ), "ORE / CYCLE"),
+                    PlanetFacility.Lab => (6, "SCI / CYCLE"), PlanetFacility.Observatory => (10, "SCI / CYCLE"),
+                    PlanetFacility.Solar => (FleetSimulation.SolarOutput, "ENERGY / CYCLE"),
+                    PlanetFacility.Yard => (FleetSimulation.YardNavalCapacity, "NAVAL / REPAIR / REFIT"),
+                    PlanetFacility.Habitat => (FleetSimulation.HabitatNavalCapacity, "NAVAL / HABITATION"),
+                    _ => (FleetSimulation.DepotNavalCapacity, "NAVAL")
+                };
+                text.TryWrite( $"+{amount} {kindText}", out length );
+            } else if ( block is not null ) length = CopyStatus( block, text );
+            else {
+                Text( plan.Layer == SiteLayer.Surface ? "SURFACE" : "ORBIT", x + 45, top + 13, 1, Label );
+                Cost( plan.Cost, x + 102, top + 12 );
+                Icon( HudIcon.Build, x + width - 24, top + 7, 11, EnergyTint );
+                continue;
             }
-            int maxChars = (int)((width - (project || dock ? 117 : 67)) / TextWidth( 1, 1 ));
-            Text( details[..Math.Min( chars, maxChars )], x + 57, top + 17, 1, available || online ? SpaceDraw.Cyan : Label );
-            if ( available ) Cost( plan.Cost, x + 93, top + 16 );
-            if ( dock && !project ) Button( x + width - 50, top + 5, 42, "OPEN", true );
-            if ( project && !fleet.SiteEnRoute( body, facility ) )
-                Progress( new( x + 57, top + layout.InspectorRow - 8 ), width - 94, 1f - (float)remaining / plan.Duration, SpaceDraw.Amber );
+            int maxChars = Math.Max( 0, (int)((width - (project ? 76 : 53)) / TextWidth( 1, 1 )) );
+            Text( text[..Math.Min( length, maxChars )], x + 45, top + 13, 1, online ? SpaceDraw.Cyan : Label );
+        }
+        if ( row == 0 ) Text( catalog ? "ALL COMPATIBLE TYPES ASSIGNED" : "NO SITES BUILT OR ASSIGNED", x + 10, y + SiteTop + 19, 1, Label );
+        if ( !catalog ) {
+            float footer = y + layout.InspectorHeight - 15;
+            SiteSlotStrip( "SURFACE", x + 10, footer, slots.Surface, surface );
+            SiteSlotStrip( "ORBIT", x + 111, footer, slots.Orbit, orbital );
         }
     }
 
-    private static HudHit HitInspector( Layout layout, Vector2 point, int body, FleetSimulation fleet ) {
+    private void SiteSlotStrip( string label, float x, float y, int slots, int occupied ) {
+        Text( label, x, y + 2, 1, Label );
+        float left = x + TextWidth( label.Length, 1 ) + 6;
+        if ( slots == 0 ) { Text( "0", left, y + 2, 1, Disabled ); return; }
+        for ( int slot = 0; slot < slots; ++slot ) {
+            float cell = left + 12 * slot;
+            Rect( cell, y, 9, 9, slot < occupied ? SpaceDraw.Cyan : Label );
+            if ( slot >= occupied ) Rect( cell + 1, y + 1, 7, 7, Well, 3 );
+        }
+    }
+
+    private static bool ShowSite( FleetSimulation fleet, int body, PlanetFacility facility, bool catalog ) =>
+        catalog ? fleet.FitsBody( body, facility ) && fleet.SiteRemaining( body, facility ) < 0 : fleet.SiteRemaining( body, facility ) >= 0;
+
+    private static HudHit HitInspector( Layout layout, Vector2 point, int body, FleetSimulation fleet, bool catalog ) {
         float x = layout.InspectorX, width = layout.InspectorWidth;
         if ( !Contains( point, x, InspectorTop, width, body == 0 ? 60 : layout.InspectorHeight ) ) return default;
         if ( Contains( point, x + width - 29, InspectorTop + 6, 21, 21 ) ) return Planet( PlanetAction.Close );
@@ -123,17 +159,21 @@ internal sealed partial class FleetHud {
         var status = fleet.Planet( body );
         if ( !status.Surveyed && Contains( point, x + width - 66, InspectorTop + 24, 57, 21 ) )
             return Planet( status.SurveyUnit is null ? PlanetAction.Survey : PlanetAction.CancelSurvey );
-        float row = point.Y - InspectorTop - SiteTop;
-        if ( row < 0 || row >= FleetSimulation.FacilityCount * layout.InspectorRow ||
-             row % layout.InspectorRow >= layout.InspectorRow - 3 || point.X < x + 8 || point.X >= x + width - 8 )
-            return new( HudAction.Panel );
-        var facility = FleetSimulation.Facilities[(int)(row / layout.InspectorRow)];
-        int remaining = fleet.SiteRemaining( body, facility );
-        if ( remaining > 0 && point.X >= x + width - 30 ) return new( HudAction.CancelSite, (int)facility );
-        if ( facility == PlanetFacility.Yard && fleet.CanOpenYard( body ) && remaining <= 0 && (remaining == 0 || point.X >= x + width - 50) )
+        if ( Contains( point, x + width - 66, InspectorTop + 61, 57, 21 ) ) return new( HudAction.ToggleBuildCatalog );
+        if ( !catalog && fleet.CanOpenYard( body ) && Contains( point, x + width - 127, InspectorTop + 61, 57, 21 ) )
             return new( HudAction.OpenYard, body );
-        if ( remaining >= 0 ) return new( HudAction.Panel );
-        return new( HudAction.BuildSite, (int)facility );
+        int row = 0;
+        foreach ( var facility in FleetSimulation.Facilities ) {
+            if ( !ShowSite( fleet, body, facility, catalog ) ) continue;
+            float top = InspectorTop + SiteTop + 5 + row++ * layout.InspectorRow;
+            if ( !Contains( point, x + 8, top, width - 16, layout.InspectorRow - 2 ) ) continue;
+            if ( catalog ) return new( HudAction.BuildSite, (int)facility );
+            if ( fleet.SiteRemaining( body, facility ) > 0 && point.X >= x + width - 28 )
+                return new( HudAction.CancelSite, (int)facility );
+            if ( facility == PlanetFacility.Yard && fleet.YardAt( body ) == 0 ) return new( HudAction.OpenYard, body );
+            break;
+        }
+        return new( HudAction.Panel );
 
         static HudHit Planet( PlanetAction action ) => new( HudAction.Planet, (int)action );
     }
@@ -141,8 +181,8 @@ internal sealed partial class FleetHud {
     private readonly partial record struct Layout {
         internal float InspectorWidth => Width < 590 ? 227 : 282;
         internal float InspectorX => Width - InspectorWidth - 14;
-        internal float InspectorHeight => MathF.Min( 269, Bottom - InspectorTop - 6 );
-        internal float InspectorRow => MathF.Min( 38, (InspectorHeight - SiteTop - 7) / FleetSimulation.FacilityCount );
+        internal float InspectorHeight => MathF.Min( 302, Bottom - InspectorTop - 6 );
+        internal float InspectorRow => MathF.Min( 30, (InspectorHeight - SiteTop - 22) / 7 );
         internal float FleetControls( FleetSimulation fleet ) => 70 + OutlinerHeight( fleet );
     }
 }
