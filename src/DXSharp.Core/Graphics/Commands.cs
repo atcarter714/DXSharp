@@ -148,11 +148,17 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
     }
 
     /// <summary>Copies inline values to b0 for a graphics pipeline with a graphics constants root signature.</summary>
-    public void SetGraphicsConstants( ReadOnlySpan<uint> values ) {
+    public void SetGraphicsConstants( ReadOnlySpan<uint> values ) => SetGraphicsConstants( values, 0 );
+
+    /// <summary>Copies inline values to a DWORD offset within the b0 root constant parameter.</summary>
+    /// <param name="values">The constants to copy.</param>
+    /// <param name="destinationOffset">The first DWORD to write. The current signature must declare the complete range.</param>
+    public void SetGraphicsConstants( ReadOnlySpan<uint> values, uint destinationOffset ) {
         Recording( );
-        if ( values.Length is 0 or > 64 ) throw new ArgumentOutOfRangeException( nameof(values) );
+        if ( destinationOffset >= 64 ) throw new ArgumentOutOfRangeException( nameof(destinationOffset) );
+        if ( values.Length == 0 || (uint)values.Length > 64 - destinationOffset ) throw new ArgumentOutOfRangeException( nameof(values) );
         fixed ( uint* pointer = values )
-            Native.Interface.SetGraphicsRoot32BitConstants( 0, (uint)values.Length, pointer, 0 );
+            Native.Interface.SetGraphicsRoot32BitConstants( 0, (uint)values.Length, pointer, destinationOffset );
     }
 
     /// <summary>Binds a structured or raw buffer to t0 for a graphics buffer root signature.</summary>

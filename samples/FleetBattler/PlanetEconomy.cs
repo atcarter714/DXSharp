@@ -15,6 +15,7 @@ internal sealed partial class FleetSimulation {
     internal const int StandardWingDuration = 480, ImprovedWingDuration = 300, ImprovedWingCost = 42;
     private readonly FleetSelection?[] _surveyUnits = new FleetSelection?[CelestialSystem.BodyCount];
     private readonly int[] _queuedWingTicks = new int[WingGoal];
+    private readonly ShipDesign[] _queuedDesigns = new ShipDesign[WingGoal];
     private int _yardBody = -1, _yardReadyTick, _wingFinishTick;
     private readonly int[] _survey = new int[CelestialSystem.BodyCount];
     private readonly int[] _mines = new int[CelestialSystem.BodyCount];
@@ -34,9 +35,10 @@ internal sealed partial class FleetSimulation {
     }
     internal int QueuedWings { get; private set; }
     internal int WingRemaining => Remaining( _wingFinishTick );
-    internal int CurrentWingCost => IndustryUpgrade ? ImprovedWingCost : WingCost;
-    internal int CurrentWingDuration => IndustryUpgrade ? ImprovedWingDuration : StandardWingDuration;
+    internal int CurrentWingCost => (IndustryUpgrade ? ImprovedWingCost : WingCost) + (Frontier ? Design.Surcharge : 0);
+    internal int CurrentWingDuration => (IndustryUpgrade ? ImprovedWingDuration : StandardWingDuration) + (Frontier ? Design.BuildTicks : 0);
     internal int ActiveWingDuration => QueuedWings == 0 ? 0 : _queuedWingTicks[0];
+    internal ShipDesign ActiveWingDesign => _queuedDesigns[0];
     internal bool CanBuildWing => YardRemaining == 0 && Ore >= CurrentWingCost && WingsBuilt + QueuedWings < WingGoal && !Lost;
     internal int CompletedSurveys { get; private set; }
     internal int LastSurveyBody { get; private set; }
@@ -51,7 +53,7 @@ internal sealed partial class FleetSimulation {
 
     internal bool CanSurvey( FleetSelection unit, int body ) =>
         body > 0 && body < _bodies.Length && _survey[body] < SurveyDuration && _surveyUnits[body] is null &&
-        (uint)unit.Squad < (uint)SquadCount && IsPlayerSquad( unit.Squad ) &&
+        (uint)unit.Squad < (uint)SquadCount && IsPlayerSquad( unit.Squad ) && (!Frontier || IsScoutSquad( unit.Squad )) &&
         (unit.IsShip ? Alive( unit.Ship ) && SquadronOf( unit.Ship ) == unit.Squad : ShipCount( unit.Squad ) > 0);
 
     internal bool BeginSurvey( FleetSelection unit, int body ) {
@@ -103,6 +105,7 @@ internal sealed partial class FleetSimulation {
     internal bool QueueWing( ) {
         if ( !CanBuildWing ) return false;
         Ore -= CurrentWingCost;
+        _queuedDesigns[QueuedWings] = Design;
         _queuedWingTicks[QueuedWings++] = CurrentWingDuration;
         if ( QueuedWings == 1 ) _wingFinishTick = Tick + _queuedWingTicks[0];
         return true;
@@ -117,18 +120,20 @@ internal sealed partial class FleetSimulation {
         }
         if ( Tick + 1 < _wingFinishTick ) return;
         var arrival = YardPosition( Tick + 1 ) + new Vector2( 4 + WingsBuilt * 4, 0 );
-        AddSquad( WingSize, 0, arrival );
+        AddSquad( Frontier ? FrontierWingSize : WingSize, 0, arrival, design: _queuedDesigns[0] );
         ++WingsBuilt;
         --QueuedWings;
         _queuedWingTicks.AsSpan( 1, QueuedWings ).CopyTo( _queuedWingTicks );
+        _queuedDesigns.AsSpan( 1, QueuedWings ).CopyTo( _queuedDesigns );
         _wingFinishTick = QueuedWings == 0 ? 0 : Tick + 1 + _queuedWingTicks[0];
     }
 
-    internal bool BuildFacility( int body, PlanetFacility facility ) {
+    internal bool BuildFacility( int body, PlanetFacility facility, FleetSelection? worker = null ) {
         if ( body <= 0 || body >= CelestialSystem.BodyCount || !Planet( body ).Surveyed || Lost ) return false;
         var projects = facility == PlanetFacility.Mine ? _mines : _labs;
         int cost = facility == PlanetFacility.Mine ? MineCost : LabCost;
         if ( projects[body] != 0 || Ore < cost ) return false;
+        if ( Frontier && facility == PlanetFacility.Mine && !AssignMine( body, worker ) ) return false;
         Ore -= cost;
         projects[body] = Tick + FacilityDuration;
         return true;
@@ -144,11 +149,13 @@ internal sealed partial class FleetSimulation {
     private void AdvancePlanets( ) {
         RefreshSurveys( );
         for ( int body = 1; body < _bodies.Length; ++body ) {
+            if ( Frontier ) AdvanceMine( body );
             if ( _surveyUnits[body] is { } unit && InSurveyRange( unit, body ) ) {
                 int rate = IsScoutSquad( unit.Squad ) ? 2 : 1;
                 _survey[body] = Math.Min( SurveyDuration, _survey[body] + rate );
                 if ( _survey[body] == SurveyDuration ) {
-                    Ore = Math.Min( 999, Ore + 40 );
+                    Ore = Math.Min( 999, Ore + (Frontier ? 15 : 40) );
+                    if ( Frontier ) RevealProspect( body );
                     ++CompletedSurveys;
                     LastSurveyBody = body;
                     LastSurveyUnit = unit;
@@ -156,7 +163,7 @@ internal sealed partial class FleetSimulation {
                 }
             }
             if ( (Tick + 1) % IncomeInterval != 0 ) continue;
-            if ( _mines[body] > 0 && _mines[body] <= Tick + 1 ) Ore = Math.Min( 999, Ore + 8 );
+            if ( _mines[body] > 0 && _mines[body] <= Tick + 1 ) Ore = Math.Min( 999, Ore + (Frontier ? DepositYield( body ) : 8) );
             if ( _labs[body] > 0 && _labs[body] <= Tick + 1 ) Science = Math.Min( 999, Science + 6 );
         }
     }

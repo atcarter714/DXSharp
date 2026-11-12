@@ -55,7 +55,8 @@ internal static class AssetQualification {
         document["materials"]![0]!["alphaMode"] = "BLEND";
         RequireUnsupported( document, "opaque" );
         VerifyTexturedAssets( );
-        Console.WriteLine( "PASS: static glTF and GLB geometry, transforms, sRGB base color textures, and unsupported resources validated." );
+        VerifySidecarsAndMaterials( );
+        Console.WriteLine( "PASS: static glTF and GLB geometry, transforms, sidecars, material factors, sRGB textures, and unsupported resources validated." );
     }
 
     private static void VerifyTexturedAssets( ) {
@@ -86,6 +87,51 @@ internal static class AssetQualification {
         Require( ReferenceEquals( shared.Primitives[0].BaseColorTexture, flat.BaseColorTexture ) &&
             flat.TexCoords.Length == flat.Indices.Length && flat.TexCoords[2] ==
                 shared.Primitives[0].TexCoords[(int)shared.Primitives[0].Indices[2]], "shared image and UVs survive flat normal expansion" );
+    }
+
+    private static void VerifySidecarsAndMaterials( ) {
+        string input = Path.Combine( AppContext.BaseDirectory, "Models", "SurveyScout.gltf" );
+        var document = JsonNode.Parse( File.ReadAllText( input ) )!;
+        string directory = Directory.CreateTempSubdirectory( "dxsharp-model-" ).FullName;
+        try {
+            string path = Path.Combine( directory, "scout.gltf" );
+            var buffer = document["buffers"]![0]!;
+            var image = document["images"]![0]!;
+            string meshDir = Directory.CreateDirectory( Path.Combine( directory, "mesh" ) ).FullName;
+            File.WriteAllBytes( Path.Combine( meshDir, "scout data.bin" ), Decode( buffer["uri"]! ) );
+            File.WriteAllBytes( Path.Combine( directory, "base.png" ), Decode( image["uri"]! ) );
+            buffer["uri"] = "mesh/scout%20data.bin";
+            image["uri"] = "base.png";
+            var material = document["materials"]![0]!;
+            material["pbrMetallicRoughness"]!["metallicFactor"] = 0.37f;
+            material["pbrMetallicRoughness"]!["roughnessFactor"] = 0.63f;
+            material["emissiveFactor"] = new JsonArray( 0.2f, 0.4f, 0.6f );
+            File.WriteAllText( path, document.ToJsonString( ) );
+
+            var embedded = GltfModel.Load( input ).Primitives[0];
+            var external = GltfModel.Load( path ).Primitives[0];
+            Require( external.Vertices.SequenceEqual( embedded.Vertices ) &&
+                external.BaseColorTexture!.Pixels.SequenceEqual( embedded.BaseColorTexture!.Pixels ) &&
+                external.Surface == new StaticMaterial( 0.37f, 0.63f, new( 0.2f, 0.4f, 0.6f ) ),
+                "relative image and percent-encoded buffer sidecars preserve geometry and PBR factors" );
+            RequireUnsupported( document, "External glTF resource" );
+
+            buffer["uri"] = "mesh/%2e%2e/mesh/scout%20data.bin";
+            File.WriteAllText( path, document.ToJsonString( ) );
+            try {
+                GltfModel.Load( path );
+            } catch ( NotSupportedException error ) when ( error.Message.Contains( "model directory", StringComparison.Ordinal ) ) {
+                return;
+            }
+            throw new InvalidOperationException( "Static asset qualification failed to reject traversal in a sidecar URI." );
+        } finally {
+            Directory.Delete( directory, recursive: true );
+        }
+
+        static byte[] Decode( JsonNode node ) {
+            string uri = node.GetValue<string>( );
+            return Convert.FromBase64String( uri[(uri.IndexOf( ',' ) + 1)..] );
+        }
     }
 
     private static MemoryStream CreateGlb( JsonNode document ) {

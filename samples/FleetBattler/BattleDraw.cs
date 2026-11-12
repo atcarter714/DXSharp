@@ -46,6 +46,11 @@ internal static class BattleDraw {
                 clip(flare*(1-input.style.x)-0.10);
                 return float4(lerp(faction,float3(1,0.92,0.67),core)*flare*(1-input.style.x),1);
             }
+            if (input.style.w > 0.5) {
+                float streak = 1 - smoothstep(0.03,0.14,abs(input.uv.x - saturate(input.style.x * 1.6)));
+                clip(streak * (1 - abs(input.uv.y)) - 0.12);
+                return float4(lerp(faction,float3(1,0.87,0.38),0.8)*streak,1);
+            }
             float head = saturate(input.style.x*2.6+0.18);
             float beam = 1 - smoothstep(0.03,0.32,abs(input.uv.x-head));
             clip(beam*(1-abs(input.uv.y))-0.09);
@@ -78,7 +83,7 @@ internal static class BattleDraw {
         float4 PS(Output input) : SV_Target {
             float2 uv = input.uv;
             float unit = Viewport.z / input.marker.w;
-            float corner = step(0.67,abs(uv.x))*step(0.67,abs(uv.y))*
+            float corner = step(2.5,Viewport.w)*step(0.67,abs(uv.x))*step(0.67,abs(uv.y))*
                 max(step(1-1.3*unit,abs(uv.x)),step(1-1.3*unit,abs(uv.y))) * input.marker.x;
             float bar = step(0.68,uv.y)*step(uv.y,0.68+2.7*unit)*step(abs(uv.x),0.57) *
                 max(input.marker.x,step(input.marker.y,0.98));

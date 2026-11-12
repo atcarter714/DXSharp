@@ -38,17 +38,24 @@ public sealed class StaticTexture {
 [StructLayout( LayoutKind.Sequential )]
 public readonly record struct TexturedModelVertex( Vector3 Position, Vector3 Normal, Vector3 Color, Vector2 TexCoord );
 
+/// <summary>Linear material factors for a static model primitive.</summary>
+/// <param name="Metallic">Metallic factor in the range zero to one.</param>
+/// <param name="Roughness">Perceptual roughness in the range zero to one.</param>
+/// <param name="Emissive">Linear RGB emission.</param>
+public readonly record struct StaticMaterial( float Metallic, float Roughness, Vector3 Emissive );
+
 /// <summary>Shared geometry for one triangle-list primitive.</summary>
 public sealed class StaticModelPrimitive {
     private readonly ModelVertex[] _vertices;
     private readonly uint[] _indices;
     private readonly Vector2[]? _texCoords;
 
-    internal StaticModelPrimitive( ModelVertex[] vertices, uint[] indices, Vector2[]? texCoords, StaticTexture? baseColor ) {
+    internal StaticModelPrimitive( ModelVertex[] vertices, uint[] indices, Vector2[]? texCoords, StaticTexture? baseColor, StaticMaterial surface ) {
         _vertices = vertices;
         _indices = indices;
         _texCoords = texCoords;
         BaseColorTexture = baseColor;
+        Surface = surface;
     }
 
     /// <summary>Gets the mesh-local vertices.</summary>
@@ -59,6 +66,9 @@ public sealed class StaticModelPrimitive {
 
     /// <summary>Gets the optional sRGB base color image. Sample with linear repeat filtering.</summary>
     public StaticTexture? BaseColorTexture { get; }
+
+    /// <summary>Gets the material response factors for this primitive.</summary>
+    public StaticMaterial Surface { get; }
 
     /// <summary>Copies interleaved geometry suitable for a textured vertex stream.</summary>
     /// <param name="destination">A destination of at least <see cref="Vertices"/> length.</param>

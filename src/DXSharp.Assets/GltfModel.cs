@@ -5,21 +5,39 @@ using StbImageSharp;
 
 namespace DXSharp.Assets;
 
-/// <summary>Imports self-contained glTF 2.0 and GLB files as static triangle meshes.</summary>
+/// <summary>Imports glTF 2.0 and GLB files as static triangle meshes.</summary>
 /// <remarks>
 /// The importer uses the default scene, or the first scene if no default is declared. It preserves
-/// local geometry, node transforms, and base color factors and embedded PNG/JPEG images for opaque
+/// local geometry, node transforms, and metallic, roughness, emissive and base color factors with PNG/JPEG images for opaque
 /// materials. This path uses one UV set per primitive and linear repeat sampling without mipmaps.
 /// Other texture channels, texture transforms, skinning, animation, morph targets, and required
 /// extensions are outside the supported static format.
 /// </remarks>
 public static class GltfModel {
-    /// <summary>Loads a self-contained model from disk.</summary>
+    /// <summary>Loads a model and its local sidecars from disk.</summary>
     /// <param name="path">The path to a glTF JSON or GLB file.</param>
     /// <returns>The geometry and instances of the selected scene.</returns>
     public static StaticModel Load( string path ) {
-        using var stream = File.OpenRead( path );
-        return Read( stream );
+        string fullPath = Path.GetFullPath( path );
+        string directory = Path.GetDirectoryName( fullPath )!;
+        using var stream = File.OpenRead( fullPath );
+        return Read( stream, name => ReadSidecar( directory, name ) );
+    }
+
+    private static ArraySegment<byte> ReadSidecar( string directory, string uri ) {
+        string relative = Uri.UnescapeDataString( uri );
+        var segments = relative.Split( '/' );
+        if ( Path.IsPathRooted( relative ) || relative.Contains( ':' ) || relative.Contains( '\\' ) ||
+             segments.Any( segment => segment.Length == 0 || segment == ".." ) )
+            throw new NotSupportedException( $"External glTF resource '{uri}' must stay within the model directory." );
+
+        string current = directory;
+        foreach ( string segment in segments ) {
+            current = Path.Combine( current, segment );
+            if ( (File.GetAttributes( current ) & FileAttributes.ReparsePoint) != 0 )
+                throw new NotSupportedException( $"External glTF resource '{uri}' traverses a symbolic link or junction." );
+        }
+        return new( File.ReadAllBytes( current ) );
     }
 
     /// <summary>Reads a self-contained model at the current position of a seekable stream.</summary>
@@ -28,13 +46,15 @@ public static class GltfModel {
     /// <exception cref="ArgumentException">The stream cannot be read or seeked.</exception>
     /// <exception cref="InvalidDataException">The model has invalid data or no renderable scene.</exception>
     /// <exception cref="NotSupportedException">The model uses features outside the static import format.</exception>
-    public static StaticModel Read( Stream stream ) {
+    public static StaticModel Read( Stream stream ) => Read( stream, name =>
+        throw new NotSupportedException( $"External glTF resource '{name}' requires a self-contained glTF or GLB export." ) );
+
+    private static StaticModel Read( Stream stream, Func<string, ArraySegment<byte>> resolve ) {
         ArgumentNullException.ThrowIfNull( stream );
         if ( !stream.CanRead || !stream.CanSeek )
             throw new ArgumentException( "glTF input must be readable and seekable.", nameof( stream ) );
 
-        var reader = ReadContext.Create( name =>
-            throw new NotSupportedException( $"External glTF resource '{name}' requires a self-contained glTF or GLB export." ) );
+        var reader = ReadContext.Create( name => resolve( name ) );
         reader.Validation = ValidationMode.Strict;
         using var input = new BorrowedStream( stream );
         ModelRoot model;
@@ -119,12 +139,16 @@ public static class GltfModel {
             throw new NotSupportedException( "Static glTF meshes support only opaque base color materials." );
         var channel = material?.FindChannel( "BaseColor" );
         var tint = channel?.Color ?? Vector4.One;
+        var response = material?.FindChannel( "MetallicRoughness" );
+        var emissive = material?.FindChannel( "Emissive" )?.Color ?? Vector4.Zero;
+        var surface = new StaticMaterial( response?.GetFactor( "MetallicFactor" ) ?? 1,
+            response?.GetFactor( "RoughnessFactor" ) ?? 1, new( emissive.X, emissive.Y, emissive.Z ) );
         StaticTexture? image = null;
         IList<Vector2>? sourceUv = null;
         if ( channel is { Texture: { } texture } binding ) {
             if ( binding.TextureTransform is not null || texture.Sampler is { } sampler &&
                 ((int)sampler.WrapS != 10497 || (int)sampler.WrapT != 10497 ||
-                 (int)sampler.MinFilter is not (0 or 9729) || (int)sampler.MagFilter is not (0 or 9729)) )
+                 (int)sampler.MinFilter is not (0 or 9729 or 9985 or 9987) || (int)sampler.MagFilter is not (0 or 9729)) )
                 throw new NotSupportedException( "Base color textures require linear repeat sampling without a UV transform or mipmaps." );
             sourceUv = primitive.GetVertexAccessor( $"TEXCOORD_{binding.TextureCoordinate}" )?.AsVector2Array( )
                 ?? throw new InvalidDataException( "A base color texture is missing its UV accessor." );
@@ -181,7 +205,7 @@ public static class GltfModel {
                 indices[i + 2] = (uint)(i + 2);
             }
         }
-        return new( vertices, indices, uv, image );
+        return new( vertices, indices, uv, image, surface );
 
         Vector3 BaseColor( int index ) {
             var rgba = tint * (colors is null ? Vector4.One : colors[index]);
