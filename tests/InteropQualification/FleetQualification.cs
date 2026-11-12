@@ -25,9 +25,10 @@ internal static class FleetQualification {
         VerifyFrontier( );
         VerifyFleetRecovery( );
         VerifyOrbitalTransfers( );
+        VerifyProjectCancellation( );
         VerifyOrbits( );
         VerifyAudio( );
-        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, owned surveys, simulation pacing, orbital production, frontier progression, fleet recovery, transfer guidance, capture, and zero-allocation updates ({first.AfterOrder:X16})." );
+        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, owned surveys, simulation pacing, orbital production, frontier progression, fleet recovery, transfer guidance, work cancellation, capture, and zero-allocation updates ({first.AfterOrder:X16})." );
     }
 
     private static void VerifyFormations( ) {
@@ -371,7 +372,8 @@ internal static class FleetQualification {
         var fleet = new FleetSimulation( 3, 37, frontier: true );
         var scout = new FleetSelection( 0 );
         const int belt = CelestialSystem.OuterBelt;
-        Require( fleet.Bodies.Length == 5 && !fleet.Orbit( scout, belt ) && !fleet.BeginSurvey( scout, belt ) &&
+        Require( fleet.Bodies.Length == 11 && fleet.BodyName( 1 ) == "EARTH" && fleet.BodyName( 10 ) == "NEPTUNE" &&
+            SolarCatalog.Get( 3 ).Parent == FleetSimulation.Homeworld && !fleet.Orbit( scout, belt ) && !fleet.BeginSurvey( scout, belt ) &&
             !fleet.Move( scout, fleet.Bodies[belt].Center ), "base drive rejects out-of-range orders without changing the orbit" );
         Require( fleet.BuildFacility( FleetSimulation.Homeworld, PlanetFacility.Lab ), "homeworld lab funds navigation research" );
         AdvanceUntil( fleet, () => fleet.Science >= FleetSimulation.DriveCost, "lab produces drive research" );
@@ -384,9 +386,21 @@ internal static class FleetQualification {
         Vector2 expected = fleet.Plan( scout ).Destination;
         var originalBelt = fleet.Bodies[belt].Center;
         bool sawCoast = false, sawBrake = false;
+        Span<ShipInstance> visual = stackalloc ShipInstance[3];
+        Span<BattleEffect> preview = stackalloc BattleEffect[BattleDraw.RouteCapacity];
+        fleet.FillInstances( visual, scout );
+        Vector2 previousHeading = visual[0].Heading;
+        int initialSegments = BattleDraw.FillRoute( fleet, scout, preview, 1 );
+        Require( initialSegments == BattleDraw.RouteCapacity && preview[initialSegments - 1].Segment.X == expected.X,
+            "rendered route has a single rendezvous marker" );
         for ( ; fleet.Tick < end; fleet.Step( ) ) {
             sawCoast |= fleet.RoutePhase( scout ) is NavigationPhase.Coast or NavigationPhase.Correction;
             sawBrake |= fleet.RoutePhase( scout ) == NavigationPhase.Brake;
+            fleet.FillInstances( visual, scout );
+            float minimumAlignment = MathF.Cos( FleetSimulation.OrbitalTurnStep ) - 1e-5f;
+            Require( Vector2.Dot( previousHeading, visual[0].Heading ) >= minimumAlignment,
+                "heading remains rate limited through turnover and insertion" );
+            previousHeading = visual[0].Heading;
         }
         Require( sawCoast && sawBrake && fleet.RouteTicks( scout ) == 0 && fleet.RoutePhase( scout ) == NavigationPhase.Parked &&
             Vector2.Distance( fleet.Center( scout ), expected ) < 0.01f && Vector2.Distance( fleet.Bodies[belt].Center, originalBelt ) > 1,
@@ -397,6 +411,42 @@ internal static class FleetQualification {
             fleet.Orbit( scout, FleetSimulation.Homeworld ), "scout remains in host-relative orbit and can plot a return" );
         Require( FleetHud.Hit( new( 465, 177 ), 640, 400, fleet, belt ) == new HudHit( HudAction.Planet, (int)PlanetAction.Mine ),
             "planet inspector site card matches the mine action" );
+    }
+
+    private static void VerifyProjectCancellation( ) {
+        const int home = FleetSimulation.Homeworld, moon = 3;
+        var fleet = new FleetSimulation( 3, 37, frontier: true );
+        var scout = new FleetSelection( 0 );
+        var miner = new FleetSelection( 1 );
+        int originalOre = fleet.Ore;
+        Require( fleet.QueueWorker( ) && fleet.CancelCivilian( ) && fleet.WorkerRemaining < 0 && fleet.Ore == originalOre &&
+            !fleet.CancelCivilian( ), "civilian cancellation refunds one order and releases its berth" );
+        Require( fleet.BuildFacility( home, PlanetFacility.Lab ) &&
+            FleetHud.Hit( new( 605, 208 ), 640, 400, fleet, home ) == new HudHit( HudAction.Planet, (int)PlanetAction.CancelLab ) &&
+            fleet.CancelSite( home, PlanetFacility.Lab ) && fleet.Ore == originalOre, "site card cancels construction and returns ore" );
+        Require( fleet.BeginSurvey( scout, moon ), "survey the Moon to discover a construction site" );
+        AdvanceUntil( fleet, () => fleet.HasDeposit( moon ), "Moon survey completes", 1800 );
+        originalOre = fleet.Ore;
+        Require( fleet.BuildFacility( moon, PlanetFacility.Mine, miner ) && fleet.MineEnRoute( moon ), "mine assigns a traveling constructor" );
+        AdvanceUntil( fleet, () => fleet.StartedConstruction == 1, "mine starts when its constructor reaches the site" );
+        var site = fleet.SitePosition( moon, PlanetFacility.Mine, 1 );
+        Require( fleet.SiteWorker( moon ) == miner && Vector2.Distance( site, fleet.Center( miner ) ) < 6 &&
+            fleet.CancelSite( moon, PlanetFacility.Mine ) && fleet.SiteWorker( moon ) is null &&
+            fleet.Ore == originalOre && !fleet.CancelSite( moon, PlanetFacility.Mine ), "active mine stays near its builder and can be canceled" );
+        Require( fleet.BuildFacility( moon, PlanetFacility.Mine, miner ), "canceled mine can be rebuilt" );
+        AdvanceUntil( fleet, () => fleet.Ore >= 205, "production cancellation test funds its yard and wings", 4000 );
+        Require( fleet.BuildYard( home ), "queue fixture has an orbital yard" );
+        AdvanceUntil( fleet, () => fleet.YardCount == 1, "orbital yard comes online" );
+        fleet.SetPlating( true );
+        Require( fleet.QueueWing( ), "armored order queued" );
+        fleet.SetPlating( false );
+        Require( fleet.QueueWing( ) && fleet.WingQueue[0].Cost == 68 && fleet.WingQueue[1].Cost == 60, "orders preserve purchase prices" );
+        originalOre = fleet.Ore;
+        Require( fleet.CancelWing( 0 ) && fleet.Ore == originalOre + 68 && fleet.NavalReserved == 3 &&
+            fleet.WingRemaining == FleetSimulation.StandardWingDuration && fleet.WingQueue[0].Cost == 60,
+            "cancelling active work refunds its snapshot and starts the next job" );
+        Require( fleet.CancelWing( 0 ) && fleet.NavalReserved == 0 && fleet.WingRemaining < 0 && !fleet.CancelWing( 0 ) &&
+            !fleet.CancelSite( home, PlanetFacility.Yard ), "completed infrastructure and empty queues reject cancellation" );
     }
 
     private static void VerifyAudio( ) {

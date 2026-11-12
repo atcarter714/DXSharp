@@ -6,7 +6,7 @@ RWStructuredBuffer<float4> Bodies : register(u2);
 cbuffer Scene : register(b0) {
     uint ShipCount; uint BodyCount; uint Reset; float Delta;
     float Time; float Radius; uint SectorIndex; uint MajorCount;
-    float4 MajorBodies[5];
+    float4 MajorBodies[11];
 };
 
 uint Mix(uint x) {
@@ -22,10 +22,10 @@ float Unit(uint x) { return float(Mix(x) >> 8) * (1.0 / 16777216.0); }
 void OrbitField(uint3 threadId : SV_DispatchThreadID) {
     uint id = threadId.x;
     if (id >= BodyCount) return;
-    if (id < 5) { Bodies[id] = MajorBodies[min(id,MajorCount-1)]; return; }
+    if (id < 11) { Bodies[id] = MajorBodies[min(id,MajorCount-1)]; return; }
     uint seed = id + SectorIndex*16381;
     float a = Unit(seed*13) * 6.2831853 + Time*(0.027 + Unit(seed*17)*0.12);
-    float lane = Radius*(MajorCount == 5 && (seed % 3) == 0 ? 1.60 + 0.25*Unit(seed*7) : 0.56 + 0.27*Unit(seed*7));
+    float lane = Radius*(MajorCount > 4 && (seed % 3) == 0 ? (MajorCount == 11 ? 2.43 : 1.60) + 0.25*Unit(seed*7) : 0.56 + 0.27*Unit(seed*7));
     float2 center = MajorBodies[0].xy + float2(cos(a)*lane, sin(a)*lane*0.79);
     Bodies[id] = float4(center, 0.09 + pow(Unit(seed*23),3)*0.52, Unit(seed*31));
 }
@@ -35,7 +35,9 @@ void Steering(uint3 threadId : SV_DispatchThreadID) {
     uint id = threadId.x;
     if (id >= ShipCount) return;
     uint seed = id + SectorIndex*21611;
-    uint bodyIndex = 1 + (Mix(seed + 41) % (BodyCount-1));
+    uint destinations = MajorCount - 1 + (BodyCount - 11);
+    uint bodyIndex = 1 + (Mix(seed + 41) % destinations);
+    if (bodyIndex >= MajorCount) bodyIndex += 11 - MajorCount;
     float4 body = Bodies[bodyIndex];
     float phase = Unit(seed*5+7)*6.2831853 + Time*(0.28+Unit(seed*13+1)*0.21);
     float orbitRadius = body.z*1.68 + 2.8 + Unit(seed*17+9)*6.8;

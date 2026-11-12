@@ -5,7 +5,7 @@ namespace FleetBattler;
 internal readonly record struct BodyPose( Vector2 Center, float Radius );
 
 internal static class CelestialSystem {
-    internal const int OuterBelt = 4, BodyCount = 5;
+    internal const int OuterBelt = 4, FrontierBodyCount = 5, BodyCount = 11;
     internal const float BeltAxis = 1.72f;
     internal const float RockyAxis = 0.45f, GiantAxis = 0.91f, MoonAxis = 0.145f;
     internal const float RockyEccentricity = 0.16f, GiantEccentricity = 0.12f, MoonEccentricity = 0.08f;
@@ -22,6 +22,10 @@ internal static class CelestialSystem {
     };
 
     internal static void Evaluate( int system, int tick, float radius, Span<BodyPose> bodies ) {
+        if ( system == 0 && bodies.Length == BodyCount ) {
+            SolarCatalog.Evaluate( tick, radius, bodies );
+            return;
+        }
         double seconds = tick * FleetSimulation.StepSeconds;
         var sun = new Vector2( -0.31f + system * 0.045f, -0.33f + system * 0.07f ) * radius;
         var rocky = sun + OrbitPoint( RockyAxis * radius, RockyEccentricity, 0.24 + system * 0.25 + seconds / 115 );
@@ -45,7 +49,7 @@ internal static class CelestialSystem {
     }
 
     internal static Vector4 Project( BodyPose body, float boardRadius, Matrix4x4 viewProjection, int width, int height, float halfHeight ) {
-        var clip = Vector4.Transform( new Vector4( body.Center.X, -boardRadius * 0.11f, body.Center.Y, 1 ), viewProjection );
+        var clip = Vector4.Transform( new Vector4( body.Center.X, 0, body.Center.Y, 1 ), viewProjection );
         return new( (clip.X / clip.W + 1) * width * 0.5f, (1 - clip.Y / clip.W) * height * 0.5f,
             body.Radius * height / (2 * halfHeight), 0 );
     }

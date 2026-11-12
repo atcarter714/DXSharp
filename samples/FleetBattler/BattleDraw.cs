@@ -8,7 +8,10 @@ namespace FleetBattler;
 internal static class BattleDraw {
     internal const uint EffectStride = 32;
     internal const uint ConstantCount = 20;
-    internal const int RouteSegments = 16;
+    internal const int RouteSegments = 48, RouteCapacity = RouteSegments + 1;
+    internal const int SiteEffectCapacity = 2 * CelestialSystem.BodyCount;
+    private const int OrbitSegments = 72;
+    internal const int SolarTrackCapacity = (CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount) * OrbitSegments;
 
     private const string Effects = """
         cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; float4 Viewport; };
@@ -27,21 +30,36 @@ internal static class BattleDraw {
             float2 delta = (end.xy/end.w-start.xy/start.w)*screenScale;
             float2 right = float2(-delta.y,delta.x) / max(0.01,length(delta));
             float2 pos = lerp(start.xy/start.w,end.xy/end.w,uv.x) + right*uv.y*Viewport.z*2.4/screenScale;
-            if (input.style.z == 1) {
+            if (input.style.z == 4) {
+                uv.x = uv.x*2-1;
+                pos = start.xy/start.w + uv*8*Viewport.z/screenScale;
+            } else if (input.style.z == 1) {
                 uv.x = uv.x*2-1;
                 pos = start.xy/start.w + uv*(3+input.style.x*18)*Viewport.z/screenScale;
             }
             Output output;
-            output.position = float4(pos,input.style.z == 2 ? 0.07 : 0.065,1);
+            output.position = float4(pos,input.style.z == 5 ? 0.9995 : input.style.z == 2 || input.style.z == 4 ? 0.07 : 0.065,1);
             output.uv = uv;
             output.style = input.style;
             return output;
         }
         float4 PS(Output input) : SV_Target {
+            if (input.style.z == 6) {
+                float spark = 0.32+0.68*pow(saturate(sin(input.uv.x*21-input.style.x*12)),4);
+                clip((1-abs(input.uv.y))*spark-0.22);
+                return float4(lerp(float3(1,0.55,0.16),float3(0.23,0.86,1),input.style.w)*spark,1);
+            }
+            if (input.style.z == 5) {
+                clip(0.26-abs(input.uv.y));
+                return float4(0.11,0.16,0.23,1);
+            }
             if (input.style.z == 2) {
-                clip(0.55-abs(input.uv.y));
-                clip(frac(input.uv.x*1.3+input.style.x)-0.26);
-                return float4(0.32,0.91,0.92,1);
+                clip(0.40-abs(input.uv.y));
+                return float4(0.30,0.82,0.89,1);
+            }
+            if (input.style.z == 4) {
+                clip(0.14-abs(abs(input.uv.x)+abs(input.uv.y)-0.86));
+                return float4(0.58,0.98,0.99,1);
             }
             float3 faction = input.style.y < 0.5 ? float3(0.21,0.86,1) : float3(1,0.42,0.12);
             if (input.style.z == 1) {
@@ -113,15 +131,47 @@ internal static class BattleDraw {
             new( "TEXCOORD", VertexFormat.Float4, 32, 3, 1, 1 )
         ], depthEnabled: true );
 
-    internal static int FillRoute( FleetSimulation fleet, FleetSelection unit, Span<BattleEffect> output ) {
+    private static readonly Vector2[] SolarTracks = BuildSolarTracks( );
+    private static Vector2[] BuildSolarTracks( ) {
+        var tracks = new Vector2[(CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount) * (OrbitSegments + 1)];
+        int next = 0;
+        for ( int body = CelestialSystem.FrontierBodyCount; body < CelestialSystem.BodyCount; ++body ) {
+            ref readonly var world = ref SolarCatalog.Get( body );
+            float minor = world.Axis * MathF.Sqrt( 1 - world.Eccentricity * world.Eccentricity );
+            for ( int i = 0; i <= OrbitSegments; ++i ) {
+                var (sin, cos) = MathF.SinCos( i * MathF.Tau / OrbitSegments );
+                tracks[next++] = new( world.Axis * (cos - world.Eccentricity), minor * sin );
+            }
+        }
+        return tracks;
+    }
+
+    internal static int FillSolarTracks( FleetSimulation fleet, Span<BattleEffect> output ) {
+        if ( !fleet.Solar ) return 0;
+        float scale = fleet.BoardRadius;
+        int next = 0;
+        for ( int i = 0; i < SolarTracks.Length; i += OrbitSegments + 1 ) {
+            for ( int j = 0; j < OrbitSegments; ++j ) {
+                var from = SolarTracks[i + j] * scale;
+                var to = SolarTracks[i + j + 1] * scale;
+                output[next++] = new( new( from.X, from.Y, to.X, to.Y ), new( 0, 0, 5, 0 ) );
+            }
+        }
+        return next;
+    }
+
+    internal static int FillRoute( FleetSimulation fleet, FleetSelection unit, Span<BattleEffect> output, float interpolation ) {
         Span<Vector2> points = stackalloc Vector2[RouteSegments + 1];
-        if ( !fleet.CopyRoute( unit, points, out _ ) ) return 0;
+        if ( !fleet.CopyRoute( unit, points, out var destination, interpolation ) ) return 0;
+        int count = 0;
         for ( int i = 0; i < RouteSegments; ++i ) {
             var start = points[i];
             var end = points[i + 1];
-            output[i] = new( new( start.X, start.Y, end.X, end.Y ), new( i * 0.3f, 0, 2, 0 ) );
+            if ( Vector2.DistanceSquared( start, end ) > 1e-6f )
+                output[count++] = new( new( start.X, start.Y, end.X, end.Y ), new( 0, 0, 2, 0 ) );
         }
-        return RouteSegments;
+        output[count++] = new( new( destination.X, destination.Y, destination.X, destination.Y ), new( 0, 0, 4, 0 ) );
+        return count;
     }
 
     internal static void Record( GraphicsCommandList commands, PipelineState pipeline, GpuResource instances, uint count,

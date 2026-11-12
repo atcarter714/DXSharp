@@ -12,6 +12,7 @@
     <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
     <Compile Include="../../samples/FleetBattler/FrontierHud.cs" Link="FrontierHud.cs" />
+    <Compile Include="../../samples/FleetBattler/OperationsFeedback.cs" Link="OperationsFeedback.cs" />
     <Compile Include="../../samples/FleetBattler/PlanetInspector.cs" Link="PlanetInspector.cs" />
     <None Include="../../samples/FleetBattler/Art/OperationsAtlas.jpg" Link="Art/OperationsAtlas.jpg"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
@@ -21,6 +22,7 @@
     <Compile Include="../../samples/FleetBattler/FleetDraw.cs" Link="FleetDraw.cs" />
     <Compile Include="../../samples/FleetBattler/SpaceDraw.cs" Link="SpaceDraw.cs" />
     <Compile Include="../../samples/FleetBattler/FleetHud.cs" Link="FleetHud.cs" />
+    <Compile Include="../../samples/FleetBattler/SolarCatalog.cs" Link="SolarCatalog.cs" />
     <Compile Include="../../samples/FleetBattler/CelestialSystem.cs" Link="CelestialSystem.cs" />
     <Compile Include="../../samples/FleetBattler/ComputeTraffic.cs" Link="ComputeTraffic.cs" />
     <Compile Include="../../samples/FleetBattler/Jukebox.cs" Link="Jukebox.cs" />

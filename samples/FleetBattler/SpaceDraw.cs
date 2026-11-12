@@ -102,7 +102,7 @@ internal static class SpaceDraw {
                 float cloud = smoothstep(0.62,0.83,Noise(n.xy*float2(7,19) + n.z*3));
                 albedo = lerp(albedo,float3(0.86,0.94,0.99),cloud*0.58);
                 sky += float3(0.16,0.42,0.83) * exp(-abs(d-1.0)*16.0) * 0.24;
-            } else if (kind == 2) {
+            } else if (kind == 2 || kind == 4) {
                 float bands = 0.5 + 0.5*sin(n.y*27 + Noise(n.xy*5)*2.4 + n.x*0.8);
                 albedo = lerp(float3(0.58,0.34,0.28),float3(0.97,0.78,0.56),bands);
             } else if (MoonOrbit.w > 0) {
@@ -146,17 +146,17 @@ internal static class SpaceDraw {
             float3 nearPoint = mul(float4(ndc,0,1), InverseViewProjection).xyz;
             float3 ray = mul(float4(0,0,1,0), InverseViewProjection).xyz;
             float2 world = (nearPoint - ray*(nearPoint.y/ray.y)).xz;
-            float2 orbitWorld = world - ray.xz * (0.11*MoonOrbit.w/ray.y);
-            float tracks = Orbit(orbitWorld,Orbits.xy,Orbits.z,0.16) + Orbit(orbitWorld,Orbits.xy,Orbits.w,0.12)
-                         + Orbit(orbitWorld,MoonOrbit.xy,MoonOrbit.z,0.08);
+            bool solar = SiteTint.x > 0.99 && SiteTint.w == 0;
+            float tracks = Orbit(world,Orbits.xy,Orbits.z,solar ? 0.0167 : 0.16) + Orbit(world,Orbits.xy,Orbits.w,solar ? 0.0484 : 0.12)
+                         + Orbit(world,MoonOrbit.xy,MoonOrbit.z,solar ? 0.0549 : 0.08);
             sky += float3(0.066,0.108,0.172) * saturate(tracks);
 
             sky = Body(sky,pixel,Star,0);
-            sky = Body(sky,pixel,Giant,2);
+            sky = Body(sky,pixel,Giant,solar ? 4 : 2);
             sky = Body(sky,pixel,Rocky,1);
             sky = Body(sky,pixel,Moon,3);
             if (SiteTint.w == 0 && Site.w > 0) {
-                float belt = Orbit(orbitWorld,Orbits.xy,Site.w,0.06);
+                float belt = Orbit(world,Orbits.xy,Site.w,0.06);
                 sky += float3(0.15,0.17,0.22) * belt;
                 sky = Body(sky,pixel,Site,3);
             }
@@ -170,7 +170,7 @@ internal static class SpaceDraw {
             float segment = step(0.18, frac(arc*12));
             float progress = step(arc, Site.w) * step(0.001,Site.w);
             sky = lerp(sky, SiteTint.rgb, saturate(ring*(segment*0.45 + progress*0.60) + crossMark*pulse)*SiteTint.w);
-            sky += SiteTint.rgb * (1 - saturate(distanceToSite/max(Site.z,0.001))) * 0.085;
+            sky += SiteTint.rgb * (1 - saturate(distanceToSite/max(Site.z,0.001))) * (0.085*SiteTint.w);
 
             float2 selectionDelta = world - Selected.xy;
             float selectionRadius = max(Selected.z, Viewport.w*11);
@@ -222,19 +222,20 @@ internal static class SpaceDraw {
         Span<Vector4> values = stackalloc Vector4[15];
         MemoryMarshal.CreateReadOnlySpan( ref inverse, 1 ).CopyTo( MemoryMarshal.Cast<Vector4, Matrix4x4>( values[..4] ) );
         values[4] = new( width, height, (float)seconds, worldPerPixel );
-        for ( int i = 0; i < bodies.Length; ++i )
-            values[5 + i] = CelestialSystem.Project( bodies[i], r, viewProjection, width, height, halfHeight );
-        values[9] = new( bodies[0].Center.X, bodies[0].Center.Y, CelestialSystem.RockyAxis * r, CelestialSystem.GiantAxis * r );
-        values[10] = new( bodies[1].Center.X, bodies[1].Center.Y, CelestialSystem.MoonAxis * r, useMoonMap ? 1 : 0 );
+        for ( int i = 0; i < CelestialSystem.OuterBelt; ++i )
+            values[5 + i] = CelestialSystem.Project( fleet.VisualBody( i, interpolation ), r, viewProjection, width, height, halfHeight );
+        values[9] = new( bodies[0].Center.X, bodies[0].Center.Y, (fleet.Solar ? SolarCatalog.Get( 1 ).Axis : CelestialSystem.RockyAxis) * r, (fleet.Solar ? SolarCatalog.Get( 2 ).Axis : CelestialSystem.GiantAxis) * r );
+        var earth = fleet.VisualBody( 1, interpolation );
+        values[10] = new( earth.Center.X, earth.Center.Y, CelestialSystem.MoonAxis * r, useMoonMap ? 1 : 0 );
         values[11] = new( fleet.Site.X, fleet.Site.Y, fleet.SiteRadius, progress );
         if ( fleet.Frontier ) {
-            var belt = CelestialSystem.Project( bodies[CelestialSystem.OuterBelt], r, viewProjection, width, height, halfHeight );
-            values[11] = belt with { W = CelestialSystem.BeltAxis * r };
+            var belt = CelestialSystem.Project( fleet.VisualBody( CelestialSystem.OuterBelt, interpolation ), r, viewProjection, width, height, halfHeight );
+            values[11] = belt with { W = (fleet.Solar ? SolarCatalog.Get( CelestialSystem.OuterBelt ).Axis : CelestialSystem.BeltAxis) * r };
         }
-        values[12] = fleet.Frontier ? Vector4.Zero : tint;
+        values[12] = fleet.Solar ? new Vector4( 1, 0, 0, 0 ) : fleet.Frontier ? Vector4.Zero : tint;
         values[13] = new( center.X, center.Y, selected.IsShip ? 2.8f : 3.5f + MathF.Sqrt( fleet.ShipCount( selected.Squad ) ) * 2.3f, showSelection ? 1 : 0 );
         float orderMode = !showSelection || plan.Order == FlightOrder.Idle ? 0
-            : !fleet.Frontier || plan.Order == FlightOrder.Attack ? 1 : fleet.RouteTicks( selected ) > 0 ? 2 : 0;
+            : !fleet.Frontier || plan.Order == FlightOrder.Attack ? 1 : 0;
         values[14] = new( target.X, target.Y, orderMode, (float)plan.Order );
         Draw( commands, pipeline, moon, values );
     }

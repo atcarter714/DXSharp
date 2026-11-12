@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum NavigationPhase { Parked, Burn, Coast, Brake, Intercept, Correction }
+internal enum NavigationPhase { Parked, Burn, Coast, Brake, Intercept, Correction, Turnover }
 
 internal sealed partial class FleetSimulation {
     private const float TransferSpeed = 24;
@@ -32,17 +32,49 @@ internal sealed partial class FleetSimulation {
             return From + (Departure + cruise) * (b * 0.5f) + cruise * (t - b) + Bend * shape;
         }
 
-        internal NavigationPhase Phase( float t ) => t < BurnFraction ? NavigationPhase.Burn
-            : t >= 1 - BurnFraction ? NavigationPhase.Brake : Bend == Vector2.Zero ? NavigationPhase.Coast : NavigationPhase.Correction;
+        internal Vector2 Aim( float t, out float throttle ) {
+            var cruise = Cruise;
+            float b = BurnFraction;
+            Vector2 departure = cruise - Departure;
+            Vector2 brake = Arrival - cruise;
+            Vector2 aim;
+            if ( t < b ) {
+                aim = departure;
+                throttle = 0.9f;
+            } else if ( t >= 1 - b ) {
+                aim = brake;
+                throttle = 0.8f;
+            } else {
+                float progress = (t - b) / (1 - 2 * b);
+                float correction = 32 * (1 - 6 * progress + 6 * progress * progress);
+                switch ( Phase( t ) ) {
+                    case NavigationPhase.Correction: aim = Bend * correction; throttle = 0.28f; break;
+                    case NavigationPhase.Coast: aim = cruise; throttle = 0; break;
+                    default: aim = brake; throttle = 0; break;
+                }
+            }
+            return aim.LengthSquared( ) > 1e-7f ? Vector2.Normalize( aim ) : Vector2.Zero;
+        }
+
+        internal NavigationPhase Phase( float t ) {
+            if ( t < BurnFraction ) return NavigationPhase.Burn;
+            if ( t >= 1 - BurnFraction ) return NavigationPhase.Brake;
+            float progress = (t - BurnFraction) / (1 - 2 * BurnFraction);
+            if ( progress >= 0.38f ) return NavigationPhase.Turnover;
+            return Bend != Vector2.Zero && MathF.Abs( 32 * (1 - 6 * progress + 6 * progress * progress) ) > 6
+                ? NavigationPhase.Correction : NavigationPhase.Coast;
+        }
     }
 
-    internal float NavigationRadius => BoardRadius * (Frontier ? 2.28f : 1);
+    internal float NavigationRadius => BoardRadius * (Solar ? 3.04f : Frontier ? 2.28f : 1);
     internal bool CanReach( FleetSelection unit, int body ) =>
-        body != CelestialSystem.OuterBelt || DriveUpgrade || !IsPlayerSquad( unit.Squad );
+        !RequiresDrive( body ) || DriveUpgrade || !IsPlayerSquad( unit.Squad );
+
+    internal bool RequiresDrive( int body ) => body == CelestialSystem.OuterBelt || Solar && SolarCatalog.Get( body ).Axis > 1.69f;
 
     internal bool CanReach( FleetSelection unit, Vector2 target ) =>
         !Frontier || !IsPlayerSquad( unit.Squad ) ||
-        Vector2.DistanceSquared( target, _bodies[0].Center ) <= MathF.Pow( BoardRadius * (DriveUpgrade ? 2.04f : 1.26f), 2 );
+        Vector2.DistanceSquared( target, _bodies[0].Center ) <= MathF.Pow( BoardRadius * (Solar ? DriveUpgrade ? 2.94f : 1.69f : DriveUpgrade ? 2.04f : 1.26f), 2 );
 
     internal int RouteTicks( FleetSelection unit ) => Math.Max( 0, EffectiveOrder( unit ).Transfer.End - Tick );
     internal NavigationPhase RoutePhase( FleetSelection unit ) {
@@ -54,14 +86,17 @@ internal sealed partial class FleetSimulation {
         return leg.Phase( progress );
     }
 
-    internal bool CopyRoute( FleetSelection unit, Span<Vector2> points, out Vector2 destination ) {
+    internal bool CopyRoute( FleetSelection unit, Span<Vector2> points, out Vector2 destination, float interpolation = 1 ) {
         var leg = EffectiveOrder( unit ).Transfer;
         destination = leg.To;
         if ( leg.End <= Tick || points.Length < 2 ) return false;
-        float start = (float)(Tick - leg.Start) / (leg.End - leg.Start);
-        points[0] = Center( unit );
-        for ( int i = 1; i < points.Length; ++i )
-            points[i] = leg.Position( start + (1 - start) * i / (points.Length - 1) );
+        float start = Math.Clamp( (Tick - 1 + interpolation - leg.Start) / (leg.End - leg.Start), 0, 1 );
+        var origin = VisualCenter( unit, interpolation );
+        points[0] = origin;
+        for ( int i = 1; i < points.Length; ++i ) {
+            float sample = (float)i / (points.Length - 1);
+            points[i] = sample <= start ? origin : leg.Position( sample );
+        }
         return true;
     }
 
@@ -91,7 +126,7 @@ internal sealed partial class FleetSimulation {
         var local = (waypoint ?? from) - _bodies[host].Center;
         float radius = waypoint is null ? OrbitRadius( host, count ) : MathF.Max( local.Length( ), OrbitRadius( 0, count ) );
         float distance = waypoint is null ? MathF.Abs( Vector2.Distance( from, _bodies[host].Center ) - radius ) : Vector2.Distance( from, waypoint.Value );
-        int arrival = Tick + (int)MathF.Ceiling( (1.25f + distance / TransferSpeed) / (float)StepSeconds );
+        int arrival = Tick + (int)MathF.Ceiling( (2.1f + distance / TransferSpeed) / (float)StepSeconds );
         var velocity = unit.IsShip ? _velocities[unit.Ship] : SquadVelocity( unit.Squad );
         float maxAcceleration = DriveUpgrade && IsPlayerSquad( unit.Squad ) ? 80 : 55;
         var order = new Order {
@@ -130,10 +165,10 @@ internal sealed partial class FleetSimulation {
         float length = chord.Length( );
         if ( length < 1 ) return default;
         Vector2 normal = new( -chord.Y / length, chord.X / length );
-        Span<BodyPose> bodies = stackalloc BodyPose[CelestialSystem.BodyCount];
+        Span<BodyPose> bodies = stackalloc BodyPose[_bodies.Length];
         CelestialSystem.Evaluate( SystemIndex, middle, BoardRadius, bodies );
         float bend = 0;
-        for ( int i = 0; i < CelestialSystem.OuterBelt; ++i ) {
+        for ( int i = 0; i < bodies.Length; ++i ) {
             var delta = bodies[i].Center - from;
             float along = Vector2.Dot( delta, chord ) / (length * length);
             if ( along is < 0.34f or > 0.66f ) continue;
@@ -149,7 +184,7 @@ internal sealed partial class FleetSimulation {
     }
 
     private Vector2 BodyCenterAt( int host, int tick ) {
-        Span<BodyPose> bodies = stackalloc BodyPose[CelestialSystem.BodyCount];
+        Span<BodyPose> bodies = stackalloc BodyPose[_bodies.Length];
         CelestialSystem.Evaluate( SystemIndex, tick, BoardRadius, bodies );
         return bodies[host].Center;
     }
@@ -163,7 +198,7 @@ internal sealed partial class FleetSimulation {
         return (evaluated ? _bodies[host].Center : BodyCenterAt( host, tick )) + new Vector2( cos, sin ) * order.Radius;
     }
 
-    private Vector2 Navigate( ref Order order, out Vector2 tangent, out float drive ) {
+    private Vector2 Navigate( ref Order order, out Vector2 tangent, out Vector2 aim, out float drive ) {
         int tick = Tick + 1;
         var leg = order.Transfer;
         drive = 0;
@@ -173,13 +208,13 @@ internal sealed partial class FleetSimulation {
             float dt = 1 / duration;
             var position = leg.Position( t );
             Vector2 velocity = leg.Position( t + dt ) - position;
-            var phase = leg.Phase( t );
-            bool braking = phase == NavigationPhase.Brake;
-            drive = phase switch { NavigationPhase.Burn => 1, NavigationPhase.Brake => 0.8f, NavigationPhase.Correction => 0.32f, _ => 0 };
-            tangent = velocity.LengthSquared( ) > 1e-8f ? Vector2.Normalize( braking ? -velocity : velocity ) : Vector2.UnitX;
+            aim = leg.Aim( t, out drive );
+            tangent = velocity.LengthSquared( ) > 1e-8f ? Vector2.Normalize( velocity ) : Vector2.Zero;
             return position;
         }
         order.Transfer = default;
-        return Berth( order, tick, out tangent, evaluated: true );
+        var berth = Berth( order, tick, out tangent, evaluated: true );
+        aim = tangent;
+        return berth;
     }
 }
