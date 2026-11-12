@@ -26,13 +26,19 @@ internal sealed partial class FleetSimulation {
         return true;
     }
 
+    internal bool RenameFleetById( int id, string name ) {
+        for ( int squad = 0; squad < SquadCount; ++squad )
+            if ( FleetId( squad ) == id && ShipCount( squad ) > 0 ) return RenameFleet( squad, name );
+        return false;
+    }
+
     internal bool RenameBody( int body, string name ) {
         if ( !Frontier || (uint)body >= (uint)_bodies.Length || NormalizeName( name ) is not { } label ) return false;
         _bodyNames[body] = label;
         return true;
     }
 
-    private static string? NormalizeName( string name ) {
+    internal static string? NormalizeName( string name ) {
         name = name.Trim( ).ToUpperInvariant( );
         if ( name.Length is < 1 or > 18 ) return null;
         foreach ( char ch in name )

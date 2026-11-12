@@ -1,6 +1,7 @@
 {
   "musicVolume": 0.24,
   "effectsVolume": 0.50,
+  "shuffle": true,
   "useProceduralTransitions": false,
   "playlists": {
     "system": ["@survey"],

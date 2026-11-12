@@ -1,15 +1,98 @@
 # DXSharp Fleet Battler
 
-The flagship sample starts with one star system, two factions, and a playable fleet skirmish. Scout a resource site, claim it, spend its output on reinforcements, then send ships to intercept a rival fleet. Use a fixed tick and seeded scenario so the same command stream can drive a replay, a headless test, or the visual sample.
+Fleet Battler is a Windows strategy game sample for DXSharp. Frontier currently starts at Earth with a science scout, two constructors, and a civilian dock. It has six map systems, local surveys and transfers, timed construction and research, colonization, orbital shipyard queues, corvette fitting, and piracy. The galaxy map can inspect neighboring systems. The command simulation runs on the CPU and GPU compute updates decorative traffic and debris. See the [sample README](../samples/FleetBattler/README.md) for the playable build and controls.
 
-The [Fleet Battler sample](../samples/FleetBattler) has a skirmish in each of three systems. Issue focus-fire and movement orders with box and modifier selection. Survey worlds, build mines and labs, and spend science on improved weapons. Amber contests the beacon and brings in reserves. The command simulation stays on the CPU. Compute updates the orbital field and autonomous freighters, and the renderer consumes those buffers directly.
+## The finish line
 
-| Slice | Implementation | Acceptance |
+Ship a 30–45 minute scenario, **The First Crossing**. Start with player presence in Sol only. A coalition on Earth charters a first permanent off-world settlement while an independent belt compact controls logistics and raiders skim unescorted shipments. Survey the Moon or Mars, establish a colony, and outfit an escort or negotiate convoy coverage. After the colony reaches sustained operation, authorize a fusion-powered expedition and establish a receiving station in Alpha Centauri. Make the two approaches to the convoy crisis affect what the player can afford, who offers aid, and what condition the expedition launches in. Keep a small post-victory sandbox and the existing skirmish.
+
+Six hulls are enough for the scenario. Each has a distinct job and an identifiable silhouette at tactical zoom. Four utilities teach the economy. Two military hulls create a choice between cheap coverage and concentrated defense.
+
+| Hull | Job | Slot emphasis |
 | --- | --- | --- |
-| Simulation and replay | Stable entity IDs and typed SoA storage for position, velocity, faction, and health. Keep orders, resource accounting, and combat on the CPU. Use contiguous spans for steering and a spatial grid for neighbor queries. | Replay the same commands to the same tick hash on the same build and architecture. Compare SIMD and scalar kernels within documented tolerances. |
-| Renderer and workload | Upload changed instance ranges through frame-local staging. Draw instanced ships. Use GPU culling, indirect draws, and compute-driven thruster and impact particles as the workload grows. Fence uploads and descriptor reuse. | Check representative output, resize and teardown. Measure steady-state allocations, CPU simulation and submission times, GPU timestamps, and peak working set at fixed fleet sizes. |
-| Asset and scene pipeline | Cook a Houdini-exported ship kit and textures into the MSBuild asset manifest. Add one rigged hangar character with a Cascadeur-authored animation as a follow-on consumer of the skinned-model sample. | A clean build, an incremental asset edit, and a packaged build load the correct assets with their license and provenance recorded. |
-| Scale and optional effects | Add a tactical map and multiple systems after the skirmish is playable. Add DXR and newer Shader Model variants to isolated effects where their measured cost or visual benefit justifies them. | Compare equivalent workloads at fixed counts, resolution, settings, and driver. Keep a WARP path for functional tests and collect performance on hardware. |
+| Science scout | Surveys and anomaly investigation | Sensor, avionics, drive, reactor |
+| Constructor | Builds and services orbital sites | Fabricator, utility, drive, reactor |
+| Freighter | Hauls ore and propellant between owned or allied ports | Cargo, radiator, drive, reactor |
+| Colony ship | Carries crew and habitat equipment to a surveyed solid body | Habitat payload, life support, drive, reactor |
+| Corvette | Fast intercept and convoy escort | Small weapon, armor or shield, drive, reactor |
+| Frigate | Protects convoys and stations against heavier threats | Medium weapon, point defense, radiator, drive, reactor |
+
+The first complete construction catalog needs an extraction rig, solar array, research lab, storage depot, orbital shipyard, survey outpost, defense platform, and habitat. Give the defense platform a limited coverage radius and ongoing energy cost. A depot adds storage and a resupply stop. A survey outpost extends detection and route knowledge. Surface buildings need a settled solid body with available labor and slots. An O’Neill habitat is a late milestone that consumes freight, energy, and construction time and creates housing and new economic capacity. Gas giants support orbital infrastructure.
+
+Stop adding feature breadth once a fresh player can finish the scenario using the game’s feedback and three replayable decisions have material consequences. Use this acceptance checklist.
+
+| Area | Accept when |
+| --- | --- |
+| Session | A small loading screen reports real initialization progress. Main menu offers New, Continue, Load, Options, Quit. Pause menu offers Resume, Save, Load, Options, Return to Menu, Quit. Quit is reachable entirely through the UI. |
+| Persistence | A versioned save round-trips bodies, fleets, names, designs, inventory, orders, colony work, tech, queues, faction decisions, campaign tick, and travel manifests. Save via a temporary file in the same directory and atomic replacement. Restore from a checkpoint mid-construction and mid-transit with identical completion outcomes. Keep user settings separate. |
+| Orders | Every long-running action identifies actor, target, phase, ETA or progress, and cancelability. Route lines follow the live rendezvous solution. Invalid orders explain the blocker. Critical notices show on the map and persist in the log. Selecting a notice focuses the relevant object where one exists. |
+| Shipyard and inspector | A player can design, validate, name, order, inspect, repair, and refit one hull end to end. A queue item preserves the purchased design revision and quoted cost and time. The planet panel shows built sites and pending work. Construction catalogs open separately. |
+| Content and pacing | Two routes through the convoy crisis are viable. The first resource chain, first unlock, and first escalation each have time to read and act at 1×. A playtest reaches the crossing without external instructions or waiting for a fleet to spawn on its own. |
+| Presentation | Body labels, alerts, route markers, and panels remain readable at 1080p and 4K. HDR bloom, thrusters, survey/assembly effects, and hostile audio make the map legible. Run on Windows hardware and retain functional WARP checks. |
+
+Defer full diplomacy, ship interiors, tactical boarding, fully simulated populations across the galaxy, more hull classes, a standalone VFX editor, and speculative megastructures until this checklist passes. The game’s completion and the SDK’s toolkit coverage have separate acceptance criteria.
+
+## Research and campaign progression
+
+Use a directed acyclic graph with explicit prerequisites, a single active project, a visible queue, and science output as work per tick. The panel shows what a node unlocks, what it costs, time at the current output, and which lab, survey, or demonstration is gating it. Introduce 12 nodes across five disciplines and reveal them in tiers as the colony develops. Make early research complete during an active survey or build. Tune later projects so a second lab or a better route changes a meaningful wait. Unlock components, capabilities, and operating envelopes so every branch changes a decision.
+
+| Discipline | Nodes in order | Tradeoff |
+| --- | --- | --- |
+| Propulsion | Orbital Refueling → High-Efficiency Drives → Pulsed Fusion | Refueling extends repeat trips. Efficient drives save propellant but trade away thrust. Fusion needs a stronger power and heat budget. |
+| Industry | In-Situ Processing → Beamed Power | Process local material and replace some fuel deliveries with power transmitters. A transmitter creates a new vulnerable route endpoint. |
+| Habitats | Closed-Loop Life Support → Rotating Habitats | Sustain a colony with fewer supply runs. A larger spin habitat trades construction material and upkeep for population and industrial capacity. |
+| Sensing and navigation | Interferometry → Deep-Sky Astrometry → Expedition Navigation | Reveal deposits and incoming contacts earlier, survey a neighboring system, and unlock flight plans for a fusion-equipped expedition. |
+| Defense | Point Defense → Distributed Fire Control | Intercept incoming ordnance or improve several ships’ coordination. Both consume power and module space. |
+
+**First act.** Survey and develop a small resource chain near Earth. Commit a constructor to a site and see it arrive, assemble the site, and turn it online. Put a scout on the next target and let the survey reveal a route or anomaly.
+
+**Second act.** Choose whether to accept the belt compact’s terms for resupply, commit your own escorts, or invest in an outpost and defense platform. A successful raid costs cargo and energy and puts a new task in the log. It leaves a viable recovery path at Earth. Use a scenario dispatch with an illustration, a concise statement of stakes, explicit costs and likely effects, and a durable record of the decision.
+
+**Third act.** Establish a self-sustaining colony and commission the expedition after researching Pulsed Fusion and Expedition Navigation. Use a scheduled sublight departure and arrival on the campaign clock, with an explicit years-long time jump for the scenario finale. The jump processes scheduled work and draws attention to major changes. Use the years of transit as part of the story. Beamed sails, autonomous industry, and rotating habitats can seed follow-on scenarios. Paired wormhole gates and other conjectural technologies belong on a later, explicitly speculative branch.
+
+## Ship design and command UI
+
+Give the designer its own screen with a named hull and design list, a turntable preview with socket overlays, a filterable component tray, and a stat inspector. Drag a module onto a compatible slot or select the module and click the socket. Show invalid drops and their reason. Start with two meaningful choices per common slot. Resolve reactor output, mass, thermal load, acceleration, delta-v, protection, and production costs from hull and component data. Evaluate modifiers in a documented order, with explicit additive, multiplicative, and clamp stages. Verify the same result in the designer, shipyard quote, simulation, and inspector. Persist designs as IDs and immutable revisions, so edits leave existing builds and ships intact until a player orders a refit.
+
+A ship inspector shows hull and design revision, installed modules, health and shields, propellant, current order, ETA, and next available action. A fleet inspector shows member ships, readiness, range set by the limiting ship, current order, and entry points for split, merge, stance, and service. It should be possible to go from a fleet summary to a single ship and from an order to its target without hunting in the map.
+
+Share layout, hit regions, scroll/clipping, focus, and glyph rendering across the HUD, menus, and designer. Use scalable type, consistent icon families, and a steady map area. Keep condition and progress on the object and explain the details in its panel. Show a single explicit pause state throughout. Rename keeps the game running. The first raid alert is a visible callout and a distinct two-tone warning. Extend it with durable event IDs, per-type coalescing, focus/dismiss actions, and separate alert volume.
+
+## Galaxy size and simulation
+
+Author Sol, one reachable neighboring system, and four surveyed or charted destinations for the campaign. Use a separate generated benchmark of 100,000 catalog entries. Keep the catalogue compact and seed unvisited content from stable system IDs. Persist changes for explored or owned systems and active fleets. Run campaign work on a fixed CPU clock with scheduled events for arrivals, production, and research. Systems with economic activity tick at a coarser rate when offscreen. A fleet in transit has an immutable manifest and a unique arrival event. Consume it exactly once and preserve that rule across saves. Visiting a system changes presentation cadence only.
+
+Keep simulation state in contiguous typed buffers for active tactical workloads. A deterministic CPU path resolves orders, economy, damage, and replay. Cull with a spatial index and feed frame-local visual snapshots to the GPU. Dispatch orbit, traffic, culling, emitter updates, and instance packing in batches through the SDK job API. Qualify any GPU steering or AI against a CPU reference first. Use GPU work for local steering and score candidates in bulk where measured gains justify it. Keep player-visible decisions deterministic and avoid synchronous readback in the frame loop. Use double-precision body/sector coordinates and pack camera-relative floats for rendering.
+
+Measure the campaign and independent stress modes. Target 100,000 charted systems with bounded memory, 10,000 active ships in a separate tactical stress run, and 65,536 decorative instances in a separate GPU stress run. Report CPU simulation and submission time, GPU pass p95, 1% frame-time lows expressed as FPS or p99 frame time, bytes uploaded, and peak working set. Record the adapter, driver, resolution, and preset. Set the frame budget from the RTX 3080 Ti measurements. WARP qualifies correctness.
+
+## Rendering and Houdini delivery
+
+Render the world to a linear FP16 scene target. Use exposure, a soft-threshold bloom extraction, a downsample/upsample pyramid, then tone map into the SDR swap chain. Draw the HUD after the composite. This lets the solar limb, engines, shield hits, and beacons supply light to the same bloom pass. Drive the lens flare from the projected star and a depth-tested visibility estimate with temporal smoothing. Give bloom and flare independent options and validate that hidden stars stop flaring. See [DirectXTK12 post-processing](https://github.com/microsoft/DirectXTK12/wiki/PostProcess).
+
+| Layer | Rendering | First art delivery |
+| --- | --- | --- |
+| Stars | Camera-relative sphere or disc, limb darkening, animated photosphere, emissive corona | Seamless linear granulation tile, corona mask, subtle flare ghost atlas |
+| Rocky worlds and moons | Sphere LODs, Sun-lit BRDF, optional night lights, atmosphere for bodies with air | Earth/Moon/Mars 2:1 albedo, linear elevation or normal map, roughness and water masks where relevant, separate Earth night emissive and cloud layers |
+| Gas giants and rings | Layered band textures, differential drift, atmosphere rim, translucent rings with planet shadow | Jupiter and Saturn color/band maps, a radial optical-depth ramp for Saturn’s rings |
+| Asteroids and comets | Seeded instances in physically placed belts, body-relative clusters, impostors at distance | Six distinct asteroid silhouettes with three LODs and one material set, one comet nucleus, a dust flipbook |
+| Deep sky | Camera-infinite sky cubemap or procedural layers with stable stars and separate foreground particles | A scene-linear EXR cubemap or lat-long Milky Way plate with no foreground planets, plus a star density mask |
+| Fleet and industry | PBR instancing with emissive sockets and authored LODs | Six hulls, one modular station kit, dock/exhaust/weapon sockets, material IDs and proxies. Start with scout, corvette, freighter, yard, and outpost. |
+| Activity effects | One GPU pool per emitter family, continuous socket emitters and batched burst records | Thruster, survey beam, assembly sparks, shield/impact and debris flipbooks. Export color/opacity or emissive masks and a named event cue for each. |
+
+Use meters, +Y up, bow toward −Z, centered local origins, named sockets, and one export per asset. Keep base color authored in sRGB. Export normals and packed metallic/roughness/occlusion as linear data, with independent emissive. Deliver neutral-light silhouettes and no baked bloom. Keep separate display scales for map readability. Start with uncompressed source textures and preserve the Houdini scene. Bring the EXR sky, map images, and material channels through the planned cooker before adopting them in the packaged sample. The current static GLB path can qualify geometry and base color today. Record attribution and provenance per file for external assets. See the [NASA 3D Resources catalog](https://science.nasa.gov/3d-resources/), [NASA media guidance](https://www.nasa.gov/nasa-brand-center/images-and-media/), and the [static model tutorial](tutorials/07-static-models.md).
+
+An emitter asset should define spawn rate or burst, life and size ranges, curves for scale and color, atlas or mesh, blend mode, and socket binding. Use a versioned, inspectable source file plus a packed runtime record. Validate it in the asset build and preview it in-game before investing in a standalone designer.
+
+## SDK toolkit coverage
+
+| Reference capability | DXSharp today | Next complete path |
+| --- | --- | --- |
+| DirectXTex texture processing | RGBA sampled texture upload, limited static glTF base color decode | Format-aware mip/subresource upload, DDS including BCn, WIC/common source decode, mip generation, compression, and color-space qualification. Use a pinned offline DirectXTex tool or adapter where it saves duplicated work. |
+| DirectXMesh geometry processing | Indexed mesh upload and shared static glTF primitives, with flat normal fallback | Offline normals/tangents, vertex remap and cache optimization, bounds, LOD ingestion, then optional meshlets. Verify packed vertex/index layout against the shaders. Use a pinned DirectXMesh tool or adapter as needed. |
+| DirectXTK12 runtime helpers | Core queues, resource/descriptor primitives, D3D12 pipelines, compute job batches, DXR and a desktop host | Reusable sprite/text batching, material/effect presets and samplers, upload batches/transient resources, render targets and post-processing, skinned model/runtime animation, and audio/input helpers. Document defaults and qualify resource lifetime and resize. |
+
+Close texture/mesh cooking, runtime material binding, and the HDR target/composite path first. They unlock the assets above and pay for themselves in samples other than Fleet Battler. Use feature-specific smoke and numerical tests and compare packaged assets to reference fixtures. Track broader toolkit coverage by workflow rather than counting matching method names. [DirectXTex](https://github.com/microsoft/DirectXTex) · [DirectXMesh](https://github.com/microsoft/DirectXMesh) · [DirectXTK12](https://github.com/microsoft/DirectXTK12/wiki)
 
 ## Kepler 2.0 data path
 

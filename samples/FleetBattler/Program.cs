@@ -145,11 +145,13 @@ internal static class Program {
         var effects = new BattleEffect[FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity + FleetSimulation.FrontierRepairCapacity];
         int planet = initial.Frontier ? FleetSimulation.Homeworld : -1, shotsHeard = 0, lossesHeard = 0, nextCue = 0;
         long noticeUntil = 0;
-        string? notice = null;
+        string? notice = null, hostileAlert = null;
+        long hostileAlertUntil = 0;
         bool oreShort = false, galaxy = startGalaxy || viewTest, sawGalaxy = false;
         int slotsUsed = 0, systemsVisited = 0, previousOwner = -1, speed = 1;
         int surveysHeard = 0, wingsHeard = 0, yardState = -1, sitesHeard = 0, buildsHeard = 0;
         BodyMenu? menu = null;
+        Form? renameEditor = null;
         CommandTab commandTab = CommandTab.Hidden;
         int dispatch = 0, dispatchesSeen = initial.DispatchCount;
         int yardInspector = -1, launchesSeen = 0, researchSeen = 0, servicesSeen = 0, scansHeard = 0;
@@ -247,11 +249,18 @@ internal static class Program {
                 audio.Cue( "launch" );
             }
             if ( dispatchesSeen < fleet.DispatchCount ) {
-                dispatchesSeen = fleet.DispatchCount;
+                bool hostile = false;
+                while ( dispatchesSeen < fleet.DispatchCount ) {
+                    var received = fleet.Dispatch( dispatchesSeen++ );
+                    if ( received is not (FrontierEvent.Raid or FrontierEvent.Counterattack) ) continue;
+                    hostile = true;
+                    hostileAlert = FleetHud.IncidentTitle( received );
+                    hostileAlertUntil = Environment.TickCount64 + 9_000;
+                }
                 dispatch = dispatchesSeen - 1;
                 var incident = fleet.Dispatch( dispatch );
                 Notify( FleetHud.IncidentTitle( incident ) );
-                audio.Cue( incident == FrontierEvent.MerchantOffer ? "dispatch" : "order" );
+                audio.Cue( hostile ? "hostile" : incident == FrontierEvent.MerchantOffer ? "dispatch" : "order" );
             }
             if ( piracySeen != fleet.PiracyCycles ) {
                 if ( piracySeen == 0 || piracySeen / 4 != fleet.PiracyCycles / 4 ) audio.Cue( "piracy" );
@@ -415,7 +424,8 @@ internal static class Program {
             hud.Record( frame.Commands, hudPipeline, hudUpload, fleet, selected, viewport.Width, viewport.Height, oreShort, screenBodies.AsSpan( 0, fleet.Bodies.Length ),
                 selection.Count, planet, Environment.TickCount64 < noticeUntil ? notice : null, drag,
                 fleet.Frontier ? null : CommandSelection.Project( fleet.Site, viewProjection, new( viewport.Width, viewport.Height ) ),
-                selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch, screenSites.AsSpan( 0, siteCount ), hover, yardInspector, buildCatalog, secondResearchPage, catalogLayer );
+                selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch, screenSites.AsSpan( 0, siteCount ), hover, yardInspector, buildCatalog, secondResearchPage, catalogLayer,
+                Environment.TickCount64 < hostileAlertUntil ? hostileAlert : null );
         }, ( window, result ) => {
             if ( result.Frames == 1 ) {
                 if ( startFullscreen ) display.Toggle( window );
@@ -675,6 +685,14 @@ internal static class Program {
                     menu = null;
                     buildCatalog = true;
                     catalogLayer = SiteLayer.Surface;
+                    Rename( window, forceFleet: false );
+                    if ( renameEditor is not { Modal: false, Visible: true } || paused )
+                        throw new InvalidOperationException( "Rename qualification did not open a modeless editor with the simulation running." );
+                }
+                if ( result.Frames == 14 ) {
+                    if ( renameEditor is not { Visible: true } || paused )
+                        throw new InvalidOperationException( "Rendering did not advance with the rename editor open." );
+                    renameEditor.Close( );
                 }
             }
         } );
@@ -723,6 +741,7 @@ internal static class Program {
         }
 
         void Enter( int index ) {
+            renameEditor?.Close( );
             int ships = initial.Frontier ? FleetSimulation.DefaultShips : initial.Capacity - FleetSimulation.WingSize * FleetSimulation.WingGoal;
             fleet = systems[index] ??= new FleetSimulation( ships, unchecked(seed + (uint)index * 1177),
                 rivalPatrol: true, system: index, battle: true, frontier: initial.Frontier );
@@ -741,7 +760,7 @@ internal static class Program {
             dispatchesSeen = fleet.DispatchCount;
             dispatch = Math.Max( 0, dispatchesSeen - 1 );
             lastClickShip = -1;
-            notice = null;
+            notice = hostileAlert = null;
             shotsHeard = fleet.ShotsFired;
             lossesHeard = fleet.ShipsLost;
             nextCue = 0;
@@ -830,22 +849,33 @@ internal static class Program {
         }
 
         void Rename( Form window, bool forceFleet, int outlinerSquad = -1 ) {
+            if ( renameEditor is { } existing ) {
+                existing.Activate( );
+                return;
+            }
             int ship = selection.Primary;
             int squad = outlinerSquad >= 0 ? outlinerSquad : ship >= 0 ? fleet.SquadronOf( ship ) : -1;
             int body = !forceFleet ? planet : -1;
             bool fleetLabel = body < 0 && (forceFleet || selection.Count > 1);
-            if ( body < 0 && (fleetLabel ? squad < 0 : ship < 0) ) return;
+            if ( body < 0 && (fleetLabel ? squad < 0 || !fleet.IsPlayerSquad( squad ) || fleet.ShipCount( squad ) == 0
+                : ship < 0 || !fleet.Alive( ship ) || fleet.FactionOf( ship ) != FactionId.Sol) ) return;
+
+            var target = fleet;
+            int fleetId = fleetLabel ? target.FleetId( squad ) : -1;
+            int generation = body < 0 && !fleetLabel ? target.ShipGeneration( ship ) : -1;
             string kind = body >= 0 ? "body" : fleetLabel ? "fleet" : "ship";
-            string current = body >= 0 ? fleet.BodyName( body ) : fleetLabel ? fleet.FleetName( squad ) ?? "" : fleet.ShipName( ship ) ?? "";
-            bool wasPaused = paused;
-            paused = true;
-            try {
-                string? name = EditName( window, kind, current );
-                if ( name is null ) return;
-                bool renamed = body >= 0 ? fleet.RenameBody( body, name )
-                    : fleetLabel ? fleet.RenameFleet( squad, name ) : fleet.RenameShip( ship, name );
-                Notify( renamed ? "NAME UPDATED" : "USE 1 TO 18 LETTERS, NUMBERS, SPACES OR DASHES" );
-            } finally { paused = wasPaused; }
+            string current = body >= 0 ? target.BodyName( body )
+                : fleetLabel ? target.FleetName( squad ) ?? "" : target.ShipName( ship ) ?? "";
+
+            var editor = CreateNameEditor( kind, current, name => {
+                bool renamed = target == fleet && (body >= 0 ? target.RenameBody( body, name )
+                    : fleetLabel ? target.RenameFleetById( fleetId, name )
+                    : target.ShipGeneration( ship ) == generation && target.RenameShip( ship, name ));
+                Notify( renamed ? "NAME UPDATED" : "RENAME TARGET NO LONGER AVAILABLE" );
+            } );
+            renameEditor = editor;
+            editor.FormClosed += ( _, _ ) => renameEditor = null;
+            editor.Show( window );
         }
 
         void OrganizeFleets( bool split ) {
@@ -989,22 +1019,40 @@ internal static class Program {
         }
     }
 
-    private static string? EditName( Form owner, string kind, string current ) {
-        using var dialog = new Form {
+    private static Form CreateNameEditor( string kind, string current, Action<string> saveName ) {
+        var editor = new Form {
             Text = $"Rename {kind}", StartPosition = FormStartPosition.CenterParent, FormBorderStyle = FormBorderStyle.FixedDialog,
-            ClientSize = new( 340, 104 ), MinimizeBox = false, MaximizeBox = false, ShowInTaskbar = false,
-            AutoScaleMode = AutoScaleMode.Dpi
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, AutoScaleMode = AutoScaleMode.Font,
+            MinimizeBox = false, MaximizeBox = false, ShowInTaskbar = false
         };
-        var input = new TextBox { Text = current, MaxLength = 18, Location = new( 12, 31 ), Width = 316 };
-        var label = new Label { Text = "Letters, numbers, spaces and dashes", AutoSize = true, Location = new( 12, 12 ) };
-        var save = new Button { Text = "Save", Location = new( 172, 66 ), Size = new( 74, 26 ), DialogResult = DialogResult.OK };
-        var cancel = new Button { Text = "Cancel", Location = new( 254, 66 ), Size = new( 74, 26 ), DialogResult = DialogResult.Cancel };
-        dialog.Controls.AddRange( [label, input, save, cancel] );
-        dialog.AcceptButton = save;
-        dialog.CancelButton = cancel;
-        dialog.ActiveControl = input;
-        input.SelectAll( );
-        return dialog.ShowDialog( owner ) == DialogResult.OK ? input.Text : null;
+        var layout = new TableLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding( 12 ) };
+        var prompt = new Label { AutoSize = true, Text = "Use 1–18 letters, numbers, spaces or dashes." };
+        var input = new TextBox { Text = current, MaxLength = 18, Anchor = AnchorStyles.Left | AnchorStyles.Right };
+        var buttons = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Anchor = AnchorStyles.Right, WrapContents = false };
+        var save = new Button { Text = "Save", AutoSize = true };
+        var cancel = new Button { Text = "Cancel", AutoSize = true };
+        save.Enabled = FleetSimulation.NormalizeName( input.Text ) is not null;
+        input.TextChanged += ( _, _ ) => save.Enabled = FleetSimulation.NormalizeName( input.Text ) is not null;
+        save.Click += ( _, _ ) => {
+            if ( FleetSimulation.NormalizeName( input.Text ) is not { } name ) return;
+            saveName( name );
+            editor.Close( );
+        };
+        cancel.Click += ( _, _ ) => editor.Close( );
+        buttons.Controls.AddRange( [save, cancel] );
+        layout.Controls.Add( prompt, 0, 0 );
+        layout.Controls.Add( input, 0, 1 );
+        layout.Controls.Add( buttons, 0, 2 );
+        editor.Controls.Add( layout );
+        editor.AcceptButton = save;
+        editor.CancelButton = cancel;
+        editor.Shown += ( _, _ ) => {
+            input.Focus( );
+            input.SelectAll( );
+        };
+        return editor;
     }
 
     private static bool IsDrag( Point from, Point to ) => Math.Abs( from.X - to.X ) > 5 || Math.Abs( from.Y - to.Y ) > 5;

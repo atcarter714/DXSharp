@@ -1,18 +1,33 @@
 # Add your music to Fleet Battler
 
-1. Copy a track such as `theme.ogg` into `samples/FleetBattler/Music/`. For an already built copy, use the `Music` folder beside `FleetBattler.exe`.
-2. Open `jukebox.json` in that same folder. Change the `system` list from `["@survey"]` to `["theme.ogg"]`. Keep the other entries as shipped.
-3. Rebuild if you edited the source folder, then launch the game. Fleet Battler reads the settings at startup.
+1. Put your tracks in the `Music` folder beside `FleetBattler.exe`. For a source build, put them in `samples/FleetBattler/Music/` and rebuild. Subfolders are copied with the sample.
+2. Edit `jukebox.json` in that folder. Use paths relative to `Music`, including each file's extension. Replace these example filenames with your own. Use forward slashes in JSON paths.
+3. Restart the game. It reads the file at startup.
 
-The theme keeps playing when you enter combat, win, or open the galaxy map. Add more filenames to the list to play them in order. Paths are relative to `Music`, so `["Ambient/theme.ogg", "patrol.wav"]` works if those files are present.
+```json
+{
+  "musicVolume": 0.35,
+  "effectsVolume": 0.55,
+  "shuffle": true,
+  "useProceduralTransitions": false,
+  "playlists": {
+    "system": ["Exploration/Sol.ogg", "Exploration/Quiet Orbit.ogg", "Exploration/Blue Hours.ogg"],
+    "galaxy": ["Galaxy/Deep Sky.ogg", "Galaxy/Parallax.ogg"],
+    "contested": ["Combat/Intercept.ogg", "Combat/Long Burn.ogg"],
+    "victory": ["Victory/Homeward.ogg", "Victory/Safe Harbor.ogg"]
+  }
+}
+```
 
-| Playlist | When it takes over if you give it its own track |
+| Playlist | When it plays |
 | --- | --- |
 | `system` | Routine system operations |
-| `galaxy` | Galaxy map |
-| `contested` | A contested relay or active combat |
-| `victory` | The system is won |
+| `galaxy` | Galaxy map, including during combat or after victory |
+| `contested` | A contested relay or active combat in the current system |
+| `victory` | A won system |
 
-Tracks beginning with `@` are the bundled procedural cues. With a custom system playlist, untouched contextual lists inherit it. Set `"useProceduralTransitions": true` to retain the stock cue changes. If an explicit playlist fails to play, Fleet Battler logs the failure and falls back to a procedural cue. Use Ogg Vorbis, MP3, or PCM WAV. Write `"theme.ogg"` without a leading `@`. The sample decodes mono or stereo Vorbis on a background thread into a local PCM cache on first use. Subsequent plays of the same file reuse that cache. Export Vorbis when encoding an Ogg container. The Ogg playback path supports Vorbis audio.
+With `"shuffle": true`, each list shuffles its distinct tracks and cycles through them before reshuffling. A different playlist starts its next track when the situation changes. Returning to a list picks up at its next track, and contexts with the same track list keep the current song playing. Set `"shuffle": false` to play the lists in written order.
 
-`musicVolume` and `effectsVolume` run from 0 to 1. Press **M** to toggle audio or start with `--mute`.
+To use one large library everywhere, define only `system` and leave `"useProceduralTransitions": false`. Unspecified contexts inherit that library. Tracks beginning with `@` are bundled procedural cues. Enable `"useProceduralTransitions": true` to retain default cues in contexts without a custom list. If every track in a list fails, the game logs the errors and uses a bundled cue.
+
+Use Ogg Vorbis, MP3, or PCM WAV. Export Vorbis when encoding an Ogg container. The sample decodes mono or stereo Vorbis on a background thread into a local PCM cache on first use and reuses that cache. `musicVolume` and `effectsVolume` run from 0 to 1. Press **M** to toggle audio or start with `--mute`.

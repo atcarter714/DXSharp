@@ -605,7 +605,7 @@ internal static class FleetQualification {
         AdvanceUntil( fleet, () => fleet.LastLaunch.Hull == HullBlueprint.Colony, "colony ship is commissioned" );
         int ship = fleet.LastLaunch.Ship, squad = fleet.SquadronOf( ship );
         var unit = new FleetSelection( squad, ship );
-        Require( fleet.RenameShip( ship, " sunrise " ) && fleet.RenameFleet( squad, "Survey Group" ) &&
+        Require( fleet.RenameShip( ship, " sunrise " ) && fleet.RenameFleetById( fleet.FleetId( squad ), "Survey Group" ) &&
             fleet.RenameBody( moon, "New Selene" ) && fleet.ShipName( ship ) == "SUNRISE" &&
             fleet.FleetName( squad ) == "SURVEY GROUP" && fleet.BodyName( moon ) == "NEW SELENE" &&
             !fleet.RenameShip( ship, "??" ), "names are validated and tied to live objects" );
@@ -613,7 +613,7 @@ internal static class FleetQualification {
             !fleet.BeginColony( giant, unit ) && fleet.BeginColony( moon, unit ) &&
             fleet.SiteRemaining( moon, PlanetFacility.Mine ) < 0 && fleet.Colony( moon ).WorkRemaining == FleetSimulation.ColonyDuration,
             "orbital storage expands caps and settlement requires a surveyed solid body" );
-        int losses = fleet.ShipsLost;
+        int losses = fleet.ShipsLost, retiredFleet = fleet.FleetId( squad );
         AdvanceUntil( fleet, () => fleet.ColoniesFounded == 1, "colony ship lands after its transfer", 2000 );
         Require( !fleet.Alive( ship ) && fleet.ShipsLost == losses && !fleet.IsFleetLeader( squad ) &&
             fleet.FleetName( squad ) is null && fleet.Colony( moon ).Population == FleetSimulation.ColonyLandingPopulation &&
@@ -626,7 +626,8 @@ internal static class FleetQualification {
             "a small body's physical capacity remains binding after population grows" );
         Require( fleet.QueueShip( home, HullBlueprint.Colony ), "another colony ship can be ordered" );
         AdvanceUntil( fleet, () => fleet.ActiveColonyShips( ) == 1, "replacement colony ship arrives" );
-        Require( fleet.LastLaunch.Ship == ship && fleet.ShipName( ship ) is null && fleet.FleetName( squad ) is null,
+        Require( fleet.LastLaunch.Ship == ship && fleet.ShipName( ship ) is null && fleet.FleetName( squad ) is null &&
+            !fleet.RenameFleetById( retiredFleet, "Gone" ),
             "recycled hull and squad slots never inherit previous names" );
     }
 
@@ -680,6 +681,26 @@ internal static class FleetQualification {
             "explicit procedural transitions still work" );
         Require( new Jukebox( ).Tracks( 1 ).SequenceEqual( new[] { "@cartography" } ), "default soundtrack still has context" );
 
+        using var shuffled = JsonDocument.Parse( """
+            {"shuffle":true,"playlists":{"system":["one.ogg","two.ogg","three.ogg"],"galaxy":["chart.wav"]}}
+            """ );
+        var rotations = Jukebox.Parse( shuffled.RootElement ).CreateRotations( new Random( 37 ) );
+        Require( rotations[0] == rotations[2] && rotations[0] == rotations[3] && rotations[0] != rotations[1],
+            "inherited playlists share rotation and a separate galaxy list has its own cursor" );
+        string? previous = null;
+        for ( int cycle = 0; cycle < 4; ++cycle ) {
+            var heard = new HashSet<string>( );
+            for ( int track = 0; track < 3; ++track ) {
+                string choice = rotations[0].Next( previous );
+                Require( choice != previous && heard.Add( choice ), "shuffle plays each track before repeating and avoids a cycle-boundary repeat" );
+                Require( rotations[1].Next( choice ) == "chart.wav", "playing a galaxy track does not reset the system rotation" );
+                previous = choice;
+            }
+        }
+        var sequential = new PlaylistRotation( ["first", "second"], shuffle: false, new Random( 37 ) );
+        Require( sequential.Next( null ) == "first" && sequential.Next( "first" ) == "second" &&
+            sequential.Next( "second" ) == "first", "legacy configuration keeps authored playlist order" );
+
         using var vorbis = File.OpenRead( Path.Combine( AppContext.BaseDirectory, "Audio", "TestTone.ogg" ) );
         using var pcm = new MemoryStream( );
         VorbisTrack.Decode( vorbis, pcm );
@@ -689,7 +710,7 @@ internal static class FleetQualification {
             System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian( wave[40..] ) == 1920 * 2 &&
             wave[44..].IndexOfAnyExcept( (byte)0 ) >= 0, "mono Vorbis decodes to a complete, non-silent 16 kHz PCM track" );
 
-        foreach ( string name in new[] { "survey", "cartography", "signal", "arrival", "order", "launch", "capture", "laser", "burst" } ) {
+        foreach ( string name in new[] { "survey", "cartography", "signal", "arrival", "order", "launch", "capture", "laser", "burst", "hostile" } ) {
             using var stream = new MemoryStream( );
             SynthAudio.WriteWave( stream, name );
             var data = stream.GetBuffer( ).AsSpan( 0, (int)stream.Length );

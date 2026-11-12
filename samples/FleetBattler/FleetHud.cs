@@ -96,7 +96,7 @@ internal sealed partial class FleetHud {
     internal void Record( GraphicsCommandList commands, PipelineState pipeline, GpuResource upload, FleetSimulation fleet,
         FleetSelection selected, int width, int height, bool oreShort, ReadOnlySpan<Vector4> bodies = default,
         int selectionCount = -1, int planet = -1, string? notice = null, Vector4? drag = null, Vector2? beacon = null,
-        ReadOnlySpan<bool> selectedShips = default, int speed = 1, bool paused = false, FleetSelection? surveyUnit = null, BodyMenu? menu = null, Vector2? yard = null, CommandTab commandTab = CommandTab.Hidden, int dispatch = 0, ReadOnlySpan<MapSite> sites = default, MapHover hover = default, int yardInspector = -1, bool buildCatalog = false, bool secondResearchPage = false, SiteLayer catalogLayer = SiteLayer.Orbit ) {
+        ReadOnlySpan<bool> selectedShips = default, int speed = 1, bool paused = false, FleetSelection? surveyUnit = null, BodyMenu? menu = null, Vector2? yard = null, CommandTab commandTab = CommandTab.Hidden, int dispatch = 0, ReadOnlySpan<MapSite> sites = default, MapHover hover = default, int yardInspector = -1, bool buildCatalog = false, bool secondResearchPage = false, SiteLayer catalogLayer = SiteLayer.Orbit, string? hostileAlert = null ) {
         if ( width < 350 || height < 240 ) return;
         Begin( width, height );
         var layout = new Layout( width / _scale, height / _scale );
@@ -264,6 +264,14 @@ internal sealed partial class FleetHud {
         if ( fleet.Frontier ) CommandPanel( layout, fleet, commandTab, dispatch, speed, secondResearchPage );
         if ( fleet.Frontier ) OperationsFeedback( layout, fleet, bodies, sites, hover, speed, planet );
         if ( yardInspector >= 0 && fleet.CanOpenYard( yardInspector ) ) DrawShipyard( layout, fleet, yardInspector, speed );
+        if ( hostileAlert is not null ) {
+            float alertWidth = MathF.Min( layout.Width - 28, 318 ), x = (layout.Width - alertWidth) / 2;
+            float y = layout.Bottom - 56;
+            PanelAt( x, y, alertWidth, 48, SpaceDraw.Amber );
+            Text( "HOSTILE CONTACT", x + 9, y + 8, 1.28f, SpaceDraw.Amber );
+            int characters = (int)((alertWidth - 18) / TextWidth( 1, 1.05f ));
+            Text( hostileAlert.AsSpan( 0, Math.Min( hostileAlert.Length, characters ) ), x + 9, y + 29, 1.05f, White );
+        }
         if ( menu is { } popup ) ContextPanel( layout, fleet, popup, surveyUnit, selectionCount != 0 );
         Submit( commands, pipeline, upload, width, height );
     }
