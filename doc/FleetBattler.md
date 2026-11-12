@@ -2,9 +2,21 @@
 
 Fleet Battler is a Windows strategy game sample for DXSharp. Frontier currently starts at Earth with a science scout, two constructors, and a civilian dock. It has six map systems, local surveys and transfers, timed construction and research, colonization, orbital shipyard queues, corvette fitting, and piracy. The galaxy map can inspect neighboring systems. The command simulation runs on the CPU and GPU compute updates decorative traffic and debris. See the [sample README](../samples/FleetBattler/README.md) for the playable build and controls.
 
-## The finish line
+## When to stop developing the sample
 
-Ship a 30–45 minute scenario, **The First Crossing**. Start with player presence in Sol only. A coalition on Earth charters a first permanent off-world settlement while an independent belt compact controls logistics and raiders skim unescorted shipments. Survey the Moon or Mars, establish a colony, and outfit an escort or negotiate convoy coverage. After the colony reaches sustained operation, authorize a fusion-powered expedition and establish a receiving station in Alpha Centauri. Make the two approaches to the convoy crisis affect what the player can afford, who offers aid, and what condition the expedition launches in. Keep a small post-victory sandbox and the existing skirmish.
+Freeze feature development once the Windows sample demonstrates the complete workflow below and the SDK features it uses have reusable entry points. From that point, work on bugs, readability, balance, performance regressions, packaging, and documentation until the sample qualifies. Further game features can live in a separate game repository. Keep the sample in DXSharp as a maintained reference for the SDK.
+
+| Milestone | Scope | Gate |
+| --- | --- | --- |
+| Feature freeze | One authored campaign in Sol, the existing skirmish, and a chart of neighboring systems. At most six hulls, eight structures, and twelve research nodes. Include menus, save/load, a working module designer, inspectors, alerts, and a complete art and effects pass for the campaign. | A first-time player can survey, build, resolve the convoy crisis, design and commission a ship, and complete the campaign using only the game UI. A player can quit and continue the same run. |
+| Stabilization | Fix crashes, lost state, progression blockers, ambiguous orders, rendering and audio defects, and measured hot paths. | Repeat the campaign from a clean install. Resume saves made during construction, production, and a scenario choice. Qualify on WARP and hardware and run Windows Debug/Release and NativeAOT CI. Record one reproducible stress run and its frame-time and memory results. |
+| Sample maintenance | Keep the documented Windows build, controls, asset provenance, and sample working as DXSharp evolves. | SDK changes that affect the sample pass its smoke tests. New content, grand strategy mechanics, and an expanded galaxy are independent project work. |
+
+A playable second system, a huge simulated galaxy, a standalone VFX editor, and complete toolkit parity are separate milestones. A controlled interstellar departure can be the campaign payoff. Use an epilogue for the arrival if it would otherwise require a second simulation and UI pass before feature freeze.
+
+## The campaign
+
+Build **The First Crossing** as a compact campaign. Use 30–45 minutes as an initial pacing estimate to test. Start with player presence in Sol only. A coalition on Earth charters a first permanent off-world settlement while an independent belt compact controls logistics and raiders skim unescorted shipments. Survey the Moon or Mars, establish a colony, and outfit an escort or negotiate convoy coverage. After the colony reaches sustained operation, authorize a fusion-powered expedition bound for Alpha Centauri. Make the two approaches to the convoy crisis affect what the player can afford, who offers aid, and what condition the expedition launches in. Keep a small post-victory sandbox and the existing skirmish.
 
 Six hulls are enough for the scenario. Each has a distinct job and an identifiable silhouette at tactical zoom. Four utilities teach the economy. Two military hulls create a choice between cheap coverage and concentrated defense.
 
@@ -19,12 +31,12 @@ Six hulls are enough for the scenario. Each has a distinct job and an identifiab
 
 The first complete construction catalog needs an extraction rig, solar array, research lab, storage depot, orbital shipyard, survey outpost, defense platform, and habitat. Give the defense platform a limited coverage radius and ongoing energy cost. A depot adds storage and a resupply stop. A survey outpost extends detection and route knowledge. Surface buildings need a settled solid body with available labor and slots. An O’Neill habitat is a late milestone that consumes freight, energy, and construction time and creates housing and new economic capacity. Gas giants support orbital infrastructure.
 
-Stop adding feature breadth once a fresh player can finish the scenario using the game’s feedback and three replayable decisions have material consequences. Use this acceptance checklist.
+Use the following checks for the feature freeze and stabilization milestones.
 
 | Area | Accept when |
 | --- | --- |
 | Session | A small loading screen reports real initialization progress. Main menu offers New, Continue, Load, Options, Quit. Pause menu offers Resume, Save, Load, Options, Return to Menu, Quit. Quit is reachable entirely through the UI. |
-| Persistence | A versioned save round-trips bodies, fleets, names, designs, inventory, orders, colony work, tech, queues, faction decisions, campaign tick, and travel manifests. Save via a temporary file in the same directory and atomic replacement. Restore from a checkpoint mid-construction and mid-transit with identical completion outcomes. Keep user settings separate. |
+| Persistence | A versioned save round-trips bodies, fleets, names, designs, inventory, orders, colony work, tech, queues, faction decisions, campaign tick, and travel manifests. Save via a temporary file in the same directory and atomic replacement. Restore from a checkpoint mid-construction and before the expedition launch with identical completion outcomes. When interstellar transit becomes playable, add a mid-transit round trip. Keep user settings separate. |
 | Orders | Every long-running action identifies actor, target, phase, ETA or progress, and cancelability. Route lines follow the live rendezvous solution. Invalid orders explain the blocker. Critical notices show on the map and persist in the log. Selecting a notice focuses the relevant object where one exists. |
 | Shipyard and inspector | A player can design, validate, name, order, inspect, repair, and refit one hull end to end. A queue item preserves the purchased design revision and quoted cost and time. The planet panel shows built sites and pending work. Construction catalogs open separately. |
 | Content and pacing | Two routes through the convoy crisis are viable. The first resource chain, first unlock, and first escalation each have time to read and act at 1×. A playtest reaches the crossing without external instructions or waiting for a fleet to spawn on its own. |
@@ -48,7 +60,7 @@ Use a directed acyclic graph with explicit prerequisites, a single active projec
 
 **Second act.** Choose whether to accept the belt compact’s terms for resupply, commit your own escorts, or invest in an outpost and defense platform. A successful raid costs cargo and energy and puts a new task in the log. It leaves a viable recovery path at Earth. Use a scenario dispatch with an illustration, a concise statement of stakes, explicit costs and likely effects, and a durable record of the decision.
 
-**Third act.** Establish a self-sustaining colony and commission the expedition after researching Pulsed Fusion and Expedition Navigation. Use a scheduled sublight departure and arrival on the campaign clock, with an explicit years-long time jump for the scenario finale. The jump processes scheduled work and draws attention to major changes. Use the years of transit as part of the story. Beamed sails, autonomous industry, and rotating habitats can seed follow-on scenarios. Paired wormhole gates and other conjectural technologies belong on a later, explicitly speculative branch.
+**Third act.** Establish a self-sustaining colony and commission the expedition after researching Pulsed Fusion and Expedition Navigation. End the scenario with a sublight departure. Use the years of transit as part of the epilogue. If the later interstellar simulation runs that passage, process scheduled work on the campaign clock and draw attention to major changes. Beamed sails, autonomous industry, and rotating habitats can seed follow-on scenarios. Paired wormhole gates and other conjectural technologies belong on a later, explicitly speculative branch.
 
 ## Ship design and command UI
 
@@ -60,7 +72,7 @@ Share layout, hit regions, scroll/clipping, focus, and glyph rendering across th
 
 ## Galaxy size and simulation
 
-Author Sol, one reachable neighboring system, and four surveyed or charted destinations for the campaign. Use a separate generated benchmark of 100,000 catalog entries. Keep the catalogue compact and seed unvisited content from stable system IDs. Persist changes for explored or owned systems and active fleets. Run campaign work on a fixed CPU clock with scheduled events for arrivals, production, and research. Systems with economic activity tick at a coarser rate when offscreen. A fleet in transit has an immutable manifest and a unique arrival event. Consume it exactly once and preserve that rule across saves. Visiting a system changes presentation cadence only.
+Author Sol and five charted destinations for the campaign. Build one reachable neighboring system when interstellar play is developed. Use a separate generated benchmark of 100,000 catalog entries. Keep the catalogue compact and seed unvisited content from stable system IDs. Persist changes for explored or owned systems and active fleets. Run campaign work on a fixed CPU clock with scheduled events for arrivals, production, and research. Systems with economic activity tick at a coarser rate when offscreen. A fleet in transit has an immutable manifest and a unique arrival event. Consume it exactly once and preserve that rule across saves. Visiting a system changes presentation cadence only.
 
 Keep simulation state in contiguous typed buffers for active tactical workloads. A deterministic CPU path resolves orders, economy, damage, and replay. Cull with a spatial index and feed frame-local visual snapshots to the GPU. Dispatch orbit, traffic, culling, emitter updates, and instance packing in batches through the SDK job API. Qualify any GPU steering or AI against a CPU reference first. Use GPU work for local steering and score candidates in bulk where measured gains justify it. Keep player-visible decisions deterministic and avoid synchronous readback in the frame loop. Use double-precision body/sector coordinates and pack camera-relative floats for rendering.
 

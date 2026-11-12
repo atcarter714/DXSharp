@@ -49,10 +49,10 @@ The [finish-line design](../../doc/FleetBattler.md) covers the campaign, tech pr
 
 | Priority | Remaining work |
 | --- | --- |
-| Primary | Implement interstellar departures and arrivals, a shared campaign clock, and save/load for fleets, names, and colonies. |
+| Primary | Add session menus and save/load. Complete the Sol campaign, ship designer, inspectors, alerts, and presentation pass. |
 | Primary | Tune the colony and trade economy through playtests, including population needs, housing, freight, pirate pressure, and additional faction decisions. |
 | Stretch | Add authored ship, habitat, surface, and faction art, more hulls and effects, and bespoke sound design. |
-| Stretch | Expand to richer colonization and exploration, repair tenders, larger megastructures, and a denser inhabited galaxy. |
+| Stretch | Make interstellar transit and arrivals playable on a shared campaign clock. Expand colonization and exploration, repair tenders, megastructures, and the inhabited galaxy. |
 
 ## Relay skirmish
 
