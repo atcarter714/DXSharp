@@ -6,8 +6,12 @@ internal enum FleetStance { Normal, Aggressive, Passive, Mixed }
 internal enum ServiceOrder : byte { None, Repair, Refit, Retreat }
 
 internal sealed partial class FleetSimulation {
+    internal const int FrontierRepairCapacity = FrontierCapacity;
     private readonly ShipDesign[] _refitDesigns;
     internal int CompletedServices { get; private set; }
+
+    internal bool RepairingAtYard( int ship ) => Alive( ship ) &&
+        _shipOrders[ship] is { Service: ServiceOrder.Repair, Transfer.End: 0 };
 
     internal ServiceOrder Service( FleetSelection unit ) => EffectiveOrder( unit ).Service;
 
@@ -61,6 +65,7 @@ internal sealed partial class FleetSimulation {
             var retreat = PlotTransfer( unit, host, false );
             retreat.Construction = 0;
             retreat.Service = ServiceOrder.Retreat;
+            retreat.Settlement = false;
             retreat.ServiceTicks = 0;
             SetOrder( unit, retreat );
             _squads[squad].Stance = FleetStance.Passive;

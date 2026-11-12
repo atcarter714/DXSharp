@@ -54,7 +54,10 @@ public static class DesktopGame {
         if ( Thread.CurrentThread.GetApartmentState( ) != ApartmentState.STA )
             throw new InvalidOperationException( "The desktop game must run on an STA thread." );
 
+        using var icon = Environment.ProcessPath is { } path && OperatingSystem.IsWindows( )
+            ? Icon.ExtractAssociatedIcon( path ) : null;
         using var window = new GameWindow { Text = options.Title, ClientSize = options.ClientSize, StartPosition = FormStartPosition.CenterScreen };
+        if ( icon is not null ) window.Icon = icon;
         window.Show( );
         var queue = device.CreateCommandQueue( );
         Task? drain = null;

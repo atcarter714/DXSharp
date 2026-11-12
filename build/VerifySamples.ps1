@@ -24,7 +24,7 @@ try {
     Invoke-Sample 'FleetBattler' @('run', '--project', 'samples/FleetBattler', '-c', 'Debug', '--',
         '--warp', '--mute', '--ships=129', '--frames=7', '--resize-test')
     Invoke-Sample 'FleetBattler-views' @('run', '--project', 'samples/FleetBattler', '-c', 'Debug', '--',
-        '--warp', '--mute', '--traffic=257', '--debris=513', '--frames=12', '--view-test')
+        '--warp', '--mute', '--traffic=257', '--debris=513', '--frames=14', '--view-test')
     Invoke-Sample 'FleetBattler-dense-traffic' @('run', '--project', 'samples/FleetBattler', '-c', 'Debug', '--',
         '--warp', '--mute', '--traffic=8193', '--debris=2049', '--frames=3')
     Invoke-Sample 'ModernTriangle-buffered' @('run', '--project', 'samples/ModernTriangle', '-c', 'Debug', '--',

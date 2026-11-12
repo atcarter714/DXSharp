@@ -72,6 +72,7 @@ internal sealed partial class FleetSimulation {
         var baseline = role switch {
             HullRole.Scout => new FlightStats( 29, 61, 1, 1 ),
             HullRole.Miner => new FlightStats( 20, 44, 0.75f, 1 ),
+            HullRole.Colony => new FlightStats( 16, 37, 0.62f, 1 ),
             HullRole.Freighter => new FlightStats( 18, 39, 0.65f, 1 ),
             _ => new FlightStats( 25, 55, 1, 1 )
         };

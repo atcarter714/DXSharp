@@ -6,7 +6,7 @@ internal readonly record struct ResourceCost( int Ore, int Energy, int Science =
 internal enum ResearchTopic { Industry, Weapons, Drive, Habitation, Astrometry, Count }
 internal readonly record struct Technology( string Name, string Benefit, ResourceCost Cost, int Duration );
 internal readonly record struct HullPlan( string Name, HullRole Role, ResourceCost Cost, int Duration );
-internal enum HullBlueprint { Scout, Miner, Corvette }
+internal enum HullBlueprint { Scout, Miner, Corvette, Colony }
 internal readonly record struct ShipyardOrder( HullBlueprint Hull, ShipDesign Design, ResourceCost Cost, int Duration );
 internal readonly record struct YardLaunch( int Body, int Ship, HullBlueprint Hull );
 
@@ -17,7 +17,7 @@ internal sealed partial class FleetSimulation {
 
     private readonly ShipyardOrder[] _shipOrdersAtYards = new ShipyardOrder[CelestialSystem.BodyCount * YardQueueLimit];
     private readonly int[] _yardQueueSizes = new int[CelestialSystem.BodyCount], _yardShipReady = new int[CelestialSystem.BodyCount];
-    private int _navalReserved, _minersReserved, _scoutsReserved;
+    private int _navalReserved, _minersReserved, _scoutsReserved, _colonyReserved;
     private int _researchWork;
     internal int Energy { get; private set; }
     internal bool Established => Frontier && Solar;
@@ -34,14 +34,29 @@ internal sealed partial class FleetSimulation {
     internal int CorvettesLaunched { get; private set; }
     internal int EnergyIncome => (Established ? EarthOutput : 0) + Online( _solarArrays ) * SolarOutput;
     internal int ScienceIncome => Online( _labs ) * 6 + Online( _observatories ) * 10;
+    internal ResourceCost ResourceCapacity {
+        get {
+            if ( !Frontier ) return new( 999, 999, 999 );
+            int ground = Online( _surfaceStores ), orbit = Online( _orbitalStores );
+            return new( 400 + 250 * ground + 180 * orbit, 400 + 100 * ground + 250 * orbit, 400 + 50 * ground + 50 * orbit );
+        }
+    }
+
     internal int OreIncome {
         get {
             int sum = 0;
-            for ( int i = 1; i < _bodies.Length; ++i )
-                if ( ExtractionRemaining( i ) == 0 ) sum += DepositYield( i );
+            for ( int body = 1; body < _bodies.Length; ++body ) sum += ExtractionIncome( body, Tick );
             return sum;
         }
     }
+
+    internal int ExtractionIncome( int body, int tick ) {
+        int sum = _mines[body] > 0 && _mines[body] <= tick ? Frontier ? DepositYield( body ) : 8 : 0;
+        if ( _skimmers[body] > 0 && _skimmers[body] <= tick ) sum += OrbitalExtractionYield( body );
+        return sum;
+    }
+
+    internal int OrbitalExtractionYield( int body ) => Colonizable( body ) ? DepositYield( body ) / 2 : DepositYield( body );
 
     internal static Technology Tech( ResearchTopic topic ) => topic switch {
         ResearchTopic.Industry => new( "ORBITAL FABRICATION", "LOWER CORVETTE ORE AND BUILD TIME", new( 0, 12, IndustryCost ), 960 ),
@@ -79,7 +94,7 @@ internal sealed partial class FleetSimulation {
 
     private void AdvanceIndustry( ) {
         if ( !Frontier ) return;
-        if ( (Tick + 1) % IncomeInterval == 0 ) Energy = Math.Min( 999, Energy + EnergyIncome );
+        if ( (Tick + 1) % IncomeInterval == 0 ) Energy = Math.Min( ResourceCapacity.Energy, Energy + EnergyIncome );
         AdvanceContracts( );
         if ( ActiveResearch is { } topic && (_researchWork -= ResearchRate) <= 0 ) {
             switch ( topic ) {
@@ -110,6 +125,7 @@ internal sealed partial class FleetSimulation {
     }
 
     internal HullPlan Hull( HullBlueprint blueprint ) => blueprint switch {
+        HullBlueprint.Colony => new( "COLONY SHIP", HullRole.Colony, new( 76, 26 ), 440 ),
         HullBlueprint.Scout => new( "SURVEY SCOUT", HullRole.Scout, new( 24, 6 ), 240 ),
         HullBlueprint.Miner => new( "MINER / CONSTRUCTOR", HullRole.Miner, new( 20, 5 ), 240 ),
         HullBlueprint.Corvette => new( "CORVETTE", HullRole.Corvette,
@@ -131,6 +147,10 @@ internal sealed partial class FleetSimulation {
             if ( YardAt( body ) != 0 ) return "REQUIRES AN ORBITAL SHIPYARD";
             if ( !Design.Valid ) return "BLUEPRINT EXCEEDS REACTOR POWER";
             if ( NavalUsed + _navalReserved >= NavalCapacity ) return "NAVAL CAPACITY FULL";
+        }
+        if ( blueprint == HullBlueprint.Colony ) {
+            if ( YardAt( body ) != 0 ) return "REQUIRES AN ORBITAL SHIPYARD";
+            if ( ActiveColonyShips( ) + _colonyReserved >= 2 ) return "COLONY SHIP LIMIT REACHED";
         }
         if ( blueprint == HullBlueprint.Scout && ActiveScouts( ) + _scoutsReserved >= 2 ) return "SCOUT LIMIT REACHED";
         if ( blueprint == HullBlueprint.Miner && ActiveMiners( ) + _minersReserved >= MaxWorkers ) return "CONSTRUCTOR LIMIT REACHED";
@@ -171,6 +191,7 @@ internal sealed partial class FleetSimulation {
             case HullBlueprint.Scout: _scoutsReserved += delta; break;
             case HullBlueprint.Miner: _minersReserved += delta; break;
             case HullBlueprint.Corvette: _navalReserved += delta; break;
+            case HullBlueprint.Colony: _colonyReserved += delta; break;
         }
     }
 
@@ -182,8 +203,9 @@ internal sealed partial class FleetSimulation {
     }
 
     private void Refund( ResourceCost cost ) {
-        Ore = Math.Min( 999, Ore + cost.Ore );
-        Energy = Math.Min( 999, Energy + cost.Energy );
-        Science = Math.Min( 999, Science + cost.Science );
+        var cap = ResourceCapacity;
+        Ore = Math.Min( cap.Ore, Ore + cost.Ore );
+        Energy = Math.Min( cap.Energy, Energy + cost.Energy );
+        Science = Math.Min( cap.Science, Science + cost.Science );
     }
 }

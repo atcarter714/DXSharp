@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum HudIcon { Ore, Energy, Science, Colony, Design, Orders, Log, Merge, Split, Yard, Build, Repair, Retreat }
+internal enum HudIcon { Ore, Energy, Science, Colony, Design, Orders, Log, Merge, Split, Yard, Build, Repair, Retreat, Health }
 
 internal sealed partial class FleetHud {
     private static readonly Vector4 OreTint = new( 0.92f, 0.68f, 0.44f, 1 );
@@ -10,7 +10,7 @@ internal sealed partial class FleetHud {
     private static readonly Vector4 ScienceTint = new( 0.48f, 0.85f, 1, 1 );
     private static readonly ulong[] Icons = [
         0x020e3ae7ddf1c, 0x00820c7e30c30, 0x0d8e7793dce36, 0x1ff1e3eef8e08, 0x08b1f77c70e08,
-        0x1fe0dd83760ff, 0x0f913a44e913e, 0x02041cfe20a22, 0x088a08fe70408, 0x18f5ff55ff5e3, 0x03c187f306180, 0x0437df1c7030c, 0x00020c3ffff00
+        0x1fe0dd83760ff, 0x0f913a44e913e, 0x02041cfe20a22, 0x088a08fe70408, 0x18f5ff55ff5e3, 0x03c187f306180, 0x0437df1c7030c, 0x00020c3ffff00, 0x03870e7ff838e
     ];
 
     private void Icon( HudIcon icon, float x, float y, float size, Vector4 tint ) {
@@ -40,7 +40,7 @@ internal sealed partial class FleetHud {
         }
     }
 
-    private const float YardWidth = 422, YardTop = 61, YardHeight = 240;
+    private const float YardWidth = 422, YardTop = 61, YardHeight = 284;
     private static float YardLeft( Layout layout ) => (layout.Width - YardWidth) / 2;
 
     private void DrawShipyard( Layout layout, FleetSimulation fleet, int body, int speed ) {
@@ -58,7 +58,7 @@ internal sealed partial class FleetHud {
 
         Span<char> label = stackalloc char[44];
         int length;
-        for ( int i = 0; i < 3; ++i ) {
+        for ( int i = 0; i <= (int)HullBlueprint.Colony; ++i ) {
             var blueprint = (HullBlueprint)i;
             var hull = fleet.Hull( blueprint );
             float row = y + 80 + i * 45;
@@ -82,7 +82,7 @@ internal sealed partial class FleetHud {
                 continue;
             }
             var order = orders[i];
-            Text( order.Hull switch { HullBlueprint.Scout => "SURVEY SCOUT", HullBlueprint.Miner => "CONSTRUCTOR",
+            Text( order.Hull switch { HullBlueprint.Scout => "SURVEY SCOUT", HullBlueprint.Miner => "CONSTRUCTOR", HullBlueprint.Colony => "COLONY SHIP",
                 _ => order.Design.Weapon == WeaponKind.Rail ? "RAIL CORVETTE" : "PULSE CORVETTE" }, x + 239, row + 4, 1, White );
             int remaining = fleet.ShipRemaining( body );
             if ( i == 0 ) label.TryWrite( $"BUILDING / {Seconds( remaining, speed )} SEC", out length );
@@ -91,7 +91,7 @@ internal sealed partial class FleetHud {
             if ( i == 0 ) Progress( new( x + 239, row + 25 ), 128, 1f - (float)remaining / order.Duration, EnergyTint );
             Button( x + 386, row + 4, 20, "X", true );
         }
-        Text( "ONE HULL PER ORDER", x + 11, y + 222, 1, Label );
+        Text( "ONE HULL PER ORDER", x + 11, y + 267, 1, Label );
         _overlay = 0;
     }
 
@@ -99,7 +99,7 @@ internal sealed partial class FleetHud {
         float x = YardLeft( layout ), y = YardTop;
         if ( !Contains( p, x, y, YardWidth, YardHeight ) ) return default;
         if ( Contains( p, x + 390, y + 8, 22, 21 ) ) return new( HudAction.CloseYard );
-        for ( int i = 0; i < 3; ++i )
+        for ( int i = 0; i <= (int)HullBlueprint.Colony; ++i )
             if ( Contains( p, x + 170, y + 93 + i * 45, 37, 21 ) && fleet.ShipOrderBlock( body, (HullBlueprint)i ) is null )
                 return new( HudAction.BuildShip, i );
         for ( int i = 0; i < fleet.YardQueue( body ).Length; ++i )

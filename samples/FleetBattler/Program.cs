@@ -42,9 +42,9 @@ internal static class Program {
             throw new ArgumentException( "Resize qualification requires at least six frames." );
         if ( resizeTest && frameLimit == 0 ) frameLimit = 6;
         bool viewTest = args.Contains( "--view-test" );
-        if ( viewTest && (!frontier || frameLimit is > 0 and < 12) )
-            throw new ArgumentException( "View qualification requires the Frontier scenario and at least twelve frames." );
-        if ( viewTest && frameLimit == 0 ) frameLimit = 12;
+        if ( viewTest && (!frontier || frameLimit is > 0 and < 14) )
+            throw new ArgumentException( "View qualification requires the Frontier scenario and at least fourteen frames." );
+        if ( viewTest && frameLimit == 0 ) frameLimit = 14;
         int trafficCount = int.Parse( Option( args, "--traffic=", ComputeTraffic.DefaultAgents.ToString( ) ) );
         int debrisCount = int.Parse( Option( args, "--debris=", ComputeTraffic.DefaultDebris.ToString( ) ) );
 
@@ -86,8 +86,8 @@ internal static class Program {
         using var second = device.CreateBuffer( (ulong)(fleet.Capacity + StationSlots) * FleetDraw.InstanceStride, BufferMemory.Upload );
         using var firstHud = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
         using var secondHud = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
-        using var firstEffects = device.CreateBuffer( (FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity) * BattleDraw.EffectStride, BufferMemory.Upload );
-        using var secondEffects = device.CreateBuffer( (FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity) * BattleDraw.EffectStride, BufferMemory.Upload );
+        using var firstEffects = device.CreateBuffer( (FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity + FleetSimulation.FrontierRepairCapacity) * BattleDraw.EffectStride, BufferMemory.Upload );
+        using var secondEffects = device.CreateBuffer( (FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity + FleetSimulation.FrontierRepairCapacity) * BattleDraw.EffectStride, BufferMemory.Upload );
         using var queue = device.CreateCommandQueue( );
         using var allocator = device.CreateCommandAllocator( );
         using var commands = device.CreateCommandList( allocator );
@@ -142,7 +142,7 @@ internal static class Program {
         var display = new FullscreenToggle( );
         var selection = new CommandSelection( fleet.Capacity );
         selection.Squadron( fleet, fleet.FirstPlayerSquad( ), SelectionMode.Replace );
-        var effects = new BattleEffect[FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity];
+        var effects = new BattleEffect[FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity + FleetSimulation.FrontierRepairCapacity];
         int planet = initial.Frontier ? FleetSimulation.Homeworld : -1, shotsHeard = 0, lossesHeard = 0, nextCue = 0;
         long noticeUntil = 0;
         string? notice = null;
@@ -154,9 +154,11 @@ internal static class Program {
         int dispatch = 0, dispatchesSeen = initial.DispatchCount;
         int yardInspector = -1, launchesSeen = 0, researchSeen = 0, servicesSeen = 0, scansHeard = 0;
         bool buildCatalog = false, secondResearchPage = false;
+        SiteLayer catalogLayer = SiteLayer.Orbit;
+        int piracySeen = 0, coloniesSeen = 0;
         var clock = new FleetClock( );
         bool paused = false;
-        float zoom = initial.Solar ? 0.52f : 0.85f, tilt = DefaultTilt, yaw = 0;
+        float zoom = initial.Solar ? 0.64f : 0.85f, tilt = DefaultTilt, yaw = 0;
         Vector2 cameraFocus = initial.Solar ? initial.Bodies[FleetSimulation.Homeworld].Center : default;
         bool tilting = false;
         Point? panStart = null, dragStart = null;
@@ -251,6 +253,16 @@ internal static class Program {
                 Notify( FleetHud.IncidentTitle( incident ) );
                 audio.Cue( incident == FrontierEvent.MerchantOffer ? "dispatch" : "order" );
             }
+            if ( piracySeen != fleet.PiracyCycles ) {
+                if ( piracySeen == 0 || piracySeen / 4 != fleet.PiracyCycles / 4 ) audio.Cue( "piracy" );
+                piracySeen = fleet.PiracyCycles;
+                Notify( $"PIRATES INTERCEPTED CARGO / {fleet.BodyName( fleet.LastPiracyBody )}" );
+            }
+            if ( coloniesSeen != fleet.ColoniesFounded ) {
+                coloniesSeen = fleet.ColoniesFounded;
+                Notify( $"COLONY FOUNDED / {fleet.BodyName( fleet.LastFoundedBody )}" );
+                audio.Cue( "launch" );
+            }
             selection.Prune( fleet );
             var unit = selection.SurveyUnit( fleet );
             var selected = unit ?? selection.Focus( fleet );
@@ -269,7 +281,7 @@ internal static class Program {
                 screenBodies[i] = CelestialSystem.Project( fleet.VisualBody( i, interpolation ), radius, viewProjection, viewport.Width, viewport.Height, halfHeight );
 
             bool computeActive = traffic.ShipCount != 0 || traffic.DebrisCount != 0;
-            if ( computeActive ) traffic.RecordCompute( frame.Commands, fleet, elapsed );
+            if ( computeActive ) traffic.RecordCompute( frame.Commands, fleet, elapsed, interpolation );
             SpaceDraw.Record( frame.Commands, space, moon, useMoonMap, fleet, selected, viewProjection, inverseViewProjection,
                 viewport.Width, viewport.Height, halfHeight, showSelection: unit is not null, interpolation: interpolation );
             if ( computeActive ) {
@@ -341,7 +353,7 @@ internal static class Program {
             if ( !active.IsEmpty ) {
                 FleetDraw.RecordThrusters( frame.Commands, thrust, upload, (uint)active.Length, viewProjection, (float)(fleet.Tick * FleetSimulation.StepSeconds) );
                 FleetDraw.Record( frame.Commands, pipeline, corvettes, upload, corvetteCount, viewProjection );
-                uint miners = fleet.Frontier ? (uint)(fleet.MerchantCount + fleet.ActiveMiners( )) : 0;
+                uint miners = fleet.Frontier ? (uint)(fleet.MerchantCount + fleet.ActiveMiners( ) + fleet.ActiveColonyShips( )) : 0;
                 uint scoutsEnd = (uint)active.Length - miners;
                 FleetDraw.Record( frame.Commands, pipeline, scouts, upload, scoutsEnd - corvetteCount, viewProjection, corvetteCount );
                 FleetDraw.Record( frame.Commands, pipeline, minerMeshes, upload, miners, viewProjection, scoutsEnd );
@@ -378,6 +390,7 @@ internal static class Program {
                 void WorkBeam( Vector2 from, Vector2 to, float scanner ) =>
                     effects[pulseCount++] = new( new( from.X, from.Y, to.X, to.Y ), new( workTime, 0, 6, scanner ) );
             }
+            if ( fleet.Frontier ) pulseCount += BattleDraw.FillRepairs( fleet, effects.AsSpan( pulseCount ), interpolation );
             pulseCount += BattleDraw.FillSolarTracks( fleet, effects.AsSpan( pulseCount ) );
             if ( pulseCount != 0 ) {
                 var pulses = effectsUploads[frame.FrameSlotIndex];
@@ -388,7 +401,7 @@ internal static class Program {
             var drag = dragStart is { } start && IsDrag( start, dragEnd ) ? DragRect( start, dragEnd ) : (Vector4?)null;
             MapHover hover = default;
             if ( fleet.Frontier && menu is null && panStart is null && dragStart is null && mouse is { } pointer &&
-                 FleetHud.Hit( new( pointer.X, pointer.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, secondResearchPage: secondResearchPage ).Action == HudAction.None ) {
+                 FleetHud.Hit( new( pointer.X, pointer.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, secondResearchPage: secondResearchPage, catalogLayer: catalogLayer ).Action == HudAction.None ) {
                 var pixel = new Vector2( pointer.X, pointer.Y );
                 var dimensions = new Vector2( viewport.Width, viewport.Height );
                 int ship = CommandSelection.Hit( fleet, pixel, viewProjection, dimensions, -1, interpolation );
@@ -402,7 +415,7 @@ internal static class Program {
             hud.Record( frame.Commands, hudPipeline, hudUpload, fleet, selected, viewport.Width, viewport.Height, oreShort, screenBodies.AsSpan( 0, fleet.Bodies.Length ),
                 selection.Count, planet, Environment.TickCount64 < noticeUntil ? notice : null, drag,
                 fleet.Frontier ? null : CommandSelection.Project( fleet.Site, viewProjection, new( viewport.Width, viewport.Height ) ),
-                selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch, screenSites.AsSpan( 0, siteCount ), hover, yardInspector, buildCatalog, secondResearchPage );
+                selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch, screenSites.AsSpan( 0, siteCount ), hover, yardInspector, buildCatalog, secondResearchPage, catalogLayer );
         }, ( window, result ) => {
             if ( result.Frames == 1 ) {
                 if ( startFullscreen ) display.Toggle( window );
@@ -417,6 +430,7 @@ internal static class Program {
                         case Keys.Escape when buildCatalog: buildCatalog = false; break;
                         case Keys.Escape when !galaxy: planet = -1; break;
                         case Keys.Home when !galaxy: ResetCamera( ); break;
+                        case Keys.F2 when !galaxy && fleet.Frontier: Rename( window, e.Control ); break;
                         case Keys.F when !galaxy:
                             if ( planet >= 0 ) cameraFocus = ClampCamera( fleet.Bodies[planet].Center );
                             else if ( selection.SurveyUnit( fleet ) is { } focusUnit ) cameraFocus = ClampCamera( fleet.Center( focusUnit ) );
@@ -487,8 +501,12 @@ internal static class Program {
                             return;
                         }
                     }
-                    var hit = FleetHud.Hit( pointer, viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, secondResearchPage: secondResearchPage );
+                    var hit = FleetHud.Hit( pointer, viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, secondResearchPage: secondResearchPage, catalogLayer: catalogLayer );
                     if ( hit.Action != HudAction.None ) {
+                        if ( e.Button == MouseButtons.Right && hit.Action == HudAction.Squad && fleet.Frontier ) {
+                            Rename( window, true, hit.Index );
+                            return;
+                        }
                         if ( e.Button == MouseButtons.Left ) {
                             switch ( hit.Action ) {
                                 case HudAction.Pause: paused = !paused; break;
@@ -507,7 +525,12 @@ internal static class Program {
                                     }
                                     break;
                                 case HudAction.CancelShip: CancelOrder( fleet.CancelShip( yardInspector, hit.Index ) ); break;
-                                case HudAction.ToggleBuildCatalog: buildCatalog = !buildCatalog; break;
+                                case HudAction.ToggleBuildCatalog: buildCatalog = !buildCatalog; catalogLayer = SiteLayer.Orbit; break;
+                                case HudAction.BuildLayer: catalogLayer = catalogLayer == SiteLayer.Orbit ? SiteLayer.Surface : SiteLayer.Orbit; break;
+                                case HudAction.Colonize: Settle( hit.Index ); break;
+                                case HudAction.CancelColony:
+                                    if ( fleet.CancelColony( hit.Index ) ) Notify( "SETTLEMENT ORDER CANCELED" );
+                                    break;
                                 case HudAction.Stance: CycleStance( ); break;
                                 case HudAction.ShipService: Service( (ServiceOrder)hit.Index ); break;
                                 case HudAction.CycleModule: fleet.CycleModule( (ModuleSlot)hit.Index ); break;
@@ -568,7 +591,7 @@ internal static class Program {
                     if ( panStart is not { } previous ) return;
                     if ( e.Button != MouseButtons.Middle ) { panStart = null; return; }
                     if ( tilting ) {
-                        yaw = Math.Clamp( yaw - (e.X - previous.X) * 0.006f, -0.87f, 0.87f );
+                        yaw = MathF.IEEERemainder( yaw - (e.X - previous.X) * 0.006f, MathF.Tau );
                         tilt = Math.Clamp( tilt + (e.Y - previous.Y) * 0.005f, 0.50f, 1.36f );
                     } else if ( TryPick( previous, viewport, inverseViewProjection, out var from ) &&
                          TryPick( e.Location, viewport, inverseViewProjection, out var to ) )
@@ -614,8 +637,8 @@ internal static class Program {
                     }
                 };
                 window.MouseWheel += ( _, e ) => {
-                    if ( galaxy || menu is not null || FleetHud.Hit( new( e.X, e.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, secondResearchPage: secondResearchPage ).Action != HudAction.None ) return;
-                    float nextZoom = Math.Clamp( zoom * MathF.Pow( 0.85f, e.Delta / 120f ), 0.12f, fleet.Solar ? 3.8f : fleet.Frontier ? 2.8f : 2.5f );
+                    if ( galaxy || menu is not null || FleetHud.Hit( new( e.X, e.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, secondResearchPage: secondResearchPage, catalogLayer: catalogLayer ).Action != HudAction.None ) return;
+                    float nextZoom = Math.Clamp( zoom * MathF.Pow( 0.85f, e.Delta / 120f ), 0.12f, fleet.Solar ? 4.6f : fleet.Frontier ? 2.8f : 2.5f );
                     if ( TryPick( e.Location, viewport, inverseViewProjection, out var anchor ) )
                         cameraFocus = ClampCamera( cameraFocus + (anchor - cameraFocus) * (1 - nextZoom / zoom) );
                     zoom = nextZoom;
@@ -644,6 +667,15 @@ internal static class Program {
                     dispatch = fleet.DispatchCount - 1;
                     SelectTab( CommandTab.Events );
                 }
+                if ( result.Frames == 11 ) {
+                    SelectTab( CommandTab.Hidden );
+                    menu = new( new( viewport.Width - 5, viewport.Height - 5 ), 3 );
+                }
+                if ( result.Frames == 12 ) {
+                    menu = null;
+                    buildCatalog = true;
+                    catalogLayer = SiteLayer.Surface;
+                }
             }
         } );
         if ( resizeTest && slotsUsed != 3 )
@@ -655,7 +687,7 @@ internal static class Program {
         Vector2 ClampCamera( Vector2 center ) => Vector2.Clamp( center, new( -fleet.NavigationRadius ), new( fleet.NavigationRadius ) );
 
         void ResetCamera( ) {
-            zoom = fleet.Solar ? 0.52f : 0.85f;
+            zoom = fleet.Solar ? 0.64f : 0.85f;
             yaw = 0;
             tilt = DefaultTilt;
             cameraFocus = fleet.Solar ? fleet.Bodies[FleetSimulation.Homeworld].Center : default;
@@ -701,6 +733,9 @@ internal static class Program {
             researchSeen = fleet.CompletedResearch;
             servicesSeen = fleet.CompletedServices;
             scansHeard = fleet.StartedScans;
+            piracySeen = fleet.PiracyCycles;
+            coloniesSeen = fleet.ColoniesFounded;
+            catalogLayer = SiteLayer.Orbit;
             buildCatalog = secondResearchPage = false;
             commandTab = CommandTab.Hidden;
             dispatchesSeen = fleet.DispatchCount;
@@ -785,6 +820,34 @@ internal static class Program {
             audio.Cue( "order" );
         }
 
+        void Settle( int body ) {
+            var unit = selection.SurveyUnit( fleet );
+            if ( fleet.ColonyBlock( body, unit ) is { } reason ) { Notify( reason ); return; }
+            if ( unit is { } selected && fleet.BeginColony( body, selected ) ) {
+                Notify( $"COLONY SHIP DISPATCHED / {fleet.BodyName( body )}" );
+                audio.Cue( "order" );
+            }
+        }
+
+        void Rename( Form window, bool forceFleet, int outlinerSquad = -1 ) {
+            int ship = selection.Primary;
+            int squad = outlinerSquad >= 0 ? outlinerSquad : ship >= 0 ? fleet.SquadronOf( ship ) : -1;
+            int body = !forceFleet ? planet : -1;
+            bool fleetLabel = body < 0 && (forceFleet || selection.Count > 1);
+            if ( body < 0 && (fleetLabel ? squad < 0 : ship < 0) ) return;
+            string kind = body >= 0 ? "body" : fleetLabel ? "fleet" : "ship";
+            string current = body >= 0 ? fleet.BodyName( body ) : fleetLabel ? fleet.FleetName( squad ) ?? "" : fleet.ShipName( ship ) ?? "";
+            bool wasPaused = paused;
+            paused = true;
+            try {
+                string? name = EditName( window, kind, current );
+                if ( name is null ) return;
+                bool renamed = body >= 0 ? fleet.RenameBody( body, name )
+                    : fleetLabel ? fleet.RenameFleet( squad, name ) : fleet.RenameShip( ship, name );
+                Notify( renamed ? "NAME UPDATED" : "USE 1 TO 18 LETTERS, NUMBERS, SPACES OR DASHES" );
+            } finally { paused = wasPaused; }
+        }
+
         void OrganizeFleets( bool split ) {
             bool changed = split ? fleet.SplitFleets( selection.Ships ) : fleet.MergeFleets( selection.Ships );
             Notify( split ? changed ? "FLEET SPLIT INTO INDEPENDENT UNITS" : "SELECT SHIPS IN A MERGED FLEET"
@@ -795,9 +858,11 @@ internal static class Program {
         void BuildProject( int body, PlanetFacility facility ) {
             var builder = selection.SurveyUnit( fleet );
             if ( fleet.ConstructionBlock( body, facility, builder ) is { } reason ) { Notify( reason ); return; }
-            if ( builder is { } unit && fleet.BuildFacility( body, facility, unit ) ) {
+            if ( fleet.BuildFacility( body, facility, builder ) ) {
                 buildCatalog = false;
-                Notify( $"{UnitName( unit )} DISPATCHED / {FleetHud.SiteName( facility )}" );
+                string crew = FleetSimulation.Facility( facility ).Layer == SiteLayer.Surface ? "LOCAL CREW WORKING"
+                    : $"{UnitName( builder!.Value )} DISPATCHED";
+                Notify( $"{crew} / {FleetHud.SiteName( facility )}" );
                 audio.Cue( "order" );
             }
         }
@@ -820,6 +885,7 @@ internal static class Program {
                 planet = body;
                 yardInspector = -1;
                 buildCatalog = action == PlanetAction.Construction;
+                catalogLayer = SiteLayer.Orbit;
                 return;
             }
             if ( action == PlanetAction.Close ) { planet = -1; yardInspector = -1; buildCatalog = false; return; }
@@ -830,7 +896,7 @@ internal static class Program {
             if ( fleet.Frontier && action is PlanetAction.Yard or PlanetAction.Mine or PlanetAction.Lab or PlanetAction.Depot ) {
                 BuildProject( body, action switch {
                     PlanetAction.Yard => PlanetFacility.Yard,
-                    PlanetAction.Mine => fleet.FitsBody( body, PlanetFacility.Mine ) ? PlanetFacility.Mine : PlanetFacility.Skimmer,
+                    PlanetAction.Mine => body > 0 && fleet.Colony( body ).Population > 0 ? PlanetFacility.Mine : PlanetFacility.Skimmer,
                     PlanetAction.Lab => PlanetFacility.Lab, _ => PlanetFacility.Depot
                 } );
                 return;
@@ -921,6 +987,24 @@ internal static class Program {
             }
             return body;
         }
+    }
+
+    private static string? EditName( Form owner, string kind, string current ) {
+        using var dialog = new Form {
+            Text = $"Rename {kind}", StartPosition = FormStartPosition.CenterParent, FormBorderStyle = FormBorderStyle.FixedDialog,
+            ClientSize = new( 340, 104 ), MinimizeBox = false, MaximizeBox = false, ShowInTaskbar = false,
+            AutoScaleMode = AutoScaleMode.Dpi
+        };
+        var input = new TextBox { Text = current, MaxLength = 18, Location = new( 12, 31 ), Width = 316 };
+        var label = new Label { Text = "Letters, numbers, spaces and dashes", AutoSize = true, Location = new( 12, 12 ) };
+        var save = new Button { Text = "Save", Location = new( 172, 66 ), Size = new( 74, 26 ), DialogResult = DialogResult.OK };
+        var cancel = new Button { Text = "Cancel", Location = new( 254, 66 ), Size = new( 74, 26 ), DialogResult = DialogResult.Cancel };
+        dialog.Controls.AddRange( [label, input, save, cancel] );
+        dialog.AcceptButton = save;
+        dialog.CancelButton = cancel;
+        dialog.ActiveControl = input;
+        input.SelectAll( );
+        return dialog.ShowDialog( owner ) == DialogResult.OK ? input.Text : null;
     }
 
     private static bool IsDrag( Point from, Point to ) => Math.Abs( from.X - to.X ) > 5 || Math.Abs( from.Y - to.Y ) > 5;

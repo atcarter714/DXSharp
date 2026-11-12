@@ -6,6 +6,7 @@ RWStructuredBuffer<float4> Bodies : register(u2);
 cbuffer Scene : register(b0) {
     uint ShipCount; uint BodyCount; uint Reset; float Delta;
     float Time; float Radius; uint SectorIndex; uint MajorCount;
+    float BeltInner; float BeltOuter; float Reserved0; float Reserved1;
     float4 MajorBodies[11];
 };
 
@@ -24,9 +25,9 @@ void OrbitField(uint3 threadId : SV_DispatchThreadID) {
     if (id >= BodyCount) return;
     if (id < 11) { Bodies[id] = MajorBodies[min(id,MajorCount-1)]; return; }
     uint seed = id + SectorIndex*16381;
-    float a = Unit(seed*13) * 6.2831853 + Time*(0.027 + Unit(seed*17)*0.12);
-    float lane = Radius*(MajorCount > 4 && (seed % 3) == 0 ? (MajorCount == 11 ? 2.43 : 1.60) + 0.25*Unit(seed*7) : 0.56 + 0.27*Unit(seed*7));
-    float2 center = MajorBodies[0].xy + float2(cos(a)*lane, sin(a)*lane*0.79);
+    float lane = lerp(BeltInner,BeltOuter,Unit(seed*7));
+    float a = Unit(seed*13) * 6.2831853 + Time*(0.085*pow(BeltInner/lane,1.5));
+    float2 center = MajorBodies[0].xy + float2(cos(a),sin(a)) * (Radius*lane);
     Bodies[id] = float4(center, 0.09 + pow(Unit(seed*23),3)*0.52, Unit(seed*31));
 }
 

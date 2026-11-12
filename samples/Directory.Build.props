@@ -3,5 +3,21 @@
   <PropertyGroup>
     <UseWindowsForms>true</UseWindowsForms>
     <IsPackable>false</IsPackable>
+    <ApplicationIcon>$(MSBuildThisFileDirectory)Shared/DXSharpSample.ico</ApplicationIcon>
+    <AssemblyTitle>DXSharp - $(MSBuildProjectName)</AssemblyTitle>
+    <Product>DXSharp Samples</Product>
+    <Copyright>Copyright (c) Arkaen Solutions and DXSharp contributors</Copyright>
+    <Description Condition="'$(MSBuildProjectName)' == 'AdvancedSample'">Advanced DXSharp graphics techniques.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'BasicSample'">A minimal Direct3D 12 renderer built with DXSharp.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'DxrHelloWorld'">A DirectX raytracing scene and readback validation.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'FleetBattler'">A Direct3D 12 space strategy and compute simulation.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'HelloTexture'">Textured geometry and texture uploads with DXSharp.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'InstancedGrid'">Instanced Direct3D 12 geometry rendering.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'LitCube'">A shaded cube with Direct3D 12 depth testing and lighting.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'ModernCompute'">A DXC and Direct3D 12 compute dispatch sample.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'ModernTriangle'">A minimal DXSharp rendering and swap-chain sample.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'NBodyGravity'">GPU N-body gravity simulation and particle rendering.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'PlanarShadows'">Planar shadow rendering with DXSharp.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'StaticModelViewer'">A glTF static mesh and material viewer.</Description>
   </PropertyGroup>
 </Project>

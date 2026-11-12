@@ -65,15 +65,15 @@ internal sealed partial class FleetSimulation {
         }
     }
 
-    internal float NavigationRadius => BoardRadius * (Solar ? 3.04f : Frontier ? 2.28f : 1);
+    internal float NavigationRadius => BoardRadius * (Solar ? 3.52f * SolarCatalog.Spacing : Frontier ? 2.28f : 1);
     internal bool CanReach( FleetSelection unit, int body ) => !RequiresDrive( body ) || DriveUpgrade || !IsPlayerSquad( unit.Squad ) ||
-        Solar && body != CelestialSystem.OuterBelt && SolarCatalog.Get( body ).Axis <= 1.69f * Flight( unit.Squad ).Range;
+        Solar && body != CelestialSystem.OuterBelt && SolarCatalog.Get( body ).Axis <= 1.69f * SolarCatalog.Spacing * Flight( unit.Squad ).Range;
 
-    internal bool RequiresDrive( int body ) => body == CelestialSystem.OuterBelt || Solar && SolarCatalog.Get( body ).Axis > 1.69f;
+    internal bool RequiresDrive( int body ) => body == CelestialSystem.OuterBelt || Solar && SolarCatalog.Get( body ).Axis > 1.69f * SolarCatalog.Spacing;
 
     internal bool CanReach( FleetSelection unit, Vector2 target ) =>
         !Frontier || !IsPlayerSquad( unit.Squad ) ||
-        Vector2.DistanceSquared( target, _bodies[0].Center ) <= MathF.Pow( BoardRadius * (Solar ? DriveUpgrade ? 2.94f : 1.69f : DriveUpgrade ? 2.04f : 1.26f) * Flight( unit.Squad ).Range, 2 );
+        Vector2.DistanceSquared( target, _bodies[0].Center ) <= MathF.Pow( BoardRadius * (Solar ? (DriveUpgrade ? 3.38f : 1.69f) * SolarCatalog.Spacing : DriveUpgrade ? 2.04f : 1.26f) * Flight( unit.Squad ).Range, 2 );
 
     internal int RouteTicks( FleetSelection unit ) => Math.Max( 0, EffectiveOrder( unit ).Transfer.End - Tick );
     internal NavigationPhase RoutePhase( FleetSelection unit ) {

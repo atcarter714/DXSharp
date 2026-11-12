@@ -9,7 +9,8 @@ The Frontier scenario opens at Earth with one science scout, two constructors, 5
 | Shift / Ctrl | Add to or toggle the selection. Ctrl+A selects all living Sol ships |
 | Merge / Split or J / Shift+J | Merge selected combat groups or split selected squadrons into independent groups |
 | Right-click | Plot a transfer, attack a hostile contact, or open a body's order menu |
-| Click a planet or moon | Open Site Inventory. **Build** opens its construction catalog |
+| Click a body | Open its inventory. **Build** opens the orbital catalog, and **Surface** switches to local construction |
+| F2 / Ctrl+F2 | Rename the inspected body or selected unit. Ctrl+F2 or right-click an outliner row renames a fleet |
 | Click a yard or press B | Open its design catalog and build queue |
 | E / N / L / T | Assign a survey, dispatch a constructor for extraction or a lab, or open Research |
 | Q / V / Y / U | Cycle stance, flee, repair, or refit |
@@ -17,29 +18,39 @@ The Frontier scenario opens at Earth with one science scout, two constructors, 5
 | Tab / Escape / F4 | Open Colony, close the top panel, or open the dispatch log |
 | Space / + | Pause or resume, and cycle 1×, 2×, and 4× |
 | Scroll / middle-drag / arrow keys | Zoom toward the pointer or pan |
-| Shift + middle-drag / Home / F | Tilt and rotate, reset the camera, or focus the inspected object |
+| Shift + middle-drag / Home / F | Rotate through 360° with limited tilt, reset the camera, or focus the inspected object |
 | G / F11 / M | Galaxy map / fullscreen / mute |
 
 ## Playing Frontier
 
 1. **Survey a body.** A scout takes 16 seconds at 1× to scan after arrival, then reveals the deposit and awards 15 ore. The inspector shows travel or scan progress. A scanning beam and audio cue start on arrival. The first completed survey also brings a merchant offer in **Log**.
-2. **Build on a surveyed body.** Inspect the inventory, then open **Build**. The catalog lists compatible types. Surface and orbital slots are counted separately, with pending work reserving a slot. Earth has two surface slots, the Moon has one, and gas giants have none. Use orbital extraction at a surveyed giant or belt. Select a constructor to assign any project. Work begins on arrival. Canceling or redirecting the worker returns the reserved resources.
-3. **Supply the colony.** Ore funds hulls and construction. Earth and solar arrays produce energy. Labs generate 6 science per income cycle, and surface observatories generate 10. Each additional six points of combined science output, rounded up, contributes one unit of research work per tick. A single lab runs the core projects in 64–88 seconds at 1×. Switch to **Advanced** for Habitat Engineering and Deep Sky Astrometry. Habitat Engineering unlocks the O'Neill cylinder, which adds four naval slots once built.
+2. **Build or settle a surveyed body.** A constructor travels to build orbital projects, including orbital extraction. Local crews build surface facilities once colonists arrive. Order a colony ship at an operational orbital yard, select it, and press **Settle** in the body inspector. The ship enters orbit and establishes a three-population settlement after a landing interval. Housing is tied to body size and limits growth. Each four population, rounded up, staffs one physical surface slot. Pending projects reserve their slots.
+3. **Supply the colony.** Ore funds hulls and construction. Earth and solar arrays produce energy. The colony ledger shows storage limits. A surface warehouse adds 250 ore, 100 energy, and 50 science capacity. An orbital storage station adds 180 ore, 250 energy, and 50 science capacity. Labs generate 6 science per income cycle, and surface observatories generate 10. Each additional six points of combined science output, rounded up, contributes one unit of research work per tick. A single lab runs the core projects in 64–88 seconds at 1×. Switch to **Advanced** for Habitat Engineering and Deep Sky Astrometry. Habitat Engineering unlocks the O'Neill cylinder, which adds four naval slots once built.
 4. **Fit and build ships.** Set the weapon, armor, shield, computer, reactor, and drive in **Design**. The power meter and derived stats update as modules change. An over-budget design cannot be ordered. Build one hull at a time from an orbital yard with four queue slots per yard. Earth's civilian dock also builds scouts and constructors. Purchase captures the fit, cost, and duration. Completed yards and logistics depots add six and three naval slots respectively.
-5. **Use the fleet controls.** Normal ships fire at enemies in range. Aggressive corvettes also pursue nearby hostiles when free of other orders. Passive ships fire only at explicit attack targets. **Flee** orders a retreat and sets passive stance. **Fix** routes a damaged hull to the nearest reachable orbital yard. Repairs cost 1 energy per service interval. **Fit** sends a corvette to a yard to install the current valid blueprint. Refit costs 10 ore and 4 energy plus module premiums, paid after arrival.
+5. **Use the fleet controls.** Normal ships fire at enemies in range. Aggressive corvettes also pursue nearby hostiles when free of other orders. Passive ships fire only at explicit attack targets. **Flee** orders a retreat and sets passive stance. **Fix** routes a damaged hull to the nearest reachable orbital yard. A green cross identifies repairs in orbit, which cost 1 energy per service interval. **Fit** sends a corvette to a yard to install the current valid blueprint. Refit costs 10 ore and 4 energy plus module premiums, paid after arrival.
 6. **Choose an agreement.** The merchant dispatch offers either 25 ore and an allied trading contact for 12 energy, or 18 science for 15 ore. A trade agreement exchanges 5 energy for 12 ore every fifth income cycle when affordable. Your choice is recorded and cannot be taken twice.
+7. **Escort production.** Pirates contest extraction sites. When they outnumber the local combat escort, they take up to half that site's ore output and one energy per raider each income cycle. They attack escorts and leave civilian ships and colonies alone. Rival Command remains a military opponent.
 
 ## Navigation
 
 Ships start and launch in host-relative parking orbits. The cyan route traces the remaining transfer and the diamond marks the predicted insertion. Gold brackets follow the live host or moving ship. A dashed connector separates the object's current position from the intercept. Attack pursuit updates its short-horizon lead as the target moves. Civilian hulls, armor mass, drive modules, and propulsion research affect cruise speed, acceleration, or turning. Open-space orders enter a stellar parking orbit at the selected radius.
 
-**Long Burn Drive** expands the operating envelope to the outer belt. Long-range corvette modules extend reach within the current technology limits. Sol's tactical projection uses rounded planetary semimajor axes and eccentricities from the [JPL J2000 approximate elements](https://ssd.jpl.nasa.gov/planets/approx_pos.html), compressed distances, and illustrative phases, radii, and periods.
+**Long Burn Drive** expands the operating envelope to the outer belt. Long-range corvette modules extend reach within the current technology limits. Sol's tactical projection uses rounded semimajor axes and eccentricities from the [JPL J2000 approximate elements](https://ssd.jpl.nasa.gov/planets/approx_pos.html) and NASA's fact sheets for [Ceres and Vesta](https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html), [Pluto](https://nssdc.gsfc.nasa.gov/planetary/factsheet/plutofact.html), and [Halley](https://nssdc.gsfc.nasa.gov/planetary/factsheet/cometfact.html). Orbital spacing is 28% wider in the tactical projection. Phases, radii, and periods are illustrative. The GPU asteroid field stays within the [main belt](https://science.nasa.gov/solar-system/asteroids/) between Mars and Jupiter, and uses the fractional simulation clock for rendering.
 
 ### Interstellar travel design
 
 Use surveyed lanes with scheduled departures and arrivals. The first unlock should come from Deep Sky Astrometry and a completed orbital yard, then require a lane-capable drive module on every participating hull. Use energy for departure and reserve enough to return unless the destination has an allied port. That gives science, diplomacy, and yards a direct role in expansion.
 
 Keep fleet identity and travel events on a campaign clock. On departure, move an immutable manifest into a transit queue with ship IDs, fits, health, stance, and the destination berth. Process arrivals independently of the viewed system and hand the manifest to its local simulation once. Test exactly-once arrival across save/load and compare identical orders issued from different views. Lane geometry belongs in the galaxy map. Local burn, coast, and insertion remain tactical orders. The current map supports observation, and departures and arrivals are future work.
+
+### Remaining goals
+
+| Priority | Remaining work |
+| --- | --- |
+| Primary | Implement interstellar departures and arrivals, a shared campaign clock, and save/load for fleets, names, and colonies. |
+| Primary | Tune the colony and trade economy through playtests, including population needs, housing, freight, pirate pressure, and additional faction decisions. |
+| Stretch | Add authored ship, habitat, surface, and faction art, more hulls and effects, and bespoke sound design. |
+| Stretch | Expand to richer colonization and exploration, repair tenders, larger megastructures, and a denser inhabited galaxy. |
 
 ## Relay skirmish
 

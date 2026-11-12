@@ -10,6 +10,9 @@ internal sealed class ComputeTraffic : IDisposable {
     internal const int DefaultAgents = 32, DefaultDebris = 256;
     internal const int MaxAgents = 65_536, MaxDebris = 16_384;
     private const uint GroupSize = 64, DetailedFreighterLimit = 1024;
+    // Steering needs the primary worlds only. Keep the root constants within the D3D12 limit.
+    internal const int PrimaryBodies = 11;
+    private const int OrbitParameters = 12;
     private readonly PipelineState? _orbits, _steering, _debrisPipeline, _freighters;
     private readonly GpuResource? _agents, _instances, _bodies;
     private readonly int _bodyCount;
@@ -46,10 +49,10 @@ internal sealed class ComputeTraffic : IDisposable {
         if ( debris is < 0 or > MaxDebris ) throw new ArgumentOutOfRangeException( nameof(debris) );
         ShipCount = (uint)ships;
         DebrisCount = (uint)debris;
-        _bodyCount = CelestialSystem.BodyCount + debris;
+        _bodyCount = PrimaryBodies + debris;
         try {
             string compute = File.ReadAllText( Path.Combine( AppContext.BaseDirectory, "Shaders", "Traffic.hlsl" ) );
-            using var computeRoot = device.CreateRootSignature( 3, 8 + 4 * CelestialSystem.BodyCount );
+            using var computeRoot = device.CreateRootSignature( 3, OrbitParameters + 4 * PrimaryBodies );
             _orbits = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "OrbitField", "cs_6_0" ) );
             _steering = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "Steering", "cs_6_0" ) );
             using var debrisRoot = device.CreateGraphicsBufferRootSignature( 20 );
@@ -78,20 +81,26 @@ internal sealed class ComputeTraffic : IDisposable {
     internal GpuResource Instances => _instances!;
     internal GpuResource Bodies => _bodies!;
 
-    internal void RecordCompute( GraphicsCommandList commands, FleetSimulation fleet, float elapsed ) {
-        Span<uint> constants = stackalloc uint[8 + 4 * CelestialSystem.BodyCount];
+    internal void RecordCompute( GraphicsCommandList commands, FleetSimulation fleet, float elapsed, float interpolation = 1 ) {
+        Span<uint> constants = stackalloc uint[OrbitParameters + 4 * PrimaryBodies];
         constants[0] = ShipCount;
         constants[1] = (uint)_bodyCount;
         constants[2] = _lastSystem == fleet.SystemIndex ? 0u : 1u;
         constants[3] = BitConverter.SingleToUInt32Bits( Math.Clamp( elapsed, 0, 0.05f ) );
-        constants[4] = BitConverter.SingleToUInt32Bits( (float)(fleet.Tick * FleetSimulation.StepSeconds) );
+        constants[4] = BitConverter.SingleToUInt32Bits( RenderTime( fleet.Tick, interpolation ) );
         constants[5] = BitConverter.SingleToUInt32Bits( fleet.BoardRadius );
         constants[6] = (uint)fleet.SystemIndex;
-        constants[7] = (uint)fleet.Bodies.Length;
-        var bodyConstants = MemoryMarshal.Cast<uint, Vector4>( constants[8..] );
+        int count = Math.Min( PrimaryBodies, fleet.Bodies.Length );
+        constants[7] = (uint)count;
+        var (inner, outer) = Belt( fleet.Solar );
+        constants[8] = BitConverter.SingleToUInt32Bits( inner );
+        constants[9] = BitConverter.SingleToUInt32Bits( outer );
+        constants[10] = 0;
+        constants[11] = 0;
+        var bodyConstants = MemoryMarshal.Cast<uint, Vector4>( constants[OrbitParameters..] );
         bodyConstants.Clear( );
-        for ( int i = 0; i < fleet.Bodies.Length; ++i ) {
-            var body = fleet.Bodies[i];
+        for ( int i = 0; i < count; ++i ) {
+            var body = fleet.VisualBody( i, interpolation );
             bodyConstants[i] = new( body.Center.X, body.Center.Y, body.Radius, 0 );
         }
 
@@ -107,6 +116,13 @@ internal sealed class ComputeTraffic : IDisposable {
         commands.Transition( Bodies, ResourceState.UnorderedAccess, ResourceState.NonPixelShaderResource );
         _lastSystem = fleet.SystemIndex;
     }
+
+    internal static float RenderTime( int tick, float interpolation ) =>
+        (float)(Math.Max( 0, tick - 1 + (double)interpolation ) * FleetSimulation.StepSeconds);
+
+    internal static (float Inner, float Outer) Belt( bool solar ) => solar
+        ? (SolarCatalog.Axis( SolarCatalog.MainBeltInnerAu ), SolarCatalog.Axis( SolarCatalog.MainBeltOuterAu ))
+        : (0.59f, 0.74f);
 
     internal void RecordDebris( GraphicsCommandList commands, Matrix4x4 viewProjection, int width, int height, float halfHeight ) {
         if ( DebrisCount == 0 ) return;

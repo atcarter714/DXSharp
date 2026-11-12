@@ -12,7 +12,7 @@ internal sealed partial class FleetHud {
     private static readonly HudIcon[] TabIcons = [HudIcon.Colony, HudIcon.Science, HudIcon.Design, HudIcon.Orders, HudIcon.Log];
     private static (float X, float Y) CommandOrigin( Layout layout ) => ((layout.Width - OfficeWidth) / 2, 61);
     private static float CommandHeight( CommandTab tab, FleetSimulation fleet ) => tab switch {
-        CommandTab.Economy => 208, CommandTab.Research => 251, CommandTab.Fleet => 289, CommandTab.Events => 239,
+        CommandTab.Economy => 226, CommandTab.Research => 251, CommandTab.Fleet => 289, CommandTab.Events => 239,
         CommandTab.Orders => 82 + Math.Max( 1, YardRows( fleet ) ) * 21, _ => 162
     };
 
@@ -45,9 +45,12 @@ internal sealed partial class FleetHud {
                 Text( "ENERGY / SHIPYARDS AND INDUSTRY", x + 11, y + 119, 1, EnergyTint );
                 Text( "SCIENCE / RESEARCH PROJECTS", x + 11, y + 135, 1, ScienceTint );
                 if ( fleet.Established ) {
+                    var cap = fleet.ResourceCapacity;
+                    label.TryWrite( $"CAP / {cap.Ore} ORE / {cap.Energy} ENERGY / {cap.Science} SCI", out int capLength );
+                    Text( label[..capLength], x + 11, y + 152, 1, White );
                     if ( fleet.MerchantAgreement == MerchantDecision.Trade )
-                        Text( "TRADE / 5 ENERGY FOR 12 ORE EVERY 5 CYCLES", x + 11, y + 153, 1, EnergyTint );
-                    IconButton( x + 10, y + 175, 328, HudIcon.Yard, "OPEN EARTH CIVILIAN DOCK", true );
+                        Text( "TRADE / 5 ENERGY FOR 12 ORE EVERY 5 CYCLES", x + 11, y + 170, 1, EnergyTint );
+                    IconButton( x + 10, y + 193, 328, HudIcon.Yard, "OPEN EARTH CIVILIAN DOCK", true );
                 } else Text( "NO SOL PRESENCE IN THIS SYSTEM", x + 11, y + 155, 1, Label );
                 break;
             case CommandTab.Research:
@@ -188,7 +191,7 @@ internal sealed partial class FleetHud {
                 if ( fleet.CanOpenYard( body ) && Contains( relative, 10, 77 + row++ * 21, 328, 21 ) ) return new( HudAction.OpenYard, body );
         }
         return tab switch {
-            CommandTab.Economy when fleet.Established && Contains( relative, 10, 175, 328, 21 ) => new( HudAction.OpenYard, FleetSimulation.Homeworld ),
+            CommandTab.Economy when fleet.Established && Contains( relative, 10, 193, 328, 21 ) => new( HudAction.OpenYard, FleetSimulation.Homeworld ),
             CommandTab.Events when Contains( relative, 10, 209, 74, 21 ) => Action( CommandAction.Earlier ),
             CommandTab.Events when Contains( relative, 265, 209, 74, 21 ) => Action( CommandAction.Later ),
             _ => new( HudAction.Panel )

@@ -37,7 +37,7 @@ internal sealed partial class FleetSimulation {
 
     private void AdvanceContracts( ) {
         if ( MerchantAgreement != MerchantDecision.Trade || (Tick + 1) % (IncomeInterval * 5) != 0 ||
-             Energy < 5 || Ore > 987 ) return;
+             Energy < 5 || Ore > ResourceCapacity.Ore - 12 ) return;
         Energy -= 5;
         Ore += 12;
         ++MerchantShipments;

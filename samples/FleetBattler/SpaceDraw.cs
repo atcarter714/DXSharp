@@ -211,7 +211,7 @@ internal static class SpaceDraw {
     internal static void Record( GraphicsCommandList commands, PipelineState pipeline, SampledTexture2D moon, bool useMoonMap, FleetSimulation fleet, FleetSelection selected,
         Matrix4x4 viewProjection, Matrix4x4 inverse, int width, int height, float halfHeight, bool showSelection = true, float interpolation = 1 ) {
         float r = fleet.BoardRadius;
-        double seconds = fleet.Tick * FleetSimulation.StepSeconds;
+        float seconds = ComputeTraffic.RenderTime( fleet.Tick, interpolation );
         var bodies = fleet.Bodies;
         float worldPerPixel = halfHeight * 2 / height;
         var center = fleet.VisualCenter( selected, interpolation );
@@ -222,12 +222,12 @@ internal static class SpaceDraw {
         float progress = fleet.CaptureTicks > 0 ? (float)fleet.CaptureTicks / FleetSimulation.CaptureDuration : fleet.Owner >= 0 ? 1 : 0;
         Span<Vector4> values = stackalloc Vector4[15];
         MemoryMarshal.CreateReadOnlySpan( ref inverse, 1 ).CopyTo( MemoryMarshal.Cast<Vector4, Matrix4x4>( values[..4] ) );
-        values[4] = new( width, height, (float)seconds, worldPerPixel );
+        values[4] = new( width, height, seconds, worldPerPixel );
         for ( int i = 0; i < CelestialSystem.OuterBelt; ++i )
             values[5 + i] = CelestialSystem.Project( fleet.VisualBody( i, interpolation ), r, viewProjection, width, height, halfHeight );
         values[9] = new( bodies[0].Center.X, bodies[0].Center.Y, (fleet.Solar ? SolarCatalog.Get( 1 ).Axis : CelestialSystem.RockyAxis) * r, (fleet.Solar ? SolarCatalog.Get( 2 ).Axis : CelestialSystem.GiantAxis) * r );
         var earth = fleet.VisualBody( 1, interpolation );
-        values[10] = new( earth.Center.X, earth.Center.Y, CelestialSystem.MoonAxis * r, useMoonMap ? 1 : 0 );
+        values[10] = new( earth.Center.X, earth.Center.Y, (fleet.Solar ? SolarCatalog.Get( 3 ).Axis : CelestialSystem.MoonAxis) * r, useMoonMap ? 1 : 0 );
         values[11] = new( fleet.Site.X, fleet.Site.Y, fleet.SiteRadius, progress );
         if ( fleet.Frontier ) {
             var belt = CelestialSystem.Project( fleet.VisualBody( CelestialSystem.OuterBelt, interpolation ), r, viewProjection, width, height, halfHeight );

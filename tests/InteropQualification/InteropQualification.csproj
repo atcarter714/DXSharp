@@ -21,6 +21,9 @@
     <Compile Include="../../samples/FleetBattler/FleetGroups.cs" Link="FleetGroups.cs" />
     <Compile Include="../../samples/FleetBattler/Factions.cs" Link="Factions.cs" />
     <Compile Include="../../samples/FleetBattler/SiteConstruction.cs" Link="SiteConstruction.cs" />
+    <Compile Include="../../samples/FleetBattler/UnitNames.cs" Link="Fleet/UnitNames.cs" />
+    <Compile Include="../../samples/FleetBattler/Piracy.cs" Link="Fleet/Piracy.cs" />
+    <Compile Include="../../samples/FleetBattler/Colonies.cs" Link="Fleet/Colonies.cs" />
     <Compile Include="../../samples/FleetBattler/ShipModules.cs" Link="Fleet/ShipModules.cs" />
     <Compile Include="../../samples/FleetBattler/ShipService.cs" Link="Fleet/ShipService.cs" />
     <Compile Include="../../samples/FleetBattler/FleetOrdersHud.cs" Link="Fleet/FleetOrdersHud.cs" />

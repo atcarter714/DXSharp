@@ -5,7 +5,7 @@ namespace FleetBattler;
 internal readonly record struct BodyPose( Vector2 Center, float Radius );
 
 internal static class CelestialSystem {
-    internal const int OuterBelt = 4, FrontierBodyCount = 5, BodyCount = 11;
+    internal const int OuterBelt = 4, FrontierBodyCount = 5, BodyCount = 15;
     internal const float BeltAxis = 1.72f;
     internal const float RockyAxis = 0.45f, GiantAxis = 0.91f, MoonAxis = 0.145f;
     internal const float RockyEccentricity = 0.16f, GiantEccentricity = 0.12f, MoonEccentricity = 0.08f;
@@ -45,8 +45,9 @@ internal static class CelestialSystem {
 
     internal static Vector2 OrbitPoint( float axis, float eccentricity, double phase ) {
         double mean = (phase - Math.Floor( phase )) * Math.Tau;
-        double anomaly = mean;
-        for ( int i = 0; i < 5; ++i )
+        double anomaly = eccentricity > 0.8 ? Math.PI : mean;
+        int iterations = eccentricity > 0.8 ? 12 : 5;
+        for ( int i = 0; i < iterations; ++i )
             anomaly -= (anomaly - eccentricity * Math.Sin( anomaly ) - mean) / (1 - eccentricity * Math.Cos( anomaly ));
         return new( (float)(axis * (Math.Cos( anomaly ) - eccentricity)),
             (float)(axis * Math.Sqrt( 1 - eccentricity * eccentricity ) * Math.Sin( anomaly )) );
