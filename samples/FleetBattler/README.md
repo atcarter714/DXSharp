@@ -1,6 +1,6 @@
 # Fleet Battler
 
-The default Frontier scenario starts with a surveyed homeworld, one science scout, two miners, and 50 ore. Survey a moon or gas giant, build an extraction site, then defend the new settlement when Amber notices the operation. Helios, Caldera, and Nereid each retain their own scenario state when you switch systems.
+The default Frontier scenario starts at Earth in the Solar System with one science scout, two miners, and 50 ore. Survey a moon or gas giant, build an extraction site, then defend the new settlement when Amber notices the operation. Sol, Caldera, and Nereid each retain their own scenario state when you switch systems.
 
 | Control | Action |
 | --- | --- |
@@ -12,20 +12,23 @@ The default Frontier scenario starts with a surveyed homeworld, one science scou
 | R | Return selected ships to their formation slots |
 | Click a planet or moon | Inspect its survey and construction status |
 | E / N / L / T / I | Assign survey / build mine / build lab / research weapons / research industry |
-| Tab / Command | Open or close the Economy, Fleet, and Events tabs |
+| Colony / Design / Orders / Log | Build civilian ships and research, select the next wing loadout, manage live production, or review dispatches |
+| Tab / Escape | Open Colony or close the current panel |
+| Hover a ship, body, or station | See status or combat stats. Click a station to open its body's inspector |
 | F4 | Open the latest Frontier dispatch |
 | B / Queue Wing | Order a wing from an operational orbital shipyard |
 | Scroll / middle-drag / arrow keys | Zoom toward the pointer / pan |
-| Shift + middle-drag / Home | Tilt and rotate within tactical limits / reset the camera |
+| Shift + middle-drag / Home | Tilt and rotate within tactical limits / reset the camera to Earth in Sol |
+| F | Focus the inspected body or selected squad |
 | G / F11 / M | Galaxy map / fullscreen / mute |
 
 ## Playing Frontier
 
 1. Select the science scout in the fleet outliner. Right-click an unsurveyed body and assign the survey, or use the action in its inspection panel. The flight plan shows the assigned craft's course. A finished survey reveals the local deposit and pays 15 ore.
-2. Select a miner, inspect the surveyed body, and choose the **Extraction Rig** card. The miner travels to the construction site before the timer starts. The build reserves 35 ore. Reassigning the miner during construction cancels the build and refunds its cost. The completed mine runs independently.
-3. Use **Economy** to order another miner for 20 ore. Build a 55-ore orbital shipyard on a surveyed world. The site grows as it builds and the yard opens production after 24 seconds at 1×.
-4. Open **Fleet** to choose a weapon and defense package for the next three-corvette wing. Pulse cycles quickly and hits shields first. Rail fires farther and bypasses shields. A shield generator recovers after a lull. Heavy plating trades shield capacity for armor and adds 8 ore and four seconds at 1×.
-5. Follow the **Events** dispatches as extraction attracts an Amber raid. Richer deposits pay for defenses faster and draw an earlier response. Move miners and the scout clear, deploy escorts, and defeat both waves. An orbital lab generates science for weapons, industry, and drive research. Click a celestial body for site cards that show ore or science output, yard and depot capacity, construction progress, and local ship orders.
+2. Select a miner, inspect the surveyed body, and choose the **Extraction Rig** card. The miner travels to the construction site before the timer starts. The build reserves 35 ore. Reassigning the miner during construction cancels the build and refunds its cost. The builder stays near the rig and shows a welding beam and progress bar during assembly. The completed mine runs independently.
+3. Use **Colony** to order another miner for 20 ore. Build a 55-ore orbital shipyard on a surveyed world. The site grows as it builds and the yard opens production after 24 seconds at 1×.
+4. Open **Design** to choose a weapon and defense package for the next three-corvette wing. Pulse cycles quickly and hits shields first. Rail fires farther and bypasses shields. A shield generator recovers after a lull. Heavy plating trades shield capacity for armor and adds 8 ore and four seconds at 1×.
+5. Follow the **Log** dispatches as extraction attracts an Amber raid. Richer deposits pay for defenses faster and draw an earlier response. Move miners and the scout clear, deploy escorts, and defeat both waves. An orbital lab generates science for weapons, industry, and drive research. Click a celestial body for site cards that show ore or science output, yard and depot capacity, construction progress, and local ship orders.
 
 | Order | Ore | Construction at 1× |
 | --- | ---: | ---: |
@@ -38,13 +41,15 @@ The default Frontier scenario starts with a surveyed homeworld, one science scou
 | Three-corvette wing | 60 | 32 s |
 | Wing after industry research | 42 | 20 s |
 
-Each completed shipyard adds six naval slots. Each completed logistics depot adds three. Only living combat hulls and queued wings occupy naval capacity. Click an online yard's card to order from that site. The system can hold two wing orders at once and produces them in order. The queue reserves ore and records the yard, loadout, and duration at order time. After a fleet wipe, a surviving yard can launch replacements. The homeworld can replace the scout and miners independently.
+Each completed shipyard adds six naval slots. Each completed logistics depot adds three. Only living combat hulls and queued wings occupy naval capacity. Click an online yard's card to order from that site. The system can hold two wing orders at once and produces them in order. The queue reserves ore and records the yard, loadout, price, and duration at order time. Cancel production in Orders or a site project from its inspector to return the reserved ore. After a fleet wipe, a surviving yard can launch replacements. The homeworld can replace the scout and miners independently.
 
 ## Navigation
 
-Ships start and launch in host-relative parking orbits. An orbit or survey command targets an intercept on the destination body's future orbit. The dashed route samples the same transfer the ship flies. The diamond marks the rendezvous and the **Flight Plan** card shows the active flight phase and ETA at the current simulation speed. Open-space orders transfer into a stellar parking orbit at the chosen radius. Ships burn, coast or correct course, and brake before entering the destination orbit.
+Ships start and launch in host-relative parking orbits. An orbit or survey command targets an intercept on the destination body's future orbit. The dashed route samples the same transfer the ship flies. The diamond marks the rendezvous and the **Flight Plan** card shows the active flight phase and ETA at the current simulation speed. Open-space orders transfer into a stellar parking orbit at the chosen radius. Ships burn, coast, rotate for turnover, and brake before entering the destination orbit. Hull attitude and formation orientation update independently. The route uses fixed samples as the completed portion disappears.
 
-The round-trip operating envelope is enforced before accepting a route. Research **Long Burn Drive** in Economy for 36 science to expand it and reach the outer belt. Far Reach, Cinder Belt, and Dark Shoal each contain a high-yield prospect. Zoom out to find the outer track. The navigation model uses scaled orbital distances and bounded-burn guidance. Gravity assists and per-ship propellant accounting are future work.
+The round-trip operating envelope is enforced before accepting a route. Research **Long Burn Drive** in Economy for 36 science to expand it and reach the outer belt. The Kuiper Belt, Cinder Belt, and Dark Shoal each contain a high-yield prospect. Zoom out to find the outer track. The navigation model uses scaled orbital distances and bounded-burn guidance. Gravity assists and per-ship propellant accounting are future work.
+
+Sol includes the Sun, eight planets, Earth's Moon, and a Kuiper Belt prospect. The catalog uses rounded planetary semimajor axes and eccentricities from the [JPL J2000 approximate elements](https://ssd.jpl.nasa.gov/planets/approx_pos.html). The tactical projection compresses distance logarithmically and uses illustrative starting phases, radii, and periods.
 
 ## Relay skirmish
 
@@ -69,7 +74,7 @@ dotnet run --project samples/FleetBattler -c Release -- --ships=10000 --traffic=
 dotnet run --project samples/FleetBattler -c Release -- --ships=10000 --benchmark-ticks=600
 ```
 
-The fixed-tick CPU simulation owns combat, movement orders, casualties, and the economy. Damage resolves after each tick's volley. Rendering packs living ships. Recycled slots carry generation IDs so replacement hulls do not inherit a destroyed ship’s selection. GPU compute steers the civilian freighters and evaluates the asteroid field. Living tactical ships draw in batches by hull class. Civilian freighters read the compute-generated instance buffer directly. Distant or dense traffic uses a 24-vertex silhouette to bound draw cost. Asteroids use irregular faceted silhouettes. The compute shaders are in [Shaders](Shaders).
+The fixed-tick CPU simulation owns combat, movement orders, casualties, and the economy. Damage resolves after each tick's volley. Rendering packs living ships. Recycled slots carry generation IDs so replacement hulls do not inherit a destroyed ship’s selection. GPU compute steers the civilian freighters and evaluates the asteroid field as separate jobs over contiguous UAV buffers. `ComputeJobBatch` binds each kernel, rounds work to thread groups, and inserts UAV barriers for declared read/write hazards. The renderer owns resource transitions and command submission. Tactical combat and player commands run on the CPU. Living tactical ships draw in batches by hull class. Civilian freighters read the compute-generated instance buffer directly. Distant or dense traffic uses a 24-vertex silhouette to bound draw cost. Asteroids use irregular faceted silhouettes. The compute shaders are in [Shaders](Shaders).
 
 The [jukebox configuration](Music/README.md) includes system, galaxy, engagement, and victory playlists. The original procedural tracks play by default. The sample includes order, capture, launch, and combat effects.
 

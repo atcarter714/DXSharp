@@ -27,7 +27,7 @@ internal sealed partial class FleetHud {
     private static string PhaseName( NavigationPhase phase ) => phase switch {
         NavigationPhase.Burn => "DEPARTURE BURN", NavigationPhase.Coast => "COAST",
         NavigationPhase.Brake => "BRAKING BURN", NavigationPhase.Correction => "COURSE CORRECTION",
-        NavigationPhase.Intercept => "INTERCEPT", _ => "PARKED"
+        NavigationPhase.Intercept => "INTERCEPT", NavigationPhase.Turnover => "TURNOVER", _ => "PARKED"
     };
 
     private void FlightCard( Layout layout, FleetSimulation fleet, FleetSelection unit, int speed ) {
@@ -37,7 +37,7 @@ internal sealed partial class FleetHud {
         Text( "FLIGHT PLAN", 23, top + 8, 1.25f, White );
         var plan = fleet.Plan( unit );
         var phase = fleet.RoutePhase( unit );
-        Text( plan.Body >= 0 ? CelestialSystem.Name( fleet.SystemIndex, plan.Body ) :
+        Text( plan.Body >= 0 ? fleet.BodyName( plan.Body ) :
             phase == NavigationPhase.Intercept ? "HOSTILE TARGET" : "STELLAR ORBIT", 23, top + 25, 1.05f, Label );
         Text( PhaseName( phase ), 23, top + 41, 1, SpaceDraw.Cyan );
         int remaining = fleet.RouteTicks( unit );
@@ -50,9 +50,9 @@ internal sealed partial class FleetHud {
     private void InspectPlanet( Layout layout, FleetSimulation fleet, int body, FleetSelection? unit, int speed ) {
         float x = layout.InspectorX, y = InspectorTop, width = layout.InspectorWidth;
         PanelAt( x, y, width, body == 0 ? 60 : layout.InspectorHeight, SpaceDraw.Cyan );
-        Text( CelestialSystem.Name( fleet.SystemIndex, body ), x + 10, y + 8, 1.6f, White );
+        Text( fleet.BodyName( body ), x + 10, y + 8, 1.6f, White );
         Button( x + width - 29, y + 6, 21, "X", true );
-        var kind = body switch { 0 => "PRIMARY STAR", 1 => "HOMEWORLD", 2 => "GAS GIANT", 3 => "INNER MOON", _ => "OUTER BELT" };
+        var kind = fleet.Solar ? SolarCatalog.Get( body ).Kind : body switch { 0 => "PRIMARY STAR", 1 => "HOMEWORLD", 2 => "GAS GIANT", 3 => "INNER MOON", _ => "OUTER BELT" };
         var status = fleet.Planet( body );
         Text( kind, x + 10, y + 28, 1.03f, Label );
         if ( body == 0 ) return;
@@ -60,7 +60,7 @@ internal sealed partial class FleetHud {
         int length;
         if ( status.Surveyed )
             line.TryWrite( $"SURVEYED / {(fleet.HasDeposit( body ) ? fleet.DepositYield( body ) : 0)} ORE POTENTIAL", out length );
-        else if ( body == CelestialSystem.OuterBelt && !fleet.DriveUpgrade )
+        else if ( fleet.RequiresDrive( body ) && !fleet.DriveUpgrade )
             length = CopyStatus( "OUT OF RANGE / RESEARCH DRIVE", line );
         else if ( status.SurveyUnit is { } scout )
             line.TryWrite( $"SCOUT {scout.Squad + 1:D2} / {status.Survey * 100 / FleetSimulation.SurveyDuration} PCT", out length );
@@ -103,8 +103,9 @@ internal sealed partial class FleetHud {
                 else if ( description == "QUEUE WING" ) details.TryWrite( $"QUEUE WING / {fleet.CurrentWingCost} ORE", out chars );
                 else details.TryWrite( $"{description} / +{output}", out chars );
             } else details.TryWrite( $"{(available ? "BUILD" : index == 0 && status.Surveyed ? "NEEDS DEPOSIT AND MINER" : "SURVEY REQUIRED")} / {cost} ORE", out chars );
-            int maxChars = (int)((width - 72) / TextWidth( 1, 1 ));
+            int maxChars = (int)((width - (remaining > 0 ? 97 : 72)) / TextWidth( 1, 1 ));
             Text( details[..Math.Min( chars, maxChars )], x + 64, top + 16, 1, enabled ? SpaceDraw.Cyan : Label );
+            if ( remaining > 0 ) Button( x + width - 30, top + 5, 20, "X", true );
             if ( remaining > 0 || producing ) {
                 float fraction = producing ? 1 - (float)fleet.WingRemaining / fleet.ActiveWingDuration : 1 - (float)remaining / duration;
                 Rect( x + 64, top + 29, width - 74, 2, Panel, 3 );
@@ -123,11 +124,19 @@ internal sealed partial class FleetHud {
             return Planet( status.SurveyUnit is null ? PlanetAction.Survey : PlanetAction.CancelSurvey );
         float row = point.Y - InspectorTop - SiteTop;
         if ( row >= 0 && row < 4 * SiteHeight && row % SiteHeight < 34 && point.X >= x + 8 && point.X < x + width - 8 )
-            return Planet( (int)(row / SiteHeight) switch {
+        {
+            int index = (int)(row / SiteHeight);
+            if ( point.X >= x + width - 30 && point.X < x + width - 10 && row % SiteHeight is >= 5 and < 26 ) {
+                var facility = index switch { 0 => PlanetFacility.Mine, 1 => PlanetFacility.Lab, 2 => PlanetFacility.Yard, _ => PlanetFacility.Depot };
+                if ( fleet.SiteRemaining( body, facility ) > 0 )
+                    return Planet( (PlanetAction)((int)PlanetAction.CancelMine + index) );
+            }
+            return Planet( index switch {
                 0 => PlanetAction.Mine, 1 => PlanetAction.Lab,
                 2 => fleet.YardAt( body ) == 0 ? PlanetAction.SiteWing : PlanetAction.Yard,
                 _ => PlanetAction.Depot
             } );
+        }
         return new( HudAction.Panel );
 
         static HudHit Planet( PlanetAction action ) => new( HudAction.Planet, (int)action );

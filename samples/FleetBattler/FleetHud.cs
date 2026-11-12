@@ -5,7 +5,7 @@ using DXSharp.Shaders;
 
 namespace FleetBattler;
 
-internal enum PlanetAction { None, Survey, Mine, Lab, Research, Yard, Industry, CancelSurvey, Orbit, Inspect, Depot, Drive, Close, SiteWing }
+internal enum PlanetAction { None, Survey, Mine, Lab, Research, Yard, Industry, CancelSurvey, Orbit, Inspect, Depot, Drive, Close, SiteWing, CancelMine, CancelLab, CancelYard, CancelDepot }
 internal readonly record struct BodyMenu( Vector2 Pixel, int Body );
 internal enum HudAction { None, Panel, Pause, Speed, Galaxy, Wing, Squad, Planet, Context, Command }
 internal readonly record struct HudHit( HudAction Action, int Index = 0 );
@@ -49,13 +49,28 @@ internal sealed partial class FleetHud {
             Output output;
             output.uv = corners[id];
             float2 pixel = input.rect.xy + output.uv * input.rect.zw;
-            float depth = input.bits.z == 1 ? 0.04 : input.bits.z == 2 ? 0.025 : input.bits.z == 3 ? 0.018 : input.bits.z == 4 ? 0.014 : input.bits.z == 5 ? 0.015 : 0.01;
-            output.position = float4(pixel/Viewport.xy*float2(2,-2)+float2(-1,1),depth*(input.bits.w == 0 ? 1 : input.bits.w == 1 ? 0.15 : 0.02),1);
+            float depth = input.bits.z == 6 ? 0.9994 : input.bits.z == 1 ? 0.04 : input.bits.z == 2 ? 0.025 : input.bits.z == 3 ? 0.018 : input.bits.z == 4 ? 0.014 : input.bits.z == 5 ? 0.015 : 0.01;
+            output.position = float4(pixel/Viewport.xy*float2(2,-2)+float2(-1,1),depth*(input.bits.w == 0 ? 1 : input.bits.w == 1 ? 0.15 : input.bits.w == 2 ? 0.02 : 0.002),1);
             output.bits = input.bits.xyz;
             output.tint = input.tint;
             return output;
         }
         float4 PS(Output input) : SV_Target {
+            if (input.bits.z == 6) {
+                float2 p = input.uv*4.4-2.2;
+                float d = length(p);
+                float2 ringPlane = float2(p.x*0.94-p.y*0.34,p.x*0.34+p.y*0.94);
+                float ring = length(ringPlane*float2(1,3.15));
+                if (d > 1) {
+                    clip(input.bits.x != 0 && ring >= 1.24 && ring <= 2.05 ? 1 : -1);
+                    return float4(input.tint.rgb*(0.51+0.21*sin(ring*72)),1);
+                }
+                float sunAngle = asfloat(input.bits.y);
+                float2 sun = float2(cos(sunAngle),sin(sunAngle));
+                float lit = 0.26+0.74*saturate(dot(p,sun)*0.72+sqrt(saturate(1-d*d))*0.75);
+                float bands = 0.91+0.09*cos(p.y*24+p.x*2);
+                return float4(input.tint.rgb*lit*bands,1);
+            }
             if (input.bits.z == 4) {
                 float2 tile = float2(input.bits.x % 3,input.bits.x / 3);
                 float2 uv = (tile + lerp(0.02,0.98,input.uv)) / float2(3,2);
@@ -80,7 +95,7 @@ internal sealed partial class FleetHud {
     internal void Record( GraphicsCommandList commands, PipelineState pipeline, GpuResource upload, FleetSimulation fleet,
         FleetSelection selected, int width, int height, bool oreShort, ReadOnlySpan<Vector4> bodies = default,
         int selectionCount = -1, int planet = -1, string? notice = null, Vector4? drag = null, Vector2? beacon = null,
-        ReadOnlySpan<bool> selectedShips = default, int speed = 1, bool paused = false, FleetSelection? surveyUnit = null, BodyMenu? menu = null, Vector2? yard = null, CommandTab commandTab = CommandTab.Hidden, int dispatch = 0 ) {
+        ReadOnlySpan<bool> selectedShips = default, int speed = 1, bool paused = false, FleetSelection? surveyUnit = null, BodyMenu? menu = null, Vector2? yard = null, CommandTab commandTab = CommandTab.Hidden, int dispatch = 0, ReadOnlySpan<MapSite> sites = default, MapHover hover = default ) {
         if ( width < 350 || height < 240 ) return;
         Begin( width, height );
         var layout = new Layout( width / _scale, height / _scale );
@@ -91,7 +106,7 @@ internal sealed partial class FleetHud {
             : fleet.Owner == 1 ? "AMBER CONTROL" : "UNCLAIMED";
 
         PanelAt( 14, 12, layout.Width - 28, 41, SpaceDraw.Cyan );
-        Text( CelestialSystem.Systems[fleet.SystemIndex], 23, 20, 1.9f, White );
+        Text( fleet.SystemName, 23, 20, 1.9f, White );
         text.TryWrite( $"ORE {fleet.Ore:D3}   SCI {fleet.Science:D3}", out int length );
         Text( text[..length], 23, 39, 1.05f, Label );
         Button( layout.ClockX, 19, 64, paused ? "RESUME" : "PAUSE", true, paused );
@@ -133,9 +148,19 @@ internal sealed partial class FleetHud {
         else text.TryWrite( $"WINGS {fleet.WingsBuilt}/{FleetSimulation.WingGoal}  AMBER {fleet.AmberCount}", out length );
         Text( text[..length], right + 9, 120, 1.05f, Label );
 
+        if ( fleet.Solar && bodies.Length == CelestialSystem.BodyCount ) {
+            for ( int i = CelestialSystem.FrontierBodyCount; i < bodies.Length; ++i ) {
+                var center = bodies[i];
+                var light = new Vector2( bodies[0].X - center.X, bodies[0].Y - center.Y );
+                ref readonly var world = ref SolarCatalog.Get( i );
+                float radius = MathF.Max( center.Z, 2 ) * 2.2f;
+                _glyphs[_count++] = new( new( center.X - radius, center.Y - radius, radius * 2, radius * 2 ),
+                    new( world.Color, 1 ), world.Rings ? 1u : 0, BitConverter.SingleToUInt32Bits( MathF.Atan2( light.Y, light.X ) ), 6, 0 );
+            }
+        }
         for ( int i = 0; i < bodies.Length; ++i ) {
             var body = bodies[i] / _scale;
-            var name = CelestialSystem.Name( fleet.SystemIndex, i );
+            var name = fleet.BodyName( i );
             float textWidth = TextWidth( name.Length, 1 );
             float x = body.X - textWidth / 2, y = body.Y + body.Z + 9;
             if ( x < 0 || x + textWidth > layout.Width || y < 3 || y > layout.Bottom - 12 ||
@@ -174,7 +199,7 @@ internal sealed partial class FleetHud {
                 Text( "SELECT ONE FOR PLAN", right + 9, 192, 1, Label );
             else if ( selectionCount != 0 ) {
                 var plan = fleet.Plan( selected );
-                if ( plan.Body >= 0 ) text.TryWrite( $"{(plan.Order == FlightOrder.Survey ? "SURVEY" : "ORBIT")} {CelestialSystem.Name( fleet.SystemIndex, plan.Body )}", out length );
+                if ( plan.Body >= 0 ) text.TryWrite( $"{(plan.Order == FlightOrder.Survey ? "SURVEY" : "ORBIT")} {fleet.BodyName( plan.Body )}", out length );
                 else if ( plan.Target >= 0 ) text.TryWrite( $"ATTACK SHIP {plan.Target + 1:D2}", out length );
                 else length = CopyStatus( plan.Order == FlightOrder.Move ? "MOVING TO WAYPOINT" : fleet.Frontier ? "PARKED IN ORBIT" : "HOLDING POSITION", text );
                 Text( text[..length], right + 9, 192, 1.05f, SpaceDraw.Cyan );
@@ -204,16 +229,17 @@ internal sealed partial class FleetHud {
             : fleet.InBattle ? "ENGAGEMENT / RIGHT CLICK AMBER TO ATTACK"
             : selectionCount != 0 && fleet.Orbiting( selected ) ? "ORBIT ORDER ACTIVE"
             : oreShort && fleet.Ore < fleet.CurrentWingCost ? "NEED ORE TO QUEUE A WING"
-            : fleet.Frontier ? "TAB / ECONOMY, FLEET AND EVENTS"
+            : fleet.Frontier ? fleet.CompletedSurveys == 0 ? "SELECT SCOUT / RIGHT CLICK A BODY TO SURVEY" : "SELECT A BODY FOR ITS SITE ORDERS"
             : fleet.Owner == 0 ? "HOLD THE RELAY TO MINE ORE" : "CAPTURE THE RELAY OR DEFEAT AMBER"));
         float instructionScale = layout.Width < 530 ? 1 : 1.16f;
         int instructionCapacity = (int)((layout.Width - 159) / TextWidth( 1, instructionScale ));
         Text( instruction.AsSpan( 0, Math.Min( instruction.Length, instructionCapacity ) ), 23, layout.Bottom + 9, instructionScale,
             fleet.Won ? SpaceDraw.Cyan : fleet.Lost ? SpaceDraw.Amber : White );
-        Text( layout.Width >= 585 ? "MID PAN  /  SHIFT MID TILT  /  HOME RESET  /  RIGHT CLICK ORDERS"
+        Text( layout.Width >= 585 ? "MID PAN  /  SHIFT MID TILT  /  F FOCUS  /  HOME RESET"
             : "DRAG SELECT  /  RIGHT CLICK ORDER", 23, layout.Bottom + 31, 1, Label );
-        Button( layout.Width - 127, layout.Bottom + 14, 104, "QUEUE WING", fleet.CanBuildWing );
+        Button( layout.Width - 127, layout.Bottom + 14, 104, fleet.Frontier ? "ORDERS" : "QUEUE WING", fleet.Frontier || fleet.CanBuildWing );
         if ( fleet.Frontier ) CommandPanel( layout, fleet, commandTab, dispatch, speed );
+        if ( fleet.Frontier ) OperationsFeedback( layout, fleet, bodies, sites, hover, speed, planet );
         if ( menu is { } popup ) ContextPanel( layout, fleet, popup, surveyUnit, selectionCount != 0 );
         Submit( commands, pipeline, upload, width, height );
     }
@@ -225,7 +251,7 @@ internal sealed partial class FleetHud {
 
     private void PlanetPanel( FleetSimulation fleet, int planet, float right, FleetSelection? surveyUnit ) {
         PanelAt( right, 147, 171, planet == 0 ? 43 : 184, SpaceDraw.Cyan );
-        Text( CelestialSystem.Name( fleet.SystemIndex, planet ), right + 9, 156, 1.35f, White );
+        Text( fleet.BodyName( planet ), right + 9, 156, 1.35f, White );
         if ( planet == 0 ) {
             Text( "STELLAR BODY", right + 9, 174, 1.05f, Label );
             return;
@@ -291,7 +317,7 @@ internal sealed partial class FleetHud {
         var area = layout.Context( menu, _scale, fleet.Frontier );
         _overlay = 2;
         PanelAt( area.X, area.Y, area.Z, area.W, SpaceDraw.Cyan );
-        Text( CelestialSystem.Name( fleet.SystemIndex, menu.Body ), area.X + 9, area.Y + 8, 1.3f, White );
+        Text( fleet.BodyName( menu.Body ), area.X + 9, area.Y + 8, 1.3f, White );
         Button( area.X + 9, area.Y + 23, area.Z - 18, "INSPECT BODY", true );
         Button( area.X + 9, area.Y + 47, area.Z - 18, "ENTER ORBIT", hasSelection );
         if ( menu.Body > 0 ) {
@@ -359,7 +385,7 @@ internal sealed partial class FleetHud {
         if ( Contains( p, layout.ClockX, 19, 64, 21 ) ) return new( HudAction.Pause );
         if ( Contains( p, layout.ClockX + 70, 19, 36, 21 ) ) return new( HudAction.Speed );
         if ( Contains( p, layout.ClockX + 112, 19, 66, 21 ) ) return new( HudAction.Galaxy );
-        if ( Contains( p, layout.Width - 127, layout.Bottom + 14, 104, 21 ) ) return new( HudAction.Wing );
+        if ( Contains( p, layout.Width - 127, layout.Bottom + 14, 104, 21 ) ) return fleet.Frontier ? new( HudAction.Command, (int)CommandAction.Orders ) : new( HudAction.Wing );
         if ( p.X >= 23 && p.X < 162 && p.Y >= 106 ) {
             float rowY = p.Y - 106;
             int wanted = (int)(rowY / 24);
@@ -414,7 +440,7 @@ internal sealed partial class FleetHud {
     }
 
     internal void RecordGalaxy( GraphicsCommandList commands, PipelineState pipeline, GpuResource upload,
-        int currentSystem, int width, int height ) {
+        int currentSystem, int width, int height, bool frontier = false ) {
         if ( width < 350 || height < 240 ) return;
         Begin( width, height );
         float logicalWidth = width / _scale, logicalHeight = height / _scale;
@@ -426,7 +452,7 @@ internal sealed partial class FleetHud {
         Button( logicalWidth - 108, 22, 85, "RETURN", true );
         for ( int i = 0; i < CelestialSystem.Systems.Length; ++i ) {
             var center = CelestialSystem.MapPositions[i] * new Vector2( logicalWidth, logicalHeight );
-            string name = CelestialSystem.Systems[i];
+            string name = frontier && i == 0 ? "SOLAR SYSTEM" : CelestialSystem.Systems[i];
             float textWidth = TextWidth( name.Length, 1.3f );
             float left = center.X - textWidth / 2;
             Rect( left - 6, center.Y + 19, textWidth + 12, 7 * GlyphPitch( 1.3f ) / _scale + 10, Panel, 1 );

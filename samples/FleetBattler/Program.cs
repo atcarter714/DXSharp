@@ -86,8 +86,8 @@ internal static class Program {
         using var second = device.CreateBuffer( (ulong)(fleet.Capacity + StationSlots) * FleetDraw.InstanceStride, BufferMemory.Upload );
         using var firstHud = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
         using var secondHud = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
-        using var firstEffects = device.CreateBuffer( (FleetSimulation.EffectCapacity + BattleDraw.RouteSegments) * BattleDraw.EffectStride, BufferMemory.Upload );
-        using var secondEffects = device.CreateBuffer( (FleetSimulation.EffectCapacity + BattleDraw.RouteSegments) * BattleDraw.EffectStride, BufferMemory.Upload );
+        using var firstEffects = device.CreateBuffer( (FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity) * BattleDraw.EffectStride, BufferMemory.Upload );
+        using var secondEffects = device.CreateBuffer( (FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity) * BattleDraw.EffectStride, BufferMemory.Upload );
         using var queue = device.CreateCommandQueue( );
         using var allocator = device.CreateCommandAllocator( );
         using var commands = device.CreateCommandList( allocator );
@@ -133,24 +133,27 @@ internal static class Program {
         var fleet = initial;
         var instances = new ShipInstance[fleet.Capacity + StationSlots];
         var screenBodies = new Vector4[CelestialSystem.BodyCount];
+        var screenSites = new MapSite[StationSlots];
+        int siteCount = 0;
+        Point? mouse = null;
         var hud = new FleetHud( atlas );
         var display = new FullscreenToggle( );
         var selection = new CommandSelection( fleet.Capacity );
         selection.Squadron( fleet, 0, SelectionMode.Replace );
-        var effects = new BattleEffect[FleetSimulation.EffectCapacity + BattleDraw.RouteSegments];
+        var effects = new BattleEffect[FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity];
         int planet = initial.Frontier ? FleetSimulation.Homeworld : -1, shotsHeard = 0, lossesHeard = 0, nextCue = 0;
         long noticeUntil = 0;
         string? notice = null;
         bool oreShort = false, galaxy = startGalaxy || viewTest, sawGalaxy = false;
         int slotsUsed = 0, systemsVisited = 0, previousOwner = -1, speed = 1;
-        int surveysHeard = 0, wingsHeard = 0, yardState = -1;
+        int surveysHeard = 0, wingsHeard = 0, yardState = -1, sitesHeard = 0, buildsHeard = 0;
         BodyMenu? menu = null;
-        CommandTab commandTab = initial.Frontier ? CommandTab.Events : CommandTab.Hidden;
+        CommandTab commandTab = CommandTab.Hidden;
         int dispatch = 0, dispatchesSeen = initial.DispatchCount;
         var clock = new FleetClock( );
         bool paused = false;
-        float zoom = 0.85f, tilt = DefaultTilt, yaw = 0;
-        Vector2 cameraFocus = default;
+        float zoom = initial.Solar ? 0.52f : 0.85f, tilt = DefaultTilt, yaw = 0;
+        Vector2 cameraFocus = initial.Solar ? initial.Bodies[FleetSimulation.Homeworld].Center : default;
         bool tilting = false;
         Point? panStart = null, dragStart = null;
         Point dragEnd = default, lastClickPoint = default;
@@ -174,7 +177,7 @@ internal static class Program {
             if ( galaxy ) {
                 sawGalaxy = true;
                 SpaceDraw.RecordGalaxy( frame.Commands, space, moon, fleet.SystemIndex, viewport.Width, viewport.Height );
-                hud.RecordGalaxy( frame.Commands, hudPipeline, hudUpload, fleet.SystemIndex, viewport.Width, viewport.Height );
+                hud.RecordGalaxy( frame.Commands, hudPipeline, hudUpload, fleet.SystemIndex, viewport.Width, viewport.Height, fleet.Frontier );
                 return;
             }
 
@@ -194,7 +197,7 @@ internal static class Program {
             }
             if ( surveysHeard != fleet.CompletedSurveys ) {
                 surveysHeard = fleet.CompletedSurveys;
-                Notify( $"{UnitName( fleet.LastSurveyUnit )} SURVEYED {CelestialSystem.Name( fleet.SystemIndex, fleet.LastSurveyBody )}" );
+                Notify( $"{UnitName( fleet.LastSurveyUnit )} SURVEYED {fleet.BodyName( fleet.LastSurveyBody )}" );
                 audio.Cue( "survey-complete" );
             }
             if ( wingsHeard != fleet.WingsBuilt ) {
@@ -206,6 +209,17 @@ internal static class Program {
                 audio.Cue( "launch" );
             }
             yardState = fleet.YardRemaining;
+            if ( buildsHeard != fleet.StartedConstruction ) {
+                buildsHeard = fleet.StartedConstruction;
+                Notify( "MINER ON SITE / ASSEMBLING EXTRACTION RIG" );
+                audio.Cue( "order" );
+            }
+            if ( sitesHeard != fleet.CompletedSites ) {
+                sitesHeard = fleet.CompletedSites;
+                var site = fleet.LastCompletedSite;
+                Notify( $"{FleetHud.SiteName( site.Facility )} ONLINE / {fleet.BodyName( site.Body )}" );
+                audio.Cue( "launch" );
+            }
             if ( dispatchesSeen < fleet.DispatchCount ) {
                 dispatchesSeen = fleet.DispatchCount;
                 dispatch = dispatchesSeen - 1;
@@ -228,7 +242,7 @@ internal static class Program {
             viewProjection = view * projection;
             Matrix4x4.Invert( viewProjection, out inverseViewProjection );
             for ( int i = 0; i < fleet.Bodies.Length; ++i )
-                screenBodies[i] = CelestialSystem.Project( fleet.Bodies[i], radius, viewProjection, viewport.Width, viewport.Height, halfHeight );
+                screenBodies[i] = CelestialSystem.Project( fleet.VisualBody( i, interpolation ), radius, viewProjection, viewport.Width, viewport.Height, halfHeight );
 
             bool computeActive = traffic.ShipCount != 0 || traffic.DebrisCount != 0;
             if ( computeActive ) traffic.RecordCompute( frame.Commands, fleet, elapsed );
@@ -242,6 +256,7 @@ internal static class Program {
 
             var active = instances.AsSpan( 0, fleet.ActiveCount );
             uint corvetteCount = (uint)fleet.FillInstances( active, selected, selection.Ships, groupHulls: true, interpolation: interpolation, groupMiners: fleet.Frontier );
+            siteCount = 0;
             int stationStart = active.Length;
             int nextStation = stationStart;
             if ( !fleet.Frontier ) {
@@ -251,26 +266,26 @@ internal static class Program {
             }
             Vector2? yardPixel = null;
             for ( int body = 1; body < fleet.Bodies.Length; ++body ) {
-                int remaining = fleet.YardAt( body );
-                if ( remaining < 0 ) continue;
-                var yard = fleet.YardAtPosition( body );
-                if ( body == fleet.YardBody ) yardPixel = CommandSelection.Project( yard, viewProjection, new( viewport.Width, viewport.Height ) );
-                AddStation( yard, 0.77f, remaining, FleetSimulation.YardDuration, new( 1.8f, 1.42f, 0.57f, 1 ) );
-            }
-            if ( fleet.Frontier ) {
-                for ( int body = 1; body < fleet.Bodies.Length; ++body ) {
-                    var status = fleet.Planet( body );
-                    var center = fleet.Bodies[body].Center;
-                    float orbitRadius = fleet.OrbitRadius( body, 1 );
-                    var (sin, cos) = MathF.SinCos( fleet.Tick * (float)FleetSimulation.StepSeconds * 0.31f );
-                    var orbit = new Vector2( cos, sin ) * orbitRadius;
-                    if ( status.MineRemaining >= 0 )
-                        AddStation( center + orbit, 0.50f, status.MineRemaining, FleetSimulation.FacilityDuration, new( 1.8f, 1.12f, 0.47f, 1 ) );
-                    if ( status.LabRemaining >= 0 )
-                        AddStation( center - orbit, 0.46f, status.LabRemaining, FleetSimulation.FacilityDuration, new( 0.57f, 1.3f, 1.8f, 1 ) );
-                    if ( fleet.DepotAt( body ) >= 0 )
-                        AddStation( center + new Vector2( -orbit.Y, orbit.X ), 0.55f, fleet.DepotAt( body ), FleetSimulation.FacilityDuration, new( 0.63f, 1.9f, 1.35f, 1 ) );
+                if ( fleet.YardAt( body ) >= 0 ) {
+                    var yard = fleet.SitePosition( body, PlanetFacility.Yard, interpolation );
+                    if ( body == fleet.YardBody ) yardPixel = CommandSelection.Project( yard, viewProjection, new( viewport.Width, viewport.Height ) );
+                    RecordSite( body, PlanetFacility.Yard, 0.77f, FleetSimulation.YardDuration, new( 1.8f, 1.42f, 0.57f, 1 ) );
                 }
+                if ( !fleet.Frontier ) continue;
+                RecordSite( body, PlanetFacility.Mine, 0.50f, FleetSimulation.FacilityDuration, new( 1.8f, 1.12f, 0.47f, 1 ) );
+                RecordSite( body, PlanetFacility.Lab, 0.46f, FleetSimulation.FacilityDuration, new( 0.57f, 1.3f, 1.8f, 1 ) );
+                RecordSite( body, PlanetFacility.Depot, 0.55f, FleetSimulation.FacilityDuration, new( 0.63f, 1.9f, 1.35f, 1 ) );
+            }
+
+            void RecordSite( int body, PlanetFacility facility, float size, int duration, Vector4 tint ) {
+                int remaining = fleet.SiteRemaining( body, facility );
+                if ( remaining < 0 ) return;
+                var position = fleet.SitePosition( body, facility, interpolation );
+                var pixel = CommandSelection.Project( position, viewProjection, new( viewport.Width, viewport.Height ) );
+                bool wing = facility == PlanetFacility.Yard && fleet.ActiveYard == body;
+                screenSites[siteCount++] = new( pixel, body, facility, wing ? fleet.WingRemaining : remaining,
+                    wing ? fleet.ActiveWingDuration : duration );
+                if ( facility != PlanetFacility.Mine || !fleet.MineEnRoute( body ) ) AddStation( position, size, remaining, duration, tint );
             }
             var upload = uploads[frame.FrameSlotIndex];
             upload.Write<ShipInstance>( instances.AsSpan( 0, nextStation ) );
@@ -292,7 +307,20 @@ internal static class Program {
             }
             int pulseCount = fleet.FillEffects( effects.AsSpan( 0, FleetSimulation.EffectCapacity ) );
             if ( fleet.Frontier && unit is { } navigator )
-                pulseCount += BattleDraw.FillRoute( fleet, navigator, effects.AsSpan( pulseCount ) );
+                pulseCount += BattleDraw.FillRoute( fleet, navigator, effects.AsSpan( pulseCount ), interpolation );
+            if ( fleet.Frontier ) {
+                float workTime = (fleet.Tick - 1 + interpolation) * (float)FleetSimulation.StepSeconds;
+                for ( int body = 1; body < fleet.Bodies.Length; ++body ) {
+                    if ( fleet.SiteWorker( body ) is { } worker && !fleet.MineEnRoute( body ) )
+                        WorkBeam( fleet.VisualCenter( worker, interpolation ), fleet.SitePosition( body, PlanetFacility.Mine, interpolation ), 0 );
+                    if ( fleet.Planet( body ).SurveyUnit is { } scout && fleet.SurveyWorking( body ) )
+                        WorkBeam( fleet.VisualCenter( scout, interpolation ), fleet.VisualBody( body, interpolation ).Center, 1 );
+                }
+
+                void WorkBeam( Vector2 from, Vector2 to, float scanner ) =>
+                    effects[pulseCount++] = new( new( from.X, from.Y, to.X, to.Y ), new( workTime, 0, 6, scanner ) );
+            }
+            pulseCount += BattleDraw.FillSolarTracks( fleet, effects.AsSpan( pulseCount ) );
             if ( pulseCount != 0 ) {
                 var pulses = effectsUploads[frame.FrameSlotIndex];
                 pulses.Write<BattleEffect>( effects.AsSpan( 0, pulseCount ) );
@@ -300,10 +328,24 @@ internal static class Program {
                     viewport.Width, viewport.Height, halfHeight, effects: true );
             }
             var drag = dragStart is { } start && IsDrag( start, dragEnd ) ? DragRect( start, dragEnd ) : (Vector4?)null;
+            MapHover hover = default;
+            if ( fleet.Frontier && menu is null && panStart is null && dragStart is null && mouse is { } pointer &&
+                 FleetHud.Hit( new( pointer.X, pointer.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab ).Action == HudAction.None ) {
+                var pixel = new Vector2( pointer.X, pointer.Y );
+                var dimensions = new Vector2( viewport.Width, viewport.Height );
+                int ship = CommandSelection.Hit( fleet, pixel, viewProjection, dimensions, 0, interpolation );
+                if ( ship < 0 ) ship = CommandSelection.Hit( fleet, pixel, viewProjection, dimensions, 1, interpolation );
+                if ( ship >= 0 )
+                    hover = new( HoverKind.Ship, ship, CommandSelection.Project( fleet.VisualPosition( ship, interpolation ), viewProjection, dimensions ), pixel );
+                else if ( PickSite( pixel ) is >= 0 and var site )
+                    hover = new( HoverKind.Site, site, screenSites[site].Pixel, pixel );
+                else if ( PickBody( pointer ) is >= 0 and var body )
+                    hover = new( HoverKind.Body, body, new( screenBodies[body].X, screenBodies[body].Y ), pixel );
+            }
             hud.Record( frame.Commands, hudPipeline, hudUpload, fleet, selected, viewport.Width, viewport.Height, oreShort, screenBodies.AsSpan( 0, fleet.Bodies.Length ),
                 selection.Count, planet, Environment.TickCount64 < noticeUntil ? notice : null, drag,
                 fleet.Frontier ? null : CommandSelection.Project( fleet.Site, viewProjection, new( viewport.Width, viewport.Height ) ),
-                selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch );
+                selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch, screenSites.AsSpan( 0, siteCount ), hover );
         }, ( window, result ) => {
             if ( result.Frames == 1 ) {
                 if ( startFullscreen ) display.Toggle( window );
@@ -316,6 +358,10 @@ internal static class Program {
                         case Keys.Escape when commandTab != CommandTab.Hidden: commandTab = CommandTab.Hidden; break;
                         case Keys.Escape when !galaxy: planet = -1; break;
                         case Keys.Home when !galaxy: ResetCamera( ); break;
+                        case Keys.F when !galaxy:
+                            if ( planet >= 0 ) cameraFocus = ClampCamera( fleet.Bodies[planet].Center );
+                            else if ( selection.SurveyUnit( fleet ) is { } focusUnit ) cameraFocus = ClampCamera( fleet.Center( focusUnit ) );
+                            break;
                         case Keys.Left or Keys.Right or Keys.Up or Keys.Down when !galaxy:
                             var motion = e.KeyCode switch {
                                 Keys.Left => new Vector2( -1, 0 ), Keys.Right => new Vector2( 1, 0 ),
@@ -420,7 +466,9 @@ internal static class Program {
                     }
                     audio.Cue( "order" );
                 };
+                window.MouseLeave += ( _, _ ) => mouse = null;
                 window.MouseMove += ( _, e ) => {
+                    mouse = e.Location;
                     if ( galaxy ) return;
                     if ( dragStart is not null ) { dragEnd = e.Location; return; }
                     if ( panStart is not { } previous ) return;
@@ -446,7 +494,8 @@ internal static class Program {
                         lastClickShip = -1;
                     } else {
                         int ship = CommandSelection.Hit( fleet, new( e.X, e.Y ), viewProjection, dimensions, 0, interpolation );
-                        int hitBody = ship < 0 ? PickBody( e.Location ) : -1;
+                        int hitSite = ship < 0 && fleet.Frontier ? PickSite( new( e.X, e.Y ) ) : -1;
+                        int hitBody = ship < 0 ? hitSite >= 0 ? screenSites[hitSite].Body : PickBody( e.Location ) : -1;
                         if ( hitBody >= 0 ) planet = hitBody;
                         else {
                             long now = Environment.TickCount64;
@@ -467,7 +516,7 @@ internal static class Program {
                 };
                 window.MouseWheel += ( _, e ) => {
                     if ( galaxy || menu is not null || FleetHud.Hit( new( e.X, e.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab ).Action != HudAction.None ) return;
-                    float nextZoom = Math.Clamp( zoom * MathF.Pow( 0.85f, e.Delta / 120f ), 0.12f, fleet.Frontier ? 2.8f : 2.5f );
+                    float nextZoom = Math.Clamp( zoom * MathF.Pow( 0.85f, e.Delta / 120f ), 0.12f, fleet.Solar ? 3.8f : fleet.Frontier ? 2.8f : 2.5f );
                     if ( TryPick( e.Location, viewport, inverseViewProjection, out var anchor ) )
                         cameraFocus = ClampCamera( cameraFocus + (anchor - cameraFocus) * (1 - nextZoom / zoom) );
                     zoom = nextZoom;
@@ -491,10 +540,10 @@ internal static class Program {
         Vector2 ClampCamera( Vector2 center ) => Vector2.Clamp( center, new( -fleet.NavigationRadius ), new( fleet.NavigationRadius ) );
 
         void ResetCamera( ) {
-            zoom = 0.85f;
+            zoom = fleet.Solar ? 0.52f : 0.85f;
             yaw = 0;
             tilt = DefaultTilt;
-            cameraFocus = default;
+            cameraFocus = fleet.Solar ? fleet.Bodies[FleetSimulation.Homeworld].Center : default;
         }
 
         static SelectionMode ModifierSelection( ) {
@@ -544,6 +593,8 @@ internal static class Program {
             nextCue = 0;
             previousOwner = fleet.Owner;
             surveysHeard = fleet.CompletedSurveys;
+            sitesHeard = fleet.CompletedSites;
+            buildsHeard = fleet.StartedConstruction;
             wingsHeard = fleet.WingsBuilt;
             yardState = fleet.YardRemaining;
             menu = null;
@@ -563,9 +614,10 @@ internal static class Program {
                 case CommandAction.Toggle:
                     commandTab = commandTab == CommandTab.Hidden ? CommandTab.Economy : CommandTab.Hidden;
                     break;
-                case CommandAction.Economy: commandTab = CommandTab.Economy; break;
-                case CommandAction.Fleet: commandTab = CommandTab.Fleet; break;
-                case CommandAction.Events: commandTab = CommandTab.Events; break;
+                case CommandAction.Economy: SelectTab( CommandTab.Economy ); break;
+                case CommandAction.Fleet: SelectTab( CommandTab.Fleet ); break;
+                case CommandAction.Orders: SelectTab( CommandTab.Orders ); break;
+                case CommandAction.Events: SelectTab( CommandTab.Events ); break;
                 case CommandAction.Worker:
                     if ( fleet.QueueWorker( ) ) {
                         Notify( "MINER QUEUED AT HOMEWORLD" );
@@ -578,11 +630,23 @@ internal static class Program {
                     break;
                 case CommandAction.Drive: PlanetOrder( PlanetAction.Drive, planet ); break;
                 case CommandAction.Wing: QueueWing( ); break;
-                case CommandAction.Weapon: fleet.ConfigureDesign( weapon: true ); break;
-                case CommandAction.Defense: fleet.ConfigureDesign( weapon: false ); break;
+                case CommandAction.Pulse: fleet.SetWeapon( WeaponKind.Pulse ); break;
+                case CommandAction.Rail: fleet.SetWeapon( WeaponKind.Rail ); break;
+                case CommandAction.Shield: fleet.SetPlating( false ); break;
+                case CommandAction.Plating: fleet.SetPlating( true ); break;
+                case CommandAction.CancelFirstWing: CancelOrder( fleet.CancelWing( 0 ) ); break;
+                case CommandAction.CancelSecondWing: CancelOrder( fleet.CancelWing( 1 ) ); break;
+                case CommandAction.CancelCivilian: CancelOrder( fleet.CancelCivilian( ) ); break;
                 case CommandAction.Earlier: dispatch = Math.Max( 0, dispatch - 1 ); break;
                 case CommandAction.Later: dispatch = Math.Min( fleet.DispatchCount - 1, dispatch + 1 ); break;
             }
+        }
+
+        void SelectTab( CommandTab tab ) => commandTab = commandTab == tab ? CommandTab.Hidden : tab;
+        void CancelOrder( bool canceled ) {
+            if ( !canceled ) return;
+            Notify( "ORDER CANCELED / ORE RETURNED" );
+            audio.Cue( "order" );
         }
 
         void Notify( string text ) {
@@ -597,6 +661,15 @@ internal static class Program {
             if ( action == PlanetAction.Inspect ) { planet = body; return; }
             if ( action == PlanetAction.Close ) { planet = -1; return; }
             if ( action == PlanetAction.SiteWing ) { QueueWing( body ); return; }
+            if ( action is >= PlanetAction.CancelMine and <= PlanetAction.CancelDepot ) {
+                var facilityToCancel = action switch {
+                    PlanetAction.CancelMine => PlanetFacility.Mine,
+                    PlanetAction.CancelLab => PlanetFacility.Lab,
+                    PlanetAction.CancelYard => PlanetFacility.Yard, _ => PlanetFacility.Depot
+                };
+                CancelOrder( fleet.CancelSite( body, facilityToCancel ) );
+                return;
+            }
             if ( action == PlanetAction.Drive ) {
                 Notify( fleet.DriveUpgrade ? "LONG BURN DRIVE ONLINE" : fleet.ResearchDrive( ) ? "LONG BURN DRIVE ONLINE / OUTER BELT UNLOCKED"
                     : "LONG BURN DRIVE NEEDS 36 SCIENCE" );
@@ -605,7 +678,7 @@ internal static class Program {
             if ( action == PlanetAction.Orbit ) {
                 if ( selection.Count == 0 ) { Notify( "SELECT SHIPS TO ORBIT" ); return; }
                 if ( !selection.Issue( fleet, default, orbit: body ) ) { Notify( "OUTER BELT REQUIRES LONG BURN DRIVE" ); return; }
-                Notify( $"{SelectionName( )} TRANSFER TO {CelestialSystem.Name( fleet.SystemIndex, body )}" );
+                Notify( $"{SelectionName( )} TRANSFER TO {fleet.BodyName( body )}" );
                 audio.Cue( "order" );
                 return;
             }
@@ -632,13 +705,13 @@ internal static class Program {
             }
             if ( action == PlanetAction.Survey ) {
                 if ( status.Surveyed ) { Notify( "SURVEY ALREADY COMPLETE" ); return; }
-                if ( body == CelestialSystem.OuterBelt && !fleet.DriveUpgrade ) { Notify( "OUTER BELT REQUIRES LONG BURN DRIVE" ); return; }
+                if ( fleet.RequiresDrive( body ) && !fleet.DriveUpgrade ) { Notify( "OUTER BELT REQUIRES LONG BURN DRIVE" ); return; }
                 if ( status.SurveyUnit is { } assigned ) { Notify( $"{UnitName( assigned )} ALREADY ASSIGNED" ); return; }
                 if ( selection.SurveyUnit( fleet ) is not { } unit || !fleet.BeginSurvey( unit, body ) ) {
                     Notify( fleet.Frontier ? "SELECT YOUR SCIENCE SCOUT" : "SELECT ONE SHIP OR ONE SQUAD" );
                     return;
                 }
-                Notify( $"{UnitName( unit )} SURVEYING {CelestialSystem.Name( fleet.SystemIndex, body )}" );
+                Notify( $"{UnitName( unit )} SURVEYING {fleet.BodyName( body )}" );
                 audio.Cue( "survey-assign" );
                 return;
             }
@@ -663,10 +736,22 @@ internal static class Program {
             if ( started ) audio.Cue( "launch" );
         }
 
+        int PickSite( Vector2 pixel ) {
+            float best = MathF.Pow( MathF.Max( 11, viewport.Height * 0.013f ), 2 );
+            int result = -1;
+            for ( int i = 0; i < siteCount; ++i ) {
+                float distance = Vector2.DistanceSquared( pixel, screenSites[i].Pixel );
+                if ( distance >= best ) continue;
+                best = distance;
+                result = i;
+            }
+            return result;
+        }
+
         int PickBody( Point pixel ) {
             int body = -1;
             float closest = 1;
-            for ( int i = 0; i < screenBodies.Length; ++i ) {
+            for ( int i = 0; i < fleet.Bodies.Length; ++i ) {
                 var screen = screenBodies[i];
                 float radius = MathF.Max( 8, screen.Z );
                 float distance = Vector2.DistanceSquared( new( pixel.X, pixel.Y ), new( screen.X, screen.Y ) ) / (radius * radius);

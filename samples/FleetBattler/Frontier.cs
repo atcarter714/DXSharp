@@ -18,9 +18,11 @@ internal readonly record struct ShipDesign( WeaponKind Weapon, bool Plating ) {
 internal sealed partial class FleetSimulation {
     internal const int Homeworld = 1, WorkerCost = 20, WorkerDuration = 240;
     // A one-survivor wing can retain three storage slots while consuming one naval slot.
-    private const int FrontierCapacity = 128, FrontierWingSize = 3, MaxWorkers = 5;
+    private const int FrontierCapacity = 320, FrontierWingSize = 3, MaxWorkers = 5;
     private readonly FrontierEvent[] _dispatches = new FrontierEvent[8];
     private readonly FleetSelection?[] _constructionWorkers = new FleetSelection?[CelestialSystem.BodyCount];
+    private readonly Vector2[] _mineOrbits = new Vector2[CelestialSystem.BodyCount];
+    private readonly bool[] _buildingMines = new bool[CelestialSystem.BodyCount];
     private int _workerReadyTick, _raidTick, _raidsLaunched, _deposits;
     private int _surveyedProspects;
     private bool _secured;
@@ -58,6 +60,9 @@ internal sealed partial class FleetSimulation {
             : Design with { Plating = !Design.Plating };
     }
 
+    internal void SetWeapon( WeaponKind weapon ) => Design = Design with { Weapon = weapon };
+    internal void SetPlating( bool plating ) => Design = Design with { Plating = plating };
+
     private void OpenFrontier( ) {
         _survey[Homeworld] = SurveyDuration;
         Ore = 50;
@@ -70,6 +75,12 @@ internal sealed partial class FleetSimulation {
 
     internal bool QueueWorker( ) => QueueCivilian( HullRole.Miner );
     internal bool QueueScout( ) => QueueCivilian( HullRole.Scout );
+    internal bool CancelCivilian( ) {
+        if ( !Frontier || WorkerRemaining <= 0 ) return false;
+        _workerReadyTick = 0;
+        Refund( _civilianOrder == HullRole.Miner ? WorkerCost : ScoutCost );
+        return true;
+    }
 
     private bool QueueCivilian( HullRole role ) {
         if ( !CanOrderCivilian( role ) ) return false;
@@ -97,7 +108,9 @@ internal sealed partial class FleetSimulation {
         if ( !CanPlaceMine( body, unit ) ) return false;
         var worker = unit!.Value;
         _constructionWorkers[body] = worker;
-        SetOrder( worker, OrbitalOrder( worker, body, survey: false ) );
+        var orbit = OrbitalOrder( worker, body, survey: false );
+        _mineOrbits[body] = new( orbit.Radius, orbit.Phase + 0.24f );
+        SetOrder( worker, orbit );
         return true;
     }
 
@@ -110,13 +123,34 @@ internal sealed partial class FleetSimulation {
         if ( _constructionWorkers[body] is not { } worker ) return;
         bool alive = worker.IsShip ? Alive( worker.Ship ) : ShipCount( worker.Squad ) != 0;
         if ( !alive || EffectiveOrder( worker ).Body != body + 1 ) {
-            _constructionWorkers[body] = null;
-            _mines[body] = 0;
-            Ore = Math.Min( 999, Ore + MineCost );
+            CancelSite( body, PlanetFacility.Mine );
             return;
         }
-        if ( !MineOnSite( body ) ) ++_mines[body];
+        if ( !MineOnSite( body ) ) {
+            ++_mines[body];
+            return;
+        }
+        if ( !_buildingMines[body] ) {
+            _buildingMines[body] = true;
+            ++StartedConstruction;
+        }
         if ( _mines[body] <= Tick + 1 ) _constructionWorkers[body] = null;
+    }
+
+    internal FleetSelection? SiteWorker( int body ) => _constructionWorkers[body];
+
+    internal Vector2 SitePosition( int body, PlanetFacility facility, float interpolation ) {
+        var center = VisualBody( body, interpolation ).Center;
+        float tick = Math.Max( 0, Tick - 1 + interpolation );
+        if ( facility == PlanetFacility.Mine && _mineOrbits[body].X > 0 ) {
+            var orbit = _mineOrbits[body];
+            var (sin, cos) = MathF.SinCos( orbit.Y + tick * OrbitRate( orbit.X ) );
+            return center + new Vector2( cos, sin ) * orbit.X;
+        }
+        float angularSpeed = facility == PlanetFacility.Yard ? 0.23f : 0.31f;
+        float phase = facility == PlanetFacility.Lab ? MathF.PI : facility == PlanetFacility.Depot ? MathF.PI / 2 : -MathF.PI / 2;
+        var (y, x) = MathF.SinCos( tick * (float)StepSeconds * angularSpeed + phase );
+        return center + new Vector2( x, y ) * (OrbitRadius( body, 1 ) + (facility == PlanetFacility.Yard ? 4 : 0));
     }
 
     private void RevealProspect( int body ) {

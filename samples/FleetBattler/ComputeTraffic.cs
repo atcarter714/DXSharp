@@ -13,6 +13,7 @@ internal sealed class ComputeTraffic : IDisposable {
     private readonly PipelineState? _orbits, _steering, _debrisPipeline, _freighters;
     private readonly GpuResource? _agents, _instances, _bodies;
     private readonly int _bodyCount;
+    private readonly GpuResource[] _jobBuffers;
     private int _lastSystem = -1;
 
     private const string DebrisShader = """
@@ -21,7 +22,7 @@ internal sealed class ComputeTraffic : IDisposable {
         struct Output { float4 position : SV_Position; float2 uv : TEXCOORD; float shade : COLOR; };
         Output VS(uint id : SV_VertexID, uint instance : SV_InstanceID) {
             const float2 corners[6] = {float2(-1,-1),float2(1,-1),float2(-1,1),float2(-1,1),float2(1,-1),float2(1,1)};
-            float4 rock = Bodies[instance+5];
+            float4 rock = Bodies[instance+11];
             Output output;
             output.uv = corners[id];
             output.position = mul(float4(rock.x,-0.8,rock.y,1),ViewProjection);
@@ -48,7 +49,7 @@ internal sealed class ComputeTraffic : IDisposable {
         _bodyCount = CelestialSystem.BodyCount + debris;
         try {
             string compute = File.ReadAllText( Path.Combine( AppContext.BaseDirectory, "Shaders", "Traffic.hlsl" ) );
-            using var computeRoot = device.CreateRootSignature( 3, 28 );
+            using var computeRoot = device.CreateRootSignature( 3, 8 + 4 * CelestialSystem.BodyCount );
             _orbits = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "OrbitField", "cs_6_0" ) );
             _steering = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "Steering", "cs_6_0" ) );
             using var debrisRoot = device.CreateGraphicsBufferRootSignature( 20 );
@@ -65,6 +66,7 @@ internal sealed class ComputeTraffic : IDisposable {
             _agents = device.CreateBuffer( (ulong)Math.Max( ships, 1 ) * 16, unorderedAccess: true );
             _instances = device.CreateBuffer( (ulong)Math.Max( ships, 1 ) * FleetDraw.InstanceStride, unorderedAccess: true );
             _bodies = device.CreateBuffer( (ulong)_bodyCount * 16, unorderedAccess: true );
+            _jobBuffers = [_agents, _instances, _bodies];
         } catch {
             Dispose( );
             throw;
@@ -77,7 +79,7 @@ internal sealed class ComputeTraffic : IDisposable {
     internal GpuResource Bodies => _bodies!;
 
     internal void RecordCompute( GraphicsCommandList commands, FleetSimulation fleet, float elapsed ) {
-        Span<uint> constants = stackalloc uint[28];
+        Span<uint> constants = stackalloc uint[8 + 4 * CelestialSystem.BodyCount];
         constants[0] = ShipCount;
         constants[1] = (uint)_bodyCount;
         constants[2] = _lastSystem == fleet.SystemIndex ? 0u : 1u;
@@ -96,27 +98,14 @@ internal sealed class ComputeTraffic : IDisposable {
         commands.Transition( _agents!, ResourceState.Common, ResourceState.UnorderedAccess );
         commands.Transition( Instances, ResourceState.Common, ResourceState.UnorderedAccess );
         commands.Transition( Bodies, ResourceState.Common, ResourceState.UnorderedAccess );
-        Bind( _orbits! );
-        commands.SetComputeConstants( 3, constants );
-        commands.Dispatch( ((uint)_bodyCount + GroupSize - 1) / GroupSize );
-        if ( ShipCount > 0 ) {
-            commands.UavBarrier( Bodies );
-            Bind( _steering! );
-            commands.SetComputeConstants( 3, constants );
-            commands.Dispatch( (ShipCount + GroupSize - 1) / GroupSize );
-        }
+        var jobs = new ComputeJobBatch( commands, _jobBuffers );
+        const uint agents = 1 << 0, instances = 1 << 1, bodies = 1 << 2;
+        jobs.Dispatch( _orbits!, (uint)_bodyCount, GroupSize, 0, bodies, constants );
+        jobs.Dispatch( _steering!, ShipCount, GroupSize, agents | bodies, agents | instances, constants );
         commands.Transition( _agents!, ResourceState.UnorderedAccess, ResourceState.Common );
         commands.Transition( Instances, ResourceState.UnorderedAccess, ResourceState.VertexAndConstantBuffer );
         commands.Transition( Bodies, ResourceState.UnorderedAccess, ResourceState.NonPixelShaderResource );
         _lastSystem = fleet.SystemIndex;
-        return;
-
-        void Bind( PipelineState pipeline ) {
-            commands.SetComputePipeline( pipeline );
-            commands.SetComputeBuffer( 0, _agents! );
-            commands.SetComputeBuffer( 1, Instances );
-            commands.SetComputeBuffer( 2, Bodies );
-        }
     }
 
     internal void RecordDebris( GraphicsCommandList commands, Matrix4x4 viewProjection, int width, int height, float halfHeight ) {
