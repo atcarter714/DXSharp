@@ -321,6 +321,10 @@ internal static class FleetQualification {
         Require( sawRailBypass && sawPulseAbsorption, "rail bypasses shields and pulse strips them before reaching armor" );
         Require( fleet.Won && fleet.ActiveRaids == 2 && fleet.Dispatch( fleet.DispatchCount - 1 ) == FrontierEvent.Secured,
             "the player can overcome both escalating raids and secure the frontier" );
+        int squads = fleet.SquadCount;
+        Require( fleet.QueueWorker( ), "the homeworld can continue growing after victory" );
+        AdvanceUntil( fleet, () => fleet.SquadCount > squads, "a post-victory worker leaves the queue" );
+        Require( fleet.Role( squads ) == HullRole.Miner && fleet.ActiveRaids == 2, "post-victory production does not restart raids" );
     }
 
     private static void VerifyAudio( ) {

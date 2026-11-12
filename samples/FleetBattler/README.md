@@ -22,7 +22,7 @@ The default Frontier scenario starts with a surveyed homeworld, one science scou
 
 1. Select the science scout in the fleet outliner. Right-click an unsurveyed body and assign the survey, or use the action in its inspection panel. The flight plan shows the assigned craft's course. A finished survey reveals the local deposit and pays 15 ore.
 2. Select a miner, inspect the surveyed body, and choose **Place Mine**. The miner travels to the construction site before the timer starts. The build reserves 35 ore. Reassigning the miner during construction cancels the build and refunds its cost. The completed mine runs independently.
-3. Use the homeworld panel or **Economy** to order another miner for 20 ore. Build a 55-ore orbital shipyard on a surveyed world. The site grows as it builds and the yard opens production after 24 seconds at 1×.
+3. Use **Economy** to order another miner for 20 ore. Build a 55-ore orbital shipyard on a surveyed world. The site grows as it builds and the yard opens production after 24 seconds at 1×.
 4. Open **Fleet** to choose a weapon and defense package for the next three-corvette wing. Pulse cycles quickly and hits shields first. Rail fires farther and bypasses shields. A shield generator recovers after a lull. Heavy plating trades shield capacity for armor and adds 8 ore and four seconds at 1×.
 5. Follow the **Events** dispatches as extraction attracts an Amber raid. Richer deposits pay for defenses faster and draw an earlier response. Move miners and the scout clear, deploy escorts, and defeat both waves. An orbital lab generates science for weapons and industry research.
 

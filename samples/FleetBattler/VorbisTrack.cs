@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using NVorbis;
@@ -37,13 +38,17 @@ internal static class VorbisTrack {
         writer.Write( rate ); writer.Write( rate * channels * 2 ); writer.Write( (short)(channels * 2) ); writer.Write( (short)16 );
         writer.Write( "data"u8 ); writer.Write( 0 );
         var samples = new float[8192];
+        var pcm = new byte[samples.Length * sizeof(short)];
         long bytes = 0;
         for ( int count; (count = reader.ReadSamples( samples, 0, samples.Length )) > 0; ) {
             bytes += count * 2L;
             if ( bytes > 512 * 1024 * 1024 ) throw new InvalidDataException( "Decoded music exceeds the 512 MiB cache entry limit." );
             if ( count % channels != 0 ) throw new InvalidDataException( "Vorbis decoder returned a partial PCM frame." );
-            for ( int i = 0; i < count; ++i )
-                writer.Write( (short)Math.Round( Math.Clamp( samples[i], -1, 1 ) * short.MaxValue ) );
+            for ( int i = 0; i < count; ++i ) {
+                short sample = (short)Math.Round( Math.Clamp( samples[i], -1, 1 ) * short.MaxValue );
+                BinaryPrimitives.WriteInt16LittleEndian( pcm.AsSpan( i * sizeof(short) ), sample );
+            }
+            writer.Write( pcm.AsSpan( 0, count * sizeof(short) ) );
         }
         if ( bytes == 0 ) throw new InvalidDataException( "The Ogg Vorbis file contains no audio samples." );
         long end = output.Position;

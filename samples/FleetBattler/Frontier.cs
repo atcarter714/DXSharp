@@ -64,14 +64,19 @@ internal sealed partial class FleetSimulation {
         if ( !Frontier ) return true;
         return HasDeposit( body ) && unit is { } worker && (uint)worker.Squad < (uint)SquadCount &&
             IsPlayerSquad( worker.Squad ) && Role( worker.Squad ) == HullRole.Miner &&
-            (worker.IsShip ? Alive( worker.Ship ) && SquadronOf( worker.Ship ) == worker.Squad : ShipCount( worker.Squad ) > 0);
+            (worker.IsShip ? Alive( worker.Ship ) && SquadronOf( worker.Ship ) == worker.Squad : ShipCount( worker.Squad ) > 0) &&
+            !WorkerAssigned( worker.Squad );
+    }
+
+    private bool WorkerAssigned( int squad ) {
+        foreach ( var assignment in _constructionWorkers )
+            if ( assignment?.Squad == squad ) return true;
+        return false;
     }
 
     private bool AssignMine( int body, FleetSelection? unit ) {
         if ( !CanPlaceMine( body, unit ) ) return false;
         var worker = unit!.Value;
-        for ( int i = 1; i < _constructionWorkers.Length; ++i )
-            if ( _constructionWorkers[i]?.Squad == worker.Squad ) return false;
         _constructionWorkers[body] = worker;
         SetOrder( worker, OrbitalOrder( worker, body, survey: false ) );
         return true;
@@ -102,12 +107,13 @@ internal sealed partial class FleetSimulation {
     }
 
     private void AdvanceFrontier( ) {
-        if ( !Frontier || Lost || Won ) return;
+        if ( !Frontier || Lost ) return;
         if ( _workerReadyTick != 0 && Tick + 1 >= _workerReadyTick ) {
             _workerReadyTick = 0;
             ++_workersBuilt;
             AddSquad( 1, 0, _bodies[Homeworld].Center + new Vector2( -OrbitRadius( Homeworld, 1 ), 0 ), HullRole.Miner );
         }
+        if ( Won ) return;
         if ( _raidsLaunched == 0 && _raidTick == 0 && HasOperatingMine( ) ) {
             _raidTick = Tick + (ProspectYield( FirstMineBody( ) ) > 8 ? 840 : 1080);
             SendDispatch( FrontierEvent.Distress );
