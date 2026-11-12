@@ -17,25 +17,40 @@ internal readonly record struct ShipDesign( WeaponKind Weapon, bool Plating ) {
 
 internal sealed partial class FleetSimulation {
     internal const int Homeworld = 1, WorkerCost = 20, WorkerDuration = 240;
-    private const int FrontierCapacity = 32, FrontierWingSize = 3, MaxWorkers = 3;
+    // A one-survivor wing can retain three storage slots while consuming one naval slot.
+    private const int FrontierCapacity = 128, FrontierWingSize = 3, MaxWorkers = 5;
     private readonly FrontierEvent[] _dispatches = new FrontierEvent[8];
     private readonly FleetSelection?[] _constructionWorkers = new FleetSelection?[CelestialSystem.BodyCount];
-    private int _workerReadyTick, _workersBuilt, _raidTick, _raidsLaunched, _deposits;
+    private int _workerReadyTick, _raidTick, _raidsLaunched, _deposits;
     private int _surveyedProspects;
     private bool _secured;
+    private HullRole _civilianOrder;
     internal bool Frontier { get; }
     internal int DispatchCount { get; private set; }
     internal int WorkerRemaining => Remaining( _workerReadyTick );
     internal int Deposits => _deposits;
     internal int ActiveRaids => _raidsLaunched;
-    internal bool CanQueueWorker => Frontier && !Lost && _workerReadyTick == 0 && _workersBuilt < MaxWorkers && Ore >= WorkerCost;
+    internal bool CanQueueWorker => CanOrderCivilian( HullRole.Miner );
+    internal bool CanQueueScout => CanOrderCivilian( HullRole.Scout );
+    internal HullRole CivilianOrder => _civilianOrder;
+    internal bool Recovering => Frontier && CyanCount == 0 && !Won;
+    internal const int ScoutCost = 24;
+    private bool CanOrderCivilian( HullRole role ) => Frontier && _workerReadyTick == 0 &&
+        (role == HullRole.Miner ? ActiveMiners( ) < MaxWorkers && Ore >= WorkerCost :
+            ActiveScouts( ) == 0 && Ore >= ScoutCost);
+    private int ActiveScouts( ) {
+        int count = 0;
+        for ( int i = 0; i < SquadCount; ++i )
+            if ( IsScoutSquad( i ) ) count += ShipCount( i );
+        return count;
+    }
     internal ShipDesign Design { get; private set; } = new( WeaponKind.Pulse, false );
     internal HullRole Role( int squad ) => _squads[squad].Role;
     internal ShipDesign Loadout( int ship ) => _squads[_squadOfShip[ship]].Design;
     internal FrontierEvent Dispatch( int index ) => _dispatches[index];
     internal bool HasDeposit( int body ) => Frontier && (_deposits & (1 << body)) != 0;
     internal int DepositYield( int body ) => HasDeposit( body ) ? ProspectYield( body ) : 0;
-    private int ProspectYield( int body ) => (body + SystemIndex) % 2 == 0 ? 12 : 8;
+    private int ProspectYield( int body ) => body == CelestialSystem.OuterBelt ? 20 : (body + SystemIndex) % 2 == 0 ? 12 : 8;
 
     internal void ConfigureDesign( bool weapon ) {
         if ( !Frontier ) return;
@@ -47,15 +62,19 @@ internal sealed partial class FleetSimulation {
         _survey[Homeworld] = SurveyDuration;
         Ore = 50;
         Vector2 home = _bodies[Homeworld].Center + new Vector2( -OrbitRadius( Homeworld, 1 ), 0 );
-        AddSquad( 1, 0, home, HullRole.Scout );
-        AddSquad( 1, 0, home + new Vector2( -5, 5 ), HullRole.Miner );
-        AddSquad( 1, 0, home + new Vector2( -5, -5 ), HullRole.Miner );
+        Park( AddSquad( 1, 0, home, HullRole.Scout ), Homeworld );
+        Park( AddSquad( 1, 0, home + new Vector2( -5, 5 ), HullRole.Miner ), Homeworld );
+        Park( AddSquad( 1, 0, home + new Vector2( -5, -5 ), HullRole.Miner ), Homeworld );
         SendDispatch( FrontierEvent.Arrival );
     }
 
-    internal bool QueueWorker( ) {
-        if ( !CanQueueWorker ) return false;
-        Ore -= WorkerCost;
+    internal bool QueueWorker( ) => QueueCivilian( HullRole.Miner );
+    internal bool QueueScout( ) => QueueCivilian( HullRole.Scout );
+
+    private bool QueueCivilian( HullRole role ) {
+        if ( !CanOrderCivilian( role ) ) return false;
+        Ore -= role == HullRole.Miner ? WorkerCost : ScoutCost;
+        _civilianOrder = role;
         _workerReadyTick = Tick + WorkerDuration;
         return true;
     }
@@ -65,7 +84,7 @@ internal sealed partial class FleetSimulation {
         return HasDeposit( body ) && unit is { } worker && (uint)worker.Squad < (uint)SquadCount &&
             IsPlayerSquad( worker.Squad ) && Role( worker.Squad ) == HullRole.Miner &&
             (worker.IsShip ? Alive( worker.Ship ) && SquadronOf( worker.Ship ) == worker.Squad : ShipCount( worker.Squad ) > 0) &&
-            !WorkerAssigned( worker.Squad );
+            !WorkerAssigned( worker.Squad ) && CanReach( worker, body );
     }
 
     private bool WorkerAssigned( int squad ) {
@@ -107,11 +126,13 @@ internal sealed partial class FleetSimulation {
     }
 
     private void AdvanceFrontier( ) {
-        if ( !Frontier || Lost ) return;
+        if ( !Frontier ) return;
+        if ( Tick % IncomeInterval == 0 && ShipsLost > 0 && Ore < MineCost && !HasOperatingMine( ) )
+            Ore = Math.Min( MineCost, Ore + 2 );
         if ( _workerReadyTick != 0 && Tick + 1 >= _workerReadyTick ) {
             _workerReadyTick = 0;
-            ++_workersBuilt;
-            AddSquad( 1, 0, _bodies[Homeworld].Center + new Vector2( -OrbitRadius( Homeworld, 1 ), 0 ), HullRole.Miner );
+            var origin = _bodies[Homeworld].Center + new Vector2( -OrbitRadius( Homeworld, 1 ), 0 );
+            Park( AddSquad( 1, 0, origin, _civilianOrder ), Homeworld );
         }
         if ( Won ) return;
         if ( _raidsLaunched == 0 && _raidTick == 0 && HasOperatingMine( ) ) {
@@ -139,7 +160,7 @@ internal sealed partial class FleetSimulation {
                 target = ship;
             }
             if ( target >= 0 ) Attack( new( i ), target );
-            else Move( i, destination );
+            else if ( _squads[i].Order.Enemy != 0 || Vector2.DistanceSquared( _squads[i].Order.Target, destination ) > 100 ) Move( i, destination );
         }
     }
 
@@ -159,9 +180,8 @@ internal sealed partial class FleetSimulation {
     private void LaunchRaid( int count, FrontierEvent incident ) {
         var target = YardBody >= 0 ? Shipyard : FirstMinePosition( );
         var origin = target + new Vector2( target.X < 0 ? 48 : -48, target.Y < 0 ? 35 : -35 );
-        int squad = SquadCount;
         var design = new ShipDesign( incident == FrontierEvent.Raid ? WeaponKind.Pulse : WeaponKind.Rail, false );
-        AddSquad( count, 1, Vector2.Clamp( origin, new( -BoardRadius + 5 ), new( BoardRadius - 5 ) ), design: design );
+        int squad = AddSquad( count, 1, Vector2.Clamp( origin, new( -BoardRadius + 5 ), new( BoardRadius - 5 ) ), design: design );
         Move( squad, target );
         ++_raidsLaunched;
         SendDispatch( incident );

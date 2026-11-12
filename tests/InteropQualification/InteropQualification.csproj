@@ -12,6 +12,10 @@
     <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
     <Compile Include="../../samples/FleetBattler/FrontierHud.cs" Link="FrontierHud.cs" />
+    <Compile Include="../../samples/FleetBattler/PlanetInspector.cs" Link="PlanetInspector.cs" />
+    <None Include="../../samples/FleetBattler/Art/OperationsAtlas.jpg" Link="Art/OperationsAtlas.jpg"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Compile Include="../../samples/FleetBattler/OrbitalNavigation.cs" Link="OrbitalNavigation.cs" />
     <Compile Include="../../samples/FleetBattler/Frontier.cs" Link="Frontier.cs" />
     <Compile Include="../../samples/FleetBattler/FleetSimulation.cs" Link="FleetSimulation.cs" />
     <Compile Include="../../samples/FleetBattler/FleetDraw.cs" Link="FleetDraw.cs" />

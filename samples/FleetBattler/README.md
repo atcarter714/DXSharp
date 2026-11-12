@@ -1,6 +1,6 @@
 # Fleet Battler
 
-The default Frontier scenario starts with a surveyed homeworld, one science scout, two miners, and 50 ore. Survey an outer body, build an extraction site, then defend the new settlement when Amber notices the operation. Helios, Caldera, and Nereid each retain their own scenario state when you switch systems.
+The default Frontier scenario starts with a surveyed homeworld, one science scout, two miners, and 50 ore. Survey a moon or gas giant, build an extraction site, then defend the new settlement when Amber notices the operation. Helios, Caldera, and Nereid each retain their own scenario state when you switch systems.
 
 | Control | Action |
 | --- | --- |
@@ -15,27 +15,36 @@ The default Frontier scenario starts with a surveyed homeworld, one science scou
 | Tab / Command | Open or close the Economy, Fleet, and Events tabs |
 | F4 | Open the latest Frontier dispatch |
 | B / Queue Wing | Order a wing from an operational orbital shipyard |
-| Scroll / middle-drag | Zoom toward the pointer / pan |
+| Scroll / middle-drag / arrow keys | Zoom toward the pointer / pan |
+| Shift + middle-drag / Home | Tilt and rotate within tactical limits / reset the camera |
 | G / F11 / M | Galaxy map / fullscreen / mute |
 
 ## Playing Frontier
 
 1. Select the science scout in the fleet outliner. Right-click an unsurveyed body and assign the survey, or use the action in its inspection panel. The flight plan shows the assigned craft's course. A finished survey reveals the local deposit and pays 15 ore.
-2. Select a miner, inspect the surveyed body, and choose **Place Mine**. The miner travels to the construction site before the timer starts. The build reserves 35 ore. Reassigning the miner during construction cancels the build and refunds its cost. The completed mine runs independently.
+2. Select a miner, inspect the surveyed body, and choose the **Extraction Rig** card. The miner travels to the construction site before the timer starts. The build reserves 35 ore. Reassigning the miner during construction cancels the build and refunds its cost. The completed mine runs independently.
 3. Use **Economy** to order another miner for 20 ore. Build a 55-ore orbital shipyard on a surveyed world. The site grows as it builds and the yard opens production after 24 seconds at 1×.
 4. Open **Fleet** to choose a weapon and defense package for the next three-corvette wing. Pulse cycles quickly and hits shields first. Rail fires farther and bypasses shields. A shield generator recovers after a lull. Heavy plating trades shield capacity for armor and adds 8 ore and four seconds at 1×.
-5. Follow the **Events** dispatches as extraction attracts an Amber raid. Richer deposits pay for defenses faster and draw an earlier response. Move miners and the scout clear, deploy escorts, and defeat both waves. An orbital lab generates science for weapons and industry research.
+5. Follow the **Events** dispatches as extraction attracts an Amber raid. Richer deposits pay for defenses faster and draw an earlier response. Move miners and the scout clear, deploy escorts, and defeat both waves. An orbital lab generates science for weapons, industry, and drive research. Click a celestial body for site cards that show ore or science output, yard and depot capacity, construction progress, and local ship orders.
 
 | Order | Ore | Construction at 1× |
 | --- | ---: | ---: |
 | Homeworld miner | 20 | 16 s |
+| Replacement scout | 24 | 16 s |
 | Mine | 35 | 12 s after miner arrival |
 | Lab | 45 | 12 s |
 | Orbital shipyard | 55 | 24 s |
+| Logistics depot | 40 | 12 s |
 | Three-corvette wing | 60 | 32 s |
 | Wing after industry research | 42 | 20 s |
 
-The yard can produce two wings per scenario. The queue reserves ore and records the loadout and duration at order time.
+Each completed shipyard adds six naval slots. Each completed logistics depot adds three. Only living combat hulls and queued wings occupy naval capacity. Click an online yard's card to order from that site. The system can hold two wing orders at once and produces them in order. The queue reserves ore and records the yard, loadout, and duration at order time. After a fleet wipe, a surviving yard can launch replacements. The homeworld can replace the scout and miners independently.
+
+## Navigation
+
+Ships start and launch in host-relative parking orbits. An orbit or survey command targets an intercept on the destination body's future orbit. The dashed route samples the same transfer the ship flies. The diamond marks the rendezvous and the **Flight Plan** card shows the active flight phase and ETA at the current simulation speed. Open-space orders transfer into a stellar parking orbit at the chosen radius. Ships burn, coast or correct course, and brake before entering the destination orbit.
+
+The round-trip operating envelope is enforced before accepting a route. Research **Long Burn Drive** in Economy for 36 science to expand it and reach the outer belt. Far Reach, Cinder Belt, and Dark Shoal each contain a high-yield prospect. Zoom out to find the outer track. The navigation model uses scaled orbital distances and bounded-burn guidance. Gravity assists and per-ship propellant accounting are future work.
 
 ## Relay skirmish
 
@@ -60,7 +69,7 @@ dotnet run --project samples/FleetBattler -c Release -- --ships=10000 --traffic=
 dotnet run --project samples/FleetBattler -c Release -- --ships=10000 --benchmark-ticks=600
 ```
 
-The fixed-tick CPU simulation owns combat, movement orders, casualties, and the economy. Damage resolves after each tick's volley. Rendering packs living ships and keeps their original selection IDs. GPU compute steers the civilian freighters and evaluates the asteroid field. Living tactical ships draw in batches by hull class. Civilian freighters read the compute-generated instance buffer directly. Distant or dense traffic uses a 24-vertex silhouette to bound draw cost. Asteroids use irregular faceted silhouettes. The compute shaders are in [Shaders](Shaders).
+The fixed-tick CPU simulation owns combat, movement orders, casualties, and the economy. Damage resolves after each tick's volley. Rendering packs living ships. Recycled slots carry generation IDs so replacement hulls do not inherit a destroyed ship’s selection. GPU compute steers the civilian freighters and evaluates the asteroid field. Living tactical ships draw in batches by hull class. Civilian freighters read the compute-generated instance buffer directly. Distant or dense traffic uses a 24-vertex silhouette to bound draw cost. Asteroids use irregular faceted silhouettes. The compute shaders are in [Shaders](Shaders).
 
 The [jukebox configuration](Music/README.md) includes system, galaxy, engagement, and victory playlists. The original procedural tracks play by default. The sample includes order, capture, launch, and combat effects.
 
@@ -90,4 +99,4 @@ dotnet run --project samples/FleetBattler -c Release -- --ship-model="C:\exports
 
 The FBX converter runs at authoring time. The game reads the resulting GLB. See the [static model tutorial](../../doc/tutorials/07-static-models.md) for material and format support.
 
-The assets use the repository's [MIT license](../../LICENSE.md). The [fleet roadmap](../../doc/FleetBattler.md) describes the larger game and content pipeline.
+The [operations art atlas](Art/OperationsAtlas.jpg) depicts a scout, ore hauler, corvette, orbital shipyard, extraction rig, and research station. The artwork appears in the outliner and planet inspector. The assets use the repository's [MIT license](../../LICENSE.md). The [fleet roadmap](../../doc/FleetBattler.md) describes the larger game and content pipeline.

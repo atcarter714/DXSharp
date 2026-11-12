@@ -155,6 +155,11 @@ internal static class SpaceDraw {
             sky = Body(sky,pixel,Giant,2);
             sky = Body(sky,pixel,Rocky,1);
             sky = Body(sky,pixel,Moon,3);
+            if (SiteTint.w == 0 && Site.w > 0) {
+                float belt = Orbit(orbitWorld,Orbits.xy,Site.w,0.06);
+                sky += float3(0.15,0.17,0.22) * belt;
+                sky = Body(sky,pixel,Site,3);
+            }
 
             float2 marker = world - Site.xy;
             float distanceToSite = length(marker);
@@ -180,7 +185,7 @@ internal static class SpaceDraw {
             float2 destinationOffset = abs(world-Order.xy);
             float destination = Line(destinationOffset.x+destinationOffset.y-Viewport.w*9, Viewport.w*0.95);
             float3 orderTint = Order.w == 4 ? float3(1,0.48,0.21) : Order.w == 3 ? float3(0.62,1,0.63) : float3(0.30,0.87,0.96);
-            sky = lerp(sky,orderTint,saturate((route*0.73+destination)*Order.z));
+            sky = lerp(sky,orderTint,saturate((route*0.73*step(Order.z,1.0)+destination)*min(1,Order.z)));
             return float4(saturate(sky),1);
         }
         """;
@@ -222,9 +227,15 @@ internal static class SpaceDraw {
         values[9] = new( bodies[0].Center.X, bodies[0].Center.Y, CelestialSystem.RockyAxis * r, CelestialSystem.GiantAxis * r );
         values[10] = new( bodies[1].Center.X, bodies[1].Center.Y, CelestialSystem.MoonAxis * r, useMoonMap ? 1 : 0 );
         values[11] = new( fleet.Site.X, fleet.Site.Y, fleet.SiteRadius, progress );
+        if ( fleet.Frontier ) {
+            var belt = CelestialSystem.Project( bodies[CelestialSystem.OuterBelt], r, viewProjection, width, height, halfHeight );
+            values[11] = belt with { W = CelestialSystem.BeltAxis * r };
+        }
         values[12] = fleet.Frontier ? Vector4.Zero : tint;
         values[13] = new( center.X, center.Y, selected.IsShip ? 2.8f : 3.5f + MathF.Sqrt( fleet.ShipCount( selected.Squad ) ) * 2.3f, showSelection ? 1 : 0 );
-        values[14] = new( target.X, target.Y, showSelection && plan.Order != FlightOrder.Idle ? 1 : 0, (float)plan.Order );
+        float orderMode = !showSelection || plan.Order == FlightOrder.Idle ? 0
+            : !fleet.Frontier || plan.Order == FlightOrder.Attack ? 1 : fleet.RouteTicks( selected ) > 0 ? 2 : 0;
+        values[14] = new( target.X, target.Y, orderMode, (float)plan.Order );
         Draw( commands, pipeline, moon, values );
     }
 

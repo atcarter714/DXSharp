@@ -23,9 +23,11 @@ internal static class FleetQualification {
         VerifyPlanetEconomy( );
         VerifyEconomy( );
         VerifyFrontier( );
+        VerifyFleetRecovery( );
+        VerifyOrbitalTransfers( );
         VerifyOrbits( );
         VerifyAudio( );
-        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, owned surveys, simulation pacing, orbital production, frontier progression, capture, and zero-allocation updates ({first.AfterOrder:X16})." );
+        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, owned surveys, simulation pacing, orbital production, frontier progression, fleet recovery, transfer guidance, capture, and zero-allocation updates ({first.AfterOrder:X16})." );
     }
 
     private static void VerifyFormations( ) {
@@ -321,10 +323,80 @@ internal static class FleetQualification {
         Require( sawRailBypass && sawPulseAbsorption, "rail bypasses shields and pulse strips them before reaching armor" );
         Require( fleet.Won && fleet.ActiveRaids == 2 && fleet.Dispatch( fleet.DispatchCount - 1 ) == FrontierEvent.Secured,
             "the player can overcome both escalating raids and secure the frontier" );
-        int squads = fleet.SquadCount;
+        int miners = fleet.ActiveMiners( );
         Require( fleet.QueueWorker( ), "the homeworld can continue growing after victory" );
-        AdvanceUntil( fleet, () => fleet.SquadCount > squads, "a post-victory worker leaves the queue" );
-        Require( fleet.Role( squads ) == HullRole.Miner && fleet.ActiveRaids == 2, "post-victory production does not restart raids" );
+        AdvanceUntil( fleet, () => fleet.ActiveMiners( ) > miners, "a post-victory worker leaves the queue" );
+        Require( fleet.ActiveMiners( ) == miners + 1 && fleet.ActiveRaids == 2, "post-victory production does not restart raids" );
+    }
+
+    private static void VerifyFleetRecovery( ) {
+        const int home = FleetSimulation.Homeworld, prospect = 2;
+        var fleet = new FleetSimulation( 3, 37, frontier: true );
+        Require( fleet.BeginSurvey( new( 0 ), prospect ), "recovery test begins a survey" );
+        AdvanceUntil( fleet, () => fleet.HasDeposit( prospect ), "recovery prospect surveyed", 1800 );
+        Require( fleet.BuildFacility( prospect, PlanetFacility.Mine, new( 1 ) ), "recovery funding" );
+        AdvanceUntil( fleet, () => fleet.Ore >= 235, "mine funds fleet and infrastructure", 3000 );
+        Require( fleet.BuildYard( home ) && fleet.BuildFacility( home, PlanetFacility.Depot ) &&
+            fleet.BuildYard( prospect ) && fleet.NavalCapacity == 0 && !fleet.CanBuildWing,
+            "incomplete infrastructure cannot grant capacity" );
+        AdvanceUntil( fleet, () => fleet.DepotCount == 1, "logistics depot constructed" );
+        Require( fleet.NavalCapacity == FleetSimulation.DepotNavalCapacity && !fleet.CanBuildWing, "depot alone supplies no shipyard" );
+        AdvanceUntil( fleet, () => fleet.YardCount == 2, "both yards constructed" );
+        Require( fleet.NavalCapacity == 15 && fleet.QueueWing( prospect ) && fleet.ActiveYard == prospect &&
+            fleet.QueueWing( home ) && fleet.NavalReserved == 6 && !fleet.CanBuildWing, "queue reserves actual hull slots and stores its yard" );
+        for ( int ship = 0; ship < fleet.Count; ++ship )
+            if ( fleet.SideOf( ship ) == 0 ) fleet.ApplyHullDamage( ship, FleetSimulation.HullCapacity );
+        Require( fleet.Recovering && !fleet.Lost && fleet.NavalReserved == 6, "total loss leaves infrastructure and queued orders intact" );
+        AdvanceUntil( fleet, () => fleet.WingsBuilt == 2, "both yards can fulfill work after a fleet wipe", 1300 );
+        Require( fleet.NavalUsed == 6 && fleet.NavalReserved == 0 && !fleet.Recovering, "launch converts reserved capacity to live hulls" );
+        var chosen = new CommandSelection( fleet.Capacity );
+        chosen.All( fleet );
+        int storage = fleet.Count;
+        for ( int iteration = 0; iteration < 35; ++iteration ) {
+            for ( int ship = 0; ship < fleet.Count; ++ship )
+                if ( fleet.SideOf( ship ) == 0 ) fleet.ApplyHullDamage( ship, FleetSimulation.HullCapacity );
+            Require( fleet.NavalUsed == 0 && fleet.Recovering && fleet.QueueWing( home ), "losses release naval capacity for every replacement" );
+            int built = fleet.WingsBuilt;
+            AdvanceUntil( fleet, () => fleet.WingsBuilt > built, "replacement wing launches" );
+        }
+        chosen.Prune( fleet );
+        Require( chosen.Count == 0 && fleet.Count == storage && fleet.NavalUsed == 3 && fleet.WingsBuilt == 37,
+            "replacement recycles storage without inheriting a dead hull's selection" );
+        Require( fleet.QueueScout( ), "destroyed scout can be ordered from the homeworld" );
+        AdvanceUntil( fleet, () => fleet.WorkerRemaining < 0, "replacement scout launches" );
+        Require( fleet.CyanCount == 4 && fleet.IsScoutSquad( 0 ), "replacement civilian restores scouting without occupying naval capacity" );
+    }
+
+    private static void VerifyOrbitalTransfers( ) {
+        var fleet = new FleetSimulation( 3, 37, frontier: true );
+        var scout = new FleetSelection( 0 );
+        const int belt = CelestialSystem.OuterBelt;
+        Require( fleet.Bodies.Length == 5 && !fleet.Orbit( scout, belt ) && !fleet.BeginSurvey( scout, belt ) &&
+            !fleet.Move( scout, fleet.Bodies[belt].Center ), "base drive rejects out-of-range orders without changing the orbit" );
+        Require( fleet.BuildFacility( FleetSimulation.Homeworld, PlanetFacility.Lab ), "homeworld lab funds navigation research" );
+        AdvanceUntil( fleet, () => fleet.Science >= FleetSimulation.DriveCost, "lab produces drive research" );
+        Require( fleet.ResearchDrive( ) && fleet.BeginSurvey( scout, belt ), "long-burn drive unlocks belt rendezvous" );
+        int end = fleet.Tick + fleet.RouteTicks( scout );
+        Span<Vector2> route = stackalloc Vector2[17];
+        Require( fleet.RoutePhase( scout ) == NavigationPhase.Burn && fleet.CopyRoute( scout, route, out var endpoint ) &&
+            route[0] == fleet.Center( scout ) && route[^1] == endpoint && fleet.Plan( scout ).Destination == endpoint,
+            "displayed route and destination use the actual rendezvous calculation" );
+        Vector2 expected = fleet.Plan( scout ).Destination;
+        var originalBelt = fleet.Bodies[belt].Center;
+        bool sawCoast = false, sawBrake = false;
+        for ( ; fleet.Tick < end; fleet.Step( ) ) {
+            sawCoast |= fleet.RoutePhase( scout ) is NavigationPhase.Coast or NavigationPhase.Correction;
+            sawBrake |= fleet.RoutePhase( scout ) == NavigationPhase.Brake;
+        }
+        Require( sawCoast && sawBrake && fleet.RouteTicks( scout ) == 0 && fleet.RoutePhase( scout ) == NavigationPhase.Parked &&
+            Vector2.Distance( fleet.Center( scout ), expected ) < 0.01f && Vector2.Distance( fleet.Bodies[belt].Center, originalBelt ) > 1,
+            "burn, coast, brake and moving-body insertion match the forecast" );
+        float radius = Vector2.Distance( fleet.Center( scout ), fleet.Bodies[belt].Center );
+        AdvanceUntil( fleet, () => fleet.HasDeposit( belt ), "survey completes from orbit" );
+        Require( fleet.DepositYield( belt ) == 20 && MathF.Abs( Vector2.Distance( fleet.Center( scout ), fleet.Bodies[belt].Center ) - radius ) < 0.01f &&
+            fleet.Orbit( scout, FleetSimulation.Homeworld ), "scout remains in host-relative orbit and can plot a return" );
+        Require( FleetHud.Hit( new( 465, 177 ), 640, 400, fleet, belt ) == new HudHit( HudAction.Planet, (int)PlanetAction.Mine ),
+            "planet inspector site card matches the mine action" );
     }
 
     private static void VerifyAudio( ) {

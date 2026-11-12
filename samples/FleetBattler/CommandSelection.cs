@@ -7,7 +7,12 @@ internal enum SelectionMode { Replace, Add, Toggle }
 internal sealed class CommandSelection {
     private readonly bool[] _ships;
 
-    internal CommandSelection( int capacity ) => _ships = new bool[capacity];
+    private readonly int[] _generations;
+
+    internal CommandSelection( int capacity ) {
+        _ships = new bool[capacity];
+        _generations = new int[capacity];
+    }
 
     internal ReadOnlySpan<bool> Ships => _ships;
     internal int Count { get; private set; }
@@ -36,7 +41,7 @@ internal sealed class CommandSelection {
         Primary = -1;
         for ( int i = 0; i < fleet.Count; ++i ) {
             if ( !_ships[i] ) continue;
-            if ( !fleet.Alive( i ) ) {
+            if ( !fleet.Alive( i ) || _generations[i] != fleet.ShipGeneration( i ) ) {
                 _ships[i] = false;
                 continue;
             }
@@ -48,21 +53,21 @@ internal sealed class CommandSelection {
     internal void Click( FleetSimulation fleet, int ship, bool squad, SelectionMode mode ) {
         if ( squad && ship >= 0 ) { Squadron( fleet, fleet.SquadronOf( ship ), mode ); return; }
         if ( mode == SelectionMode.Replace ) Clear( );
-        if ( ship >= 0 && fleet.Alive( ship ) && fleet.SideOf( ship ) == 0 ) Include( ship, mode );
+        if ( ship >= 0 && fleet.Alive( ship ) && fleet.SideOf( ship ) == 0 ) Include( fleet, ship, mode );
         Prune( fleet );
     }
 
     internal void Squadron( FleetSimulation fleet, int squad, SelectionMode mode ) {
         if ( mode == SelectionMode.Replace ) Clear( );
         for ( int i = 0; i < fleet.Count; ++i )
-            if ( fleet.Alive( i ) && fleet.SideOf( i ) == 0 && fleet.SquadronOf( i ) == squad ) Include( i, mode );
+            if ( fleet.Alive( i ) && fleet.SideOf( i ) == 0 && fleet.SquadronOf( i ) == squad ) Include( fleet, i, mode );
         Prune( fleet );
     }
 
     internal void All( FleetSimulation fleet ) {
         Clear( );
         for ( int i = 0; i < fleet.Count; ++i )
-            if ( fleet.Alive( i ) && fleet.SideOf( i ) == 0 ) _ships[i] = true;
+            if ( fleet.Alive( i ) && fleet.SideOf( i ) == 0 ) Include( fleet, i, SelectionMode.Add );
         Prune( fleet );
     }
 
@@ -72,7 +77,7 @@ internal sealed class CommandSelection {
             if ( !fleet.Alive( i ) || fleet.SideOf( i ) != 0 ) continue;
             var pixel = Project( fleet.VisualPosition( i, interpolation ), viewProjection, dimensions );
             if ( pixel.X >= rectangle.X && pixel.X <= rectangle.Z && pixel.Y >= rectangle.Y && pixel.Y <= rectangle.W )
-                Include( i, mode );
+                Include( fleet, i, mode );
         }
         Prune( fleet );
     }
@@ -90,8 +95,9 @@ internal sealed class CommandSelection {
         return result;
     }
 
-    internal void Issue( FleetSimulation fleet, Vector2 destination, int orbit = -1, int hostile = -1 ) {
-        if ( Count == 0 || fleet.Lost ) return;
+    internal bool Issue( FleetSimulation fleet, Vector2 destination, int orbit = -1, int hostile = -1 ) {
+        if ( Count == 0 || fleet.Lost ) return false;
+        bool issued = false;
         Span<int> selectedPerSquad = stackalloc int[fleet.SquadCount];
         selectedPerSquad.Clear( );
         Vector2 centroid = default;
@@ -112,20 +118,24 @@ internal sealed class CommandSelection {
             if ( selectedPerSquad[squad] > 0 ) Order( new( squad, ship ), fleet.Positions[ship] );
         }
 
+        return issued;
+
         void Order( FleetSelection selection, Vector2 center ) {
-            if ( hostile >= 0 ) fleet.Attack( selection, hostile );
-            else if ( orbit >= 0 ) fleet.Orbit( selection, orbit );
+            if ( hostile >= 0 ) { fleet.Attack( selection, hostile ); issued = true; }
+            else if ( orbit >= 0 ) issued |= fleet.Orbit( selection, orbit );
             else {
                 var offset = center - centroid;
                 float length = offset.Length( );
                 if ( length > 16 ) offset *= 16 / length;
-                fleet.Move( selection, destination + offset );
+                issued |= fleet.Move( selection, destination + offset );
             }
         }
     }
 
-    private void Include( int ship, SelectionMode mode ) =>
-        _ships[ship] = mode != SelectionMode.Toggle || !_ships[ship];
+    private void Include( FleetSimulation fleet, int ship, SelectionMode mode ) {
+        _ships[ship] = mode != SelectionMode.Toggle || !_ships[ship] || _generations[ship] != fleet.ShipGeneration( ship );
+        _generations[ship] = fleet.ShipGeneration( ship );
+    }
 
     internal static Vector2 Project( Vector2 world, Matrix4x4 matrix, Vector2 dimensions ) {
         var clip = Vector4.Transform( new Vector4( world.X, 0.1f, world.Y, 1 ), matrix );

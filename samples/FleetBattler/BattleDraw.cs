@@ -8,6 +8,7 @@ namespace FleetBattler;
 internal static class BattleDraw {
     internal const uint EffectStride = 32;
     internal const uint ConstantCount = 20;
+    internal const int RouteSegments = 16;
 
     private const string Effects = """
         cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; float4 Viewport; };
@@ -26,19 +27,24 @@ internal static class BattleDraw {
             float2 delta = (end.xy/end.w-start.xy/start.w)*screenScale;
             float2 right = float2(-delta.y,delta.x) / max(0.01,length(delta));
             float2 pos = lerp(start.xy/start.w,end.xy/end.w,uv.x) + right*uv.y*Viewport.z*2.4/screenScale;
-            if (input.style.z > 0.5) {
+            if (input.style.z == 1) {
                 uv.x = uv.x*2-1;
                 pos = start.xy/start.w + uv*(3+input.style.x*18)*Viewport.z/screenScale;
             }
             Output output;
-            output.position = float4(pos,0.065,1);
+            output.position = float4(pos,input.style.z == 2 ? 0.07 : 0.065,1);
             output.uv = uv;
             output.style = input.style;
             return output;
         }
         float4 PS(Output input) : SV_Target {
+            if (input.style.z == 2) {
+                clip(0.55-abs(input.uv.y));
+                clip(frac(input.uv.x*1.3+input.style.x)-0.26);
+                return float4(0.32,0.91,0.92,1);
+            }
             float3 faction = input.style.y < 0.5 ? float3(0.21,0.86,1) : float3(1,0.42,0.12);
-            if (input.style.z > 0.5) {
+            if (input.style.z == 1) {
                 float radius = length(input.uv);
                 float ring = 1-smoothstep(0.12,0.25,abs(radius-0.72));
                 float core = 1-smoothstep(0.04,0.43,radius);
@@ -106,6 +112,17 @@ internal static class BattleDraw {
             new( "TEXCOORD", VertexFormat.Float4, 16, 2, 1, 1 ),
             new( "TEXCOORD", VertexFormat.Float4, 32, 3, 1, 1 )
         ], depthEnabled: true );
+
+    internal static int FillRoute( FleetSimulation fleet, FleetSelection unit, Span<BattleEffect> output ) {
+        Span<Vector2> points = stackalloc Vector2[RouteSegments + 1];
+        if ( !fleet.CopyRoute( unit, points, out _ ) ) return 0;
+        for ( int i = 0; i < RouteSegments; ++i ) {
+            var start = points[i];
+            var end = points[i + 1];
+            output[i] = new( new( start.X, start.Y, end.X, end.Y ), new( i * 0.3f, 0, 2, 0 ) );
+        }
+        return RouteSegments;
+    }
 
     internal static void Record( GraphicsCommandList commands, PipelineState pipeline, GpuResource instances, uint count,
         Matrix4x4 viewProjection, int width, int height, float halfHeight, bool effects ) {

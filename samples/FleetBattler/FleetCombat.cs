@@ -28,7 +28,7 @@ internal sealed partial class FleetSimulation {
     internal int LastEngagementTick { get; private set; } = -10_000;
     internal bool InBattle => Tick - LastEngagementTick < 150;
     internal bool Won => Frontier ? _secured : WingsBuilt == WingGoal || AmberCount == 0 && CyanCount > 0;
-    internal bool Lost => CyanCount == 0 && !Won;
+    internal bool Lost => !Frontier && CyanCount == 0 && !Won;
 
     internal bool Alive( int ship ) => (uint)ship < (uint)Count && _hull[ship] > 0;
     internal int SquadronOf( int ship ) => _squadOfShip[ship];
@@ -146,13 +146,32 @@ internal sealed partial class FleetSimulation {
                 _armor[ship] -= (byte)armor;
                 damage -= armor;
             }
-            _hull[ship] = (byte)Math.Max( 0, _hull[ship] - damage );
-            if ( Alive( ship ) ) continue;
-            ref var squad = ref _squads[_squadOfShip[ship]];
-            --squad.Alive;
-            --_factionCount[squad.Faction];
-            ++ShipsLost;
-            Emit( _positions[ship], _positions[ship], squad.Faction, burst: true );
+            ApplyHullDamage( ship, damage );
+        }
+    }
+
+    internal void ApplyHullDamage( int ship, int damage ) {
+        if ( !Alive( ship ) || damage <= 0 ) return;
+        _hull[ship] = (byte)Math.Max( 0, _hull[ship] - damage );
+        if ( Alive( ship ) ) return;
+        ref var squad = ref _squads[_squadOfShip[ship]];
+        --squad.Alive;
+        --_factionCount[squad.Faction];
+        ++ShipsLost;
+        Emit( _positions[ship], _positions[ship], squad.Faction, burst: true );
+    }
+
+    private void ClearRetiredOrders( int squad, int first, int count ) {
+        RefreshSurveys( );
+        for ( int body = 1; body < _constructionWorkers.Length; ++body )
+            if ( _constructionWorkers[body]?.Squad == squad ) AdvanceMine( body );
+        for ( int i = 0; i < SquadCount; ++i ) ClearTarget( ref _squads[i].Order, _squads[i].Center );
+        for ( int ship = 0; ship < Count; ++ship ) ClearTarget( ref _shipOrders[ship], _positions[ship] );
+
+        void ClearTarget( ref Order order, Vector2 position ) {
+            if ( (uint)(order.Enemy - 1 - first) >= (uint)count ) return;
+            order.Enemy = 0;
+            order.Target = position;
         }
     }
 

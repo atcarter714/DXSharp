@@ -322,7 +322,8 @@ internal static unsafe class MeshQualification {
         using var effectData = device.CreateBuffer( FleetSimulation.EffectCapacity * BattleDraw.EffectStride, BufferMemory.Upload );
         using var spaceRoot = device.CreateTextureRootSignature( SpaceDraw.Constants, linearWrap: true );
         using var moon = device.CreateSampledTexture2D( commands, 2, 1, [180, 170, 155, 255, 135, 140, 160, 255], srgb: true );
-        using var hudRoot = device.CreateGraphicsConstantsRootSignature( 4 );
+        using var hudRoot = device.CreateTextureRootSignature( 4, linearWrap: true );
+        using var atlas = FleetHud.LoadAtlas( device, commands );
         using var fleetPipeline = FleetDraw.CreatePipeline( device, fleetRoot, compiler, depthEnabled: true );
         using var skyPipeline = SpaceDraw.CreatePipeline( device, spaceRoot, compiler );
         using var hudPipeline = FleetHud.CreatePipeline( device, hudRoot, compiler );
@@ -369,10 +370,10 @@ internal static unsafe class MeshQualification {
         FleetDraw.Record( commands, fleetPipeline, scouts, instances, active - corvetteCount, matrix, corvetteCount );
         BattleDraw.Record( commands, markers, instances, active, matrix, (int)width, (int)height, halfHeight, effects: false );
         BattleDraw.Record( commands, effects, effectData, (uint)pulseCount, matrix, (int)width, (int)height, halfHeight, effects: true );
-        Span<Vector4> bodyLabels = stackalloc Vector4[CelestialSystem.BodyCount];
+        Span<Vector4> bodyLabels = stackalloc Vector4[fleet.Bodies.Length];
         for ( int i = 0; i < bodyLabels.Length; ++i )
             bodyLabels[i] = CelestialSystem.Project( fleet.Bodies[i], radius, matrix, (int)width, (int)height, halfHeight );
-        new FleetHud( ).Record( commands, hudPipeline, glyphs, fleet, new( 1 ), (int)width, (int)height, false, bodyLabels,
+        new FleetHud( atlas ).Record( commands, hudPipeline, glyphs, fleet, new( 1 ), (int)width, (int)height, false, bodyLabels,
             selectionCount: fleet.ShipCount( 1 ), planet: 1, beacon: CommandSelection.Project( fleet.Site, matrix, new( width, height ) ),
             surveyUnit: new FleetSelection( 1 ), menu: new BodyMenu( new( 287, 255 ), 1 ) );
         commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );

@@ -21,7 +21,7 @@ internal sealed class ComputeTraffic : IDisposable {
         struct Output { float4 position : SV_Position; float2 uv : TEXCOORD; float shade : COLOR; };
         Output VS(uint id : SV_VertexID, uint instance : SV_InstanceID) {
             const float2 corners[6] = {float2(-1,-1),float2(1,-1),float2(-1,1),float2(-1,1),float2(1,-1),float2(1,1)};
-            float4 rock = Bodies[instance+4];
+            float4 rock = Bodies[instance+5];
             Output output;
             output.uv = corners[id];
             output.position = mul(float4(rock.x,-0.8,rock.y,1),ViewProjection);
@@ -48,7 +48,7 @@ internal sealed class ComputeTraffic : IDisposable {
         _bodyCount = CelestialSystem.BodyCount + debris;
         try {
             string compute = File.ReadAllText( Path.Combine( AppContext.BaseDirectory, "Shaders", "Traffic.hlsl" ) );
-            using var computeRoot = device.CreateRootSignature( 3, 24 );
+            using var computeRoot = device.CreateRootSignature( 3, 28 );
             _orbits = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "OrbitField", "cs_6_0" ) );
             _steering = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "Steering", "cs_6_0" ) );
             using var debrisRoot = device.CreateGraphicsBufferRootSignature( 20 );
@@ -77,7 +77,7 @@ internal sealed class ComputeTraffic : IDisposable {
     internal GpuResource Bodies => _bodies!;
 
     internal void RecordCompute( GraphicsCommandList commands, FleetSimulation fleet, float elapsed ) {
-        Span<uint> constants = stackalloc uint[24];
+        Span<uint> constants = stackalloc uint[28];
         constants[0] = ShipCount;
         constants[1] = (uint)_bodyCount;
         constants[2] = _lastSystem == fleet.SystemIndex ? 0u : 1u;
@@ -85,8 +85,9 @@ internal sealed class ComputeTraffic : IDisposable {
         constants[4] = BitConverter.SingleToUInt32Bits( (float)(fleet.Tick * FleetSimulation.StepSeconds) );
         constants[5] = BitConverter.SingleToUInt32Bits( fleet.BoardRadius );
         constants[6] = (uint)fleet.SystemIndex;
-        constants[7] = 0;
+        constants[7] = (uint)fleet.Bodies.Length;
         var bodyConstants = MemoryMarshal.Cast<uint, Vector4>( constants[8..] );
+        bodyConstants.Clear( );
         for ( int i = 0; i < fleet.Bodies.Length; ++i ) {
             var body = fleet.Bodies[i];
             bodyConstants[i] = new( body.Center.X, body.Center.Y, body.Radius, 0 );

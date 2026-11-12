@@ -5,7 +5,8 @@ namespace FleetBattler;
 internal readonly record struct BodyPose( Vector2 Center, float Radius );
 
 internal static class CelestialSystem {
-    internal const int BodyCount = 4;
+    internal const int OuterBelt = 4, BodyCount = 5;
+    internal const float BeltAxis = 1.72f;
     internal const float RockyAxis = 0.45f, GiantAxis = 0.91f, MoonAxis = 0.145f;
     internal const float RockyEccentricity = 0.16f, GiantEccentricity = 0.12f, MoonEccentricity = 0.08f;
     private static readonly string[] Names = ["HELIOS", "CALDERA", "NEREID"];
@@ -14,9 +15,9 @@ internal static class CelestialSystem {
     internal static ReadOnlySpan<Vector2> MapPositions => Positions;
 
     internal static string Name( int system, int body ) => (system, body) switch {
-        (0, 0) => "HELIOS", (0, 1) => "AURELIA", (0, 2) => "BRONTES", (0, 3) => "SELENE",
-        (1, 0) => "CALDERA", (1, 1) => "VESPER", (1, 2) => "MAGNUS", (1, 3) => "EMBER",
-        (2, 0) => "NEREID", (2, 1) => "PELAGOS", (2, 2) => "THALASSA", (2, 3) => "ECHO",
+        (0, 0) => "HELIOS", (0, 1) => "AURELIA", (0, 2) => "BRONTES", (0, 3) => "SELENE", (0, 4) => "FAR REACH",
+        (1, 0) => "CALDERA", (1, 1) => "VESPER", (1, 2) => "MAGNUS", (1, 3) => "EMBER", (1, 4) => "CINDER BELT",
+        (2, 0) => "NEREID", (2, 1) => "PELAGOS", (2, 2) => "THALASSA", (2, 3) => "ECHO", (2, 4) => "DARK SHOAL",
         _ => throw new ArgumentOutOfRangeException( nameof(body) )
     };
 
@@ -30,6 +31,8 @@ internal static class CelestialSystem {
         bodies[1] = new( rocky, 0.064f * radius );
         bodies[2] = new( giant, 0.103f * radius );
         bodies[3] = new( moon, 0.026f * radius );
+        if ( bodies.Length > OuterBelt )
+            bodies[OuterBelt] = new( sun + OrbitPoint( BeltAxis * radius, 0.06f, 0.09 + system * 0.15 + seconds / 860 ), 0.033f * radius );
     }
 
     internal static Vector2 OrbitPoint( float axis, float eccentricity, double phase ) {
