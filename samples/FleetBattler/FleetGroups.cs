@@ -5,6 +5,7 @@ internal sealed partial class FleetSimulation {
     internal int FleetId( int squad ) => _squads[squad].FleetId;
     internal bool IsFleetLeader( int squad ) {
         if ( !Frontier ) return true;
+        if ( ShipCount( squad ) == 0 ) return false;
         int id = FleetId( squad );
         for ( int i = 0; i < squad; ++i )
             if ( ShipCount( i ) > 0 && FleetId( i ) == id ) return false;
@@ -38,6 +39,8 @@ internal sealed partial class FleetSimulation {
         int target = groups[0];
         for ( int i = 0; i < SquadCount; ++i )
             if ( ShipCount( i ) > 0 && groups[..count].Contains( FleetId( i ) ) ) _squads[i].FleetId = target;
+        for ( int i = 0; i < count; ++i )
+            if ( groups[i] != target ) _fleetNames.Remove( groups[i] );
         return true;
     }
 

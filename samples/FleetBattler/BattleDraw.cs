@@ -11,7 +11,7 @@ internal static class BattleDraw {
     internal const int RouteSegments = 48, RouteCapacity = RouteSegments + 3;
     internal const int SiteEffectCapacity = (FleetSimulation.FacilityCount + 3) * CelestialSystem.BodyCount;
     private const int OrbitSegments = 72;
-    internal const int SolarTrackCapacity = (CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount) * OrbitSegments;
+    internal const int SolarTrackCapacity = (CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount + 2) * OrbitSegments;
 
     private const string Effects = """
         cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; float4 Viewport; };
@@ -30,9 +30,10 @@ internal static class BattleDraw {
             float2 delta = (end.xy/end.w-start.xy/start.w)*screenScale;
             float2 right = float2(-delta.y,delta.x) / max(0.01,length(delta));
             float2 pos = lerp(start.xy/start.w,end.xy/end.w,uv.x) + right*uv.y*Viewport.z*2.4/screenScale;
-            if (input.style.z == 4 || input.style.z == 8) {
+            if (input.style.z == 4 || input.style.z == 8 || input.style.z == 9) {
                 uv.x = uv.x*2-1;
                 pos = start.xy/start.w + uv*(input.style.z == 8 ? 7 : 8)*Viewport.z/screenScale;
+                if (input.style.z == 9) pos += float2(0,16)*Viewport.z/screenScale;
             } else if (input.style.z == 1) {
                 uv.x = uv.x*2-1;
                 pos = start.xy/start.w + uv*(3+input.style.x*18)*Viewport.z/screenScale;
@@ -44,6 +45,12 @@ internal static class BattleDraw {
             return output;
         }
         float4 PS(Output input) : SV_Target {
+            if (input.style.z == 9) {
+                float2 p = abs(input.uv);
+                clip(0.85-max(p.x,p.y));
+                float cross = step(min(p.x,p.y),0.25)*step(max(p.x,p.y),0.65);
+                return float4(lerp(float3(0.04,0.19,0.15),float3(0.38,1,0.64),cross),1);
+            }
             if (input.style.z == 8) {
                 float2 p = abs(input.uv);
                 clip(0.14-abs(max(p.x,p.y)-0.77));
@@ -146,17 +153,31 @@ internal static class BattleDraw {
 
     private static readonly Vector2[] SolarTracks = BuildSolarTracks( );
     private static Vector2[] BuildSolarTracks( ) {
-        var tracks = new Vector2[(CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount) * (OrbitSegments + 1)];
+        var tracks = new Vector2[(SolarTrackCapacity / OrbitSegments) * (OrbitSegments + 1)];
         int next = 0;
         for ( int body = CelestialSystem.FrontierBodyCount; body < CelestialSystem.BodyCount; ++body ) {
             ref readonly var world = ref SolarCatalog.Get( body );
             float minor = world.Axis * MathF.Sqrt( 1 - world.Eccentricity * world.Eccentricity );
             for ( int i = 0; i <= OrbitSegments; ++i ) {
+                if ( world.PhysicalAxis > 0 ) {
+                    tracks[next++] = SolarCatalog.TrackOffset( body, (double)i / OrbitSegments );
+                    continue;
+                }
                 var (sin, cos) = MathF.SinCos( i * MathF.Tau / OrbitSegments );
                 tracks[next++] = new( world.Axis * (cos - world.Eccentricity), minor * sin );
             }
         }
+        var belt = ComputeTraffic.Belt( solar: true );
+        Ring( belt.Inner );
+        Ring( belt.Outer );
         return tracks;
+
+        void Ring( float radius ) {
+            for ( int i = 0; i <= OrbitSegments; ++i ) {
+                var (sin, cos) = MathF.SinCos( i * MathF.Tau / OrbitSegments );
+                tracks[next++] = new Vector2( cos, sin ) * radius;
+            }
+        }
     }
 
     internal static int FillSolarTracks( FleetSimulation fleet, Span<BattleEffect> output ) {
@@ -171,6 +192,16 @@ internal static class BattleDraw {
             }
         }
         return next;
+    }
+
+    internal static int FillRepairs( FleetSimulation fleet, Span<BattleEffect> output, float interpolation ) {
+        int count = 0;
+        for ( int ship = 0; ship < fleet.Count; ++ship ) {
+            if ( !fleet.RepairingAtYard( ship ) ) continue;
+            var point = fleet.VisualPosition( ship, interpolation );
+            output[count++] = new( new( point.X, point.Y, point.X, point.Y ), new( 0, 0, 9, 0 ) );
+        }
+        return count;
     }
 
     internal static int FillRoute( FleetSimulation fleet, FleetSelection unit, Span<BattleEffect> output, float interpolation ) {

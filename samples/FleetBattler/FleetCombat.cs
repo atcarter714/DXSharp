@@ -134,7 +134,7 @@ internal sealed partial class FleetSimulation {
             bool canAutoFire = !Frontier || _squads[SquadronOf( ship )].Stance != FleetStance.Passive &&
                 EffectiveOrder( new( SquadronOf( ship ), ship ) ).Service == ServiceOrder.None;
             int target = Alive( preferred ) && IsHostile( side, SideOf( preferred ) ) && Vector2.DistanceSquared( _positions[preferred], _positions[ship] ) <= range * range
-                ? preferred : canAutoFire ? ClosestHostile( ship, side, range ) : -1;
+                ? preferred : canAutoFire ? ClosestHostile( ship, side, range, combatOnly: Frontier && side == (int)FactionId.Raiders ) : -1;
             if ( target < 0 ) continue;
             int damage = Frontier ? design.Damage + (side == 0 && WeaponUpgrade ? 4 : 0) : side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
             if ( weapon == WeaponKind.Rail ) _railIncoming[target] = (ushort)Math.Min( 512, _railIncoming[target] + damage );
@@ -174,6 +174,7 @@ internal sealed partial class FleetSimulation {
         --squad.Alive;
         --_factionCount[squad.Faction];
         ++ShipsLost;
+        if ( Frontier && squad.Alive == 0 ) ReleaseFleetName( SquadronOf( ship ) );
         Emit( _positions[ship], _positions[ship], squad.Faction, burst: true );
     }
 
@@ -192,7 +193,7 @@ internal sealed partial class FleetSimulation {
         }
     }
 
-    private int ClosestHostile( int ship, int side, float range ) {
+    private int ClosestHostile( int ship, int side, float range, bool combatOnly = false ) {
         var origin = _positions[ship];
         var cell = Cell( origin );
         int reach = (int)MathF.Ceiling( range / AvoidRadius ) + 1;
@@ -202,7 +203,7 @@ internal sealed partial class FleetSimulation {
             for ( int x = Math.Max( 1, cell.X - reach ); x <= Math.Min( _gridSide - 2, cell.X + reach ); ++x ) {
                 int other = _grid[y * _gridSide + x];
                 for ( int visited = 0; other >= 0 && visited < 8; ++visited, other = _next[other] ) {
-                    if ( !IsHostile( side, SideOf( other ) ) ) continue;
+                    if ( !IsHostile( side, SideOf( other ) ) || combatOnly && Role( SquadronOf( other ) ) != HullRole.Corvette ) continue;
                     float d = Vector2.DistanceSquared( origin, _positions[other] );
                     if ( d >= best ) continue;
                     best = d;

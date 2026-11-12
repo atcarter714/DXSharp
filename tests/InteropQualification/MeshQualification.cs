@@ -251,19 +251,25 @@ internal static unsafe class MeshQualification {
 
     private static void VerifyComputeTraffic( GraphicsDevice device, ShaderCompiler compiler ) {
         const int ships = 8_193, debris = 2_049;
-        var fleet = new FleetSimulation( FleetSimulation.DefaultShips, 37 );
+        var fleet = new FleetSimulation( FleetSimulation.DefaultShips, 37, frontier: true );
         using var traffic = new ComputeTraffic( device, compiler, ships, debris );
         using var queue = device.CreateCommandQueue( );
         using var allocator = device.CreateCommandAllocator( );
         using var commands = device.CreateCommandList( allocator );
         ulong strideBytes = ships * FleetDraw.InstanceStride;
         using var shipResults = device.CreateBuffer( 2 * strideBytes, BufferMemory.Readback );
-        using var bodyResults = device.CreateBuffer( (debris + CelestialSystem.BodyCount) * 16, BufferMemory.Readback );
+        using var bodyResults = device.CreateBuffer( (debris + ComputeTraffic.PrimaryBodies) * 16, BufferMemory.Readback );
         traffic.RecordCompute( commands, fleet, 1f / 60 );
         traffic.Finish( commands );
         Copy( traffic.Instances, shipResults, strideBytes );
         for ( int i = 0; i < 30; ++i ) fleet.Step( );
-        traffic.RecordCompute( commands, fleet, 1f / 60 );
+        using var priorRock = device.CreateBuffer( 16, BufferMemory.Readback );
+        traffic.RecordCompute( commands, fleet, 0, interpolation: 0.25f );
+        traffic.Finish( commands );
+        commands.Transition( traffic.Bodies, ResourceState.Common, ResourceState.CopySource );
+        commands.CopyBuffer( traffic.Bodies, priorRock, 16, sourceOffset: ComputeTraffic.PrimaryBodies * 16 );
+        commands.Transition( traffic.Bodies, ResourceState.CopySource, ResourceState.Common );
+        traffic.RecordCompute( commands, fleet, 1f / 60, interpolation: 0.75f );
         traffic.Finish( commands );
         Copy( traffic.Instances, shipResults, strideBytes, strideBytes );
         Copy( traffic.Bodies, bodyResults, bodyResults.SizeInBytes );
@@ -271,12 +277,12 @@ internal static unsafe class MeshQualification {
         queue.Wait( queue.Submit( commands ) );
         var a = new ShipInstance[ships];
         var b = new ShipInstance[ships];
-        var bodies = new Vector4[debris + CelestialSystem.BodyCount];
+        var bodies = new Vector4[debris + ComputeTraffic.PrimaryBodies];
         shipResults.Read<ShipInstance>( a );
         shipResults.Read<ShipInstance>( b, strideBytes );
         bodyResults.Read<Vector4>( bodies );
-        for ( int i = 0; i < fleet.Bodies.Length; ++i ) {
-            var body = fleet.Bodies[i];
+        for ( int i = 0; i < ComputeTraffic.PrimaryBodies; ++i ) {
+            var body = fleet.VisualBody( i, 0.75f );
             if ( bodies[i] != new Vector4( body.Center.X, body.Center.Y, body.Radius, 0 ) )
                 throw new InvalidOperationException( $"Compute body {i} disagrees with the tactical body catalog." );
         }
@@ -288,9 +294,17 @@ internal static unsafe class MeshQualification {
                 throw new InvalidOperationException( $"Invalid compute steering output for ship {i}." );
             if ( Vector2.DistanceSquared( a[i].Center, agent.Center ) > 1e-7f ) ++moving;
         }
-        for ( int i = CelestialSystem.BodyCount; i < bodies.Length; ++i )
-            if ( bodies[i].Z is < 0.09f or > 0.62f || !float.IsFinite( bodies[i].X + bodies[i].Y ) )
-                throw new InvalidOperationException( $"Invalid compute orbit output for debris {i}." );
+        var (inner, outer) = ComputeTraffic.Belt( solar: true );
+        for ( int i = ComputeTraffic.PrimaryBodies; i < bodies.Length; ++i ) {
+            var rock = bodies[i];
+            float lane = new Vector2( rock.X, rock.Y ).Length( ) / fleet.BoardRadius;
+            if ( rock.Z is < 0.09f or > 0.62f || !float.IsFinite( lane ) || lane < inner - 1e-5f || lane > outer + 1e-5f )
+                throw new InvalidOperationException( $"Debris {i} left the main asteroid belt." );
+        }
+        Span<Vector4> earlier = stackalloc Vector4[1];
+        priorRock.Read<Vector4>( earlier );
+        if ( earlier[0] == bodies[ComputeTraffic.PrimaryBodies] )
+            throw new InvalidOperationException( "Debris did not advance between renders on the same simulation tick." );
         if ( moving < ships * 0.98 || a[^1].Center == b[^1].Center )
             throw new InvalidOperationException( $"Compute steering moved only {moving} ships." );
         Console.WriteLine( $"PASS: compute orbit field and steering moved {moving} of {ships} ships around {debris} debris bodies." );

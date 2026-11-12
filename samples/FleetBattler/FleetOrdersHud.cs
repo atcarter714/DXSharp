@@ -13,7 +13,7 @@ internal sealed partial class FleetHud {
         title.TryWrite( $"STANCE / {mode}", out int count );
         IconButton( 14, y, 157, HudIcon.Orders, title[..count], true, stance == FleetStance.Aggressive );
         IconButton( 14, y + 25, 51, HudIcon.Retreat, "FLEE", true );
-        IconButton( 68, y + 25, 51, HudIcon.Repair, "FIX", fleet.YardCount > 0 );
+        IconButton( 68, y + 25, 51, HudIcon.Health, "FIX", fleet.YardCount > 0 );
         IconButton( 122, y + 25, 49, HudIcon.Design, "FIT", fleet.YardCount > 0 && fleet.Design.Valid );
     }
 

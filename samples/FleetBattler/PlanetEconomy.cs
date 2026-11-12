@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum PlanetFacility { Mine, Lab, Depot, Yard, Solar, Habitat, Observatory, Skimmer }
+internal enum PlanetFacility { Mine, Lab, Depot, Yard, Solar, Habitat, Observatory, Skimmer, SurfaceStore, OrbitalStore }
 internal readonly record struct WingOrder( int Body, ShipDesign Design, int Duration, int Cost );
 internal readonly record struct SiteOrder( int Body, PlanetFacility Facility );
 
@@ -102,6 +102,7 @@ internal sealed partial class FleetSimulation {
         var order = OrbitalOrder( unit, body, survey: true );
         order.Construction = 0;
         order.Service = ServiceOrder.None;
+        order.Settlement = false;
         SetOrder( unit, order );
         _surveyUnits[body] = unit;
         return true;
@@ -202,6 +203,7 @@ internal sealed partial class FleetSimulation {
         PlanetFacility.Mine => _mines, PlanetFacility.Lab => _labs, PlanetFacility.Depot => _depots,
         PlanetFacility.Yard => _yards, PlanetFacility.Solar => _solarArrays, PlanetFacility.Habitat => _habitats,
         PlanetFacility.Observatory => _observatories, PlanetFacility.Skimmer => _skimmers,
+        PlanetFacility.SurfaceStore => _surfaceStores, PlanetFacility.OrbitalStore => _orbitalStores,
         _ => throw new ArgumentOutOfRangeException( nameof(facility) )
     };
 
@@ -221,7 +223,7 @@ internal sealed partial class FleetSimulation {
                 if ( _survey[body] == 0 ) ++StartedScans;
                 _survey[body] = Math.Min( SurveyRequired, _survey[body] + rate );
                 if ( _survey[body] == SurveyRequired ) {
-                    Ore = Math.Min( 999, Ore + (Frontier ? 15 : 40) );
+                    Ore = Math.Min( ResourceCapacity.Ore, Ore + (Frontier ? 15 : 40) );
                     if ( Frontier ) RevealProspect( body );
                     ++CompletedSurveys;
                     LastSurveyBody = body;
@@ -230,16 +232,17 @@ internal sealed partial class FleetSimulation {
                 }
             }
             if ( Frontier ) {
+                AdvanceColony( body );
                 foreach ( var facility in Facilities ) {
                     AdvanceConstruction( body, facility );
                     MarkSite( body, facility, SiteDeadlines( facility )[body] );
                 }
             }
             if ( (Tick + 1) % IncomeInterval != 0 ) continue;
-            if ( _mines[body] > 0 && _mines[body] <= Tick + 1 || _skimmers[body] > 0 && _skimmers[body] <= Tick + 1 )
-                Ore = Math.Min( 999, Ore + (Frontier ? DepositYield( body ) : 8) );
-            if ( _labs[body] > 0 && _labs[body] <= Tick + 1 ) Science = Math.Min( 999, Science + 6 );
-            if ( _observatories[body] > 0 && _observatories[body] <= Tick + 1 ) Science = Math.Min( 999, Science + 10 );
+            int extraction = ExtractionIncome( body, Tick + 1 );
+            if ( extraction > 0 ) Ore = Math.Min( ResourceCapacity.Ore, Ore + extraction );
+            if ( _labs[body] > 0 && _labs[body] <= Tick + 1 ) Science = Math.Min( ResourceCapacity.Science, Science + 6 );
+            if ( _observatories[body] > 0 && _observatories[body] <= Tick + 1 ) Science = Math.Min( ResourceCapacity.Science, Science + 10 );
         }
     }
 

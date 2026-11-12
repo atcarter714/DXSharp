@@ -46,7 +46,7 @@ internal sealed partial class FleetHud {
                 var faction = fleet.FactionOf( ship );
                 var attitude = fleet.Relationship( FactionId.Sol, faction );
                 tint = attitude == Disposition.Allied ? SpaceDraw.Cyan : attitude == Disposition.Hostile ? SpaceDraw.Amber : SpaceDraw.Neutral;
-                title.TryWrite( $"{Factions.Name( faction )} / {role.ToString().ToUpperInvariant()}", out titleLength );
+                title.TryWrite( $"{Factions.Name( faction )} / {fleet.ShipName( ship ) ?? FleetSimulation.RoleName( role )}", out titleLength );
                 detail.TryWrite( $"{attitude.ToString().ToUpperInvariant()} / HULL {fleet.Hull( ship )}  SHIELD {fleet.Shield( ship )}  ARMOR {fleet.Armor( ship )}", out detailLength );
                 break;
             case HoverKind.Site:

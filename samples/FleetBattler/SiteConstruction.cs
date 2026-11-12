@@ -10,14 +10,16 @@ internal readonly record struct SiteSlots( int Surface, int Orbit ) {
 internal record struct ConstructionSite( FleetSelection? Worker, Vector2 Orbit, bool Working );
 
 internal sealed partial class FleetSimulation {
-    internal const int FacilityCount = 8;
+    internal const int FacilityCount = 10;
     internal static ReadOnlySpan<PlanetFacility> Facilities => [
         PlanetFacility.Mine, PlanetFacility.Observatory, PlanetFacility.Skimmer, PlanetFacility.Lab,
-        PlanetFacility.Yard, PlanetFacility.Depot, PlanetFacility.Solar, PlanetFacility.Habitat
+        PlanetFacility.Yard, PlanetFacility.Depot, PlanetFacility.Solar, PlanetFacility.Habitat,
+        PlanetFacility.SurfaceStore, PlanetFacility.OrbitalStore
     ];
     private readonly int[] _solarArrays = new int[CelestialSystem.BodyCount];
     private readonly int[] _habitats = new int[CelestialSystem.BodyCount], _observatories = new int[CelestialSystem.BodyCount],
-        _skimmers = new int[CelestialSystem.BodyCount];
+        _skimmers = new int[CelestialSystem.BodyCount], _surfaceStores = new int[CelestialSystem.BodyCount],
+        _orbitalStores = new int[CelestialSystem.BodyCount];
     private readonly ConstructionSite[] _siteConstruction = new ConstructionSite[CelestialSystem.BodyCount * FacilityCount];
     internal SiteOrder LastStartedSite { get; private set; }
 
@@ -30,6 +32,8 @@ internal sealed partial class FleetSimulation {
         PlanetFacility.Habitat => new( "O NEILL HABITAT", new( 100, 32 ), 660 ),
         PlanetFacility.Observatory => new( "SURFACE OBSERVATORY", new( 56, 12 ), 300, SiteLayer.Surface ),
         PlanetFacility.Skimmer => new( "ORBITAL EXTRACTION", new( 35, 8 ), FacilityDuration ),
+        PlanetFacility.SurfaceStore => new( "SURFACE WAREHOUSE", new( 36, 8 ), 220, SiteLayer.Surface ),
+        PlanetFacility.OrbitalStore => new( "ORBITAL STORAGE", new( 45, 12 ), 260 ),
         _ => throw new ArgumentOutOfRangeException( nameof(facility) )
     };
 
@@ -39,15 +43,13 @@ internal sealed partial class FleetSimulation {
     internal SiteSlots Slots( int body ) {
         if ( body <= 0 || body >= _bodies.Length ) return default;
         float radius = _bodies[body].Radius / BoardRadius;
-        bool solid = body != CelestialSystem.OuterBelt && body != 2 && (!Solar || body < 8);
-        int surface = !solid ? 0 : radius >= 0.045f ? 2 : 1;
+        int surface = !Colonizable( body ) ? 0 : radius >= 0.045f ? 3 : radius >= 0.030f ? 2 : 1;
         int orbit = radius >= 0.060f ? 5 : radius >= 0.030f ? 4 : 3;
         return new( surface, orbit );
     }
 
     internal bool FitsBody( int body, PlanetFacility facility ) {
         var slots = Slots( body );
-        if ( facility == PlanetFacility.Skimmer ) return slots is { Surface: 0, Orbit: > 0 };
         return slots.For( Facility( facility ).Layer ) > 0;
     }
 
@@ -65,13 +67,18 @@ internal sealed partial class FleetSimulation {
         if ( !FitsBody( body, facility ) ) return "INCOMPATIBLE BODY TYPE";
         if ( SiteRemaining( body, facility ) >= 0 ) return "SITE ALREADY ASSIGNED";
         var plan = Facility( facility );
-        if ( OccupiedSlots( body, plan.Layer ) >= Slots( body ).For( plan.Layer ) ) return "NO FREE SITE SLOTS";
+        int used = OccupiedSlots( body, plan.Layer );
+        if ( used >= Slots( body ).For( plan.Layer ) ) return "NO FREE SITE SLOTS";
+        if ( plan.Layer == SiteLayer.Surface && used >= SurfaceWorkLimit( body ) )
+            return _population[body] == 0 ? "FOUND A COLONY FIRST" : "NEEDS MORE POPULATION";
         if ( facility is PlanetFacility.Mine or PlanetFacility.Skimmer && !HasDeposit( body ) ) return "NO ORE DEPOSIT";
         if ( facility == PlanetFacility.Habitat && !Researched( ResearchTopic.Habitation ) ) return "REQUIRES HABITAT ENGINEERING";
-        if ( unit is not { } worker || !ValidConstructor( worker ) ) return "SELECT A CONSTRUCTOR";
-        if ( !CanReach( worker, body ) ) return "OUTSIDE CONSTRUCTOR RANGE";
-        foreach ( var assignment in _siteConstruction )
-            if ( assignment.Worker?.Squad == worker.Squad ) return "CONSTRUCTOR ALREADY ASSIGNED";
+        if ( plan.Layer == SiteLayer.Orbit ) {
+            if ( unit is not { } worker || !ValidConstructor( worker ) ) return "SELECT A CONSTRUCTOR";
+            if ( !CanReach( worker, body ) ) return "OUTSIDE CONSTRUCTOR RANGE";
+            foreach ( var assignment in _siteConstruction )
+                if ( assignment.Worker?.Squad == worker.Squad ) return "CONSTRUCTOR ALREADY ASSIGNED";
+        }
         var cost = plan.Cost;
         if ( Ore < cost.Ore ) return "INSUFFICIENT ORE";
         if ( Energy < cost.Energy ) return "INSUFFICIENT ENERGY";
@@ -84,14 +91,16 @@ internal sealed partial class FleetSimulation {
 
     private bool StartConstruction( int body, PlanetFacility facility, FleetSelection? unit ) {
         if ( ConstructionBlock( body, facility, unit ) is not null ) return false;
-        var worker = unit!.Value;
-        var orbit = OrbitalOrder( worker, body, survey: false );
-        orbit.Construction = (byte)((int)facility + 1);
-        orbit.Service = ServiceOrder.None;
-        orbit.ServiceTicks = 0;
-        Construction( body, facility ) = new( worker, new( orbit.Radius, orbit.Phase + 0.24f ), false );
-        SetOrder( worker, orbit );
         var plan = Facility( facility );
+        if ( plan.Layer == SiteLayer.Orbit ) {
+            var worker = unit!.Value;
+            var orbit = OrbitalOrder( worker, body, survey: false );
+            orbit.Construction = (byte)((int)facility + 1);
+            orbit.Service = ServiceOrder.None;
+            orbit.ServiceTicks = 0;
+            Construction( body, facility ) = new( worker, new( orbit.Radius, orbit.Phase + 0.24f ), false );
+            SetOrder( worker, orbit );
+        }
         Spend( plan.Cost );
         SiteDeadlines( facility )[body] = Tick + plan.Duration;
         return true;
@@ -128,7 +137,8 @@ internal sealed partial class FleetSimulation {
     private Vector2 SitePositionAt( int body, PlanetFacility facility, float tick, Vector2 center ) {
         var orbit = Construction( body, facility ).Orbit;
         if ( Frontier && Facility( facility ).Layer == SiteLayer.Surface ) {
-            var (surfaceY, surfaceX) = MathF.SinCos( (facility == PlanetFacility.Mine ? -1.4f : 1.2f) + 0.003f * tick );
+            float offset = facility switch { PlanetFacility.Mine => -1.4f, PlanetFacility.Observatory => 1.2f, _ => 2.8f };
+            var (surfaceY, surfaceX) = MathF.SinCos( offset + 0.003f * tick );
             return center + new Vector2( surfaceX, surfaceY ) * (_bodies[body].Radius * 0.84f);
         }
         if ( orbit.X > 0 ) {

@@ -69,7 +69,7 @@ internal sealed partial class FleetSimulation {
         internal byte Body, Construction;
         internal ServiceOrder Service;
         internal int Enemy, ServiceTicks;
-        internal bool Detached, Survey, Waypoint, Rejoining;
+        internal bool Detached, Survey, Waypoint, Rejoining, Settlement;
     }
 
     internal FleetSimulation( int ships, uint seed, bool rivalPatrol = false, int system = 0, bool battle = false, bool frontier = false ) {
@@ -135,7 +135,7 @@ internal sealed partial class FleetSimulation {
 
     internal int SystemIndex { get; }
     internal bool Solar => Frontier && SystemIndex == 0;
-    internal string BodyName( int body ) => Solar ? SolarCatalog.Get( body ).Name : CelestialSystem.Name( SystemIndex, body );
+    internal string BodyName( int body ) => _bodyNames[body] ?? (Solar ? SolarCatalog.Get( body ).Name : CelestialSystem.Name( SystemIndex, body ));
     internal string SystemName => Solar ? "SOLAR SYSTEM" : CelestialSystem.Systems[SystemIndex];
     internal ReadOnlySpan<BodyPose> Bodies => _bodies;
     internal BodyPose VisualBody( int body, float interpolation ) =>
@@ -199,6 +199,8 @@ internal sealed partial class FleetSimulation {
             target += RotateSlot( _offsets[selected.Ship], _squads[selected.Squad].Direction );
         return new( Vector2.DistanceSquared( Center( selected ), target ) > 1 ? FlightOrder.Move : FlightOrder.Idle, target, -1, -1 );
     }
+    internal static bool UsesHaulerModel( HullRole role ) => role is HullRole.Miner or HullRole.Freighter or HullRole.Colony;
+
     internal int ActiveMiners( ) {
         int count = 0;
         for ( int i = 0; i < SquadCount; ++i )
@@ -259,6 +261,7 @@ internal sealed partial class FleetSimulation {
         var order = OrbitalOrder( selected, body, survey: false );
         order.Construction = 0;
         order.Service = ServiceOrder.None;
+        order.Settlement = false;
         SetOrder( selected, order );
         return true;
     }
@@ -482,21 +485,21 @@ internal sealed partial class FleetSimulation {
         if ( groupHulls ) {
             for ( int i = 0; i < SquadCount; ++i ) {
                 if ( IsScoutSquad( i ) ) corvettes -= ShipCount( i );
-                if ( groupMiners && Role( i ) is HullRole.Miner or HullRole.Freighter ) miners += ShipCount( i );
+                if ( groupMiners && UsesHaulerModel( Role( i ) ) ) miners += ShipCount( i );
             }
             corvettes -= miners;
         }
         int index = 0, scoutIndex = corvettes, minerIndex = ActiveCount - miners;
         for ( int i = 0; i < SquadCount; ++i ) {
             bool scout = groupHulls && IsScoutSquad( i );
-            bool miner = groupMiners && Role( i ) is HullRole.Miner or HullRole.Freighter;
+            bool miner = groupMiners && UsesHaulerModel( Role( i ) );
             ref readonly var squad = ref _squads[i];
             var tint = Factions.ShipTint( (FactionId)squad.Faction );
             int end = squad.First + squad.Count;
             for ( int ship = squad.First; ship < end; ++ship ) {
                 if ( !Alive( ship ) ) continue;
                 bool highlighted = selection.IsEmpty ? ship == selected.Ship || !selected.IsShip && i == selected.Squad : selection[ship];
-                var color = tint;
+                var color = squad.Role == HullRole.Colony ? new Vector4( 0.58f, 1.9f, 1.31f, 1 ) : tint;
                 if ( highlighted ) color.W = 1.66f;
                 destination[scout ? scoutIndex++ : miner ? minerIndex++ : index++] = new( VisualPosition( ship, interpolation ),
                     interpolation == 1 ? _headings[ship] : Vector2.Normalize( Vector2.Lerp( _previousHeadings[ship], _headings[ship], interpolation ) ), color,
@@ -512,6 +515,7 @@ internal sealed partial class FleetSimulation {
             Append( (uint)_nextFleetId ); Append( (uint)_raidTick ); Append( (uint)_raidsLaunched ); Append( (uint)_deposits ); Append( _secured ? 1u : 0u );
             Append( DriveUpgrade ? 1u : 0u ); Append( HabitationUpgrade ? 1u : 0u ); Append( AstrometryUpgrade ? 1u : 0u );
             AppendDesign( Design );
+            Append( (uint)PiracyCycles ); Append( (uint)PirateOreLost ); Append( (uint)PirateEnergyLost );
             Append( (uint)MerchantAgreement ); Append( (uint)MerchantShipments );
             Append( (uint)Energy ); Append( (uint)ShipsLaunched ); Append( (uint)CorvettesLaunched ); Append( (uint)_researchWork ); Append( ActiveResearch is { } topic ? (uint)topic + 1 : 0 );
             for ( int body = 1; body < _bodies.Length; ++body ) {
@@ -535,8 +539,11 @@ internal sealed partial class FleetSimulation {
         for ( int body = 0; body < _bodies.Length; ++body ) {
             Append( (uint)(_surveyUnits[body]?.Squad ?? -1) ); Append( (uint)(_surveyUnits[body]?.Ship ?? -1) );
             Append( (uint)_survey[body] ); Append( (uint)_mines[body] ); Append( (uint)_labs[body] );
-            if ( Frontier )
+            if ( Frontier ) {
+                Append( (uint)_population[body] ); Append( (uint)_nextGrowth[body] ); Append( (uint)_colonyWork[body] );
+                Append( (uint)(_colonyShips[body]?.Squad ?? -1) ); Append( (uint)(_colonyShips[body]?.Ship ?? -1) );
                 foreach ( var facility in Facilities ) Append( (uint)SiteDeadlines( facility )[body] );
+            }
         }
         Append( (uint)Ore ); Append( (uint)WingsBuilt ); Append( (uint)_incomeTicks ); Append( _rivalPatrol ? 1u : 0u ); Append( _battle ? 1u : 0u );
         for ( int i = 0; i < SquadCount; ++i ) {
@@ -566,7 +573,7 @@ internal sealed partial class FleetSimulation {
             if ( Frontier ) {
                 var leg = order.Transfer;
                 Append( BitConverter.SingleToUInt32Bits( order.Radius ) ); Append( order.Waypoint ? 1u : 0u ); Append( order.Rejoining ? 1u : 0u );
-                Append( order.Construction ); Append( (uint)order.Service ); Append( (uint)order.ServiceTicks );
+                Append( order.Construction ); Append( order.Settlement ? 1u : 0u ); Append( (uint)order.Service ); Append( (uint)order.ServiceTicks );
                 Append( (uint)leg.Start ); Append( (uint)leg.End ); AppendVector( leg.From ); AppendVector( leg.To );
                 AppendVector( leg.Departure ); AppendVector( leg.Arrival ); AppendVector( leg.Bend );
             }
@@ -624,6 +631,7 @@ internal sealed partial class FleetSimulation {
             _previousPositions[i] = _positions[i] = center + RotateSlot( _offsets[i], heading );
             _squadOfShip[i] = squadIndex;
             ++_shipGeneration[i];
+            if ( Frontier ) _shipNames[i] = null;
             _shipOrders[i] = default;
             _velocities[i] = default;
             _thrust[i] = 0;

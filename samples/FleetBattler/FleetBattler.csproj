@@ -2,6 +2,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>$(DotNetTargets)</TargetFramework>
+    <ApplicationIcon>Art/FleetBattler.ico</ApplicationIcon>
+    <AssemblyTitle>DXSharp - Fleet Battler</AssemblyTitle>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
   <ItemGroup>
