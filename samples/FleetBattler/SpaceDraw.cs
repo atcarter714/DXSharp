@@ -89,7 +89,10 @@ internal static class SpaceDraw {
             float rings = smoothstep(1.19, 1.25, ringDistance) * (1 - smoothstep(1.93, 2.04, ringDistance));
             rings *= 0.38 + 0.57 * smoothstep(-0.3,0.7,sin(ringDistance*59.0));
             float3 ringTint = float3(0.76,0.66,0.48);
-            if (kind == 2 && ringPlane.y < 0) sky = lerp(sky, ringTint, rings*0.65);
+            float ringDepth = ringPlane.y * sqrt(3.4*3.4-1);
+            float sphereDepth = sqrt(saturate(1-d*d));
+            bool ringInFront = ringDepth > sphereDepth;
+            if (kind == 2 && !ringInFront) sky = lerp(sky, ringTint, rings*0.65);
 
             float3 n = float3(p.x, -p.y, sqrt(saturate(1 - d*d)));
             float2 towardSun = Star.xy - body.xy;
@@ -115,7 +118,7 @@ internal static class SpaceDraw {
                 albedo = float3(0.69,0.73,0.79) * (0.47 + 0.48*Noise(p*11));
             }
             sky = lerp(sky, albedo * diffuse, 1 - smoothstep(0.97,1.015,d));
-            if (kind == 2 && ringPlane.y >= 0) sky = lerp(sky,ringTint,rings*0.65);
+            if (kind == 2 && ringInFront) sky = lerp(sky,ringTint,rings*0.65);
             return sky;
         }
 
@@ -243,13 +246,14 @@ internal static class SpaceDraw {
         Draw( commands, pipeline, moon, values );
     }
 
-    internal static void RecordGalaxy( GraphicsCommandList commands, PipelineState pipeline, SampledTexture2D moon, int currentSystem, int width, int height ) {
+    internal static void RecordGalaxy( GraphicsCommandList commands, PipelineState pipeline, SampledTexture2D moon, int currentSystem, int width, int height, bool frontier ) {
         Span<Vector4> values = stackalloc Vector4[15];
         values.Clear( );
         values[4] = new( width, height, 0, 0 );
-        var points = CelestialSystem.MapPositions;
-        for ( int i = 0; i < points.Length; ++i )
-            values[5 + i] = new( points[i].X * width, points[i].Y * height, i == currentSystem ? 1 : 0, 0 );
+        for ( int i = 0; i < CelestialSystem.MapPositions.Length; ++i ) {
+            var pixel = FleetHud.GalaxyNodePixel( i, width, height, frontier );
+            values[5 + i] = new( pixel.X, pixel.Y, i == currentSystem ? 1 : 0, 0 );
+        }
         Draw( commands, pipeline, moon, values );
     }
 

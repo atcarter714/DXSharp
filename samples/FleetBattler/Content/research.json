@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "Industry", "branch": "Industry", "name": "Orbital Fabrication",
+      "benefit": "LOWER CORVETTE COST AND BUILD TIME",
+      "description": "Ceres yard crews developed jigs that let a single tug build and align a hull in free fall. Standardizing the design makes every new corvette cheaper and faster to produce.",
+      "artwork": "Yard", "energy": 12, "science": 24, "work": 960, "requires": []
+    },
+    {
+      "id": "Weapons", "branch": "Industry", "name": "Fire Control",
+      "benefit": "INCREASE WARSHIP DAMAGE AND RANGE",
+      "description": "Separate hulls can share a firing solution before their weapons open up. A synchronized track gives our escorts more time to shoot before reaching a convoy.",
+      "artwork": "Corvette", "energy": 16, "science": 30, "work": 1500, "damageBonus": 4, "rangeBonus": 3, "requires": ["Industry"]
+    },
+    {
+      "id": "Escorts", "branch": "Industry", "name": "Fleet Escort Systems",
+      "benefit": "UNLOCK THE MARINER ESCORT FRIGATE",
+      "description": "The Mariner trades acceleration for armor, reactor capacity and a heavier battery. It can escort fragile expedition hulls through a contested arrival.",
+      "artwork": "Corvette", "ore": 20, "energy": 24, "science": 52, "work": 1920, "requires": ["Weapons"]
+    },
+    {
+      "id": "Habitation", "branch": "Industry", "name": "Habitat Engineering",
+      "benefit": "BUILD O'NEILL HABITATS AND SUPPORT FUSION FLIGHTS",
+      "description": "Closed-loop water and air systems keep crews alive through long missions. The same design makes rotating habitats and their industrial capacity possible.",
+      "artwork": "Yard", "energy": 26, "science": 60, "work": 2100, "requires": ["Industry"]
+    },
+    {
+      "id": "Drive", "branch": "Propulsion", "name": "Long Burn Drive",
+      "benefit": "REACH THE OUTER SOLAR SYSTEM",
+      "description": "A reworked heat rejection loop lets ships sustain a burn long enough to reach the outer worlds. The new drive also increases acceleration on local transfers.",
+      "artwork": "Scout", "energy": 20, "science": 36, "work": 1680, "requires": []
+    },
+    {
+      "id": "Astrometry", "branch": "Propulsion", "name": "Deep Sky Astrometry",
+      "benefit": "CHART NEARBY STARS AND SCAN FASTER",
+      "description": "Combining long-baseline observations gives Sol a chart of nearby systems. It also improves the instruments on every survey scout.",
+      "artwork": "Lab", "energy": 18, "science": 48, "work": 1740, "scanRate": 3, "requires": ["Drive"]
+    },
+    {
+      "id": "Fusion", "branch": "Propulsion", "name": "Pulsed Fusion",
+      "benefit": "OPEN THE EXPEDITION ROUTE TO PROXIMA",
+      "description": "The Sol Authority has cleared a crewed flight to the silent Proxima receiver. Fit out a scout and constructor in Earth orbit. Bring an escort if you intend to hold the receiver for Sol.",
+      "artwork": "Scout", "ore": 32, "energy": 32, "science": 72, "work": 2400, "requires": ["Astrometry", "Habitation"]
+    }
+  ]
+}

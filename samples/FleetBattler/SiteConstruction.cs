@@ -132,7 +132,15 @@ internal sealed partial class FleetSimulation {
             LastStartedSite = new( body, facility );
             ++StartedConstruction;
         }
-        if ( deadlines[body] <= Tick + 1 ) site.Worker = null;
+        if ( deadlines[body] <= Tick + 1 ) {
+            ReleaseConstructor( body, facility, worker );
+            site.Worker = null;
+        }
+    }
+
+    private void ReleaseConstructor( int body, PlanetFacility facility, FleetSelection worker ) {
+        ref var order = ref (worker.IsShip ? ref _shipOrders[worker.Ship] : ref _squads[worker.Squad].Order);
+        if ( order.Body == body + 1 && order.Construction == (int)facility + 1 ) order.Construction = 0;
     }
 
     internal Vector2 SitePosition( int body, PlanetFacility facility, float interpolation ) =>

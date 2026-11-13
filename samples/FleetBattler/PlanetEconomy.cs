@@ -194,7 +194,9 @@ internal sealed partial class FleetSimulation {
         var projects = SiteDeadlines( facility );
         if ( projects[body] <= Tick ) return false;
         projects[body] = 0;
-        Construction( body, facility ) = default;
+        ref var site = ref Construction( body, facility );
+        if ( site.Worker is { } worker ) ReleaseConstructor( body, facility, worker );
+        site = default;
         Refund( Facility( facility ).Cost );
         return true;
     }
@@ -219,7 +221,7 @@ internal sealed partial class FleetSimulation {
         RefreshSurveys( );
         for ( int body = 1; body < _bodies.Length; ++body ) {
             if ( _surveyUnits[body] is { } unit && InSurveyRange( unit, body ) ) {
-                int rate = IsScoutSquad( unit.Squad ) ? AstrometryUpgrade ? 3 : 2 : 1;
+                int rate = IsScoutSquad( unit.Squad ) ? AstrometryUpgrade ? Tech( ResearchTopic.Astrometry ).ScanRate : 2 : 1;
                 if ( _survey[body] == 0 ) ++StartedScans;
                 _survey[body] = Math.Min( SurveyRequired, _survey[body] + rate );
                 if ( _survey[body] == SurveyRequired ) {

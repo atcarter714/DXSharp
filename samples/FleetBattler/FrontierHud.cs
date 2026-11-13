@@ -12,7 +12,7 @@ internal sealed partial class FleetHud {
     private static readonly HudIcon[] TabIcons = [HudIcon.Colony, HudIcon.Science, HudIcon.Design, HudIcon.Orders, HudIcon.Log];
     private static (float X, float Y) CommandOrigin( Layout layout ) => ((layout.Width - OfficeWidth) / 2, 61);
     private static float CommandHeight( CommandTab tab, FleetSimulation fleet ) => tab switch {
-        CommandTab.Economy => 226, CommandTab.Research => 302, CommandTab.Fleet => 289, CommandTab.Events => 239,
+        CommandTab.Economy => 226, CommandTab.Research => 86 + Math.Max( ResearchTopics( false ).Length, ResearchTopics( true ).Length ) * 54, CommandTab.Fleet => 289, CommandTab.Events => 239,
         CommandTab.Orders => 82 + Math.Max( 1, YardRows( fleet ) ) * 21, _ => 162
     };
 
@@ -174,9 +174,11 @@ internal sealed partial class FleetHud {
             var topics = ResearchTopics( secondResearchPage );
             for ( int i = 0; i < topics.Length; ++i ) {
                 var topic = topics[i];
-                if ( !Contains( relative, 270, 107 + i * 54, 64, 21 ) ) continue;
-                if ( fleet.ActiveResearch == topic ) return Action( CommandAction.CancelResearch );
-                if ( fleet.CanResearch( topic ) ) return Action( (CommandAction)((int)CommandAction.StartIndustry + (int)topic) );
+                if ( Contains( relative, 270, 107 + i * 54, 64, 21 ) ) {
+                    if ( fleet.ActiveResearch == topic ) return Action( CommandAction.CancelResearch );
+                    if ( fleet.CanResearch( topic ) ) return Action( (CommandAction)((int)CommandAction.StartIndustry + (int)topic) );
+                }
+                if ( Contains( relative, 10, 82 + i * 54, 330, 49 ) ) return new( HudAction.ResearchDetails, (int)topic );
             }
         }
         if ( tab == CommandTab.Fleet ) {

@@ -30,6 +30,7 @@ internal static class FleetQualification {
         VerifyColoniesAndStorage( );
         VerifyPiracy( );
         VerifySolarPresentation( );
+        VerifyCampaignHud( );
         VerifyOrbits( );
         VerifyAudio( );
         VerifyExpedition( );
@@ -515,6 +516,7 @@ internal static class FleetQualification {
         AdvanceUntil( fleet, () => fleet.Ore >= 205, "orbital extraction funds production and research", 4600 );
         Require( fleet.BuildYard( home, new( 2 ) ) && fleet.BuildFacility( home, PlanetFacility.Solar, miner ), "build yard and solar array" );
         AdvanceUntil( fleet, () => fleet.YardCount == 1 && fleet.EnergyIncome == 11, "the yard and additional energy income come online" );
+        Require( fleet.ExpeditionReadyInOrbit( 1 ) && fleet.ExpeditionReadyInOrbit( 2 ), "completed orbital projects release builders for expeditions" );
         Require( fleet.BuildFacility( home, PlanetFacility.Lab, new( 2 ) ), "build research lab" );
         AdvanceUntil( fleet, () => fleet.CanResearch( ResearchTopic.Industry ), "lab produces science for timed research" );
         int science = fleet.Science;
@@ -728,12 +730,43 @@ internal static class FleetQualification {
             fleet.BodyName( SolarCatalog.Vesta ) == "VESTA" && fleet.BodyName( SolarCatalog.Pluto ) == "PLUTO" &&
             fleet.BodyName( SolarCatalog.Halley ) == "HALLEY" && SolarCatalog.TrackOffset( SolarCatalog.Halley, 0 ).Length( ) > SolarCatalog.Get( 0 ).Radius,
             "the extended catalog names small bodies and the comet clears the Sun" );
-        Require( FleetHud.Hit( new( 180, 290 ), 660, 500, fleet, -1,
-            briefing: new( "TITLE", "FIRST", "SECOND", "ACCEPT", "DISMISS" ) ) == new HudHit( HudAction.Briefing, 1 ),
+        Require( FleetHud.Hit( new( 180, 366 ), 660, 500, fleet, -1,
+            briefing: new( "TITLE", "SOURCE", "TEXT", ContentArt.Scout, "ACCEPT", "DISMISS" ) ) == new HudHit( HudAction.Briefing, 1 ),
             "briefing hit tests use the same layout as the drawn accept button" );
         var menu = new BodyMenu( new( 650, 490 ), 3 );
         Require( FleetHud.Hit( new( 525, 474 ), 660, 500, fleet, -1, menu ) == new HudHit( HudAction.Context, (int)PlanetAction.Construction ),
             "the lower-right clamped menu keeps the Build Catalog row actionable" );
+    }
+
+    private static void VerifyCampaignHud( ) {
+        var fleet = new FleetSimulation( 3, 37, frontier: true );
+        var selection = new CommandSelection( fleet.Capacity );
+        Require( fleet.SelectExpedition( selection ) == 2 && selection.Ships[0] && selection.Ships[1] &&
+            FleetHud.StarDate( 0 ) == new DateOnly( 2184, 1, 1 ) && FleetHud.StarDate( 240 ) == new DateOnly( 2184, 1, 3 ),
+            "the suggested crew selects an idle scout and constructor and the star date derives from ticks" );
+        var route = new GalaxyRoute( 0, FleetSimulation.Proxima, "", "LOCKED", 2, false, false, false, 0, true, true );
+        Require( FleetHud.HitGalaxy( new( 202, 154 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route ) == new GalaxyHit( GalaxyAction.Fleet, 0 ) &&
+            FleetHud.HitGalaxy( new( 335, 223 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route ) == new GalaxyHit( GalaxyAction.Star, 1 ) &&
+            FleetHud.HitGalaxy( new( 275, 463 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route ).Action == GalaxyAction.Research &&
+            FleetHud.HitGalaxy( new( 275, 463 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route with { Block = null, CanResearch = false } ).Action == GalaxyAction.Launch,
+            "the galaxy map shares the fleet badge and route action layout and exposes research until launch is unlocked" );
+        var remote = new FleetSimulation( 3, 37, frontier: true, system: 2 );
+        Require( FleetHud.Hit( new( 35, 150 ), 660, 500, remote, -1 ).Action == HudAction.Galaxy &&
+            FleetHud.Hit( new( 45, 220 ), 660, 500, remote, -1 ).Action == HudAction.None,
+            "remote charts offer a return action without presenting an empty fleet control" );
+
+        var path = Path.Combine( AppContext.BaseDirectory, "Content", "research.json" );
+        string json = File.ReadAllText( path );
+        using var revised = JsonDocument.Parse( json.Replace( "Fire Control", "Cooperative Targeting", StringComparison.Ordinal )
+            .Replace( "\"damageBonus\": 4", "\"damageBonus\": 6", StringComparison.Ordinal ) );
+        var catalog = ResearchCatalog.Parse( revised.RootElement );
+        Require( catalog[ResearchTopic.Weapons].Name == "COOPERATIVE TARGETING" && catalog[ResearchTopic.Weapons].Damage == 6 &&
+            catalog[ResearchTopic.Fusion].Requires.Contains( ResearchTopic.Habitation ), "research names, stats and prerequisite links come from the catalog" );
+        using var cyclic = JsonDocument.Parse( json.Replace( "\"requires\": [\"Weapons\"]", "\"requires\": [\"Escorts\"]", StringComparison.Ordinal ) );
+        bool rejected = false;
+        try { ResearchCatalog.Parse( cyclic.RootElement ); }
+        catch ( InvalidDataException ) { rejected = true; }
+        Require( rejected, "research catalog rejects a prerequisite cycle" );
     }
 
     private static void VerifyExpedition( ) {

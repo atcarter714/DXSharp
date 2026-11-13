@@ -4,7 +4,6 @@ namespace FleetBattler;
 
 internal readonly record struct ResourceCost( int Ore, int Energy, int Science = 0 );
 internal enum ResearchTopic { Industry, Weapons, Drive, Habitation, Astrometry, Escorts, Fusion, Count }
-internal readonly record struct Technology( string Name, string Benefit, ResourceCost Cost, int Duration, ResearchTopic? Requires = null );
 internal readonly record struct HullPlan( string Name, HullRole Role, ResourceCost Cost, int Duration );
 internal enum HullBlueprint { Scout, Miner, Corvette, Colony, Frigate, Count }
 internal readonly record struct ShipyardOrder( HullBlueprint Hull, ShipDesign Design, ResourceCost Cost, int Duration );
@@ -27,6 +26,8 @@ internal sealed partial class FleetSimulation {
     internal float ResearchProgress => ActiveResearch is { } topic ? 1 - (float)_researchWork / Tech( topic ).Duration : 0;
     internal bool HabitationUpgrade { get; private set; }
     internal bool AstrometryUpgrade { get; private set; }
+    internal int FireControlDamage => WeaponUpgrade ? Tech( ResearchTopic.Weapons ).Damage : 0;
+    internal int FireControlRange => WeaponUpgrade ? Tech( ResearchTopic.Weapons ).Range : 0;
     internal bool EscortsUpgrade { get; private set; }
     internal bool FusionUpgrade { get; private set; }
     internal ResearchTopic LastTechnology { get; private set; }
@@ -60,16 +61,7 @@ internal sealed partial class FleetSimulation {
 
     internal int OrbitalExtractionYield( int body ) => Colonizable( body ) ? DepositYield( body ) / 2 : DepositYield( body );
 
-    internal static Technology Tech( ResearchTopic topic ) => topic switch {
-        ResearchTopic.Industry => new( "ORBITAL FABRICATION", "LOWER CORVETTE ORE AND BUILD TIME", new( 0, 12, IndustryCost ), 960 ),
-        ResearchTopic.Weapons => new( "FIRE CONTROL", "WARSHIP DAMAGE AND RANGE", new( 0, 16, UpgradeCost ), 1500, ResearchTopic.Industry ),
-        ResearchTopic.Drive => new( "LONG BURN DRIVE", "REACH THE OUTER SOLAR SYSTEM", new( 0, 20, DriveCost ), 1680 ),
-        ResearchTopic.Habitation => new( "HABITAT ENGINEERING", "BUILD O NEILL HABITATS", new( 0, 26, 60 ), 2100, ResearchTopic.Industry ),
-        ResearchTopic.Astrometry => new( "DEEP SKY ASTROMETRY", "CHART STARS / SCAN FASTER", new( 0, 18, 48 ), 1740, ResearchTopic.Drive ),
-        ResearchTopic.Escorts => new( "FLEET ESCORT SYSTEMS", "BUILD MODULAR FRIGATES", new( 20, 24, 52 ), 1920, ResearchTopic.Weapons ),
-        ResearchTopic.Fusion => new( "PULSED FUSION", "OPEN EXPEDITION TO PROXIMA", new( 32, 32, 72 ), 2400, ResearchTopic.Astrometry ),
-        _ => throw new ArgumentOutOfRangeException( nameof(topic) )
-    };
+    internal static Technology Tech( ResearchTopic topic ) => ResearchCatalog.Current[topic];
 
     internal bool Researched( ResearchTopic topic ) => topic switch {
         ResearchTopic.Industry => IndustryUpgrade, ResearchTopic.Weapons => WeaponUpgrade, ResearchTopic.Drive => DriveUpgrade,
@@ -81,8 +73,8 @@ internal sealed partial class FleetSimulation {
         if ( !Frontier || (uint)topic >= (uint)ResearchTopic.Count ) return "PROJECT UNAVAILABLE";
         var tech = Tech( topic );
         if ( Researched( topic ) ) return "COMPLETE";
-        if ( tech.Requires is { } prerequisite && !Researched( prerequisite ) ) return Tech( prerequisite ).Name;
-        if ( topic == ResearchTopic.Fusion && !HabitationUpgrade ) return Tech( ResearchTopic.Habitation ).Name;
+        foreach ( var prerequisite in tech.Requires )
+            if ( !Researched( prerequisite ) ) return Tech( prerequisite ).Name;
         if ( ActiveResearch is not null ) return "ANOTHER PROJECT ACTIVE";
         if ( ScienceIncome == 0 ) return "BUILD A LAB";
         return CanAfford( tech.Cost ) ? null : "INSUFFICIENT RESOURCES";

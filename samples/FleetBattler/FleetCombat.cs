@@ -129,14 +129,14 @@ internal sealed partial class FleetSimulation {
             int side = SideOf( ship );
             var design = Loadout( ship );
             var weapon = Frontier ? design.Weapon : WeaponKind.Pulse;
-            float range = Frontier ? design.Range + (side == 0 && WeaponUpgrade ? 3 : 0) : side == 0 && WeaponUpgrade ? 19 : 16;
+            float range = Frontier ? design.Range + (side == 0 ? FireControlRange : 0) : side == 0 && WeaponUpgrade ? 19 : 16;
             int preferred = (_shipOrders[ship].Detached ? _shipOrders[ship].Enemy : _squads[_squadOfShip[ship]].Order.Enemy) - 1;
             bool canAutoFire = !Frontier || _squads[SquadronOf( ship )].Stance != FleetStance.Passive &&
                 EffectiveOrder( new( SquadronOf( ship ), ship ) ).Service == ServiceOrder.None;
             int target = Alive( preferred ) && IsHostile( side, SideOf( preferred ) ) && Vector2.DistanceSquared( _positions[preferred], _positions[ship] ) <= range * range
                 ? preferred : canAutoFire ? ClosestHostile( ship, side, range, combatOnly: Frontier && side == (int)FactionId.Raiders ) : -1;
             if ( target < 0 ) continue;
-            int damage = Frontier ? design.Damage + (side == 0 && WeaponUpgrade ? 4 : 0) + (Role( SquadronOf( ship ) ) == HullRole.Frigate ? 7 : 0) : side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
+            int damage = Frontier ? design.Damage + (side == 0 ? FireControlDamage : 0) + (Role( SquadronOf( ship ) ) == HullRole.Frigate ? 7 : 0) : side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
             if ( weapon == WeaponKind.Rail ) _railIncoming[target] = (ushort)Math.Min( 512, _railIncoming[target] + damage );
             else _incoming[target] = (byte)Math.Min( Frontier ? 255 : HullCapacity, _incoming[target] + damage );
             _nextShot[ship] = Tick + (Frontier ? design.Reload : 38) + ship % 9;
