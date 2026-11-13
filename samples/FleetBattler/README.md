@@ -1,11 +1,11 @@
 # Fleet Battler
 
-The Frontier scenario opens at Earth with one science scout, two constructors, 50 ore, and 25 energy. The galaxy map shows six systems. Sol is the player's starting system. The other systems have neutral contacts from the Free Merchants, Ceres Compact, or Survey Consortium. You can observe those systems and inspect their contacts in **Log**.
+The Frontier scenario opens at Earth with one science scout, two constructors, 50 ore, and 25 energy. The galaxy map charts neighboring stars after Deep Sky Astrometry. A chart reveals a system's bodies. Local traffic requires an arriving Sol expedition.
 
 | Control | Action |
 | --- | --- |
 | Click or drag a box | Select Sol ships. Double-click a ship to select its command group |
-| Fleet outliner | Select a group. Double-click to center the camera |
+| Fleet outliner | Select a group. Double-click to center the camera. Scroll the wheel over the list or click the scrollbar track to see further groups |
 | Shift / Ctrl | Add to or toggle the selection. Ctrl+A selects all living Sol ships |
 | Merge / Split or J / Shift+J | Merge selected combat groups or split selected squadrons into independent groups |
 | Right-click | Plot a transfer, attack a hostile contact, or open a body's order menu |
@@ -14,7 +14,7 @@ The Frontier scenario opens at Earth with one science scout, two constructors, 5
 | Click a yard or press B | Open its design catalog and build queue |
 | E / N / L / T | Assign a survey, dispatch a constructor for extraction or a lab, or open Research |
 | Q / V / Y / U | Cycle stance, flee, repair, or refit |
-| Colony / Research / Design / Orders / Log | Inspect resources, run research, configure corvettes, find yards, or read illustrated dispatches |
+| Colony / Research / Design / Orders / Log | Inspect resources, run research, configure corvettes and frigates, find yards, or read illustrated dispatches |
 | Tab / Escape / F4 | Open Colony, close the top panel, or open the dispatch log |
 | Space / + | Pause or resume, and cycle 1×, 2×, and 4× |
 | Scroll / middle-drag / arrow keys | Zoom toward the pointer or pan |
@@ -24,22 +24,27 @@ The Frontier scenario opens at Earth with one science scout, two constructors, 5
 ## Playing Frontier
 
 1. **Survey a body.** A scout takes 16 seconds at 1× to scan after arrival, then reveals the deposit and awards 15 ore. The inspector shows travel or scan progress. A scanning beam and audio cue start on arrival. The first completed survey also brings a merchant offer in **Log**.
-2. **Build or settle a surveyed body.** A constructor travels to build orbital projects, including orbital extraction. Local crews build surface facilities once colonists arrive. Order a colony ship at an operational orbital yard, select it, and press **Settle** in the body inspector. The ship enters orbit and establishes a three-population settlement after a landing interval. Housing is tied to body size and limits growth. Each four population, rounded up, staffs one physical surface slot. Pending projects reserve their slots.
-3. **Supply the colony.** Ore funds hulls and construction. Earth and solar arrays produce energy. The colony ledger shows storage limits. A surface warehouse adds 250 ore, 100 energy, and 50 science capacity. An orbital storage station adds 180 ore, 250 energy, and 50 science capacity. Labs generate 6 science per income cycle, and surface observatories generate 10. Each additional six points of combined science output, rounded up, contributes one unit of research work per tick. A single lab runs the core projects in 64–88 seconds at 1×. Switch to **Advanced** for Habitat Engineering and Deep Sky Astrometry. Habitat Engineering unlocks the O'Neill cylinder, which adds four naval slots once built.
-4. **Fit and build ships.** Set the weapon, armor, shield, computer, reactor, and drive in **Design**. The power meter and derived stats update as modules change. An over-budget design cannot be ordered. Build one hull at a time from an orbital yard with four queue slots per yard. Earth's civilian dock also builds scouts and constructors. Purchase captures the fit, cost, and duration. Completed yards and logistics depots add six and three naval slots respectively.
+2. **Build or settle a surveyed body.** A constructor travels to build orbital projects, including orbital extraction. Local crews build surface facilities once colonists arrive. Build a logistics depot in orbit above the destination first. Order a colony ship at an operational orbital yard, select it, and press **Settle** in the body inspector. The ship enters orbit and establishes a three-population settlement after 60 seconds in orbit at 1×. Remote yards require an online depot and six population. Housing is tied to body size and limits growth. Colonies grow when supplied by a depot or solar array. Surface facilities appear in the body inspector. Each four population, rounded up, staffs one physical surface slot. Pending projects reserve their slots.
+3. **Supply the colony.** Ore funds hulls and construction. Earth and solar arrays produce energy. The colony ledger shows storage limits. A surface warehouse adds 250 ore, 100 energy, and 50 science capacity. An orbital storage station adds 180 ore, 250 energy, and 50 science capacity. Labs generate 6 science per income cycle, and surface observatories generate 10. Each additional six points of combined science output, rounded up, contributes one unit of research work per tick. Research is divided into industry/defense and propulsion/survey branches. Locked projects name their prerequisites. Completion opens a briefing with a shortcut back to research. Habitat Engineering unlocks the O'Neill cylinder, which adds four naval slots once built.
+4. **Fit and build ships.** Set the weapon, armor, shield, computer, reactor, and drive in **Design**. Fleet Escort Systems unlocks the Mariner frigate, which has a separate fit and uses two naval slots. The power meter and derived stats update as modules change. An over-budget design cannot be ordered. Build one hull at a time from an orbital yard with four queue slots per yard. Earth's civilian dock also builds scouts and constructors. Purchase captures the fit, cost, and duration. Completed yards and logistics depots add six and three naval slots respectively.
 5. **Use the fleet controls.** Normal ships fire at enemies in range. Aggressive corvettes also pursue nearby hostiles when free of other orders. Passive ships fire only at explicit attack targets. **Flee** orders a retreat and sets passive stance. **Fix** routes a damaged hull to the nearest reachable orbital yard. A green cross identifies repairs in orbit, which cost 1 energy per service interval. **Fit** sends a corvette to a yard to install the current valid blueprint. Refit costs 10 ore and 4 energy plus module premiums, paid after arrival.
 6. **Choose an agreement.** The merchant dispatch offers either 25 ore and an allied trading contact for 12 energy, or 18 science for 15 ore. A trade agreement exchanges 5 energy for 12 ore every fifth income cycle when affordable. Your choice is recorded and cannot be taken twice.
-7. **Escort production.** Pirates contest extraction sites. When they outnumber the local combat escort, they take up to half that site's ore output and one energy per raider each income cycle. They attack escorts and leave civilian ships and colonies alone. Rival Command remains a military opponent.
+7. **Escort production.** Pirates contest extraction sites. When they outnumber the local combat escort, they take up to half that site's ore output and one energy per raider each income cycle. They attack escorts and leave civilian ships and colonies alone. The first piracy briefing offers a paid Ceres patrol that delays and weakens the raid. Amber patrols can return after the first raid sequence. Rival Command remains a military opponent.
 
 ## Navigation
 
 Ships start and launch in host-relative parking orbits. The cyan route traces the remaining transfer and the diamond marks the predicted insertion. Gold brackets follow the live host or moving ship. A dashed connector separates the object's current position from the intercept. Attack pursuit updates its short-horizon lead as the target moves. Civilian hulls, armor mass, drive modules, and propulsion research affect cruise speed, acceleration, or turning. Open-space orders enter a stellar parking orbit at the selected radius.
 
-**Long Burn Drive** expands the operating envelope to the outer belt. Long-range corvette modules extend reach within the current technology limits. Sol's tactical projection uses rounded semimajor axes and eccentricities from the [JPL J2000 approximate elements](https://ssd.jpl.nasa.gov/planets/approx_pos.html) and NASA's fact sheets for [Ceres and Vesta](https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html), [Pluto](https://nssdc.gsfc.nasa.gov/planetary/factsheet/plutofact.html), and [Halley](https://nssdc.gsfc.nasa.gov/planetary/factsheet/cometfact.html). Orbital spacing is 28% wider in the tactical projection. Phases, radii, and periods are illustrative. The GPU asteroid field stays within the [main belt](https://science.nasa.gov/solar-system/asteroids/) between Mars and Jupiter, and uses the fractional simulation clock for rendering.
+**Long Burn Drive** expands the operating envelope to the outer belt. Long-range corvette modules extend reach within the current technology limits. Sol's tactical projection uses rounded semimajor axes and eccentricities from the [JPL J2000 approximate elements](https://ssd.jpl.nasa.gov/planets/approx_pos.html) and NASA's fact sheets for [Ceres and Vesta](https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html), [Pluto](https://nssdc.gsfc.nasa.gov/planetary/factsheet/plutofact.html), and [Halley](https://nssdc.gsfc.nasa.gov/planetary/factsheet/cometfact.html). Orbital spacing is 29% wider than the previous map and Sol transfers include longer burn and coast time. The [Kuiper Belt](https://science.nasa.gov/solar-system/kuiper-belt/) is a region bounded by two tracks. Survey [Arrokoth](https://science.nasa.gov/solar-system/kuiper-belt/arrokoth-2014-mu69/) or Pluto as individual bodies. Phases, radii, and periods are illustrative. The GPU asteroid field stays within the [main belt](https://science.nasa.gov/solar-system/asteroids/) between Mars and Jupiter, and uses the fractional simulation clock for rendering.
 
-### Interstellar travel design
+### The First Crossing
 
-The current galaxy map supports observation. The campaign milestone adds a playable Sol–Proxima route with a fuel and range quote, scheduled departure and arrival, and a recoverable transit manifest. On arrival, the fleet can survey the system, recover a receiver, and establish a foothold. See [the campaign design](../../doc/FleetBattler.md#one-interstellar-route-end-to-end) for prerequisites, faction access, and save/load requirements.
+1. Survey a solid body, build its orbital depot, and establish a colony. Keep Earth’s orbital shipyard active.
+2. Complete Long Burn Drive, Deep Sky Astrometry, Habitat Engineering, and Pulsed Fusion. Industry research precedes Habitat Engineering.
+3. Select a scout and constructor in Earth orbit, optionally with escorts. Leave at least one hull in Sol. Open **Galaxy**, click **Proxima**, and choose **Launch One Way**. The quote costs 65 ore and 100 energy. The fleet arrives after two minutes at 1× and Sol continues operating during transit.
+4. Choose **View Arrival**. Survey Receiver World and build an orbital research lab to restore the receiver. Share its data with the Survey Consortium, or claim it for Sol with an escort and repel Rival Command.
+
+The [campaign design](../../doc/FleetBattler.md) describes the larger faction, travel, research, and presentation milestones.
 
 ### Remaining goals
 
@@ -48,7 +53,7 @@ The [finish-line design](../../doc/FleetBattler.md) covers the campaign, tech pr
 | Priority | Remaining work |
 | --- | --- |
 | Primary | Add session menus and save/load. Complete the ship designer, inspectors, alerts, and presentation pass. |
-| Primary | Ship one authored campaign with factional choices, a research tree, and a playable crossing from Sol to a neighboring system. |
+| Primary | Expand the playable crossing with freight routes, stronger faction consequences, and save/load during transit. |
 | Primary | Tune the colony and trade economy through playtests, including population needs, housing, freight, pirate pressure, and additional faction decisions. |
 | Stretch | Add authored ship, habitat, surface, and faction art, more hulls and effects, and bespoke sound design. |
 | Stretch | Expand colonization, exploration, megastructures, and the inhabited galaxy. |
@@ -93,12 +98,13 @@ Each file embeds its geometry and base color image. Import it into a Houdini geo
 | Reference file | Length | Role |
 | --- | ---: | --- |
 | [SurveyScout.gltf](Models/SurveyScout.gltf) | 28 m | Kestrel science scout with side sensor booms |
+| [EscortFrigate.gltf](Models/EscortFrigate.gltf) | 75 m | Mariner heavy escort with twin exhaust sockets |
 | [Corvette.gltf](Models/Corvette.gltf) | 48 m | Lancer escort and reinforcement hull |
 | [Freighter.gltf](Models/Freighter.gltf) | 96 m | Mule hauler with six external cargo pods. Also used as the temporary miner hull |
 | [MiningRelay.gltf](Models/MiningRelay.gltf) | 48 m | Capture site and temporary orbital facility hull |
 | [ONeillHabitat.gltf](Models/ONeillHabitat.gltf) | 98 m | Cylindrical orbital habitat with radiator bands |
 
-Use the Static Model Viewer to inspect each authored asset with an auto-fit camera and to check replacement exports. Use `--ship-model`, `--scout-model`, `--miner-model`, `--freighter-model`, `--station-model`, and `--habitat-model` to replace the corresponding placeholder with a `.glb` or `.gltf`. Include the mesh and texture sidecars if you export a separate glTF. The override uses the exported node transforms and dimensions. Export a tactical corvette about 2.4 units long, with thrusters about 0.9 units off center and 1.12 units aft. Keep an authored-scale copy for Houdini.
+Use the Static Model Viewer to inspect each authored asset with an auto-fit camera and to check replacement exports. Use `--ship-model`, `--frigate-model`, `--scout-model`, `--miner-model`, `--freighter-model`, `--station-model`, and `--habitat-model` to replace the corresponding placeholder with a `.glb` or `.gltf`. Include the mesh and texture sidecars if you export a separate glTF. The override uses the exported node transforms and dimensions. Export a tactical corvette about 2.4 units long, with thrusters about 0.9 units off center and 1.12 units aft. Keep an authored-scale copy for Houdini.
 
 ```powershell
 blender -b --python-exit-code 1 --python tools/ConvertModel.py -- C:\exports\Corvette.fbx C:\exports\Corvette.glb

@@ -9,7 +9,7 @@ internal static class CelestialSystem {
     internal const float BeltAxis = 1.72f;
     internal const float RockyAxis = 0.45f, GiantAxis = 0.91f, MoonAxis = 0.145f;
     internal const float RockyEccentricity = 0.16f, GiantEccentricity = 0.12f, MoonEccentricity = 0.08f;
-    private static readonly string[] Names = ["HELIOS", "CALDERA", "NEREID", "VESPER", "TETHYS", "PEREGRINE"];
+    private static readonly string[] Names = ["HELIOS", "PROXIMA", "NEREID", "VESPER", "TETHYS", "PEREGRINE"];
     private static readonly Vector2[] Positions = [new( 0.25f, 0.40f ), new( 0.51f, 0.63f ), new( 0.75f, 0.34f ),
         new( 0.31f, 0.76f ), new( 0.55f, 0.22f ), new( 0.79f, 0.68f )];
     internal static ReadOnlySpan<string> Systems => Names;
@@ -17,7 +17,7 @@ internal static class CelestialSystem {
 
     internal static string Name( int system, int body ) => (system, body) switch {
         (0, 0) => "HELIOS", (0, 1) => "AURELIA", (0, 2) => "BRONTES", (0, 3) => "SELENE", (0, 4) => "FAR REACH",
-        (1, 0) => "CALDERA", (1, 1) => "VESPER", (1, 2) => "MAGNUS", (1, 3) => "EMBER", (1, 4) => "CINDER BELT",
+        (1, 0) => "PROXIMA", (1, 1) => "RECEIVER WORLD", (1, 2) => "MAGNUS", (1, 3) => "EMBER", (1, 4) => "CINDER BELT",
         (2, 0) => "NEREID", (2, 1) => "PELAGOS", (2, 2) => "THALASSA", (2, 3) => "ECHO", (2, 4) => "DARK SHOAL",
         (3, 0) => "VESPER", (3, 1) => "HEARTH", (3, 2) => "FARLIGHT", (3, 3) => "CINDER", (3, 4) => "LANTERN BELT",
         (4, 0) => "TETHYS", (4, 1) => "QUILL", (4, 2) => "OBERON", (4, 3) => "WATCH", (4, 4) => "SILENT RING",

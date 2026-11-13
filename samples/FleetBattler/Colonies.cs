@@ -3,11 +3,14 @@ namespace FleetBattler;
 internal readonly record struct ColonyStatus( int Population, int Housing, int WorkRemaining, FleetSelection? Ship );
 
 internal sealed partial class FleetSimulation {
-    internal const int ColonyDuration = 240, ColonyLandingPopulation = 3;
-    private const int ColonyGrowthInterval = 900;
+    internal const int ColonyDuration = 900, ColonyLandingPopulation = 3, YardPopulation = 6;
+    private const int ColonyGrowthInterval = 1350;
     private readonly int[] _population = new int[CelestialSystem.BodyCount], _nextGrowth = new int[CelestialSystem.BodyCount],
         _colonyWork = new int[CelestialSystem.BodyCount];
     private readonly FleetSelection?[] _colonyShips = new FleetSelection?[CelestialSystem.BodyCount];
+
+    internal bool ColonySupplied( int body ) => body == Homeworld && Established ||
+        SiteRemaining( body, PlanetFacility.Solar ) == 0 || DepotAt( body ) == 0;
 
     internal int ColoniesFounded { get; private set; }
     internal int LastFoundedBody { get; private set; }
@@ -29,6 +32,7 @@ internal sealed partial class FleetSimulation {
         if ( !Frontier || !Colonizable( body ) ) return "NO SETTLEMENT SITE";
         if ( !Planet( body ).Surveyed ) return "SURVEY THE BODY FIRST";
         if ( _population[body] > 0 ) return "COLONY ALREADY ESTABLISHED";
+        if ( DepotAt( body ) != 0 ) return "BUILD A LANDING DEPOT FIRST";
         if ( _colonyShips[body] is not null ) return "COLONY SHIP ALREADY ASSIGNED";
         if ( selection is not { } unit || !ValidColonyShip( unit ) ) return "SELECT A COLONY SHIP";
         return CanReach( unit, body ) ? null : "OUTSIDE COLONY SHIP RANGE";
@@ -83,7 +87,7 @@ internal sealed partial class FleetSimulation {
                 LastFoundedBody = body;
             }
         }
-        if ( _population[body] > 0 && _population[body] < Colony( body ).Housing && Tick >= _nextGrowth[body] ) {
+        if ( _population[body] > 0 && _population[body] < Colony( body ).Housing && ColonySupplied( body ) && Tick >= _nextGrowth[body] ) {
             ++_population[body];
             _nextGrowth[body] = Tick + ColonyGrowthInterval;
         }

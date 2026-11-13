@@ -10,7 +10,7 @@ internal sealed partial class FleetSimulation {
 
     internal static string RoleName( HullRole role ) => role switch {
         HullRole.Scout => "SCOUT", HullRole.Miner => "CONSTRUCTOR", HullRole.Freighter => "FREIGHTER",
-        HullRole.Colony => "COLONY SHIP", _ => "CORVETTE"
+        HullRole.Colony => "COLONY SHIP", HullRole.Frigate => "FRIGATE", _ => "CORVETTE"
     };
 
     internal bool RenameShip( int ship, string name ) {

@@ -105,6 +105,8 @@ internal static class SpaceDraw {
             } else if (kind == 2 || kind == 4) {
                 float bands = 0.5 + 0.5*sin(n.y*27 + Noise(n.xy*5)*2.4 + n.x*0.8);
                 albedo = lerp(float3(0.58,0.34,0.28),float3(0.97,0.78,0.56),bands);
+            } else if (kind == 5) {
+                albedo = float3(0.76,0.42,0.30) * (0.62 + 0.33*Noise(p*11));
             } else if (MoonOrbit.w > 0) {
                 float2 uv = float2(0.5 + atan2(n.x,max(n.z,0.0001)) / 6.2831853, acos(clamp(n.y,-1,1)) / 3.14159265);
                 albedo = MoonMap.SampleLevel(MoonSampler,float2(frac(uv.x+Viewport.z*0.005),clamp(uv.y,0.002,0.998)),0).rgb;
@@ -157,9 +159,9 @@ internal static class SpaceDraw {
             sky = Body(sky,pixel,Rocky,1);
             sky = Body(sky,pixel,Moon,3);
             if (SiteTint.w == 0 && Site.w > 0) {
-                float belt = Orbit(world,Orbits.xy,Site.w,0.06);
+                float belt = Orbit(world,Orbits.xy,Site.w,solar ? 0.044 : 0.06);
                 sky += float3(0.15,0.17,0.22) * belt;
-                sky = Body(sky,pixel,Site,3);
+                sky = Body(sky,pixel,Site,solar ? 5 : 3);
             }
 
             float2 marker = world - Site.xy;

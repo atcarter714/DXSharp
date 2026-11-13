@@ -53,7 +53,7 @@ internal sealed partial class FleetSimulation {
         get {
             int used = 0;
             for ( int squad = 0; squad < SquadCount; ++squad )
-                if ( IsPlayerSquad( squad ) && Role( squad ) == HullRole.Corvette ) used += ShipCount( squad );
+                if ( IsPlayerSquad( squad ) ) used += ShipCount( squad ) * NavalWeight( Role( squad ) );
             return used;
         }
     }

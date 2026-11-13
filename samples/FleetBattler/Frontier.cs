@@ -2,17 +2,37 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum HullRole : byte { Corvette, Scout, Miner, Freighter, Colony }
+internal enum HullRole : byte { Corvette, Scout, Miner, Freighter, Colony, Frigate }
 internal enum WeaponKind : byte { None, Pulse, Rail }
-internal enum FrontierEvent : byte { Arrival, Prospect, Distress, Raid, Counterattack, Secured, MerchantOffer }
+internal enum FrontierEvent : byte { Arrival, Prospect, Distress, Raid, Counterattack, Secured, MerchantOffer, Interdiction }
 internal sealed partial class FleetSimulation {
     internal const int Homeworld = 1;
     // A one-survivor wing can retain three storage slots while consuming one naval slot.
     private const int FrontierCapacity = 320, MaxWorkers = 5;
-    private readonly FrontierEvent[] _dispatches = new FrontierEvent[8];
+    private readonly FrontierEvent[] _dispatches = new FrontierEvent[9];
     private int _raidTick, _raidsLaunched, _deposits;
     private int _surveyedProspects;
     private bool _secured;
+    private int _nextPatrol;
+    internal const int RaidPreparation = 2400, PatrolInterval = 4200;
+    internal string Objective => !Solar ? !ExpeditionArrived ? "NO SOL SENSOR COVERAGE" : ReceiverSecured ? "FIRST CROSSING COMPLETE"
+        : ReceiverOnline ? "DEFEND THE PROXIMA RECEIVER" : "SURVEY RECEIVER WORLD / BUILD AN ORBITAL LAB"
+        : RaidWarningTicks > 0 ? "PREPARE ESCORTS FOR THE INBOUND RAID"
+        : AmberCount > 0 ? "PROTECT EXTRACTION AND INTERCEPT HOSTILES"
+        : ColoniesFounded == 0 && _secured ? "SUPPLY AND SETTLE A WORLD"
+        : FusionUpgrade ? "SELECT EARTH ORBIT FLEET / OPEN GALAXY MAP"
+        : _secured ? "RESEARCH INTERSTELLAR PROPULSION"
+        : !HasOperatingMine( ) ? "SURVEY A BODY / BUILD AN EXTRACTION SITE" : "BUILD A YARD AND EQUIP AN ESCORT";
+    internal int RaidWarningTicks => _raidsLaunched == 0 ? Math.Max( 0, _raidTick - Tick ) : 0;
+    internal bool PaidPatrol { get; private set; }
+
+    internal bool FundPatrol( ) {
+        if ( RaidWarningTicks == 0 || PaidPatrol || Energy < 15 ) return false;
+        Spend( new( 0, 15 ) );
+        PaidPatrol = true;
+        _raidTick += 900;
+        return true;
+    }
     internal bool Frontier { get; }
     internal int DispatchCount { get; private set; }
     internal int Deposits => _deposits;
@@ -62,16 +82,21 @@ internal sealed partial class FleetSimulation {
         if ( Tick % IncomeInterval == 0 && ShipsLost > 0 && Ore < MineCost && !HasOperatingMine( ) )
             Ore = Math.Min( MineCost, Ore + 2 );
         AdvancePiracy( );
-        if ( Won ) return;
+        if ( !_battle ) return;
         if ( _raidsLaunched == 0 && _raidTick == 0 && HasOperatingMine( ) ) {
-            _raidTick = Tick + (ProspectYield( FirstMineBody( ) ) > 8 ? 840 : 1080);
+            _raidTick = Tick + RaidPreparation;
             SendDispatch( FrontierEvent.Distress );
         }
-        if ( _raidsLaunched == 0 && _raidTick != 0 && Tick >= _raidTick ) LaunchRaid( 2, FrontierEvent.Raid );
+        if ( _raidsLaunched == 0 && _raidTick != 0 && Tick >= _raidTick ) LaunchRaid( PaidPatrol ? 1 : 2, FrontierEvent.Raid );
         if ( _raidsLaunched == 1 && AmberCount == 0 && CorvettesLaunched > 0 ) LaunchRaid( 3, FrontierEvent.Counterattack );
-        if ( _raidsLaunched == 2 && AmberCount == 0 ) {
+        if ( !_secured && _raidsLaunched == 2 && AmberCount == 0 ) {
             _secured = true;
+            _nextPatrol = Tick + PatrolInterval;
             SendDispatch( FrontierEvent.Secured );
+        }
+        if ( _secured && AmberCount == 0 && Tick >= _nextPatrol && HasOperatingMine( ) ) {
+            LaunchRaid( 2, FrontierEvent.Interdiction );
+            _nextPatrol = Tick + PatrolInterval;
         }
         if ( AmberCount == 0 || Tick % 90 != 0 ) return;
 
@@ -83,7 +108,7 @@ internal sealed partial class FleetSimulation {
             float distance = 24 * 24;
             for ( int ship = 0; ship < Count; ++ship ) {
                 if ( !Alive( ship ) || SideOf( ship ) != 0 ||
-                     pirate && Role( SquadronOf( ship ) ) != HullRole.Corvette ) continue;
+                     pirate && !IsWarship( Role( SquadronOf( ship ) ) ) ) continue;
                 float d = Vector2.DistanceSquared( _positions[ship], Center( i ) );
                 if ( d >= distance ) continue;
                 distance = d;
@@ -108,14 +133,14 @@ internal sealed partial class FleetSimulation {
     }
 
     private void LaunchRaid( int count, FrontierEvent incident ) {
-        var target = incident == FrontierEvent.Raid || YardBody < 0 ? FirstMinePosition( ) : Shipyard;
+        var target = incident != FrontierEvent.Counterattack || YardBody < 0 ? FirstMinePosition( ) : Shipyard;
         var origin = target + new Vector2( target.X < 0 ? 48 : -48, target.Y < 0 ? 35 : -35 );
-        var design = new ShipDesign( incident == FrontierEvent.Raid ? WeaponKind.Pulse : WeaponKind.Rail, false );
-        int faction = (int)(incident == FrontierEvent.Raid ? FactionId.Raiders : FactionId.Rival);
+        var design = new ShipDesign( incident == FrontierEvent.Counterattack ? WeaponKind.Rail : WeaponKind.Pulse, false );
+        int faction = (int)(incident == FrontierEvent.Counterattack ? FactionId.Rival : FactionId.Raiders);
         int squad = AddSquad( count, faction, Vector2.Clamp( origin, new( -NavigationRadius + 5 ), new( NavigationRadius - 5 ) ), design: design );
         Move( squad, target );
         ++_raidsLaunched;
-        SendDispatch( incident );
+        if ( incident != FrontierEvent.Interdiction || _raidsLaunched == 3 ) SendDispatch( incident );
     }
 
     private void SendDispatch( FrontierEvent incident ) => _dispatches[DispatchCount++] = incident;

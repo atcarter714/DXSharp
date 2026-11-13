@@ -35,7 +35,8 @@ internal sealed partial class FleetSimulation {
 
     internal bool NeedsRepair( int ship ) {
         var design = Loadout( ship );
-        return _hull[ship] < HullCapacity || Role( SquadronOf( ship ) ) == HullRole.Corvette && _armor[ship] < design.Armor;
+        var role = Role( SquadronOf( ship ) );
+        return _hull[ship] < MaxHull( role ) || IsWarship( role ) && _armor[ship] < design.Armor;
     }
 
     private int FindServiceYard( FleetSelection unit, Vector2 from ) {
@@ -55,7 +56,8 @@ internal sealed partial class FleetSimulation {
         if ( !Frontier || service == ServiceOrder.None || !Alive( ship ) || FactionOf( ship ) != FactionId.Sol ) return false;
         int squad = SquadronOf( ship );
         if ( service == ServiceOrder.Repair && !NeedsRepair( ship ) ) return false;
-        if ( service == ServiceOrder.Refit && (Role( squad ) != HullRole.Corvette || _squads[squad].Count != 1 || !Design.Valid || Design == Loadout( ship )) )
+        var blueprint = Blueprint( Role( squad ) == HullRole.Frigate ? HullBlueprint.Frigate : HullBlueprint.Corvette );
+        if ( service == ServiceOrder.Refit && (!IsWarship( Role( squad ) ) || _squads[squad].Count != 1 || !blueprint.Valid || blueprint == Loadout( ship )) )
             return false;
         var unit = new FleetSelection( squad, ship );
         int yard = FindServiceYard( unit, _positions[ship] );
@@ -76,7 +78,7 @@ internal sealed partial class FleetSimulation {
         var order = PlotTransfer( unit, yard, false, fixedBerth: new( orbit.X, orbit.Y + 0.14f ) );
         order.Service = service;
         order.ServiceTicks = 0;
-        if ( service == ServiceOrder.Refit ) _refitDesigns[ship] = Design;
+        if ( service == ServiceOrder.Refit ) _refitDesigns[ship] = blueprint;
         SetOrder( unit, order );
         return true;
     }
@@ -105,8 +107,8 @@ internal sealed partial class FleetSimulation {
                 if ( Energy == 0 ) continue;
                 --Energy;
                 var design = Loadout( ship );
-                _hull[ship] = (byte)Math.Min( HullCapacity, _hull[ship] + 12 );
-                if ( Role( SquadronOf( ship ) ) == HullRole.Corvette )
+                _hull[ship] = (byte)Math.Min( MaxHull( Role( SquadronOf( ship ) ) ), _hull[ship] + 12 );
+                if ( IsWarship( Role( SquadronOf( ship ) ) ) )
                     _armor[ship] = (byte)Math.Min( design.Armor, _armor[ship] + 8 );
                 order.ServiceTicks = 0;
                 if ( NeedsRepair( ship ) ) continue;
@@ -122,7 +124,7 @@ internal sealed partial class FleetSimulation {
             if ( !Alive( ship ) ) continue;
             int squad = SquadronOf( ship );
             ref readonly var group = ref _squads[squad];
-            if ( group.Faction != (int)FactionId.Sol || group.Role != HullRole.Corvette || group.Stance != FleetStance.Aggressive ) continue;
+            if ( group.Faction != (int)FactionId.Sol || !IsWarship( group.Role ) || group.Stance != FleetStance.Aggressive ) continue;
             var unit = new FleetSelection( squad, ship );
             var order = EffectiveOrder( unit );
             if ( order.Enemy != 0 || order.Service != ServiceOrder.None || order.Transfer.End != 0 ) continue;

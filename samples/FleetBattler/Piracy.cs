@@ -22,7 +22,7 @@ internal sealed partial class FleetSimulation {
             for ( int ship = 0; ship < Count; ++ship ) {
                 if ( !Alive( ship ) || Vector2.DistanceSquared( _positions[ship], position ) > PirateControlRadius * PirateControlRadius ) continue;
                 if ( FactionOf( ship ) == FactionId.Raiders ) ++pirates;
-                else if ( FactionOf( ship ) == FactionId.Sol && Role( SquadronOf( ship ) ) == HullRole.Corvette ) ++escorts;
+                else if ( FactionOf( ship ) == FactionId.Sol && IsWarship( Role( SquadronOf( ship ) ) ) ) escorts += NavalWeight( Role( SquadronOf( ship ) ) );
             }
             if ( pirates <= escorts ) continue;
             PirateControlledBody = body;

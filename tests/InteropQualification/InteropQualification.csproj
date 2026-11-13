@@ -12,6 +12,8 @@
     <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
     <Compile Include="../../samples/FleetBattler/IndustryHud.cs" Link="Fleet/IndustryHud.cs" />
+    <Compile Include="../../samples/FleetBattler/Expedition.cs" Link="Fleet/Expedition.cs" />
+    <Compile Include="../../samples/FleetBattler/BriefingHud.cs" Link="BriefingHud.cs" />
     <Compile Include="../../samples/FleetBattler/FrontierHud.cs" Link="FrontierHud.cs" />
     <Compile Include="../../samples/FleetBattler/OperationsFeedback.cs" Link="OperationsFeedback.cs" />
     <Compile Include="../../samples/FleetBattler/PlanetInspector.cs" Link="PlanetInspector.cs" />

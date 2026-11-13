@@ -145,7 +145,7 @@ internal sealed partial class FleetSimulation {
         float radius = fixedBerth?.X ?? (waypoint is null ? OrbitRadius( host, count ) : MathF.Max( local.Length( ), OrbitRadius( 0, count ) ));
         float distance = waypoint is null ? MathF.Abs( Vector2.Distance( from, _bodies[host].Center ) - radius ) : Vector2.Distance( from, waypoint.Value );
         var flight = Flight( unit.Squad );
-        int arrival = Tick + (int)MathF.Ceiling( (2.1f + distance / flight.Cruise) / (float)StepSeconds );
+        int arrival = Tick + (int)MathF.Ceiling( ((Solar ? 3.4f : 2.1f) + distance / (Solar ? flight.Cruise * 0.78f : flight.Cruise)) / (float)StepSeconds );
         var velocity = unit.IsShip ? _velocities[unit.Ship] : SquadVelocity( unit.Squad );
         float maxAcceleration = flight.Acceleration;
         var order = new Order {
