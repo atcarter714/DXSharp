@@ -39,9 +39,7 @@ Ships start and launch in host-relative parking orbits. The cyan route traces th
 
 ### Interstellar travel design
 
-Use surveyed lanes with scheduled departures and arrivals. The first unlock should come from Deep Sky Astrometry and a completed orbital yard, then require a lane-capable drive module on every participating hull. Use energy for departure and reserve enough to return unless the destination has an allied port. That gives science, diplomacy, and yards a direct role in expansion.
-
-Keep fleet identity and travel events on a campaign clock. On departure, move an immutable manifest into a transit queue with ship IDs, fits, health, stance, and the destination berth. Process arrivals independently of the viewed system and hand the manifest to its local simulation once. Test exactly-once arrival across save/load and compare identical orders issued from different views. Lane geometry belongs in the galaxy map. Local burn, coast, and insertion remain tactical orders. The current map supports observation, and departures and arrivals are future work.
+The current galaxy map supports observation. The campaign milestone adds a playable Sol–Proxima route with a fuel and range quote, scheduled departure and arrival, and a recoverable transit manifest. On arrival, the fleet can survey the system, recover a receiver, and establish a foothold. See [the campaign design](../../doc/FleetBattler.md#one-interstellar-route-end-to-end) for prerequisites, faction access, and save/load requirements.
 
 ### Remaining goals
 
@@ -49,10 +47,11 @@ The [finish-line design](../../doc/FleetBattler.md) covers the campaign, tech pr
 
 | Priority | Remaining work |
 | --- | --- |
-| Primary | Add session menus and save/load. Complete the Sol campaign, ship designer, inspectors, alerts, and presentation pass. |
+| Primary | Add session menus and save/load. Complete the ship designer, inspectors, alerts, and presentation pass. |
+| Primary | Ship one authored campaign with factional choices, a research tree, and a playable crossing from Sol to a neighboring system. |
 | Primary | Tune the colony and trade economy through playtests, including population needs, housing, freight, pirate pressure, and additional faction decisions. |
 | Stretch | Add authored ship, habitat, surface, and faction art, more hulls and effects, and bespoke sound design. |
-| Stretch | Make interstellar transit and arrivals playable on a shared campaign clock. Expand colonization and exploration, repair tenders, megastructures, and the inhabited galaxy. |
+| Stretch | Expand colonization, exploration, megastructures, and the inhabited galaxy. |
 
 ## Relay skirmish
 

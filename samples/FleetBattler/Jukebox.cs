@@ -65,6 +65,27 @@ internal sealed class Jukebox {
         float.IsFinite( level ) ? Math.Clamp( level, 0, 1 ) : fallback;
 }
 
+internal enum MusicSituation { System, Galaxy, Contested, Victory }
+
+internal sealed class MusicDirector( bool hasVictoryCue ) {
+    private readonly HashSet<int> _celebrated = new( );
+    private int _system = -1;
+    internal MusicSituation Situation { get; private set; }
+
+    internal bool Update( int system, bool galaxy, bool contested, bool won ) {
+        bool continuingVictory = Situation == MusicSituation.Victory && _system == system;
+        _system = system;
+        bool startVictory = hasVictoryCue && won && !galaxy && !contested && !continuingVictory && _celebrated.Add( system );
+        Situation = galaxy ? MusicSituation.Galaxy : contested ? MusicSituation.Contested
+            : won && (continuingVictory || startVictory) ? MusicSituation.Victory : MusicSituation.System;
+        return startVictory;
+    }
+
+    internal void FinishVictory( ) {
+        if ( Situation == MusicSituation.Victory ) Situation = MusicSituation.System;
+    }
+}
+
 internal sealed class PlaylistRotation {
     private readonly string[] _tracks;
     private readonly bool _shuffle;

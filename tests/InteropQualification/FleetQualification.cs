@@ -701,6 +701,26 @@ internal static class FleetQualification {
         Require( sequential.Next( null ) == "first" && sequential.Next( "first" ) == "second" &&
             sequential.Next( "second" ) == "first", "legacy configuration keeps authored playlist order" );
 
+        var director = new MusicDirector( hasVictoryCue: true );
+        Require( !director.Update( 0, galaxy: false, contested: true, won: true ) &&
+            director.Situation == MusicSituation.Contested, "combat takes priority over an existing victory flag" );
+        Require( director.Update( 0, galaxy: false, contested: false, won: true ) &&
+            !director.Update( 0, galaxy: false, contested: false, won: true ) &&
+            director.Situation == MusicSituation.Victory, "the victory track starts once and survives per-frame context updates" );
+        director.FinishVictory( );
+        Require( !director.Update( 0, galaxy: false, contested: false, won: true ) &&
+            director.Situation == MusicSituation.System, "persistent victory does not loop the victory playlist" );
+        Require( !director.Update( 0, galaxy: true, contested: false, won: true ) && director.Situation == MusicSituation.Galaxy &&
+            !director.Update( 0, galaxy: false, contested: false, won: true ) && director.Situation == MusicSituation.System,
+            "galaxy round trip does not rearm victory" );
+        Require( director.Update( 2, galaxy: false, contested: false, won: true ) &&
+            director.Update( 3, galaxy: false, contested: false, won: true ) &&
+            !director.Update( 2, galaxy: false, contested: false, won: true ) && director.Situation == MusicSituation.System,
+            "a second system can celebrate, and an interrupted celebration does not restart" );
+        var inherited = new MusicDirector( hasVictoryCue: false );
+        Require( !inherited.Update( 0, galaxy: false, contested: false, won: true ) &&
+            inherited.Situation == MusicSituation.System, "an inherited victory list leaves the system track alone" );
+
         using var vorbis = File.OpenRead( Path.Combine( AppContext.BaseDirectory, "Audio", "TestTone.ogg" ) );
         using var pcm = new MemoryStream( );
         VorbisTrack.Decode( vorbis, pcm );

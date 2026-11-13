@@ -7,10 +7,11 @@ internal sealed class FleetAudio : IDisposable {
     private readonly string _folder;
     private readonly Jukebox _jukebox;
     private readonly PlaylistRotation[] _rotations;
+    private readonly MusicDirector _director;
     private readonly MediaPlayer _music = new( ), _effect = new( );
     private readonly bool _available;
-    private int _situation = -1;
-    private string? _lastPlayed;
+    private bool _initialized;
+    private string? _lastPlayed, _playingTrack;
     private bool _muted;
     private int _playRequest;
     private long _alertUntil;
@@ -26,6 +27,7 @@ internal sealed class FleetAudio : IDisposable {
             _jukebox = new( );
         }
         _rotations = _jukebox.CreateRotations( Random.Shared );
+        _director = new( _rotations[(int)MusicSituation.System] != _rotations[(int)MusicSituation.Victory] );
         try {
             _music.Volume = _jukebox.MusicVolume;
             _effect.Volume = _jukebox.EffectsVolume;
@@ -38,16 +40,14 @@ internal sealed class FleetAudio : IDisposable {
         }
     }
 
-    internal void SetSituation( bool galaxy, bool contested, bool victory ) {
-        int situation = galaxy ? 1 : victory ? 3 : contested ? 2 : 0;
-        if ( situation == _situation ) return;
-        bool continuing = _situation >= 0 && _rotations[situation] == _rotations[_situation];
-        _situation = situation;
-        if ( continuing ) return;
-        if ( _available && !_muted ) {
-            _music.Close( );
-            PlayNext( );
-        }
+    internal void SetSituation( int system, bool galaxy, bool contested, bool victory ) {
+        var previous = _director.Situation;
+        bool startVictory = _director.Update( system, galaxy, contested, victory );
+        if ( _muted ) _director.FinishVictory( );
+        bool continuing = _initialized && _rotations[(int)_director.Situation] == _rotations[(int)previous];
+        _initialized = true;
+        if ( !_available || _muted || continuing && !startVictory ) return;
+        PlayNext( );
     }
 
     internal void Toggle( ) {
@@ -55,9 +55,10 @@ internal sealed class FleetAudio : IDisposable {
         _muted = !_muted;
         if ( _muted ) {
             ++_playRequest;
-            _music.Close( );
+            _director.FinishVictory( );
+            CloseMusic( );
             _effect.Close( );
-        } else if ( _situation >= 0 ) {
+        } else if ( _initialized ) {
             PlayNext( );
         }
     }
@@ -77,22 +78,28 @@ internal sealed class FleetAudio : IDisposable {
     }
 
     private void OnEnded( object? sender, EventArgs args ) {
+        if ( _playingTrack is null ) return;
+        _director.FinishVictory( );
         PlayNext( );
     }
 
     private void OnFailed( object? sender, ExceptionEventArgs args ) {
-        Console.WriteLine( $"Fleet music: {args.ErrorException.Message}" );
-        if ( _lastPlayed is not null ) _badTracks.Add( _lastPlayed );
+        if ( _playingTrack is not { } track ) return;
+        if ( _badTracks.Add( track ) ) Console.WriteLine( $"Fleet music track {track}: {args.ErrorException.Message}" );
         PlayNext( );
     }
 
     private async void PlayNext( ) {
-        if ( _muted || !_available || _situation < 0 ) return;
+        if ( _muted || !_available || !_initialized ) return;
         int request = ++_playRequest;
-        var rotation = _rotations[_situation];
-        int attempts = 2 * rotation.Count - 1;
-        for ( int attempt = 0; attempt <= attempts; ++attempt ) {
-            string choice = attempt == attempts ? _jukebox.Fallback( _situation ) : rotation.Next( _lastPlayed );
+        CloseMusic( );
+        var situation = _director.Situation;
+        var rotation = _rotations[(int)situation];
+        int playlistAttempts = 2 * rotation.Count - 1;
+        bool victory = situation == MusicSituation.Victory;
+        int attempts = victory ? playlistAttempts : playlistAttempts + 1;
+        for ( int attempt = 0; attempt < attempts; ++attempt ) {
+            string choice = attempt == playlistAttempts ? _jukebox.Fallback( (int)situation ) : rotation.Next( _lastPlayed );
             if ( _badTracks.Contains( choice ) ) continue;
             try {
                 string? file = Resolve( choice );
@@ -105,16 +112,26 @@ internal sealed class FleetAudio : IDisposable {
                     file = await Task.Run( ( ) => VorbisTrack.Prepare( source ) );
                     if ( request != _playRequest ) return;
                 }
-                _music.Close( );
+                _playingTrack = choice;
                 _lastPlayed = choice;
                 _music.Open( new Uri( file ) );
                 _music.Play( );
                 return;
             } catch ( Exception error ) when ( error is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or NotSupportedException or ArgumentException ) {
                 if ( request != _playRequest ) return;
+                CloseMusic( );
                 if ( _badTracks.Add( choice ) ) Console.WriteLine( $"Fleet music track {choice}: {error.Message}" );
             }
         }
+        if ( victory ) {
+            _director.FinishVictory( );
+            PlayNext( );
+        }
+    }
+
+    private void CloseMusic( ) {
+        _playingTrack = null;
+        _music.Close( );
     }
 
     private string? Resolve( string choice ) {
@@ -132,6 +149,6 @@ internal sealed class FleetAudio : IDisposable {
         _music.MediaEnded -= OnEnded;
         _music.MediaFailed -= OnFailed;
         _effect.Close( );
-        _music.Close( );
+        CloseMusic( );
     }
 }
