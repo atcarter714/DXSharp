@@ -18,9 +18,9 @@ internal sealed partial class FleetHud {
         HullRole.Scout => Tile.Scout, HullRole.Miner or HullRole.Colony or HullRole.Freighter => Tile.Miner, _ => Tile.Corvette
     };
 
-    private void Art( Tile tile, float x, float y, float width, float height, bool lit = true ) =>
+    private void Art( Tile tile, float x, float y, float width, float height, bool lit = true, bool crop = false ) =>
         _glyphs[_count++] = new( new Vector4( x, y, width, height ) * _scale,
-            lit ? Vector4.One : new( 0.32f, 0.41f, 0.49f, 1 ), (uint)tile, 0, 4, _overlay );
+            lit ? Vector4.One : new( 0.32f, 0.41f, 0.49f, 1 ), (uint)tile, crop ? 1u : 0u, 4, _overlay );
 
     private static int Seconds( int ticks, int speed ) => (int)Math.Ceiling( ticks * FleetSimulation.StepSeconds / (speed * 0.25) );
 

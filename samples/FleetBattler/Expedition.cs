@@ -6,25 +6,58 @@ internal readonly record struct Expedition( int Destination, int ArrivalTick, Ex
 
 internal sealed partial class FleetSimulation {
     internal const int Proxima = 1, ExpeditionDuration = 1800;
-    private static readonly ResourceCost CrossingCost = new( 65, 100 );
+    internal static readonly ResourceCost CrossingCost = new( 65, 100 );
     private static readonly ResourceCost ArrivalSupplies = new( 45, 20 );
     private bool _expeditionArrived, _expeditionDeparted;
     internal bool ExpeditionArrived => _expeditionArrived;
     internal bool CanSeeContacts => !Frontier || Solar || _expeditionArrived;
+    internal bool ChartOnly => Frontier && !CanSeeContacts;
+
+    internal bool ExpeditionReadyInOrbit( int ship ) {
+        if ( !Alive( ship ) || FactionOf( ship ) != FactionId.Sol ) return false;
+        var order = EffectiveOrder( new( SquadronOf( ship ), ship ) );
+        return order.Body == Homeworld + 1 && order.Transfer.End == 0 && order.Service == ServiceOrder.None &&
+            order.Construction == 0 && !order.Settlement && !order.Survey;
+    }
+
+    internal int SelectExpedition( CommandSelection selection ) {
+        Span<int> crew = stackalloc int[2] { -1, -1 };
+        for ( int ship = 0; ship < Count; ++ship ) {
+            if ( !ExpeditionReadyInOrbit( ship ) ) continue;
+            int role = Role( SquadronOf( ship ) ) switch { HullRole.Scout => 0, HullRole.Miner => 1, _ => -1 };
+            if ( role >= 0 && crew[role] < 0 ) crew[role] = ship;
+        }
+        if ( crew[0] < 0 || crew[1] < 0 ) return 0;
+        selection.Click( this, crew[0], false, SelectionMode.Replace );
+        selection.Click( this, crew[1], false, SelectionMode.Add );
+        return selection.Count;
+    }
+
+    internal bool RallyExpedition( ) {
+        bool changed = false;
+        for ( int ship = 0; ship < Count; ++ship ) {
+            if ( !Alive( ship ) || FactionOf( ship ) != FactionId.Sol || ExpeditionReadyInOrbit( ship ) ) continue;
+            int squad = SquadronOf( ship );
+            if ( Role( squad ) is not (HullRole.Scout or HullRole.Miner) ) continue;
+            var order = EffectiveOrder( new( squad, ship ) );
+            if ( order.Service != ServiceOrder.None || order.Survey || order.Construction != 0 || order.Settlement ||
+                 order.Body == Homeworld + 1 ) continue;
+            changed |= Orbit( new( squad, ship ), Homeworld );
+        }
+        return changed;
+    }
 
     internal string? LaunchBlock( ReadOnlySpan<bool> selected ) {
         if ( _expeditionDeparted ) return "EXPEDITION ALREADY DISPATCHED";
-        if ( !Solar || !FusionUpgrade ) return "REQUIRES PULSED FUSION IN SOL";
+        if ( !Solar || !FusionUpgrade ) return "RESEARCH PULSED FUSION IN SOL";
         if ( ColoniesFounded == 0 ) return "FOUND A COLONY BEFORE LAUNCH";
-        if ( YardAt( Homeworld ) != 0 ) return "REQUIRES EARTH SHIPYARD";
+        if ( YardAt( Homeworld ) != 0 ) return "FINISH EARTH'S ORBITAL SHIPYARD";
         int count = 0;
         bool scout = false, constructor = false;
         for ( int ship = 0; ship < Math.Min( selected.Length, Count ); ++ship ) {
             if ( !selected[ship] || !Alive( ship ) || FactionOf( ship ) != FactionId.Sol ) continue;
+            if ( !ExpeditionReadyInOrbit( ship ) ) return "SELECT IDLE SHIPS IN EARTH ORBIT";
             int squad = SquadronOf( ship );
-            var order = EffectiveOrder( new( squad, ship ) );
-            if ( order.Body != Homeworld + 1 || order.Transfer.End != 0 || order.Service != ServiceOrder.None ||
-                 order.Construction != 0 || order.Settlement || order.Survey ) return "SELECT IDLE SHIPS IN EARTH ORBIT";
             scout |= Role( squad ) == HullRole.Scout;
             constructor |= Role( squad ) == HullRole.Miner;
             ++count;

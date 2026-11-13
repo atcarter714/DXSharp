@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum HudIcon { Ore, Energy, Science, Colony, Design, Orders, Log, Merge, Split, Yard, Build, Repair, Retreat, Health }
+internal enum HudIcon { Ore, Energy, Science, Colony, Design, Orders, Log, Merge, Split, Yard, Build, Repair, Retreat, Health, Ship }
 
 internal sealed partial class FleetHud {
     private static readonly Vector4 OreTint = new( 0.92f, 0.68f, 0.44f, 1 );
@@ -10,7 +10,7 @@ internal sealed partial class FleetHud {
     private static readonly Vector4 ScienceTint = new( 0.48f, 0.85f, 1, 1 );
     private static readonly ulong[] Icons = [
         0x020e3ae7ddf1c, 0x00820c7e30c30, 0x0d8e7793dce36, 0x1ff1e3eef8e08, 0x08b1f77c70e08,
-        0x1fe0dd83760ff, 0x0f913a44e913e, 0x02041cfe20a22, 0x088a08fe70408, 0x18f5ff55ff5e3, 0x03c187f306180, 0x0437df1c7030c, 0x00020c3ffff00, 0x03870e7ff838e
+        0x1fe0dd83760ff, 0x0f913a44e913e, 0x02041cfe20a22, 0x088a08fe70408, 0x18f5ff55ff5e3, 0x03c187f306180, 0x0437df1c7030c, 0x00020c3ffff00, 0x03870e7ff838e, 0x01993ffffc704
     ];
 
     private void Icon( HudIcon icon, float x, float y, float size, Vector4 tint ) {
@@ -22,7 +22,7 @@ internal sealed partial class FleetHud {
         Rect( x, y, width, 21, active ? Active : Well );
         Vector4 tint = active ? White : enabled ? SpaceDraw.Cyan : Disabled;
         Icon( icon, x + 4, y + 5, 11, tint );
-        Text( title, x + 19, y + 7, 1, tint );
+        FitText( title, x + 19, y + 7, width - 22, 1, tint );
     }
 
     private void Wallet( FleetSimulation fleet, float x, float y, bool income = false ) {
@@ -120,9 +120,8 @@ internal sealed partial class FleetHud {
         }
     }
 
-    private static ReadOnlySpan<ResearchTopic> ResearchTopics( bool propulsion ) => propulsion
-        ? [ResearchTopic.Drive, ResearchTopic.Astrometry, ResearchTopic.Fusion]
-        : [ResearchTopic.Industry, ResearchTopic.Weapons, ResearchTopic.Escorts, ResearchTopic.Habitation];
+    private static ReadOnlySpan<ResearchTopic> ResearchTopics( bool propulsion ) =>
+        ResearchCatalog.Current.Topics( propulsion ? ResearchBranch.Propulsion : ResearchBranch.Industry );
 
     private void ResearchPanel( float x, float y, FleetSimulation fleet, int speed, bool propulsion ) {
         Text( propulsion ? "PROPULSION AND SURVEY" : "INDUSTRY AND DEFENSE", x + 11, y + 42, 1.25f, White );
@@ -138,14 +137,15 @@ internal sealed partial class FleetHud {
             var topic = topics[i];
             var tech = FleetSimulation.Tech( topic );
             float row = y + 82 + i * 54;
-            float inset = topic is ResearchTopic.Escorts or ResearchTopic.Fusion ? 28 : tech.Requires is null ? 0 : 14;
+            float inset = tech.Requires.Length == 0 ? 0 : 14;
             if ( inset > 0 ) {
                 Rect( x + 11 + inset - 7, row - 5, 1, 19, Label );
                 Rect( x + 11 + inset - 7, row + 14, 7, 1, Label );
             }
             Rect( x + 10 + inset, row, 330 - inset, 49, fleet.ActiveResearch == topic ? Active : Well );
-            Text( tech.Name, x + 17 + inset, row + 6, 1.1f, White );
-            Text( tech.Benefit, x + 17 + inset, row + 20, 1, Label );
+            Art( (Tile)tech.Artwork, x + 14 + inset, row + 4, 28, 27 );
+            FitText( tech.Name, x + 47 + inset, row + 6, 278 - inset, 1.1f, White );
+            FitText( tech.Benefit, x + 47 + inset, row + 20, 278 - inset, 1, Label );
             if ( fleet.Researched( topic ) ) {
                 Text( "COMPLETE", x + 17 + inset, row + 34, 1, SpaceDraw.Cyan );
                 continue;
@@ -157,7 +157,7 @@ internal sealed partial class FleetHud {
                 Button( x + 270, row + 25, 64, "CANCEL", true );
             } else if ( fleet.ResearchBlock( topic ) is { } block && block != "INSUFFICIENT RESOURCES" ) {
                 line.TryWrite( $"REQUIRES / {block}", out int length );
-                Text( line[..length], x + 17 + inset, row + 34, 1, Disabled );
+                FitText( line[..length], x + 17 + inset, row + 34, 310 - inset, 1, Disabled );
             } else {
                 Cost( tech.Cost, x + 17 + inset, row + 33 );
                 int rate = Math.Max( 1, fleet.ResearchRate );

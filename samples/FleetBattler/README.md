@@ -16,7 +16,7 @@ The Frontier scenario opens at Earth with one science scout, two constructors, 5
 | Q / V / Y / U | Cycle stance, flee, repair, or refit |
 | Colony / Research / Design / Orders / Log | Inspect resources, run research, configure corvettes and frigates, find yards, or read illustrated dispatches |
 | Tab / Escape / F4 | Open Colony, close the top panel, or open the dispatch log |
-| Space / + | Pause or resume, and cycle 1×, 2×, and 4× |
+| Space / − / + | Pause or resume, slow down, or speed up. Both maps offer 1×, 2×, and 4× |
 | Scroll / middle-drag / arrow keys | Zoom toward the pointer or pan |
 | Shift + middle-drag / Home / F | Rotate through 360° with limited tilt, reset the camera, or focus the inspected object |
 | G / F11 / M | Galaxy map / fullscreen / mute |
@@ -39,12 +39,21 @@ Ships start and launch in host-relative parking orbits. The cyan route traces th
 
 ### The First Crossing
 
+The star date starts at 2184.01.01. Each simulated day passes in eight real seconds at 1× and the date holds while paused.
+
 1. Survey a solid body, build its orbital depot, and establish a colony. Keep Earth’s orbital shipyard active.
 2. Complete Long Burn Drive, Deep Sky Astrometry, Habitat Engineering, and Pulsed Fusion. Industry research precedes Habitat Engineering.
-3. Select a scout and constructor in Earth orbit, optionally with escorts. Leave at least one hull in Sol. Open **Galaxy**, click **Proxima**, and choose **Launch One Way**. The quote costs 65 ore and 100 energy. The fleet arrives after two minutes at 1× and Sol continues operating during transit.
-4. Choose **View Arrival**. Survey Receiver World and build an orbital research lab to restore the receiver. Share its data with the Survey Consortium, or claim it for Sol with an escort and repel Rival Command.
+3. Open **Galaxy** and click the ship badge beside **Sol**. Click or right-click **Proxima** to set the destination. Use **Select Crew** to choose an idle scout and constructor in Earth orbit, or **Rally to Earth** to recall available civilian ships. Select optional escorts in the Sol view. Leave at least one hull in Sol.
+4. Choose **Launch One Way** once the planner shows **Ready to Depart**. The quote costs 65 ore and 100 energy. The fleet arrives after two minutes at 1× and Sol continues operating during transit.
+5. Choose **View System** after arrival. Survey Receiver World and build an orbital research lab to restore the receiver. Share its data with the Survey Consortium, or claim it for Sol with an escort and repel Rival Command.
 
 The [campaign design](../../doc/FleetBattler.md) describes the larger faction, travel, research, and presentation milestones.
+
+### Editing research
+
+Edit [Content/research.json](Content/research.json) before building, or edit the copy alongside the built executable and restart the game. Each project defines the displayed name, description, benefit, branch, prerequisite IDs, artwork tile, resource cost, and required research work. The UI and simulation read the same definitions. If you change an effect such as `damageBonus` or `scanRate`, update the corresponding benefit text to match.
+
+Keep the seven built-in project IDs. Use `Scout`, `Miner`, `Corvette`, `Yard`, `Mine`, or `Lab` for the existing artwork tiles. The loader checks both branches and rejects missing projects, unknown values, and prerequisite cycles.
 
 ### Remaining goals
 

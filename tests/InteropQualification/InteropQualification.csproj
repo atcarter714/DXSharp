@@ -11,8 +11,13 @@
     <ProjectReference Include="../../src/DXSharp.Core/DXSharp.Core.csproj" />
     <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
+    <Compile Include="../../samples/FleetBattler/ResearchCatalog.cs" Link="Fleet/ResearchCatalog.cs" />
+    <None Include="../../samples/FleetBattler/Content/research.json" Link="Content/research.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Compile Include="../../samples/FleetBattler/IndustryHud.cs" Link="Fleet/IndustryHud.cs" />
     <Compile Include="../../samples/FleetBattler/Expedition.cs" Link="Fleet/Expedition.cs" />
+    <Compile Include="../../samples/FleetBattler/GalaxyHud.cs" Link="GalaxyHud.cs" />
+    <Compile Include="../../samples/FleetBattler/CampaignHud.cs" Link="CampaignHud.cs" />
+    <Compile Include="../../samples/FleetBattler/SelectionHud.cs" Link="SelectionHud.cs" />
     <Compile Include="../../samples/FleetBattler/BriefingHud.cs" Link="BriefingHud.cs" />
     <Compile Include="../../samples/FleetBattler/FrontierHud.cs" Link="FrontierHud.cs" />
     <Compile Include="../../samples/FleetBattler/OperationsFeedback.cs" Link="OperationsFeedback.cs" />
