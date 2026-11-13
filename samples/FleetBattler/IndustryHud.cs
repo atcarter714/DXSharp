@@ -40,7 +40,7 @@ internal sealed partial class FleetHud {
         }
     }
 
-    private const float YardWidth = 422, YardTop = 61, YardHeight = 284;
+    private const float YardWidth = 422, YardTop = 61, YardHeight = 323;
     private static float YardLeft( Layout layout ) => (layout.Width - YardWidth) / 2;
 
     private void DrawShipyard( Layout layout, FleetSimulation fleet, int body, int speed ) {
@@ -58,7 +58,7 @@ internal sealed partial class FleetHud {
 
         Span<char> label = stackalloc char[44];
         int length;
-        for ( int i = 0; i <= (int)HullBlueprint.Colony; ++i ) {
+        for ( int i = 0; i < (int)HullBlueprint.Count; ++i ) {
             var blueprint = (HullBlueprint)i;
             var hull = fleet.Hull( blueprint );
             float row = y + 80 + i * 45;
@@ -82,7 +82,7 @@ internal sealed partial class FleetHud {
                 continue;
             }
             var order = orders[i];
-            Text( order.Hull switch { HullBlueprint.Scout => "SURVEY SCOUT", HullBlueprint.Miner => "CONSTRUCTOR", HullBlueprint.Colony => "COLONY SHIP",
+            Text( order.Hull switch { HullBlueprint.Scout => "SURVEY SCOUT", HullBlueprint.Miner => "CONSTRUCTOR", HullBlueprint.Colony => "COLONY SHIP", HullBlueprint.Frigate => "ESCORT FRIGATE",
                 _ => order.Design.Weapon == WeaponKind.Rail ? "RAIL CORVETTE" : "PULSE CORVETTE" }, x + 239, row + 4, 1, White );
             int remaining = fleet.ShipRemaining( body );
             if ( i == 0 ) label.TryWrite( $"BUILDING / {Seconds( remaining, speed )} SEC", out length );
@@ -91,7 +91,7 @@ internal sealed partial class FleetHud {
             if ( i == 0 ) Progress( new( x + 239, row + 25 ), 128, 1f - (float)remaining / order.Duration, EnergyTint );
             Button( x + 386, row + 4, 20, "X", true );
         }
-        Text( "ONE HULL PER ORDER", x + 11, y + 267, 1, Label );
+        Text( "ONE HULL PER ORDER", x + 11, y + 307, 1, Label );
         _overlay = 0;
     }
 
@@ -99,7 +99,7 @@ internal sealed partial class FleetHud {
         float x = YardLeft( layout ), y = YardTop;
         if ( !Contains( p, x, y, YardWidth, YardHeight ) ) return default;
         if ( Contains( p, x + 390, y + 8, 22, 21 ) ) return new( HudAction.CloseYard );
-        for ( int i = 0; i <= (int)HullBlueprint.Colony; ++i )
+        for ( int i = 0; i < (int)HullBlueprint.Count; ++i )
             if ( Contains( p, x + 170, y + 93 + i * 45, 37, 21 ) && fleet.ShipOrderBlock( body, (HullBlueprint)i ) is null )
                 return new( HudAction.BuildShip, i );
         for ( int i = 0; i < fleet.YardQueue( body ).Length; ++i )
@@ -120,39 +120,49 @@ internal sealed partial class FleetHud {
         }
     }
 
-    private static ReadOnlySpan<ResearchTopic> ResearchTopics( bool secondPage ) => secondPage
-        ? [ResearchTopic.Habitation, ResearchTopic.Astrometry] : [ResearchTopic.Industry, ResearchTopic.Weapons, ResearchTopic.Drive];
+    private static ReadOnlySpan<ResearchTopic> ResearchTopics( bool propulsion ) => propulsion
+        ? [ResearchTopic.Drive, ResearchTopic.Astrometry, ResearchTopic.Fusion]
+        : [ResearchTopic.Industry, ResearchTopic.Weapons, ResearchTopic.Escorts, ResearchTopic.Habitation];
 
-    private void ResearchPanel( float x, float y, FleetSimulation fleet, int speed, bool secondPage ) {
-        Text( "RESEARCH PROJECTS", x + 11, y + 42, 1.25f, White );
-        Button( x + 266, y + 39, 69, secondPage ? "CORE" : "ADVANCED", true );
-        Span<char> line = stackalloc char[52];
+    private void ResearchPanel( float x, float y, FleetSimulation fleet, int speed, bool propulsion ) {
+        Text( propulsion ? "PROPULSION AND SURVEY" : "INDUSTRY AND DEFENSE", x + 11, y + 42, 1.25f, White );
+        Button( x + 237, y + 39, 98, propulsion ? "INDUSTRY" : "PROPULSION", true );
+        Span<char> line = stackalloc char[64];
         if ( fleet.ResearchRate == 0 ) Text( "BUILD A LAB OR OBSERVATORY TO START", x + 11, y + 62, 1, Label );
         else {
             line.TryWrite( $"LAB THROUGHPUT {fleet.ResearchRate}X / {fleet.ScienceIncome} SCI PER CYCLE", out int n );
             Text( line[..n], x + 11, y + 62, 1, Label );
         }
-        var topics = ResearchTopics( secondPage );
+        var topics = ResearchTopics( propulsion );
         for ( int i = 0; i < topics.Length; ++i ) {
             var topic = topics[i];
             var tech = FleetSimulation.Tech( topic );
             float row = y + 82 + i * 54;
-            Rect( x + 10, row, 330, 49, fleet.ActiveResearch == topic ? Active : Well );
-            Text( tech.Name, x + 17, row + 6, 1.1f, White );
-            Text( tech.Benefit, x + 17, row + 20, 1, Label );
+            float inset = topic is ResearchTopic.Escorts or ResearchTopic.Fusion ? 28 : tech.Requires is null ? 0 : 14;
+            if ( inset > 0 ) {
+                Rect( x + 11 + inset - 7, row - 5, 1, 19, Label );
+                Rect( x + 11 + inset - 7, row + 14, 7, 1, Label );
+            }
+            Rect( x + 10 + inset, row, 330 - inset, 49, fleet.ActiveResearch == topic ? Active : Well );
+            Text( tech.Name, x + 17 + inset, row + 6, 1.1f, White );
+            Text( tech.Benefit, x + 17 + inset, row + 20, 1, Label );
             if ( fleet.Researched( topic ) ) {
-                Text( "COMPLETE", x + 17, row + 34, 1, SpaceDraw.Cyan );
+                Text( "COMPLETE", x + 17 + inset, row + 34, 1, SpaceDraw.Cyan );
                 continue;
             }
             if ( fleet.ActiveResearch == topic ) {
                 line.TryWrite( $"{Seconds( fleet.ResearchRemaining, speed )} SEC LEFT", out int length );
-                Text( line[..length], x + 17, row + 33, 1, ScienceTint );
-                Progress( new( x + 124, row + 36 ), 105, fleet.ResearchProgress, ScienceTint );
+                Text( line[..length], x + 17 + inset, row + 33, 1, ScienceTint );
+                Progress( new( x + 145, row + 36 ), 105, fleet.ResearchProgress, ScienceTint );
                 Button( x + 270, row + 25, 64, "CANCEL", true );
+            } else if ( fleet.ResearchBlock( topic ) is { } block && block != "INSUFFICIENT RESOURCES" ) {
+                line.TryWrite( $"REQUIRES / {block}", out int length );
+                Text( line[..length], x + 17 + inset, row + 34, 1, Disabled );
             } else {
-                Cost( tech.Cost, x + 17, row + 33 );
-                line.TryWrite( $"{Seconds( (tech.Duration + Math.Max( 1, fleet.ResearchRate ) - 1) / Math.Max( 1, fleet.ResearchRate ), speed )} SEC AT {speed}X", out int length );
-                Text( line[..length], x + 104, row + 34, 1, Label );
+                Cost( tech.Cost, x + 17 + inset, row + 33 );
+                int rate = Math.Max( 1, fleet.ResearchRate );
+                line.TryWrite( $"{Seconds( (tech.Duration + rate - 1) / rate, speed )} SEC", out int length );
+                Text( line[..length], x + 139 + inset, row + 34, 1, Label );
                 Button( x + 270, row + 25, 64, "START", fleet.CanResearch( topic ) );
             }
         }

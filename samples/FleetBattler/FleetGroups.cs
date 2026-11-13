@@ -60,5 +60,5 @@ internal sealed partial class FleetSimulation {
 
     private bool SelectedCombatSquad( int squad, ReadOnlySpan<bool> selected ) =>
         selected.Length >= Count && IsPlayerSquad( squad ) && ShipCount( squad ) > 0 &&
-        Role( squad ) == HullRole.Corvette && AnySelectedInSquad( squad, selected );
+        IsWarship( Role( squad ) ) && AnySelectedInSquad( squad, selected );
 }

@@ -65,7 +65,10 @@ internal readonly record struct ShipDesign( WeaponKind Weapon, bool Plating, Shi
 internal readonly record struct FlightStats( float Cruise, float Acceleration, float TurnRate, float Range );
 
 internal sealed partial class FleetSimulation {
-    internal void CycleModule( ModuleSlot slot ) => Design = Design.Cycle( slot );
+    internal void CycleModule( ModuleSlot slot, bool frigate = false ) {
+        if ( frigate ) FrigateDesign = FrigateDesign.Cycle( slot );
+        else Design = Design.Cycle( slot );
+    }
     internal FlightStats Flight( int squad ) => Flight( Role( squad ), _squads[squad].Design, DriveUpgrade && IsPlayerSquad( squad ) );
 
     internal static FlightStats Flight( HullRole role, ShipDesign design, bool improved ) {
@@ -74,10 +77,11 @@ internal sealed partial class FleetSimulation {
             HullRole.Miner => new FlightStats( 20, 44, 0.75f, 1 ),
             HullRole.Colony => new FlightStats( 16, 37, 0.62f, 1 ),
             HullRole.Freighter => new FlightStats( 18, 39, 0.65f, 1 ),
+            HullRole.Frigate => new FlightStats( 21, 43, 0.72f, 1 ),
             _ => new FlightStats( 25, 55, 1, 1 )
         };
-        float handling = role == HullRole.Corvette ? design.Handling( ) : 1;
-        float range = role == HullRole.Corvette && design.Drive == DriveModule.LongRange ? 1.2f : 1f;
+        float handling = IsWarship( role ) ? design.Handling( ) : 1;
+        float range = IsWarship( role ) && design.Drive == DriveModule.LongRange ? 1.2f : 1f;
         var propulsion = StatModifier<float>.Multiplier( handling ) +
             StatModifier<float>.Multiplier( improved ? 1.18f : 1f );
         return new( propulsion.Apply( baseline.Cruise ),

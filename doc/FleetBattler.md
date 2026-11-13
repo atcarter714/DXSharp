@@ -1,6 +1,6 @@
 # DXSharp Fleet Battler
 
-Fleet Battler is a Windows strategy game sample for DXSharp. Frontier currently starts at Earth with a science scout, two constructors, and a civilian dock. It has six map systems, local surveys and transfers, timed construction and research, colonization, orbital shipyard queues, corvette fitting, and piracy. The galaxy map can inspect neighboring systems. The command simulation runs on the CPU and GPU compute updates decorative traffic and debris. See the [sample README](../samples/FleetBattler/README.md) for the playable build and controls.
+Fleet Battler is a Windows strategy game sample for DXSharp. Frontier currently starts at Earth with a science scout, two constructors, and a civilian dock. It has six map systems, local surveys and transfers, timed construction and research, colonization, orbital shipyard queues, corvette fitting, and piracy. Deep Sky Astrometry opens a chart of neighboring systems. A one-way expedition can travel from Sol to Proxima, reveal its local contacts, restore a receiver, and share it or face a challenge from Rival Command. The command simulation runs on the CPU and GPU compute updates decorative traffic and debris. See the [sample README](../samples/FleetBattler/README.md) for the playable build and controls.
 
 ## When to stop developing the sample
 
@@ -14,7 +14,7 @@ Fleet Battler is the showcase for building a polished Windows game with DXSharp.
 
 ### Campaign and factional conflict
 
-**The First Crossing** starts with player presence only in Sol. Earth funds a new survey mission after a robotic precursor goes silent near Proxima. The dispatches follow three events the player can affect: securing a Sol supply route, deciding who gets access to the expedition, and restoring the remote receiver. Use 30–45 minutes as an initial playtest target. After the local raid, replace the generic secured banner with the next objective and surface the missing prerequisites. Keep the system playable after the ending.
+**The First Crossing** starts with player presence only in Sol. Earth funds a new survey mission after a robotic precursor goes silent near Proxima. The dispatches follow three events the player can affect: securing a Sol supply route, deciding who gets access to the expedition, and restoring the remote receiver. Use 30–60 minutes as the playtest target. After the local raid, replace the generic secured banner with the next objective and surface the missing prerequisites. Keep the system playable after the ending.
 
 | Faction | Goal and activity | Interaction that matters |
 | --- | --- | --- |
@@ -22,7 +22,7 @@ Fleet Battler is the showcase for building a polished Windows game with DXSharp.
 | Ceres Compact | Sell propellant and docking in exchange for guaranteed freight | A compact supplies a fuel berth and escort coverage. Its recurring fee and the port access appear on the route card. The player can instead invest in their own depot and escorts. |
 | Free Merchants | Move freight along profitable safe routes | They can deliver contracted supplies or sell survey data. Lost shipments suspend service until the route is protected or replaced. |
 | Survey Consortium | Recover and publish the precursor data | Joint research offers an early navigation project. Shared receiver access earns the agreement ending and changes the last dispatch. |
-| Rival Command | Secure first control of the receiver | It contests the recovery site under clearly announced rules. Its arrival is an observable mission with an ETA. The player can beat it there, negotiate shared access through the Consortium, or escort the repair crew and hold the site. |
+| Rival Command | Secure first control of the receiver | It contests the recovery site under clearly announced rules. Its arrival is an observable mission with an ETA. The first implementation has two outcomes. Share access with the Consortium, or claim the station and defeat the responding Rival Command patrol. |
 | Amber Raiders | Steal cargo on lightly defended routes | They choose a viable shipment, intercept it, and withdraw with a bounded loss. They can delay the expedition. A civilian dock, recovery orders, and a replacement route keep the player in the game. |
 
 Use directional faction relations with explicit **hostility**, **port access**, and **survey/data rights**. A compact or contract sets rights for a named party and route. A reputation value can gate offers. It cannot silently change targeting or access rules. Show the reason for every permission on the route, station, or faction inspector. Record offers and decisions as stable events with known costs, outcomes, and cancellation rules.

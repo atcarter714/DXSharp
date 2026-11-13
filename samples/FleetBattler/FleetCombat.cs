@@ -42,7 +42,7 @@ internal sealed partial class FleetSimulation {
     internal int Armor( int ship ) => _armor[ship];
 
     internal bool Attack( FleetSelection selection, int target ) {
-        if ( Frontier && Role( selection.Squad ) != HullRole.Corvette ) return false;
+        if ( Frontier && !IsWarship( Role( selection.Squad ) ) ) return false;
         if ( !Alive( target ) || !IsHostile( _squads[selection.Squad].Faction, SideOf( target ) ) ) return false;
         SetOrder( selection, new Order {
             Enemy = target + 1, Target = _positions[target], Detached = selection.IsShip
@@ -119,13 +119,13 @@ internal sealed partial class FleetSimulation {
         if ( !_battle || CyanCount == 0 ) return;
         if ( Frontier && Tick % 15 == 0 ) {
             for ( int ship = 0; ship < Count; ++ship )
-                if ( Alive( ship ) && Role( SquadronOf( ship ) ) == HullRole.Corvette && Tick - _lastHit[ship] >= 180 )
+                if ( Alive( ship ) && IsWarship( Role( SquadronOf( ship ) ) ) && Tick - _lastHit[ship] >= 180 )
                     _shield[ship] = (byte)Math.Min( Loadout( ship ).Shield, _shield[ship] + 2 );
         }
         if ( AmberCount == 0 ) return;
         for ( int ship = 0; ship < Count; ++ship ) {
             if ( !Alive( ship ) || Tick < _nextShot[ship] || (Tick + ship) % 4 != 0 ) continue;
-            if ( Frontier && Role( SquadronOf( ship ) ) != HullRole.Corvette ) continue;
+            if ( Frontier && !IsWarship( Role( SquadronOf( ship ) ) ) ) continue;
             int side = SideOf( ship );
             var design = Loadout( ship );
             var weapon = Frontier ? design.Weapon : WeaponKind.Pulse;
@@ -136,7 +136,7 @@ internal sealed partial class FleetSimulation {
             int target = Alive( preferred ) && IsHostile( side, SideOf( preferred ) ) && Vector2.DistanceSquared( _positions[preferred], _positions[ship] ) <= range * range
                 ? preferred : canAutoFire ? ClosestHostile( ship, side, range, combatOnly: Frontier && side == (int)FactionId.Raiders ) : -1;
             if ( target < 0 ) continue;
-            int damage = Frontier ? design.Damage + (side == 0 && WeaponUpgrade ? 4 : 0) : side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
+            int damage = Frontier ? design.Damage + (side == 0 && WeaponUpgrade ? 4 : 0) + (Role( SquadronOf( ship ) ) == HullRole.Frigate ? 7 : 0) : side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
             if ( weapon == WeaponKind.Rail ) _railIncoming[target] = (ushort)Math.Min( 512, _railIncoming[target] + damage );
             else _incoming[target] = (byte)Math.Min( Frontier ? 255 : HullCapacity, _incoming[target] + damage );
             _nextShot[ship] = Tick + (Frontier ? design.Reload : 38) + ship % 9;
@@ -203,7 +203,7 @@ internal sealed partial class FleetSimulation {
             for ( int x = Math.Max( 1, cell.X - reach ); x <= Math.Min( _gridSide - 2, cell.X + reach ); ++x ) {
                 int other = _grid[y * _gridSide + x];
                 for ( int visited = 0; other >= 0 && visited < 8; ++visited, other = _next[other] ) {
-                    if ( !IsHostile( side, SideOf( other ) ) || combatOnly && Role( SquadronOf( other ) ) != HullRole.Corvette ) continue;
+                    if ( !IsHostile( side, SideOf( other ) ) || combatOnly && !IsWarship( Role( SquadronOf( other ) ) ) ) continue;
                     float d = Vector2.DistanceSquared( origin, _positions[other] );
                     if ( d >= best ) continue;
                     best = d;

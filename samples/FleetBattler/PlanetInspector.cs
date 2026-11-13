@@ -58,7 +58,7 @@ internal sealed partial class FleetHud {
         Text( fleet.BodyName( body ), x + 10, y + 8, 1.6f, White );
         Button( x + width - 29, y + 6, 21, "X", true );
         var kind = fleet.Solar ? SolarCatalog.Get( body ).Kind : body switch {
-            0 => "PRIMARY STAR", 1 => "ROCKY PLANET", 2 => "GAS GIANT", 3 => "INNER MOON", _ => "OUTER BELT"
+            0 => "PRIMARY STAR", 1 => "ROCKY PLANET", 2 => "GAS GIANT", 3 => "INNER MOON", _ => "OUTER BELT OBJECT"
         };
         Text( kind, x + 10, y + 28, 1.03f, Label );
         if ( body == 0 ) return;
@@ -71,9 +71,12 @@ internal sealed partial class FleetHud {
             text.TryWrite( $"{(fleet.Settling( body ) ? "SETTLING" : "COLONY SHIP EN ROUTE")} / {Seconds( colony.WorkRemaining, speed )} SEC", out length );
             Progress( new( x + 10, y + 56 ), width - 20, 1 - (float)colony.WorkRemaining / FleetSimulation.ColonyDuration, SpaceDraw.Cyan );
         } else if ( colony.Population > 0 )
-            text.TryWrite( $"POP {colony.Population}/{colony.Housing} / ORE POTENTIAL {fleet.DepositYield( body )}", out length );
-        else if ( status.Surveyed )
-            text.TryWrite( $"SURVEYED / {fleet.DepositYield( body )} ORE POTENTIAL", out length );
+            text.TryWrite( $"POP {colony.Population}/{colony.Housing} / {(fleet.ColonySupplied( body ) ? "SUPPLIED" : "NEEDS POWER OR DEPOT")}", out length );
+        else if ( status.Surveyed ) {
+            if ( unit is { } colonyUnit && fleet.Role( colonyUnit.Squad ) == HullRole.Colony &&
+                 fleet.ColonyBlock( body, unit ) is { } need ) length = CopyStatus( need, text );
+            else text.TryWrite( $"SURVEYED / {fleet.DepositYield( body )} ORE POTENTIAL", out length );
+        }
         else if ( status.SurveyUnit is { } scout ) {
             text.TryWrite( $"SCOUT {scout.Squad + 1:D2} / {(fleet.SurveyWorking( body ) ? "SCANNING" : "EN ROUTE")} {(int)(status.SurveyProgress * 100)} PCT", out length );
             Progress( new( x + 10, y + 56 ), width - 20, status.SurveyProgress, ScienceTint );
@@ -108,7 +111,7 @@ internal sealed partial class FleetHud {
             bool available = catalog && block is null, online = remaining == 0, project = remaining > 0;
             var tile = facility switch {
                 PlanetFacility.Mine or PlanetFacility.Skimmer => Tile.Mine,
-                PlanetFacility.Lab or PlanetFacility.Observatory => Tile.Lab, _ => Tile.Yard
+                PlanetFacility.Lab or PlanetFacility.Observatory => Tile.Lab, PlanetFacility.SurfaceStore => Tile.Mine, _ => Tile.Yard
             };
             Rect( x + 8, top, width - 16, layout.InspectorRow - 2, available || online ? Active : Well );
             Art( tile, x + 9, top + 1, 32, layout.InspectorRow - 4, available || remaining >= 0 );

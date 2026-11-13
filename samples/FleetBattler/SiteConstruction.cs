@@ -72,6 +72,10 @@ internal sealed partial class FleetSimulation {
         if ( plan.Layer == SiteLayer.Surface && used >= SurfaceWorkLimit( body ) )
             return _population[body] == 0 ? "FOUND A COLONY FIRST" : "NEEDS MORE POPULATION";
         if ( facility is PlanetFacility.Mine or PlanetFacility.Skimmer && !HasDeposit( body ) ) return "NO ORE DEPOSIT";
+        if ( facility == PlanetFacility.Yard && !(Established && body == Homeworld) ) {
+            if ( _population[body] < YardPopulation ) return "SHIPYARD NEEDS 6 POPULATION";
+            if ( DepotAt( body ) != 0 ) return "SHIPYARD NEEDS AN ONLINE DEPOT";
+        }
         if ( facility == PlanetFacility.Habitat && !Researched( ResearchTopic.Habitation ) ) return "REQUIRES HABITAT ENGINEERING";
         if ( plan.Layer == SiteLayer.Orbit ) {
             if ( unit is not { } worker || !ValidConstructor( worker ) ) return "SELECT A CONSTRUCTOR";

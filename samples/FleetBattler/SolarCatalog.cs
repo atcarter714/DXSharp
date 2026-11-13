@@ -6,8 +6,9 @@ internal readonly record struct SolarBody( string Name, string Kind, int Parent,
     float Radius, float Phase, float Period, Vector3 Color, bool Rings = false, float PhysicalAxis = 0 );
 
 internal static class SolarCatalog {
-    internal const float Spacing = 1.28f;
+    internal const float Spacing = 1.65f;
     internal const float MainBeltInnerAu = 2.1f, MainBeltOuterAu = 3.3f;
+    internal const float KuiperInnerAu = 30, KuiperOuterAu = 50;
     internal const int Ceres = 11, Vesta = 12, Pluto = 13, Halley = 14;
     // Planetary a and e are rounded from the JPL J2000 approximate elements. Phases, sizes,
     // distances and periods are scaled independently for the tactical map.
@@ -16,7 +17,7 @@ internal static class SolarCatalog {
         new( "EARTH", "HOMEWORLD", 0, Axis( 1 ), 0.0167f, 0.052f, 0.22f, Period( 1 ), new( 0.22f, 0.53f, 0.82f ) ),
         new( "JUPITER", "GAS GIANT", 0, Axis( 5.2029f ), 0.0484f, 0.106f, 0.84f, Period( 5.2029f ), new( 0.82f, 0.65f, 0.51f ) ),
         new( "MOON", "EARTH SATELLITE", 1, 0.172f, 0.0549f, 0.023f, 0.17f, 39, new( 0.65f, 0.67f, 0.72f ) ),
-        new( "KUIPER BELT", "OUTER PROSPECT", 0, Axis( 43 ), 0.06f, 0.022f, 0.09f, Period( 43 ), new( 0.45f, 0.62f, 0.71f ) ),
+        new( "ARROKOTH", "KUIPER BELT OBJECT", 0, Axis( 44.6f ), 0.044f, 0.012f, 0.09f, Period( 44.6f ), new( 0.68f, 0.46f, 0.35f ) ),
         new( "MERCURY", "ROCKY PLANET", 0, Axis( 0.3871f ), 0.2056f, 0.023f, 0.73f, Period( 0.3871f ), new( 0.65f, 0.58f, 0.54f ) ),
         new( "VENUS", "CLOUD WORLD", 0, Axis( 0.7233f ), 0.0068f, 0.047f, 0.54f, Period( 0.7233f ), new( 0.92f, 0.70f, 0.44f ) ),
         new( "MARS", "ROCKY PLANET", 0, Axis( 1.5237f ), 0.0934f, 0.033f, 0.33f, Period( 1.5237f ), new( 0.78f, 0.39f, 0.25f ) ),

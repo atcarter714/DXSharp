@@ -86,6 +86,7 @@ internal sealed class CommandSelection {
     }
 
     internal static int Hit( FleetSimulation fleet, Vector2 pixel, Matrix4x4 viewProjection, Vector2 dimensions, int faction, float interpolation = 1 ) {
+        if ( !fleet.CanSeeContacts ) return -1;
         float best = MathF.Pow( MathF.Max( 11, dimensions.Y * 0.013f ), 2 );
         int result = -1;
         for ( int i = 0; i < fleet.Count; ++i ) {

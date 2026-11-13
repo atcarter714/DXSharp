@@ -31,7 +31,9 @@ internal sealed partial class FleetSimulation {
     }
 
     internal Disposition Relationship( FactionId from, FactionId to ) =>
-        MerchantAgreement == MerchantDecision.Trade &&
+        Charter == ReceiverCharter.Shared &&
+        (from == FactionId.Sol && to == FactionId.Consortium || from == FactionId.Consortium && to == FactionId.Sol)
+            ? Disposition.Allied : MerchantAgreement == MerchantDecision.Trade &&
         (from == FactionId.Sol && to == FactionId.Merchants || from == FactionId.Merchants && to == FactionId.Sol)
             ? Disposition.Allied : Factions.Attitude( from, to );
 

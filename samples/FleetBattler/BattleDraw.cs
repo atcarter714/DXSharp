@@ -11,7 +11,7 @@ internal static class BattleDraw {
     internal const int RouteSegments = 48, RouteCapacity = RouteSegments + 3;
     internal const int SiteEffectCapacity = (FleetSimulation.FacilityCount + 3) * CelestialSystem.BodyCount;
     private const int OrbitSegments = 72;
-    internal const int SolarTrackCapacity = (CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount + 2) * OrbitSegments;
+    internal const int SolarTrackCapacity = (CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount + 4) * OrbitSegments;
 
     private const string Effects = """
         cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; float4 Viewport; };
@@ -170,6 +170,8 @@ internal static class BattleDraw {
         var belt = ComputeTraffic.Belt( solar: true );
         Ring( belt.Inner );
         Ring( belt.Outer );
+        Ring( SolarCatalog.Axis( SolarCatalog.KuiperInnerAu ) );
+        Ring( SolarCatalog.Axis( SolarCatalog.KuiperOuterAu ) );
         return tracks;
 
         void Ring( float radius ) {

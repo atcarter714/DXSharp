@@ -54,6 +54,9 @@ internal static class AssetQualification {
         document = JsonNode.Parse( json )!;
         document["materials"]![0]!["alphaMode"] = "BLEND";
         RequireUnsupported( document, "opaque" );
+        var frigate = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "EscortFrigate.gltf" ) );
+        Require( frigate.Instances.Length == 1 && frigate.BoundsMax.Z - frigate.BoundsMin.Z == 75 &&
+            frigate.Primitives[0].Indices.Length > 100, "frigate placeholder is an indexed 75 m authored hull" );
         VerifyTexturedAssets( );
         VerifySidecarsAndMaterials( );
         Console.WriteLine( "PASS: static glTF and GLB geometry, transforms, sidecars, material factors, sRGB textures, and unsupported resources validated." );

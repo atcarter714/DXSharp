@@ -4,7 +4,7 @@ namespace FleetBattler;
 
 internal enum CommandTab { Hidden, Economy, Research, Fleet, Orders, Events }
 internal enum CommandAction { Toggle, Economy, Research, Fleet, Orders, Events,
-    StartIndustry, StartWeapons, StartDrive, StartHabitation, StartAstrometry, CancelResearch, Earlier, Later }
+    StartIndustry, StartWeapons, StartDrive, StartHabitation, StartAstrometry, StartEscorts, StartFusion, CancelResearch, Earlier, Later }
 
 internal sealed partial class FleetHud {
     private const float OfficeWidth = 350;
@@ -12,7 +12,7 @@ internal sealed partial class FleetHud {
     private static readonly HudIcon[] TabIcons = [HudIcon.Colony, HudIcon.Science, HudIcon.Design, HudIcon.Orders, HudIcon.Log];
     private static (float X, float Y) CommandOrigin( Layout layout ) => ((layout.Width - OfficeWidth) / 2, 61);
     private static float CommandHeight( CommandTab tab, FleetSimulation fleet ) => tab switch {
-        CommandTab.Economy => 226, CommandTab.Research => 251, CommandTab.Fleet => 289, CommandTab.Events => 239,
+        CommandTab.Economy => 226, CommandTab.Research => 302, CommandTab.Fleet => 289, CommandTab.Events => 239,
         CommandTab.Orders => 82 + Math.Max( 1, YardRows( fleet ) ) * 21, _ => 162
     };
 
@@ -23,7 +23,7 @@ internal sealed partial class FleetHud {
         return count;
     }
 
-    private void CommandPanel( Layout layout, FleetSimulation fleet, CommandTab tab, int dispatch, int speed, bool secondResearchPage ) {
+    private void CommandPanel( Layout layout, FleetSimulation fleet, CommandTab tab, int dispatch, int speed, bool secondResearchPage, bool frigate ) {
         if ( layout.Width >= 780 ) {
             for ( int i = 0; i < TabNames.Length; ++i )
                 IconButton( layout.ClockX - 358 + i * 71, 19, 68, TabIcons[i], TabNames[i], true, (int)tab == i + 1 );
@@ -57,12 +57,15 @@ internal sealed partial class FleetHud {
                 ResearchPanel( x, y, fleet, speed, secondResearchPage );
                 break;
             case CommandTab.Fleet:
-                var design = fleet.Design;
-                var flight = FleetSimulation.Flight( HullRole.Corvette, design, fleet.DriveUpgrade );
+                var blueprint = frigate ? HullBlueprint.Frigate : HullBlueprint.Corvette;
+                var hull = fleet.Hull( blueprint );
+                var design = fleet.Blueprint( blueprint );
+                var flight = FleetSimulation.Flight( hull.Role, design, fleet.DriveUpgrade );
                 Art( Tile.Corvette, x + 10, y + 41, 61, 35 );
-                Text( "CORVETTE / MODULE FIT", x + 80, y + 43, 1.2f, White );
+                Text( frigate ? "FRIGATE / MODULE FIT" : "CORVETTE / MODULE FIT", x + 80, y + 43, 1.2f, White );
                 label.TryWrite( $"REACTOR LOAD {design.PowerUsed}/{design.PowerAvailable}", out int length );
                 Text( label[..length], x + 80, y + 62, 1, design.Valid ? EnergyTint : SpaceDraw.Amber );
+                Button( x + 252, y + 58, 83, frigate ? "CORVETTE" : "FRIGATE", true );
                 for ( int i = 0; i < (int)ModuleSlot.Count; ++i ) {
                     var slot = (ModuleSlot)i;
                     float top = y + 85 + i * 23;
@@ -71,11 +74,11 @@ internal sealed partial class FleetHud {
                     Text( design.Installed( slot ), x + 94, top + 7, 1, White );
                     Button( x + 277, top, 59, "CHANGE", true );
                 }
-                label.TryWrite( $"HULL 72  ARMOR {design.Armor}  SHIELD {design.Shield}  DMG {design.Damage}  RNG {design.Range}", out length );
+                label.TryWrite( $"HULL {FleetSimulation.MaxHull( hull.Role )}  ARMOR {design.Armor}  SHIELD {design.Shield}  DMG {design.Damage}  RNG {design.Range}", out length );
                 Text( label[..length], x + 12, y + 232, 1, Label );
                 label.TryWrite( $"CRUISE {flight.Cruise:F0}  THRUST {flight.Acceleration:F0}  RELOAD {design.Reload}T", out length );
                 Text( label[..length], x + 12, y + 249, 1, Label );
-                Cost( fleet.Hull( HullBlueprint.Corvette ).Cost, x + 12, y + 267 );
+                Cost( hull.Cost, x + 12, y + 267 );
                 Text( design.Valid ? "PER HULL / NEW ORDERS" : "OVER POWER / CHANGE MODULES", x + 95, y + 268, 1,
                     design.Valid ? White : SpaceDraw.Amber );
                 break;
@@ -101,7 +104,7 @@ internal sealed partial class FleetHud {
                     for ( int side = (int)FactionId.Raiders; side < (int)FactionId.Count; ++side ) {
                         var faction = (FactionId)side;
                         int vessels = fleet.FactionCount( faction );
-                        if ( vessels == 0 ) continue;
+                        if ( !fleet.CanSeeContacts || vessels == 0 ) continue;
                         label.TryWrite( $"{Factions.Name( faction )} / {vessels} HULL(S)", out int n );
                         IconButton( x + 10, y + 87 + 25 * contactRow++, 328, HudIcon.Log, label[..n], true );
                     }
@@ -111,7 +114,7 @@ internal sealed partial class FleetHud {
                 var (title, first, second) = IncidentText( incident );
                 Art( incident switch {
                     FrontierEvent.Arrival => Tile.Scout, FrontierEvent.Prospect => Tile.Mine,
-                    FrontierEvent.Distress or FrontierEvent.Raid or FrontierEvent.Counterattack => Tile.Corvette,
+                    FrontierEvent.Distress or FrontierEvent.Raid or FrontierEvent.Counterattack or FrontierEvent.Interdiction => Tile.Corvette,
                     FrontierEvent.Secured => Tile.Yard, _ => Tile.Miner
                 }, x + 11, y + 42, 101, 66 );
                 Text( title, x + 121, y + 46, 1.23f, White );
@@ -144,11 +147,12 @@ internal sealed partial class FleetHud {
     private static (string Title, string First, string Second) IncidentText( FrontierEvent incident ) => incident switch {
         FrontierEvent.Arrival => ("FRONTIER CHARTER", "SURVEY A MOON OR PLANET WITH YOUR SCOUT", "SEND A CONSTRUCTOR TO BUILD ON A DEPOSIT"),
         FrontierEvent.Prospect => ("ORE SIGNATURE CONFIRMED", "SELECT A CONSTRUCTOR AND INSPECT THE BODY", "PLACE AN EXTRACTION RIG"),
-        FrontierEvent.Distress => ("DISTRESS SIGNAL", "RAIDERS HAVE NOTICED YOUR EXTRACTION", "BUILD A SHIPYARD AND KEEP CIVILIANS CLEAR"),
+        FrontierEvent.Distress => ("THE FIRST PIRATES", "UNREGISTERED HULLS ARE TRACKING YOUR CARGO", "PROTECT EXTRACTION WITH ESCORTS OR PATROLS"),
         FrontierEvent.Raid => ("AMBER RAID INBOUND", "RAIDERS ARE APPROACHING YOUR SITES", "OPEN A SHIPYARD TO ORDER ESCORTS"),
         FrontierEvent.Counterattack => ("RIVAL COMMAND CONTACT", "RAIL CORVETTES ARE APPROACHING", "RAIL SHOTS BYPASS SHIELDS"),
         FrontierEvent.MerchantOffer => ("MERCHANT OFFER", "A HAULER OFFERS TO SUPPLY THE NEW SETTLEMENT", "FUND A TRADE ROUTE OR BUY THEIR SURVEY DATA"),
-        FrontierEvent.Secured => ("SYSTEM SECURED", "HOSTILE CONTACTS HAVE BEEN DRIVEN OFF", "YOUR OUTPOST CAN EXPAND"),
+        FrontierEvent.Secured => ("FIRST RAIDS REPELLED", "THE ROUTE IS OPEN BUT RAIDS CAN RETURN", "BUILD A COLONY AND RESEARCH DEEP SKY ASTROMETRY"),
+        FrontierEvent.Interdiction => ("AMBER PIRATES RETURN", "RAIDERS ARE BACK ON THE EXTRACTION ROUTE", "KEEP AN ESCORT AT YOUR HIGHEST YIELD SITE"),
         _ => throw new ArgumentOutOfRangeException( nameof(incident) )
     };
 
@@ -166,7 +170,7 @@ internal sealed partial class FleetHud {
                 return Action( (CommandAction)((int)CommandAction.Economy + i) );
         var relative = p - new Vector2( x, y );
         if ( tab == CommandTab.Research ) {
-            if ( Contains( relative, 266, 39, 69, 21 ) ) return new( HudAction.ResearchPage );
+            if ( Contains( relative, 237, 39, 98, 21 ) ) return new( HudAction.ResearchPage );
             var topics = ResearchTopics( secondResearchPage );
             for ( int i = 0; i < topics.Length; ++i ) {
                 var topic = topics[i];
@@ -176,6 +180,7 @@ internal sealed partial class FleetHud {
             }
         }
         if ( tab == CommandTab.Fleet ) {
+            if ( Contains( relative, 252, 58, 83, 21 ) ) return new( HudAction.DesignHull );
             for ( int i = 0; i < (int)ModuleSlot.Count; ++i )
                 if ( Contains( relative, 277, 85 + i * 23, 59, 21 ) ) return new( HudAction.CycleModule, i );
         }

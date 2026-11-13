@@ -3,10 +3,10 @@ using System.Numerics;
 namespace FleetBattler;
 
 internal readonly record struct ResourceCost( int Ore, int Energy, int Science = 0 );
-internal enum ResearchTopic { Industry, Weapons, Drive, Habitation, Astrometry, Count }
-internal readonly record struct Technology( string Name, string Benefit, ResourceCost Cost, int Duration );
+internal enum ResearchTopic { Industry, Weapons, Drive, Habitation, Astrometry, Escorts, Fusion, Count }
+internal readonly record struct Technology( string Name, string Benefit, ResourceCost Cost, int Duration, ResearchTopic? Requires = null );
 internal readonly record struct HullPlan( string Name, HullRole Role, ResourceCost Cost, int Duration );
-internal enum HullBlueprint { Scout, Miner, Corvette, Colony }
+internal enum HullBlueprint { Scout, Miner, Corvette, Colony, Frigate, Count }
 internal readonly record struct ShipyardOrder( HullBlueprint Hull, ShipDesign Design, ResourceCost Cost, int Duration );
 internal readonly record struct YardLaunch( int Body, int Ship, HullBlueprint Hull );
 
@@ -27,6 +27,8 @@ internal sealed partial class FleetSimulation {
     internal float ResearchProgress => ActiveResearch is { } topic ? 1 - (float)_researchWork / Tech( topic ).Duration : 0;
     internal bool HabitationUpgrade { get; private set; }
     internal bool AstrometryUpgrade { get; private set; }
+    internal bool EscortsUpgrade { get; private set; }
+    internal bool FusionUpgrade { get; private set; }
     internal ResearchTopic LastTechnology { get; private set; }
     internal int CompletedResearch { get; private set; }
     internal YardLaunch LastLaunch { get; private set; }
@@ -60,20 +62,33 @@ internal sealed partial class FleetSimulation {
 
     internal static Technology Tech( ResearchTopic topic ) => topic switch {
         ResearchTopic.Industry => new( "ORBITAL FABRICATION", "LOWER CORVETTE ORE AND BUILD TIME", new( 0, 12, IndustryCost ), 960 ),
-        ResearchTopic.Weapons => new( "FIRE CONTROL", "+4 CORVETTE DAMAGE / +3 RANGE", new( 0, 16, UpgradeCost ), 1140 ),
-        ResearchTopic.Drive => new( "LONG BURN DRIVE", "UNLOCK OUTER PLANETS AND KUIPER BELT", new( 0, 20, DriveCost ), 1320 ),
-        ResearchTopic.Habitation => new( "HABITAT ENGINEERING", "UNLOCK O NEILL HABITATS", new( 0, 26, 60 ), 1680 ),
-        ResearchTopic.Astrometry => new( "DEEP SKY ASTROMETRY", "SCOUTS SCAN 50 PCT FASTER", new( 0, 18, 48 ), 1200 ),
+        ResearchTopic.Weapons => new( "FIRE CONTROL", "WARSHIP DAMAGE AND RANGE", new( 0, 16, UpgradeCost ), 1500, ResearchTopic.Industry ),
+        ResearchTopic.Drive => new( "LONG BURN DRIVE", "REACH THE OUTER SOLAR SYSTEM", new( 0, 20, DriveCost ), 1680 ),
+        ResearchTopic.Habitation => new( "HABITAT ENGINEERING", "BUILD O NEILL HABITATS", new( 0, 26, 60 ), 2100, ResearchTopic.Industry ),
+        ResearchTopic.Astrometry => new( "DEEP SKY ASTROMETRY", "CHART STARS / SCAN FASTER", new( 0, 18, 48 ), 1740, ResearchTopic.Drive ),
+        ResearchTopic.Escorts => new( "FLEET ESCORT SYSTEMS", "BUILD MODULAR FRIGATES", new( 20, 24, 52 ), 1920, ResearchTopic.Weapons ),
+        ResearchTopic.Fusion => new( "PULSED FUSION", "OPEN EXPEDITION TO PROXIMA", new( 32, 32, 72 ), 2400, ResearchTopic.Astrometry ),
         _ => throw new ArgumentOutOfRangeException( nameof(topic) )
     };
 
     internal bool Researched( ResearchTopic topic ) => topic switch {
         ResearchTopic.Industry => IndustryUpgrade, ResearchTopic.Weapons => WeaponUpgrade, ResearchTopic.Drive => DriveUpgrade,
-        ResearchTopic.Habitation => HabitationUpgrade, ResearchTopic.Astrometry => AstrometryUpgrade, _ => false
+        ResearchTopic.Habitation => HabitationUpgrade, ResearchTopic.Astrometry => AstrometryUpgrade,
+        ResearchTopic.Escorts => EscortsUpgrade, ResearchTopic.Fusion => FusionUpgrade, _ => false
     };
 
-    internal bool CanResearch( ResearchTopic topic ) => (uint)topic < (uint)ResearchTopic.Count && Frontier && ActiveResearch is null && !Researched( topic ) &&
-        ScienceIncome > 0 && CanAfford( Tech( topic ).Cost );
+    internal string? ResearchBlock( ResearchTopic topic ) {
+        if ( !Frontier || (uint)topic >= (uint)ResearchTopic.Count ) return "PROJECT UNAVAILABLE";
+        var tech = Tech( topic );
+        if ( Researched( topic ) ) return "COMPLETE";
+        if ( tech.Requires is { } prerequisite && !Researched( prerequisite ) ) return Tech( prerequisite ).Name;
+        if ( topic == ResearchTopic.Fusion && !HabitationUpgrade ) return Tech( ResearchTopic.Habitation ).Name;
+        if ( ActiveResearch is not null ) return "ANOTHER PROJECT ACTIVE";
+        if ( ScienceIncome == 0 ) return "BUILD A LAB";
+        return CanAfford( tech.Cost ) ? null : "INSUFFICIENT RESOURCES";
+    }
+
+    internal bool CanResearch( ResearchTopic topic ) => ResearchBlock( topic ) is null;
 
     internal bool StartResearch( ResearchTopic topic ) {
         if ( !CanResearch( topic ) ) return false;
@@ -103,6 +118,8 @@ internal sealed partial class FleetSimulation {
                 case ResearchTopic.Drive: DriveUpgrade = true; break;
                 case ResearchTopic.Habitation: HabitationUpgrade = true; break;
                 case ResearchTopic.Astrometry: AstrometryUpgrade = true; break;
+                case ResearchTopic.Escorts: EscortsUpgrade = true; break;
+                case ResearchTopic.Fusion: FusionUpgrade = true; break;
             }
             ActiveResearch = null;
             _researchWork = 0;
@@ -124,13 +141,20 @@ internal sealed partial class FleetSimulation {
         }
     }
 
+    internal ShipDesign FrigateDesign { get; private set; } = new( WeaponKind.Rail, true, Reactor: ReactorModule.HighOutput );
+    internal ShipDesign Blueprint( HullBlueprint hull ) => hull == HullBlueprint.Frigate ? FrigateDesign : Design;
+    internal static int NavalWeight( HullRole role ) => role == HullRole.Frigate ? 2 : role == HullRole.Corvette ? 1 : 0;
+    internal static bool IsWarship( HullRole role ) => NavalWeight( role ) > 0;
+
     internal HullPlan Hull( HullBlueprint blueprint ) => blueprint switch {
-        HullBlueprint.Colony => new( "COLONY SHIP", HullRole.Colony, new( 76, 26 ), 440 ),
+        HullBlueprint.Colony => new( "COLONY SHIP", HullRole.Colony, new( 96, 35 ), 780 ),
         HullBlueprint.Scout => new( "SURVEY SCOUT", HullRole.Scout, new( 24, 6 ), 240 ),
         HullBlueprint.Miner => new( "MINER / CONSTRUCTOR", HullRole.Miner, new( 20, 5 ), 240 ),
         HullBlueprint.Corvette => new( "CORVETTE", HullRole.Corvette,
             new( (IndustryUpgrade ? 14 : 20) + Design.ExtraOre, 8 + Design.ExtraEnergy ),
             (IndustryUpgrade ? 100 : 160) + Design.ExtraTicks ),
+        HullBlueprint.Frigate => new( "ESCORT FRIGATE", HullRole.Frigate,
+            new( 48 + FrigateDesign.ExtraOre, 17 + FrigateDesign.ExtraEnergy ), 420 + FrigateDesign.ExtraTicks ),
         _ => throw new ArgumentOutOfRangeException( nameof(blueprint) )
     };
 
@@ -143,10 +167,13 @@ internal sealed partial class FleetSimulation {
     internal string? ShipOrderBlock( int body, HullBlueprint blueprint ) {
         if ( !CanOpenYard( body ) ) return "REQUIRES AN ONLINE SHIPYARD";
         if ( _yardQueueSizes[body] == YardQueueLimit ) return "QUEUE FULL";
-        if ( blueprint == HullBlueprint.Corvette ) {
+        if ( (uint)blueprint >= (uint)HullBlueprint.Count ) return "UNKNOWN HULL";
+        int weight = NavalWeight( Hull( blueprint ).Role );
+        if ( weight > 0 ) {
             if ( YardAt( body ) != 0 ) return "REQUIRES AN ORBITAL SHIPYARD";
-            if ( !Design.Valid ) return "BLUEPRINT EXCEEDS REACTOR POWER";
-            if ( NavalUsed + _navalReserved >= NavalCapacity ) return "NAVAL CAPACITY FULL";
+            if ( blueprint == HullBlueprint.Frigate && !EscortsUpgrade ) return "REQUIRES ESCORT SYSTEMS";
+            if ( !Blueprint( blueprint ).Valid ) return "BLUEPRINT EXCEEDS REACTOR POWER";
+            if ( NavalUsed + _navalReserved + weight > NavalCapacity ) return "NAVAL CAPACITY FULL";
         }
         if ( blueprint == HullBlueprint.Colony ) {
             if ( YardAt( body ) != 0 ) return "REQUIRES AN ORBITAL SHIPYARD";
@@ -164,7 +191,7 @@ internal sealed partial class FleetSimulation {
         if ( ShipOrderBlock( body, blueprint ) is not null ) return false;
         var hull = Hull( blueprint );
         int index = _yardQueueSizes[body]++;
-        _shipOrdersAtYards[body * YardQueueLimit + index] = new( blueprint, Design, hull.Cost, hull.Duration );
+        _shipOrdersAtYards[body * YardQueueLimit + index] = new( blueprint, Blueprint( blueprint ), hull.Cost, hull.Duration );
         Spend( hull.Cost );
         ReserveShip( blueprint, 1 );
         if ( index == 0 ) _yardShipReady[body] = Tick + hull.Duration;
@@ -191,6 +218,7 @@ internal sealed partial class FleetSimulation {
             case HullBlueprint.Scout: _scoutsReserved += delta; break;
             case HullBlueprint.Miner: _minersReserved += delta; break;
             case HullBlueprint.Corvette: _navalReserved += delta; break;
+            case HullBlueprint.Frigate: _navalReserved += 2 * delta; break;
             case HullBlueprint.Colony: _colonyReserved += delta; break;
         }
     }
