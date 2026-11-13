@@ -4,63 +4,69 @@ Fleet Battler is a Windows strategy game sample for DXSharp. Frontier currently 
 
 ## When to stop developing the sample
 
-Freeze feature development once the Windows sample demonstrates the complete workflow below and the SDK features it uses have reusable entry points. From that point, work on bugs, readability, balance, performance regressions, packaging, and documentation until the sample qualifies. Further game features can live in a separate game repository. Keep the sample in DXSharp as a maintained reference for the SDK.
+Fleet Battler is the showcase for building a polished Windows game with DXSharp. The feature freeze requires a playable trip from Sol to one authored neighboring system, meaningful relationships with several factions, a research tree, and an ending earned through play at the destination. Use the existing skirmish as a quick entry point. Keep the rest of the chart as context and keep large simulations in a separate benchmark mode.
 
 | Milestone | Scope | Gate |
 | --- | --- | --- |
-| Feature freeze | One authored campaign in Sol, the existing skirmish, and a chart of neighboring systems. At most six hulls, eight structures, and twelve research nodes. Include menus, save/load, a working module designer, inspectors, alerts, and a complete art and effects pass for the campaign. | A first-time player can survey, build, resolve the convoy crisis, design and commission a ship, and complete the campaign using only the game UI. A player can quit and continue the same run. |
-| Stabilization | Fix crashes, lost state, progression blockers, ambiguous orders, rendering and audio defects, and measured hot paths. | Repeat the campaign from a clean install. Resume saves made during construction, production, and a scenario choice. Qualify on WARP and hardware and run Windows Debug/Release and NativeAOT CI. Record one reproducible stress run and its frame-time and memory results. |
-| Sample maintenance | Keep the documented Windows build, controls, asset provenance, and sample working as DXSharp evolves. | SDK changes that affect the sample pass its smoke tests. New content, grand strategy mechanics, and an expanded galaxy are independent project work. |
+| Feature freeze | One campaign across Sol and the Alpha Centauri region, plus skirmish. Use six hulls, eight core structures, and twelve techs as starting content budgets. Include a dedicated ship designer and a coherent UI across both maps. | A first-time player can survey, build, negotiate or fight, commission a ship, travel between systems, establish a foothold, and reach a clear ending through the game UI. A player can quit and continue from a save made in transit. |
+| Stabilization | Fix progression blockers, tune competing choices and pacing, polish art, typography, sound, and camera, and qualify the packaged build. | The campaign is fun to replay by a different route. Queues, ETA, risks, and blocked actions are readable at 1080p and 4K. Run a Windows hardware playtest, keep WARP and CI green, and publish a reproducible CPU/GPU frame-time and memory baseline. |
+| Maintenance | Keep the showcase, asset provenance, and build instructions working as DXSharp evolves. | Put a larger commercial game, its NoesisGUI integration, and its full content pipeline in a separate project. |
 
-A playable second system, a huge simulated galaxy, a standalone VFX editor, and complete toolkit parity are separate milestones. A controlled interstellar departure can be the campaign payoff. Use an epilogue for the arrival if it would otherwise require a second simulation and UI pass before feature freeze.
+### Campaign and factional conflict
 
-## The campaign
+**The First Crossing** starts with player presence only in Sol. Earth funds a new survey mission after a robotic precursor goes silent near Proxima. The dispatches follow three events the player can affect: securing a Sol supply route, deciding who gets access to the expedition, and restoring the remote receiver. Use 30–45 minutes as an initial playtest target. After the local raid, replace the generic secured banner with the next objective and surface the missing prerequisites. Keep the system playable after the ending.
 
-Build **The First Crossing** as a compact campaign. Use 30–45 minutes as an initial pacing estimate to test. Start with player presence in Sol only. A coalition on Earth charters a first permanent off-world settlement while an independent belt compact controls logistics and raiders skim unescorted shipments. Survey the Moon or Mars, establish a colony, and outfit an escort or negotiate convoy coverage. After the colony reaches sustained operation, authorize a fusion-powered expedition bound for Alpha Centauri. Make the two approaches to the convoy crisis affect what the player can afford, who offers aid, and what condition the expedition launches in. Keep a small post-victory sandbox and the existing skirmish.
-
-Six hulls are enough for the scenario. Each has a distinct job and an identifiable silhouette at tactical zoom. Four utilities teach the economy. Two military hulls create a choice between cheap coverage and concentrated defense.
-
-| Hull | Job | Slot emphasis |
+| Faction | Goal and activity | Interaction that matters |
 | --- | --- | --- |
-| Science scout | Surveys and anomaly investigation | Sensor, avionics, drive, reactor |
-| Constructor | Builds and services orbital sites | Fabricator, utility, drive, reactor |
-| Freighter | Hauls ore and propellant between owned or allied ports | Cargo, radiator, drive, reactor |
-| Colony ship | Carries crew and habitat equipment to a surveyed solid body | Habitat payload, life support, drive, reactor |
-| Corvette | Fast intercept and convoy escort | Small weapon, armor or shield, drive, reactor |
-| Frigate | Protects convoys and stations against heavier threats | Medium weapon, point defense, radiator, drive, reactor |
+| Sol Authority | Establish an independent outpost and a durable link to Earth | The player chooses whether to share the route, can escort shipments, and can build a listening outpost or local defense. |
+| Ceres Compact | Sell propellant and docking in exchange for guaranteed freight | A compact supplies a fuel berth and escort coverage. Its recurring fee and the port access appear on the route card. The player can instead invest in their own depot and escorts. |
+| Free Merchants | Move freight along profitable safe routes | They can deliver contracted supplies or sell survey data. Lost shipments suspend service until the route is protected or replaced. |
+| Survey Consortium | Recover and publish the precursor data | Joint research offers an early navigation project. Shared receiver access earns the agreement ending and changes the last dispatch. |
+| Rival Command | Secure first control of the receiver | It contests the recovery site under clearly announced rules. Its arrival is an observable mission with an ETA. The player can beat it there, negotiate shared access through the Consortium, or escort the repair crew and hold the site. |
+| Amber Raiders | Steal cargo on lightly defended routes | They choose a viable shipment, intercept it, and withdraw with a bounded loss. They can delay the expedition. A civilian dock, recovery orders, and a replacement route keep the player in the game. |
 
-The first complete construction catalog needs an extraction rig, solar array, research lab, storage depot, orbital shipyard, survey outpost, defense platform, and habitat. Give the defense platform a limited coverage radius and ongoing energy cost. A depot adds storage and a resupply stop. A survey outpost extends detection and route knowledge. Surface buildings need a settled solid body with available labor and slots. An O’Neill habitat is a late milestone that consumes freight, energy, and construction time and creates housing and new economic capacity. Gas giants support orbital infrastructure.
+Use directional faction relations with explicit **hostility**, **port access**, and **survey/data rights**. A compact or contract sets rights for a named party and route. A reputation value can gate offers. It cannot silently change targeting or access rules. Show the reason for every permission on the route, station, or faction inspector. Record offers and decisions as stable events with known costs, outcomes, and cancellation rules.
 
-Use the following checks for the feature freeze and stabilization milestones.
+Use one recurring resource route to drive the crisis. Extraction adds to a site's stock, a freighter claims a shipment, and delivery adds it to the destination's stock. The economy UI shows *on site*, *in transit*, *delivered*, and *lost*. Threat selects routes from visible activity and escort strength. A station in range contributes protection, and the convoy card shows which ships are assigned. Raiders cannot both take a shipment and leave it queued for delivery. Start with ore and energy as spendable resources. Use propellant as a local port/ship stock and science as research throughput. Add resources only where they change a decision.
 
-| Area | Accept when |
-| --- | --- |
-| Session | A small loading screen reports real initialization progress. Main menu offers New, Continue, Load, Options, Quit. Pause menu offers Resume, Save, Load, Options, Return to Menu, Quit. Quit is reachable entirely through the UI. |
-| Persistence | A versioned save round-trips bodies, fleets, names, designs, inventory, orders, colony work, tech, queues, faction decisions, campaign tick, and travel manifests. Save via a temporary file in the same directory and atomic replacement. Restore from a checkpoint mid-construction and before the expedition launch with identical completion outcomes. When interstellar transit becomes playable, add a mid-transit round trip. Keep user settings separate. |
-| Orders | Every long-running action identifies actor, target, phase, ETA or progress, and cancelability. Route lines follow the live rendezvous solution. Invalid orders explain the blocker. Critical notices show on the map and persist in the log. Selecting a notice focuses the relevant object where one exists. |
-| Shipyard and inspector | A player can design, validate, name, order, inspect, repair, and refit one hull end to end. A queue item preserves the purchased design revision and quoted cost and time. The planet panel shows built sites and pending work. Construction catalogs open separately. |
-| Content and pacing | Two routes through the convoy crisis are viable. The first resource chain, first unlock, and first escalation each have time to read and act at 1×. A playtest reaches the crossing without external instructions or waiting for a fleet to spawn on its own. |
-| Presentation | Body labels, alerts, route markers, and panels remain readable at 1080p and 4K. HDR bloom, thrusters, survey/assembly effects, and hostile audio make the map legible. Run on Windows hardware and retain functional WARP checks. |
-
-Defer full diplomacy, ship interiors, tactical boarding, fully simulated populations across the galaxy, more hull classes, a standalone VFX editor, and speculative megastructures until this checklist passes. The game’s completion and the SDK’s toolkit coverage have separate acceptance criteria.
-
-## Research and campaign progression
-
-Use a directed acyclic graph with explicit prerequisites, a single active project, a visible queue, and science output as work per tick. The panel shows what a node unlocks, what it costs, time at the current output, and which lab, survey, or demonstration is gating it. Introduce 12 nodes across five disciplines and reveal them in tiers as the colony develops. Make early research complete during an active survey or build. Tune later projects so a second lab or a better route changes a meaningful wait. Unlock components, capabilities, and operating envelopes so every branch changes a decision.
-
-| Discipline | Nodes in order | Tradeoff |
+| Act | Player decision | Observable result |
 | --- | --- | --- |
-| Propulsion | Orbital Refueling → High-Efficiency Drives → Pulsed Fusion | Refueling extends repeat trips. Efficient drives save propellant but trade away thrust. Fusion needs a stronger power and heat budget. |
-| Industry | In-Situ Processing → Beamed Power | Process local material and replace some fuel deliveries with power transmitters. A transmitter creates a new vulnerable route endpoint. |
-| Habitats | Closed-Loop Life Support → Rotating Habitats | Sustain a colony with fewer supply runs. A larger spin habitat trades construction material and upkeep for population and industrial capacity. |
-| Sensing and navigation | Interferometry → Deep-Sky Astrometry → Expedition Navigation | Reveal deposits and incoming contacts earlier, survey a neighboring system, and unlock flight plans for a fusion-equipped expedition. |
-| Defense | Point Defense → Distributed Fire Control | Intercept incoming ordnance or improve several ships’ coordination. Both consume power and module space. |
+| Establish a foothold | Survey a solid body and choose a site for a depot, mine, and first colony. | A constructor builds the site, the first freighter leaves with cargo, and the player can follow the delivery. |
+| Resolve the convoy crisis | Buy a Ceres berth and protection or build a depot, escort, and defense yourself. | The raid applies only to exposed freight. The choice changes fuel access, expedition funds, and which faction offers support. |
+| Cross and recover | Fit a fusion-capable expedition, choose who travels, and commit with a route quote. Use the arriving scout and constructor to locate and restore the receiver. | The fleet becomes playable at the destination. Sol stays accessible. The scenario ends on a working receiver under independent or shared control. |
 
-**First act.** Survey and develop a small resource chain near Earth. Commit a constructor to a site and see it arrive, assemble the site, and turn it online. Put a scout on the next target and let the survey reveal a route or anomaly.
+Keep the six-hull target. The scout surveys, constructor builds, freighter moves cargo, colony ship establishes settlement, corvette intercepts, and frigate protects a convoy or station. Give each an identifiable silhouette and a distinct role. Build the scenario around extraction rigs, solar arrays, labs, depots, shipyards, survey outposts, defense platforms, and habitats. An O’Neill habitat is a late optional expression of the same housing and freight rules. Surface work uses local labor and slots, and orbital facilities use constructor assignments.
 
-**Second act.** Choose whether to accept the belt compact’s terms for resupply, commit your own escorts, or invest in an outpost and defense platform. A successful raid costs cargo and energy and puts a new task in the log. It leaves a viable recovery path at Earth. Use a scenario dispatch with an illustration, a concise statement of stakes, explicit costs and likely effects, and a durable record of the decision.
+## Research and interstellar travel
 
-**Third act.** Establish a self-sustaining colony and commission the expedition after researching Pulsed Fusion and Expedition Navigation. End the scenario with a sublight departure. Use the years of transit as part of the epilogue. If the later interstellar simulation runs that passage, process scheduled work on the campaign clock and draw attention to major changes. Beamed sails, autonomous industry, and rotating habitats can seed follow-on scenarios. Paired wormhole gates and other conjectural technologies belong on a later, explicitly speculative branch.
+Use one active project and a reorderable queue. Eligibility depends on prerequisites and completed world milestones. Labs contribute work per campaign tick. Progress already earned stays with a paused project. Recalculate ETA as lab output changes. Unlock an action, module, route, or production process in each project. Show that result and the cheapest viable prerequisite path in the research view. Award the player progress during surveys, construction, or transfers so the fastest route involves active decisions.
+
+| Track | First project | Follow-up | Result in play |
+| --- | --- | --- | --- |
+| Propulsion | Orbital Refueling | High-Efficiency Drives → Pulsed Fusion | Add depot refueling, offer a slower fuel-saving drive, then fit an expedition drive that needs a reactor and radiator budget. |
+| Industry | In-Situ Processing | Beamed Power | Convert local ore to port propellant, then support outposts from a transmitter with visible coverage and uptime. |
+| Habitats | Closed-Loop Life Support | Rotating Habitats | Reduce colony resupply and qualify a long-duration crewed flight. Later buy population capacity by funding a freight-heavy habitat. |
+| Survey and navigation | Interferometry | Deep-Sky Astrometry → Expedition Navigation | Reveal deposits and contacts earlier, obtain an approach solution, and unlock the fleet routing action. |
+| Defense | Point Defense | Distributed Fire Control | Escort loadouts can screen haulers, then coordinate fire across the group at additional power and slot cost. |
+
+Cross-links keep these tracks tied to the map. A completed depot enables Orbital Refueling. A surveyed deposit and extraction site enable In-Situ Processing. A supplied colony demonstrates Closed-Loop Life Support. Deep-Sky Astrometry needs an operating survey outpost. Pulsed Fusion needs High-Efficiency Drives and demonstrated propellant supply through either In-Situ Processing or the Ceres berth. Expedition Navigation needs the destination survey solution. Crewed passage needs Closed-Loop Life Support. Beamed power, rotating habitats, and advanced defenses offer reasons to keep playing and should stay optional for first departure.
+
+### One interstellar route end to end
+
+Use an authored sublight route between Sol and the Proxima destination. Show a diegetic calendar duration and a clearly labeled compressed campaign ETA. The path is a strategic flight plan with deterministic phase deadlines. Inside a system, keep local orbital transfers. Use an authored range budget to qualify the route from wet mass, drive class, and propellant. The fleet quote displays the limiting hull, departure and arrival ports, one-way cost, return reserve, projected arrival, and blocked requirements. Allow a one-way expedition only with explicit confirmation and a viable plan for supplies at the destination.
+
+1. **Plan and provision.** Preview from the galaxy map. Reserve fuel at the departure port only on confirmation. Allow cancellation and refund before departure.
+2. **Depart.** Move selected hulls into a manifest with stable ship and design revision IDs, loadout, health, cargo, faction, and remaining propellant. Remove them from local ship commands atomically. Leave the rest of the fleet in Sol.
+3. **Cruise and brake.** Show progress, phase, and arrival ETA in the outliner. The player can manage Sol while the ship is en route. This first route has fixed intermediate phases and no random destructive event.
+4. **Insert and play.** Consume the unique arrival event once, instantiate the fleet in a safe orbit, and offer **Focus arrival**. The scout can survey the receiver, the constructor can repair it, and escorts can protect the work. Allow the return journey after a port or supply site can support it.
+
+Keep a global campaign clock and store the manifest with its phase, due ticks, and event ID. Save and resume before departure, during cruise, and on the arrival tick. Verify that visiting either system, pausing, or changing view does not change outcomes. Verify that a fleet arrives once and its resources are neither duplicated nor lost. Never tie strategic time to the frame delta or current camera.
+
+### UI and pacing
+
+Put **Objectives**, **Research**, **Factions**, and **Fleets** in the same screen hierarchy. Use one pinned next objective that links to the relevant body, ship, queue, or research node. The map shows intent and the inspector answers why. An expedition in transit uses the same order card as a survey or delivery, with actor, phase, ETA, cost, and available action. Critical alerts are clickable and persist in a log. Use a short outcome cue for resolved milestones and continuous music for ongoing play.
+
+Use the capture at 3:00 as the pacing test. The local raiders are cleared and the fleet remains controllable, but the interface only says to continue colony operations. At 7:35 the player can reach Vesta and open its actions, yet the HUD still gives no concrete strategic reason to choose a site. On completion of local defense, surface a near-term task that unlocks the next phase, such as contracting a fuel berth or delivering the first depot shipment. Keep the campaign beats visible without taking the camera away.
 
 ## Ship design and command UI
 
@@ -72,7 +78,7 @@ Share layout, hit regions, scroll/clipping, focus, and glyph rendering across th
 
 ## Galaxy size and simulation
 
-Author Sol and five charted destinations for the campaign. Build one reachable neighboring system when interstellar play is developed. Use a separate generated benchmark of 100,000 catalog entries. Keep the catalogue compact and seed unvisited content from stable system IDs. Persist changes for explored or owned systems and active fleets. Run campaign work on a fixed CPU clock with scheduled events for arrivals, production, and research. Systems with economic activity tick at a coarser rate when offscreen. A fleet in transit has an immutable manifest and a unique arrival event. Consume it exactly once and preserve that rule across saves. Visiting a system changes presentation cadence only.
+Author Sol and one reachable neighboring system. The other four chart entries provide context for the first campaign. Use a separate generated benchmark of 100,000 catalog entries. Keep the catalogue compact and seed unvisited content from stable system IDs. Persist changes for explored or owned systems and active fleets. Run campaign work on a fixed CPU clock with scheduled events for arrivals, production, and research. Skip inactive systems and batch work to the next due tick where the simulation can preserve equivalent results. A fleet in transit has an immutable manifest and a unique arrival event. Consume it exactly once and preserve that rule across saves. Visiting a system changes presentation cadence only.
 
 Keep simulation state in contiguous typed buffers for active tactical workloads. A deterministic CPU path resolves orders, economy, damage, and replay. Cull with a spatial index and feed frame-local visual snapshots to the GPU. Dispatch orbit, traffic, culling, emitter updates, and instance packing in batches through the SDK job API. Qualify any GPU steering or AI against a CPU reference first. Use GPU work for local steering and score candidates in bulk where measured gains justify it. Keep player-visible decisions deterministic and avoid synchronous readback in the frame loop. Use double-precision body/sector coordinates and pack camera-relative floats for rendering.
 

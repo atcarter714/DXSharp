@@ -181,7 +181,7 @@ internal static class Program {
             viewport = frame.Size;
             slotsUsed |= 1 << frame.FrameSlotIndex;
             var hudUpload = hudUploads[frame.FrameSlotIndex];
-            audio.SetSituation( galaxy, fleet.Contested || fleet.InBattle, fleet.Won );
+            audio.SetSituation( fleet.SystemIndex, galaxy, fleet.Contested || fleet.InBattle, fleet.Won );
             if ( galaxy ) {
                 sawGalaxy = true;
                 SpaceDraw.RecordGalaxy( frame.Commands, space, moon, fleet.SystemIndex, viewport.Width, viewport.Height );
