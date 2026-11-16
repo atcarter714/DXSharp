@@ -6,12 +6,27 @@ namespace FleetBattler;
 
 internal sealed partial class FleetHud {
     private const float InspectorTop = 147, SiteTop = 92;
-    private enum Tile : uint { Scout, Miner, Corvette, Yard, Mine, Lab }
+    private enum Tile : uint { Scout, Miner, Corvette, Yard, Mine, Lab, Receiver }
 
     internal static SampledTexture2D LoadAtlas( GraphicsDevice device, GraphicsCommandList commands ) {
-        using var stream = File.OpenRead( Path.Combine( AppContext.BaseDirectory, "Art", "OperationsAtlas.jpg" ) );
-        var image = ImageResult.FromStream( stream, ColorComponents.RedGreenBlueAlpha );
-        return device.CreateSampledTexture2D( commands, (uint)image.Width, (uint)image.Height, image.Data, srgb: true );
+        var operations = ReadArt( "OperationsAtlas.jpg" );
+        var receiver = ReadArt( "ReceiverBriefing.jpg" );
+        int tileWidth = operations.Width / 3, tileHeight = operations.Height / 2;
+        if ( tileWidth * 3 != operations.Width || tileHeight * 2 != operations.Height ||
+             receiver.Width != tileWidth || receiver.Height != tileHeight )
+            throw new InvalidDataException( "Fleet HUD artwork does not match the atlas tile dimensions." );
+        int stride = 4 * operations.Width;
+        var pixels = new byte[stride * tileHeight * 3];
+        operations.Data.CopyTo( pixels, 0 );
+        int rowBytes = receiver.Width * 4;
+        for ( int row = 0; row < tileHeight; ++row )
+            receiver.Data.AsSpan( row * rowBytes, rowBytes ).CopyTo( pixels.AsSpan( operations.Data.Length + row * stride ) );
+        return device.CreateSampledTexture2D( commands, (uint)operations.Width, (uint)(tileHeight * 3), pixels, srgb: true );
+
+        static ImageResult ReadArt( string name ) {
+            using var stream = File.OpenRead( Path.Combine( AppContext.BaseDirectory, "Art", name ) );
+            return ImageResult.FromStream( stream, ColorComponents.RedGreenBlueAlpha );
+        }
     }
 
     private static Tile HullArt( HullRole role ) => role switch {

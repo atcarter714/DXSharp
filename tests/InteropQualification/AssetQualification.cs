@@ -57,6 +57,12 @@ internal static class AssetQualification {
         var frigate = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "EscortFrigate.gltf" ) );
         Require( frigate.Instances.Length == 1 && frigate.BoundsMax.Z - frigate.BoundsMin.Z == 75 &&
             frigate.Primitives[0].Indices.Length > 100, "frigate placeholder is an indexed 75 m authored hull" );
+        var receiver = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "ProximaReceiver.gltf" ) );
+        int receiverTriangles = 0;
+        foreach ( var primitive in receiver.Primitives ) receiverTriangles += primitive.Indices.Length / 3;
+        Require( receiver.Instances.Length == 4 && receiver.Primitives.Length == 4 && receiverTriangles == 624 &&
+            receiver.BoundsMax.Y > 8.5f && receiver.BoundsMin.Y < -1 &&
+            receiver.Primitives[3].Surface.Emissive.Z > 0.5f, "receiver dish, structure, and emissive feed import on the production path" );
         VerifyTexturedAssets( );
         VerifySidecarsAndMaterials( );
         Console.WriteLine( "PASS: static glTF and GLB geometry, transforms, sidecars, material factors, sRGB textures, and unsupported resources validated." );

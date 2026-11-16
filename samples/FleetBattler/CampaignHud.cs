@@ -14,7 +14,7 @@ internal sealed partial class FleetHud {
         text.TryWrite( $"{date.Year:D4}.{date.Month:D2}.{date.Day:D2}", out int length );
         Text( text[..length], x + 36, 19, 1, White );
         Rect( x + 4, 18, 26, 28, Active );
-        Text( paused ? ">" : "II", x + 10, 28, 1, paused ? EnergyTint : SpaceDraw.Cyan );
+        Icon( paused ? HudIcon.Play : HudIcon.Pause, x + 10, 25, 14, paused ? EnergyTint : SpaceDraw.Cyan );
         Button( x + 35, 29, 22, "-", speed > 1 );
         text.TryWrite( $"{speed}X", out length );
         Text( paused ? "PAUSED" : text[..length], x + 58, 38, 1, paused ? EnergyTint : SpaceDraw.Cyan );
@@ -34,7 +34,7 @@ internal sealed partial class FleetHud {
     private void ChartSummary( Layout layout, FleetSimulation fleet, int planet ) {
         float x = 14, y = 63, width = 251;
         PanelAt( x, y, width, 103, Label );
-        Icon( HudIcon.Science, x + 10, y + 9, 14, SpaceDraw.Cyan );
+        Icon( HudIcon.Chart, x + 10, y + 9, 14, SpaceDraw.Cyan );
         Text( "TELESCOPE CHART", x + 30, y + 11, 1.27f, White );
         WrapText( fleet.SystemIndex == FleetSimulation.Proxima
             ? "A silent precursor receiver is marked on this chart. Plan a crewed expedition from Sol."

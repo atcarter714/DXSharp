@@ -13,6 +13,12 @@ internal static class BattleDraw {
     private const int OrbitSegments = 72;
     internal const int SolarTrackCapacity = (CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount + 4) * OrbitSegments;
 
+    internal static BattleEffect ReceiverSignal( Vector2 position, int tick, float interpolation ) {
+        const int period = 150;
+        float phase = (tick % period + interpolation) / period;
+        return new( new( position.X, position.Y, position.X, position.Y ), new( phase, 0, 10, 0 ) );
+    }
+
     private const string Effects = """
         cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; float4 Viewport; };
         struct Input { float4 segment : POSITION; float4 style : COLOR; };
@@ -34,9 +40,10 @@ internal static class BattleDraw {
                 uv.x = uv.x*2-1;
                 pos = start.xy/start.w + uv*(input.style.z == 8 ? 7 : 8)*Viewport.z/screenScale;
                 if (input.style.z == 9) pos += float2(0,16)*Viewport.z/screenScale;
-            } else if (input.style.z == 1) {
+            } else if (input.style.z == 1 || input.style.z == 10) {
                 uv.x = uv.x*2-1;
-                pos = start.xy/start.w + uv*(3+input.style.x*18)*Viewport.z/screenScale;
+                float extent = input.style.z == 10 ? 25 : 3+input.style.x*18;
+                pos = start.xy/start.w + uv*extent*Viewport.z/screenScale;
             }
             Output output;
             output.position = float4(pos,input.style.z == 5 ? 0.9995 : input.style.z == 2 || input.style.z >= 7 || input.style.z == 4 ? 0.07 : 0.065,1);
@@ -45,6 +52,16 @@ internal static class BattleDraw {
             return output;
         }
         float4 PS(Output input) : SV_Target {
+            if (input.style.z == 10) {
+                float radius = length(input.uv);
+                float phase = input.style.x;
+                float primary = (1-smoothstep(0.02,0.055,abs(radius-lerp(0.23,0.91,phase))))*(1-phase);
+                float echoPhase = saturate((phase-0.19)/0.81);
+                float echo = (1-smoothstep(0.02,0.06,abs(radius-lerp(0.19,0.77,echoPhase))))*(1-echoPhase)*step(0.19,phase)*0.65;
+                float signal = max(primary,echo);
+                clip(signal-0.16);
+                return float4(float3(0.31,0.94,1)*lerp(0.44,1,signal),1);
+            }
             if (input.style.z == 9) {
                 float2 p = abs(input.uv);
                 clip(0.85-max(p.x,p.y));

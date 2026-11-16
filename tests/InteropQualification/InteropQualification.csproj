@@ -14,6 +14,7 @@
     <Compile Include="../../samples/FleetBattler/ResearchCatalog.cs" Link="Fleet/ResearchCatalog.cs" />
     <None Include="../../samples/FleetBattler/Content/research.json" Link="Content/research.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Compile Include="../../samples/FleetBattler/IndustryHud.cs" Link="Fleet/IndustryHud.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetCampaign.cs" Link="Fleet/FleetCampaign.cs" />
     <Compile Include="../../samples/FleetBattler/Expedition.cs" Link="Fleet/Expedition.cs" />
     <Compile Include="../../samples/FleetBattler/GalaxyHud.cs" Link="GalaxyHud.cs" />
     <Compile Include="../../samples/FleetBattler/CampaignHud.cs" Link="CampaignHud.cs" />
@@ -22,7 +23,7 @@
     <Compile Include="../../samples/FleetBattler/FrontierHud.cs" Link="FrontierHud.cs" />
     <Compile Include="../../samples/FleetBattler/OperationsFeedback.cs" Link="OperationsFeedback.cs" />
     <Compile Include="../../samples/FleetBattler/PlanetInspector.cs" Link="PlanetInspector.cs" />
-    <None Include="../../samples/FleetBattler/Art/OperationsAtlas.jpg" Link="Art/OperationsAtlas.jpg"
+    <None Include="../../samples/FleetBattler/Art/*.jpg" Link="Art/%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Compile Include="../../samples/FleetBattler/OrbitalNavigation.cs" Link="OrbitalNavigation.cs" />
     <Compile Include="../../samples/FleetBattler/FleetGroups.cs" Link="FleetGroups.cs" />

@@ -34,7 +34,7 @@ internal static class FleetQualification {
         VerifyOrbits( );
         VerifyAudio( );
         VerifyExpedition( );
-        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, owned surveys, simulation pacing, orbital production, frontier progression, fleet recovery, transfer guidance, site slots, stacked modules, repairs, trade choices, colony ships, storage, piracy, fog of war, shipyard gates, expeditions, and zero-allocation updates ({first.AfterOrder:X16})." );
+        Console.WriteLine( $"PASS: fleet replay, selection modifiers, moving orbits, skirmish casualties, owned surveys, simulation pacing, orbital production, frontier progression, fleet recovery, transfer guidance, site slots, stacked modules, repairs, trade choices, colony ships, storage, piracy, fog of war, shipyard gates, view-independent campaigns, expeditions, and zero-allocation updates ({first.AfterOrder:X16})." );
     }
 
     private static void VerifyFormations( ) {
@@ -290,7 +290,12 @@ internal static class FleetQualification {
         Require( fleet.Slots( home ) is { Surface: 3 } && fleet.SurfaceWorkLimit( home ) == 2 && fleet.Slots( prospect ) is { Surface: 0, Orbit: 5 } &&
             fleet.Slots( 3 ) is { Surface: 1, Orbit: 3 } && !fleet.BuildFacility( prospect, PlanetFacility.Mine, miner ) &&
             fleet.BuildFacility( prospect, PlanetFacility.Skimmer, miner ), "gas giants permit orbital extraction and reject surface construction" );
+        var campaign = new FleetCampaign( fleet, 37 );
+        _ = campaign.System( FleetSimulation.Proxima );
         AdvanceUntil( fleet, () => fleet.Planet( prospect ).MineRemaining == 0, "arrival starts and completes construction", 1800 );
+        campaign.Advance( );
+        Require( campaign.TryTakeEvent( out var distress ) && distress == new CampaignEvent( CampaignEventKind.Distress, fleet ) &&
+            !campaign.TryTakeEvent( out _ ), "the raid decision is delivered once, even with a remote chart open" );
         Require( fleet.ActiveMiners( ) == 3 && fleet.YardQueue( home ).IsEmpty && fleet.Dispatch( 3 ) == FrontierEvent.Distress,
             "the Earth order launches one constructor and mining triggers a warning" );
         AdvanceUntil( fleet, () => fleet.CanAfford( FleetSimulation.Facility( PlanetFacility.Yard ).Cost ), "operating mine pays for an orbital yard" );
@@ -594,7 +599,11 @@ internal static class FleetQualification {
 
     private static void VerifyColoniesAndStorage( ) {
         const int home = FleetSimulation.Homeworld, giant = 2, moon = 3;
-        var fleet = new FleetSimulation( 3, 37, frontier: true );
+        const uint seed = 37;
+        var fleet = new FleetSimulation( 3, seed, frontier: true );
+        var campaign = new FleetCampaign( fleet, seed );
+        var chart = campaign.System( FleetSimulation.Proxima );
+        ulong initialChart = chart.StateHash( );
         Require( !fleet.QueueShip( home, HullBlueprint.Colony ) && fleet.BeginSurvey( new( 0 ), giant ),
             "a civilian dock cannot produce a colony ship" );
         AdvanceUntil( fleet, () => fleet.HasDeposit( giant ), "survey the giant for orbital extraction", 2000 );
@@ -645,7 +654,10 @@ internal static class FleetQualification {
             ResearchTopic.Habitation, ResearchTopic.Drive, ResearchTopic.Astrometry, ResearchTopic.Fusion } ) {
             AdvanceUntil( fleet, () => fleet.CanResearch( topic ), $"afford {topic}", 2500 );
             Require( fleet.StartResearch( topic ), $"start {topic}" );
-            AdvanceUntil( fleet, () => fleet.Researched( topic ), $"complete {topic}", 2500 );
+            CampaignUntil( () => fleet.Researched( topic ), $"complete {topic}", 2500 );
+            Require( campaign.TryTakeEvent( out var notice ) &&
+                notice == new CampaignEvent( CampaignEventKind.ResearchComplete, fleet, topic ) &&
+                !campaign.TryTakeEvent( out _ ), "research queues exactly one briefing for its originating system" );
         }
         Require( fleet.CanChartSystem( FleetSimulation.Proxima ) && fleet.EscortsUpgrade && fleet.FusionUpgrade,
             "completed research charts Proxima and unlocks expeditions and frigates" );
@@ -664,23 +676,39 @@ internal static class FleetQualification {
         var selected = new bool[fleet.Capacity];
         selected[0] = selected[2] = selected[escort] = true;
         int originShips = fleet.CyanCount;
-        var flight = fleet.Depart( selected, fleet.Tick );
-        Require( flight is { Hulls.Length: 3 } && fleet.CyanCount == originShips - 3 && fleet.NavalUsed == 0 &&
-            fleet.Depart( selected, fleet.Tick ) is null, "departure atomically removes the expedition from Sol and prevents a duplicate" );
-        var expedition = flight.GetValueOrDefault( );
-        var destination = new FleetSimulation( 3, 37, frontier: true, system: FleetSimulation.Proxima );
-        Require( !destination.Receive( expedition, expedition.ArrivalTick - 1 ) &&
-            destination.Receive( expedition, expedition.ArrivalTick ) && destination.CyanCount == 3 &&
-            !destination.Receive( expedition, expedition.ArrivalTick ), "arrival inserts the fleet exactly once at the campaign deadline" );
+        Require( campaign.Depart( selected ) && campaign.InTransit is { Hulls.Length: 3 } &&
+            fleet.CyanCount == originShips - 3 && fleet.NavalUsed == 0 &&
+            !campaign.Depart( selected ), "departure atomically removes the expedition from Sol and prevents a duplicate" );
+        var expedition = campaign.InTransit.GetValueOrDefault( );
+        CampaignUntil( () => fleet.Tick == expedition.ArrivalTick - 1, "expedition is approaching Proxima", FleetSimulation.ExpeditionDuration );
+        Require( chart.StateHash( ) == initialChart && !chart.CanSeeContacts && campaign.HullsAt( FleetSimulation.Proxima ) == 0 &&
+            !campaign.TryTakeEvent( out _ ), "visiting a remote chart cannot advance remote state or reveal the expedition before arrival" );
+        fleet.Step( );
+        campaign.Advance( );
+        var destination = campaign.System( FleetSimulation.Proxima );
+        var unviewed = new FleetCampaign( new FleetSimulation( 3, seed, frontier: true ), seed ).System( FleetSimulation.Proxima );
+        Require( campaign.InTransit is null && campaign.Arrived && campaign.HullsAt( FleetSimulation.Proxima ) == 3 &&
+            destination.Tick == 0 && unviewed.Receive( expedition, fleet.Tick ) && destination.StateHash( ) == unviewed.StateHash( ) &&
+            campaign.TryTakeEvent( out var arrival ) && arrival == new CampaignEvent( CampaignEventKind.Arrival, destination ) &&
+            !destination.Receive( expedition, fleet.Tick ), "arrival is independent of chart viewing and emits a single briefing" );
         int scout = destination.FirstPlayerSquad( );
         Require( destination.BeginSurvey( new( scout ), home ), "the expedition scout can survey the receiver world" );
-        AdvanceUntil( destination, () => destination.Planet( home ).Surveyed, "receiver surveyed" );
+        CampaignUntil( () => destination.Planet( home ).Surveyed, "receiver surveyed" );
         Require( destination.BuildFacility( home, PlanetFacility.Lab, new( scout + 1 ) ), "the expedition constructor repairs the receiver" );
-        AdvanceUntil( destination, () => destination.ReceiverOnline, "receiver restored" );
+        CampaignUntil( () => destination.ReceiverOnline, "receiver restored" );
+        Require( destination.Tick == fleet.Tick - expedition.ArrivalTick && campaign.TryTakeEvent( out var charter ) &&
+            charter == new CampaignEvent( CampaignEventKind.ReceiverDecision, destination ) && !campaign.TryTakeEvent( out _ ),
+            "both systems progress offscreen and the restored receiver posts one decision" );
         Require( !destination.ReceiverSecured && destination.CommissionReceiver( ReceiverCharter.Shared ) &&
             destination.ReceiverSecured && !destination.CommissionReceiver( ReceiverCharter.Independent ) &&
             destination.Relationship( FactionId.Sol, FactionId.Consortium ) == Disposition.Allied,
             "choosing a charter resolves the receiver and changes the faction relationship" );
+        CampaignUntil( () => campaign.TryTakeEvent( out var ending ) &&
+            ending == new CampaignEvent( CampaignEventKind.CrossingComplete, destination ), "the campaign posts the shared ending" );
+        fleet.Step( );
+        campaign.Advance( );
+        Require( !campaign.TryTakeEvent( out _ ), "ending does not repeat" );
+
         var independent = new FleetSimulation( 3, 37, frontier: true, system: FleetSimulation.Proxima );
         Require( independent.Receive( expedition, expedition.ArrivalTick ), "alternate charter starts from the same expedition" );
         int independentScout = independent.FirstPlayerSquad( );
@@ -693,6 +721,15 @@ internal static class FleetQualification {
         for ( int enemy = 0; enemy < independent.Count; ++enemy )
             if ( independent.FactionOf( enemy ) == FactionId.Rival ) independent.ApplyHullDamage( enemy, FleetSimulation.HullCapacity );
         Require( independent.ReceiverSecured, "the independent route completes after defeating the rival fleet" );
+
+        void CampaignUntil( Func<bool> condition, string name, int limit = 900 ) {
+            for ( int i = 0; i < limit; ++i ) {
+                if ( condition( ) ) return;
+                fleet.Step( );
+                campaign.Advance( );
+            }
+            Require( condition( ), name );
+        }
     }
 
     private static void VerifyPiracy( ) {
@@ -750,6 +787,10 @@ internal static class FleetQualification {
             FleetHud.HitGalaxy( new( 275, 463 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route ).Action == GalaxyAction.Research &&
             FleetHud.HitGalaxy( new( 275, 463 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route with { Block = null, CanResearch = false } ).Action == GalaxyAction.Launch,
             "the galaxy map shares the fleet badge and route action layout and exposes research until launch is unlocked" );
+        Require( FleetHud.HitBriefing( new( 210, 360 ), 660, 500 ) == new HudHit( HudAction.Briefing, 1 ) &&
+            FleetHud.HitBriefing( new( 210, 394 ), 660, 500 ) == new HudHit( HudAction.Briefing, 0 ) &&
+            FleetHud.HitBriefing( new( 20, 20 ), 660, 500 ).Action == HudAction.Panel,
+            "the modal owns the same action slots over both maps and consumes outside clicks" );
         var remote = new FleetSimulation( 3, 37, frontier: true, system: 2 );
         Require( FleetHud.Hit( new( 35, 150 ), 660, 500, remote, -1 ).Action == HudAction.Galaxy &&
             FleetHud.Hit( new( 45, 220 ), 660, 500, remote, -1 ).Action == HudAction.None,

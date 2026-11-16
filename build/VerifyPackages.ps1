@@ -44,6 +44,7 @@ try {
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings>
     <UseWindowsForms>true</UseWindowsForms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
@@ -56,13 +57,12 @@ try {
   </ItemGroup>
 </Project>
 "@ | Set-Content (Join-Path $consumerDirectory 'Consumer.csproj')
+    Copy-Item (Join-Path $repoRoot 'samples/ModernCompute/Program.cs') (Join-Path $consumerDirectory 'Program.cs')
     @'
-System.Console.WriteLine(typeof(DXSharp.Direct3D12.IDevice).Assembly.FullName);
-System.Console.WriteLine(typeof(DXSharp.Dxc.ShaderBuilder).Assembly.FullName);
-System.Console.WriteLine(typeof(DXSharp.Graphics.GraphicsDevice).Assembly.FullName);
-System.Console.WriteLine(typeof(DXSharp.Framework.Desktop.DesktopGame).Assembly.FullName);
-System.Console.WriteLine(typeof(DXSharp.MachineLearning.DirectMlDevice).Assembly.FullName);
-'@ | Set-Content (Join-Path $consumerDirectory 'Program.cs')
+internal static class LegacySurface {
+    internal static readonly System.Type[] Types = [typeof(DXSharp.Direct3D12.IDevice), typeof(DXSharp.Dxc.ShaderBuilder)];
+}
+'@ | Set-Content (Join-Path $consumerDirectory 'LegacySurface.cs')
     @"
 <configuration>
   <packageSources>
@@ -110,6 +110,11 @@ System.Console.WriteLine(typeof(DXSharp.MachineLearning.DirectMlDevice).Assembly
         & dotnet publish Consumer.csproj --configuration $Configuration --no-restore --output $publish
         if ($LASTEXITCODE -ne 0) { throw 'Package consumer single-file publish failed.' }
         Test-NativeOutput $publish
+        if ($IsWindows) {
+            Write-Host "Running DXC, WARP and DirectML from the published package consumer."
+            & (Join-Path $publish 'Consumer.exe') --warp --no-debug --directml --gemm
+            if ($LASTEXITCODE -ne 0) { throw 'Published package consumer GPU smoke test failed.' }
+        }
         foreach ($debugLayer in @('D3D12/d3d12SDKLayers.dll', 'DirectML.Debug.dll')) {
             if (Test-Path (Join-Path $publish $debugLayer)) { throw "Debug layer leaked into publish: $debugLayer" }
         }

@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum HudIcon { Ore, Energy, Science, Colony, Design, Orders, Log, Merge, Split, Yard, Build, Repair, Retreat, Health, Ship }
+internal enum HudIcon { Ore, Energy, Science, Colony, Design, Orders, Log, Merge, Split, Yard, Build, Repair, Retreat, Health, Ship, Chart, Route, Signal, Rally, Launch, Crew, Play, Pause }
 
 internal sealed partial class FleetHud {
     private static readonly Vector4 OreTint = new( 0.92f, 0.68f, 0.44f, 1 );
@@ -10,7 +10,15 @@ internal sealed partial class FleetHud {
     private static readonly Vector4 ScienceTint = new( 0.48f, 0.85f, 1, 1 );
     private static readonly ulong[] Icons = [
         0x020e3ae7ddf1c, 0x00820c7e30c30, 0x0d8e7793dce36, 0x1ff1e3eef8e08, 0x08b1f77c70e08,
-        0x1fe0dd83760ff, 0x0f913a44e913e, 0x02041cfe20a22, 0x088a08fe70408, 0x18f5ff55ff5e3, 0x03c187f306180, 0x0437df1c7030c, 0x00020c3ffff00, 0x03870e7ff838e, 0x01993ffffc704
+        0x1fe0dd83760ff, 0x0f913a44e913e, 0x02041cfe20a22, 0x088a08fe70408, 0x18f5ff55ff5e3, 0x03c187f306180, 0x0437df1c7030c, 0x00020c3ffff00, 0x03870e7ff838e, 0x01993ffffc704,
+        0x071149ab2511c, // Chart
+        0x1830381038183, // Route
+        0x07041c457511c, // Signal
+        0x07040892f8e08, // Rally
+        0x05042a7cf1e18, // Launch
+        0x18e09c7d06e9c, // Crew
+        0x01061c7870604, // Play
+        0x0d9b366cd9b36, // Pause
     ];
 
     private void Icon( HudIcon icon, float x, float y, float size, Vector4 tint ) {

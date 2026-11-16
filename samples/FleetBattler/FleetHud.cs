@@ -83,7 +83,7 @@ internal sealed partial class FleetHud {
             if (input.bits.z == 4) {
                 float2 tile = float2(input.bits.x % 3,input.bits.x / 3);
                 float2 sampleUv = input.bits.y == 0 ? input.uv : float2(input.uv.x, lerp(0.34,0.66,input.uv.y));
-                float2 uv = (tile + lerp(0.02,0.98,sampleUv)) / float2(3,2);
+                float2 uv = (tile + lerp(0.02,0.98,sampleUv)) / float2(3,3);
                 return float4(pow(saturate(Atlas.Sample(ArtSampler,uv).rgb*input.tint.rgb),1.0/2.2),1);
             }
             uint columns = input.bits.z == 7 ? 7 : 5;
@@ -130,6 +130,7 @@ internal sealed partial class FleetHud {
                 MapLabel( new( body.X, body.Y + body.Z ), fleet.BodyName( i ), layout, fleet, -1 );
             }
             ChartSummary( layout, fleet, planet );
+            if ( briefing is { } chartBriefing ) DrawBriefing( layout, chartBriefing );
             Submit( commands, pipeline, upload, width, height );
             return;
         }

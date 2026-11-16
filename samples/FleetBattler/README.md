@@ -43,9 +43,11 @@ The star date starts at 2184.01.01. Each simulated day passes in eight real seco
 
 1. Survey a solid body, build its orbital depot, and establish a colony. Keep Earth’s orbital shipyard active.
 2. Complete Long Burn Drive, Deep Sky Astrometry, Habitat Engineering, and Pulsed Fusion. Industry research precedes Habitat Engineering.
-3. Open **Galaxy** and click the ship badge beside **Sol**. Click or right-click **Proxima** to set the destination. Use **Select Crew** to choose an idle scout and constructor in Earth orbit, or **Rally to Earth** to recall available civilian ships. Select optional escorts in the Sol view. Leave at least one hull in Sol.
-4. Choose **Launch One Way** once the planner shows **Ready to Depart**. The quote costs 65 ore and 100 energy. The fleet arrives after two minutes at 1× and Sol continues operating during transit.
-5. Choose **View System** after arrival. Survey Receiver World and build an orbital research lab to restore the receiver. Share its data with the Survey Consortium, or claim it for Sol with an escort and repel Rival Command.
+3. Open **Galaxy** and click the ship badge beside **Sol**. Click or right-click **Proxima** to set the destination. Use **Select Crew** to choose an idle scout and constructor in Earth orbit, or **Rally to Sol** to recall available civilian ships. Select optional escorts in the Sol view. Leave at least one hull in Sol.
+4. Choose **Launch** once the planner shows **Ready to Depart**. Confirm the one-way flight in the briefing to spend 65 ore and 100 energy. The fleet arrives after two minutes at 1× and Sol continues operating during transit.
+5. Choose **Focus Arrival** in the arrival briefing or **View System** on the map. Survey Receiver World and build an orbital research lab to restore the receiver. The restored dish emits a visible double pulse. Share its data with the Survey Consortium, or claim it for Sol with an escort and repel Rival Command.
+
+Research completions and the first raid briefing reach you on either map. Unoccupied systems show a fixed telescope chart until the expedition arrives. You can inspect Proxima before departure without advancing its local orbital state.
 
 The [campaign design](../../doc/FleetBattler.md) describes the larger faction, travel, research, and presentation milestones.
 
@@ -53,7 +55,7 @@ The [campaign design](../../doc/FleetBattler.md) describes the larger faction, t
 
 Edit [Content/research.json](Content/research.json) before building, or edit the copy alongside the built executable and restart the game. Each project defines the displayed name, description, benefit, branch, prerequisite IDs, artwork tile, resource cost, and required research work. The UI and simulation read the same definitions. If you change an effect such as `damageBonus` or `scanRate`, update the corresponding benefit text to match.
 
-Keep the seven built-in project IDs. Use `Scout`, `Miner`, `Corvette`, `Yard`, `Mine`, or `Lab` for the existing artwork tiles. The loader checks both branches and rejects missing projects, unknown values, and prerequisite cycles.
+Keep the seven built-in project IDs. Use `Scout`, `Miner`, `Corvette`, `Yard`, `Mine`, `Lab`, or `Receiver` for the artwork tiles. The loader checks both branches and rejects missing projects, unknown values, and prerequisite cycles.
 
 ### Remaining goals
 
@@ -102,7 +104,7 @@ The star uses a local two-scale halo in the sky shader. A general bloom pass wou
 
 ## Houdini asset handoff
 
-Each file embeds its geometry and base color image. Import it into a Houdini geometry network with a glTF SOP and load the mesh. The files use meters, +Y up, bow toward −Z, and a centered local origin. Fleet Battler applies separate display scales to keep the hulls legible next to planets and orbital paths.
+Each file embeds its geometry and materials. Textured models also embed their base color images. Import it into a Houdini geometry network with a glTF SOP and load the mesh. The files use meters, +Y up, bow toward −Z, and a centered local origin. Fleet Battler applies separate display scales to keep the hulls legible next to planets and orbital paths.
 
 | Reference file | Length | Role |
 | --- | ---: | --- |
@@ -112,8 +114,9 @@ Each file embeds its geometry and base color image. Import it into a Houdini geo
 | [Freighter.gltf](Models/Freighter.gltf) | 96 m | Mule hauler with six external cargo pods. Also used as the temporary miner hull |
 | [MiningRelay.gltf](Models/MiningRelay.gltf) | 48 m | Capture site and temporary orbital facility hull |
 | [ONeillHabitat.gltf](Models/ONeillHabitat.gltf) | 98 m | Cylindrical orbital habitat with radiator bands |
+| [ProximaReceiver.gltf](Models/ProximaReceiver.gltf) | 16.8 m across | Faceted dish, copper support struts, and emissive feed |
 
-Use the Static Model Viewer to inspect each authored asset with an auto-fit camera and to check replacement exports. Use `--ship-model`, `--frigate-model`, `--scout-model`, `--miner-model`, `--freighter-model`, `--station-model`, and `--habitat-model` to replace the corresponding placeholder with a `.glb` or `.gltf`. Include the mesh and texture sidecars if you export a separate glTF. The override uses the exported node transforms and dimensions. Export a tactical corvette about 2.4 units long, with thrusters about 0.9 units off center and 1.12 units aft. Keep an authored-scale copy for Houdini.
+Use the Static Model Viewer to inspect each authored asset with an auto-fit camera and to check replacement exports. Use `--ship-model`, `--frigate-model`, `--scout-model`, `--miner-model`, `--freighter-model`, `--station-model`, `--habitat-model`, and `--receiver-model` to replace the corresponding placeholder with a `.glb` or `.gltf`. Include the mesh and texture sidecars if you export a separate glTF. The override uses the exported node transforms and dimensions. Export a tactical corvette about 2.4 units long, with thrusters about 0.9 units off center and 1.12 units aft. Keep an authored-scale copy for Houdini.
 
 ```powershell
 blender -b --python-exit-code 1 --python tools/ConvertModel.py -- C:\exports\Corvette.fbx C:\exports\Corvette.glb
@@ -123,3 +126,5 @@ dotnet run --project samples/FleetBattler -c Release -- --ship-model="C:\exports
 The FBX converter runs at authoring time. The game reads the resulting GLB. See the [static model tutorial](../../doc/tutorials/07-static-models.md) for material and format support.
 
 The [operations art atlas](Art/OperationsAtlas.jpg) depicts a scout, ore hauler, corvette, orbital shipyard, extraction rig, and research station. The artwork appears in the outliner and planet inspector. The assets use the repository's [MIT license](../../LICENSE.md). The [fleet roadmap](../../doc/FleetBattler.md) describes the larger game and content pipeline.
+
+The [receiver briefing illustration](Art/ReceiverBriefing.jpg) was generated for the sample and staged in the HUD atlas at startup. The navigation and signal glyphs use the existing bitmap HUD batch.

@@ -3,7 +3,7 @@ using System.Numerics;
 namespace FleetBattler;
 
 internal readonly record struct Briefing( string Title, string Source, string Body, ContentArt Artwork,
-    string Accept, string Dismiss, string AcceptEffect = "", string DismissEffect = "" );
+    string Accept, string Dismiss, string AcceptEffect = "", string DismissEffect = "", bool EscapeDismisses = true );
 
 internal sealed partial class FleetHud {
     private static Vector4 BriefingArea( Layout layout ) {
@@ -20,7 +20,7 @@ internal sealed partial class FleetHud {
         _overlay = 3;
         PanelAt( x, y, width, height, EnergyTint );
         Rect( x + 2, y + 1, width - 3, 45, Well );
-        Icon( HudIcon.Log, x + 13, y + 11, 15, EnergyTint );
+        Icon( briefing.Artwork == ContentArt.Receiver ? HudIcon.Signal : HudIcon.Log, x + 13, y + 11, 15, EnergyTint );
         FitText( briefing.Title, x + 36, y + 12, width - 48, 1.6f, White );
         FitText( briefing.Source, x + 36, y + 31, width - 48, 1, Label );
         Art( (Tile)briefing.Artwork, x + 12, y + 53, width - 24, artHeight, crop: true );
@@ -36,6 +36,12 @@ internal sealed partial class FleetHud {
             FitText( name, x + 21, top + (effect.Length == 0 ? 10 : 5), width - 40, 1.05f, tint );
             if ( effect.Length > 0 ) FitText( effect, x + 21, top + 17, width - 40, 0.9f, Label );
         }
+    }
+
+    internal static HudHit HitBriefing( Vector2 pixel, int width, int height ) {
+        if ( width < 350 || height < 240 ) return new( HudAction.Panel );
+        float scale = HudScale( width, height );
+        return HitBriefing( new( width / scale, height / scale ), pixel / scale );
     }
 
     private static HudHit HitBriefing( Layout layout, Vector2 p ) {

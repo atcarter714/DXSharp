@@ -51,6 +51,7 @@ internal static unsafe class MeshQualification {
         RenderFleet( device, compiler );
         VerifyComputeTraffic( device, compiler );
         RenderSystem( device, compiler );
+        RenderReceiver( device, compiler );
         var diagnostics = device.GetDiagnostics( );
         if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any(
             message => message.Contains( "SEVERITY_ERROR" ) || message.Contains( "SEVERITY_CORRUPTION" ) ) )
@@ -422,6 +423,59 @@ internal static unsafe class MeshQualification {
 
         StaticMeshSet Upload( string file, float scale ) =>
             new( device, commands, GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", file ) ), scale );
+    }
+
+    private static void RenderReceiver( GraphicsDevice device, ShaderCompiler compiler ) {
+        const uint width = 160, height = 120;
+        using var queue = device.CreateCommandQueue( );
+        using var allocator = device.CreateCommandAllocator( );
+        using var commands = device.CreateCommandList( allocator );
+        var model = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "ProximaReceiver.gltf" ) );
+        using var receiver = new StaticMeshSet( device, commands, model, 0.16f );
+        using var material = device.CreateTextureRootSignature( FleetDraw.MaterialConstants, linearWrap: true );
+        using var pipeline = FleetDraw.CreatePipeline( device, material, compiler, depthEnabled: true );
+        using var effectsRoot = device.CreateGraphicsConstantsRootSignature( BattleDraw.ConstantCount );
+        using var effects = BattleDraw.CreateEffects( device, effectsRoot, compiler );
+        using var instance = device.CreateBuffer( FleetDraw.InstanceStride, BufferMemory.Upload );
+        using var pulse = device.CreateBuffer( BattleDraw.EffectStride, BufferMemory.Upload );
+        using var target = CreateTarget( device, width, height );
+        using var heap = device.CreateRenderTargetHeap( 1 );
+        using var depth = device.CreateDepthTarget( width, height );
+        var view = device.CreateRenderTargetView( target, heap, 0 );
+        var description = target.Native.Interface.GetDesc( );
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint;
+        ulong bytes;
+        device.Native.Interface.GetCopyableFootprints( &description, 0, 1, 0, &footprint, null, null, &bytes );
+        using var readback = device.CreateBuffer( bytes, BufferMemory.Readback );
+
+        instance.Write<ShipInstance>( [new( Vector2.Zero, Vector2.UnitY, Vector4.One )] );
+        pulse.Write<BattleEffect>( [BattleDraw.ReceiverSignal( Vector2.Zero, 65, 1 )] );
+        var matrix = Matrix4x4.CreateLookAt( new( 0, 4, 4 ), Vector3.Zero, Vector3.UnitY ) *
+            Matrix4x4.CreateOrthographic( 5.6f, 4.2f, 0.1f, 14 );
+        commands.SetViewport( width, height );
+        commands.Clear( view, 0, 0, 0 );
+        commands.SetRenderTarget( view, depth, clearDepth: true );
+        FleetDraw.Record( commands, pipeline, receiver, instance, 1, matrix );
+        BattleDraw.Record( commands, effects, pulse, 1, matrix, (int)width, (int)height, 2.1f, effects: true );
+        commands.Transition( target, ResourceState.RenderTarget, ResourceState.CopySource );
+        CopyPixels( commands, target, readback, footprint );
+        commands.Close( );
+        queue.Wait( queue.Submit( commands ) );
+
+        var pixels = new byte[checked((int)bytes)];
+        readback.Read<byte>( pixels );
+        int ceramic = 0, signal = 0;
+        for ( uint y = 0; y < height; ++y ) {
+            for ( uint x = 0; x < width; ++x ) {
+                int offset = checked((int)(footprint.Offset + y * footprint.Footprint.RowPitch + x * 4));
+                byte r = pixels[offset], g = pixels[offset + 1], b = pixels[offset + 2];
+                if ( r > 140 && g > 100 && r >= b ) ++ceramic;
+                if ( r is > 35 and < 83 && g > 135 && b > 155 && b > g ) ++signal;
+            }
+        }
+        if ( ceramic < 60 || signal < 15 )
+            throw new InvalidOperationException( $"Receiver rendering is incomplete: {ceramic} reflector and {signal} signal pixels." );
+        Console.WriteLine( $"PASS: Proxima receiver rendered {ceramic} reflector and {signal} signal pixels." );
     }
 
     private static GpuResource CreateTarget( GraphicsDevice device, uint width = Width, uint height = Height ) {

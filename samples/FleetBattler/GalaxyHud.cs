@@ -12,12 +12,13 @@ internal readonly record struct GalaxyRoute( int Source, int Destination, string
 internal sealed partial class FleetHud {
     internal void RecordGalaxy( GraphicsCommandList commands, PipelineState pipeline, GpuResource upload,
         int currentSystem, int width, int height, bool frontier, bool charted, ReadOnlySpan<int> hulls,
-        GalaxyRoute route, int campaignTick, int speed, bool paused ) {
+        GalaxyRoute route, int campaignTick, int speed, bool paused, Briefing? briefing = null ) {
         if ( width < 350 || height < 240 ) return;
         Begin( width, height );
         var layout = new Layout( width / _scale, height / _scale );
         PanelAt( 14, 12, layout.Width - 28, 41, SpaceDraw.Cyan );
-        Text( "GALAXY MAP", 23, 24, 1.45f, White );
+        Icon( HudIcon.Chart, 24, 22, 16, SpaceDraw.Cyan );
+        Text( "GALAXY MAP", 47, 24, 1.45f, White );
         ClockPanel( layout, campaignTick, speed, paused, "RETURN" );
         if ( frontier ) {
             var from = GalaxyNode( layout, 0, frontier );
@@ -33,6 +34,7 @@ internal sealed partial class FleetHud {
                 }
             }
         }
+        Span<char> count = stackalloc char[6];
         for ( int i = 0; i < CelestialSystem.Systems.Length; ++i ) {
             var center = GalaxyNode( layout, i, frontier );
             bool known = !frontier || i == 0 || charted;
@@ -45,13 +47,15 @@ internal sealed partial class FleetHud {
             var badge = GalaxyBadge( center );
             Rect( badge.X, badge.Y, badge.Z, badge.W, route.Source == i ? Active : Well );
             Icon( HudIcon.Ship, badge.X + 4, badge.Y + 4, 12, SpaceDraw.Cyan );
-            Text( hulls[i].ToString( ), badge.X + 20, badge.Y + 6, 1, White );
+            hulls[i].TryFormat( count, out int length );
+            Text( count[..length], badge.X + 20, badge.Y + 6, 1, White );
         }
         if ( frontier ) DrawGalaxyRoute( layout, route );
         else {
             PanelAt( 14, layout.Bottom, layout.Width - 28, 45, SpaceDraw.Cyan );
             Text( "SELECT A STAR SYSTEM TO ENTER", 23, layout.Bottom + 14, 1, Label );
         }
+        if ( briefing is { } prompt ) DrawBriefing( layout, prompt );
         Submit( commands, pipeline, upload, width, height );
     }
 
@@ -78,7 +82,7 @@ internal sealed partial class FleetHud {
         float x = panel.X, y = panel.Y, w = panel.Z;
         _overlay = 2;
         PanelAt( x, y, w, panel.W, SpaceDraw.Cyan );
-        Icon( HudIcon.Ship, x + 10, y + 8, 16, SpaceDraw.Cyan );
+        Icon( route.Destination == FleetSimulation.Proxima ? HudIcon.Route : HudIcon.Chart, x + 10, y + 8, 16, SpaceDraw.Cyan );
         FitText( route.Destination == FleetSimulation.Proxima ? "EXPEDITION / SOL TO PROXIMA" :
             $"{CelestialSystem.Systems[route.Destination]} / SYSTEM CHART", x + 33, y + 9, w - 47, 1.3f, White );
         FitText( route.Status, x + 11, y + 33, w - 22, 1, Label );
@@ -102,13 +106,17 @@ internal sealed partial class FleetHud {
     }
 
     private void GalaxyButton( float x, float y, float width, GalaxyAction action ) {
-        string label = action switch {
-            GalaxyAction.SelectCrew => "SELECT CREW", GalaxyAction.Rally => "RALLY TO EARTH",
-            GalaxyAction.Launch => "LAUNCH ONE WAY", GalaxyAction.View => "VIEW SYSTEM", GalaxyAction.Research => "OPEN RESEARCH", _ => ""
+        var (icon, label, narrow) = action switch {
+            GalaxyAction.SelectCrew => (HudIcon.Crew, "SELECT CREW", "CREW"),
+            GalaxyAction.Rally => (HudIcon.Rally, "RALLY TO SOL", "RALLY"),
+            GalaxyAction.Launch => (HudIcon.Launch, "LAUNCH", "LAUNCH"),
+            GalaxyAction.View => (HudIcon.Chart, "VIEW SYSTEM", "VIEW"),
+            GalaxyAction.Research => (HudIcon.Science, "RESEARCH", "RESEARCH"),
+            _ => (HudIcon.Ship, "", "")
         };
         if ( label.Length == 0 ) return;
-        Rect( x, y, width, 21, action == GalaxyAction.Launch ? Active : Well );
-        FitText( label, x + 6, y + 7, width - 12, 1, SpaceDraw.Cyan );
+        IconButton( x, y, width, icon, TextWidth( label.Length, 1 ) <= width - 22 ? label : narrow,
+            enabled: true, active: action == GalaxyAction.Launch );
     }
 
     private static (GalaxyAction First, GalaxyAction Second, GalaxyAction Third, GalaxyAction Fourth) RouteActions( GalaxyRoute route ) {

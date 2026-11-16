@@ -11,6 +11,8 @@ namespace FleetBattler;
 internal static class Program {
     private const float DefaultTilt = 1.068f;
     private const int StationSlots = 1 + FleetSimulation.FacilityCount * (CelestialSystem.BodyCount - 1);
+    private const int EffectSlots = FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity +
+        BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity + FleetSimulation.FrontierRepairCapacity + 1;
 
     [STAThread]
     public static int Main( string[] args ) {
@@ -87,8 +89,8 @@ internal static class Program {
         using var second = device.CreateBuffer( (ulong)(fleet.Capacity + StationSlots) * FleetDraw.InstanceStride, BufferMemory.Upload );
         using var firstHud = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
         using var secondHud = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
-        using var firstEffects = device.CreateBuffer( (FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity + FleetSimulation.FrontierRepairCapacity) * BattleDraw.EffectStride, BufferMemory.Upload );
-        using var secondEffects = device.CreateBuffer( (FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity + FleetSimulation.FrontierRepairCapacity) * BattleDraw.EffectStride, BufferMemory.Upload );
+        using var firstEffects = device.CreateBuffer( EffectSlots * BattleDraw.EffectStride, BufferMemory.Upload );
+        using var secondEffects = device.CreateBuffer( EffectSlots * BattleDraw.EffectStride, BufferMemory.Upload );
         using var queue = device.CreateCommandQueue( );
         using var allocator = device.CreateCommandAllocator( );
         using var commands = device.CreateCommandList( allocator );
@@ -101,6 +103,7 @@ internal static class Program {
         using var minerOverride = minerPath is null ? null : new StaticMeshSet( device, commands, GltfModel.Load( minerPath ), flattenScene: true );
         using var relay = LoadModel( "--station-model=", "MiningRelay.gltf", 0.12f );
         using var habitats = LoadModel( "--habitat-model=", "ONeillHabitat.gltf", 0.05f );
+        using var receiver = frontier ? LoadModel( "--receiver-model=", "ProximaReceiver.gltf", 0.13f ) : null;
         string defaultMoon = Path.Combine( AppContext.BaseDirectory, "Celestial", "Moon.jpg" );
         string? moonPath = args.FirstOrDefault( value => value.StartsWith( "--moon-map=", StringComparison.Ordinal ) )?[11..];
         if ( moonPath is null && File.Exists( defaultMoon ) ) moonPath = defaultMoon;
@@ -110,7 +113,7 @@ internal static class Program {
         queue.Wait( queue.Submit( commands ) );
 
         var result = Present( device, pipeline, thrust, space, moon, moonPath is not null, atlas, hud, effects, markers, traffic, audio, fleet, seed,
-            corvettes, frigates, scouts, freighters, minerOverride ?? freighters, relay, habitats, [first, second], [firstHud, secondHud], [firstEffects, secondEffects],
+            corvettes, frigates, scouts, freighters, minerOverride ?? freighters, relay, habitats, receiver, [first, second], [firstHud, secondHud], [firstEffects, secondEffects],
             frameLimit, resizeTest, viewTest, args.Contains( "--fullscreen" ), args.Contains( "--galaxy" ) );
         var diagnostics = device.GetDiagnostics( );
         foreach ( string message in diagnostics.Messages ) Console.WriteLine( message );
@@ -129,10 +132,9 @@ internal static class Program {
 
     private static DesktopRunResult Present( GraphicsDevice device, PipelineState pipeline, PipelineState thrust, PipelineState space, SampledTexture2D moon, bool useMoonMap,
         SampledTexture2D atlas, PipelineState hudPipeline, PipelineState effectsPipeline, PipelineState markers, ComputeTraffic traffic, FleetAudio audio,
-        FleetSimulation initial, uint seed, StaticMeshSet corvettes, StaticMeshSet frigates, StaticMeshSet scouts, StaticMeshSet freighters, StaticMeshSet minerMeshes, StaticMeshSet relay, StaticMeshSet habitats,
+        FleetSimulation initial, uint seed, StaticMeshSet corvettes, StaticMeshSet frigates, StaticMeshSet scouts, StaticMeshSet freighters, StaticMeshSet minerMeshes, StaticMeshSet relay, StaticMeshSet habitats, StaticMeshSet? receiver,
         GpuResource[] uploads, GpuResource[] hudUploads, GpuResource[] effectsUploads, int frameLimit, bool resizeTest, bool viewTest, bool startFullscreen, bool startGalaxy ) {
-        var systems = new FleetSimulation?[CelestialSystem.Systems.Length];
-        systems[0] = initial;
+        var campaign = new FleetCampaign( initial, seed );
         var fleet = initial;
         var instances = new ShipInstance[fleet.Capacity + StationSlots];
         var habitatInstances = new ShipInstance[CelestialSystem.BodyCount];
@@ -144,14 +146,14 @@ internal static class Program {
         var display = new FullscreenToggle( );
         var selection = new CommandSelection( fleet.Capacity );
         selection.Squadron( fleet, fleet.FirstPlayerSquad( ), SelectionMode.Replace );
-        var effects = new BattleEffect[FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity + BattleDraw.SolarTrackCapacity + BattleDraw.SiteEffectCapacity + FleetSimulation.FrontierRepairCapacity];
+        var effects = new BattleEffect[EffectSlots];
         int planet = initial.Frontier ? FleetSimulation.Homeworld : -1, shotsHeard = 0, lossesHeard = 0, nextCue = 0;
         long noticeUntil = 0;
         string? notice = null, hostileAlert = null;
         long hostileAlertUntil = 0;
         string? routeNotice = null;
         int routeTarget = FleetSimulation.Proxima;
-        var galaxyHulls = new int[systems.Length];
+        var galaxyHulls = new int[CelestialSystem.Systems.Length];
         bool oreShort = false, galaxy = startGalaxy || viewTest, sawGalaxy = false;
         int slotsUsed = 0, systemsVisited = 0, previousOwner = -1, speed = 1;
         int surveysHeard = 0, wingsHeard = 0, yardState = -1, sitesHeard = 0, buildsHeard = 0;
@@ -163,13 +165,11 @@ internal static class Program {
         int raidersSeen = 0;
         var briefings = new Queue<(Briefing Text, Action? Accept, Action? Dismiss)>();
         Briefing? CurrentBriefing( ) => briefings.TryPeek( out var next ) ? next.Text : null;
-        int yardInspector = -1, launchesSeen = 0, researchSeen = 0, servicesSeen = 0, scansHeard = 0;
+        int yardInspector = -1, launchesSeen = 0, servicesSeen = 0, scansHeard = 0;
         bool buildCatalog = false, secondResearchPage = false;
         SiteLayer catalogLayer = SiteLayer.Orbit;
         int piracySeen = 0, coloniesSeen = 0;
         var clock = new FleetClock( );
-        Expedition? crossing = null;
-        bool crossed = false, endShown = false, charterOffered = false;
         bool paused = false;
         float zoom = initial.Solar ? 0.64f : 0.85f, tilt = DefaultTilt, yaw = 0;
         Vector2 cameraFocus = initial.Solar ? initial.Bodies[FleetSimulation.Homeworld].Center : default;
@@ -193,14 +193,15 @@ internal static class Program {
             slotsUsed |= 1 << frame.FrameSlotIndex;
             var hudUpload = hudUploads[frame.FrameSlotIndex];
             audio.SetSituation( fleet.SystemIndex, galaxy, fleet.Contested || fleet.InBattle, fleet.Won );
-            float elapsed = clock.Advance( initial.Frontier ? initial : fleet, frame.Elapsed.TotalSeconds, speed, paused || briefings.Count > 0, AdvanceCampaign );
+            float elapsed = clock.Advance( initial.Frontier ? initial : fleet, frame.Elapsed.TotalSeconds, speed, paused || briefings.Count > 0, campaign.Advance );
+            QueueCampaignBriefings( );
             interpolation = clock.Interpolation;
             if ( galaxy ) {
                 sawGalaxy = true;
                 SpaceDraw.RecordGalaxy( frame.Commands, space, moon, fleet.SystemIndex, viewport.Width, viewport.Height, fleet.Frontier );
                 UpdateGalaxyHulls( );
                 hud.RecordGalaxy( frame.Commands, hudPipeline, hudUpload, fleet.SystemIndex, viewport.Width, viewport.Height,
-                    fleet.Frontier, initial.AstrometryUpgrade, galaxyHulls, RouteView( ), initial.Frontier ? initial.Tick : fleet.Tick, speed, paused );
+                    fleet.Frontier, initial.AstrometryUpgrade, galaxyHulls, RouteView( ), initial.Frontier ? initial.Tick : fleet.Tick, speed, paused, CurrentBriefing( ) );
                 return;
             }
 
@@ -256,48 +257,10 @@ internal static class Program {
                 Notify( $"{fleet.Hull( launch.Hull ).Name} LAUNCHED / {fleet.BodyName( launch.Body )}" );
                 audio.Cue( "launch" );
             }
-            if ( fleet.ReceiverOnline && !charterOffered ) {
-                charterOffered = true;
-                bool canClaim = fleet.CanClaimReceiver;
-                briefings.Enqueue( (new( "WHO CONTROLS THE RECEIVER?", "PROXIMA / SURVEY CONSORTIUM",
-                    "The receiver is answering. The Consortium wants an open channel so independent crews can study the precursor data. " +
-                    (canClaim ? "Rival Command is approaching and will challenge a sole claim." : "A sole claim requires an expedition escort."),
-                    ContentArt.Lab, "SHARE WITH CONSORTIUM", canClaim ? "CLAIM FOR SOL" : "SHARE AND CLOSE",
-                    "OPEN ACCESS / +30 SCIENCE", canClaim ? "RIVAL COMMAND WILL INTERCEPT" : "OPEN ACCESS / +30 SCIENCE" ),
-                    () => fleet.CommissionReceiver( ReceiverCharter.Shared ),
-                    () => fleet.CommissionReceiver( canClaim ? ReceiverCharter.Independent : ReceiverCharter.Shared )) );
-            }
-            if ( fleet.ReceiverSecured && !endShown ) {
-                endShown = true;
-                briefings.Enqueue( (new( "THE FIRST CROSSING COMPLETE", "PROXIMA / EXPEDITION DISPATCH",
-                    fleet.Charter == ReceiverCharter.Shared
-                        ? "The Proxima receiver is transmitting. Sol and the Consortium share the link. Independent crews can now read the precursor record."
-                        : "The Proxima receiver is transmitting. With Rival Command driven off, Sol holds the first working interstellar link.",
-                    ContentArt.Lab, "CONTINUE CAMPAIGN", "CLOSE" ), null, null) );
-            }
-            if ( researchSeen != fleet.CompletedResearch ) {
-                researchSeen = fleet.CompletedResearch;
-                var tech = FleetSimulation.Tech( fleet.LastTechnology );
-                briefings.Enqueue( (new( "RESEARCH COMPLETED", tech.Name, tech.Description, tech.Artwork, "OPEN RESEARCH", "DISMISS", tech.Benefit ), () => {
-                    secondResearchPage = tech.Branch == ResearchBranch.Propulsion;
-                    yardInspector = -1;
-                    commandTab = CommandTab.Research;
-                }, null) );
-                Notify( $"{FleetSimulation.Tech( fleet.LastTechnology ).Name} RESEARCH COMPLETE" );
-                audio.Cue( "launch" );
-            }
             if ( dispatchesSeen < fleet.DispatchCount ) {
                 bool hostile = false;
                 while ( dispatchesSeen < fleet.DispatchCount ) {
                     var received = fleet.Dispatch( dispatchesSeen++ );
-                    if ( received == FrontierEvent.Distress ) {
-                        briefings.Enqueue( (new( "THE FIRST PIRATES", "SOL AUTHORITY / EXTRACTION DISPATCH",
-                            "Unregistered hulls are following our outbound ore shipments. Their transponders went dark as the first convoy left. " +
-                            "The Ceres Compact offers a patrol to hold them off while our own escorts get ready.",
-                            ContentArt.Corvette, "FUND CERES PATROL", "PREPARE OUR OWN FLEET",
-                            "15 ENERGY / +60 SECONDS AT 1X / ONE FEWER RAIDER", "KEEP OUR ENERGY / MAKE READY FOR THE FULL RAID" ), () =>
-                            Notify( fleet.FundPatrol( ) ? "CERES PATROL FUNDED / RAID DELAYED" : "PATROL UNAVAILABLE / PREPARE YOUR FLEET" ), null) );
-                    }
                     if ( received is not (FrontierEvent.Raid or FrontierEvent.Counterattack or FrontierEvent.Interdiction) ) continue;
                     hostile = true;
                     hostileAlert = FleetHud.IncidentTitle( received );
@@ -359,6 +322,7 @@ internal static class Program {
             siteCount = 0;
             int stationStart = active.Length;
             int nextStation = stationStart, habitatCount = 0;
+            ShipInstance? receiverInstance = null;
             if ( !fleet.Frontier ) {
                 Vector4 relayTint = fleet.Owner == 0 ? new( 0.48f, 1.5f, 1.8f, 1 ) : fleet.Owner == 1
                     ? new( 2.1f, 0.91f, 0.5f, 1 ) : Vector4.One;
@@ -395,16 +359,23 @@ internal static class Program {
                     _ => (0.55f, new Vector4( 0.63f, 1.9f, 1.35f, 1 ))
                 };
                 if ( !fleet.SiteEnRoute( body, facility ) || yard ) {
-                    if ( facility == PlanetFacility.Habitat )
+                    if ( receiver is not null && fleet.SystemIndex == FleetSimulation.Proxima &&
+                         body == FleetSimulation.Homeworld && facility == PlanetFacility.Lab )
+                        receiverInstance = Station( position, 1, remaining, duration, Vector4.One );
+                    else if ( facility == PlanetFacility.Habitat )
                         habitatInstances[habitatCount++] = Station( position, 1.18f, remaining, duration, new( 1.15f, 1.37f, 1.85f, 1 ) );
                     else AddStation( position, size, Math.Max( 0, remaining ), duration, tint );
                 }
             }
             var upload = uploads[frame.FrameSlotIndex];
             habitatInstances.AsSpan( 0, habitatCount ).CopyTo( instances.AsSpan( nextStation ) );
-            upload.Write<ShipInstance>( instances.AsSpan( 0, nextStation + habitatCount ) );
+            int receiverStart = nextStation + habitatCount;
+            if ( receiverInstance is { } station ) instances[receiverStart] = station;
+            upload.Write<ShipInstance>( instances.AsSpan( 0, receiverStart + (receiverInstance.HasValue ? 1 : 0) ) );
             FleetDraw.Record( frame.Commands, pipeline, relay, upload, (uint)(nextStation - stationStart), viewProjection, (uint)stationStart );
             FleetDraw.Record( frame.Commands, pipeline, habitats, upload, (uint)habitatCount, viewProjection, (uint)nextStation );
+            if ( receiverInstance.HasValue )
+                FleetDraw.Record( frame.Commands, pipeline, receiver!, upload, 1, viewProjection, (uint)receiverStart );
 
             void AddStation( Vector2 position, float size, int remaining, int duration, Vector4 tint ) =>
                 instances[nextStation++] = Station( position, size, remaining, duration, tint );
@@ -457,6 +428,8 @@ internal static class Program {
                 void WorkBeam( Vector2 from, Vector2 to, float scanner ) =>
                     effects[pulseCount++] = new( new( from.X, from.Y, to.X, to.Y ), new( workTime, 0, 6, scanner ) );
             }
+            if ( fleet.ReceiverOnline && receiverInstance is { } transmitter )
+                effects[pulseCount++] = BattleDraw.ReceiverSignal( transmitter.Center, fleet.Tick, interpolation );
             if ( fleet.Frontier ) pulseCount += BattleDraw.FillRepairs( fleet, effects.AsSpan( pulseCount ), interpolation );
             pulseCount += BattleDraw.FillSolarTracks( fleet, effects.AsSpan( pulseCount ) );
             if ( pulseCount != 0 ) {
@@ -499,7 +472,9 @@ internal static class Program {
                 window.KeyPreview = true;
                 window.KeyDown += ( _, e ) => {
                     if ( briefings.Count > 0 ) {
-                        if ( e.KeyCode is Keys.Enter or Keys.Escape ) ResolveBriefing( e.KeyCode == Keys.Enter );
+                        if ( e.KeyCode == Keys.Enter ) ResolveBriefing( accept: true );
+                        if ( e.KeyCode == Keys.Escape && CurrentBriefing( ) is { EscapeDismisses: true } )
+                            ResolveBriefing( accept: false );
                         e.SuppressKeyPress = true;
                         return;
                     }
@@ -558,6 +533,11 @@ internal static class Program {
                     e.SuppressKeyPress = true;
                 };
                 window.MouseDown += ( _, e ) => {
+                    if ( CurrentBriefing( ) is not null ) {
+                        var briefingHit = FleetHud.HitBriefing( new( e.X, e.Y ), viewport.Width, viewport.Height );
+                        if ( e.Button == MouseButtons.Left && briefingHit.Action == HudAction.Briefing ) ResolveBriefing( briefingHit.Index == 1 );
+                        return;
+                    }
                     if ( galaxy ) {
                         if ( e.Button is MouseButtons.Left or MouseButtons.Right )
                             GalaxyCommand( window, new( e.X, e.Y ), e.Button == MouseButtons.Right );
@@ -620,7 +600,6 @@ internal static class Program {
                                     if ( selection.Count > 0 ) shipDetails = !shipDetails;
                                     break;
                                 case HudAction.ScrollFleet: fleetScroll = hit.Index; break;
-                                case HudAction.Briefing: ResolveBriefing( hit.Index != 0 ); break;
                                 case HudAction.ResearchPage: secondResearchPage = !secondResearchPage; break;
                                 case HudAction.MerchantDecision:
                                     if ( fleet.AcceptContract( (MerchantDecision)hit.Index ) ) {
@@ -766,9 +745,9 @@ internal static class Program {
                     menu = new( new( viewport.Width - 5, viewport.Height - 5 ), 3 );
                 }
                 if ( result.Frames == 13 ) {
-                    briefings.Enqueue( (new( "THE FIRST PIRATES", "SOL AUTHORITY / EXTRACTION DISPATCH",
-                        "Unregistered hulls are following cargo traffic through the main belt.", ContentArt.Corvette,
-                        "FUND THE CERES PATROL", "PREPARE OUR OWN FLEET", "15 ENERGY / DELAY THE RAID", "KEEP YOUR RESERVES" ), null, null) );
+                    galaxy = true;
+                    briefings.Enqueue( (new( "EXPEDITION ARRIVED", "PROXIMA / FLIGHT OPERATIONS",
+                        "Receiver World is in sensor range.", ContentArt.Receiver, "FOCUS ARRIVAL", "KEEP CURRENT VIEW" ), null, null) );
                 }
                 if ( result.Frames == 12 ) {
                     menu = null;
@@ -830,39 +809,72 @@ internal static class Program {
                 : $"NEED {fleet.CurrentWingCost} ORE TO QUEUE A WING" );
         }
 
-        FleetSimulation System( int index ) {
-            int ships = initial.Frontier ? FleetSimulation.DefaultShips : initial.Capacity - FleetSimulation.WingSize * FleetSimulation.WingGoal;
-            return systems[index] ??= new FleetSimulation( ships, unchecked(seed + (uint)index * 1177),
-                rivalPatrol: true, system: index, battle: true, frontier: initial.Frontier );
-        }
-
-        void AdvanceCampaign( ) {
-            if ( !initial.Frontier ) return;
-            for ( int index = 1; index < systems.Length; ++index )
-                if ( systems[index] is { } system && (system == fleet || system.ExpeditionArrived) ) system.Step( );
-            if ( crossing is not { } flight || initial.Tick < flight.ArrivalTick ) return;
-            if ( System( flight.Destination ).Receive( flight, initial.Tick ) ) {
-                crossed = true;
-                crossing = null;
-                Notify( "EXPEDITION ARRIVED / OPEN THE GALAXY MAP" );
-                audio.Cue( "launch" );
-            }
-        }
-
         void UpdateGalaxyHulls( ) {
-            for ( int i = 0; i < systems.Length; ++i ) galaxyHulls[i] = systems[i]?.CyanCount ?? 0;
+            for ( int i = 0; i < galaxyHulls.Length; ++i ) galaxyHulls[i] = campaign.HullsAt( i );
+        }
+
+        void QueueCampaignBriefings( ) {
+            while ( campaign.TryTakeEvent( out var entry ) ) {
+                var system = entry.System;
+                switch ( entry.Kind ) {
+                    case CampaignEventKind.ResearchComplete:
+                        var tech = FleetSimulation.Tech( entry.Technology );
+                        briefings.Enqueue( (new( "RESEARCH COMPLETED", tech.Name, tech.Description, tech.Artwork,
+                            "OPEN RESEARCH", "DISMISS", tech.Benefit ), () => {
+                            if ( fleet != system ) Enter( system.SystemIndex );
+                            galaxy = false;
+                            secondResearchPage = tech.Branch == ResearchBranch.Propulsion;
+                            yardInspector = -1;
+                            commandTab = CommandTab.Research;
+                        }, null) );
+                        audio.Cue( "launch" );
+                        break;
+                    case CampaignEventKind.Distress:
+                        briefings.Enqueue( (new( "THE FIRST PIRATES", "SOL AUTHORITY / EXTRACTION DISPATCH",
+                            "Unregistered hulls are following our outbound ore shipments. Their transponders went dark as the first convoy left. " +
+                            "The Ceres Compact offers a patrol to hold them off while our own escorts get ready.",
+                            ContentArt.Corvette, "FUND CERES PATROL", "PREPARE OUR OWN FLEET",
+                            "15 ENERGY / +60 SECONDS AT 1X / ONE FEWER RAIDER", "KEEP OUR ENERGY / PREPARE FOR THE FULL RAID",
+                            EscapeDismisses: false ), () => Notify( system.FundPatrol( )
+                                ? "CERES PATROL FUNDED / RAID DELAYED" : "PATROL UNAVAILABLE / PREPARE YOUR FLEET" ), null) );
+                        break;
+                    case CampaignEventKind.Arrival:
+                        briefings.Enqueue( (new( "EXPEDITION ARRIVED", "PROXIMA / FLIGHT OPERATIONS",
+                            "The fleet has reached a stable orbit. Receiver World is within sensor range. Survey the site and establish an orbital lab to restore the transmitter.",
+                            ContentArt.Receiver, "FOCUS ARRIVAL", "KEEP CURRENT VIEW" ), () => Enter( system.SystemIndex ), null) );
+                        audio.Cue( "launch" );
+                        break;
+                    case CampaignEventKind.ReceiverDecision:
+                        bool canClaim = system.CanClaimReceiver;
+                        briefings.Enqueue( (new( "WHO CONTROLS THE RECEIVER?", "PROXIMA / SURVEY CONSORTIUM",
+                            "The receiver is answering. The Consortium wants an open channel so independent crews can study the precursor data. " +
+                            (canClaim ? "Rival Command is approaching and will challenge a sole claim." : "A sole claim requires an expedition escort."),
+                            ContentArt.Receiver, "SHARE WITH CONSORTIUM", canClaim ? "CLAIM FOR SOL" : "SHARE AND CLOSE",
+                            "OPEN ACCESS / +30 SCIENCE", canClaim ? "RIVAL COMMAND WILL INTERCEPT" : "OPEN ACCESS / +30 SCIENCE",
+                            EscapeDismisses: false ), () => system.CommissionReceiver( ReceiverCharter.Shared ),
+                            () => system.CommissionReceiver( canClaim ? ReceiverCharter.Independent : ReceiverCharter.Shared )) );
+                        break;
+                    case CampaignEventKind.CrossingComplete:
+                        briefings.Enqueue( (new( "THE FIRST CROSSING COMPLETE", "PROXIMA / EXPEDITION DISPATCH",
+                            system.Charter == ReceiverCharter.Shared
+                                ? "The Proxima receiver is transmitting. Sol and the Consortium share the link. Independent crews can now read the precursor record."
+                                : "The Proxima receiver is transmitting. With Rival Command driven off, Sol holds the first working interstellar link.",
+                            ContentArt.Receiver, "CONTINUE CAMPAIGN", "CLOSE" ), null, null) );
+                        break;
+                }
+            }
         }
 
         GalaxyRoute RouteView( ) {
             bool proxima = routeTarget == FleetSimulation.Proxima;
             bool charted = initial.CanChartSystem( routeTarget );
-            if ( proxima && crossing is { } flight ) {
+            if ( proxima && campaign.InTransit is { } flight ) {
                 int remaining = Math.Max( 0, flight.ArrivalTick - initial.Tick );
                 string phase = remaining > 1350 ? "DEPARTURE BURN" : remaining > 450 ? "CRUISE" : "BRAKING BURN";
                 return new( 0, routeTarget, $"{phase} / ETA {Math.Ceiling( remaining * FleetSimulation.StepSeconds * 4 / speed )} SEC",
                     null, flight.Hulls.Length, true, true, false, 1 - (float)remaining / FleetSimulation.ExpeditionDuration, false );
             }
-            if ( proxima && crossed )
+            if ( proxima && campaign.Arrived )
                 return new( fleet.SystemIndex, routeTarget, "EXPEDITION ARRIVED / RECEIVER WORLD IN SENSOR RANGE", null,
                     selection.Count, true, false, true, 1, false );
             string status = !charted ? "OBSERVATIONS REQUIRE DEEP SKY ASTROMETRY"
@@ -920,11 +932,20 @@ internal static class Program {
                     Enter( routeTarget );
                     break;
                 case GalaxyAction.Launch:
-                    if ( initial.Depart( selection.Ships, initial.Tick ) is not { } flight ) break;
-                    crossing = flight;
-                    selection.Prune( initial );
-                    routeNotice = null;
-                    audio.Cue( "launch" );
+                    if ( initial.LaunchBlock( selection.Ships ) is not null ) break;
+                    var cost = FleetSimulation.CrossingCost;
+                    briefings.Enqueue( (new( "AUTHORIZE THE FIRST CROSSING", "SOL / FLIGHT OPERATIONS",
+                        $"Authorize a one-way flight to Proxima for {selection.Count} ships. Sol will continue operating while the crew is in transit. Confirm the launch when you are ready to commit the fleet.",
+                        ContentArt.Receiver, "CONFIRM ONE-WAY LAUNCH", "KEEP PLANNING",
+                        $"{cost.Ore} ORE / {cost.Energy} ENERGY / 120 SEC AT 1X" ), () => {
+                        if ( !campaign.Depart( selection.Ships ) ) {
+                            routeNotice = initial.LaunchBlock( selection.Ships ) ?? "DEPARTURE UNAVAILABLE";
+                            return;
+                        }
+                        selection.Prune( initial );
+                        routeNotice = null;
+                        audio.Cue( "launch" );
+                    }, null) );
                     break;
             }
         }
@@ -933,12 +954,11 @@ internal static class Program {
             renameEditor?.Close( );
             fleetScroll = 0;
             shipDetails = false;
-            fleet = System( index );
+            fleet = campaign.System( index );
             selection.Squadron( fleet, fleet.FirstPlayerSquad( ), SelectionMode.Replace );
             planet = fleet.Established ? FleetSimulation.Homeworld : -1;
             yardInspector = -1;
             launchesSeen = fleet.ShipsLaunched;
-            researchSeen = fleet.CompletedResearch;
             raidersSeen = fleet.ActiveRaids;
             servicesSeen = fleet.CompletedServices;
             scansHeard = fleet.StartedScans;

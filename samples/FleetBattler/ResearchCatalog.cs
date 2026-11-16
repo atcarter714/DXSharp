@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace FleetBattler;
 
 internal enum ResearchBranch { Industry, Propulsion }
-internal enum ContentArt : uint { Scout, Miner, Corvette, Yard, Mine, Lab }
+internal enum ContentArt : uint { Scout, Miner, Corvette, Yard, Mine, Lab, Receiver }
 
 internal sealed record Technology( string Name, string Benefit, string Description, ContentArt Artwork,
     ResourceCost Cost, int Duration, ResearchBranch Branch, ResearchTopic[] Requires,
