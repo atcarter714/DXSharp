@@ -4,15 +4,15 @@ namespace FleetBattler;
 
 internal enum CommandTab { Hidden, Economy, Research, Fleet, Orders, Events }
 internal enum CommandAction { Toggle, Economy, Research, Fleet, Orders, Events,
-    StartIndustry, StartWeapons, StartDrive, StartHabitation, StartAstrometry, StartEscorts, StartFusion, CancelResearch, Earlier, Later }
+    CancelResearch, Earlier, Later }
 
 internal sealed partial class FleetHud {
     private const float OfficeWidth = 350;
     private static readonly string[] TabNames = ["COLONY", "RESEARCH", "DESIGN", "ORDERS", "LOG"];
     private static readonly HudIcon[] TabIcons = [HudIcon.Colony, HudIcon.Science, HudIcon.Design, HudIcon.Orders, HudIcon.Log];
     private static (float X, float Y) CommandOrigin( Layout layout ) => ((layout.Width - OfficeWidth) / 2, 61);
-    private static float CommandHeight( CommandTab tab, FleetSimulation fleet ) => tab switch {
-        CommandTab.Economy => 226, CommandTab.Research => 86 + Math.Max( ResearchTopics( false ).Length, ResearchTopics( true ).Length ) * 54, CommandTab.Fleet => 289, CommandTab.Events => 239,
+    private static float CommandHeight( CommandTab tab, FleetSimulation fleet, ResearchBranch researchBranch ) => tab switch {
+        CommandTab.Economy => 226, CommandTab.Research => 116 + ResearchCatalog.Current.Topics( researchBranch ).Length * 54, CommandTab.Fleet => 0, CommandTab.Events => 239,
         CommandTab.Orders => 82 + Math.Max( 1, YardRows( fleet ) ) * 21, _ => 162
     };
 
@@ -23,26 +23,27 @@ internal sealed partial class FleetHud {
         return count;
     }
 
-    private void CommandPanel( Layout layout, FleetSimulation fleet, CommandTab tab, int dispatch, int speed, bool secondResearchPage, bool frigate ) {
-        if ( layout.Width >= 780 ) {
+    private void CommandPanel( Layout layout, FleetSimulation fleet, CommandTab tab, int dispatch, int speed, ResearchBranch researchBranch ) {
+        if ( layout.Width >= 1110 ) {
             for ( int i = 0; i < TabNames.Length; ++i )
-                IconButton( layout.ClockX - 358 + i * 71, 19, 68, TabIcons[i], TabNames[i], true, (int)tab == i + 1 );
-        } else IconButton( layout.ClockX - 89, 19, 83, HudIcon.Colony, tab == CommandTab.Hidden ? "COMMAND" : "CLOSE", true, tab != CommandTab.Hidden );
-        if ( tab == CommandTab.Hidden ) return;
+                IconButton( layout.Width - 446 + i * 71, 19, 68, TabIcons[i], TabNames[i], true, (int)tab == i + 1 );
+        } else IconButton( layout.Width - 172, 19, 83, HudIcon.Colony, tab == CommandTab.Hidden ? "COMMAND" : "CLOSE", true, tab != CommandTab.Hidden );
+        if ( tab is CommandTab.Hidden or CommandTab.Fleet ) return;
 
         var (x, y) = CommandOrigin( layout );
         _overlay = 1;
-        PanelAt( x, y, OfficeWidth, CommandHeight( tab, fleet ), SpaceDraw.Cyan );
+        PanelAt( x, y, OfficeWidth, CommandHeight( tab, fleet, researchBranch ), SpaceDraw.Cyan );
         for ( int i = 0; i < TabNames.Length; ++i )
             IconButton( x + 7 + i * 68, y + 8, 65, TabIcons[i], TabNames[i], true, (int)tab == i + 1 );
         Span<char> label = stackalloc char[56];
+        int length;
         switch ( tab ) {
             case CommandTab.Economy:
                 Text( "COLONY ECONOMY", x + 11, y + 42, 1.25f, White );
                 Text( "STOCKPILE AND INCOME PER CYCLE", x + 11, y + 62, 1, Label );
                 Wallet( fleet, x + 11, y + 81, income: true );
                 Text( "ORE / CONSTRUCTION AND HULL MATERIAL", x + 11, y + 103, 1, OreTint );
-                Text( "ENERGY / SHIPYARDS AND INDUSTRY", x + 11, y + 119, 1, EnergyTint );
+                Text( $"ENERGY / {fleet.EnergyUpkeep} UPKEEP PER CYCLE", x + 11, y + 119, 1, EnergyTint );
                 Text( "SCIENCE / RESEARCH PROJECTS", x + 11, y + 135, 1, ScienceTint );
                 if ( fleet.Established ) {
                     var cap = fleet.ResourceCapacity;
@@ -54,33 +55,7 @@ internal sealed partial class FleetHud {
                 } else Text( "NO SOL PRESENCE IN THIS SYSTEM", x + 11, y + 155, 1, Label );
                 break;
             case CommandTab.Research:
-                ResearchPanel( x, y, fleet, speed, secondResearchPage );
-                break;
-            case CommandTab.Fleet:
-                var blueprint = frigate ? HullBlueprint.Frigate : HullBlueprint.Corvette;
-                var hull = fleet.Hull( blueprint );
-                var design = fleet.Blueprint( blueprint );
-                var flight = FleetSimulation.Flight( hull.Role, design, fleet.DriveUpgrade );
-                Art( Tile.Corvette, x + 10, y + 41, 61, 35 );
-                Text( frigate ? "FRIGATE / MODULE FIT" : "CORVETTE / MODULE FIT", x + 80, y + 43, 1.2f, White );
-                label.TryWrite( $"REACTOR LOAD {design.PowerUsed}/{design.PowerAvailable}", out int length );
-                Text( label[..length], x + 80, y + 62, 1, design.Valid ? EnergyTint : SpaceDraw.Amber );
-                Button( x + 252, y + 58, 83, frigate ? "CORVETTE" : "FRIGATE", true );
-                for ( int i = 0; i < (int)ModuleSlot.Count; ++i ) {
-                    var slot = (ModuleSlot)i;
-                    float top = y + 85 + i * 23;
-                    Rect( x + 10, top, 330, 21, Well );
-                    Text( ModuleLabels[i], x + 17, top + 7, 1, Label );
-                    Text( design.Installed( slot ), x + 94, top + 7, 1, White );
-                    Button( x + 277, top, 59, "CHANGE", true );
-                }
-                label.TryWrite( $"HULL {FleetSimulation.MaxHull( hull.Role )}  ARMOR {design.Armor}  SHIELD {design.Shield}  DMG {design.Damage}  RNG {design.Range}", out length );
-                Text( label[..length], x + 12, y + 232, 1, Label );
-                label.TryWrite( $"CRUISE {flight.Cruise:F0}  THRUST {flight.Acceleration:F0}  RELOAD {design.Reload}T", out length );
-                Text( label[..length], x + 12, y + 249, 1, Label );
-                Cost( hull.Cost, x + 12, y + 267 );
-                Text( design.Valid ? "PER HULL / NEW ORDERS" : "OVER POWER / CHANGE MODULES", x + 95, y + 268, 1,
-                    design.Valid ? White : SpaceDraw.Amber );
+                ResearchPanel( x, y, fleet, speed, researchBranch );
                 break;
             case CommandTab.Orders:
                 Text( "PRODUCTION SITES", x + 11, y + 42, 1.25f, White );
@@ -156,35 +131,32 @@ internal sealed partial class FleetHud {
         _ => throw new ArgumentOutOfRangeException( nameof(incident) )
     };
 
-    private static HudHit HitCommand( Layout layout, Vector2 p, FleetSimulation fleet, CommandTab tab, int dispatch, bool secondResearchPage ) {
-        if ( layout.Width >= 780 ) {
+    private static HudHit HitCommand( Layout layout, Vector2 p, FleetSimulation fleet, CommandTab tab, int dispatch, ResearchBranch researchBranch ) {
+        if ( layout.Width >= 1110 ) {
             for ( int i = 0; i < TabNames.Length; ++i )
-                if ( Contains( p, layout.ClockX - 358 + i * 71, 19, 68, 21 ) )
+                if ( Contains( p, layout.Width - 446 + i * 71, 19, 68, 21 ) )
                     return Action( (CommandAction)((int)CommandAction.Economy + i) );
-        } else if ( Contains( p, layout.ClockX - 89, 19, 83, 21 ) ) return Action( CommandAction.Toggle );
-        if ( tab == CommandTab.Hidden ) return default;
+        } else if ( Contains( p, layout.Width - 172, 19, 83, 21 ) ) return Action( CommandAction.Toggle );
+        if ( tab is CommandTab.Hidden or CommandTab.Fleet ) return default;
         var (x, y) = CommandOrigin( layout );
-        if ( !Contains( p, x, y, OfficeWidth, CommandHeight( tab, fleet ) ) ) return default;
+        if ( !Contains( p, x, y, OfficeWidth, CommandHeight( tab, fleet, researchBranch ) ) ) return default;
         for ( int i = 0; i < TabNames.Length; ++i )
             if ( Contains( p, x + 7 + i * 68, y + 8, 65, 21 ) )
                 return Action( (CommandAction)((int)CommandAction.Economy + i) );
         var relative = p - new Vector2( x, y );
         if ( tab == CommandTab.Research ) {
-            if ( Contains( relative, 237, 39, 98, 21 ) ) return new( HudAction.ResearchPage );
-            var topics = ResearchTopics( secondResearchPage );
+            for ( int i = 0; i < (int)ResearchBranch.Count; ++i )
+                if ( Contains( relative, 10 + i % 3 * 110, 39 + i / 3 * 23, 106, 21 ) )
+                    return new( HudAction.ResearchPage, i );
+            var topics = ResearchCatalog.Current.Topics( researchBranch );
             for ( int i = 0; i < topics.Length; ++i ) {
                 var topic = topics[i];
-                if ( Contains( relative, 270, 107 + i * 54, 64, 21 ) ) {
+                if ( Contains( relative, 270, 137 + i * 54, 64, 21 ) ) {
                     if ( fleet.ActiveResearch == topic ) return Action( CommandAction.CancelResearch );
-                    if ( fleet.CanResearch( topic ) ) return Action( (CommandAction)((int)CommandAction.StartIndustry + (int)topic) );
+                    if ( fleet.CanResearch( topic ) ) return new( HudAction.ResearchStart, (int)topic );
                 }
-                if ( Contains( relative, 10, 82 + i * 54, 330, 49 ) ) return new( HudAction.ResearchDetails, (int)topic );
+                if ( Contains( relative, 10, 112 + i * 54, 330, 49 ) ) return new( HudAction.ResearchDetails, (int)topic );
             }
-        }
-        if ( tab == CommandTab.Fleet ) {
-            if ( Contains( relative, 252, 58, 83, 21 ) ) return new( HudAction.DesignHull );
-            for ( int i = 0; i < (int)ModuleSlot.Count; ++i )
-                if ( Contains( relative, 277, 85 + i * 23, 59, 21 ) ) return new( HudAction.CycleModule, i );
         }
         if ( tab == CommandTab.Events && fleet.DispatchCount > dispatch && dispatch >= 0 && fleet.Dispatch( dispatch ) == FrontierEvent.MerchantOffer ) {
             if ( Contains( relative, 11, 148, 328, 21 ) && fleet.CanAcceptContract( MerchantDecision.Trade ) )

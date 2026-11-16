@@ -136,7 +136,7 @@ internal sealed partial class FleetSimulation {
             int target = Alive( preferred ) && IsHostile( side, SideOf( preferred ) ) && Vector2.DistanceSquared( _positions[preferred], _positions[ship] ) <= range * range
                 ? preferred : canAutoFire ? ClosestHostile( ship, side, range, combatOnly: Frontier && side == (int)FactionId.Raiders ) : -1;
             if ( target < 0 ) continue;
-            int damage = Frontier ? design.Damage + (side == 0 ? FireControlDamage : 0) + (Role( SquadronOf( ship ) ) == HullRole.Frigate ? 7 : 0) : side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
+            int damage = Frontier ? design.Damage + (side == 0 ? FireControlDamage : 0) + (Math.Max( 0, NavalWeight( Role( SquadronOf( ship ) ) ) - 1 ) * 7) : side == 0 ? WeaponUpgrade ? 17 : 13 : 11;
             if ( weapon == WeaponKind.Rail ) _railIncoming[target] = (ushort)Math.Min( 512, _railIncoming[target] + damage );
             else _incoming[target] = (byte)Math.Min( Frontier ? 255 : HullCapacity, _incoming[target] + damage );
             _nextShot[ship] = Tick + (Frontier ? design.Reload : 38) + ship % 9;

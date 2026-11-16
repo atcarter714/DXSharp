@@ -93,7 +93,8 @@ internal sealed partial class FleetHud {
             else text.TryWrite( $"SURVEYED / {fleet.DepositYield( body )} ORE POTENTIAL", out length );
         }
         else if ( status.SurveyUnit is { } scout ) {
-            text.TryWrite( $"SCOUT {scout.Squad + 1:D2} / {(fleet.SurveyWorking( body ) ? "SCANNING" : "EN ROUTE")} {(int)(status.SurveyProgress * 100)} PCT", out length );
+            var name = scout.IsShip ? fleet.ShipName( scout.Ship ) : fleet.FirstShipName( scout.Squad );
+            text.TryWrite( $"{name ?? "SCOUT"} / {(fleet.SurveyWorking( body ) ? "SCANNING" : "EN ROUTE")} {(int)(status.SurveyProgress * 100)} PCT", out length );
             Progress( new( x + 10, y + 56 ), width - 20, status.SurveyProgress, ScienceTint );
         } else length = CopyStatus( fleet.RequiresDrive( body ) && !fleet.DriveUpgrade ? "OUT OF RANGE / RESEARCH DRIVE" : "UNSURVEYED / ASSIGN SCOUT", text );
         Text( text[..length], x + 10, y + 45, 1, status.Surveyed ? SpaceDraw.Cyan : Label );
@@ -142,18 +143,19 @@ internal sealed partial class FleetHud {
                 if ( !fleet.SiteEnRoute( body, facility ) )
                     Progress( new( x + 45, top + layout.InspectorRow - 6 ), width - 77, 1f - (float)remaining / plan.Duration, SpaceDraw.Amber );
             } else if ( online ) {
+                int upgrade = fleet.SiteUpgradeRemaining( body, facility );
                 var (amount, kindText) = facility switch {
-                    PlanetFacility.Mine => (fleet.DepositYield( body ), "ORE / CYCLE"),
-                    PlanetFacility.Skimmer => (fleet.OrbitalExtractionYield( body ), "ORE / CYCLE"),
+                    PlanetFacility.Mine or PlanetFacility.Skimmer => (fleet.ExtractionIncome( body, fleet.Tick ), "ORE TOTAL / CYCLE"),
                     PlanetFacility.SurfaceStore => (250, "ORE CAP / 100 ENERGY"),
                     PlanetFacility.OrbitalStore => (180, "ORE CAP / 250 ENERGY"),
-                    PlanetFacility.Lab => (6, "SCI / CYCLE"), PlanetFacility.Observatory => (10, "SCI / CYCLE"),
-                    PlanetFacility.Solar => (FleetSimulation.SolarOutput, "ENERGY / CYCLE"),
-                    PlanetFacility.Yard => (FleetSimulation.YardNavalCapacity, "NAVAL / REPAIR / REFIT"),
-                    PlanetFacility.Habitat => (FleetSimulation.HabitatNavalCapacity, "NAVAL / HABITATION"),
-                    _ => (FleetSimulation.DepotNavalCapacity, "NAVAL")
+                    PlanetFacility.Lab or PlanetFacility.Observatory => (plan.Output + fleet.SiteUpgradeBonus( body, facility ), "SCI / CYCLE"),
+                    PlanetFacility.Solar => (plan.Output + fleet.SiteUpgradeBonus( body, facility ), "ENERGY / CYCLE"),
+                    _ => (plan.Output + fleet.SiteUpgradeBonus( body, facility ), "NAVAL CAPACITY")
                 };
-                text.TryWrite( $"+{amount} {kindText}", out length );
+                if ( upgrade > 0 ) text.TryWrite( $"UPGRADING / {Seconds( upgrade, speed )} SEC", out length );
+                else text.TryWrite( $"+{amount} {kindText}{(upgrade == 0 ? " / II" : "")}", out length );
+                if ( upgrade < 0 && plan.UpgradeBonus > 0 )
+                    Text( "UP", x + width - 26, top + 7, 1, fleet.UpgradeBlock( body, facility ) is null ? EnergyTint : Disabled );
             } else if ( block is not null ) length = CopyStatus( block, text );
             else {
                 Text( plan.Layer == SiteLayer.Surface ? "SURFACE" : "ORBIT", x + 45, top + 13, 1, Label );
@@ -210,6 +212,9 @@ internal sealed partial class FleetHud {
             if ( catalog ) return new( HudAction.BuildSite, (int)facility );
             if ( fleet.SiteRemaining( body, facility ) > 0 && point.X >= x + width - 28 )
                 return new( HudAction.CancelSite, (int)facility );
+            if ( fleet.SiteRemaining( body, facility ) == 0 && FleetSimulation.Facility( facility ).UpgradeBonus > 0 &&
+                 fleet.SiteUpgradeRemaining( body, facility ) < 0 && point.X >= x + width - 29 )
+                return new( HudAction.UpgradeSite, (int)facility );
             if ( facility == PlanetFacility.Yard && fleet.YardAt( body ) == 0 ) return new( HudAction.OpenYard, body );
             break;
         }

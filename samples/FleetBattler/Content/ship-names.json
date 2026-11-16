@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "names": {
+    "Scout": [
+      "Parallax",
+      "Wayfinder",
+      "Far Lantern",
+      "Arcminute",
+      "Vigil",
+      "Polaris",
+      "Kepler",
+      "Night Index"
+    ],
+    "Miner": [
+      "Gantry",
+      "Rivet",
+      "Foundry",
+      "Plumb Line",
+      "Bridgewright",
+      "Dovetail",
+      "Forge",
+      "Sky Crane"
+    ],
+    "Prospector": [
+      "Dust Sifter",
+      "Rock Hound",
+      "Red Lode",
+      "Cairn",
+      "Basalt",
+      "Quarry",
+      "Iron Vein",
+      "Bedrock"
+    ],
+    "Freighter": [
+      "Horizon Mail",
+      "Iron Ledger",
+      "Long Haul",
+      "Courier",
+      "Perihelion",
+      "Windfall",
+      "Waybill",
+      "Meridian"
+    ],
+    "Colony": [
+      "New Acre",
+      "Morning Seed",
+      "New Horizon",
+      "Pilgrim",
+      "Germinal",
+      "Terra Nova",
+      "New Dawn",
+      "Homestead"
+    ],
+    "Corvette": [
+      "Kestrel",
+      "Skylark",
+      "Peregrine",
+      "Swift",
+      "Shrike",
+      "Harrier",
+      "Osprey",
+      "Merlin"
+    ],
+    "Frigate": [
+      "Mariner",
+      "Breakwater",
+      "Sentinel",
+      "Long Watch",
+      "Wayguard",
+      "Headland",
+      "Warden",
+      "Vanguard"
+    ],
+    "Destroyer": [
+      "Tempest",
+      "Riptide",
+      "Gale",
+      "Squall",
+      "Thunderhead",
+      "Monsoon",
+      "Foehn",
+      "Borealis"
+    ],
+    "Cruiser": [
+      "Meridian",
+      "Carina",
+      "Ascendant",
+      "Confluence",
+      "Sidereal",
+      "Umbra",
+      "Capella",
+      "Argosy"
+    ],
+    "Battleship": [
+      "Aegis",
+      "Resolute",
+      "Indomitable",
+      "Adamant",
+      "Everstead",
+      "Citadel",
+      "Bastion",
+      "Warspite"
+    ],
+    "Carrier": [
+      "Hearthfire",
+      "Star Harbor",
+      "Atlas",
+      "Long Reach",
+      "Fleet Haven",
+      "Skyhold",
+      "Flight Tender",
+      "Arclight"
+    ],
+    "Titan": [
+      "Colossus",
+      "Hyperion",
+      "Prometheus",
+      "Sovereign",
+      "Leviathan",
+      "Tartarus",
+      "Pillar",
+      "Aurora"
+    ]
+  }
+}

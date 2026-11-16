@@ -35,23 +35,25 @@ internal sealed partial class FleetHud {
 
     private void Wallet( FleetSimulation fleet, float x, float y, bool income = false ) {
         Resource( HudIcon.Ore, fleet.Ore, fleet.OreIncome, OreTint, x );
-        Resource( HudIcon.Energy, fleet.Energy, fleet.EnergyIncome, EnergyTint, x + (income ? 98 : 55) );
+        Resource( HudIcon.Energy, fleet.Energy, fleet.EnergyIncome - fleet.EnergyUpkeep, EnergyTint, x + (income ? 98 : 55) );
         Resource( HudIcon.Science, fleet.Science, fleet.ScienceIncome, ScienceTint, x + (income ? 196 : 110) );
 
         void Resource( HudIcon icon, int balance, int rate, Vector4 tint, float left ) {
             Icon( icon, left, y, 10, tint );
             Span<char> line = stackalloc char[18];
             int length;
-            if ( income ) line.TryWrite( $"{balance}  +{rate}", out length );
+            if ( income ) line.TryWrite( $"{balance}  {rate:+0;-0;0}", out length );
             else line.TryWrite( $"{balance}", out length );
             Text( line[..length], left + 14, y + 1, 1, tint );
         }
     }
 
-    private const float YardWidth = 422, YardTop = 61, YardHeight = 323;
+    private const float YardWidth = 422, YardTop = 61, YardHeight = 333;
+    private const int YardPageSize = 5;
+    private const int YardPages = ((int)HullBlueprint.Count + YardPageSize - 1) / YardPageSize;
     private static float YardLeft( Layout layout ) => (layout.Width - YardWidth) / 2;
 
-    private void DrawShipyard( Layout layout, FleetSimulation fleet, int body, int speed ) {
+    private void DrawShipyard( Layout layout, FleetSimulation fleet, int body, int speed, int page ) {
         float x = YardLeft( layout ), y = YardTop;
         _overlay = 2;
         PanelAt( x, y, YardWidth, YardHeight, EnergyTint );
@@ -66,8 +68,9 @@ internal sealed partial class FleetHud {
 
         Span<char> label = stackalloc char[44];
         int length;
-        for ( int i = 0; i < (int)HullBlueprint.Count; ++i ) {
-            var blueprint = (HullBlueprint)i;
+        int start = page * YardPageSize;
+        for ( int i = 0; i < YardPageSize && start + i < (int)HullBlueprint.Count; ++i ) {
+            var blueprint = (HullBlueprint)(start + i);
             var hull = fleet.Hull( blueprint );
             float row = y + 80 + i * 45;
             Rect( x + 10, row, 202, 41, Well );
@@ -90,8 +93,7 @@ internal sealed partial class FleetHud {
                 continue;
             }
             var order = orders[i];
-            Text( order.Hull switch { HullBlueprint.Scout => "SURVEY SCOUT", HullBlueprint.Miner => "CONSTRUCTOR", HullBlueprint.Colony => "COLONY SHIP", HullBlueprint.Frigate => "ESCORT FRIGATE",
-                _ => order.Design.Weapon == WeaponKind.Rail ? "RAIL CORVETTE" : "PULSE CORVETTE" }, x + 239, row + 4, 1, White );
+            FitText( fleet.Hull( order.Hull ).Name, x + 239, row + 4, 139, 1, White );
             int remaining = fleet.ShipRemaining( body );
             if ( i == 0 ) label.TryWrite( $"BUILDING / {Seconds( remaining, speed )} SEC", out length );
             else length = CopyStatus( "WAITING", label );
@@ -99,17 +101,22 @@ internal sealed partial class FleetHud {
             if ( i == 0 ) Progress( new( x + 239, row + 25 ), 128, 1f - (float)remaining / order.Duration, EnergyTint );
             Button( x + 386, row + 4, 20, "X", true );
         }
-        Text( "ONE HULL PER ORDER", x + 11, y + 307, 1, Label );
+        Button( x + 10, y + 304, 24, "-", page > 0 );
+        Button( x + 186, y + 304, 24, "+", page + 1 < YardPages );
+        Text( $"HULL CATALOG {page + 1}/{YardPages}", x + 42, y + 311, 1, Label );
         _overlay = 0;
     }
 
-    private static HudHit HitShipyard( Layout layout, Vector2 p, FleetSimulation fleet, int body ) {
+    private static HudHit HitShipyard( Layout layout, Vector2 p, FleetSimulation fleet, int body, int page ) {
         float x = YardLeft( layout ), y = YardTop;
         if ( !Contains( p, x, y, YardWidth, YardHeight ) ) return default;
         if ( Contains( p, x + 390, y + 8, 22, 21 ) ) return new( HudAction.CloseYard );
-        for ( int i = 0; i < (int)HullBlueprint.Count; ++i )
-            if ( Contains( p, x + 170, y + 93 + i * 45, 37, 21 ) && fleet.ShipOrderBlock( body, (HullBlueprint)i ) is null )
-                return new( HudAction.BuildShip, i );
+        if ( page > 0 && Contains( p, x + 10, y + 304, 24, 21 ) ) return new( HudAction.YardPage, page - 1 );
+        if ( page + 1 < YardPages && Contains( p, x + 186, y + 304, 24, 21 ) ) return new( HudAction.YardPage, page + 1 );
+        int start = page * YardPageSize;
+        for ( int i = 0; i < YardPageSize && start + i < (int)HullBlueprint.Count; ++i )
+            if ( Contains( p, x + 170, y + 93 + i * 45, 37, 21 ) && fleet.ShipOrderBlock( body, (HullBlueprint)(start + i) ) is null )
+                return new( HudAction.BuildShip, start + i );
         for ( int i = 0; i < fleet.YardQueue( body ).Length; ++i )
             if ( Contains( p, x + 386, y + 84 + i * 33, 20, 21 ) ) return new( HudAction.CancelShip, i );
         return new( HudAction.Panel );
@@ -128,23 +135,22 @@ internal sealed partial class FleetHud {
         }
     }
 
-    private static ReadOnlySpan<ResearchTopic> ResearchTopics( bool propulsion ) =>
-        ResearchCatalog.Current.Topics( propulsion ? ResearchBranch.Propulsion : ResearchBranch.Industry );
+    private static readonly string[] ResearchLabels = ["INDUSTRY", "PROPULSION", "SENSORS", "HULLS", "STRUCTURES", "DOCTRINE"];
 
-    private void ResearchPanel( float x, float y, FleetSimulation fleet, int speed, bool propulsion ) {
-        Text( propulsion ? "PROPULSION AND SURVEY" : "INDUSTRY AND DEFENSE", x + 11, y + 42, 1.25f, White );
-        Button( x + 237, y + 39, 98, propulsion ? "INDUSTRY" : "PROPULSION", true );
+    private void ResearchPanel( float x, float y, FleetSimulation fleet, int speed, ResearchBranch branch ) {
+        for ( int i = 0; i < ResearchLabels.Length; ++i )
+            IconButton( x + 10 + i % 3 * 110, y + 39 + i / 3 * 23, 106, HudIcon.Science, ResearchLabels[i], true, i == (int)branch );
         Span<char> line = stackalloc char[64];
-        if ( fleet.ResearchRate == 0 ) Text( "BUILD A LAB OR OBSERVATORY TO START", x + 11, y + 62, 1, Label );
+        if ( fleet.ResearchRate == 0 ) Text( "BUILD A LAB OR OBSERVATORY TO START", x + 11, y + 94, 1, Label );
         else {
             line.TryWrite( $"LAB THROUGHPUT {fleet.ResearchRate}X / {fleet.ScienceIncome} SCI PER CYCLE", out int n );
-            Text( line[..n], x + 11, y + 62, 1, Label );
+            Text( line[..n], x + 11, y + 94, 1, Label );
         }
-        var topics = ResearchTopics( propulsion );
+        var topics = ResearchCatalog.Current.Topics( branch );
         for ( int i = 0; i < topics.Length; ++i ) {
             var topic = topics[i];
             var tech = FleetSimulation.Tech( topic );
-            float row = y + 82 + i * 54;
+            float row = y + 112 + i * 54;
             float inset = tech.Requires.Length == 0 ? 0 : 14;
             if ( inset > 0 ) {
                 Rect( x + 11 + inset - 7, row - 5, 1, 19, Label );
@@ -153,7 +159,7 @@ internal sealed partial class FleetHud {
             Rect( x + 10 + inset, row, 330 - inset, 49, fleet.ActiveResearch == topic ? Active : Well );
             Art( (Tile)tech.Artwork, x + 14 + inset, row + 4, 28, 27 );
             FitText( tech.Name, x + 47 + inset, row + 6, 278 - inset, 1.1f, White );
-            FitText( tech.Benefit, x + 47 + inset, row + 20, 278 - inset, 1, Label );
+            FitText( tech.Benefit, x + 47 + inset, row + 20, 278 - inset, 1, tech.Exclusive is null ? Label : EnergyTint );
             if ( fleet.Researched( topic ) ) {
                 Text( "COMPLETE", x + 17 + inset, row + 34, 1, SpaceDraw.Cyan );
                 continue;

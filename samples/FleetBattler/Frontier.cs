@@ -2,7 +2,8 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum HullRole : byte { Corvette, Scout, Miner, Freighter, Colony, Frigate }
+internal enum HullRole : byte { Corvette, Scout, Miner, Freighter, Colony, Frigate, Prospector, Destroyer, Cruiser, Battleship, Carrier, Titan }
+internal enum EconomicCharter { Pending, Extraction, Power }
 internal enum WeaponKind : byte { None, Pulse, Rail }
 internal enum FrontierEvent : byte { Arrival, Prospect, Distress, Raid, Counterattack, Secured, MerchantOffer, Interdiction }
 internal sealed partial class FleetSimulation {
@@ -24,6 +25,14 @@ internal sealed partial class FleetSimulation {
         : _secured ? "RESEARCH INTERSTELLAR PROPULSION"
         : !HasOperatingMine( ) ? "SURVEY A BODY / BUILD AN EXTRACTION SITE" : "BUILD A YARD AND EQUIP AN ESCORT";
     internal int RaidWarningTicks => _raidsLaunched == 0 ? Math.Max( 0, _raidTick - Tick ) : 0;
+    internal EconomicCharter CharterEconomy { get; private set; }
+    internal bool AdoptCharter( EconomicCharter charter ) {
+        if ( !Solar || _surveyedProspects == 0 || CharterEconomy != EconomicCharter.Pending ||
+             charter is not (EconomicCharter.Extraction or EconomicCharter.Power) ) return false;
+        CharterEconomy = charter;
+        return true;
+    }
+
     internal bool PaidPatrol { get; private set; }
 
     internal bool FundPatrol( ) {
@@ -102,13 +111,12 @@ internal sealed partial class FleetSimulation {
 
         for ( int i = 0; i < SquadCount; ++i ) {
             if ( !IsHostile( (int)FactionId.Sol, _squads[i].Faction ) || ShipCount( i ) == 0 ) continue;
-            bool pirate = _squads[i].Faction == (int)FactionId.Raiders;
-            var destination = pirate || YardBody < 0 ? FirstMinePosition( ) : Shipyard;
+            if ( _squads[i].Faction == (int)FactionId.Raiders ) { PlotPirateRaid( i ); continue; }
+            var destination = YardBody < 0 ? FirstMinePosition( ) : Shipyard;
             int target = -1;
             float distance = 24 * 24;
             for ( int ship = 0; ship < Count; ++ship ) {
-                if ( !Alive( ship ) || SideOf( ship ) != 0 ||
-                     pirate && !IsWarship( Role( SquadronOf( ship ) ) ) ) continue;
+                if ( !Alive( ship ) || SideOf( ship ) != 0 ) continue;
                 float d = Vector2.DistanceSquared( _positions[ship], Center( i ) );
                 if ( d >= distance ) continue;
                 distance = d;
@@ -138,7 +146,8 @@ internal sealed partial class FleetSimulation {
         var design = new ShipDesign( incident == FrontierEvent.Counterattack ? WeaponKind.Rail : WeaponKind.Pulse, false );
         int faction = (int)(incident == FrontierEvent.Counterattack ? FactionId.Rival : FactionId.Raiders);
         int squad = AddSquad( count, faction, Vector2.Clamp( origin, new( -NavigationRadius + 5 ), new( NavigationRadius - 5 ) ), design: design );
-        Move( squad, target );
+        if ( faction == (int)FactionId.Raiders ) PlotPirateRaid( squad );
+        else Move( squad, target );
         ++_raidsLaunched;
         if ( incident != FrontierEvent.Interdiction || _raidsLaunched == 3 ) SendDispatch( incident );
     }

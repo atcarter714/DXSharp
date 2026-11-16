@@ -48,7 +48,8 @@ internal sealed partial class FleetSimulation {
     internal int YardCount => Online( _yards );
     internal int DepotCount => Online( _depots );
     internal const int HabitatNavalCapacity = 4;
-    internal int NavalCapacity => YardCount * YardNavalCapacity + DepotCount * DepotNavalCapacity + Online( _habitats ) * HabitatNavalCapacity;
+    internal int NavalCapacity => Frontier ? StructureOutput( PlanetFacility.Yard ) + StructureOutput( PlanetFacility.Depot ) +
+        StructureOutput( PlanetFacility.Habitat ) : YardCount * YardNavalCapacity;
     internal int NavalUsed {
         get {
             int used = 0;
@@ -221,11 +222,11 @@ internal sealed partial class FleetSimulation {
         RefreshSurveys( );
         for ( int body = 1; body < _bodies.Length; ++body ) {
             if ( _surveyUnits[body] is { } unit && InSurveyRange( unit, body ) ) {
-                int rate = IsScoutSquad( unit.Squad ) ? AstrometryUpgrade ? Tech( ResearchTopic.Astrometry ).ScanRate : 2 : 1;
+                int rate = IsScoutSquad( unit.Squad ) ? ScoutScanRate : 1;
                 if ( _survey[body] == 0 ) ++StartedScans;
                 _survey[body] = Math.Min( SurveyRequired, _survey[body] + rate );
                 if ( _survey[body] == SurveyRequired ) {
-                    Ore = Math.Min( ResourceCapacity.Ore, Ore + (Frontier ? 15 : 40) );
+                    Ore = Math.Min( ResourceCapacity.Ore, Ore + (Frontier ? 10 + (Researched( ResearchTopic.WideSearch ) ? Tech( ResearchTopic.WideSearch ).SurveyBonus : 0) : 40) );
                     if ( Frontier ) RevealProspect( body );
                     ++CompletedSurveys;
                     LastSurveyBody = body;

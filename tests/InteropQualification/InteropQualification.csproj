@@ -11,8 +11,10 @@
     <ProjectReference Include="../../src/DXSharp.Core/DXSharp.Core.csproj" />
     <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
+    <Compile Include="../../samples/FleetBattler/ShipDesignerHud.cs" Link="Fleet/ShipDesignerHud.cs" />
+    <Compile Include="../../samples/FleetBattler/GameCatalog.cs" Link="Fleet/GameCatalog.cs" />
     <Compile Include="../../samples/FleetBattler/ResearchCatalog.cs" Link="Fleet/ResearchCatalog.cs" />
-    <None Include="../../samples/FleetBattler/Content/research.json" Link="Content/research.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../../samples/FleetBattler/Content/*.json" Link="Content/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Compile Include="../../samples/FleetBattler/IndustryHud.cs" Link="Fleet/IndustryHud.cs" />
     <Compile Include="../../samples/FleetBattler/FleetCampaign.cs" Link="Fleet/FleetCampaign.cs" />
     <Compile Include="../../samples/FleetBattler/Expedition.cs" Link="Fleet/Expedition.cs" />

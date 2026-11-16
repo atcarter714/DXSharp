@@ -38,6 +38,62 @@ internal sealed partial class FleetSimulation {
         }
     }
 
+    private void PlotPirateRaid( int squad ) {
+        ref var raider = ref _squads[squad];
+        var center = Center( squad );
+        int strength = ShipCount( squad );
+        int escorts = LocalEscortStrength( center, 42, out var threat );
+        var target = Vector2.Zero;
+        float score = float.NegativeInfinity;
+        if ( escorts < strength ) {
+            for ( int body = 1; body < _bodies.Length; ++body ) {
+                int income = ExtractionIncome( body, Tick );
+                if ( income == 0 ) continue;
+                var site = ExtractionPosition( body );
+                int guard = LocalEscortStrength( site, 36, out _ );
+                if ( guard >= strength ) continue;
+                float value = income * 4 - guard * 12 - Vector2.Distance( center, site ) * 0.08f;
+                if ( value > score ) { target = site; score = value; }
+            }
+        }
+        if ( !float.IsNegativeInfinity( score ) ) {
+            raider.Stance = FleetStance.Normal;
+            if ( raider.Order.Enemy != 0 || Vector2.DistanceSquared( raider.Order.Target, target ) > 64 ) Move( squad, target );
+            return;
+        }
+
+        raider.Stance = FleetStance.Passive;
+        var away = center - (escorts > 0 ? threat : _bodies[0].Center);
+        var direction = away.LengthSquared( ) < 0.01f ? Vector2.UnitX : Vector2.Normalize( away );
+        // An undefended escape vector stays on the chart and avoids diving through the patrol.
+        target = Vector2.Clamp( center + direction * 95, new( -NavigationRadius + 4 ), new( NavigationRadius - 4 ) );
+        if ( Vector2.DistanceSquared( center, target ) < 144 && escorts == 0 ) {
+            for ( int ship = raider.First; ship < raider.First + raider.Count; ++ship ) {
+                if ( !Alive( ship ) ) continue;
+                _hull[ship] = 0;
+                --raider.Alive;
+                --_factionCount[(int)FactionId.Raiders];
+            }
+        } else if ( raider.Order.Enemy != 0 || Vector2.DistanceSquared( raider.Order.Target, target ) > 144 )
+            Move( squad, target );
+    }
+
+    internal int LocalEscortStrength( Vector2 position, float radius, out Vector2 nearest ) {
+        nearest = default;
+        float closest = float.PositiveInfinity;
+        int weight = 0;
+        for ( int ship = 0; ship < Count; ++ship ) {
+            if ( !Alive( ship ) || FactionOf( ship ) != FactionId.Sol ) continue;
+            int strength = NavalWeight( Role( SquadronOf( ship ) ) );
+            if ( strength == 0 ) continue;
+            float distance = Vector2.DistanceSquared( position, _positions[ship] );
+            if ( distance > radius * radius ) continue;
+            weight += strength;
+            if ( distance < closest ) { closest = distance; nearest = _positions[ship]; }
+        }
+        return weight;
+    }
+
     private Vector2 ExtractionPosition( int body ) => SitePositionAt( body,
         Remaining( _skimmers[body] ) == 0 ? PlanetFacility.Skimmer : PlanetFacility.Mine, Tick, _bodies[body].Center );
 }

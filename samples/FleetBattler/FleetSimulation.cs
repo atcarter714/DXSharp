@@ -202,13 +202,22 @@ internal sealed partial class FleetSimulation {
             target += RotateSlot( _offsets[selected.Ship], _squads[selected.Squad].Direction );
         return new( Vector2.DistanceSquared( Center( selected ), target ) > 1 ? FlightOrder.Move : FlightOrder.Idle, target, -1, -1 );
     }
-    internal static bool UsesHaulerModel( HullRole role ) => role is HullRole.Miner or HullRole.Freighter or HullRole.Colony;
+    internal static bool UsesHaulerModel( HullRole role ) => role is HullRole.Miner or HullRole.Freighter or HullRole.Colony or HullRole.Prospector;
 
     internal int ActiveFrigates {
         get {
             int count = 0;
             for ( int squad = 0; squad < SquadCount; ++squad )
                 if ( Role( squad ) == HullRole.Frigate ) count += ShipCount( squad );
+            return count;
+        }
+    }
+
+    internal int ActiveProspectors {
+        get {
+            int count = 0;
+            for ( int i = 0; i < SquadCount; ++i )
+                if ( IsPlayerSquad( i ) && Role( i ) == HullRole.Prospector ) count += ShipCount( i );
             return count;
         }
     }
@@ -510,6 +519,9 @@ internal sealed partial class FleetSimulation {
             bool miner = groupMiners && UsesHaulerModel( Role( i ) );
             ref readonly var squad = ref _squads[i];
             var tint = Factions.ShipTint( (FactionId)squad.Faction );
+            var hull = Frontier ? GameCatalog.Hull( squad.Role ) : null;
+            float displayScale = hull?.Scale ?? (scout ? 0.75f : 1f);
+            int hullPoints = hull?.HitPoints ?? HullCapacity;
             int end = squad.First + squad.Count;
             for ( int ship = squad.First; ship < end; ++ship ) {
                 if ( !Alive( ship ) ) continue;
@@ -518,7 +530,7 @@ internal sealed partial class FleetSimulation {
                 if ( highlighted ) color.W = 1.66f;
                 destination[frigate ? frigateIndex++ : scout ? scoutIndex++ : miner ? minerIndex++ : index++] = new( VisualPosition( ship, interpolation ),
                     interpolation == 1 ? _headings[ship] : Vector2.Normalize( Vector2.Lerp( _previousHeadings[ship], _headings[ship], interpolation ) ), color,
-                    new Vector4( _thrust[ship], (ship % 173) * 0.618f, scout ? 0.75f : miner ? 0.56f : squad.Role == HullRole.Frigate && !groupFrigates ? 1.55f : 1, (float)_hull[ship] / MaxHull( squad.Role ) + (highlighted ? 2 : 0) ) );
+                    new Vector4( _thrust[ship], (ship % 173) * 0.618f, displayScale, (float)_hull[ship] / hullPoints + (highlighted ? 2 : 0) ) );
             }
         }
         return corvettes;
@@ -527,12 +539,14 @@ internal sealed partial class FleetSimulation {
     internal ulong StateHash( ) {
         ulong hash = 14695981039346656037;
         if ( Frontier ) {
-            Append( (uint)Charter );
+            Append( (uint)Charter ); Append( (uint)CharterEconomy ); Append( _specializations );
+            Append( (uint)_reservedTravelBerths ); Append( (uint)_nextShipName );
+            foreach ( int upgrade in _siteUpgrades ) Append( (uint)upgrade );
+            foreach ( var hull in WarshipBlueprints ) AppendDesign( Blueprint( hull ) );
             Append( _expeditionArrived ? 1u : 0u ); Append( _expeditionDeparted ? 1u : 0u );
             Append( (uint)_nextPatrol ); Append( PaidPatrol ? 1u : 0u );
             Append( (uint)_nextFleetId ); Append( (uint)_raidTick ); Append( (uint)_raidsLaunched ); Append( (uint)_deposits ); Append( _secured ? 1u : 0u );
             Append( DriveUpgrade ? 1u : 0u ); Append( HabitationUpgrade ? 1u : 0u ); Append( AstrometryUpgrade ? 1u : 0u );
-            AppendDesign( Design ); AppendDesign( FrigateDesign );
             Append( EscortsUpgrade ? 1u : 0u ); Append( FusionUpgrade ? 1u : 0u );
             Append( (uint)PiracyCycles ); Append( (uint)PirateOreLost ); Append( (uint)PirateEnergyLost );
             Append( (uint)MerchantAgreement ); Append( (uint)MerchantShipments );
@@ -620,7 +634,7 @@ internal sealed partial class FleetSimulation {
         }
     }
 
-    internal static int MaxHull( HullRole role ) => role == HullRole.Frigate ? 124 : HullCapacity;
+    internal static int MaxHull( HullRole role ) => GameCatalog.Hull( role ).HitPoints;
     internal int ShipGeneration( int ship ) => _shipGeneration[ship];
 
     private int AddSquad( int count, int faction, Vector2 center, HullRole role = HullRole.Corvette, ShipDesign design = default ) {
@@ -651,7 +665,7 @@ internal sealed partial class FleetSimulation {
             _previousPositions[i] = _positions[i] = center + RotateSlot( _offsets[i], heading );
             _squadOfShip[i] = squadIndex;
             ++_shipGeneration[i];
-            if ( Frontier ) _shipNames[i] = null;
+            if ( Frontier ) _shipNames[i] = faction == (int)FactionId.Sol ? AssignShipName( role ) : null;
             _shipOrders[i] = default;
             _velocities[i] = default;
             _thrust[i] = 0;
@@ -659,7 +673,7 @@ internal sealed partial class FleetSimulation {
             _railIncoming[i] = 0;
             _nextShot[i] = Frontier ? Tick : 0;
             _lastHit[i] = Frontier ? Tick : 0;
-            _hull[i] = (byte)MaxHull( role );
+            _hull[i] = (byte)(Frontier ? MaxHull( role ) : HullCapacity);
             _shield[i] = Frontier && IsWarship( role ) ? (byte)design.Shield : (byte)0;
             _armor[i] = Frontier && IsWarship( role ) ? (byte)design.Armor : (byte)0;
             _previousHeadings[i] = _headings[i] = heading;

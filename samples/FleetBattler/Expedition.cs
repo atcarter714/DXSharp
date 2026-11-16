@@ -1,7 +1,8 @@
 namespace FleetBattler;
 
 internal enum ReceiverCharter { Pending, Shared, Independent }
-internal readonly record struct ExpeditionHull( HullRole Role, ShipDesign Design, byte Hull, byte Shield, byte Armor, FleetStance Stance, string? Name );
+internal readonly record struct ExpeditionHull( HullRole Role, ShipDesign Design, byte Hull, byte Shield, byte Armor, FleetStance Stance, string? Name,
+    int Group = 0, string? FleetName = null );
 internal readonly record struct Expedition( int Destination, int ArrivalTick, ExpeditionHull[] Hulls, ResourceCost Supplies );
 
 internal sealed partial class FleetSimulation {
@@ -70,34 +71,61 @@ internal sealed partial class FleetSimulation {
 
     internal Expedition? Depart( ReadOnlySpan<bool> selected, int campaignTick ) {
         if ( LaunchBlock( selected ) is not null ) return null;
-        var hulls = new List<ExpeditionHull>( 8 );
-        for ( int ship = 0; ship < Math.Min( selected.Length, Count ); ++ship ) {
-            if ( !selected[ship] || !Alive( ship ) || FactionOf( ship ) != FactionId.Sol ) continue;
-            ref var squad = ref _squads[SquadronOf( ship )];
-            hulls.Add( new( squad.Role, squad.Design, _hull[ship], _shield[ship], _armor[ship], squad.Stance, _shipNames[ship] ) );
-        }
         int arrival = checked(campaignTick + ExpeditionDuration);
         Spend( CrossingCost );
         _expeditionDeparted = true;
+        return new( Proxima, arrival, RemoveTravelHulls( selected ), ArrivalSupplies );
+    }
+
+    internal bool TravelReady( int ship ) {
+        if ( !Alive( ship ) || FactionOf( ship ) != FactionId.Sol ) return false;
+        var order = EffectiveOrder( new( SquadronOf( ship ), ship ) );
+        return order.Enemy == 0 && order.Transfer.End <= Tick && order.Service == ServiceOrder.None &&
+            order.Construction == 0 && !order.Settlement && !order.Survey;
+    }
+
+    internal int TravelBerths {
+        get {
+            int room = Capacity - Count;
+            for ( int squad = 0; squad < SquadCount; ++squad )
+                if ( _squads[squad] is { Alive: 0, Count: 1, Faction: (int)FactionId.Sol } ) ++room;
+            return room - _reservedTravelBerths - _yardQueueSizes.Sum( );
+        }
+    }
+
+    private int _reservedTravelBerths;
+    internal void ReserveTravelBerths( int amount ) => _reservedTravelBerths += amount;
+
+    internal ExpeditionHull[] RemoveTravelHulls( ReadOnlySpan<bool> selected ) {
+        var hulls = new List<ExpeditionHull>( 8 );
         for ( int ship = 0; ship < Math.Min( selected.Length, Count ); ++ship ) {
             if ( !selected[ship] || !Alive( ship ) || FactionOf( ship ) != FactionId.Sol ) continue;
             int squad = SquadronOf( ship );
+            ref var state = ref _squads[squad];
+            hulls.Add( new( state.Role, state.Design, _hull[ship], _shield[ship], _armor[ship], state.Stance,
+                ShipName( ship ), state.FleetId, FleetName( squad ) ) );
             _hull[ship] = 0;
-            --_squads[squad].Alive;
+            --state.Alive;
             --_factionCount[(int)FactionId.Sol];
             ReleaseFleetName( squad );
         }
-        return new( Proxima, arrival, hulls.ToArray( ), ArrivalSupplies );
+        return hulls.ToArray( );
     }
 
     internal bool Receive( Expedition flight, int campaignTick ) {
         if ( !Frontier || SystemIndex != Proxima || _expeditionArrived || flight.Destination != SystemIndex ||
-             campaignTick < flight.ArrivalTick || flight.Hulls is not { Length: > 0 and <= 8 } ) return false;
+             campaignTick < flight.ArrivalTick || flight.Hulls is not { Length: > 0 and <= 8 } || flight.Hulls.Length > TravelBerths ) return false;
+        ReceiveTravelHulls( flight.Hulls, flight.Supplies, survey: false );
+        return true;
+    }
+
+    internal void ReceiveTravelHulls( ReadOnlySpan<ExpeditionHull> hulls, ResourceCost supplies, bool survey ) {
         _expeditionArrived = true;
-        Refund( flight.Supplies );
-        int berth = 0;
-        foreach ( var hull in flight.Hulls ) {
-            float angle = MathF.Tau * berth++ / flight.Hulls.Length;
+        Refund( supplies );
+        Span<int> groups = stackalloc int[hulls.Length];
+        for ( int i = 0; i < hulls.Length; ++i ) {
+            var hull = hulls[i];
+            float angle = MathF.Tau * i / hulls.Length;
             var offset = new System.Numerics.Vector2( MathF.Cos( angle ), MathF.Sin( angle ) ) * OrbitRadius( Homeworld, 1 );
             int squad = AddSquad( 1, (int)FactionId.Sol, _bodies[Homeworld].Center + offset, hull.Role, hull.Design );
             Park( squad, Homeworld, Tick );
@@ -107,11 +135,22 @@ internal sealed partial class FleetSimulation {
             _armor[ship] = hull.Armor;
             _squads[squad].Stance = hull.Stance;
             _shipNames[ship] = hull.Name;
+            if ( hull.Group != 0 ) {
+                for ( int prior = 0; prior < i; ++prior )
+                    if ( hulls[prior].Group == hull.Group ) {
+                        _squads[squad].FleetId = groups[prior];
+                        break;
+                    }
+                groups[i] = FleetId( squad );
+                if ( hull.FleetName is { } name ) _fleetNames[groups[i]] = name;
+            }
+            if ( !survey || hull.Role != HullRole.Scout ) continue;
+            for ( int body = 1; body < _bodies.Length; ++body )
+                if ( BeginSurvey( new( squad, ship ), body ) ) break;
         }
-        return true;
     }
 
-    internal bool ReceiverOnline => _expeditionArrived && SiteRemaining( Homeworld, PlanetFacility.Lab ) == 0;
+    internal bool ReceiverOnline => SystemIndex == Proxima && _expeditionArrived && SiteRemaining( Homeworld, PlanetFacility.Lab ) == 0;
     internal ReceiverCharter Charter { get; private set; }
     internal bool ReceiverSecured => ReceiverOnline && (Charter == ReceiverCharter.Shared ||
         Charter == ReceiverCharter.Independent && AmberCount == 0);

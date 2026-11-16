@@ -167,6 +167,12 @@ internal static class SpaceDraw {
                 sky = Body(sky,pixel,Site,solar ? 5 : 3);
             }
 
+            if (SiteTint.y > 0.99 && SiteTint.w == 0) {
+                float haze = Noise(p*14 + float2(7.3,3.1)) * 0.055;
+                float luma = dot(sky,float3(0.22,0.68,0.10));
+                return float4(saturate(lerp(sky, luma*float3(0.59,0.8,1.13),0.73)*0.72 + haze*float3(0.31,0.56,0.94)),1);
+            }
+
             float2 marker = world - Site.xy;
             float distanceToSite = length(marker);
             float arc = frac(atan2(marker.x,-marker.y) / 6.2831853 + 1);
@@ -229,16 +235,17 @@ internal static class SpaceDraw {
         MemoryMarshal.CreateReadOnlySpan( ref inverse, 1 ).CopyTo( MemoryMarshal.Cast<Vector4, Matrix4x4>( values[..4] ) );
         values[4] = new( width, height, seconds, worldPerPixel );
         for ( int i = 0; i < CelestialSystem.OuterBelt; ++i )
-            values[5 + i] = CelestialSystem.Project( fleet.VisualBody( i, interpolation ), r, viewProjection, width, height, halfHeight );
+            values[5 + i] = CelestialSystem.Project( fleet.VisualBody( i, interpolation ), r, viewProjection, width, height, halfHeight, fleet.Frontier ? CelestialSystem.FrontierBodyDisplayScale : 1 );
         values[9] = new( bodies[0].Center.X, bodies[0].Center.Y, (fleet.Solar ? SolarCatalog.Get( 1 ).Axis : CelestialSystem.RockyAxis) * r, (fleet.Solar ? SolarCatalog.Get( 2 ).Axis : CelestialSystem.GiantAxis) * r );
         var earth = fleet.VisualBody( 1, interpolation );
         values[10] = new( earth.Center.X, earth.Center.Y, (fleet.Solar ? SolarCatalog.Get( 3 ).Axis : CelestialSystem.MoonAxis) * r, useMoonMap ? 1 : 0 );
         values[11] = new( fleet.Site.X, fleet.Site.Y, fleet.SiteRadius, progress );
         if ( fleet.Frontier ) {
-            var belt = CelestialSystem.Project( fleet.VisualBody( CelestialSystem.OuterBelt, interpolation ), r, viewProjection, width, height, halfHeight );
+            var belt = CelestialSystem.Project( fleet.VisualBody( CelestialSystem.OuterBelt, interpolation ), r, viewProjection, width, height, halfHeight, fleet.Frontier ? CelestialSystem.FrontierBodyDisplayScale : 1 );
+            if ( fleet.ChartOnly ) belt.Z = 0;
             values[11] = belt with { W = (fleet.Solar ? SolarCatalog.Get( CelestialSystem.OuterBelt ).Axis : CelestialSystem.BeltAxis) * r };
         }
-        values[12] = fleet.Solar ? new Vector4( 1, 0, 0, 0 ) : fleet.Frontier ? Vector4.Zero : tint;
+        values[12] = fleet.Solar ? new Vector4( 1, 0, 0, 0 ) : fleet.ChartOnly ? new Vector4( 0, 1, 0, 0 ) : fleet.Frontier ? Vector4.Zero : tint;
         values[13] = new( center.X, center.Y, selected.IsShip ? 2.8f : 3.5f + MathF.Sqrt( fleet.ShipCount( selected.Squad ) ) * 2.3f, showSelection ? 1 : 0 );
         float orderMode = !showSelection || plan.Order == FlightOrder.Idle ? 0
             : !fleet.Frontier ? 1 : 0;

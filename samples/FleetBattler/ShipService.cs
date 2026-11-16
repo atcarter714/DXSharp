@@ -6,6 +6,12 @@ internal enum FleetStance { Normal, Aggressive, Passive, Mixed }
 internal enum ServiceOrder : byte { None, Repair, Refit, Retreat }
 
 internal sealed partial class FleetSimulation {
+    private static HullBlueprint FindWarshipBlueprint( HullRole role ) {
+        foreach ( var hull in WarshipBlueprints )
+            if ( BlueprintRole( hull ) == role ) return hull;
+        return HullBlueprint.Corvette;
+    }
+
     internal const int FrontierRepairCapacity = FrontierCapacity;
     private readonly ShipDesign[] _refitDesigns;
     internal int CompletedServices { get; private set; }
@@ -56,7 +62,7 @@ internal sealed partial class FleetSimulation {
         if ( !Frontier || service == ServiceOrder.None || !Alive( ship ) || FactionOf( ship ) != FactionId.Sol ) return false;
         int squad = SquadronOf( ship );
         if ( service == ServiceOrder.Repair && !NeedsRepair( ship ) ) return false;
-        var blueprint = Blueprint( Role( squad ) == HullRole.Frigate ? HullBlueprint.Frigate : HullBlueprint.Corvette );
+        var blueprint = Blueprint( FindWarshipBlueprint( Role( squad ) ) );
         if ( service == ServiceOrder.Refit && (!IsWarship( Role( squad ) ) || _squads[squad].Count != 1 || !blueprint.Valid || blueprint == Loadout( ship )) )
             return false;
         var unit = new FleetSelection( squad, ship );

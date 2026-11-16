@@ -31,7 +31,7 @@ internal static class Program {
         uint seed = uint.Parse( Option( args, "--seed=", "37" ) );
         bool frontier = ticks == 0 && !args.Contains( "--skirmish" ) &&
             !args.Any( arg => arg.StartsWith( "--ships=", StringComparison.Ordinal ) );
-        if ( frontier ) _ = ResearchCatalog.Current;
+        if ( frontier ) { _ = ResearchCatalog.Current; GameCatalog.Validate( ); }
         var fleet = new FleetSimulation( ships, seed, rivalPatrol: ticks == 0, battle: ticks == 0, frontier: frontier );
         if ( ticks > 0 ) {
             Benchmark( fleet, ticks );
@@ -144,12 +144,15 @@ internal static class Program {
         Point? mouse = null;
         var hud = new FleetHud( atlas );
         var display = new FullscreenToggle( );
-        var selection = new CommandSelection( fleet.Capacity );
+        var selections = new CommandSelection?[CelestialSystem.Systems.Length];
+        var selection = selections[0] = new CommandSelection( fleet.Capacity );
+        bool galaxyRoster = false;
+        int rosterPage = 0;
         selection.Squadron( fleet, fleet.FirstPlayerSquad( ), SelectionMode.Replace );
         var effects = new BattleEffect[EffectSlots];
         int planet = initial.Frontier ? FleetSimulation.Homeworld : -1, shotsHeard = 0, lossesHeard = 0, nextCue = 0;
-        long noticeUntil = 0;
-        string? notice = null, hostileAlert = null;
+        var notices = new MinorNotice[4];
+        string? hostileAlert = null;
         long hostileAlertUntil = 0;
         string? routeNotice = null;
         int routeTarget = FleetSimulation.Proxima;
@@ -161,12 +164,15 @@ internal static class Program {
         Form? renameEditor = null;
         CommandTab commandTab = CommandTab.Hidden;
         int dispatch = 0, dispatchesSeen = initial.DispatchCount, fleetScroll = 0;
-        bool frigate = false, shipDetails = false;
+        var designer = new ShipDesigner( );
+        bool shipDetails = false;
         int raidersSeen = 0;
         var briefings = new Queue<(Briefing Text, Action? Accept, Action? Dismiss)>();
         Briefing? CurrentBriefing( ) => briefings.TryPeek( out var next ) ? next.Text : null;
         int yardInspector = -1, launchesSeen = 0, servicesSeen = 0, scansHeard = 0;
-        bool buildCatalog = false, secondResearchPage = false;
+        bool buildCatalog = false;
+        ResearchBranch researchBranch = ResearchBranch.Industry;
+        int yardPage = 0;
         SiteLayer catalogLayer = SiteLayer.Orbit;
         int piracySeen = 0, coloniesSeen = 0;
         var clock = new FleetClock( );
@@ -196,16 +202,7 @@ internal static class Program {
             float elapsed = clock.Advance( initial.Frontier ? initial : fleet, frame.Elapsed.TotalSeconds, speed, paused || briefings.Count > 0, campaign.Advance );
             QueueCampaignBriefings( );
             interpolation = clock.Interpolation;
-            if ( galaxy ) {
-                sawGalaxy = true;
-                SpaceDraw.RecordGalaxy( frame.Commands, space, moon, fleet.SystemIndex, viewport.Width, viewport.Height, fleet.Frontier );
-                UpdateGalaxyHulls( );
-                hud.RecordGalaxy( frame.Commands, hudPipeline, hudUpload, fleet.SystemIndex, viewport.Width, viewport.Height,
-                    fleet.Frontier, initial.AstrometryUpgrade, galaxyHulls, RouteView( ), initial.Frontier ? initial.Tick : fleet.Tick, speed, paused, CurrentBriefing( ) );
-                return;
-            }
-
-            systemsVisited |= 1 << fleet.SystemIndex;
+            if ( !galaxy ) systemsVisited |= 1 << fleet.SystemIndex;
             if ( previousOwner != fleet.Owner ) {
                 if ( fleet.Owner == 0 ) audio.Cue( "capture" );
                 previousOwner = fleet.Owner;
@@ -289,6 +286,16 @@ internal static class Program {
                 Notify( $"COLONY FOUNDED / {fleet.BodyName( fleet.LastFoundedBody )}" );
                 audio.Cue( "launch" );
             }
+            if ( galaxy ) {
+                sawGalaxy = true;
+                SpaceDraw.RecordGalaxy( frame.Commands, space, moon, fleet.SystemIndex, viewport.Width, viewport.Height, fleet.Frontier );
+                UpdateGalaxyHulls( );
+                selection.Prune( fleet );
+                hud.RecordGalaxy( frame.Commands, hudPipeline, hudUpload, fleet.SystemIndex, viewport.Width, viewport.Height,
+                    fleet.Frontier, initial.AstrometryUpgrade, galaxyHulls, RouteView( ), initial.Frontier ? initial.Tick : fleet.Tick, speed, paused, CurrentBriefing( ), galaxyRoster ? fleet : null, selection, rosterPage, campaign.Transfers, notices, Environment.TickCount64 );
+                return;
+            }
+
             selection.Prune( fleet );
             var unit = selection.SurveyUnit( fleet );
             var selected = unit ?? selection.Focus( fleet );
@@ -304,7 +311,7 @@ internal static class Program {
             viewProjection = view * projection;
             Matrix4x4.Invert( viewProjection, out inverseViewProjection );
             for ( int i = 0; i < fleet.Bodies.Length; ++i )
-                screenBodies[i] = CelestialSystem.Project( fleet.VisualBody( i, interpolation ), radius, viewProjection, viewport.Width, viewport.Height, halfHeight );
+                screenBodies[i] = CelestialSystem.Project( fleet.VisualBody( i, interpolation ), radius, viewProjection, viewport.Width, viewport.Height, halfHeight, fleet.Frontier ? CelestialSystem.FrontierBodyDisplayScale : 1 );
 
             bool computeActive = traffic.ShipCount != 0 || traffic.DebrisCount != 0;
             if ( computeActive ) traffic.RecordCompute( frame.Commands, fleet, elapsed, interpolation );
@@ -388,7 +395,7 @@ internal static class Program {
             if ( !active.IsEmpty ) {
                 FleetDraw.RecordThrusters( frame.Commands, thrust, upload, (uint)active.Length, viewProjection, (float)(fleet.Tick * FleetSimulation.StepSeconds) );
                 FleetDraw.Record( frame.Commands, pipeline, corvettes, upload, corvetteCount, viewProjection );
-                uint miners = fleet.Frontier ? (uint)(fleet.MerchantCount + fleet.ActiveMiners( ) + fleet.ActiveColonyShips( )) : 0;
+                uint miners = fleet.Frontier ? (uint)(fleet.MerchantCount + fleet.ActiveMiners( ) + fleet.ActiveColonyShips( ) + fleet.ActiveProspectors) : 0;
                 uint frigateCount = (uint)fleet.ActiveFrigates;
                 uint scoutsStart = corvetteCount + frigateCount;
                 uint scoutsEnd = (uint)active.Length - miners;
@@ -441,7 +448,7 @@ internal static class Program {
             var drag = dragStart is { } start && IsDrag( start, dragEnd ) ? DragRect( start, dragEnd ) : (Vector4?)null;
             MapHover hover = default;
             if ( fleet.Frontier && menu is null && panStart is null && dragStart is null && mouse is { } pointer &&
-                 FleetHud.Hit( new( pointer.X, pointer.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, secondResearchPage: secondResearchPage, catalogLayer: catalogLayer, fleetScroll: fleetScroll, briefing: CurrentBriefing( ), shipDetails: shipDetails ).Action == HudAction.None ) {
+                 FleetHud.Hit( new( pointer.X, pointer.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, researchBranch: researchBranch, catalogLayer: catalogLayer, fleetScroll: fleetScroll, briefing: CurrentBriefing( ), shipDetails: shipDetails, yardPage: yardPage ).Action == HudAction.None ) {
                 var pixel = new Vector2( pointer.X, pointer.Y );
                 var dimensions = new Vector2( viewport.Width, viewport.Height );
                 int ship = CommandSelection.Hit( fleet, pixel, viewProjection, dimensions, -1, interpolation );
@@ -462,10 +469,11 @@ internal static class Program {
                 }
             }
             hud.Record( frame.Commands, hudPipeline, hudUpload, fleet, selected, viewport.Width, viewport.Height, oreShort, screenBodies.AsSpan( 0, fleet.Bodies.Length ),
-                selection.Count, planet, Environment.TickCount64 < noticeUntil ? notice : null, drag,
+                selection.Count, planet, null, drag,
                 fleet.Frontier ? null : CommandSelection.Project( fleet.Site, viewProjection, new( viewport.Width, viewport.Height ) ),
-                selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch, screenSites.AsSpan( 0, siteCount ), hover, yardInspector, buildCatalog, secondResearchPage, catalogLayer,
-                Environment.TickCount64 < hostileAlertUntil ? hostileAlert : null, fleetScroll, frigate, CurrentBriefing( ), fleet.Solar ? kuiperLabels : default, shipDetails, initial.Frontier ? initial.Tick : fleet.Tick );
+                selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch, screenSites.AsSpan( 0, siteCount ), hover, yardInspector, buildCatalog, researchBranch, catalogLayer,
+                Environment.TickCount64 < hostileAlertUntil ? hostileAlert : null, fleetScroll, designer, CurrentBriefing( ), fleet.Solar ? kuiperLabels : default, shipDetails, initial.Frontier ? initial.Tick : fleet.Tick, yardPage,
+                mouse is { } cursor ? new Vector2( cursor.X, cursor.Y ) : null, notices, Environment.TickCount64 );
         }, ( window, result ) => {
             if ( result.Frames == 1 ) {
                 if ( startFullscreen ) display.Toggle( window );
@@ -483,7 +491,11 @@ internal static class Program {
                         case Keys.G: ToggleGalaxy( window ); break;
                         case Keys.Escape when menu is not null: menu = null; break;
                         case Keys.Escape when yardInspector >= 0: yardInspector = -1; break;
-                        case Keys.Escape when commandTab != CommandTab.Hidden: commandTab = CommandTab.Hidden; break;
+                        case Keys.Escape when commandTab != CommandTab.Hidden:
+                            designer.Release( default );
+                            window.Capture = false;
+                            commandTab = CommandTab.Hidden;
+                            break;
                         case Keys.Escape when buildCatalog: buildCatalog = false; break;
                         case Keys.Escape when !galaxy: planet = -1; shipDetails = false; break;
                         case Keys.Home when !galaxy: ResetCamera( ); break;
@@ -540,10 +552,20 @@ internal static class Program {
                     }
                     if ( galaxy ) {
                         if ( e.Button is MouseButtons.Left or MouseButtons.Right )
-                            GalaxyCommand( window, new( e.X, e.Y ), e.Button == MouseButtons.Right );
+                            GalaxyCommand( window, new( e.X, e.Y ), e.Button == MouseButtons.Right, e.Clicks );
                         return;
                     }
                     var pointer = new Vector2( e.X, e.Y );
+                    if ( commandTab == CommandTab.Fleet ) {
+                        if ( e.Button != MouseButtons.Left ) return;
+                        var control = FleetHud.HitDesigner( pointer, viewport.Width, viewport.Height, designer );
+                        if ( control.Control == DesignerControl.Close ) commandTab = CommandTab.Hidden;
+                        else {
+                            designer.Click( fleet, control );
+                            if ( designer.Dragging ) window.Capture = true;
+                        }
+                        return;
+                    }
                     if ( briefings.Count == 0 && menu is { } popup ) {
                         var popupHit = FleetHud.Hit( pointer, viewport.Width, viewport.Height, fleet, planet, popup );
                         menu = null;
@@ -552,7 +574,7 @@ internal static class Program {
                             return;
                         }
                     }
-                    var hit = FleetHud.Hit( pointer, viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, secondResearchPage: secondResearchPage, catalogLayer: catalogLayer, fleetScroll: fleetScroll, briefing: CurrentBriefing( ), shipDetails: shipDetails );
+                    var hit = FleetHud.Hit( pointer, viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, researchBranch: researchBranch, catalogLayer: catalogLayer, fleetScroll: fleetScroll, briefing: CurrentBriefing( ), shipDetails: shipDetails, yardPage: yardPage );
                     if ( hit.Action != HudAction.None ) {
                         if ( e.Button == MouseButtons.Right && hit.Action == HudAction.Squad && fleet.Frontier ) {
                             Rename( window, true, hit.Index );
@@ -594,18 +616,26 @@ internal static class Program {
                                     break;
                                 case HudAction.Stance: CycleStance( ); break;
                                 case HudAction.ShipService: Service( (ServiceOrder)hit.Index ); break;
-                                case HudAction.CycleModule: fleet.CycleModule( (ModuleSlot)hit.Index, frigate ); break;
-                                case HudAction.DesignHull: frigate = !frigate; break;
+                                case HudAction.YardPage: yardPage = hit.Index; break;
                                 case HudAction.ShipDetails:
                                     if ( selection.Count > 0 ) shipDetails = !shipDetails;
                                     break;
                                 case HudAction.ScrollFleet: fleetScroll = hit.Index; break;
-                                case HudAction.ResearchPage: secondResearchPage = !secondResearchPage; break;
+                                case HudAction.ResearchPage: researchBranch = (ResearchBranch)hit.Index; break;
+                                case HudAction.ResearchStart:
+                                    var project = (ResearchTopic)hit.Index;
+                                    if ( fleet.StartResearch( project ) ) Notify( $"{FleetSimulation.Tech( project ).Name} RESEARCH STARTED" );
+                                    break;
                                 case HudAction.MerchantDecision:
                                     if ( fleet.AcceptContract( (MerchantDecision)hit.Index ) ) {
                                         Notify( "MERCHANT CONTRACT CONFIRMED" );
                                         audio.Cue( "dispatch" );
                                     }
+                                    break;
+                                case HudAction.UpgradeSite:
+                                    var upgrade = (PlanetFacility)hit.Index;
+                                    if ( fleet.UpgradeBlock( planet, upgrade ) is { } block ) Notify( block );
+                                    else if ( fleet.UpgradeSite( planet, upgrade ) ) Notify( $"{FleetHud.SiteName( upgrade )} UPGRADE QUEUED" );
                                     break;
                                 case HudAction.BuildSite: BuildProject( planet, (PlanetFacility)hit.Index ); break;
                                 case HudAction.CancelSite: CancelOrder( fleet.CancelSite( planet, (PlanetFacility)hit.Index ) ); break;
@@ -667,6 +697,12 @@ internal static class Program {
                 };
                 window.MouseCaptureChanged += ( _, _ ) => { if ( !window.Capture ) panStart = dragStart = null; };
                 window.MouseUp += ( _, e ) => {
+                    if ( commandTab == CommandTab.Fleet && designer.Dragging && e.Button == MouseButtons.Left ) {
+                        designer.Release( CurrentBriefing( ) is null
+                            ? FleetHud.HitDesigner( new( e.X, e.Y ), viewport.Width, viewport.Height, designer ) : default );
+                        window.Capture = false;
+                        return;
+                    }
                     if ( e.Button == MouseButtons.Middle ) { panStart = null; window.Capture = false; return; }
                     if ( e.Button != MouseButtons.Left || dragStart is not { } start ) return;
                     dragStart = null;
@@ -706,7 +742,7 @@ internal static class Program {
                 window.MouseWheel += ( _, e ) => {
                     if ( !galaxy && briefings.Count == 0 && menu is null && FleetHud.ScrollOutliner( new( e.X, e.Y ), viewport.Width,
                         viewport.Height, fleet, Math.Sign( e.Delta ), ref fleetScroll ) ) return;
-                    if ( galaxy || menu is not null || FleetHud.Hit( new( e.X, e.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, secondResearchPage: secondResearchPage, catalogLayer: catalogLayer, fleetScroll: fleetScroll, briefing: CurrentBriefing( ), shipDetails: shipDetails ).Action != HudAction.None ) return;
+                    if ( galaxy || menu is not null || FleetHud.Hit( new( e.X, e.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, researchBranch: researchBranch, catalogLayer: catalogLayer, fleetScroll: fleetScroll, briefing: CurrentBriefing( ), shipDetails: shipDetails, yardPage: yardPage ).Action != HudAction.None ) return;
                     float nextZoom = Math.Clamp( zoom * MathF.Pow( 0.85f, e.Delta / 120f ), 0.12f, fleet.Solar ? 4.6f : fleet.Frontier ? 2.8f : 2.5f );
                     if ( TryPick( e.Location, viewport, inverseViewProjection, out var anchor ) )
                         cameraFocus = ClampCamera( cameraFocus + (anchor - cameraFocus) * (1 - nextZoom / zoom) );
@@ -718,7 +754,10 @@ internal static class Program {
             if ( viewTest ) {
                 if ( result.Frames == 2 ) { display.Toggle( window ); Enter( 2 ); }
                 if ( result.Frames == 4 ) display.Toggle( window );
-                if ( result.Frames == 5 ) galaxy = true;
+                if ( result.Frames == 5 ) {
+                    Enter( 0 );
+                    galaxy = galaxyRoster = true;
+                }
                 if ( result.Frames == 6 ) {
                     Enter( 0 );
                     OpenYard( FleetSimulation.Homeworld );
@@ -729,8 +768,8 @@ internal static class Program {
                 if ( result.Frames == 8 ) { SelectTab( CommandTab.Hidden ); buildCatalog = true; }
                 if ( result.Frames == 9 ) {
                     buildCatalog = false;
-                    frigate = true;
                     SelectTab( CommandTab.Fleet );
+                    designer.Open( fleet, HullBlueprint.Frigate );
                 }
                 if ( result.Frames == 10 ) {
                     if ( !fleet.BeginSurvey( new( fleet.FirstPlayerSquad( ) ), 3 ) )
@@ -786,6 +825,7 @@ internal static class Program {
         }
 
         void ToggleGalaxy( Form window ) {
+            designer.Release( default );
             galaxy = !galaxy;
             routeNotice = null;
             menu = null;
@@ -823,11 +863,22 @@ internal static class Program {
                             "OPEN RESEARCH", "DISMISS", tech.Benefit ), () => {
                             if ( fleet != system ) Enter( system.SystemIndex );
                             galaxy = false;
-                            secondResearchPage = tech.Branch == ResearchBranch.Propulsion;
+                            researchBranch = tech.Branch;
                             yardInspector = -1;
                             commandTab = CommandTab.Research;
                         }, null) );
                         audio.Cue( "launch" );
+                        break;
+                    case CampaignEventKind.EconomicCharter:
+                        briefings.Enqueue( (new( "THE FRONTIER CHARTER", "SOL AUTHORITY / FIRST SURVEY",
+                            "The first confirmed deposit has unlocked public investment. Set a permanent priority for Sol: extraction grants for new operations or long-term power contracts.",
+                            ContentArt.Mine, "FUND EXTRACTION", "FUND POWER",
+                            "+1 ORE PER ACTIVE EXTRACTION SITE EACH CYCLE", "+1 ENERGY EACH CYCLE IN SOL",
+                            EscapeDismisses: false ), () => {
+                                if ( system.AdoptCharter( EconomicCharter.Extraction ) ) Notify( "SOL ADOPTED THE EXTRACTION CHARTER" );
+                            }, () => {
+                                if ( system.AdoptCharter( EconomicCharter.Power ) ) Notify( "SOL ADOPTED THE POWER CHARTER" );
+                            }) );
                         break;
                     case CampaignEventKind.Distress:
                         briefings.Enqueue( (new( "THE FIRST PIRATES", "SOL AUTHORITY / EXTRACTION DISPATCH",
@@ -838,9 +889,12 @@ internal static class Program {
                             EscapeDismisses: false ), () => Notify( system.FundPatrol( )
                                 ? "CERES PATROL FUNDED / RAID DELAYED" : "PATROL UNAVAILABLE / PREPARE YOUR FLEET" ), null) );
                         break;
+                    case CampaignEventKind.TravelArrival:
+                        Notify( $"FLEET ARRIVED / {system.SystemName}" );
+                        break;
                     case CampaignEventKind.Arrival:
                         briefings.Enqueue( (new( "EXPEDITION ARRIVED", "PROXIMA / FLIGHT OPERATIONS",
-                            "The fleet has reached a stable orbit. Receiver World is within sensor range. Survey the site and establish an orbital lab to restore the transmitter.",
+                            "The first crossing is complete. Other star routes are open. Survey Receiver World and send a constructor to establish an orbital lab and restore the transmitter.",
                             ContentArt.Receiver, "FOCUS ARRIVAL", "KEEP CURRENT VIEW" ), () => Enter( system.SystemIndex ), null) );
                         audio.Cue( "launch" );
                         break;
@@ -866,30 +920,26 @@ internal static class Program {
         }
 
         GalaxyRoute RouteView( ) {
-            bool proxima = routeTarget == FleetSimulation.Proxima;
-            bool charted = initial.CanChartSystem( routeTarget );
-            if ( proxima && campaign.InTransit is { } flight ) {
-                int remaining = Math.Max( 0, flight.ArrivalTick - initial.Tick );
-                string phase = remaining > 1350 ? "DEPARTURE BURN" : remaining > 450 ? "CRUISE" : "BRAKING BURN";
-                return new( 0, routeTarget, $"{phase} / ETA {Math.Ceiling( remaining * FleetSimulation.StepSeconds * 4 / speed )} SEC",
-                    null, flight.Hulls.Length, true, true, false, 1 - (float)remaining / FleetSimulation.ExpeditionDuration, false );
+            int source = fleet.SystemIndex;
+            foreach ( var flight in campaign.Transfers ) {
+                if ( flight.Source != source || flight.Destination != routeTarget || selection.Count != 0 ) continue;
+                int remaining = Math.Max( 0, flight.Arrival - initial.Tick );
+                return new( source, routeTarget, $"IN TRANSIT / {flight.Hulls.Length} HULLS / {Math.Ceiling( remaining * FleetSimulation.StepSeconds * 4 / speed )} SEC",
+                    null, 0, InTransit: true, Progress: (float)(initial.Tick - flight.Departure) / (flight.Arrival - flight.Departure) );
             }
-            if ( proxima && campaign.Arrived )
-                return new( fleet.SystemIndex, routeTarget, "EXPEDITION ARRIVED / RECEIVER WORLD IN SENSOR RANGE", null,
-                    selection.Count, true, false, true, 1, false );
-            string status = !charted ? "OBSERVATIONS REQUIRE DEEP SKY ASTROMETRY"
-                : proxima ? "SELECT A SCOUT AND CONSTRUCTOR / ESCORTS OPTIONAL"
-                : routeTarget == 0 ? "HOME SYSTEM / SELECT ITS FLEET BADGE FOR ORDERS"
-                : "REMOTE CHART / NO AUTHORIZED ROUTE";
-            string? block = proxima ? fleet == initial ? initial.LaunchBlock( selection.Ships ) : "SELECT THE SOL FLEET BADGE TO PLAN DEPARTURE"
-                : charted ? "USE VIEW SYSTEM TO INSPECT THE CHART" : "RESEARCH DEEP SKY ASTROMETRY IN SOL";
-            return new( fleet.SystemIndex, routeTarget, routeNotice ?? status, block, selection.Count, charted, false, false, 0,
-                proxima && fleet == initial, !initial.AstrometryUpgrade || proxima && !initial.FusionUpgrade );
+            var block = campaign.TravelBlock( fleet, routeTarget, selection.Ships, survey: false );
+            bool canSurvey = block is null && campaign.TravelBlock( fleet, routeTarget, selection.Ships, survey: true ) is null;
+            string status = routeNotice ?? (campaign.Arrived ? "SELECT A FLEET / RIGHT CLICK A DESTINATION TO MOVE"
+                : "FIRST CROSSING / SEND ONE IDLE SCOUT FROM SOL TO PROXIMA");
+            string? quote = source == routeTarget ? null : $"TRANSIT / {(int)Math.Ceiling( campaign.FlightTicks( source, routeTarget ) * FleetSimulation.StepSeconds * 4 / speed )} SEC";
+            return new( source, routeTarget, status, block, selection.Count, CanSurvey: canSurvey, Quote: quote );
         }
 
-        void GalaxyCommand( Form window, Vector2 pointer, bool rightClick ) {
+        void GalaxyCommand( Form window, Vector2 pointer, bool rightClick, int clicks ) {
+            selection.Prune( fleet );
             UpdateGalaxyHulls( );
-            var hit = FleetHud.HitGalaxy( pointer, viewport.Width, viewport.Height, fleet.Frontier, galaxyHulls, RouteView( ) );
+            var hit = FleetHud.HitGalaxy( pointer, viewport.Width, viewport.Height, fleet.Frontier, galaxyHulls, RouteView( ),
+                galaxyRoster ? fleet : null, rosterPage );
             if ( rightClick && hit.Action != GalaxyAction.Star ) return;
             switch ( hit.Action ) {
                 case GalaxyAction.Return: ToggleGalaxy( window ); break;
@@ -897,57 +947,43 @@ internal static class Program {
                 case GalaxyAction.Slower: ChangeSpeed( increase: false ); break;
                 case GalaxyAction.Faster: ChangeSpeed( increase: true ); break;
                 case GalaxyAction.Star:
-                    if ( !fleet.Frontier ) Enter( hit.System );
-                    else {
-                        routeTarget = hit.System;
-                        routeNotice = null;
-                    }
+                    if ( !rightClick && clicks >= 2 || !fleet.Frontier ) { Enter( hit.System ); break; }
+                    routeTarget = hit.System;
+                    routeNotice = null;
+                    if ( rightClick && selection.Count > 0 ) IssueTravel( survey: false );
                     break;
                 case GalaxyAction.Fleet:
+                    if ( clicks >= 2 ) { Enter( hit.System ); break; }
                     if ( fleet.SystemIndex != hit.System ) Enter( hit.System );
-                    galaxy = true;
-                    routeTarget = hit.System == 0 ? FleetSimulation.Proxima : hit.System;
-                    if ( fleet == initial && selection.Count <= 1 ) initial.SelectExpedition( selection );
-                    routeNotice = fleet == initial && selection.Count >= 2 ? $"SOL FLEET / {selection.Count} SHIPS SELECTED"
-                        : $"{fleet.SystemName} / {fleet.CyanCount} LOCAL SHIPS";
+                    galaxy = galaxyRoster = true;
+                    rosterPage = 0;
+                    routeNotice = "SELECT A FLEET ROW / SHIFT ADD / CTRL TOGGLE";
                     break;
-                case GalaxyAction.SelectCrew:
-                    routeNotice = initial.SelectExpedition( selection ) == 0
-                        ? "NO IDLE SCOUT AND CONSTRUCTOR AT EARTH"
-                        : "SCOUT AND CONSTRUCTOR SELECTED / ADD ESCORTS IN SOL";
+                case GalaxyAction.RosterRow:
+                    selection.Squadron( fleet, hit.System, ModifierSelection( ) );
+                    routeNotice = null;
                     break;
-                case GalaxyAction.Rally:
-                    routeNotice = initial.RallyExpedition( ) ? "AVAILABLE CIVILIAN SHIPS ARE RETURNING TO EARTH"
-                        : "CHECK EARTH ORBIT OR FINISH ACTIVE CIVILIAN JOBS";
+                case GalaxyAction.RosterClose: galaxyRoster = false; break;
+                case GalaxyAction.RosterPrevious: --rosterPage; break;
+                case GalaxyAction.RosterNext: ++rosterPage; break;
+                case GalaxyAction.FindScout:
+                    int scout = -1;
+                    for ( int i = 0; i < fleet.Count; ++i )
+                        if ( fleet.TravelReady( i ) && fleet.Role( fleet.SquadronOf( i ) ) == HullRole.Scout ) { scout = i; break; }
+                    if ( scout >= 0 ) selection.Click( fleet, scout, false, SelectionMode.Replace );
+                    routeNotice = scout < 0 ? "NO IDLE SCOUT IN THIS SYSTEM / FINISH OR CANCEL ITS ORDER" : "SCOUT SELECTED / CHOOSE MOVE OR SURVEY";
                     break;
-                case GalaxyAction.Research:
-                    if ( fleet != initial ) Enter( 0 );
-                    galaxy = false;
-                    yardInspector = -1;
-                    secondResearchPage = FleetSimulation.Tech( initial.AstrometryUpgrade ? ResearchTopic.Fusion : ResearchTopic.Astrometry ).Branch == ResearchBranch.Propulsion;
-                    commandTab = CommandTab.Research;
-                    break;
-                case GalaxyAction.View:
-                    if ( !initial.CanChartSystem( routeTarget ) ) break;
-                    Enter( routeTarget );
-                    break;
-                case GalaxyAction.Launch:
-                    if ( initial.LaunchBlock( selection.Ships ) is not null ) break;
-                    var cost = FleetSimulation.CrossingCost;
-                    briefings.Enqueue( (new( "AUTHORIZE THE FIRST CROSSING", "SOL / FLIGHT OPERATIONS",
-                        $"Authorize a one-way flight to Proxima for {selection.Count} ships. Sol will continue operating while the crew is in transit. Confirm the launch when you are ready to commit the fleet.",
-                        ContentArt.Receiver, "CONFIRM ONE-WAY LAUNCH", "KEEP PLANNING",
-                        $"{cost.Ore} ORE / {cost.Energy} ENERGY / 120 SEC AT 1X" ), () => {
-                        if ( !campaign.Depart( selection.Ships ) ) {
-                            routeNotice = initial.LaunchBlock( selection.Ships ) ?? "DEPARTURE UNAVAILABLE";
-                            return;
-                        }
-                        selection.Prune( initial );
-                        routeNotice = null;
-                        audio.Cue( "launch" );
-                    }, null) );
-                    break;
+                case GalaxyAction.View: Enter( routeTarget ); break;
+                case GalaxyAction.Move: IssueTravel( survey: false ); break;
+                case GalaxyAction.Survey: IssueTravel( survey: true ); break;
             }
+        }
+
+        void IssueTravel( bool survey ) {
+            routeNotice = campaign.TravelBlock( fleet, routeTarget, selection.Ships, survey );
+            if ( routeNotice is not null || !campaign.Travel( fleet, routeTarget, selection.Ships, survey ) ) return;
+            selection.Prune( fleet );
+            audio.Cue( "launch" );
         }
 
         void Enter( int index ) {
@@ -955,7 +991,13 @@ internal static class Program {
             fleetScroll = 0;
             shipDetails = false;
             fleet = campaign.System( index );
-            selection.Squadron( fleet, fleet.FirstPlayerSquad( ), SelectionMode.Replace );
+            if ( selections[index] is not { } activeSelection ) {
+                selections[index] = activeSelection = new CommandSelection( fleet.Capacity );
+                activeSelection.Squadron( fleet, fleet.FirstPlayerSquad( ), SelectionMode.Replace );
+            }
+            selection = activeSelection;
+            selection.Prune( fleet );
+            galaxyRoster = false;
             planet = fleet.Established ? FleetSimulation.Homeworld : -1;
             yardInspector = -1;
             launchesSeen = fleet.ShipsLaunched;
@@ -965,12 +1007,13 @@ internal static class Program {
             piracySeen = fleet.PiracyCycles;
             coloniesSeen = fleet.ColoniesFounded;
             catalogLayer = SiteLayer.Orbit;
-            buildCatalog = secondResearchPage = false;
+            buildCatalog = false;
+            researchBranch = ResearchBranch.Industry;
             commandTab = CommandTab.Hidden;
             dispatchesSeen = fleet.DispatchCount;
             dispatch = Math.Max( 0, dispatchesSeen - 1 );
             lastClickShip = -1;
-            notice = hostileAlert = null;
+            hostileAlert = null;
             shotsHeard = fleet.ShotsFired;
             lossesHeard = fleet.ShipsLost;
             nextCue = 0;
@@ -1007,13 +1050,6 @@ internal static class Program {
                 case CommandAction.Orders: SelectTab( CommandTab.Orders ); break;
                 case CommandAction.Events: SelectTab( CommandTab.Events ); break;
                 case CommandAction.Research: SelectTab( CommandTab.Research ); break;
-                case >= CommandAction.StartIndustry and <= CommandAction.StartFusion:
-                    var tech = (ResearchTopic)(action - CommandAction.StartIndustry);
-                    if ( fleet.StartResearch( tech ) ) {
-                        Notify( $"{FleetSimulation.Tech( tech ).Name} RESEARCH STARTED" );
-                        audio.Cue( "order" );
-                    }
-                    break;
                 case CommandAction.CancelResearch: CancelOrder( fleet.CancelResearch( ) ); break;
                 case CommandAction.Earlier: dispatch = Math.Max( 0, dispatch - 1 ); break;
                 case CommandAction.Later: dispatch = Math.Clamp( dispatch + 1, 0, Math.Max( 0, fleet.DispatchCount - 1 ) ); break;
@@ -1023,11 +1059,13 @@ internal static class Program {
         void SelectTab( CommandTab tab ) {
             yardInspector = -1;
             commandTab = commandTab == tab ? CommandTab.Hidden : tab;
+            if ( commandTab == CommandTab.Fleet ) designer.Open( fleet, designer.Hull );
         }
 
         void OpenYard( int body ) {
             if ( !fleet.CanOpenYard( body ) ) return;
             yardInspector = planet = body;
+            yardPage = 0;
             buildCatalog = false;
             commandTab = CommandTab.Hidden;
         }
@@ -1118,11 +1156,13 @@ internal static class Program {
         }
 
         void Notify( string text ) {
-            notice = text;
-            noticeUntil = Environment.TickCount64 + 4200;
+            if ( string.Equals( notices[0].Text, text, StringComparison.Ordinal ) ) return;
+            notices.AsSpan( 0, notices.Length - 1 ).CopyTo( notices.AsSpan( 1 ) );
+            notices[0] = new( text, Environment.TickCount64 );
         }
 
-        static string UnitName( FleetSelection unit ) => unit.IsShip ? $"SHIP {unit.Ship + 1:D2}" : $"SQUAD {unit.Squad + 1:D2}";
+        string UnitName( FleetSelection unit ) => unit.IsShip ? fleet.ShipName( unit.Ship ) ?? FleetSimulation.RoleName( fleet.Role( unit.Squad ) )
+            : fleet.FleetName( unit.Squad ) ?? fleet.FirstShipName( unit.Squad ) ?? FleetSimulation.RoleName( fleet.Role( unit.Squad ) );
         string SelectionName( ) => selection.SurveyUnit( fleet ) is { } unit ? UnitName( unit ) : $"{selection.Count} SHIPS";
 
         void PlanetOrder( PlanetAction action, int body ) {

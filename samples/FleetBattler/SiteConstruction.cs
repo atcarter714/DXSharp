@@ -3,7 +3,8 @@ using System.Numerics;
 namespace FleetBattler;
 
 internal enum SiteLayer { Surface, Orbit }
-internal readonly record struct FacilityPlan( string Name, ResourceCost Cost, int Duration, SiteLayer Layer = SiteLayer.Orbit );
+internal readonly record struct FacilityPlan( string Name, ResourceCost Cost, int Duration, SiteLayer Layer = SiteLayer.Orbit,
+    int Output = 0, int UpgradeBonus = 0, int UpgradeTicks = 0, ResourceCost UpgradeCost = default, ResearchTopic? Requirement = null );
 internal readonly record struct SiteSlots( int Surface, int Orbit ) {
     internal int For( SiteLayer layer ) => layer == SiteLayer.Surface ? Surface : Orbit;
 }
@@ -23,19 +24,38 @@ internal sealed partial class FleetSimulation {
     private readonly ConstructionSite[] _siteConstruction = new ConstructionSite[CelestialSystem.BodyCount * FacilityCount];
     internal SiteOrder LastStartedSite { get; private set; }
 
-    internal static FacilityPlan Facility( PlanetFacility facility ) => facility switch {
-        PlanetFacility.Mine => new( "EXTRACTION RIG", new( MineCost, 8 ), FacilityDuration, SiteLayer.Surface ),
-        PlanetFacility.Lab => new( "RESEARCH LAB", new( LabCost, 10 ), FacilityDuration ),
-        PlanetFacility.Yard => new( "ORBITAL SHIPYARD", new( YardCost, 15 ), YardDuration ),
-        PlanetFacility.Depot => new( "LOGISTICS DEPOT", new( DepotCost, 9 ), FacilityDuration ),
-        PlanetFacility.Solar => new( "SOLAR ARRAY", new( 28, 4 ), FacilityDuration ),
-        PlanetFacility.Habitat => new( "O NEILL HABITAT", new( 100, 32 ), 660 ),
-        PlanetFacility.Observatory => new( "SURFACE OBSERVATORY", new( 56, 12 ), 300, SiteLayer.Surface ),
-        PlanetFacility.Skimmer => new( "ORBITAL EXTRACTION", new( 35, 8 ), FacilityDuration ),
-        PlanetFacility.SurfaceStore => new( "SURFACE WAREHOUSE", new( 36, 8 ), 220, SiteLayer.Surface ),
-        PlanetFacility.OrbitalStore => new( "ORBITAL STORAGE", new( 45, 12 ), 260 ),
-        _ => throw new ArgumentOutOfRangeException( nameof(facility) )
-    };
+    internal static FacilityPlan Facility( PlanetFacility facility ) => GameCatalog.Facility( facility );
+
+    private readonly int[] _siteUpgrades = new int[CelestialSystem.BodyCount * FacilityCount];
+    private ref int UpgradeDeadline( int body, PlanetFacility facility ) => ref _siteUpgrades[body * FacilityCount + (int)facility];
+
+    internal int SiteUpgradeRemaining( int body, PlanetFacility facility ) => Remaining( UpgradeDeadline( body, facility ) );
+    internal int SiteUpgradeBonus( int body, PlanetFacility facility ) =>
+        SiteUpgradeRemaining( body, facility ) == 0 ? Facility( facility ).UpgradeBonus : 0;
+    internal int StructureOutput( PlanetFacility facility ) {
+        int output = 0;
+        var plan = Facility( facility );
+        for ( int body = 1; body < _bodies.Length; ++body )
+            if ( SiteRemaining( body, facility ) == 0 ) output += plan.Output + SiteUpgradeBonus( body, facility );
+        return output;
+    }
+
+    internal string? UpgradeBlock( int body, PlanetFacility facility ) {
+        if ( !Frontier || body <= 0 || body >= _bodies.Length || SiteRemaining( body, facility ) != 0 ) return "NEEDS AN ONLINE SITE";
+        var plan = Facility( facility );
+        if ( plan.UpgradeBonus == 0 ) return "NO UPGRADE PACKAGE";
+        if ( SiteUpgradeRemaining( body, facility ) >= 0 ) return "UPGRADE ALREADY ORDERED";
+        if ( plan.Requirement is { } requirement && !Researched( requirement ) ) return $"REQUIRES {Tech( requirement ).Name}";
+        return CanAfford( plan.UpgradeCost ) ? null : "INSUFFICIENT RESOURCES";
+    }
+
+    internal bool UpgradeSite( int body, PlanetFacility facility ) {
+        if ( UpgradeBlock( body, facility ) is not null ) return false;
+        var plan = Facility( facility );
+        UpgradeDeadline( body, facility ) = checked(Tick + plan.UpgradeTicks);
+        Spend( plan.UpgradeCost );
+        return true;
+    }
 
     private ref ConstructionSite Construction( int body, PlanetFacility facility ) =>
         ref _siteConstruction[body * FacilityCount + (int)facility];

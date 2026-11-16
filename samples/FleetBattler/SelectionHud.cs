@@ -83,7 +83,7 @@ internal sealed partial class FleetHud {
     }
 
     private void DrawComposition( FleetSimulation fleet, ReadOnlySpan<bool> selected, float x, float y, float height ) {
-        Span<int> roles = stackalloc int[(int)HullRole.Frigate + 1];
+        Span<int> roles = stackalloc int[(int)HullRole.Titan + 1];
         for ( int ship = 0; ship < Math.Min( fleet.Count, selected.Length ); ++ship )
             if ( selected[ship] && fleet.Alive( ship ) ) ++roles[(int)fleet.Role( fleet.SquadronOf( ship ) )];
         Span<char> line = stackalloc char[32];

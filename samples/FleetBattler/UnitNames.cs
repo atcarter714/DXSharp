@@ -6,12 +6,28 @@ internal sealed partial class FleetSimulation {
     private readonly Dictionary<int, string> _fleetNames = new( );
 
     internal string? ShipName( int ship ) => Frontier && Alive( ship ) ? _shipNames[ship] : null;
+    internal string? FirstShipName( int squad ) {
+        for ( int i = _squads[squad].First; i < _squads[squad].First + _squads[squad].Count; ++i )
+            if ( Alive( i ) ) return ShipName( i );
+        return null;
+    }
+
     internal string? FleetName( int squad ) => Frontier && ShipCount( squad ) > 0 ? _fleetNames.GetValueOrDefault( FleetId( squad ) ) : null;
 
-    internal static string RoleName( HullRole role ) => role switch {
-        HullRole.Scout => "SCOUT", HullRole.Miner => "CONSTRUCTOR", HullRole.Freighter => "FREIGHTER",
-        HullRole.Colony => "COLONY SHIP", HullRole.Frigate => "FRIGATE", _ => "CORVETTE"
-    };
+    private int _nextShipName;
+    internal static string RoleName( HullRole role ) => GameCatalog.Hull( role ).Name;
+
+    private string AssignShipName( HullRole role ) {
+        var names = GameCatalog.ShipNames( role );
+        int serial = _nextShipName++;
+        for ( int i = 0; i < names.Length; ++i ) {
+            string candidate = names[(serial + i) % names.Length];
+            if ( Array.IndexOf( _shipNames, candidate ) < 0 ) return candidate;
+        }
+        string stem = names[serial % names.Length];
+        string suffix = $" {serial + 1}";
+        return stem[..Math.Min( stem.Length, 18 - suffix.Length )] + suffix;
+    }
 
     internal bool RenameShip( int ship, string name ) {
         if ( !Frontier || !Alive( ship ) || FactionOf( ship ) != FactionId.Sol || NormalizeName( name ) is not { } label ) return false;

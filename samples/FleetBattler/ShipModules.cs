@@ -19,27 +19,38 @@ internal readonly record struct StatModifier<T>( T Flat, T Scale ) where T : INu
 
 internal readonly record struct ShipDesign( WeaponKind Weapon, bool Plating, ShieldModule Shielding = ShieldModule.Standard,
     ComputerModule Computer = ComputerModule.General, ReactorModule Reactor = ReactorModule.Standard, DriveModule Drive = DriveModule.Cruise ) {
-    internal int Shield => Shielding switch { ShieldModule.None => 0, ShieldModule.Reinforced => 52, _ => 34 };
-    internal int Armor => StatModifier<int>.FlatBonus( Plating ? 22 : 0 ).Apply( 10 );
-    internal int Range => StatModifier<int>.FlatBonus( Computer == ComputerModule.Targeting ? 4 : 0 ).Apply( Weapon == WeaponKind.Rail ? 21 : 16 );
-    internal int Reload => StatModifier<int>.FlatBonus( Computer == ComputerModule.RapidCycle ? -8 : 0 ).Apply( Weapon == WeaponKind.Rail ? 64 : 38 );
-    internal int Damage => Weapon == WeaponKind.Rail ? 22 : 13;
-    internal int PowerAvailable => Reactor == ReactorModule.HighOutput ? 17 : 12;
-    internal int PowerUsed => (Weapon == WeaponKind.Rail ? 4 : 3) +
-        (Shielding switch { ShieldModule.None => 0, ShieldModule.Reinforced => 5, _ => 3 }) +
-        (Computer == ComputerModule.General ? 1 : 3) + (Drive == DriveModule.HighThrust ? 5 : 3);
-    internal bool Valid => PowerUsed <= PowerAvailable;
-    internal int ExtraOre => (Plating ? 3 : 0) + (Shielding == ShieldModule.Reinforced ? 5 : 0) +
-        (Computer == ComputerModule.General ? 0 : 3) + (Reactor == ReactorModule.HighOutput ? 5 : 0) + (Drive == DriveModule.Cruise ? 0 : 4);
-    internal int ExtraEnergy => (Plating ? 2 : 0) + (Shielding == ShieldModule.Reinforced ? 3 : 0) +
-        (Reactor == ReactorModule.HighOutput ? 4 : 0) + (Drive == DriveModule.HighThrust ? 2 : 0);
-    internal int ExtraTicks => (Plating ? 20 : 0) + (Reactor == ReactorModule.HighOutput ? 30 : 0) + (Drive == DriveModule.Cruise ? 0 : 20);
+    private ModuleDefinition WeaponStats => GameCatalog.Module( ModuleSlot.Weapon, Weapon == WeaponKind.Rail ? 1 : 0 );
+    private ModuleDefinition ArmorStats => GameCatalog.Module( ModuleSlot.Armor, Plating ? 1 : 0 );
+    private ModuleDefinition ShieldStats => GameCatalog.Module( ModuleSlot.Shield, (int)Shielding );
+    private ModuleDefinition ComputerStats => GameCatalog.Module( ModuleSlot.Computer, (int)Computer );
+    private ModuleDefinition PowerStats => GameCatalog.Module( ModuleSlot.Power, (int)Reactor );
+    private ModuleDefinition DriveStats => GameCatalog.Module( ModuleSlot.Drive, (int)Drive );
 
-    internal float Handling( ) {
-        var mass = StatModifier<float>.Multiplier( Plating ? 0.84f : 1f );
-        var thrust = StatModifier<float>.Multiplier( Drive == DriveModule.HighThrust ? 1.34f : Drive == DriveModule.LongRange ? 0.93f : 1f );
-        return (mass + thrust).Apply( 1f );
-    }
+    internal int Shield => ShieldStats.Health;
+    internal int Armor => ArmorStats.Health;
+    internal int Range => WeaponStats.Range + ComputerStats.Range;
+    internal int Reload => Math.Max( 8, WeaponStats.Reload + ComputerStats.Reload );
+    internal int Damage => WeaponStats.Damage;
+    internal int PowerAvailable => PowerStats.Supply;
+    internal int PowerUsed => WeaponStats.Draw + ArmorStats.Draw + ShieldStats.Draw + ComputerStats.Draw + DriveStats.Draw;
+    internal bool Valid => PowerUsed <= PowerAvailable;
+    internal int ExtraOre => WeaponStats.Ore + ArmorStats.Ore + ShieldStats.Ore + ComputerStats.Ore + PowerStats.Ore + DriveStats.Ore;
+    internal int ExtraEnergy => WeaponStats.Energy + ArmorStats.Energy + ShieldStats.Energy + ComputerStats.Energy + PowerStats.Energy + DriveStats.Energy;
+    internal int ExtraTicks => WeaponStats.Ticks + ArmorStats.Ticks + ShieldStats.Ticks + ComputerStats.Ticks + PowerStats.Ticks + DriveStats.Ticks;
+
+    internal float Handling( ) => ArmorStats.Handling * DriveStats.Handling;
+    internal float Reach => DriveStats.Reach;
+    internal int Variant( ModuleSlot slot ) => slot switch {
+        ModuleSlot.Weapon => Weapon == WeaponKind.Rail ? 1 : 0, ModuleSlot.Armor => Plating ? 1 : 0,
+        ModuleSlot.Shield => (int)Shielding, ModuleSlot.Computer => (int)Computer, ModuleSlot.Power => (int)Reactor,
+        ModuleSlot.Drive => (int)Drive, _ => throw new ArgumentOutOfRangeException( nameof(slot) )
+    };
+    internal ShipDesign Install( ModuleSlot slot, int option ) => slot switch {
+        ModuleSlot.Weapon => this with { Weapon = option == 0 ? WeaponKind.Pulse : WeaponKind.Rail },
+        ModuleSlot.Armor => this with { Plating = option != 0 }, ModuleSlot.Shield => this with { Shielding = (ShieldModule)option },
+        ModuleSlot.Computer => this with { Computer = (ComputerModule)option }, ModuleSlot.Power => this with { Reactor = (ReactorModule)option },
+        ModuleSlot.Drive => this with { Drive = (DriveModule)option }, _ => throw new ArgumentOutOfRangeException( nameof(slot) )
+    };
 
     internal ShipDesign Cycle( ModuleSlot slot ) => slot switch {
         ModuleSlot.Weapon => this with { Weapon = Weapon == WeaponKind.Rail ? WeaponKind.Pulse : WeaponKind.Rail },
@@ -51,15 +62,7 @@ internal readonly record struct ShipDesign( WeaponKind Weapon, bool Plating, Shi
         _ => throw new ArgumentOutOfRangeException( nameof(slot) )
     };
 
-    internal string Installed( ModuleSlot slot ) => slot switch {
-        ModuleSlot.Weapon => Weapon == WeaponKind.Rail ? "RAIL BATTERY" : "PULSE BATTERY",
-        ModuleSlot.Armor => Plating ? "HEAVY PLATING" : "STANDARD PLATING",
-        ModuleSlot.Shield => Shielding switch { ShieldModule.None => "EMPTY SLOT", ShieldModule.Reinforced => "REINFORCED FIELD", _ => "STANDARD FIELD" },
-        ModuleSlot.Computer => Computer switch { ComputerModule.Targeting => "LONG RANGE TARGETING", ComputerModule.RapidCycle => "RAPID CYCLE", _ => "GENERAL PURPOSE" },
-        ModuleSlot.Power => Reactor == ReactorModule.HighOutput ? "HIGH OUTPUT REACTOR" : "STANDARD REACTOR",
-        ModuleSlot.Drive => Drive switch { DriveModule.HighThrust => "HIGH THRUST DRIVE", DriveModule.LongRange => "LONG RANGE DRIVE", _ => "CRUISE DRIVE" },
-        _ => throw new ArgumentOutOfRangeException( nameof(slot) )
-    };
+    internal string Installed( ModuleSlot slot ) => GameCatalog.Module( slot, Variant( slot ) ).Name;
 }
 
 internal readonly record struct FlightStats( float Cruise, float Acceleration, float TurnRate, float Range );
@@ -72,16 +75,9 @@ internal sealed partial class FleetSimulation {
     internal FlightStats Flight( int squad ) => Flight( Role( squad ), _squads[squad].Design, DriveUpgrade && IsPlayerSquad( squad ) );
 
     internal static FlightStats Flight( HullRole role, ShipDesign design, bool improved ) {
-        var baseline = role switch {
-            HullRole.Scout => new FlightStats( 29, 61, 1, 1 ),
-            HullRole.Miner => new FlightStats( 20, 44, 0.75f, 1 ),
-            HullRole.Colony => new FlightStats( 16, 37, 0.62f, 1 ),
-            HullRole.Freighter => new FlightStats( 18, 39, 0.65f, 1 ),
-            HullRole.Frigate => new FlightStats( 21, 43, 0.72f, 1 ),
-            _ => new FlightStats( 25, 55, 1, 1 )
-        };
+        var baseline = GameCatalog.Hull( role ).Flight;
         float handling = IsWarship( role ) ? design.Handling( ) : 1;
-        float range = IsWarship( role ) && design.Drive == DriveModule.LongRange ? 1.2f : 1f;
+        float range = IsWarship( role ) ? design.Reach : 1;
         var propulsion = StatModifier<float>.Multiplier( handling ) +
             StatModifier<float>.Multiplier( improved ? 1.18f : 1f );
         return new( propulsion.Apply( baseline.Cruise ),

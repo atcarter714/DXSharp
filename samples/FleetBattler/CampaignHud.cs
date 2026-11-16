@@ -2,33 +2,51 @@ using System.Numerics;
 
 namespace FleetBattler;
 
+internal readonly record struct MinorNotice( string? Text, long Time );
+
 internal sealed partial class FleetHud {
     internal static DateOnly StarDate( int campaignTick ) =>
-        new DateOnly( 2184, 1, 1 ).AddDays( Math.Max( 0, campaignTick ) / 120 );
+        new DateOnly( 2184, 1, 1 ).AddDays( (int)SolarCatalog.CalendarDays( campaignTick ) );
 
     private void ClockPanel( Layout layout, int tick, int speed, bool paused, string mapButton ) {
         float x = layout.ClockX;
-        Rect( x, 16, 125, 34, Well );
+        Rect( x, 16, 184, 34, Well );
         var date = StarDate( tick );
-        Span<char> text = stackalloc char[22];
+        Span<char> text = stackalloc char[24];
         text.TryWrite( $"{date.Year:D4}.{date.Month:D2}.{date.Day:D2}", out int length );
-        Text( text[..length], x + 36, 19, 1, White );
-        Rect( x + 4, 18, 26, 28, Active );
-        Icon( paused ? HudIcon.Play : HudIcon.Pause, x + 10, 25, 14, paused ? EnergyTint : SpaceDraw.Cyan );
-        Button( x + 35, 29, 22, "-", speed > 1 );
+        Text( text[..length], x + 42, 20, 1.2f, White );
+        Rect( x + 3, 19, 29, 28, Active );
+        Icon( paused ? HudIcon.Play : HudIcon.Pause, x + 10, 26, 14, paused ? EnergyTint : SpaceDraw.Cyan );
+        Button( x + 120, 28, 20, "-", speed > 1 );
         text.TryWrite( $"{speed}X", out length );
-        Text( paused ? "PAUSED" : text[..length], x + 58, 38, 1, paused ? EnergyTint : SpaceDraw.Cyan );
-        Button( x + 101, 29, 22, "+", speed < 4 );
-        Button( x + 132, 19, 66, mapButton, true );
+        Text( text[..length], x + 146, 36, 1, paused ? EnergyTint : SpaceDraw.Cyan );
+        Button( x + 161, 28, 20, "+", speed < 4 );
+        Text( paused ? "PAUSED" : "CAMPAIGN DATE", x + 42, 37, 0.9f, paused ? EnergyTint : Label );
+        Button( layout.Width - 82, 22, 66, mapButton, true );
     }
 
     private static HudHit HitClock( Layout layout, Vector2 p ) {
         float x = layout.ClockX;
-        if ( Contains( p, x + 4, 18, 26, 28 ) ) return new( HudAction.Pause );
-        if ( Contains( p, x + 35, 29, 22, 21 ) ) return new( HudAction.Slower );
-        if ( Contains( p, x + 101, 29, 22, 21 ) ) return new( HudAction.Speed );
-        if ( Contains( p, x + 132, 19, 66, 21 ) ) return new( HudAction.Galaxy );
+        if ( Contains( p, x + 3, 19, 29, 28 ) ) return new( HudAction.Pause );
+        if ( Contains( p, x + 120, 28, 20, 21 ) ) return new( HudAction.Slower );
+        if ( Contains( p, x + 161, 28, 20, 21 ) ) return new( HudAction.Speed );
+        if ( Contains( p, layout.Width - 82, 22, 66, 21 ) ) return new( HudAction.Galaxy );
         return default;
+    }
+
+    private void DrawMinorNotices( Layout layout, ReadOnlySpan<MinorNotice> entries, long now ) {
+        float width = Math.Min( 318, layout.Width - 28 );
+        float x = layout.Width - width - 14, y = layout.Height - 69;
+        _overlay = 1;
+        foreach ( var entry in entries ) {
+            if ( entry.Text is not { } text || now - entry.Time >= 5400 ) continue;
+            float fade = Math.Min( 1, (5400 - (now - entry.Time)) / 1000f );
+            PanelAt( x, y - 29, width, 29, Vector4.Lerp( Panel, SpaceDraw.Cyan, fade ) );
+            Icon( HudIcon.Log, x + 7, y - 21, 12, Vector4.Lerp( Panel, ScienceTint, fade ) );
+            FitText( text, x + 26, y - 18, width - 32, 1, Vector4.Lerp( Panel, White, fade ) );
+            y -= 35;
+        }
+        _overlay = 0;
     }
 
     private void ChartSummary( Layout layout, FleetSimulation fleet, int planet ) {
@@ -37,7 +55,7 @@ internal sealed partial class FleetHud {
         Icon( HudIcon.Chart, x + 10, y + 9, 14, SpaceDraw.Cyan );
         Text( "TELESCOPE CHART", x + 30, y + 11, 1.27f, White );
         WrapText( fleet.SystemIndex == FleetSimulation.Proxima
-            ? "A silent precursor receiver is marked on this chart. Plan a crewed expedition from Sol."
+            ? "Telescopes see the primary and major bodies. Send a scout to locate the receiver and survey the system."
             : "Stellar observations show the arrangement of the major bodies. Local contacts require a ship in this system.",
             x + 10, y + 33, width - 20, 42, 1, Label );
         Button( x + 10, y + 76, 132, "BACK TO GALAXY", true );
