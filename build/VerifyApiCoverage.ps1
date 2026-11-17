@@ -16,8 +16,10 @@ try {
     $assembly = (& dotnet msbuild $nativeProject "-p:Configuration=$Configuration" -getProperty:TargetPath -nologo | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path $assembly)) { throw 'Build DXSharp.Native before checking API coverage.' }
     New-Item -ItemType Directory -Force 'artifacts/api-coverage' | Out-Null
-    $arguments = @('run', '--project', 'tools/ApiCoverage', '--no-build', '--no-restore', '-c', $Configuration,
-        '--', (Join-Path $metadataRoot 'Windows.Win32.winmd'), $assembly, "artifacts/api-coverage/$Configuration.json")
+    # The solution maps build-host tools to AnyCPU even inside an x64 MSVC shell.
+    $tool = (& dotnet msbuild 'tools/ApiCoverage/ApiCoverage.csproj' '-p:Platform=AnyCPU' "-p:Configuration=$Configuration" -getProperty:TargetPath -nologo | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $tool)) { throw 'Build ApiCoverage before checking API coverage.' }
+    $arguments = @($tool, (Join-Path $metadataRoot 'Windows.Win32.winmd'), $assembly, "artifacts/api-coverage/$Configuration.json")
     & dotnet @arguments
     if ($LASTEXITCODE -ne 0) { throw 'Public native API coverage regressed; inspect artifacts/api-coverage.' }
 } finally {
