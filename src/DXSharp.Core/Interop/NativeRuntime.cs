@@ -6,7 +6,10 @@ namespace DXSharp.Interop;
 internal static class NativeRuntime {
     private static readonly Dictionary<string, nint> Modules = new( StringComparer.OrdinalIgnoreCase );
     private static readonly object Gate = new( );
-    static NativeRuntime( ) => NativeLibrary.SetDllImportResolver( typeof(NativeRuntime).Assembly, Resolve );
+    static NativeRuntime( ) {
+        NativeLibrary.SetDllImportResolver( typeof(NativeRuntime).Assembly, Resolve );
+        NativeLibrary.SetDllImportResolver( typeof(Windows.Win32.PInvoke).Assembly, Resolve );
+    }
 
     internal static void Initialize( ) {
         if ( !OperatingSystem.IsWindows( ) ) throw new PlatformNotSupportedException( "DirectX execution requires Windows." );

@@ -44,6 +44,23 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
         Recording( ); if ( !_retained.TryAdd( key, lease ) ) lease.Dispose( );
     }
 
+    /// <summary>Records native commands and retains the supplied DXSharp dependencies through GPU completion.</summary>
+    /// <param name="record">A synchronous callback using this list's generated Direct3D 12 interface.</param>
+    /// <param name="dependencies">Every DXSharp resource, descriptor heap, or pipeline referenced by the native commands.</param>
+    /// <remarks>
+    /// Call during recording. The callback must keep the command list open and
+    /// preserve the allocator. It must retain external resources separately.
+    /// Rebind pipeline, descriptor, and render-target state before later draws
+    /// when the callback changes that state.
+    /// </remarks>
+    public void RecordNative( Action<ID3D12GraphicsCommandList> record, params GraphicsObject[] dependencies ) {
+        ArgumentNullException.ThrowIfNull( record );
+        ArgumentNullException.ThrowIfNull( dependencies );
+        Recording( );
+        foreach ( var dependency in dependencies ) Track( dependency );
+        record( Native.Interface );
+    }
+
     /// <summary>Closes the current recording.</summary>
     public void Close( ) { Recording( ); Results.Check( Native.Interface.Close( ), "CommandList.Close" ); _state = 1; }
     /// <summary>Starts a new recording after its previous submission completes. Reset the allocator separately.</summary>
@@ -122,24 +139,63 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
         Native.Interface.ClearRenderTargetView( target.Handle, _color, 0, null );
     }
     /// <summary>Binds a render target.</summary>
-    public void SetRenderTarget( RenderTargetView target ) {
-        Recording( ); Track( target.Heap ); Track( target.Resource );
-        var handle = target.Handle;
-        Native.Interface.OMSetRenderTargets( 1, &handle, false, null );
-    }
-    /// <summary>Binds a color target and a D32 depth target, optionally clearing depth to 1.</summary>
+    public void SetRenderTarget( RenderTargetView target ) => SetRenderTargets( [target] );
+
+    /// <summary>Binds color and depth-stencil targets, optionally clearing depth to 1.</summary>
     public void SetRenderTarget( RenderTargetView target, DepthTarget depth, bool clearDepth = false ) {
         ArgumentNullException.ThrowIfNull( depth );
+        SetRenderTargets( [target], depth );
+        if ( clearDepth ) ClearDepthStencil( depth );
+    }
+
+    /// <summary>Binds up to eight color targets and an optional depth-stencil target.</summary>
+    /// <param name="targets">Color descriptors from this device. An empty span enables depth-only rendering.</param>
+    /// <param name="depth">An optional target in the depth-write state.</param>
+    /// <remarks>The command list retains the resources and descriptor heaps through GPU completion.</remarks>
+    public void SetRenderTargets( ReadOnlySpan<RenderTargetView> targets, DepthTarget? depth = null ) {
         Recording( );
+        if ( targets.Length > 8 ) throw new ArgumentOutOfRangeException( nameof(targets) );
+        Span<D3D12_CPU_DESCRIPTOR_HANDLE> handles = stackalloc D3D12_CPU_DESCRIPTOR_HANDLE[targets.Length];
+        for ( int i = 0; i < targets.Length; ++i ) {
+            Track( targets[i].Heap );
+            Track( targets[i].Resource );
+            handles[i] = targets[i].Handle;
+        }
+
+        D3D12_CPU_DESCRIPTOR_HANDLE depthHandle = default;
+        if ( depth is not null ) {
+            Track( depth.Heap );
+            Track( depth.Resource );
+            depthHandle = depth.Heap.CpuHandle( 0 );
+        }
+        fixed ( D3D12_CPU_DESCRIPTOR_HANDLE* pointer = handles )
+            Native.Interface.OMSetRenderTargets( (uint)handles.Length, pointer, false, depth is null ? null : &depthHandle );
+    }
+
+    /// <summary>Clears selected components of a depth-stencil target.</summary>
+    /// <param name="target">A target from this device in the depth-write state.</param>
+    /// <param name="components">Depth, stencil, or both. Stencil requires a stencil-capable format.</param>
+    /// <param name="depth">Depth clear value between 0 and 1 when clearing depth.</param>
+    /// <param name="stencil">Eight-bit stencil clear value when clearing stencil.</param>
+    public void ClearDepthStencil( DepthTarget target, DepthStencilClear components = DepthStencilClear.Depth,
+        float depth = 1, byte stencil = 0 ) {
+        ArgumentNullException.ThrowIfNull( target );
+        Recording( );
+        if ( components == 0 || (components & ~DepthStencilClear.DepthAndStencil) != 0 )
+            throw new ArgumentOutOfRangeException( nameof(components) );
+        if ( (components & DepthStencilClear.Stencil) != 0 && !target.HasStencil )
+            throw new ArgumentException( "The target has no stencil component.", nameof(components) );
+        if ( (components & DepthStencilClear.Depth) != 0 && (!float.IsFinite( depth ) || depth < 0 || depth > 1) )
+            throw new ArgumentOutOfRangeException( nameof(depth) );
         Track( target.Heap );
         Track( target.Resource );
-        Track( depth.Heap );
-        Track( depth.Resource );
-        var colorHandle = target.Handle;
-        var depthHandle = depth.Heap.CpuHandle( 0 );
-        if ( clearDepth )
-            Native.Interface.ClearDepthStencilView( depthHandle, D3D12_CLEAR_FLAGS.D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, null );
-        Native.Interface.OMSetRenderTargets( 1, &colorHandle, false, &depthHandle );
+        Native.Interface.ClearDepthStencilView( target.Heap.CpuHandle( 0 ), (D3D12_CLEAR_FLAGS)components, depth, stencil, 0, null );
+    }
+
+    /// <summary>Sets the stencil reference used by the current graphics pipeline.</summary>
+    public void SetStencilReference( byte reference ) {
+        Recording( );
+        Native.Interface.OMSetStencilRef( reference );
     }
 
     /// <summary>Copies inline values to b0 for a graphics pipeline with a graphics constants root signature.</summary>

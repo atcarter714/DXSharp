@@ -4,6 +4,7 @@ Open `DXSharp.sln` or run a project with `dotnet run --project samples/<name> -c
 
 | Sample | What it exercises |
 | --- | --- |
+| [DepthStencil](DepthStencil) | Depth/stencil formats, masks, native interop, readback, and early owner disposal |
 | [ModernTriangle](ModernTriangle) | Minimal graphics pipeline and resize qualification |
 | [HelloTexture](HelloTexture) | Texture upload, SRV and sampler |
 | [InstancedGrid](InstancedGrid) | 256 animated quads in one instanced draw |

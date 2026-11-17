@@ -14,6 +14,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "$Name failed with exit code $LASTEXITCODE." }
     }
 
+    Invoke-Sample 'DepthStencil' @('run', '--project', 'samples/DepthStencil', '-c', 'Debug', '--', '--warp')
+
     Invoke-Sample 'ModernTriangle' @('run', '--project', 'samples/ModernTriangle', '-c', 'Debug', '--',
         '--warp', '--resize-test', '--evidence=artifacts/triangle-resize')
     foreach ($sample in 'HelloTexture', 'InstancedGrid', 'LitCube', 'PlanarShadows') {

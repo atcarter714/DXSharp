@@ -118,3 +118,31 @@ public sealed unsafe partial class GraphicsDevice {
         return new( heap, resource, index );
     }
 }
+
+public sealed unsafe partial class GraphicsDevice {
+    /// <summary>Creates an owned committed buffer or texture from a native D3D12 description.</summary>
+    /// <param name="description">Native resource dimensions, format, flags, and sample description.</param>
+    /// <param name="memory">A default, upload, or readback heap description.</param>
+    /// <param name="initialState">The resource's initial state, matching its heap type and intended access.</param>
+    /// <param name="heapFlags">Native heap flags.</param>
+    /// <param name="optimizedClear">Optional typed optimized clear value for a render or depth-stencil target.</param>
+    /// <returns>A resource compatible with DXSharp lifetime tracking and native interface queries.</returns>
+    public GpuResource CreateCommittedResource( in D3D12_RESOURCE_DESC description, in D3D12_HEAP_PROPERTIES memory,
+        ResourceState initialState, D3D12_HEAP_FLAGS heapFlags = 0, D3D12_CLEAR_VALUE? optimizedClear = null ) {
+        var placement = (BufferMemory)memory.Type;
+        if ( !Enum.IsDefined( placement ) ) throw new ArgumentException( "Use a default, upload, or readback heap.", nameof(memory) );
+        var resourceDescription = description;
+        var heapDescription = memory;
+        var clear = optimizedClear.GetValueOrDefault( );
+        Guid id = typeof(ID3D12Resource).GUID;
+        nint pointer = 0;
+        Results.Check( Native.Interface.CreateCommittedResource( &heapDescription, heapFlags, &resourceDescription,
+            (D3D12_RESOURCE_STATES)initialState, optimizedClear.HasValue ? &clear : null, &id, (void**)&pointer ),
+            "CreateCommittedResource" );
+        return new( ComOwner<ID3D12Resource>.Adopt( pointer ),
+            description.Dimension == D3D12_RESOURCE_DIMENSION.D3D12_RESOURCE_DIMENSION_BUFFER ? description.Width : 0, placement ) {
+            DeviceIdentity = DeviceIdentity,
+            SupportsUnorderedAccess = (description.Flags & D3D12_RESOURCE_FLAGS.D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) != 0
+        };
+    }
+}

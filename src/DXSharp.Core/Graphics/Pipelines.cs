@@ -130,7 +130,21 @@ public sealed unsafe partial class GraphicsDevice {
 
     /// <summary>Creates a triangle-list graphics pipeline with optional D32_FLOAT depth testing and writes.</summary>
     public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
-        PixelFormat targetFormat, bool depthEnabled ) {
+        PixelFormat targetFormat, bool depthEnabled ) =>
+        CreateGraphicsPipeline( root, vertex, pixel, targetFormat,
+            new DepthStencilState { DepthEnabled = depthEnabled, DepthWriteEnabled = depthEnabled } );
+
+    /// <summary>Creates a triangle-list pipeline with explicit depth-stencil format, tests, masks, and face operations.</summary>
+    /// <param name="root">The root signature retained independently by the pipeline.</param>
+    /// <param name="vertex">Compiled vertex shader.</param>
+    /// <param name="pixel">Compiled pixel shader.</param>
+    /// <param name="targetFormat">The color target format.</param>
+    /// <param name="depthStencil">Single-sample depth-stencil state. Bind a target with the specified format when a test is enabled.</param>
+    /// <returns>An independently owned pipeline state.</returns>
+    public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
+        PixelFormat targetFormat, DepthStencilState depthStencil ) {
+        ArgumentNullException.ThrowIfNull( depthStencil );
+        var nativeDepthStencil = depthStencil.ToNative( );
         RequireSameDevice( root );
         vertex.RequireSuccess( ); pixel.RequireSuccess( );
         if ( vertex.Bytecode.IsEmpty || pixel.Bytecode.IsEmpty ) throw new ArgumentException( "Both compiled shader objects are required." );
@@ -149,22 +163,9 @@ public sealed unsafe partial class GraphicsDevice {
                 SrcBlendAlpha = D3D12_BLEND.D3D12_BLEND_ONE, DestBlendAlpha = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOpAlpha = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
                 LogicOp = D3D12_LOGIC_OP.D3D12_LOGIC_OP_NOOP, RenderTargetWriteMask = 15
             };
-            description.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS;
-            if ( depthEnabled ) {
-                description.DSVFormat = DXGI_FORMAT.DXGI_FORMAT_D32_FLOAT;
-                description.DepthStencilState.DepthEnable = true;
-                description.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK.D3D12_DEPTH_WRITE_MASK_ALL;
-                description.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_LESS;
-            }
-            description.DepthStencilState.StencilReadMask = byte.MaxValue;
-            description.DepthStencilState.StencilWriteMask = byte.MaxValue;
-            description.DepthStencilState.FrontFace = new( ) {
-                StencilFailOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
-                StencilDepthFailOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
-                StencilPassOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
-                StencilFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS
-            };
-            description.DepthStencilState.BackFace = description.DepthStencilState.FrontFace;
+            description.DepthStencilState = nativeDepthStencil;
+            if ( depthStencil.DepthEnabled || depthStencil.StencilEnabled )
+                description.DSVFormat = (DXGI_FORMAT)depthStencil.Format;
             description.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE.D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
             description.NumRenderTargets = 1; description.RTVFormats.AsSpan( )[0] = (DXGI_FORMAT)targetFormat; description.SampleDesc.Count = 1;
             Guid id = typeof(ID3D12PipelineState).GUID;

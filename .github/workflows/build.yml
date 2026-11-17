@@ -51,6 +51,7 @@ jobs:
           path: |
             artifacts/build.binlog
             artifacts/test-results/**
+            artifacts/api-coverage/**
             artifacts/packages/**
           if-no-files-found: warn
 

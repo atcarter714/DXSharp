@@ -16,7 +16,7 @@ try {
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($version)) {
         throw 'Unable to evaluate the package version.'
     }
-    foreach ($name in @('DXSharp', 'DXSharp.Dxc', 'DXSharp.Framework', 'DXSharp.Framework.Desktop', 'DXSharp.Core', 'DXSharp.DirectML')) {
+    foreach ($name in @('DXSharp', 'DXSharp.Dxc', 'DXSharp.Framework', 'DXSharp.Framework.Desktop', 'DXSharp.Native', 'DXSharp.Core', 'DXSharp.DirectML')) {
         $path = Join-Path $packageDirectory "$name.$version.nupkg"
         if (-not (Test-Path $path)) { throw "Missing package: $path" }
         $archive = [System.IO.Compression.ZipFile]::OpenRead($path)
@@ -60,6 +60,9 @@ try {
 System.Console.WriteLine(typeof(DXSharp.Direct3D12.IDevice).Assembly.FullName);
 System.Console.WriteLine(typeof(DXSharp.Dxc.ShaderBuilder).Assembly.FullName);
 System.Console.WriteLine(typeof(DXSharp.Graphics.GraphicsDevice).Assembly.FullName);
+System.Console.WriteLine(typeof(Windows.Win32.Graphics.Direct3D12.ID3D12Device15).Assembly.FullName);
+System.Console.WriteLine(typeof(Windows.Win32.Graphics.Direct2D.ID2D1DeviceContext).Assembly.FullName);
+System.Console.WriteLine(typeof(Windows.Win32.Media.Audio.XAudio2.IXAudio2).Assembly.FullName);
 System.Console.WriteLine(typeof(DXSharp.Framework.Desktop.DesktopGame).Assembly.FullName);
 System.Console.WriteLine(typeof(DXSharp.MachineLearning.DirectMlDevice).Assembly.FullName);
 '@ | Set-Content (Join-Path $consumerDirectory 'Program.cs')

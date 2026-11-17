@@ -26,6 +26,7 @@ Push-Location $PSScriptRoot
 try {
     Invoke-DotNet -Arguments @('restore', 'DXSharp.sln', '--locked-mode', '-m:1')
     Invoke-DotNet -Arguments @('build', 'DXSharp.sln', '--configuration', $Configuration, '--no-restore', '-m:1', '-bl:artifacts/build.binlog')
+    & (Join-Path $PSScriptRoot 'build/VerifyApiCoverage.ps1') -Configuration $Configuration
     if (-not $SkipTests) {
         $resultsDirectory = Join-Path $PSScriptRoot "artifacts/test-results/$Configuration"
         New-Item -ItemType Directory -Force -Path $resultsDirectory | Out-Null
