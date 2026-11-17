@@ -5,6 +5,7 @@ trigger:
   branches:
     include:
       - main
+      - integration/*
       - stability/com-ownership
       - ci/azure-qualification
       - samples/dxr-hello-world
@@ -72,7 +73,7 @@ jobs:
       $target = Join-Path '$(Build.ArtifactStagingDirectory)' 'evidence'
       New-Item -ItemType Directory -Force $target | Out-Null
       "commit=$env:BUILD_SOURCEVERSION" | Set-Content (Join-Path $target 'source.txt')
-      foreach ($name in 'build-info.txt', 'build.binlog', 'test-results', 'sample-results', 'triangle-resize') {
+      foreach ($name in 'build-info.txt', 'build.binlog', 'test-results', 'api-coverage', 'sample-packages', 'sample-results', 'triangle-resize') {
         $path = Join-Path 'artifacts' $name
         if (Test-Path -LiteralPath $path) { Copy-Item -LiteralPath $path -Destination $target -Recurse }
       }

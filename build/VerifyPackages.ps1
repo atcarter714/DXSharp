@@ -16,7 +16,7 @@ try {
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($version)) {
         throw 'Unable to evaluate the package version.'
     }
-    foreach ($name in @('DXSharp', 'DXSharp.Dxc', 'DXSharp.Framework', 'DXSharp.Framework.Desktop', 'DXSharp.Core', 'DXSharp.DirectML')) {
+    foreach ($name in @('DXSharp', 'DXSharp.Dxc', 'DXSharp.Framework', 'DXSharp.Framework.Desktop', 'DXSharp.Native', 'DXSharp.Assets', 'DXSharp.Core', 'DXSharp.DirectML')) {
         $path = Join-Path $packageDirectory "$name.$version.nupkg"
         if (-not (Test-Path $path)) { throw "Missing package: $path" }
         $archive = [System.IO.Compression.ZipFile]::OpenRead($path)
@@ -54,15 +54,19 @@ try {
     <PackageReference Include="DXSharp.Framework" Version="$version" />
     <PackageReference Include="DXSharp.Framework.Desktop" Version="$version" />
     <PackageReference Include="DXSharp.DirectML" Version="$version" />
+    <PackageReference Include="DXSharp.Assets" Version="$version" />
   </ItemGroup>
 </Project>
 "@ | Set-Content (Join-Path $consumerDirectory 'Consumer.csproj')
     Copy-Item (Join-Path $repoRoot 'samples/ModernCompute/Program.cs') (Join-Path $consumerDirectory 'Program.cs')
     @'
-internal static class LegacySurface {
-    internal static readonly System.Type[] Types = [typeof(DXSharp.Direct3D12.IDevice), typeof(DXSharp.Dxc.ShaderBuilder)];
+internal static class PackageSurfaces {
+    internal static readonly System.Type[] Types = [typeof(DXSharp.Direct3D12.IDevice), typeof(DXSharp.Dxc.ShaderBuilder),
+        typeof(DXSharp.Graphics.GraphicsDevice), typeof(Windows.Win32.Graphics.Direct3D12.ID3D12Device15),
+        typeof(Windows.Win32.Graphics.Direct2D.ID2D1DeviceContext), typeof(Windows.Win32.Media.Audio.XAudio2.IXAudio2),
+        typeof(DXSharp.Assets.GltfModel)];
 }
-'@ | Set-Content (Join-Path $consumerDirectory 'LegacySurface.cs')
+'@ | Set-Content (Join-Path $consumerDirectory 'PackageSurfaces.cs')
     @"
 <configuration>
   <packageSources>

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>WinExe</OutputType>
+        <OutputType>Exe</OutputType>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Platforms>$(TargetCPUs);</Platforms>
@@ -11,11 +11,12 @@
     <ItemGroup>
       <None Update="shader1.hlsl">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </None>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\DXSharp\DXSharp.csproj" />
+      <ProjectReference Include="../../src/DXSharp.Framework.Desktop/DXSharp.Framework.Desktop.csproj" />
     </ItemGroup>
 
 </Project>

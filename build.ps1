@@ -26,6 +26,7 @@ Push-Location $PSScriptRoot
 try {
     Invoke-DotNet -Arguments @('restore', 'DXSharp.sln', '--locked-mode', '-m:1')
     Invoke-DotNet -Arguments @('build', 'DXSharp.sln', '--configuration', $Configuration, '--no-restore', '-m:1', '-bl:artifacts/build.binlog')
+    & (Join-Path $PSScriptRoot 'build/VerifyApiCoverage.ps1') -Configuration $Configuration
     if (-not $SkipTests) {
         $resultsDirectory = Join-Path $PSScriptRoot "artifacts/test-results/$Configuration"
         New-Item -ItemType Directory -Force -Path $resultsDirectory | Out-Null
@@ -47,6 +48,7 @@ try {
     }
     Invoke-DotNet -Arguments @('pack', 'DXSharp.sln', '--configuration', $Configuration, '--no-build', '--no-restore', '-m:1')
     & (Join-Path $PSScriptRoot 'build/VerifyPackages.ps1') -Configuration $Configuration
+    & (Join-Path $PSScriptRoot 'build/VerifySamplePackages.ps1') -Configuration $Configuration
 } finally {
     Pop-Location
 }

@@ -14,9 +14,9 @@ flowchart TD
 
 ## What the bindings do
 
-1. **Describe the ABI.** [NativeMethods.txt](../src/DXSharp.Core/NativeMethods.txt) selects the Win32 metadata declarations used by Core. [NativeMethods.json](../src/DXSharp.Core/NativeMethods.json) keeps them internal and asks CsWin32 to emit source-generated COM declarations. Native HRESULTs and explicit COM out pointers let the ownership layer handle failure and transfer at the call site.
+1. **Describe the ABI.** [NativeMethods.txt](../src/DXSharp.Native/NativeMethods.txt) selects the public Win32 metadata declarations exposed by DXSharp.Native and used by Core. [NativeMethods.json](../src/DXSharp.Native/NativeMethods.json) makes them public and asks CsWin32 to emit source-generated COM declarations. Native HRESULTs and explicit COM out pointers let the ownership layer handle failure and transfer at the call site.
 2. **Generate the calls.** CsWin32 supplies signatures, GUIDs, data layouts, and interface inheritance. .NET emits the COM vtable dispatch and marshalling code at compile time. `ShaderCompiler` also implements the native DXC include callback through a generated managed-to-native COM projection. Core and DirectML disable implicit runtime marshalling. [Microsoft's COM generation guide](https://learn.microsoft.com/en-us/dotnet/standard/native-interop/comwrappers-source-generation)
-3. **Own the pointer.** [ComOwner](../src/DXSharp.Core/Interop/ComOwner.cs) adopts the reference returned by a successful call, holds it in a safe handle, and creates a unique `StrategyBasedComWrappers` projection. A scoped borrow pins the handle's lifetime for a raw call. Cloning acquires a separate native reference. Disposal releases the projection and the owned native reference. The manual vtable calls in this layer are the three `IUnknown` operations. [IFactory2Raw](../src/DXSharp.Core/Interop/Factory2Raw.cs) supplies a narrow generated signature for swap-chain creation so its returned native reference can be adopted directly.
+3. **Own the pointer.** [ComOwner](../src/DXSharp.Core/Interop/ComOwner.cs) adopts the reference returned by a successful call, holds it in a safe handle, and creates a unique `StrategyBasedComWrappers` projection. A scoped borrow pins the handle's lifetime for a raw call. Cloning acquires a separate native reference. Disposal releases the projection and the owned native reference. The manual vtable calls in this layer are the three `IUnknown` operations. [IFactory2Raw](../src/DXSharp.Native/Factory2Raw.cs) supplies a narrow generated signature for swap-chain creation so its returned native reference can be adopted directly.
 4. **Keep recorded work alive.** A command list retains resources, heaps, pipelines and other dependencies as it records. Submission associates those leases with a fence value. Queue retirement releases them after completion. Callers still select resource states and synchronize conflicting access. A COM reference protects lifetime, while a barrier or fence orders work.
 5. **Load and distribute native dependencies.** The loader resolves OS D3D12 and DXGI from the Windows system directory, and resolves DXC and DirectML from the application directory. The Agility path creates a local D3D12 device factory from the packaged runtime. NuGet transitive MSBuild targets copy the appropriate runtime files into build and publish outputs. The Linux qualification exercises a portable native COM fixture. The graphics runtime uses Windows.
 
@@ -24,14 +24,15 @@ flowchart TD
 
 | Layer | Current responsibilities |
 | --- | --- |
+| `DXSharp.Native` | Public generated DirectX, imaging, audio, and input declarations from pinned Win32 metadata |
 | `DXSharp.Core` | Device and queue ownership, buffers and resource states, descriptors, pipelines, HWND swap chains, DXC, and a bounded DXR surface |
 | `DXSharp.DirectML` | Same-device tensor binding and synchronous compiled Add and GEMM execution with optional fused ReLU |
 | `DXSharp.Framework.Desktop` | A WinForms-owned STA loop, one or two fenced frame slots, resize, depth target, and presentation |
-| `DXSharp`, `DXSharp.Dxc`, `DXSharp.Framework` | Compatibility types, RCWs, older wrappers and framework. BasicSample and the compatibility tests still exercise this path. |
+| `DXSharp`, `DXSharp.Dxc`, `DXSharp.Framework` | Compatibility types, RCWs, older wrappers and framework. The compatibility tests still exercise this path. BasicSample uses the current desktop host. |
 
 ### Release documentation
 
-The modern package contract covers handwritten public and protected API declarations in Core, DirectML, and Desktop. The compiler rejects missing or malformed XML and unresolved references in those sources. NuGet verification checks for a parseable, nonempty XML file alongside each SDK library. Document ownership, synchronization, units, defaults, and failure conditions at the API boundary. Tutorials provide end-to-end examples.
+The modern package contract covers handwritten public and protected API declarations in Core, DirectML, Desktop, and Assets. The compiler rejects missing or malformed XML and unresolved references in those sources. NuGet verification checks for a parseable, nonempty XML file alongside each SDK library. Document ownership, synchronization, units, defaults, and failure conditions at the API boundary. Tutorials provide end-to-end examples.
 
 The compatibility audit reported at least 3,945 missing comments at the qualified baseline. The compiler reported 3,649 in `DXSharp`, 21 in `DXSharp.Dxc`, and 275 in `DXSharp.Framework`. Existing pragmas suppress additional warnings. Before putting a compatibility package under the same gate, decide which APIs it will support, remove its scoped suppressions, and document and verify the retained surface.
 
@@ -39,7 +40,7 @@ The compatibility audit reported at least 3,945 missing comments at the qualifie
 
 | Candidate | Evidence and release decision |
 | --- | --- |
-| Unused high-version generated interfaces | Narrow Core's metadata roots to the highest versions used by the implementation. The modern bindings are internal, so this reduces generated code without changing the public API. Keep the ABI and sample qualification on the resulting binary. |
+| Unused high-version generated interfaces | The generated declarations are public in DXSharp.Native and form its low-level API contract. Changes to their roots require the metadata coverage gate and an API compatibility review. Keep the ABI and sample qualification on the resulting binary. |
 | Old DXC archives and checked-in documentation output | The two 2023 DXC ZIPs and `doc/DXSharp.xml` account for about 54 MB in the checked-out tree. The current package pipeline restores a pinned DXC package and generates XML from source. Check any external consumers before removing these snapshots. Repository history retains old blobs after a normal deletion. |
 | Backup DXC project and old build experiments | The backup project sits outside the solution. The older DevOps definitions and shader task experiments are historical candidates for a separate cleanup. Confirm their use in downstream builds first. |
 | Legacy RCW packages | Keep the compatibility boundary explicit. The legacy shader builder and framework overlap with modern entry points, but existing callers and compatibility tests still reference them. Inventory public API and migrate the sample and downstream consumers before deprecating packages. |

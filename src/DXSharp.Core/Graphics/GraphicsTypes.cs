@@ -31,6 +31,10 @@ public enum ResourceState : uint {
     IndexBuffer = 2,
     /// <summary>Write as a color render target.</summary>
     RenderTarget = 4,
+    /// <summary>Write through a depth-stencil view.</summary>
+    DepthWrite = 0x10,
+    /// <summary>Read-only depth-stencil access.</summary>
+    DepthRead = 0x20,
     /// <summary>Access through an unordered-access view.</summary>
     UnorderedAccess = 8,
     /// <summary>Read as a shader resource from a stage other than the pixel shader.</summary>
@@ -95,6 +99,17 @@ public abstract class GraphicsObject : IDisposable {
         int result = Interop.UnknownCalls.QueryInterface( owner.DangerousGetHandle( ), interfaceId, out nint pointer );
         Results.Check( result, "QueryInterface" );
         return new Interop.ComReference( pointer );
+    }
+    /// <summary>Queries an independently owned, typed native COM interface.</summary>
+    /// <typeparam name="T">A public source-generated COM interface exposed by DXSharp.</typeparam>
+    /// <returns>An owning projection. Dispose it after its final CPU use.</returns>
+    /// <exception cref="GraphicsException">The device or object does not implement the interface.</exception>
+    public Interop.NativeInterface<T> QueryNativeInterface<T>( ) where T : class {
+        if ( !typeof(T).IsInterface ) throw new ArgumentException( "A generated COM interface is required.", nameof(T) );
+        using var owner = Retain( );
+        int result = Interop.UnknownCalls.QueryInterface( owner.DangerousGetHandle( ), typeof(T).GUID, out nint pointer );
+        Results.Check( result, "QueryInterface" );
+        return new( Interop.ComOwner<T>.Adopt( pointer ) );
     }
     /// <summary>Releases this owner's references. Native submission leases are independent.</summary>
     public virtual void Dispose( ) => Interlocked.Exchange( ref _owner, null )?.Dispose( );

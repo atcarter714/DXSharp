@@ -4,7 +4,7 @@
 dotnet_diagnostic.CS1591.severity = silent
 
 # Enforce the inline XML contract on hand-authored, supported SDK APIs.
-[src/{DXSharp.Core,DXSharp.DirectML,DXSharp.Framework.Desktop}/**.cs]
+[src/{DXSharp.Core,DXSharp.DirectML,DXSharp.Framework.Desktop,DXSharp.Assets}/**.cs]
 dotnet_diagnostic.CS1570.severity = error
 dotnet_diagnostic.CS1572.severity = error
 dotnet_diagnostic.CS1573.severity = error

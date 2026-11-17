@@ -9,6 +9,7 @@
     <Copyright>Copyright (c) Arkaen Solutions and DXSharp contributors</Copyright>
     <Description Condition="'$(MSBuildProjectName)' == 'AdvancedSample'">Advanced DXSharp graphics techniques.</Description>
     <Description Condition="'$(MSBuildProjectName)' == 'BasicSample'">A minimal Direct3D 12 renderer built with DXSharp.</Description>
+    <Description Condition="'$(MSBuildProjectName)' == 'DepthStencil'">Depth/stencil rendering, native interop and readback validation.</Description>
     <Description Condition="'$(MSBuildProjectName)' == 'DxrHelloWorld'">A DirectX raytracing scene and readback validation.</Description>
     <Description Condition="'$(MSBuildProjectName)' == 'FleetBattler'">A Direct3D 12 space strategy and compute simulation.</Description>
     <Description Condition="'$(MSBuildProjectName)' == 'HelloTexture'">Textured geometry and texture uploads with DXSharp.</Description>

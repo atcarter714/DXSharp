@@ -4,6 +4,8 @@ Open `DXSharp.sln` or run a project with `dotnet run --project samples/<name> -c
 
 | Sample | What it exercises |
 | --- | --- |
+| [BasicSample](BasicSample) | Minimal triangle using the current desktop host, fences and DXC |
+| [DepthStencil](DepthStencil) | Depth/stencil formats, masks, native interop, readback, and early owner disposal |
 | [ModernTriangle](ModernTriangle) | Minimal graphics pipeline and resize qualification |
 | [HelloTexture](HelloTexture) | Texture upload, SRV and sampler |
 | [InstancedGrid](InstancedGrid) | 256 animated quads in one instanced draw |
@@ -15,4 +17,4 @@ Open `DXSharp.sln` or run a project with `dotnet run --project samples/<name> -c
 | [NBodyGravity](NBodyGravity) | Ping-pong GPU simulation, instanced drawing, and a seeded CPU reference |
 | [DxrHelloWorld](DxrHelloWorld) | DXR acceleration structures, shader table, and image readback |
 
-[BasicSample](BasicSample) remains a standalone legacy crash reproduction outside the sample solution. The original [AdvancedSample](AdvancedSample) experiments are available as reference source.
+Every runnable sample project is included in DXSharp.sln and consumes the current SDK through project references. AdvancedSample remains reference source without a project file.
