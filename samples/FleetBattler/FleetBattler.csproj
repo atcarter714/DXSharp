@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>$(DotNetTargets)</TargetFramework>
+    <ApplicationIcon>Art/FleetBattler.ico</ApplicationIcon>
+    <AssemblyTitle>DXSharp - Fleet Battler</AssemblyTitle>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Shared/StaticMeshSet.cs" Link="StaticMeshSet.cs" />
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App.WPF" />
+    <PackageReference Include="NVorbis" />
+    <None Update="Shaders/**/*.hlsl" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="Celestial/Moon.jpg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="Art/*.jpg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="Content/*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="Music/**/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
+    <ProjectReference Include="../../src/DXSharp.Framework.Desktop/DXSharp.Framework.Desktop.csproj" />
+    <None Update="Models/*.gltf"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

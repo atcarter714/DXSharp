@@ -6,7 +6,63 @@
     <IsTestProject>false</IsTestProject>
     <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
   </PropertyGroup>
-  <ItemGroup><ProjectReference Include="../../src/DXSharp.Core/DXSharp.Core.csproj" /><ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" /></ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../samples/Shared/StaticMeshSet.cs" Link="StaticMeshSet.cs" />
+    <ProjectReference Include="../../src/DXSharp.Core/DXSharp.Core.csproj" />
+    <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
+    <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
+    <Compile Include="../../samples/FleetBattler/ShipDesignerHud.cs" Link="Fleet/ShipDesignerHud.cs" />
+    <Compile Include="../../samples/FleetBattler/GameCatalog.cs" Link="Fleet/GameCatalog.cs" />
+    <Compile Include="../../samples/FleetBattler/ResearchCatalog.cs" Link="Fleet/ResearchCatalog.cs" />
+    <None Include="../../samples/FleetBattler/Content/*.json" Link="Content/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Compile Include="../../samples/FleetBattler/IndustryHud.cs" Link="Fleet/IndustryHud.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetCampaign.cs" Link="Fleet/FleetCampaign.cs" />
+    <Compile Include="../../samples/FleetBattler/Expedition.cs" Link="Fleet/Expedition.cs" />
+    <Compile Include="../../samples/FleetBattler/GalaxyHud.cs" Link="GalaxyHud.cs" />
+    <Compile Include="../../samples/FleetBattler/CampaignHud.cs" Link="CampaignHud.cs" />
+    <Compile Include="../../samples/FleetBattler/SelectionHud.cs" Link="SelectionHud.cs" />
+    <Compile Include="../../samples/FleetBattler/BriefingHud.cs" Link="BriefingHud.cs" />
+    <Compile Include="../../samples/FleetBattler/FrontierHud.cs" Link="FrontierHud.cs" />
+    <Compile Include="../../samples/FleetBattler/OperationsFeedback.cs" Link="OperationsFeedback.cs" />
+    <Compile Include="../../samples/FleetBattler/PlanetInspector.cs" Link="PlanetInspector.cs" />
+    <None Include="../../samples/FleetBattler/Art/*.jpg" Link="Art/%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Compile Include="../../samples/FleetBattler/OrbitalNavigation.cs" Link="OrbitalNavigation.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetGroups.cs" Link="FleetGroups.cs" />
+    <Compile Include="../../samples/FleetBattler/Factions.cs" Link="Factions.cs" />
+    <Compile Include="../../samples/FleetBattler/SiteConstruction.cs" Link="SiteConstruction.cs" />
+    <Compile Include="../../samples/FleetBattler/UnitNames.cs" Link="Fleet/UnitNames.cs" />
+    <Compile Include="../../samples/FleetBattler/Piracy.cs" Link="Fleet/Piracy.cs" />
+    <Compile Include="../../samples/FleetBattler/Colonies.cs" Link="Fleet/Colonies.cs" />
+    <Compile Include="../../samples/FleetBattler/ShipModules.cs" Link="Fleet/ShipModules.cs" />
+    <Compile Include="../../samples/FleetBattler/ShipService.cs" Link="Fleet/ShipService.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetOrdersHud.cs" Link="Fleet/FleetOrdersHud.cs" />
+    <Compile Include="../../samples/FleetBattler/FrontierContracts.cs" Link="Fleet/FrontierContracts.cs" />
+    <Compile Include="../../samples/FleetBattler/Industry.cs" Link="Industry.cs" />
+    <Compile Include="../../samples/FleetBattler/Frontier.cs" Link="Frontier.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetSimulation.cs" Link="FleetSimulation.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetDraw.cs" Link="FleetDraw.cs" />
+    <Compile Include="../../samples/FleetBattler/SpaceDraw.cs" Link="SpaceDraw.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetHud.cs" Link="FleetHud.cs" />
+    <Compile Include="../../samples/FleetBattler/SolarCatalog.cs" Link="SolarCatalog.cs" />
+    <Compile Include="../../samples/FleetBattler/CelestialSystem.cs" Link="CelestialSystem.cs" />
+    <Compile Include="../../samples/FleetBattler/ComputeTraffic.cs" Link="ComputeTraffic.cs" />
+    <Compile Include="../../samples/FleetBattler/Jukebox.cs" Link="Jukebox.cs" />
+    <Compile Include="../../samples/FleetBattler/VorbisTrack.cs" Link="VorbisTrack.cs" />
+    <PackageReference Include="NVorbis" />
+    <None Update="Audio/TestTone.ogg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Compile Include="../../samples/FleetBattler/SynthAudio.cs" Link="SynthAudio.cs" />
+    <Compile Include="../../samples/FleetBattler/FleetCombat.cs" Link="FleetCombat.cs" />
+    <Compile Include="../../samples/FleetBattler/PlanetEconomy.cs" Link="PlanetEconomy.cs" />
+    <Compile Include="../../samples/FleetBattler/CommandSelection.cs" Link="CommandSelection.cs" />
+    <Compile Include="../../samples/FleetBattler/BattleDraw.cs" Link="BattleDraw.cs" />
+    <None Include="../../samples/FleetBattler/Shaders/*.hlsl" Link="Shaders/%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../../samples/StaticModelViewer/Models/Patrol.gltf" Link="Models/Patrol.gltf"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../../samples/FleetBattler/Models/*.gltf" Link="Models/%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
   <Target Name="CopyNativeFixture" AfterTargets="Build" Condition="'$(DXSharpNativeFixture)' != ''">
     <Copy SourceFiles="$(DXSharpNativeFixture)" DestinationFolder="$(TargetDir)" />
   </Target>

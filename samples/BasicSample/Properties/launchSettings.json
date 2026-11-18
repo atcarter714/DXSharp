@@ -1,11 +1,1 @@
-{
-  "profiles": {
-    "BasicSample": {
-      "commandName": "Project",
-      "environmentVariables": {
-        "COMPlus_legacyCorruptedState­­ExceptionsPolicy": "1"
-      },
-      "nativeDebugging": true
-    }
-  }
-}
+{"profiles":{"BasicSample":{"commandName":"Project","nativeDebugging":true}}}

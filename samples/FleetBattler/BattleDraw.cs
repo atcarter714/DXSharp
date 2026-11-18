@@ -1,0 +1,256 @@
+using System.Numerics;
+using System.Runtime.InteropServices;
+using DXSharp.Graphics;
+using DXSharp.Shaders;
+
+namespace FleetBattler;
+
+internal static class BattleDraw {
+    internal const uint EffectStride = 32;
+    internal const uint ConstantCount = 20;
+    internal const int RouteSegments = 48, RouteCapacity = RouteSegments + 3;
+    internal const int SiteEffectCapacity = (FleetSimulation.FacilityCount + 3) * CelestialSystem.BodyCount;
+    private const int OrbitSegments = 72;
+    internal const int SolarTrackCapacity = (CelestialSystem.BodyCount - CelestialSystem.FrontierBodyCount + 4) * OrbitSegments;
+
+    internal static BattleEffect ReceiverSignal( Vector2 position, int tick, float interpolation ) {
+        const int period = 150;
+        float phase = (tick % period + interpolation) / period;
+        return new( new( position.X, position.Y, position.X, position.Y ), new( phase, 0, 10, 0 ) );
+    }
+
+    private const string Effects = """
+        cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; float4 Viewport; };
+        struct Input { float4 segment : POSITION; float4 style : COLOR; };
+        struct Output {
+            float4 position : SV_Position;
+            float2 uv : TEXCOORD0;
+            nointerpolation float4 style : COLOR;
+        };
+        Output VS(Input input, uint id : SV_VertexID) {
+            const float2 corners[6] = {float2(0,-1),float2(1,-1),float2(0,1),float2(0,1),float2(1,-1),float2(1,1)};
+            float2 uv = corners[id];
+            float2 screenScale = float2(Viewport.x,Viewport.y)*0.5;
+            float4 start = mul(float4(input.segment.x,0.36,input.segment.y,1),ViewProjection);
+            float4 end = mul(float4(input.segment.z,0.36,input.segment.w,1),ViewProjection);
+            float2 delta = (end.xy/end.w-start.xy/start.w)*screenScale;
+            float2 right = float2(-delta.y,delta.x) / max(0.01,length(delta));
+            float2 pos = lerp(start.xy/start.w,end.xy/end.w,uv.x) + right*uv.y*Viewport.z*2.4/screenScale;
+            if (input.style.z == 4 || input.style.z == 8 || input.style.z == 9) {
+                uv.x = uv.x*2-1;
+                pos = start.xy/start.w + uv*(input.style.z == 8 ? 7 : 8)*Viewport.z/screenScale;
+                if (input.style.z == 9) pos += float2(0,16)*Viewport.z/screenScale;
+            } else if (input.style.z == 1 || input.style.z == 10) {
+                uv.x = uv.x*2-1;
+                float extent = input.style.z == 10 ? 25 : 3+input.style.x*18;
+                pos = start.xy/start.w + uv*extent*Viewport.z/screenScale;
+            }
+            Output output;
+            output.position = float4(pos,input.style.z == 5 ? 0.9995 : input.style.z == 2 || input.style.z >= 7 || input.style.z == 4 ? 0.07 : 0.065,1);
+            output.uv = uv;
+            output.style = input.style;
+            return output;
+        }
+        float4 PS(Output input) : SV_Target {
+            if (input.style.z == 10) {
+                float radius = length(input.uv);
+                float phase = input.style.x;
+                float primary = (1-smoothstep(0.02,0.055,abs(radius-lerp(0.23,0.91,phase))))*(1-phase);
+                float echoPhase = saturate((phase-0.19)/0.81);
+                float echo = (1-smoothstep(0.02,0.06,abs(radius-lerp(0.19,0.77,echoPhase))))*(1-echoPhase)*step(0.19,phase)*0.65;
+                float signal = max(primary,echo);
+                clip(signal-0.16);
+                return float4(float3(0.31,0.94,1)*lerp(0.44,1,signal),1);
+            }
+            if (input.style.z == 9) {
+                float2 p = abs(input.uv);
+                clip(0.85-max(p.x,p.y));
+                float cross = step(min(p.x,p.y),0.25)*step(max(p.x,p.y),0.65);
+                return float4(lerp(float3(0.04,0.19,0.15),float3(0.38,1,0.64),cross),1);
+            }
+            if (input.style.z == 8) {
+                float2 p = abs(input.uv);
+                clip(0.14-abs(max(p.x,p.y)-0.77));
+                clip(min(p.x,p.y)-0.37);
+                return float4(0.86,0.72,0.36,1);
+            }
+            if (input.style.z == 7) {
+                clip(0.26-abs(input.uv.y));
+                clip(frac(input.uv.x*9)-0.42);
+                return float4(0.56,0.46,0.27,1);
+            }
+            if (input.style.z == 6) {
+                float scan = saturate(input.style.w);
+                float frequency = lerp(21,34,scan);
+                float spark = 0.32+0.68*pow(saturate(sin(input.uv.x*frequency-input.style.x*12)),4);
+                clip((1-abs(input.uv.y))*spark-0.22);
+                return float4(lerp(float3(1,0.55,0.16),float3(0.23,0.86,1),input.style.w)*spark,1);
+            }
+            if (input.style.z == 5) {
+                clip(0.26-abs(input.uv.y));
+                return float4(0.11,0.16,0.23,1);
+            }
+            if (input.style.z == 2) {
+                clip(0.40-abs(input.uv.y));
+                return float4(0.30,0.82,0.89,1);
+            }
+            if (input.style.z == 4) {
+                clip(0.14-abs(abs(input.uv.x)+abs(input.uv.y)-0.86));
+                return float4(0.58,0.98,0.99,1);
+            }
+            float3 faction = input.style.y < 0.5 ? float3(0.21,0.86,1) : float3(1,0.42,0.12);
+            if (input.style.z == 1) {
+                float radius = length(input.uv);
+                float ring = 1-smoothstep(0.12,0.25,abs(radius-0.72));
+                float core = 1-smoothstep(0.04,0.43,radius);
+                float flare = max(ring*0.87,core*(1-input.style.x));
+                clip(flare*(1-input.style.x)-0.10);
+                return float4(lerp(faction,float3(1,0.92,0.67),core)*flare*(1-input.style.x),1);
+            }
+            if (input.style.w > 0.5) {
+                float streak = 1 - smoothstep(0.03,0.14,abs(input.uv.x - saturate(input.style.x * 1.6)));
+                clip(streak * (1 - abs(input.uv.y)) - 0.12);
+                return float4(lerp(faction,float3(1,0.87,0.38),0.8)*streak,1);
+            }
+            float head = saturate(input.style.x*2.6+0.18);
+            float beam = 1 - smoothstep(0.03,0.32,abs(input.uv.x-head));
+            clip(beam*(1-abs(input.uv.y))-0.09);
+            return float4(lerp(faction,float3(0.96,0.99,1),beam*(1-abs(input.uv.y)))*(1-input.style.x*0.58),1);
+        }
+        """;
+
+    private const string Markers = """
+        cbuffer Scene : register(b0) { row_major float4x4 ViewProjection; float4 Viewport; };
+        struct Input { float2 center : TEXCOORD0; float4 tint : TEXCOORD2; float4 motion : TEXCOORD3; };
+        struct Output {
+            float4 position : SV_Position;
+            float2 uv : TEXCOORD;
+            nointerpolation float4 marker : COLOR;
+        };
+        Output VS(Input input, uint id : SV_VertexID) {
+            const float2 corners[6] = {float2(-1,-1),float2(1,-1),float2(-1,1),float2(-1,1),float2(1,-1),float2(1,1)};
+            float2 uv = corners[id];
+            float4 projected = mul(float4(input.center.x,0.1,input.center.y,1),ViewProjection);
+            float size = clamp(1.86*Viewport.w, 6, 80);
+            Output output;
+            output.position = float4(projected.xy/projected.w + uv*(2*size/Viewport.xy),0.06,1);
+            if (input.motion.w >= 0.98 && input.motion.w < 2)
+                output.position = float4(2,2,0.06,1);
+            output.uv = uv;
+            output.marker = float4(input.motion.w >= 2 ? 1 : 0,input.motion.w >= 2 ? input.motion.w-2 : input.motion.w,
+                                   input.tint.z > input.tint.x ? 0 : 1,size);
+            return output;
+        }
+        float4 PS(Output input) : SV_Target {
+            float2 uv = input.uv;
+            float unit = Viewport.z / input.marker.w;
+            float corner = step(2.5,Viewport.w)*step(0.67,abs(uv.x))*step(0.67,abs(uv.y))*
+                max(step(1-1.3*unit,abs(uv.x)),step(1-1.3*unit,abs(uv.y))) * input.marker.x;
+            float bar = step(0.68,uv.y)*step(uv.y,0.68+2.7*unit)*step(abs(uv.x),0.57) *
+                max(input.marker.x,step(input.marker.y,0.98));
+            clip(max(corner,bar)-0.5);
+            float3 tint = input.marker.z < 0.5 ? float3(0.19,0.85,1) : float3(1,0.48,0.22);
+            if (bar > 0.5 && (uv.x+0.57)/1.14 > input.marker.y) tint *= 0.18;
+            return float4(tint,1);
+        }
+        """;
+
+    internal static PipelineState CreateEffects( GraphicsDevice device, RootSignature root, ShaderCompiler compiler ) =>
+        device.CreateGraphicsPipeline( root, compiler.Compile( Effects, "VS", "vs_6_0" ), compiler.Compile( Effects, "PS", "ps_6_0" ), [
+            new( "POSITION", VertexFormat.Float4, 0, InstanceStepRate: 1 ),
+            new( "COLOR", VertexFormat.Float4, 16, InstanceStepRate: 1 )
+        ], depthEnabled: true );
+
+    internal static PipelineState CreateMarkers( GraphicsDevice device, RootSignature root, ShaderCompiler compiler ) =>
+        device.CreateGraphicsPipeline( root, compiler.Compile( Markers, "VS", "vs_6_0" ), compiler.Compile( Markers, "PS", "ps_6_0" ), [
+            new( "TEXCOORD", VertexFormat.Float2, 0, 0, 1, 1 ),
+            new( "TEXCOORD", VertexFormat.Float4, 16, 2, 1, 1 ),
+            new( "TEXCOORD", VertexFormat.Float4, 32, 3, 1, 1 )
+        ], depthEnabled: true );
+
+    private static readonly Vector2[] SolarTracks = BuildSolarTracks( );
+    private static Vector2[] BuildSolarTracks( ) {
+        var tracks = new Vector2[(SolarTrackCapacity / OrbitSegments) * (OrbitSegments + 1)];
+        int next = 0;
+        for ( int body = CelestialSystem.FrontierBodyCount; body < CelestialSystem.BodyCount; ++body ) {
+            ref readonly var world = ref SolarCatalog.Get( body );
+            float minor = world.Axis * MathF.Sqrt( 1 - world.Eccentricity * world.Eccentricity );
+            for ( int i = 0; i <= OrbitSegments; ++i ) {
+                if ( world.PhysicalAxis > 0 ) {
+                    tracks[next++] = SolarCatalog.TrackOffset( body, (double)i / OrbitSegments );
+                    continue;
+                }
+                var (sin, cos) = MathF.SinCos( i * MathF.Tau / OrbitSegments );
+                tracks[next++] = new( world.Axis * (cos - world.Eccentricity), minor * sin );
+            }
+        }
+        var belt = ComputeTraffic.Belt( solar: true );
+        Ring( belt.Inner );
+        Ring( belt.Outer );
+        Ring( SolarCatalog.Axis( SolarCatalog.KuiperInnerAu ) );
+        Ring( SolarCatalog.Axis( SolarCatalog.KuiperOuterAu ) );
+        return tracks;
+
+        void Ring( float radius ) {
+            for ( int i = 0; i <= OrbitSegments; ++i ) {
+                var (sin, cos) = MathF.SinCos( i * MathF.Tau / OrbitSegments );
+                tracks[next++] = new Vector2( cos, sin ) * radius;
+            }
+        }
+    }
+
+    internal static int FillSolarTracks( FleetSimulation fleet, Span<BattleEffect> output ) {
+        if ( !fleet.Solar ) return 0;
+        float scale = fleet.BoardRadius;
+        int next = 0;
+        for ( int i = 0; i < SolarTracks.Length; i += OrbitSegments + 1 ) {
+            for ( int j = 0; j < OrbitSegments; ++j ) {
+                var from = SolarTracks[i + j] * scale;
+                var to = SolarTracks[i + j + 1] * scale;
+                output[next++] = new( new( from.X, from.Y, to.X, to.Y ), new( 0, 0, 5, 0 ) );
+            }
+        }
+        return next;
+    }
+
+    internal static int FillRepairs( FleetSimulation fleet, Span<BattleEffect> output, float interpolation ) {
+        int count = 0;
+        for ( int ship = 0; ship < fleet.Count; ++ship ) {
+            if ( !fleet.RepairingAtYard( ship ) ) continue;
+            var point = fleet.VisualPosition( ship, interpolation );
+            output[count++] = new( new( point.X, point.Y, point.X, point.Y ), new( 0, 0, 9, 0 ) );
+        }
+        return count;
+    }
+
+    internal static int FillRoute( FleetSimulation fleet, FleetSelection unit, Span<BattleEffect> output, float interpolation ) {
+        Span<Vector2> points = stackalloc Vector2[RouteSegments + 1];
+        if ( !fleet.CopyRoute( unit, points, out var destination, interpolation ) ) return 0;
+        int count = 0;
+        for ( int i = 0; i < RouteSegments; ++i ) {
+            var start = points[i];
+            var end = points[i + 1];
+            if ( Vector2.DistanceSquared( start, end ) > 1e-6f )
+                output[count++] = new( new( start.X, start.Y, end.X, end.Y ), new( 0, 0, 2, 0 ) );
+        }
+        if ( fleet.TrackedRouteTarget( unit, interpolation ) is { } target ) {
+            if ( Vector2.DistanceSquared( destination, target ) > 0.05f )
+                output[count++] = new( new( destination.X, destination.Y, target.X, target.Y ), new( 0, 0, 7, 0 ) );
+            output[count++] = new( new( target.X, target.Y, target.X, target.Y ), new( 0, 0, 8, 0 ) );
+        }
+        output[count++] = new( new( destination.X, destination.Y, destination.X, destination.Y ), new( 0, 0, 4, 0 ) );
+        return count;
+    }
+
+    internal static void Record( GraphicsCommandList commands, PipelineState pipeline, GpuResource instances, uint count,
+        Matrix4x4 viewProjection, int width, int height, float halfHeight, bool effects ) {
+        if ( count == 0 ) return;
+        Span<Vector4> constants = stackalloc Vector4[5];
+        MemoryMarshal.Write( MemoryMarshal.AsBytes( constants[..4] ), in viewProjection );
+        constants[4] = new( width, height, Math.Clamp( height / 740f, 1, 2.5f ), height / (2 * halfHeight) );
+        commands.SetGraphicsPipeline( pipeline );
+        commands.SetGraphicsConstants( MemoryMarshal.Cast<Vector4, uint>( constants ) );
+        commands.SetVertexBuffer( effects ? 0u : 1u, instances, effects ? EffectStride : FleetDraw.InstanceStride );
+        commands.Draw( 6, count );
+    }
+}

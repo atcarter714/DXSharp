@@ -24,7 +24,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(RepoRootPath)file/keys/strongname.snk</AssemblyOriginatorKeyFile>
     <VersionPrefix>0.4.0</VersionPrefix>
-    <VersionSuffix>net10-preview.1</VersionSuffix>
+    <VersionSuffix>net10-preview.2</VersionSuffix>
     <Company>Arkaen Solutions</Company>
     <Authors>Aaron T. Carter, Arkaen Solutions, Contributors</Authors>
     <RepositoryType>git</RepositoryType>

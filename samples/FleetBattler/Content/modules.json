@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "modules": [
+    {
+      "slot": "Weapon",
+      "id": 0,
+      "name": "Pulse battery",
+      "draw": 3,
+      "damage": 13,
+      "range": 16,
+      "reload": 38
+    },
+    {
+      "slot": "Weapon",
+      "id": 1,
+      "name": "Rail battery",
+      "draw": 4,
+      "damage": 22,
+      "range": 21,
+      "reload": 64
+    },
+    {
+      "slot": "Armor",
+      "id": 0,
+      "name": "Standard plating",
+      "health": 10
+    },
+    {
+      "slot": "Armor",
+      "id": 1,
+      "name": "Heavy plating",
+      "health": 32,
+      "ore": 3,
+      "energy": 2,
+      "ticks": 20,
+      "handling": 0.84
+    },
+    {
+      "slot": "Shield",
+      "id": 0,
+      "name": "Standard field",
+      "draw": 3,
+      "health": 34
+    },
+    {
+      "slot": "Shield",
+      "id": 1,
+      "name": "Reinforced field",
+      "draw": 5,
+      "health": 52,
+      "ore": 5,
+      "energy": 3,
+      "requires": "ShieldDoctrine"
+    },
+    {
+      "slot": "Shield",
+      "id": 2,
+      "name": "Empty slot"
+    },
+    {
+      "slot": "Computer",
+      "id": 0,
+      "name": "General purpose",
+      "draw": 1
+    },
+    {
+      "slot": "Computer",
+      "id": 1,
+      "name": "Long range targeting",
+      "draw": 3,
+      "range": 4,
+      "ore": 3,
+      "requires": "GunneryDoctrine"
+    },
+    {
+      "slot": "Computer",
+      "id": 2,
+      "name": "Rapid cycle",
+      "draw": 3,
+      "reload": -8,
+      "ore": 3,
+      "requires": "Weapons"
+    },
+    {
+      "slot": "Power",
+      "id": 0,
+      "name": "Standard reactor",
+      "supply": 12
+    },
+    {
+      "slot": "Power",
+      "id": 1,
+      "name": "High output reactor",
+      "supply": 17,
+      "ore": 5,
+      "energy": 4,
+      "ticks": 30
+    },
+    {
+      "slot": "Drive",
+      "id": 0,
+      "name": "Cruise drive",
+      "draw": 3
+    },
+    {
+      "slot": "Drive",
+      "id": 1,
+      "name": "High thrust drive",
+      "draw": 5,
+      "ore": 4,
+      "energy": 2,
+      "ticks": 20,
+      "handling": 1.34,
+      "requires": "Drive"
+    },
+    {
+      "slot": "Drive",
+      "id": 2,
+      "name": "Long range drive",
+      "draw": 3,
+      "ore": 4,
+      "ticks": 20,
+      "handling": 0.93,
+      "reach": 1.2,
+      "requires": "Fusion"
+    }
+  ]
+}

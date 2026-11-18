@@ -1,0 +1,187 @@
+using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.Json.Nodes;
+using DXSharp.Assets;
+
+internal static class AssetQualification {
+    internal static void Run( ) {
+        string path = Path.Combine( AppContext.BaseDirectory, "Models", "Patrol.gltf" );
+        var model = GltfModel.Load( path );
+        Require( Marshal.SizeOf<ModelVertex>( ) == 36, "model vertex ABI" );
+        Require( model.Primitives.Length == 3 && model.Instances.Length == 9, "three shared primitives for three ships" );
+
+        for ( int i = 0; i < model.Instances.Length; ++i )
+            Require( model.Instances[i].PrimitiveIndex == i % 3, "instance-to-primitive mapping" );
+        Require( Near( model.Instances[0].WorldTransform.Translation, new( 1.15f, 0.25f, -1 ) ), "lead transform" );
+        Require( Near( model.Instances[3].WorldTransform.Translation, new( 3.1f, 0, 2.1f ) ), "nested port transform" );
+        Require( Near( model.Instances[6].WorldTransform.Translation, new( 3.1f, 0.45f, -4.1f ) ) &&
+            model.Instances[6].WorldTransform.GetDeterminant( ) < 0, "mirrored starboard transform" );
+        Require( Near( model.BoundsMin, new( -0.95f, -0.2016f, -5.1944f ) ) &&
+            Near( model.BoundsMax, new( 4, 0.8532f, 3.1944f ) ), "transformed bounds" );
+
+        var hull = model.Primitives[0];
+        Require( hull.Indices.Length > hull.Vertices.Length && Near( hull.Vertices[0].Color, new( 0.11f, 0.27f, 0.48f ) ),
+            "indexed geometry and material tint" );
+        for ( int i = 1; i < model.Primitives.Length; ++i ) {
+            var primitive = model.Primitives[i];
+            Require( primitive.Vertices.Length == primitive.Indices.Length, "flat-normal geometry expanded per triangle" );
+            for ( int j = 0; j < primitive.Indices.Length; j += 3 ) {
+                var a = primitive.Vertices[j];
+                var b = primitive.Vertices[j + 1];
+                var c = primitive.Vertices[j + 2];
+                var normal = Vector3.Normalize( Vector3.Cross( b.Position - a.Position, c.Position - a.Position ) );
+                Require( primitive.Indices[j] == j && primitive.Indices[j + 1] == j + 1 && primitive.Indices[j + 2] == j + 2 &&
+                    Near( a.Normal, normal ) && a.Normal == b.Normal && a.Normal == c.Normal, "flat normals follow triangle winding" );
+            }
+        }
+        Require( Near( model.Primitives[2].Vertices[0].Color, new( 0.08f, 0.52f * 230 / 255, 1 ) ),
+            "normalized vertex color multiplied by the material tint" );
+
+        string json = File.ReadAllText( path );
+        var document = JsonNode.Parse( json )!;
+        using var glb = CreateGlb( document );
+        var binary = GltfModel.Read( glb );
+        Require( glb.CanRead && model.Instances.SequenceEqual( binary.Instances ) &&
+            model.BoundsMin == binary.BoundsMin && model.BoundsMax == binary.BoundsMax, "GLB scene and stream ownership" );
+        for ( int i = 0; i < model.Primitives.Length; ++i ) {
+            Require( model.Primitives[i].Vertices.SequenceEqual( binary.Primitives[i].Vertices ) &&
+                model.Primitives[i].Indices.SequenceEqual( binary.Primitives[i].Indices ), "GLB geometry matches JSON glTF" );
+        }
+
+        document["buffers"]![0]!["uri"] = "external.bin";
+        RequireUnsupported( document, "External glTF resource" );
+        document = JsonNode.Parse( json )!;
+        document["materials"]![0]!["alphaMode"] = "BLEND";
+        RequireUnsupported( document, "opaque" );
+        var frigate = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "EscortFrigate.gltf" ) );
+        Require( frigate.Instances.Length == 1 && frigate.BoundsMax.Z - frigate.BoundsMin.Z == 75 &&
+            frigate.Primitives[0].Indices.Length > 100, "frigate placeholder is an indexed 75 m authored hull" );
+        var receiver = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", "ProximaReceiver.gltf" ) );
+        int receiverTriangles = 0;
+        foreach ( var primitive in receiver.Primitives ) receiverTriangles += primitive.Indices.Length / 3;
+        Require( receiver.Instances.Length == 4 && receiver.Primitives.Length == 4 && receiverTriangles == 624 &&
+            receiver.BoundsMax.Y > 8.5f && receiver.BoundsMin.Y < -1 &&
+            receiver.Primitives[3].Surface.Emissive.Z > 0.5f, "receiver dish, structure, and emissive feed import on the production path" );
+        VerifyTexturedAssets( );
+        VerifySidecarsAndMaterials( );
+        Console.WriteLine( "PASS: static glTF and GLB geometry, transforms, sidecars, material factors, sRGB textures, and unsupported resources validated." );
+    }
+
+    private static void VerifyTexturedAssets( ) {
+        Require( Marshal.SizeOf<TexturedModelVertex>( ) == 44, "textured vertex ABI" );
+        foreach ( var (file, length) in new[] { ("SurveyScout", 28f), ("Corvette", 48f), ("Freighter", 96f), ("MiningRelay", 48f) } ) {
+            var model = GltfModel.Load( Path.Combine( AppContext.BaseDirectory, "Models", file + ".gltf" ) );
+            var primitive = model.Primitives[0];
+            var image = primitive.BaseColorTexture;
+            Require( model.Instances.Length == 1 && model.Instances[0].WorldTransform == Matrix4x4.Identity &&
+                model.BoundsMax.Z - model.BoundsMin.Z == length, $"{file} source scale and origin" );
+            Require( image is { Width: 64, Height: 64 } && image.Pixels.Length == 64 * 64 * 4 &&
+                image.Pixels[3] == 255 && image.Pixels[0] == 194, $"{file} embedded PNG data" );
+            var vertices = new TexturedModelVertex[primitive.Vertices.Length];
+            primitive.CopyTexturedVertices( vertices );
+            Require( primitive.TexCoords.Length == vertices.Length &&
+                vertices[1].TexCoord == primitive.TexCoords[1] && vertices[1].Position == primitive.Vertices[1].Position,
+                $"{file} interleaved positions and UVs" );
+        }
+
+        var text = File.ReadAllText( Path.Combine( AppContext.BaseDirectory, "Models", "SurveyScout.gltf" ) );
+        var document = JsonNode.Parse( text )!;
+        var primitives = document["meshes"]![0]!["primitives"]!.AsArray( );
+        primitives.Add( primitives[0]!.DeepClone( ) );
+        primitives[1]!["attributes"]!.AsObject( ).Remove( "NORMAL" );
+        using var stream = new MemoryStream( Encoding.UTF8.GetBytes( document.ToJsonString( ) ) );
+        var shared = GltfModel.Read( stream );
+        var flat = shared.Primitives[1];
+        Require( ReferenceEquals( shared.Primitives[0].BaseColorTexture, flat.BaseColorTexture ) &&
+            flat.TexCoords.Length == flat.Indices.Length && flat.TexCoords[2] ==
+                shared.Primitives[0].TexCoords[(int)shared.Primitives[0].Indices[2]], "shared image and UVs survive flat normal expansion" );
+    }
+
+    private static void VerifySidecarsAndMaterials( ) {
+        string input = Path.Combine( AppContext.BaseDirectory, "Models", "SurveyScout.gltf" );
+        var document = JsonNode.Parse( File.ReadAllText( input ) )!;
+        string directory = Directory.CreateTempSubdirectory( "dxsharp-model-" ).FullName;
+        try {
+            string path = Path.Combine( directory, "scout.gltf" );
+            var buffer = document["buffers"]![0]!;
+            var image = document["images"]![0]!;
+            string meshDir = Directory.CreateDirectory( Path.Combine( directory, "mesh" ) ).FullName;
+            File.WriteAllBytes( Path.Combine( meshDir, "scout data.bin" ), Decode( buffer["uri"]! ) );
+            File.WriteAllBytes( Path.Combine( directory, "base.png" ), Decode( image["uri"]! ) );
+            buffer["uri"] = "mesh/scout%20data.bin";
+            image["uri"] = "base.png";
+            var material = document["materials"]![0]!;
+            material["pbrMetallicRoughness"]!["metallicFactor"] = 0.37f;
+            material["pbrMetallicRoughness"]!["roughnessFactor"] = 0.63f;
+            material["emissiveFactor"] = new JsonArray( 0.2f, 0.4f, 0.6f );
+            File.WriteAllText( path, document.ToJsonString( ) );
+
+            var embedded = GltfModel.Load( input ).Primitives[0];
+            var external = GltfModel.Load( path ).Primitives[0];
+            Require( external.Vertices.SequenceEqual( embedded.Vertices ) &&
+                external.BaseColorTexture!.Pixels.SequenceEqual( embedded.BaseColorTexture!.Pixels ) &&
+                external.Surface == new StaticMaterial( 0.37f, 0.63f, new( 0.2f, 0.4f, 0.6f ) ),
+                "relative image and percent-encoded buffer sidecars preserve geometry and PBR factors" );
+            RequireUnsupported( document, "External glTF resource" );
+
+            buffer["uri"] = "mesh/%2e%2e/mesh/scout%20data.bin";
+            File.WriteAllText( path, document.ToJsonString( ) );
+            try {
+                GltfModel.Load( path );
+            } catch ( NotSupportedException error ) when ( error.Message.Contains( "model directory", StringComparison.Ordinal ) ) {
+                return;
+            }
+            throw new InvalidOperationException( "Static asset qualification failed to reject traversal in a sidecar URI." );
+        } finally {
+            Directory.Delete( directory, recursive: true );
+        }
+
+        static byte[] Decode( JsonNode node ) {
+            string uri = node.GetValue<string>( );
+            return Convert.FromBase64String( uri[(uri.IndexOf( ',' ) + 1)..] );
+        }
+    }
+
+    private static MemoryStream CreateGlb( JsonNode document ) {
+        var buffer = document["buffers"]![0]!.AsObject( );
+        string uri = buffer["uri"]!.GetValue<string>( );
+        byte[] bin = Convert.FromBase64String( uri[(uri.IndexOf( ',' ) + 1)..] );
+        buffer.Remove( "uri" );
+        byte[] json = Encoding.UTF8.GetBytes( document.ToJsonString( ) );
+        int jsonLength = (json.Length + 3) & ~3;
+        int binLength = (bin.Length + 3) & ~3;
+        var stream = new MemoryStream( );
+        using ( var writer = new BinaryWriter( stream, Encoding.UTF8, leaveOpen: true ) ) {
+            writer.Write( 0x46546C67u );
+            writer.Write( 2u );
+            writer.Write( 28 + jsonLength + binLength );
+            writer.Write( jsonLength );
+            writer.Write( 0x4E4F534Au );
+            writer.Write( json );
+            for ( int i = json.Length; i < jsonLength; ++i ) writer.Write( (byte)' ' );
+            writer.Write( binLength );
+            writer.Write( 0x004E4942u );
+            writer.Write( bin );
+            for ( int i = bin.Length; i < binLength; ++i ) writer.Write( (byte)0 );
+        }
+        stream.Position = 0;
+        return stream;
+    }
+
+    private static void RequireUnsupported( JsonNode document, string message ) {
+        using var stream = new MemoryStream( Encoding.UTF8.GetBytes( document.ToJsonString( ) ) );
+        try {
+            GltfModel.Read( stream );
+        } catch ( NotSupportedException error ) when ( error.Message.Contains( message, StringComparison.Ordinal ) ) {
+            return;
+        }
+        throw new InvalidOperationException( $"Static asset qualification failed to reject {message}." );
+    }
+
+    private static bool Near( Vector3 actual, Vector3 expected ) => Vector3.DistanceSquared( actual, expected ) < 1e-8f;
+
+    private static void Require( bool condition, string check ) {
+        if ( !condition ) throw new InvalidOperationException( $"Static asset qualification failed: {check}." );
+    }
+}

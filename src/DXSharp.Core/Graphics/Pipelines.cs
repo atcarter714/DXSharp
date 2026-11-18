@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Direct3D;
 using Windows.Win32.Graphics.Direct3D12;
 using Windows.Win32.Graphics.Dxgi.Common;
@@ -52,17 +53,29 @@ public sealed unsafe partial class GraphicsDevice {
     }
 
     /// <summary>Creates a graphics root signature with a pixel shader texture at t0 and a point-clamp sampler at s0.</summary>
-    public RootSignature CreateTextureRootSignature( ) {
+    public RootSignature CreateTextureRootSignature( ) => CreateTextureRootSignature( 0, false );
+
+    /// <summary>Creates a graphics signature with optional b0 constants and one pixel shader texture at t0.</summary>
+    /// <param name="constantCount">Number of inline DWORDs. Zero omits the constant parameter.</param>
+    /// <param name="linearWrap">Uses a linear repeat sampler at s0 when true and point clamp when false.</param>
+    /// <returns>The owning root signature. Bind the texture at parameter one when constants are present.</returns>
+    public RootSignature CreateTextureRootSignature( uint constantCount, bool linearWrap ) {
+        if ( constantCount > 63 ) throw new ArgumentOutOfRangeException( nameof(constantCount) );
         D3D12_DESCRIPTOR_RANGE range = new( ) { RangeType = D3D12_DESCRIPTOR_RANGE_TYPE.D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NumDescriptors = 1 };
         D3D12_ROOT_PARAMETER parameter = new( ) {
             ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
             ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_PIXEL
         };
         parameter.Anonymous.DescriptorTable = new( ) { NumDescriptorRanges = 1, pDescriptorRanges = &range };
-        var clamp = D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        D3D12_ROOT_PARAMETER* parameters = stackalloc D3D12_ROOT_PARAMETER[2];
+        int textureSlot = constantCount == 0 ? 0 : 1;
+        if ( constantCount != 0 ) parameters[0] = InlineConstants( constantCount );
+        parameters[textureSlot] = parameter;
+        var address = linearWrap ? D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_WRAP
+            : D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
         D3D12_STATIC_SAMPLER_DESC sampler = new( ) {
-            Filter = D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_POINT,
-            AddressU = clamp, AddressV = clamp, AddressW = clamp,
+            Filter = linearWrap ? D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_LINEAR : D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_POINT,
+            AddressU = address, AddressV = address, AddressW = address,
             MaxAnisotropy = 1, MaxLOD = float.MaxValue,
             ComparisonFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS,
             ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_PIXEL
@@ -70,7 +83,8 @@ public sealed unsafe partial class GraphicsDevice {
         D3D12_VERSIONED_ROOT_SIGNATURE_DESC description = default;
         description.Version = D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1_0;
         description.Anonymous.Desc_1_0 = new( ) {
-            NumParameters = 1, pParameters = &parameter,
+            NumParameters = (uint)textureSlot + 1, pParameters = parameters,
+            Flags = D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT,
             NumStaticSamplers = 1, pStaticSamplers = &sampler
         };
         return CreateRootSignature( description );
@@ -79,7 +93,7 @@ public sealed unsafe partial class GraphicsDevice {
     /// <summary>Creates a graphics root signature with up to 64 inline DWORDs at b0.</summary>
     public RootSignature CreateGraphicsConstantsRootSignature( uint valueCount ) {
         if ( valueCount is 0 or > 64 ) throw new ArgumentOutOfRangeException( nameof(valueCount) );
-        return CreateRootSignature( [InlineConstants( valueCount )] );
+        return CreateRootSignature( [InlineConstants( valueCount )], D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT );
     }
 
     /// <summary>Creates a graphics signature with constants at b0 and a vertex shader buffer at t0.</summary>
@@ -88,7 +102,7 @@ public sealed unsafe partial class GraphicsDevice {
         return CreateRootSignature( [InlineConstants( valueCount ), new( ) {
             ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_SRV,
             ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_VERTEX
-        }] );
+        }], D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT );
     }
 
     private static D3D12_ROOT_PARAMETER InlineConstants( uint count ) {
@@ -130,46 +144,92 @@ public sealed unsafe partial class GraphicsDevice {
 
     /// <summary>Creates a triangle-list graphics pipeline with optional D32_FLOAT depth testing and writes.</summary>
     public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
-        PixelFormat targetFormat, bool depthEnabled ) {
+        PixelFormat targetFormat, bool depthEnabled ) =>
+        CreateGraphicsPipeline( root, vertex, pixel, ReadOnlySpan<VertexElement>.Empty, targetFormat, depthEnabled );
+
+    /// <summary>Creates a triangle-list pipeline with explicit vertex/instance input elements and optional D32 depth testing.</summary>
+    /// <remarks>Every element offset is relative to its stream's start. Bind buffers whose stride and storage match this layout.</remarks>
+    public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
+        ReadOnlySpan<VertexElement> inputLayout, PixelFormat targetFormat = PixelFormat.Rgba8Unorm, bool depthEnabled = false ) =>
+        CreateGraphicsPipeline( root, vertex, pixel, inputLayout, targetFormat,
+            new DepthStencilState { DepthEnabled = depthEnabled, DepthWriteEnabled = depthEnabled,
+                DepthComparison = depthEnabled ? ComparisonFunction.Less : ComparisonFunction.Always } );
+
+    /// <summary>Creates a pipeline with explicit depth-stencil state and SV_VertexID-generated vertices.</summary>
+    public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
+        PixelFormat targetFormat, DepthStencilState depthStencil ) =>
+        CreateGraphicsPipeline( root, vertex, pixel, ReadOnlySpan<VertexElement>.Empty, targetFormat, depthStencil );
+
+    /// <summary>Creates a triangle-list pipeline with explicit vertex/instance input and depth-stencil state.</summary>
+    /// <param name="root">The root signature retained independently by the pipeline.</param>
+    /// <param name="vertex">Compiled vertex shader.</param>
+    /// <param name="pixel">Compiled pixel shader.</param>
+    /// <param name="inputLayout">Vertex and instance stream elements with byte offsets relative to each stream.</param>
+    /// <param name="targetFormat">The color target format.</param>
+    /// <param name="depthStencil">Single-sample depth-stencil state matching the bound depth-stencil target.</param>
+    /// <returns>An independently owned pipeline state.</returns>
+    public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
+        ReadOnlySpan<VertexElement> inputLayout, PixelFormat targetFormat, DepthStencilState depthStencil ) {
+        ArgumentNullException.ThrowIfNull( depthStencil );
+        var nativeDepthStencil = depthStencil.ToNative( );
         RequireSameDevice( root );
         vertex.RequireSuccess( ); pixel.RequireSuccess( );
         if ( vertex.Bytecode.IsEmpty || pixel.Bytecode.IsEmpty ) throw new ArgumentException( "Both compiled shader objects are required." );
-        using var lease = root.Native.Borrow( );
-        fixed ( byte* vs = vertex.Bytecode.Span, ps = pixel.Bytecode.Span ) {
-            D3D12_GRAPHICS_PIPELINE_STATE_DESC description = default;
-            description.pRootSignature = (ID3D12RootSignature_unmanaged*)lease.Pointer;
-            description.VS = new( ) { pShaderBytecode = vs, BytecodeLength = (nuint)vertex.Bytecode.Length };
-            description.PS = new( ) { pShaderBytecode = ps, BytecodeLength = (nuint)pixel.Bytecode.Length };
-            description.SampleMask = uint.MaxValue;
-            description.RasterizerState.FillMode = D3D12_FILL_MODE.D3D12_FILL_MODE_SOLID;
-            description.RasterizerState.CullMode = D3D12_CULL_MODE.D3D12_CULL_MODE_NONE;
-            description.RasterizerState.DepthClipEnable = true;
-            description.BlendState.RenderTarget.AsSpan( )[0] = new( ) {
-                SrcBlend = D3D12_BLEND.D3D12_BLEND_ONE, DestBlend = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOp = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
-                SrcBlendAlpha = D3D12_BLEND.D3D12_BLEND_ONE, DestBlendAlpha = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOpAlpha = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
-                LogicOp = D3D12_LOGIC_OP.D3D12_LOGIC_OP_NOOP, RenderTargetWriteMask = 15
-            };
-            description.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS;
-            if ( depthEnabled ) {
-                description.DSVFormat = DXGI_FORMAT.DXGI_FORMAT_D32_FLOAT;
-                description.DepthStencilState.DepthEnable = true;
-                description.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK.D3D12_DEPTH_WRITE_MASK_ALL;
-                description.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_LESS;
+        if ( inputLayout.Length > 32 ) throw new ArgumentOutOfRangeException( nameof(inputLayout) );
+        var names = new Utf8String?[inputLayout.Length];
+        Span<D3D12_INPUT_ELEMENT_DESC> elements = stackalloc D3D12_INPUT_ELEMENT_DESC[inputLayout.Length];
+        elements.Clear( );
+        try {
+            for ( int i = 0; i < inputLayout.Length; ++i ) {
+                var element = inputLayout[i];
+                if ( string.IsNullOrEmpty( element.Semantic ) || element.Semantic.Any( c => c == 0 || c > 127 ) )
+                    throw new ArgumentException( "Input semantics require nonempty ASCII names without null characters.", nameof(inputLayout) );
+                uint width = element.Format switch {
+                    VertexFormat.Float2 => 8,
+                    VertexFormat.Float3 => 12,
+                    VertexFormat.Float4 or VertexFormat.UInt4 => 16,
+                    VertexFormat.Unorm8x4 => 4,
+                    _ => throw new ArgumentException( "Unsupported vertex format.", nameof(inputLayout) )
+                };
+                if ( element.Slot >= 32 || element.Offset > 2048 - width )
+                    throw new ArgumentException( "An input element exceeds the slot or vertex stride limit.", nameof(inputLayout) );
+                names[i] = new Utf8String( element.Semantic );
+                elements[i] = new( ) {
+                    SemanticName = new PCSTR( names[i]!.Pointer ), SemanticIndex = element.SemanticIndex,
+                    Format = (DXGI_FORMAT)element.Format, InputSlot = element.Slot, AlignedByteOffset = element.Offset,
+                    InputSlotClass = element.InstanceStepRate == 0 ? D3D12_INPUT_CLASSIFICATION.D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA
+                        : D3D12_INPUT_CLASSIFICATION.D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA,
+                    InstanceDataStepRate = element.InstanceStepRate
+                };
             }
-            description.DepthStencilState.StencilReadMask = byte.MaxValue;
-            description.DepthStencilState.StencilWriteMask = byte.MaxValue;
-            description.DepthStencilState.FrontFace = new( ) {
-                StencilFailOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
-                StencilDepthFailOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
-                StencilPassOp = D3D12_STENCIL_OP.D3D12_STENCIL_OP_KEEP,
-                StencilFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS
-            };
-            description.DepthStencilState.BackFace = description.DepthStencilState.FrontFace;
-            description.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE.D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-            description.NumRenderTargets = 1; description.RTVFormats.AsSpan( )[0] = (DXGI_FORMAT)targetFormat; description.SampleDesc.Count = 1;
-            Guid id = typeof(ID3D12PipelineState).GUID;
-            Results.Check( Native.Interface.CreateGraphicsPipelineState( description, &id, out nint pointer ), "CreateGraphicsPipelineState" );
-            return OwnPipeline( pointer, root, false );
+            using var lease = root.Native.Borrow( );
+            fixed ( D3D12_INPUT_ELEMENT_DESC* input = elements )
+            fixed ( byte* vs = vertex.Bytecode.Span, ps = pixel.Bytecode.Span ) {
+                D3D12_GRAPHICS_PIPELINE_STATE_DESC description = default;
+                description.pRootSignature = (ID3D12RootSignature_unmanaged*)lease.Pointer;
+                description.VS = new( ) { pShaderBytecode = vs, BytecodeLength = (nuint)vertex.Bytecode.Length };
+                description.PS = new( ) { pShaderBytecode = ps, BytecodeLength = (nuint)pixel.Bytecode.Length };
+                description.InputLayout = new( ) { pInputElementDescs = input, NumElements = (uint)elements.Length };
+                description.SampleMask = uint.MaxValue;
+                description.RasterizerState.FillMode = D3D12_FILL_MODE.D3D12_FILL_MODE_SOLID;
+                description.RasterizerState.CullMode = D3D12_CULL_MODE.D3D12_CULL_MODE_NONE;
+                description.RasterizerState.DepthClipEnable = true;
+                description.BlendState.RenderTarget.AsSpan( )[0] = new( ) {
+                    SrcBlend = D3D12_BLEND.D3D12_BLEND_ONE, DestBlend = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOp = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
+                    SrcBlendAlpha = D3D12_BLEND.D3D12_BLEND_ONE, DestBlendAlpha = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOpAlpha = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
+                    LogicOp = D3D12_LOGIC_OP.D3D12_LOGIC_OP_NOOP, RenderTargetWriteMask = 15
+                };
+                description.DepthStencilState = nativeDepthStencil;
+                if ( depthStencil.DepthEnabled || depthStencil.StencilEnabled )
+                    description.DSVFormat = (DXGI_FORMAT)depthStencil.Format;
+                description.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE.D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+                description.NumRenderTargets = 1; description.RTVFormats.AsSpan( )[0] = (DXGI_FORMAT)targetFormat; description.SampleDesc.Count = 1;
+                Guid id = typeof(ID3D12PipelineState).GUID;
+                Results.Check( Native.Interface.CreateGraphicsPipelineState( description, &id, out nint pointer ), "CreateGraphicsPipelineState" );
+                return OwnPipeline( pointer, root, false );
+            }
+        } finally {
+            foreach ( var name in names ) name?.Dispose( );
         }
     }
 

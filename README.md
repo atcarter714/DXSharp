@@ -25,12 +25,14 @@ The first command presents four frames and exits. The second verifies GPU comput
 
 | Package | Responsibility |
 | --- | --- |
+| `DXSharp.Native` | Public generated DirectX graphics, audio, input, DXC, and DirectML interfaces |
+| `DXSharp.Assets` | Static glTF/GLB models, materials, transforms, and decoded textures |
 | `DXSharp.Core` | D3D12, DXGI, DXC, and generated COM interop |
 | `DXSharp.Framework.Desktop` | WinForms presentation loop, swap-chain resize, and frame-slot retirement |
 | `DXSharp.DirectML` | Device and operator ownership, tensor binding, and DirectML execution |
 | `DXSharp`, `DXSharp.Framework`, `DXSharp.Dxc` | Compatibility packages for the original RCW-based SDK |
 
-The modern API uses CsWin32 declarations and .NET source-generated COM projections. Managed owners release their native references deterministically. A command list takes its own references to the objects it records, and the queue holds them through fence completion. This lets applications give resources explicit lifetimes even when work is still in flight.
+The modern API uses public CsWin32 declarations from `DXSharp.Native` and .NET source-generated COM projections. [API coverage](doc/API-Coverage.md) records the pinned metadata coverage and remaining qualification. Managed owners release their native references deterministically. A command list takes its own references to the objects it records, and the queue holds them through fence completion. This lets applications give resources explicit lifetimes even when work is still in flight.
 
 DXC returns owned compilation output and diagnostics. The desktop host supplies a small presentation loop while applications retain control of render and compute commands. The [SDK architecture](doc/SDK-Architecture.md) explains the binding, ownership and package boundaries, and the next rendering and tooling slices. See [interop qualification](doc/Generated-Com-Foundation.md) for the native validation matrix.
 

@@ -115,6 +115,32 @@ internal static class Program {
                 UnknownCalls.Release( borrow.Pointer );
             }
             Check( Native.Alive( ) == 0, "borrow released" );
+
+            using ( var graphics = new FixtureGraphicsObject( ComOwner<IFixture>.Adopt( Native.Create( ) ) ) ) {
+                using var typed = graphics.QueryNativeInterface<IFixture>( );
+                Check( typed.Interface.Echo( 19 ) == (19 ^ 0x13579), "public typed native query" );
+                graphics.Dispose( );
+                GC.Collect( ); GC.WaitForPendingFinalizers( );
+                Check( Native.Alive( ) == 1 && typed.Pointer != 0, "public native lease survives owner disposal" );
+                Check( typed.Interface.Echo( 29 ) == (29 ^ 0x13579), "public native lease remains callable" );
+                typed.Dispose( );
+                try { _ = typed.Interface; throw new InvalidOperationException( "disposed native lease accepted" ); }
+                catch ( ObjectDisposedException ) { ++_checks; }
+            }
+            Check( Native.Alive( ) == 0, "public typed native lease balances references" );
+
+            using ( var adopted = NativeInterface<IFixture>.Adopt( Native.Create( ) ) ) {
+                using var borrowed = NativeInterface<IFixture>.FromBorrowed( adopted.Pointer );
+                adopted.Dispose( );
+                GC.Collect( ); GC.WaitForPendingFinalizers( );
+                Check( Native.Alive( ) == 1, "public borrowed reference owns native lifetime" );
+                Check( borrowed.Interface.Echo( 41 ) == (41 ^ 0x13579), "public borrowed projection remains callable" );
+            }
+            Check( Native.Alive( ) == 0, "public adopted and borrowed references balance" );
+            try { using var invalid = NativeInterface<IUnsupported>.Adopt( Native.Create( ) ); throw new InvalidOperationException( "invalid public projection accepted" ); }
+            catch ( InvalidCastException ) { ++_checks; }
+            Check( Native.Alive( ) == 0, "failed public projection consumes reference" );
+
             try { using var invalid = ComOwner<IUnsupported>.Adopt( Native.Create( ) ); throw new InvalidOperationException( "invalid projection accepted" ); }
             catch ( InvalidCastException ) { ++_checks; }
             Check( Native.Alive( ) == 0, "failed projection cleans native output" );
@@ -135,9 +161,16 @@ internal static class Program {
             Check( Native.InvokeCallback( 17 ) == 51, "native-held generated callback survives GC" );
             Native.RetainCallback( 0 );
             Check( Native.Destroyed( ) >= 2004, "native destructor accounting" );
+            AssetQualification.Run( );
+            FleetQualification.Run( );
+            if ( OperatingSystem.IsWindows( ) ) MeshQualification.Run( );
             Console.WriteLine( $"PASS: {_checks} checks; {Native.Destroyed( )} native objects destroyed; no live objects." );
             return 0;
         } catch ( Exception exception ) { Console.Error.WriteLine( exception ); return 1; }
+    }
+
+    private sealed class FixtureGraphicsObject( ComOwner<IFixture> owner ) : DXSharp.Graphics.GraphicsObject( owner ) {
+        internal override ComReference Retain( ) => owner.Retain( );
     }
 
     [MethodImpl( MethodImplOptions.NoInlining )]
