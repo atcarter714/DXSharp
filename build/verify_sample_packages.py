@@ -98,11 +98,12 @@ def qualify(configuration):
         for key, pattern in (("local", "DXSharp.*"), ("nuget.org", "*")):
             ET.SubElement(ET.SubElement(mapping, "packageSource", key=key), "package", pattern=pattern)
         ET.ElementTree(config).write(consumer / "NuGet.Config", encoding="utf-8", xml_declaration=True)
-        run(["restore", "Samples.slnx", "--packages", str(consumer / "packages"), "-m:1"], consumer, evidence / "restore.log")
-        run(["build", "Samples.slnx", "-c", configuration, "--no-restore", "-m:1"], consumer, evidence / "build.log")
+        run(["restore", "Samples.slnx", "--packages", str(consumer / "packages"), "-m:1", "-p:Platform=AnyCPU"], consumer, evidence / "restore.log")
+        run(["build", "Samples.slnx", "-c", configuration, "--no-restore", "-m:1", "-p:Platform=AnyCPU"], consumer, evidence / "build.log")
         if os.name == "nt":
-            run(["run", "--project", "samples/FleetBattler", "-c", configuration, "--no-build", "--no-restore", "--",
-                 "--warp", "--mute", "--frames=14", "--view-test"], consumer, evidence / "fleet-runtime.log")
+            # The developer shell's Platform variable must not change the built output path.
+            fleet = consumer / "samples/FleetBattler/bin" / configuration / "net10.0-windows10.0.26100.0/FleetBattler.dll"
+            run([str(fleet), "--warp", "--mute", "--frames=14", "--view-test"], consumer, evidence / "fleet-runtime.log")
         (evidence / "samples.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"PASS: all {len(manifest)} runnable samples consume packaged SDK {version} outside the checkout.")
 
