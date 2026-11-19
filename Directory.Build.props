@@ -3,7 +3,10 @@
     <RepoRootPath>$(MSBuildThisFileDirectory)</RepoRootPath>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <WinSDKVersion>10.0.26100.0</WinSDKVersion>
-    <DotNetTargets>net10.0-windows$(WinSDKVersion)</DotNetTargets>
+    <DXSharpRuntimeMajor Condition="'$(DXSharpRuntimeMajor)' == ''">10</DXSharpRuntimeMajor>
+    <DotNetTargets>net$(DXSharpRuntimeMajor).0-windows$(WinSDKVersion)</DotNetTargets>
+    <DXSharpTargetFrameworks Condition="'$(DXSharpTargetFrameworks)' == ''">net10.0-windows$(WinSDKVersion);net11.0-windows$(WinSDKVersion)</DXSharpTargetFrameworks>
+    <DXSharpPortableTargetFrameworks Condition="'$(DXSharpPortableTargetFrameworks)' == ''">net10.0;net11.0</DXSharpPortableTargetFrameworks>
     <TargetCPUs>AnyCPU;x64;x86;ARM64</TargetCPUs>
     <Platforms>$(TargetCPUs)</Platforms>
     <LangVersion>14.0</LangVersion>
@@ -24,7 +27,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(RepoRootPath)file/keys/strongname.snk</AssemblyOriginatorKeyFile>
     <VersionPrefix>0.4.0</VersionPrefix>
-    <VersionSuffix>net10-preview.2</VersionSuffix>
+    <VersionSuffix>preview.3</VersionSuffix>
     <Company>Arkaen Solutions</Company>
     <Authors>Aaron T. Carter, Arkaen Solutions, Contributors</Authors>
     <RepositoryType>git</RepositoryType>

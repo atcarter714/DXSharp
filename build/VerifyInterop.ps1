@@ -2,6 +2,7 @@
 param(
     [ValidateSet('Debug', 'Release')] [string] $Configuration = 'Debug',
     [ValidateSet('x64')] [string] $Architecture = 'x64',
+    [ValidateSet('10', '11')] [string] $RuntimeMajor = '10',
     [switch] $PublishAot
 )
 $ErrorActionPreference = 'Stop'
@@ -28,14 +29,15 @@ try {
         $rid = 'linux-x64'
     } else { throw 'This script qualifies Windows x64/x86/ARM64 and Linux x64.' }
     $project = 'tests/InteropQualification/InteropQualification.csproj'
-    Invoke-Checked 'dotnet' @('restore', $project, '--locked-mode', '-m:1')
-    Invoke-Checked 'dotnet' @('build', $project, '-c', $Configuration, '--no-restore', '-m:1', "-p:DXSharpNativeFixture=$fixture")
-    $managed = (& dotnet msbuild $project "-p:Configuration=$Configuration" -getProperty:TargetPath -nologo | Out-String).Trim()
+    $framework = "net$RuntimeMajor.0-windows10.0.26100.0"
+    Invoke-Checked 'dotnet' @('restore', $project, '--locked-mode', '-m:1', "-p:DXSharpRuntimeMajor=$RuntimeMajor")
+    Invoke-Checked 'dotnet' @('build', $project, '-c', $Configuration, '-f', $framework, '--no-restore', '-m:1', "-p:DXSharpRuntimeMajor=$RuntimeMajor", "-p:DXSharpNativeFixture=$fixture")
+    $managed = (& dotnet msbuild $project "-p:Configuration=$Configuration" "-p:TargetFramework=$framework" -getProperty:TargetPath -nologo | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path $managed)) { throw 'Unable to locate the built qualification assembly.' }
     Invoke-Checked 'dotnet' @($managed)
     if ($PublishAot) {
-        $publish = Join-Path $repoRoot "artifacts/qualification-aot/$rid"
-        Invoke-Checked 'dotnet' @('publish', $project, '-m:1', '-c', $Configuration, '-r', $rid, '-p:PublishAot=true',
+        $publish = Join-Path $repoRoot "artifacts/qualification-aot/net$RuntimeMajor/$rid"
+        Invoke-Checked 'dotnet' @('publish', $project, '-m:1', '-c', $Configuration, '-f', $framework, '-r', $rid, '-p:PublishAot=true', "-p:DXSharpRuntimeMajor=$RuntimeMajor",
             "-p:DXSharpNativeFixture=$fixture", '-o', $publish)
         Copy-Item $fixture $publish -Force
         $executable = Join-Path $publish $(if ($IsWindows) { 'InteropQualification.exe' } else { 'InteropQualification' })

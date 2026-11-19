@@ -44,6 +44,7 @@ internal static unsafe class MeshQualification {
         var vertex = compiler.Compile( Shader, "VS", "vs_6_0" );
         var pixel = compiler.Compile( Shader, "PS", "ps_6_0" );
         ValidateArguments( device, vertex, pixel );
+        ValidateRecordingOwnership( device );
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: true );
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: false );
         Render( device, vertex, pixel, instanceStepRate: 2, splitIndexFormats: false );
@@ -561,6 +562,34 @@ internal static unsafe class MeshQualification {
         using var compute = device.CreateCommandList( computeAllocator );
         Expect<InvalidOperationException>( ( ) => device.CreateMesh<Vector2>( compute, vertices, new ushort[] { 0, 1, 2 } ) );
         Expect<InvalidOperationException>( ( ) => compute.SetVertexBuffer( 0, buffer, 8 ) );
+    }
+
+    private static void ValidateRecordingOwnership( GraphicsDevice device ) {
+        using var allocator = device.CreateCommandAllocator( );
+        using var first = device.CreateCommandList( allocator );
+        Expect<InvalidOperationException>( ( ) => device.CreateCommandList( allocator ) );
+        Expect<InvalidOperationException>( ( ) => allocator.Reset( ) );
+        Expect<InvalidOperationException>( ( ) => first.Reset( allocator ) );
+        first.Close( );
+        using ( var second = device.CreateCommandList( allocator ) ) {
+            Expect<InvalidOperationException>( ( ) => first.Reset( allocator ) );
+        }
+        // Disposing an unsubmitted recording releases its allocator reservation.
+        allocator.Reset( );
+        first.Reset( allocator );
+        first.Close( );
+        using var queue = device.CreateCommandQueue( );
+        queue.Wait( queue.Submit( first ) );
+        allocator.Reset( );
+        first.Reset( allocator );
+        first.Close( );
+        queue.Wait( queue.Submit( first ) );
+        using ( var earlyAllocator = device.CreateCommandAllocator( ) ) {
+            using var abandoned = device.CreateCommandList( earlyAllocator );
+            earlyAllocator.Dispose( );
+            // The list retains allocator memory until native list destruction.
+        }
+        Console.WriteLine( "PASS: allocator recording ownership, rejection rollback, disposal and fence-retired reuse." );
     }
 
     private static void Expect<T>( Action action ) where T : Exception {

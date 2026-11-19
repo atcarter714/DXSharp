@@ -99,9 +99,17 @@ public sealed unsafe partial class GraphicsDevice : GraphicsObject {
     /// <summary>Creates an initially recording command list.</summary>
     public GraphicsCommandList CreateCommandList( CommandAllocator allocator ) {
         RequireSameDevice( allocator );
-        Guid id = typeof(ID3D12GraphicsCommandList).GUID;
-        Results.Check( Native.Interface.CreateCommandList( 0, (D3D12_COMMAND_LIST_TYPE)allocator.Kind, allocator.Native.Interface, null!, &id, out nint pointer ), "CreateCommandList" );
-        return new( ComOwner<ID3D12GraphicsCommandList>.Adopt( pointer ), allocator ) { DeviceIdentity = DeviceIdentity };
+        object token = new( );
+        allocator.AcquireRecording( token );
+        ComOwner<ID3D12GraphicsCommandList>? owner = null;
+        try {
+            Guid id = typeof(ID3D12GraphicsCommandList).GUID;
+            Results.Check( Native.Interface.CreateCommandList( 0, (D3D12_COMMAND_LIST_TYPE)allocator.Kind, allocator.Native.Interface, null!, &id, out nint pointer ), "CreateCommandList" );
+            owner = ComOwner<ID3D12GraphicsCommandList>.Adopt( pointer );
+            return new( owner, allocator, token ) { DeviceIdentity = DeviceIdentity };
+        } catch {
+            owner?.Dispose( ); allocator.ReleaseRecording( token ); throw;
+        }
     }
     /// <summary>Creates a queue with a dedicated completion fence.</summary>
     public CommandQueue CreateCommandQueue( QueueKind kind = QueueKind.Direct ) {

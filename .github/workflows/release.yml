@@ -18,6 +18,9 @@ on:
 permissions:
   contents: read
 
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+
 concurrency:
   group: dxsharp-preview-release
   cancel-in-progress: false
@@ -26,7 +29,7 @@ jobs:
   qualify:
     name: Build and qualify the release candidate
     runs-on: windows-2025
-    timeout-minutes: 35
+    timeout-minutes: 60
     outputs:
       version: ${{ steps.version.outputs.version }}
     env:
@@ -38,6 +41,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+          dotnet-version: 10.0.403
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
@@ -53,7 +57,7 @@ jobs:
           $version = (dotnet msbuild src/DXSharp.Core/DXSharp.Core.csproj -getProperty:PackageVersion -nologo | Out-String).Trim()
           if ($LASTEXITCODE -ne 0 -or
               ($env:RELEASE_VERSION -and $version -cne $env:RELEASE_VERSION) -or
-              $version -cnotmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-net10-preview\.[1-9][0-9]*$') {
+              $version -cnotmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-(net10-)?preview\.[1-9][0-9]*$') {
             throw "Expected the committed preview package version: $version"
           }
           if (-not (Test-Path "doc/releases/$version.md")) { throw 'Missing versioned release notes.' }
@@ -63,8 +67,10 @@ jobs:
         shell: pwsh
         run: |
           ./build.ps1 -Configuration Release
-          ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
-          ./build/VerifySamples.ps1
+          foreach ($major in '10', '11') {
+            ./build/VerifyInterop.ps1 -Configuration Release -RuntimeMajor $major -PublishAot
+            ./build/VerifySamples.ps1 -RuntimeMajor $major
+          }
           python build/release_packages.py artifacts/release-candidate --version $env:RELEASE_VERSION --commit $env:GITHUB_SHA --stage-from artifacts/packages/Release
           if ($LASTEXITCODE -ne 0) { throw 'Release package verification failed.' }
       - uses: actions/upload-artifact@v4
@@ -88,7 +94,7 @@ jobs:
   linux-interop:
     name: Qualify native COM ownership on Linux
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
@@ -96,8 +102,12 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+          dotnet-version: 10.0.403
       - shell: pwsh
-        run: ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
+        run: |
+          foreach ($major in '10', '11') {
+            ./build/VerifyInterop.ps1 -Configuration Release -RuntimeMajor $major -PublishAot
+          }
 
   release:
     name: Publish GitHub prerelease assets
@@ -150,6 +160,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+          dotnet-version: 10.0.403
       - uses: actions/download-artifact@v4
         with:
           name: release-candidate

@@ -26,13 +26,14 @@ def run(arguments, directory, log):
 
 def copy_source(source, destination):
     shutil.copytree(source, destination, dirs_exist_ok=True,
-                    ignore=lambda path, names: [name for name in names if name in EXCLUDED or name == "packages.lock.json"])
+                    ignore=lambda path, names: [name for name in names if name in EXCLUDED or (name.startswith("packages.") and name.endswith(".lock.json"))])
 
 
-def qualify(configuration):
+def qualify(configuration, runtime_major):
     root = Path(__file__).resolve().parent.parent
+    framework = f"net{runtime_major}.0-windows10.0.26100.0"
     packages = root / "artifacts/packages" / configuration
-    evidence = root / "artifacts/sample-packages" / configuration
+    evidence = root / "artifacts/sample-packages" / configuration / f"net{runtime_major}"
     evidence.mkdir(parents=True, exist_ok=True)
     version = subprocess.check_output(["dotnet", "msbuild", str(root / "src/DXSharp.Core/DXSharp.Core.csproj"),
                                        "-getProperty:PackageVersion", "-nologo"], text=True).strip()
@@ -71,15 +72,15 @@ def qualify(configuration):
             if project.getroot().findall(".//ProjectReference"):
                 raise RuntimeError(f"Unconverted conditional project reference in {relative}")
             project.write(target, encoding="utf-8", xml_declaration=True)
-            manifest.append({"project": relative.as_posix(), "packages": dependencies, "version": version})
+            manifest.append({"project": relative.as_posix(), "packages": dependencies, "version": version, "framework": framework})
         copy_source(root / "samples/Shared", consumer / "samples/Shared")
         shutil.copy2(root / "samples/Directory.Build.props", consumer / "samples/Directory.Build.props")
         shutil.copy2(root / "global.json", consumer / "global.json")
         (consumer / "Directory.Build.props").write_text("""<Project><PropertyGroup>
-  <DotNetTargets>net10.0-windows10.0.26100.0</DotNetTargets><TargetCPUs>AnyCPU;x64</TargetCPUs>
+  <DotNetTargets>net10.0-windows10.0.26100.0</DotNetTargets><DXSharpTargetFrameworks>net10.0-windows10.0.26100.0</DXSharpTargetFrameworks><TargetCPUs>AnyCPU;x64</TargetCPUs>
   <EnableWindowsTargeting>true</EnableWindowsTargeting><AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><LangVersion>14.0</LangVersion>
-</PropertyGroup></Project>""", encoding="utf-8")
+</PropertyGroup></Project>""".replace("net10.0-windows10.0.26100.0", framework), encoding="utf-8")
         versions = ET.parse(root / "Directory.Packages.props")
         group = ET.SubElement(versions.getroot(), "ItemGroup")
         for package in SDK_PACKAGES:
@@ -102,7 +103,7 @@ def qualify(configuration):
         run(["build", "Samples.slnx", "-c", configuration, "--no-restore", "-m:1", "-p:Platform=Any CPU"], consumer, evidence / "build.log")
         if os.name == "nt":
             # The developer shell's Platform variable must not change the built output path.
-            fleet = consumer / "samples/FleetBattler/bin" / configuration / "net10.0-windows10.0.26100.0/FleetBattler.dll"
+            fleet = consumer / "samples/FleetBattler/bin" / configuration / framework / "FleetBattler.dll"
             run([str(fleet), "--warp", "--mute", "--frames=14", "--view-test"], consumer, evidence / "fleet-runtime.log")
         (evidence / "samples.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"PASS: all {len(manifest)} runnable samples consume packaged SDK {version} outside the checkout.")
@@ -111,4 +112,6 @@ def qualify(configuration):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--configuration", choices=("Debug", "Release"), default="Debug")
-    qualify(parser.parse_args().configuration)
+    parser.add_argument("--runtime-major", choices=("10", "11"), default="10")
+    args = parser.parse_args()
+    qualify(args.configuration, args.runtime_major)

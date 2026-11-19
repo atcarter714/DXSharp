@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile
 
 PACKAGE_IDS = ("DXSharp.Native", "DXSharp.Assets", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop")
-PREVIEW = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-net10-preview\.[1-9][0-9]*")
+PREVIEW = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-(?:net10-)?preview\.[1-9][0-9]*")
 
 
 def fingerprint(path):
@@ -50,7 +50,7 @@ def main():
     parser.add_argument("--stage-from", type=Path)
     args = parser.parse_args()
     if not PREVIEW.fullmatch(args.version) or not re.fullmatch(r"[0-9a-f]{40}", args.commit):
-        parser.error("Expected a normalized net10-preview version and a full Git commit SHA.")
+        parser.error("Expected a normalized preview version and a full Git commit SHA.")
 
     manifest = args.directory / "release-manifest.json"
     if args.stage_from is not None:

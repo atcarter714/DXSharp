@@ -1,6 +1,6 @@
 # Publishing DXSharp previews
 
-The first public version is `0.4.0-net10-preview.1`. The next version is `0.4.0-net10-preview.2`. Publish `DXSharp.Native`, `DXSharp.Assets`, `DXSharp.Core`, `DXSharp.DirectML`, and `DXSharp.Framework.Desktop` for Windows x64. The legacy projects continue to build and produce CI artifacts for migration. The public preview depends only on the modern packages and their pinned upstream native dependencies.
+The first public version is `0.4.0-net10-preview.1`. Preview 2 is `0.4.0-net10-preview.2`; the next candidate is `0.4.0-preview.3`, with .NET 10 and .NET 11 assets. Neutral preview names are accepted alongside the earlier net10-preview versions. Publish `DXSharp.Native`, `DXSharp.Assets`, `DXSharp.Core`, `DXSharp.DirectML`, and `DXSharp.Framework.Desktop` for Windows x64. The legacy projects continue to build and produce CI artifacts for migration. The public preview depends only on the modern packages and their pinned upstream native dependencies.
 
 ## One-time configuration
 

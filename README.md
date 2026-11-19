@@ -1,16 +1,16 @@
 # DXSharp
 
-**Direct3D 12, GPU compute, and DirectML for C# and .NET 10.**
+**Direct3D 12, GPU compute, and DirectML for C# and .NET 10/11.**
 
 DXSharp exposes D3D12 devices, queues, resources, pipelines, and swap chains through typed .NET APIs. Use it to build a renderer, an engine, a graphics tool, or a GPU compute application with explicit control over command recording and resource lifetimes.
 
 ![DXSharp logo](https://raw.githubusercontent.com/atcarter714/DXSharp/main/file/img/DXSharp_Logo_00_512.png)
 
-[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [Preview release](https://github.com/atcarter714/DXSharp/releases/tag/v0.4.0-net10-preview.2) · [Publishing](doc/Publishing-Previews.md) · [Parity roadmap](doc/Competitive-Parity-Roadmap.md) · [MIT license](LICENSE.md)
+[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [Support matrix](doc/Support-Matrix.md) · [Preview release](https://github.com/atcarter714/DXSharp/releases/tag/v0.4.0-net10-preview.2) · [Publishing](doc/Publishing-Previews.md) · [Parity roadmap](doc/Competitive-Parity-Roadmap.md) · [MIT license](LICENSE.md)
 
 ## Start here
 
-The current SDK is a preview for Windows x64. The repository pins the .NET 10 SDK in [global.json](global.json) and includes the Agility SDK, DXC, and optional DirectML runtime through package dependencies. Use Windows Graphics Tools for debug-layer validation. The `--warp` examples use Microsoft's software adapter.
+The current SDK is a preview for Windows x64. The repository pins the .NET 11 SDK for building both target frameworks in [global.json](global.json) and includes the Agility SDK, DXC, and optional DirectML runtime through package dependencies. Use Windows Graphics Tools for debug-layer validation. The `--warp` examples use Microsoft's software adapter.
 
 ```powershell
 git clone https://github.com/atcarter714/DXSharp.git

@@ -1,6 +1,6 @@
 # DXSharp architecture and release contract
 
-DXSharp is a Windows D3D12 SDK for .NET 10. The current graphics samples use the generated COM stack. The compatibility packages preserve the original RCW-based API and have their own dependencies and qualification.
+DXSharp is a Windows D3D12 SDK for .NET 10/11. The current graphics samples use the generated COM stack. The compatibility packages preserve the original RCW-based API and have their own dependencies and qualification.
 
 ```mermaid
 flowchart TD

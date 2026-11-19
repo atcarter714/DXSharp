@@ -9,14 +9,33 @@ namespace DXSharp.Graphics;
 public sealed class CommandAllocator : GraphicsObject {
     internal readonly ComOwner<ID3D12CommandAllocator> Native;
     internal int Pending;
+    private readonly object _recordingGate = new( );
+    private object? _recording;
     /// <summary>The command-list type this allocator serves.</summary>
     public QueueKind Kind { get; }
     internal CommandAllocator( ComOwner<ID3D12CommandAllocator> owner, QueueKind kind ) : base( owner ) { Native = owner; Kind = kind; }
     internal override ComReference Retain( ) => Native.Retain( );
-    /// <summary>Reclaims command memory after all associated submissions complete.</summary>
+    /// <summary>Reclaims command memory after all associated submissions complete and no list is recording.</summary>
+    /// <remarks>Synchronize reset with submissions. Discarded closed recordings must be reset before reuse.</remarks>
     public void Reset( ) {
-        if ( Volatile.Read( ref Pending ) != 0 ) throw new InvalidOperationException( "The allocator still has GPU work pending." );
-        Results.Check( Native.Interface.Reset( ), "CommandAllocator.Reset" );
+        lock ( _recordingGate ) {
+            ObjectDisposedException.ThrowIf( IsDisposed, this );
+            if ( _recording is not null ) throw new InvalidOperationException( "Close or dispose the command list recording with this allocator before resetting it." );
+            if ( Volatile.Read( ref Pending ) != 0 ) throw new InvalidOperationException( "The allocator still has GPU work pending." );
+            Results.Check( Native.Interface.Reset( ), "CommandAllocator.Reset" );
+        }
+    }
+    internal void AcquireRecording( object token ) {
+        lock ( _recordingGate ) {
+            ObjectDisposedException.ThrowIf( IsDisposed, this );
+            if ( _recording is not null ) throw new InvalidOperationException( "This allocator already has a recording command list. Close or dispose that list, or use a separate allocator." );
+            _recording = token;
+        }
+    }
+    internal void ReleaseRecording( object token ) {
+        lock ( _recordingGate ) {
+            if ( ReferenceEquals( _recording, token ) ) _recording = null;
+        }
     }
 }
 
@@ -29,8 +48,10 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
     private readonly D3D12_RESOURCE_BARRIER[] _barrier = new D3D12_RESOURCE_BARRIER[1];
     private readonly float[] _color = new float[4];
     private int _state; // 0 recording, 1 closed, 2 submitted; reset becomes legal after retirement.
-    internal GraphicsCommandList( ComOwner<ID3D12GraphicsCommandList> owner, CommandAllocator allocator ) : base( owner ) {
-        Native = owner; Allocator = allocator; DeviceIdentity = allocator.DeviceIdentity; Track( allocator );
+    private readonly object _recordingToken;
+    internal GraphicsCommandList( ComOwner<ID3D12GraphicsCommandList> owner, CommandAllocator allocator, object recordingToken ) : base( owner ) {
+        Native = owner; Allocator = allocator; _recordingToken = recordingToken;
+        DeviceIdentity = allocator.DeviceIdentity; Track( allocator );
     }
     internal override ComReference Retain( ) => Native.Retain( );
     private void Recording( ) {
@@ -62,13 +83,19 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
     }
 
     /// <summary>Closes the current recording.</summary>
-    public void Close( ) { Recording( ); Results.Check( Native.Interface.Close( ), "CommandList.Close" ); _state = 1; }
+    public void Close( ) {
+        Recording( ); Results.Check( Native.Interface.Close( ), "CommandList.Close" );
+        _state = 1; Allocator.ReleaseRecording( _recordingToken );
+    }
     /// <summary>Starts a new recording after its previous submission completes. Reset the allocator separately.</summary>
     public void Reset( CommandAllocator allocator ) {
         RequireSameDevice( allocator );
         if ( _state == 2 ) throw new InvalidOperationException( "The command list still has GPU work pending." );
+        if ( _state == 0 ) throw new InvalidOperationException( "Close the command list before resetting it." );
         if ( allocator.Kind != Kind ) throw new ArgumentException( "The allocator kind does not match the command list." );
-        Results.Check( Native.Interface.Reset( allocator.Native.Interface, null! ), "CommandList.Reset" );
+        allocator.AcquireRecording( _recordingToken );
+        try { Results.Check( Native.Interface.Reset( allocator.Native.Interface, null! ), "CommandList.Reset" ); }
+        catch { allocator.ReleaseRecording( _recordingToken ); throw; }
         ReleaseRecording( ); Allocator = allocator; Track( allocator ); _state = 0;
     }
     /// <summary>Records a transition while retaining the native resource until submission retirement.</summary>
@@ -271,7 +298,13 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
     internal void Retired( ) { _state = 1; Interlocked.Decrement( ref Allocator.Pending ); }
     private void ReleaseRecording( ) { foreach ( var lease in _retained.Values ) lease.Dispose( ); _retained.Clear( ); }
     /// <inheritdoc />
-    public override void Dispose( ) { ReleaseRecording( ); base.Dispose( ); }
+    public override void Dispose( ) {
+        try { base.Dispose( ); }
+        finally {
+            ReleaseRecording( );
+            if ( _state == 0 ) Allocator.ReleaseRecording( _recordingToken );
+        }
+    }
 }
 
 /// <summary>A queue whose submissions retain native resources through fence completion. Dispose to drain pending work.</summary>

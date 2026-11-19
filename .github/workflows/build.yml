@@ -1,4 +1,4 @@
-name: .NET 10 SDK qualification
+name: .NET 10 and 11 SDK qualification
 
 on:
   push:
@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+
 concurrency:
   group: build-${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
@@ -17,7 +20,7 @@ jobs:
   windows:
     name: Windows ${{ matrix.configuration }}
     runs-on: windows-2025
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -27,6 +30,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+          dotnet-version: 10.0.403
           cache: true
           cache-dependency-path: '**/packages.lock.json'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -57,18 +61,20 @@ jobs:
           if-no-files-found: warn
 
   interop-aot:
-    name: Native COM JIT and AOT (${{ matrix.os }})
+    name: Native COM JIT and AOT (.NET ${{ matrix.runtime }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 25
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, windows-2025]
+        runtime: ['10', '11']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
+          dotnet-version: 10.0.403
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
         with:
@@ -77,15 +83,15 @@ jobs:
         shell: pwsh
         env:
           DXSHARP_FLEET_EVIDENCE: artifacts/sample-results/fleet-system.ppm
-        run: ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
+        run: ./build/VerifyInterop.ps1 -Configuration Release -RuntimeMajor ${{ matrix.runtime }} -PublishAot
       - name: WARP sample qualification
         if: runner.os == 'Windows'
         shell: pwsh
-        run: ./build/VerifySamples.ps1
+        run: ./build/VerifySamples.ps1 -RuntimeMajor ${{ matrix.runtime }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: interop-${{ matrix.os }}
+          name: interop-net${{ matrix.runtime }}-${{ matrix.os }}
           path: |
             artifacts/qualification-aot/**
             artifacts/modern-compute-aot/**
