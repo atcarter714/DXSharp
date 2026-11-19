@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>$(DotNetTargets)</TargetFramework>
+    <TargetFrameworks>$(DXSharpTargetFrameworks)</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <Description>WinForms desktop frame hosting for the modern DXSharp graphics API.</Description>
   </PropertyGroup>

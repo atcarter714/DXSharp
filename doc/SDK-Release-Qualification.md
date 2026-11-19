@@ -1,6 +1,6 @@
 # DXSharp 1.0 qualification
 
-The supported SDK surface is the generated COM stack on .NET 10. Publish a support matrix for Windows versions, architectures, runtime modes, Agility SDK, DXC and DirectML before tagging 1.0. Qualify each advertised combination with a clean external package consumer. Document the legacy RCW API as a compatibility surface and give migration examples for ownership, queues, and window lifecycle.
+The supported SDK surface is the generated COM stack on .NET 10/11. Publish a support matrix for Windows versions, architectures, runtime modes, Agility SDK, DXC and DirectML before tagging 1.0. Qualify each advertised combination with a clean external package consumer. Document the legacy RCW API as a compatibility surface and give migration examples for ownership, queues, and window lifecycle.
 
 ## Ownership contract
 

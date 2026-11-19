@@ -1,5 +1,8 @@
 name: DXSharp_$(Date:yyyyMMdd).$(Rev:r)
 
+variables:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+
 trigger:
   batch: true
   branches:
@@ -25,10 +28,15 @@ jobs:
         configuration: Debug
       Release:
         configuration: Release
-  timeoutInMinutes: 35
+  timeoutInMinutes: 60
   steps:
   - checkout: self
     clean: true
+  - task: UseDotNet@2
+    displayName: Install the .NET 10 runtime and SDK
+    inputs:
+      packageType: sdk
+      version: 10.0.403
   - task: UseDotNet@2
     displayName: Install the SDK pinned in global.json
     inputs:
@@ -51,8 +59,10 @@ jobs:
       ) | Set-Content artifacts/build-info.txt
       ./build.ps1 -Configuration $(configuration)
       if ('$(configuration)' -eq 'Release') {
-        ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
-        ./build/VerifySamples.ps1
+        foreach ($major in '10', '11') {
+          ./build/VerifyInterop.ps1 -Configuration Release -RuntimeMajor $major -PublishAot
+          ./build/VerifySamples.ps1 -RuntimeMajor $major
+        }
         $version = (dotnet msbuild src/DXSharp.Core/DXSharp.Core.csproj -getProperty:PackageVersion -nologo | Out-String).Trim()
         if ($LASTEXITCODE -ne 0) { throw 'Unable to evaluate the package version.' }
         python build/release_packages.py artifacts/release-candidate --version $version --commit $env:BUILD_SOURCEVERSION --stage-from artifacts/packages/Release
@@ -101,7 +111,7 @@ jobs:
     displayName: Publish Windows NativeAOT qualification programs
     condition: and(succeeded(), eq(variables['configuration'], 'Release'))
     inputs:
-      targetPath: $(Build.SourcesDirectory)/artifacts/qualification-aot/win-x64
+      targetPath: $(Build.SourcesDirectory)/artifacts/qualification-aot
       artifact: windows-x64-native-interop
 
   - task: PublishPipelineArtifact@1
@@ -115,21 +125,29 @@ jobs:
   displayName: Linux x64 native interop
   pool:
     vmImage: ubuntu-24.04
-  timeoutInMinutes: 25
+  timeoutInMinutes: 40
   steps:
   - checkout: self
     clean: true
+  - task: UseDotNet@2
+    displayName: Install the .NET 10 runtime and SDK
+    inputs:
+      packageType: sdk
+      version: 10.0.403
   - task: UseDotNet@2
     displayName: Install the SDK pinned in global.json
     inputs:
       packageType: sdk
       useGlobalJson: true
       workingDirectory: $(Build.SourcesDirectory)
-  - pwsh: ./build/VerifyInterop.ps1 -Configuration Release -PublishAot
+  - pwsh: |
+      foreach ($major in '10', '11') {
+        ./build/VerifyInterop.ps1 -Configuration Release -RuntimeMajor $major -PublishAot
+      }
     workingDirectory: $(Build.SourcesDirectory)
     displayName: Run native ABI and lifetime tests in JIT and NativeAOT
   - task: PublishPipelineArtifact@1
     displayName: Publish Linux NativeAOT qualification program
     inputs:
-      targetPath: $(Build.SourcesDirectory)/artifacts/qualification-aot/linux-x64
+      targetPath: $(Build.SourcesDirectory)/artifacts/qualification-aot
       artifact: linux-x64-native-interop

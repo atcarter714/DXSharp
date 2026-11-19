@@ -5,8 +5,8 @@
       "dxsharp.core": {
         "type": "Project",
         "dependencies": {
-          "DXSharp.Native": "[0.4.0-net10-preview.2, )",
-          "Microsoft.Direct3D.D3D12": "[1.620.1, 1.620.1]",
+          "DXSharp.Native": "[0.4.0-preview.3, )",
+          "Microsoft.Direct3D.D3D12": "[1.620.2, 1.620.2]",
           "Microsoft.Direct3D.DXC": "[1.9.2609.5, 1.9.2609.5]"
         }
       },
@@ -15,9 +15,9 @@
       },
       "Microsoft.Direct3D.D3D12": {
         "type": "CentralTransitive",
-        "requested": "[1.620.1, )",
-        "resolved": "1.620.1",
-        "contentHash": "oQCFTys3PZ0IHtS3I/u0/1IWgpuG7aQa+84AGiraqc8bMOCM8QpDLwLBshEbJ1J7LmuctZReXhF8c0eCiu2Xcw=="
+        "requested": "[1.620.2, )",
+        "resolved": "1.620.2",
+        "contentHash": "qSho5Lzlw6UjIHa/nEVwWK/gE2Mt7q7N2bixymflJ5QcvCWRqpatUuhkXWyW7AHex8K6yZyaEHyqx9xmXL5KLA=="
       },
       "Microsoft.Direct3D.DXC": {
         "type": "CentralTransitive",

@@ -47,8 +47,10 @@ try {
         }
     }
     Invoke-DotNet -Arguments @('pack', 'DXSharp.sln', '--configuration', $Configuration, '--no-build', '--no-restore', '-m:1')
-    & (Join-Path $PSScriptRoot 'build/VerifyPackages.ps1') -Configuration $Configuration
-    & (Join-Path $PSScriptRoot 'build/VerifySamplePackages.ps1') -Configuration $Configuration
+    foreach ($major in '10', '11') {
+        & (Join-Path $PSScriptRoot 'build/VerifyPackages.ps1') -Configuration $Configuration -RuntimeMajor $major
+        & (Join-Path $PSScriptRoot 'build/VerifySamplePackages.ps1') -Configuration $Configuration -RuntimeMajor $major
+    }
 } finally {
     Pop-Location
 }

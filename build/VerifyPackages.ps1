@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Debug', 'Release')]
-    [string] $Configuration = 'Debug'
+    [string] $Configuration = 'Debug',
+    [ValidateSet('10', '11')] [string] $RuntimeMajor = '10'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,6 +24,13 @@ try {
         try {
             $assemblies = @($archive.Entries | Where-Object FullName -CLike "lib/*/$name.dll")
             if ($assemblies.Count -eq 0) { throw "No library assembly found in $path" }
+            if ($name -in @('DXSharp.Native', 'DXSharp.Core', 'DXSharp.DirectML', 'DXSharp.Framework.Desktop', 'DXSharp.Assets')) {
+                foreach ($major in '10', '11') {
+                    # NuGet normalizes the trailing zero of the Windows platform version.
+                    $framework = if ($name -eq 'DXSharp.Assets') { "net$major.0" } else { "net$major.0-windows10.0.26100" }
+                    if ($null -eq $archive.GetEntry("lib/$framework/$name.dll")) { throw "Missing $framework asset in $path" }
+                }
+            }
             foreach ($assembly in $assemblies) {
                 $docPath = [System.IO.Path]::ChangeExtension($assembly.FullName, '.xml')
                 $entry = $archive.GetEntry($docPath)
@@ -42,7 +50,7 @@ try {
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetFramework>net${RuntimeMajor}.0-windows10.0.26100.0</TargetFramework>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWindowsForms>true</UseWindowsForms>
@@ -62,7 +70,7 @@ try {
     @'
 internal static class PackageSurfaces {
     internal static readonly System.Type[] Types = [typeof(DXSharp.Direct3D12.IDevice), typeof(DXSharp.Dxc.ShaderBuilder),
-        typeof(DXSharp.Graphics.GraphicsDevice), typeof(Windows.Win32.Graphics.Direct3D12.ID3D12Device15),
+        typeof(DXSharp.Graphics.GraphicsDevice), typeof(Windows.Win32.Graphics.Direct3D12.ID3D12Device16), typeof(Windows.Win32.Graphics.Direct3D12.ID3D12GraphicsCommandList12),
         typeof(Windows.Win32.Graphics.Direct2D.ID2D1DeviceContext), typeof(Windows.Win32.Media.Audio.XAudio2.IXAudio2),
         typeof(DXSharp.Assets.GltfModel)];
 }
@@ -94,8 +102,8 @@ internal static class PackageSurfaces {
         $output = (& dotnet msbuild Consumer.csproj "-p:Configuration=$Configuration" -getProperty:TargetDir -nologo | Out-String).Trim()
         if ($LASTEXITCODE -ne 0 -or -not (Test-Path $output)) { throw 'Unable to locate the package consumer output.' }
         $native = @{
-            'D3D12/D3D12Core.dll' = 'microsoft.direct3d.d3d12/1.620.1/build/native/bin/x64/D3D12Core.dll'
-            'D3D12/D3D12StateObjectCompiler.dll' = 'microsoft.direct3d.d3d12/1.620.1/build/native/bin/x64/D3D12StateObjectCompiler.dll'
+            'D3D12/D3D12Core.dll' = 'microsoft.direct3d.d3d12/1.620.2/build/native/bin/x64/D3D12Core.dll'
+            'D3D12/D3D12StateObjectCompiler.dll' = 'microsoft.direct3d.d3d12/1.620.2/build/native/bin/x64/D3D12StateObjectCompiler.dll'
             'dxcompiler.dll' = 'microsoft.direct3d.dxc/1.9.2609.5/build/native/bin/x64/dxcompiler.dll'
             'dxil.dll' = 'microsoft.direct3d.dxc/1.9.2609.5/build/native/bin/x64/dxil.dll'
             'DirectML.dll' = 'microsoft.ai.directml/1.15.4/bin/x64-win/DirectML.dll'

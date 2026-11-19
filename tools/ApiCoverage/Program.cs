@@ -14,14 +14,21 @@ if ( args.Length == 1 ) {
 }
 
 if ( args.Length is < 2 or > 3 ) {
-    Console.Error.WriteLine( "Usage: ApiCoverage <Windows.Win32.winmd> <DXSharp.Native.dll[;other.dll]> [report.json]" );
+    Console.Error.WriteLine( "Usage: ApiCoverage <metadata.winmd[;other.winmd]> <DXSharp.Native.dll[;other.dll]> [report.json]" );
     return 2;
 }
 
-using var metadataStream = File.OpenRead( args[0] );
-using var metadataPe = new PEReader( metadataStream );
-var source = metadataPe.GetMetadataReader( );
-var sourceTypes = ReadTypes( source, false );
+var sourceTypes = new Dictionary<string, ApiType>( StringComparer.Ordinal );
+string[] references = args[0].Split( ';', StringSplitOptions.RemoveEmptyEntries );
+foreach ( string file in references ) {
+    using var metadataStream = File.OpenRead( file );
+    using var metadataPe = new PEReader( metadataStream );
+    foreach ( var type in ReadTypes( metadataPe.GetMetadataReader( ), false ) ) {
+        if ( !type.Value.Namespace.StartsWith( "Windows.Win32.", StringComparison.Ordinal ) ) continue;
+        if ( !sourceTypes.TryAdd( type.Key, type.Value ) )
+            throw new InvalidDataException( $"Overlapping metadata definition: {type.Key}. Select one authoritative source for each API family." );
+    }
+}
 var builtTypes = new Dictionary<string, ApiType>( StringComparer.Ordinal );
 foreach ( string file in args[1].Split( ';', StringSplitOptions.RemoveEmptyEntries ) ) {
     using var assemblyStream = File.OpenRead( file );
@@ -67,6 +74,8 @@ foreach ( string family in families ) {
         (recursive && value.Namespace.StartsWith( family + ".", StringComparison.Ordinal )) ).ToArray( );
     var missingTypes = new List<string>( );
     var missingMembers = new List<string>( );
+    var iidMismatches = new List<string>( );
+    var expectedIids = new Dictionary<string, string>( StringComparer.Ordinal );
     int expectedTypes = 0, availableTypes = 0, expectedMembers = 0, availableMembers = 0;
 
     foreach ( var type in types ) {
@@ -80,6 +89,10 @@ foreach ( string family in families ) {
             if ( builtTypes.TryGetValue( type.Name, out var implementation ) ) {
                 availableTypes++;
                 actual = implementation.Members;
+                if ( type.Iid is Guid iid ) {
+                    expectedIids.Add( type.Name, iid.ToString( "D" ) );
+                    if ( implementation.Iid != iid ) iidMismatches.Add( type.Name );
+                }
             } else {
                 missingTypes.Add( type.Name );
                 actual = null;
@@ -97,16 +110,21 @@ foreach ( string family in families ) {
 
     var report = new FamilyReport( family, expectedTypes, availableTypes, expectedMembers, availableMembers,
         missingTypes.Order( StringComparer.Ordinal ).ToArray( ),
-        missingMembers.Order( StringComparer.Ordinal ).ToArray( ) );
+        missingMembers.Order( StringComparer.Ordinal ).ToArray( ),
+        family != "Windows.Win32.Storage.DirectStorage",
+        expectedTypes == 0 && expectedMembers == 0 ? "MissingReference" :
+            missingTypes.Count == 0 && missingMembers.Count == 0 && iidMismatches.Count == 0 ? "NameAndIidCoverageComplete" : "Incomplete",
+        references.Select( file => Path.GetFileName( file )! ).ToArray( ), expectedIids,
+        iidMismatches.Order( StringComparer.Ordinal ).ToArray( ) );
     reports.Add( report );
     Console.WriteLine( expectedTypes == 0 && expectedMembers == 0
-        ? $"{family}: absent from pinned metadata"
-        : $"{family}: types {availableTypes}/{expectedTypes}, member names {availableMembers}/{expectedMembers}" );
+        ? $"{family}: reference metadata unavailable ({(report.Required ? "required; gate failed" : "unsupported; not qualified")})"
+        : $"{family}: types {availableTypes}/{expectedTypes}, member names {availableMembers}/{expectedMembers}, IIDs {expectedIids.Count - iidMismatches.Count}/{expectedIids.Count}" );
 }
 
 var options = new JsonSerializerOptions { WriteIndented = true };
 if ( args.Length == 3 ) File.WriteAllText( args[2], JsonSerializer.Serialize( reports, options ) + Environment.NewLine );
-return reports.Any( report => report.MissingTypes.Length != 0 || report.MissingMemberNames.Length != 0 ) ? 1 : 0;
+return reports.Any( report => report.Required && report.Status != "NameAndIidCoverageComplete" ) ? 1 : 0;
 
 static Dictionary<string, ApiType> ReadTypes( MetadataReader reader, bool publicOnly ) {
     var result = new Dictionary<string, ApiType>( StringComparer.Ordinal );
@@ -144,11 +162,39 @@ static Dictionary<string, ApiType> ReadTypes( MetadataReader reader, bool public
         bool isDelegate = false;
         if ( type.BaseType.Kind == HandleKind.TypeReference )
             isDelegate = reader.GetString( reader.GetTypeReference( (TypeReferenceHandle)type.BaseType ).Name ) == "MulticastDelegate";
-        result[full] = new( full, ns, members, constants, isDelegate );
+        result[full] = new( full, ns, members, constants, isDelegate, ReadIid( reader, type, requireInterface: !publicOnly ) );
     }
     return result;
 }
 
-internal sealed record ApiType( string Name, string Namespace, HashSet<string> Members, HashSet<string> Constants, bool IsDelegate );
+static Guid? ReadIid( MetadataReader reader, TypeDefinition type, bool requireInterface ) {
+    // Native interfaces can project as pointer structs; source coclass GUIDs are not IIDs.
+    if ( requireInterface && (type.Attributes & TypeAttributes.Interface) == 0 ) return null;
+    foreach ( var handle in type.GetCustomAttributes( ) ) {
+        var attribute = reader.GetCustomAttribute( handle );
+        EntityHandle parent = attribute.Constructor.Kind switch {
+            HandleKind.MemberReference => reader.GetMemberReference( (MemberReferenceHandle)attribute.Constructor ).Parent,
+            HandleKind.MethodDefinition => reader.GetMethodDefinition( (MethodDefinitionHandle)attribute.Constructor ).GetDeclaringType( ),
+            _ => default
+        };
+        string? name = parent.Kind switch {
+            HandleKind.TypeReference => reader.GetString( reader.GetTypeReference( (TypeReferenceHandle)parent ).Name ),
+            HandleKind.TypeDefinition => reader.GetString( reader.GetTypeDefinition( (TypeDefinitionHandle)parent ).Name ),
+            _ => null
+        };
+        if ( name != "GuidAttribute" ) continue;
+        var blob = reader.GetBlobReader( attribute.Value );
+        if ( blob.ReadUInt16( ) != 1 ) throw new InvalidDataException( "Invalid GUID attribute prolog." );
+        // WinMD may encode the native GUID fields; CLR GuidAttribute stores a string.
+        if ( blob.RemainingBytes == 18 ) return new Guid( blob.ReadInt32( ), blob.ReadInt16( ), blob.ReadInt16( ),
+            blob.ReadByte( ), blob.ReadByte( ), blob.ReadByte( ), blob.ReadByte( ),
+            blob.ReadByte( ), blob.ReadByte( ), blob.ReadByte( ), blob.ReadByte( ) );
+        return Guid.Parse( blob.ReadSerializedString( ) ?? throw new InvalidDataException( "Missing GUID attribute value." ) );
+    }
+    return null;
+}
+
+internal sealed record ApiType( string Name, string Namespace, HashSet<string> Members, HashSet<string> Constants, bool IsDelegate, Guid? Iid );
 internal sealed record FamilyReport( string Namespace, int ExpectedTypes, int PublicTypes,
-    int ExpectedMemberNames, int PublicMemberNames, string[] MissingTypes, string[] MissingMemberNames );
+    int ExpectedMemberNames, int PublicMemberNames, string[] MissingTypes, string[] MissingMemberNames,
+    bool Required, string Status, string[] ReferenceFiles, Dictionary<string, string> ExpectedIids, string[] IidMismatches );

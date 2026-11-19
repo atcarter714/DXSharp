@@ -3,6 +3,7 @@
   <PropertyGroup>
     <UseWindowsForms>true</UseWindowsForms>
     <IsPackable>false</IsPackable>
+    <NuGetLockFilePath Condition="'$(DXSharpRuntimeMajor)' == '11'">$(MSBuildProjectDirectory)/packages.net11.lock.json</NuGetLockFilePath>
     <ApplicationIcon>$(MSBuildThisFileDirectory)Shared/DXSharpSample.ico</ApplicationIcon>
     <AssemblyTitle>DXSharp - $(MSBuildProjectName)</AssemblyTitle>
     <Product>DXSharp Samples</Product>
