@@ -26,7 +26,8 @@ try {
             if ($assemblies.Count -eq 0) { throw "No library assembly found in $path" }
             if ($name -in @('DXSharp.Native', 'DXSharp.Core', 'DXSharp.DirectML', 'DXSharp.Framework.Desktop', 'DXSharp.Assets')) {
                 foreach ($major in '10', '11') {
-                    $framework = if ($name -eq 'DXSharp.Assets') { "net$major.0" } else { "net$major.0-windows10.0.26100.0" }
+                    # NuGet normalizes the trailing zero of the Windows platform version.
+                    $framework = if ($name -eq 'DXSharp.Assets') { "net$major.0" } else { "net$major.0-windows10.0.26100" }
                     if ($null -eq $archive.GetEntry("lib/$framework/$name.dll")) { throw "Missing $framework asset in $path" }
                 }
             }

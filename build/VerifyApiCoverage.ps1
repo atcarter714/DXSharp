@@ -9,12 +9,15 @@ $repoRoot = Split-Path $PSScriptRoot -Parent
 Push-Location $repoRoot
 try {
     $nativeProject = 'src/DXSharp.Native/DXSharp.Native.csproj'
-    $metadataRoot = (& dotnet msbuild $nativeProject -getProperty:PkgMicrosoft_Windows_SDK_Win32Metadata -nologo | Out-String).Trim()
+    $frameworks = (& dotnet msbuild $nativeProject -getProperty:TargetFrameworks -nologo | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($frameworks)) { throw 'Unable to resolve the native target frameworks.' }
+    $firstFramework = $frameworks.Split(';', [StringSplitOptions]::RemoveEmptyEntries)[0]
+    # NuGet's generated package-path properties are scoped to an inner target build.
+    $metadataRoot = (& dotnet msbuild $nativeProject "-p:TargetFramework=$firstFramework" -getProperty:PkgMicrosoft_Windows_SDK_Win32Metadata -nologo | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($metadataRoot)) {
         throw 'Restore DXSharp.Native before checking API coverage.'
     }
-    $agilityRoot = (& dotnet msbuild $nativeProject -getProperty:PkgMicrosoft_Direct3D_D3D12 -nologo | Out-String).Trim()
-    $frameworks = (& dotnet msbuild $nativeProject -getProperty:TargetFrameworks -nologo | Out-String).Trim()
+    $agilityRoot = (& dotnet msbuild $nativeProject "-p:TargetFramework=$firstFramework" -getProperty:PkgMicrosoft_Direct3D_D3D12 -nologo | Out-String).Trim()
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($agilityRoot) -or [string]::IsNullOrWhiteSpace($frameworks)) {
         throw 'Unable to resolve the retail metadata provider and target frameworks.'
     }
