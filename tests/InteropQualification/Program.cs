@@ -161,6 +161,7 @@ internal static class Program {
             Check( Native.InvokeCallback( 17 ) == 51, "native-held generated callback survives GC" );
             Native.RetainCallback( 0 );
             Check( Native.Destroyed( ) >= 2004, "native destructor accounting" );
+            AllocationQualification.Run( );
             AssetQualification.Run( );
             FleetQualification.Run( );
             if ( OperatingSystem.IsWindows( ) ) MeshQualification.Run( );

@@ -40,3 +40,7 @@ CI validates only the matrix recorded for its exact commit. A skipped hardware c
 Only one command list may record with an allocator at a time. Close or dispose the active recording before reusing that allocator; an allocator reset also requires completed submissions. A command-list reset requires a closed, retired list. These checks reject invalid use before native reset/create calls. Native recording callbacks must preserve the list's allocator and recording state and declare their DXSharp dependencies.
 
 Recording remains single-threaded per list. Applications synchronize owner disposal, allocator reset and submissions, and remain responsible for barriers, resource states and cross-queue ordering. Recorded resource references are retained through the relevant submission fence.
+
+## Allocation infrastructure after preview 3
+
+The next SDK increment adds bounded descriptor pools and upload rings with per-recording allocation leases. See [resource allocation](tutorials/08-resource-allocation.md) for ownership, no-overwrite and exhaustion contracts. A retired recording must be reset before another submission because its suballocations may have been reclaimed. Multi-queue lifetime tracking does not supply queue ordering or resource barriers. Readback rings and general texture/pipeline expansion remain planned.

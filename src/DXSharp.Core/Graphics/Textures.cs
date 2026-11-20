@@ -8,12 +8,14 @@ namespace DXSharp.Graphics;
 public sealed class SampledTexture2D : IDisposable {
     internal GpuResource Resource { get; }
     internal DescriptorHeap Heap { get; }
+    internal DescriptorAllocation? View { get; }
     /// <summary>Texture width in pixels.</summary>
     public uint Width { get; }
     /// <summary>Texture height in pixels.</summary>
     public uint Height { get; }
 
-    internal SampledTexture2D( GpuResource resource, DescriptorHeap heap, uint width, uint height ) {
+    internal SampledTexture2D( GpuResource resource, DescriptorHeap heap, uint width, uint height, DescriptorAllocation? view = null ) {
+        View = view;
         Resource = resource;
         Heap = heap;
         Width = width;
@@ -22,7 +24,7 @@ public sealed class SampledTexture2D : IDisposable {
 
     /// <summary>Releases the public owners. Recorded command lists retain their own references.</summary>
     public void Dispose( ) {
-        Heap.Dispose( );
+        if ( View is not null ) View.Dispose( ); else Heap.Dispose( );
         Resource.Dispose( );
     }
 }
@@ -54,7 +56,21 @@ public sealed unsafe partial class GraphicsDevice {
     /// <param name="srgb">Whether sampling converts the RGB channels from sRGB to linear light.</param>
     /// <returns>The texture and its view. The command list retains the upload through execution.</returns>
     public SampledTexture2D CreateSampledTexture2D( GraphicsCommandList commands, uint width, uint height,
-        ReadOnlySpan<byte> rgba, bool srgb = false ) {
+        ReadOnlySpan<byte> rgba, bool srgb = false ) => CreateSampledTextureCore( commands, width, height, rgba, srgb, null, null );
+
+    /// <summary>Records an RGBA8 upload using shared descriptor and upload allocations, retaining both ranges through GPU completion.</summary>
+    /// <remarks>The texture owns its descriptor reservation. Upload slices are released automatically after recording and remain reserved until completion. Exhaustion is explicit and nonblocking.</remarks>
+    public SampledTexture2D CreateSampledTexture2D( GraphicsCommandList commands, DescriptorPool descriptors, UploadRing uploads,
+        uint width, uint height, ReadOnlySpan<byte> rgba, bool srgb = false ) {
+        ArgumentNullException.ThrowIfNull( descriptors ); ArgumentNullException.ThrowIfNull( uploads );
+        RequireSameDevice( descriptors.Heap ); RequireSameDevice( uploads.Buffer );
+        if ( descriptors.Kind != DescriptorKind.Resource || !descriptors.ShaderVisible )
+            throw new ArgumentException( "Sampled textures require a shader-visible resource descriptor pool.", nameof(descriptors) );
+        return CreateSampledTextureCore( commands, width, height, rgba, srgb, descriptors, uploads );
+    }
+
+    private SampledTexture2D CreateSampledTextureCore( GraphicsCommandList commands, uint width, uint height,
+        ReadOnlySpan<byte> rgba, bool srgb, DescriptorPool? descriptors, UploadRing? uploads ) {
         RequireSameDevice( commands );
         commands.RequireDirectRecording( );
         ArgumentOutOfRangeException.ThrowIfZero( width );
@@ -80,6 +96,22 @@ public sealed unsafe partial class GraphicsDevice {
             D3D12_RESOURCE_STATES.D3D12_RESOURCE_STATE_COPY_DEST, null, &id, (void**)&pointer ), "CreateCommittedResource(Texture2D)" );
         var texture = new GpuResource( ComOwner<ID3D12Resource>.Adopt( pointer ), 0, BufferMemory.Default ) { DeviceIdentity = DeviceIdentity };
         try {
+            if ( descriptors is not null ) {
+                var view = descriptors.Allocate( );
+                try {
+                    CreateShaderResourceView( texture, view );
+                    using var slice = uploads!.Allocate( bytes, UploadRing.TexturePlacementAlignment );
+                    var placed = footprint; placed.Offset = checked(placed.Offset + slice.Offset);
+                    lock ( slice.Lifetime.Gate ) {
+                        slice.Lifetime.RequireWritable( );
+                        WriteTextureRows( slice.Buffer, placed, rgba, rowBytes, (int)height );
+                    }
+                    commands.RetainAllocation( slice );
+                    commands.CopyTextureFromUpload( slice.Buffer, texture, placed );
+                    commands.Transition( texture, ResourceState.CopyDestination, ResourceState.PixelShaderResource );
+                    return new( texture, view.Heap, width, height, view );
+                } catch { view.Dispose( ); throw; }
+            }
             var type = D3D12_DESCRIPTOR_HEAP_TYPE.D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
             D3D12_DESCRIPTOR_HEAP_DESC heapDescription = new( ) {
                 Type = type, NumDescriptors = 1, Flags = D3D12_DESCRIPTOR_HEAP_FLAGS.D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
