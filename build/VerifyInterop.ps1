@@ -37,7 +37,7 @@ try {
     Invoke-Checked 'dotnet' @($managed)
     if ($PublishAot) {
         $publish = Join-Path $repoRoot "artifacts/qualification-aot/net$RuntimeMajor/$rid"
-        Invoke-Checked 'dotnet' @('publish', $project, '-m:1', '-c', $Configuration, '-f', $framework, '-r', $rid, '-p:PublishAot=true', "-p:DXSharpRuntimeMajor=$RuntimeMajor",
+        Invoke-Checked 'dotnet' @('publish', $project, '-m:1', '-c', $Configuration, '-f', $framework, '-r', $rid, '-p:PublishAot=true', '-p:DXSharpAotQualification=true', "-p:DXSharpRuntimeMajor=$RuntimeMajor",
             "-p:DXSharpNativeFixture=$fixture", '-o', $publish)
         Copy-Item $fixture $publish -Force
         $executable = Join-Path $publish $(if ($IsWindows) { 'InteropQualification.exe' } else { 'InteropQualification' })
