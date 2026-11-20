@@ -6,7 +6,7 @@ DXSharp exposes D3D12 devices, queues, resources, pipelines, and swap chains thr
 
 ![DXSharp logo](https://raw.githubusercontent.com/atcarter714/DXSharp/main/file/img/DXSharp_Logo_00_512.png)
 
-[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [Support matrix](doc/Support-Matrix.md) · [Preview release](https://github.com/atcarter714/DXSharp/releases/tag/v0.4.0-net10-preview.2) · [Publishing](doc/Publishing-Previews.md) · [Parity roadmap](doc/Competitive-Parity-Roadmap.md) · [MIT license](LICENSE.md)
+[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [Support matrix](doc/Support-Matrix.md) · [Preview release](https://github.com/atcarter714/DXSharp/releases/tag/v0.4.0-preview.3) · [Publishing](doc/Publishing-Previews.md) · [Parity roadmap](doc/Competitive-Parity-Roadmap.md) · [MIT license](LICENSE.md)
 
 ## Start here
 

@@ -18,8 +18,6 @@
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true' or '$(TF_BUILD)' == 'true'">true</ContinuousIntegrationBuild>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <!-- AOT restore has RID/compiler dependencies; keep it separate from committed JIT locks. -->
-    <NuGetLockFilePath Condition="'$(DXSharpAotQualification)' == 'true'">$(RepoRootPath)artifacts/aot-locks/net$(DXSharpRuntimeMajor)/$(RuntimeIdentifier)/$(MSBuildProjectName).lock.json</NuGetLockFilePath>
     <BaseOutputPath>$(RepoRootPath)artifacts/bin/$(MSBuildProjectName)/</BaseOutputPath>
     <BaseIntermediateOutputPath>$(RepoRootPath)artifacts/obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
     <!-- Keep project-local build outputs out of SDK item globs after redirecting the active output paths. -->
@@ -29,7 +27,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(RepoRootPath)file/keys/strongname.snk</AssemblyOriginatorKeyFile>
     <VersionPrefix>0.4.0</VersionPrefix>
-    <VersionSuffix>preview.4</VersionSuffix>
+    <VersionSuffix>preview.3</VersionSuffix>
     <Company>Arkaen Solutions</Company>
     <Authors>Aaron T. Carter, Arkaen Solutions, Contributors</Authors>
     <RepositoryType>git</RepositoryType>

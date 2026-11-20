@@ -66,6 +66,7 @@ jobs:
       - name: Qualify SDK, packages, WARP, and NativeAOT
         shell: pwsh
         run: |
+          ./build/VerifyRestoreIsolation.ps1
           ./build.ps1 -Configuration Release
           foreach ($major in '10', '11') {
             ./build/VerifyInterop.ps1 -Configuration Release -RuntimeMajor $major -PublishAot
@@ -86,6 +87,7 @@ jobs:
             artifacts/build.binlog
             artifacts/test-results/**
             artifacts/api-coverage/**
+            artifacts/aot-locks/**
             artifacts/sample-packages/**
             artifacts/sample-results/**
             artifacts/triangle-resize/**
@@ -105,6 +107,7 @@ jobs:
           dotnet-version: 10.0.403
       - shell: pwsh
         run: |
+          ./build/VerifyRestoreIsolation.ps1
           foreach ($major in '10', '11') {
             ./build/VerifyInterop.ps1 -Configuration Release -RuntimeMajor $major -PublishAot
           }

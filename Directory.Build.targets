@@ -1,3 +1,7 @@
 <Project>
   <Import Project="$(MSBuildThisFileDirectory)build/msbuild/NativeDependencies.targets" />
+  <!-- Apply after project/sample properties, so every AOT restore has its own lock graph. -->
+  <PropertyGroup Condition="'$(PublishAot)' == 'true'">
+    <NuGetLockFilePath>$(RepoRootPath)artifacts/aot-locks/net$(DXSharpRuntimeMajor)/$(RuntimeIdentifier)/$(MSBuildProjectName).lock.json</NuGetLockFilePath>
+  </PropertyGroup>
 </Project>

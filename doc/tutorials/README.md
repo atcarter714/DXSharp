@@ -9,3 +9,5 @@ The sample projects are the runnable references for these lessons. Each lesson g
 5. [Trace a triangle and verify the image](05-raytracing.md)
 6. [Upload and draw an indexed mesh](06-indexed-meshes.md)
 7. [Load and draw a static model](07-static-models.md)
+
+- [Descriptor pools and upload rings](08-resource-allocation.md): bounded allocation, recording leases, shared texture uploads and reclamation.
