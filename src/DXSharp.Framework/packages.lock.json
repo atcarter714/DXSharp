@@ -8,7 +8,7 @@
       "dxsharp.dxc": {
         "type": "Project",
         "dependencies": {
-          "DXSharp": "[0.4.0-preview.3, )"
+          "DXSharp": "[0.4.0-preview.4, )"
         }
       }
     }

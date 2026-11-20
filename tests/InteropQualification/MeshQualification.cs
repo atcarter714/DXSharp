@@ -45,6 +45,7 @@ internal static unsafe class MeshQualification {
         var pixel = compiler.Compile( Shader, "PS", "ps_6_0" );
         ValidateArguments( device, vertex, pixel );
         ValidateRecordingOwnership( device );
+        GpuAllocationQualification.Run( device );
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: true );
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: false );
         Render( device, vertex, pixel, instanceStepRate: 2, splitIndexFormats: false );
@@ -143,8 +144,11 @@ internal static unsafe class MeshQualification {
             0, 0, 0, 255, 128, 0, 0, 255, 0, 0, 0, 255,
             0, 0, 0, 255, 0, 128, 0, 255, 0, 0, 0, 255
         ];
-        using var srgb = device.CreateSampledTexture2D( commands, 3, 2, pixels, srgb: true );
-        using var linear = device.CreateSampledTexture2D( commands, 3, 2, pixels );
+        using var descriptors = device.CreateDescriptorPool( 2 );
+        using var uploadRing = device.CreateUploadRing( 2048 );
+        using var srgb = device.CreateSampledTexture2D( commands, descriptors, uploadRing, 3, 2, pixels, srgb: true );
+        using var linear = device.CreateSampledTexture2D( commands, descriptors, uploadRing, 3, 2, pixels );
+        if ( descriptors.AvailableCount != 0 ) throw new InvalidOperationException( "Texture descriptors were not suballocated." );
         using var root = device.CreateTextureRootSignature( 1, linearWrap: true );
         using var pipeline = device.CreateGraphicsPipeline( root, compiler.Compile( shader, "VS", "vs_6_0" ),
             compiler.Compile( shader, "PS", "ps_6_0" ) );
@@ -167,7 +171,10 @@ internal static unsafe class MeshQualification {
         commands.Close( );
         srgb.Dispose( );
         linear.Dispose( );
+        if ( descriptors.AvailableCount != 0 ) throw new InvalidOperationException( "Recorded descriptors were reclaimed before submission." );
         queue.Wait( queue.Submit( commands ) );
+        if ( descriptors.AvailableCount != 2 || uploadRing.AvailableBytes != uploadRing.Capacity )
+            throw new InvalidOperationException( "Texture allocation ranges did not retire after GPU completion." );
         var bytes = new byte[checked((int)size)];
         readback.Read<byte>( bytes );
         ulong offsetBytes = footprint.Offset;

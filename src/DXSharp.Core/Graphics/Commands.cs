@@ -45,9 +45,10 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
     internal CommandAllocator Allocator;
     internal QueueKind Kind => Allocator.Kind;
     private Dictionary<object, ComReference> _retained = new( ReferenceEqualityComparer.Instance );
+    private readonly Dictionary<GraphicsAllocation, IDisposable> _allocationRetained = new( ReferenceEqualityComparer.Instance );
     private readonly D3D12_RESOURCE_BARRIER[] _barrier = new D3D12_RESOURCE_BARRIER[1];
     private readonly float[] _color = new float[4];
-    private int _state; // 0 recording, 1 closed, 2 submitted; reset becomes legal after retirement.
+    private int _state; // 0 recording, 1 closed, 2 submitted, 3 retired; reset before another submission.
     private readonly object _recordingToken;
     internal GraphicsCommandList( ComOwner<ID3D12GraphicsCommandList> owner, CommandAllocator allocator, object recordingToken ) : base( owner ) {
         Native = owner; Allocator = allocator; _recordingToken = recordingToken;
@@ -153,8 +154,9 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
         RequireDirectRecording( );
         Track( texture.Resource );
         Track( texture.Heap );
+        if ( texture.View is not null ) RetainAllocation( texture.View );
         Native.Interface.SetDescriptorHeaps( 1, [texture.Heap.Native.Interface] );
-        Native.Interface.SetGraphicsRootDescriptorTable( parameterIndex, texture.Heap.Native.Interface.GetGPUDescriptorHandleForHeapStart( ) );
+        Native.Interface.SetGraphicsRootDescriptorTable( parameterIndex, texture.View?.GetGpuHandle( ) ?? texture.Heap.Native.Interface.GetGPUDescriptorHandleForHeapStart( ) );
     }
 
     /// <summary>Sets a viewport and scissor rectangle.</summary>
@@ -290,13 +292,17 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
         Native.Interface.Dispatch( x, y, z );
     }
 
-    internal List<ComReference> Submit( ) {
-        if ( _state != 1 ) throw new InvalidOperationException( "Close the command list before submission; retire previous submissions before reuse." );
+    internal List<IDisposable> Submit( ) {
+        if ( _state != 1 ) throw new InvalidOperationException( "Close a fresh recording before submission. Reset a retired list before submitting it again." );
         Track( this ); _state = 2; Interlocked.Increment( ref Allocator.Pending );
-        var result = _retained.Values.ToList( ); _retained.Clear( ); return result;
+        var result = _retained.Values.Cast<IDisposable>( ).Concat( _allocationRetained.Values ).ToList( );
+        _retained.Clear( ); _allocationRetained.Clear( ); return result;
     }
-    internal void Retired( ) { _state = 1; Interlocked.Decrement( ref Allocator.Pending ); }
-    private void ReleaseRecording( ) { foreach ( var lease in _retained.Values ) lease.Dispose( ); _retained.Clear( ); }
+    internal void Retired( ) { _state = 3; Interlocked.Decrement( ref Allocator.Pending ); }
+    private void ReleaseRecording( ) {
+        foreach ( var lease in _retained.Values ) lease.Dispose( ); _retained.Clear( );
+        foreach ( var lease in _allocationRetained.Values ) lease.Dispose( ); _allocationRetained.Clear( );
+    }
     /// <inheritdoc />
     public override void Dispose( ) {
         try { base.Dispose( ); }
@@ -323,7 +329,7 @@ public sealed class CommandQueue : GraphicsObject {
         Native = owner; _fence = fence; _device = device.Native.Clone( ); Kind = kind;
     }
     internal override ComReference Retain( ) => Native.Retain( );
-    /// <summary>Submits a closed list and returns its monotonic completion value.</summary>
+    /// <summary>Submits a fresh closed recording once and returns its monotonic completion value. Reset after retirement before resubmitting.</summary>
     public ulong Submit( GraphicsCommandList commands ) {
         RequireSameDevice( commands );
         if ( commands.Kind != Kind ) throw new ArgumentException( "The command-list kind does not match this queue." );
@@ -411,10 +417,10 @@ public sealed class CommandQueue : GraphicsObject {
         internal static void Add( CommandQueue queue ) { Queues.TryAdd( queue, 0 ); GC.KeepAlive( Poller ); }
         internal static void Remove( CommandQueue queue ) => Queues.TryRemove( queue, out _ );
     }
-    private sealed class Pending( ulong value, GraphicsCommandList commands, List<ComReference> references ) {
+    private sealed class Pending( ulong value, GraphicsCommandList commands, List<IDisposable> references ) {
         internal readonly ulong Value = value;
         internal readonly GraphicsCommandList Commands = commands;
-        internal readonly List<ComReference> References = references;
+        internal readonly List<IDisposable> References = references;
         internal int SignalFailure;
     }
 }

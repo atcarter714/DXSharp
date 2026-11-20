@@ -42,11 +42,22 @@ internal static class Program {
         using var root = device.CreateTextureRootSignature( );
         using var pipeline = device.CreateGraphicsPipeline( root, compiler.Compile( Shader, "VS", "vs_6_0" ), compiler.Compile( Shader, "PS", "ps_6_0" ) );
         const int size = 250; // Exercises row-pitch padding.
-        using var texture = device.CreateSampledTexture2D( uploadQueue, size, size, Checkerboard( size ) );
+        using var descriptors = device.CreateDescriptorPool( 2 );
+        using var uploadRing = device.CreateUploadRing( 1024 * 1024 );
+        using var uploadAllocator = device.CreateCommandAllocator( );
+        using var uploads = device.CreateCommandList( uploadAllocator );
+        using var texture = device.CreateSampledTexture2D( uploads, descriptors, uploadRing, size, size, Checkerboard( size ) );
+        byte[] alternate = Checkerboard( size );
+        for ( int i = 0; i < alternate.Length; i += 4 ) (alternate[i], alternate[i + 2]) = (alternate[i + 2], alternate[i]);
+        using var secondTexture = device.CreateSampledTexture2D( uploads, descriptors, uploadRing, size, size, alternate );
+        uploads.Close( );
+        uploadQueue.Wait( uploadQueue.Submit( uploads ) );
+        Console.WriteLine( $"Shared texture heap: {descriptors.Capacity} descriptors; upload ring reclaimed {uploadRing.AvailableBytes} bytes." );
+        int frameIndex = 0;
 
         var result = DesktopGame.Run( device, new( ) { Title = "DXSharp · Hello Texture", FrameLimit = frameLimit }, frame => {
             frame.Commands.SetGraphicsPipeline( pipeline );
-            frame.Commands.SetGraphicsTexture( texture );
+            frame.Commands.SetGraphicsTexture( (++frameIndex / 90 & 1) == 0 ? texture : secondTexture );
             frame.Commands.Draw( 3 );
         } );
         var diagnostics = device.GetDiagnostics( );
