@@ -155,7 +155,7 @@ public static class DesktopGame {
                 // Present supplies pacing. Drain native messages before recording another frame.
                 while (!rendering && !window.CloseRequested && window.IsHandleCreated && !window.Disposing &&
                        window.WindowState != FormWindowState.Minimized &&
-                       !PInvoke.PeekMessage(out _, default, 0, 0, PEEK_MESSAGE_REMOVE_TYPE.PM_NOREMOVE))
+                       !PInvoke.PeekMessageW(out _, default, 0, 0, PEEK_MESSAGE_REMOVE_TYPE.PM_NOREMOVE))
                     RenderFrame(null, EventArgs.Empty);
             }
             timer.Tick += RenderFrame; // Retain a wakeup for close-drain and minimized-state bookkeeping.
