@@ -41,7 +41,7 @@ internal static class Program {
         Console.WriteLine( device.AdapterName );
         using var uploadQueue = device.CreateCommandQueue( );
         using var compiler = new ShaderCompiler( );
-        using var root = device.CreateTextureRootSignature( 1 );
+        using var root = device.CreateTextureRootSignature( 1, linearWrap: false );
         using var pipeline = device.CreateGraphicsPipeline( root, compiler.Compile( Shader, "VS", "vs_6_0" ), compiler.Compile( Shader, "PS", "ps_6_0" ) );
         const int size = 250; // Exercises row-pitch padding.
         using var descriptors = device.CreateDescriptorPool( 2 );
@@ -61,7 +61,7 @@ internal static class Program {
 
         var result = DesktopGame.Run( device, new( ) { Title = "DXSharp · Hello Texture", FrameLimit = frameLimit }, frame => {
             frame.Commands.SetGraphicsPipeline( pipeline );
-            uint mip = (uint)(frameIndex++ / 90 % 3);
+            uint mip = (uint)(frameIndex++ / (frameLimit > 0 ? 1 : 90) % 3);
             frame.Commands.SetGraphicsConstants( [BitConverter.SingleToUInt32Bits( mip )] );
             frame.Commands.SetGraphicsTexture( (frameIndex / 270 & 1) == 0 ? texture : secondTexture, 1 );
             frame.Commands.Draw( 3 );
