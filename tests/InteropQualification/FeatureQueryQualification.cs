@@ -8,8 +8,13 @@ namespace InteropQualification;
 
 internal static unsafe class FeatureQueryQualification {
     internal static void Run() {
+#if DEBUG
+        const bool debugBuild = true;
+#else
+        const bool debugBuild = false;
+#endif
         foreach (bool agility in new[] { true, false }) {
-            using var device = GraphicsDevice.Create(new() { UseWarp = true, UseAgility = agility, EnableDebugLayer = true });
+            using var device = GraphicsDevice.Create(new() { UseWarp = true, UseAgility = agility, EnableDebugLayer = debugBuild && agility });
             bool versioned = device.Native.TryQuery<ID3D12Device16>(typeof(ID3D12Device16).GUID, out var probe);
             probe?.Dispose();
             D3D12_FEATURE_DATA_FORMAT_INFO planes = new() { Format = DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM };
@@ -26,7 +31,7 @@ internal static unsafe class FeatureQueryQualification {
                 m.Contains("SEVERITY_ERROR", StringComparison.Ordinal) || m.Contains("SEVERITY_CORRUPTION", StringComparison.Ordinal) ||
                 m.Contains("CheckFeatureSupport is superseded", StringComparison.Ordinal)))
                 throw new InvalidOperationException("Feature query diagnostics: " + string.Join(Environment.NewLine, diagnostics.Messages));
-            Console.WriteLine($"PASS: {(agility ? "Agility" : "system")} feature queries via {(versioned ? "CheckFeatureSupport1" : "legacy fallback")}; metadata SDK {PInvoke.D3D12_SDK_VERSION}; no deprecated-query warning.");
+            Console.WriteLine($"PASS: {(agility ? "Agility" : "system")} feature queries via {(versioned ? "CheckFeatureSupport1" : "legacy fallback")}; metadata SDK {PInvoke.D3D12_SDK_VERSION}; debug layer {(debugBuild && agility ? "enabled; no deprecated-query warning" : "disabled by the runtime/package contract")}.");
         }
     }
 }
