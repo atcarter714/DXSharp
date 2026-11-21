@@ -41,7 +41,7 @@ public sealed unsafe partial class GraphicsDevice {
     public bool SupportsRaytracing {
         get {
             D3D12_FEATURE_DATA_D3D12_OPTIONS5 options = default;
-            int hr = Native.Interface.CheckFeatureSupport( D3D12_FEATURE.D3D12_FEATURE_D3D12_OPTIONS5, &options, (uint)sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS5) );
+            int hr = QueryFeatureSupport( D3D12_FEATURE.D3D12_FEATURE_D3D12_OPTIONS5, &options, (uint)sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS5) );
             if ( hr == unchecked((int)0x80070057) ) return false;
             Results.Check( hr, "CheckFeatureSupport(D3D12_OPTIONS5)" );
             return options.RaytracingTier != D3D12_RAYTRACING_TIER.D3D12_RAYTRACING_TIER_NOT_SUPPORTED;

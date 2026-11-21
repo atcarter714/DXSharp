@@ -20,6 +20,15 @@ public sealed unsafe partial class GraphicsDevice : GraphicsObject {
     internal override ComReference Retain( ) => Native.Retain( );
     internal GraphicsDevice Clone( ) => new( Native.Clone( ), _options, AdapterName ) { DeviceIdentity = DeviceIdentity };
 
+    // The generated constant comes from the same pinned Agility metadata used to build Native.
+    // Query failure is returned unchanged; only E_NOINTERFACE permits the older API path.
+    internal int QueryFeatureSupport( D3D12_FEATURE feature, void* data, uint size ) {
+        if ( Native.TryQuery<ID3D12Device16>( typeof(ID3D12Device16).GUID, out var versioned ) ) {
+            using ( versioned ) return versioned!.Interface.CheckFeatureSupport1( feature, data, size, PInvoke.D3D12_SDK_VERSION );
+        }
+        return Native.Interface.CheckFeatureSupport( feature, data, size );
+    }
+
     /// <summary>Creates a device without changing global Agility configuration.</summary>
     public static GraphicsDevice Create( DeviceOptions? options = null ) {
         NativeRuntime.Initialize( );
@@ -50,7 +59,7 @@ public sealed unsafe partial class GraphicsDevice : GraphicsObject {
             Guid deviceFactoryId = typeof(ID3D12DeviceFactory).GUID;
             string sdkPath = Path.Combine( AppContext.BaseDirectory, "D3D12" ) + Path.DirectorySeparatorChar;
             using var path = new Utf8String( sdkPath );
-            Results.Check( configuration.Interface.CreateDeviceFactory( 620, new PCSTR( path.Pointer ), &deviceFactoryId, out nint deviceFactoryPointer ), "CreateDeviceFactory(Agility 620)" );
+            Results.Check( configuration.Interface.CreateDeviceFactory( PInvoke.D3D12_SDK_VERSION, new PCSTR( path.Pointer ), &deviceFactoryId, out nint deviceFactoryPointer ), "CreateDeviceFactory(Agility SDK)" );
             using var deviceFactory = ComOwner<ID3D12DeviceFactory>.Adopt( deviceFactoryPointer );
             if ( options.EnableDebugLayer ) {
                 Guid debugClass = new( "f2352aeb-dd84-49fe-b97b-a9dcfdcc1b4f" ), debugId = typeof(ID3D12Debug).GUID;
@@ -80,7 +89,7 @@ public sealed unsafe partial class GraphicsDevice : GraphicsObject {
         for ( int model = shaderModel6_10; model >= (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_5_1;
               model = model == (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_6_0 ? (int)D3D_SHADER_MODEL.D3D_SHADER_MODEL_5_1 : model - 1 ) {
             var data = new D3D12_FEATURE_DATA_SHADER_MODEL { HighestShaderModel = (D3D_SHADER_MODEL)model };
-            int result = Native.Interface.CheckFeatureSupport( D3D12_FEATURE.D3D12_FEATURE_SHADER_MODEL, &data,
+            int result = QueryFeatureSupport( D3D12_FEATURE.D3D12_FEATURE_SHADER_MODEL, &data,
                 (uint)sizeof(D3D12_FEATURE_DATA_SHADER_MODEL) );
             if ( result == invalidArgument ) continue;
             Results.Check( result, "CheckFeatureSupport(SHADER_MODEL)" );

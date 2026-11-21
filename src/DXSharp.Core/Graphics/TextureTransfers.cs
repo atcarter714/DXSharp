@@ -120,10 +120,10 @@ public sealed unsafe partial class GraphicsDevice {
         if ( descriptors.Kind != DescriptorKind.Resource || !descriptors.ShaderVisible ) throw new ArgumentException( "Use a shader-visible resource descriptor pool.", nameof(descriptors) );
         var native = description.NativeDescription( );
         D3D12_FEATURE_DATA_FORMAT_INFO info = new( ) { Format = description.Format };
-        Results.Check( Native.Interface.CheckFeatureSupport( D3D12_FEATURE.D3D12_FEATURE_FORMAT_INFO, &info, (uint)sizeof(D3D12_FEATURE_DATA_FORMAT_INFO) ), "CheckFeatureSupport(format planes)" );
+        Results.Check( QueryFeatureSupport( D3D12_FEATURE.D3D12_FEATURE_FORMAT_INFO, &info, (uint)sizeof(D3D12_FEATURE_DATA_FORMAT_INFO) ), "CheckFeatureSupport(format planes)" );
         if ( info.PlaneCount != 1 ) throw new NotSupportedException( "This texture transfer contract supports single-plane color formats." );
         D3D12_FEATURE_DATA_FORMAT_SUPPORT support = new( ) { Format = description.Format };
-        Results.Check( Native.Interface.CheckFeatureSupport( D3D12_FEATURE.D3D12_FEATURE_FORMAT_SUPPORT, &support, (uint)sizeof(D3D12_FEATURE_DATA_FORMAT_SUPPORT) ), "CheckFeatureSupport(texture format)" );
+        Results.Check( QueryFeatureSupport( D3D12_FEATURE.D3D12_FEATURE_FORMAT_SUPPORT, &support, (uint)sizeof(D3D12_FEATURE_DATA_FORMAT_SUPPORT) ), "CheckFeatureSupport(texture format)" );
         if ( (support.Support1 & D3D12_FORMAT_SUPPORT1.D3D12_FORMAT_SUPPORT1_TEXTURE2D) == 0 ||
              (support.Support1 & (D3D12_FORMAT_SUPPORT1.D3D12_FORMAT_SUPPORT1_SHADER_LOAD | D3D12_FORMAT_SUPPORT1.D3D12_FORMAT_SUPPORT1_SHADER_SAMPLE)) == 0 )
             throw new NotSupportedException( "The device cannot use this format as a sampled Texture2D." );
