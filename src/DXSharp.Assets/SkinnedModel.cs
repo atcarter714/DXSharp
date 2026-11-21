@@ -578,13 +578,13 @@ public sealed class SkinnedModel
                 nodes, roots, sourceVertices, indices, joints, inverseBind,
                 baseColor, metallic, roughness, animations);
             if (materialIndex >= 0) {
-                var mat = _root.GetProperty("materials")[materialIndex];
-                if (mat.TryGetProperty("pbrMetallicRoughness", out var pbr) && pbr.TryGetProperty("baseColorFactor", out var factor))
+                var settings = _root.GetProperty("materials")[materialIndex];
+                if (settings.TryGetProperty("pbrMetallicRoughness", out var pbr) && pbr.TryGetProperty("baseColorFactor", out var factor))
                     asset.BaseColorFactor = new(factor[0].GetSingle(),factor[1].GetSingle(),factor[2].GetSingle(),factor[3].GetSingle());
-                if (mat.TryGetProperty("normalTexture",out var normalSettings) && normalSettings.TryGetProperty("scale",out var scale)) asset.NormalScale=scale.GetSingle();
-                if (mat.TryGetProperty("occlusionTexture",out var aoSettings) && aoSettings.TryGetProperty("strength",out var strength)) asset.OcclusionStrength=strength.GetSingle();
-                foreach (var slot in new[]{"normalTexture","occlusionTexture"}) if(mat.TryGetProperty(slot,out var texture) && texture.TryGetProperty("texCoord",out var set) && set.GetInt32()!=0) throw new NotSupportedException("This material path supports TEXCOORD_0 only.");
-                if(mat.TryGetProperty("pbrMetallicRoughness",out var materialPbr)) foreach(var slot in new[]{"baseColorTexture","metallicRoughnessTexture"}) if(materialPbr.TryGetProperty(slot,out var texture) && texture.TryGetProperty("texCoord",out var set) && set.GetInt32()!=0) throw new NotSupportedException("This material path supports TEXCOORD_0 only.");
+                if (settings.TryGetProperty("normalTexture",out var normalSettings) && normalSettings.TryGetProperty("scale",out var scale)) asset.NormalScale=scale.GetSingle();
+                if (settings.TryGetProperty("occlusionTexture",out var aoSettings) && aoSettings.TryGetProperty("strength",out var strength)) asset.OcclusionStrength=strength.GetSingle();
+                foreach (var slot in new[]{"normalTexture","occlusionTexture"}) if(settings.TryGetProperty(slot,out var texture) && texture.TryGetProperty("texCoord",out var set) && set.GetInt32()!=0) throw new NotSupportedException("This material path supports TEXCOORD_0 only.");
+                if(settings.TryGetProperty("pbrMetallicRoughness",out var materialPbr)) foreach(var slot in new[]{"baseColorTexture","metallicRoughnessTexture"}) if(materialPbr.TryGetProperty(slot,out var texture) && texture.TryGetProperty("texCoord",out var set) && set.GetInt32()!=0) throw new NotSupportedException("This material path supports TEXCOORD_0 only.");
             }
             asset._meshNodeIndex = meshNode;
             asset._normalMap = normalMap;

@@ -105,6 +105,8 @@ def qualify(configuration, runtime_major):
             # The developer shell's Platform variable must not change the built output path.
             fleet = consumer / "samples/FleetBattler/bin" / configuration / framework / "FleetBattler.dll"
             run([str(fleet), "--warp", "--mute", "--frames=14", "--view-test"], consumer, evidence / "fleet-runtime.log")
+            character = consumer / "samples/CharacterLab/bin" / configuration / framework / "CharacterLab.dll"
+            run([str(character), "--warp", "--frames=9"], consumer, evidence / "character-runtime.log")
         (evidence / "samples.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"PASS: all {len(manifest)} runnable samples consume packaged SDK {version} outside the checkout.")
 
