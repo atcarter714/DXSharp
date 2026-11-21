@@ -72,8 +72,8 @@ float4 PS(Fragment i) : SV_Target {
     if(Surface.w<0.5) N=normalize(T*mapped.x+B*mapped.y+N*mapped.z);
     else {
         float2 g=abs(frac(i.world.xz)-0.5)/max(fwidth(i.world.xz),0.0001);
-        float line=1-saturate(min(g.x,g.y));
-        albedo=lerp(float3(0.045,0.065,0.085),float3(0.09,0.17,0.20),line*0.7);
+        float gridLine=1-saturate(min(g.x,g.y));
+        albedo=lerp(float3(0.045,0.065,0.085),float3(0.09,0.17,0.20),gridLine*0.7);
         orm=float3(1,1,0);ao=1;
     }
     float metallic=saturate(orm.b*Surface.x), roughness=clamp(orm.g*Surface.y,0.06,1);
