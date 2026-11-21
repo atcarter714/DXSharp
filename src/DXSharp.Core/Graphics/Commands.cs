@@ -246,6 +246,14 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
             Native.Interface.SetGraphicsRoot32BitConstants( 0, (uint)values.Length, pointer, destinationOffset );
     }
 
+    /// <summary>Binds a 256-byte-aligned root constant-buffer view and retains its backing resource. The shader controls the interpreted layout.</summary>
+    public void SetGraphicsConstantBuffer(uint parameterIndex, GpuResource buffer, ulong byteOffset = 0) {
+        RequireDirectRecording(); RequireSameDevice(buffer);
+        if (buffer.Memory == BufferMemory.Readback || byteOffset % 256 != 0) throw new ArgumentException("Use GPU-readable constant storage with a 256-byte-aligned offset.", nameof(byteOffset));
+        buffer.ValidateRange(byteOffset, 256); Track(buffer);
+        Native.Interface.SetGraphicsRootConstantBufferView(parameterIndex, checked(buffer.GpuAddress + byteOffset));
+    }
+
     /// <summary>Binds a structured or raw buffer to t0 for a graphics buffer root signature.</summary>
     public void SetGraphicsShaderBuffer( GpuResource buffer ) => SetGraphicsShaderBuffer( 1, buffer );
 

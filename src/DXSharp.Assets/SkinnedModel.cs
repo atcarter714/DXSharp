@@ -238,6 +238,12 @@ public sealed class SkinnedModel
     public float MetallicFactor { get; }
     /// <summary>Perceptual roughness multiplier from the material.</summary>
     public float RoughnessFactor { get; }
+    /// <summary>Linear RGBA base-color multiplier.</summary>
+    public Vector4 BaseColorFactor { get; private set; } = Vector4.One;
+    /// <summary>Scale applied to the normal map's tangent-space XY components.</summary>
+    public float NormalScale { get; private set; } = 1;
+    /// <summary>Strength of the occlusion texture, from zero to one.</summary>
+    public float OcclusionStrength { get; private set; } = 1;
     /// <summary>Imported clips; treat their channels as read-only.</summary>
     public AnimationClip[] Animations { get; }
     /// <summary>Skin attachment and joint palette ordering.</summary>
@@ -253,10 +259,9 @@ public sealed class SkinnedModel
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         if (!File.Exists(path)) throw new FileNotFoundException("Skinned GLB was not found.", path);
-        using var stream = File.OpenRead(path);
-        try { _ = SharpGLTF.Schema2.ModelRoot.ReadGLB(stream, new SharpGLTF.Schema2.ReadSettings { Validation = SharpGLTF.Validation.ValidationMode.Strict }); }
+        try { using var validation = File.OpenRead(path); _ = SharpGLTF.Schema2.ModelRoot.ReadGLB(validation, new SharpGLTF.Schema2.ReadSettings { Validation = SharpGLTF.Validation.ValidationMode.Strict }); }
         catch (SharpGLTF.Validation.ModelException error) { throw new InvalidDataException("The skinned GLB failed schema/content validation.", error); }
-        stream.Position = 0;
+        using var stream = File.OpenRead(path);
         using var reader = new GlbReader(stream);
         return reader.Read();
     }
@@ -572,6 +577,15 @@ public sealed class SkinnedModel
             var asset = new SkinnedModel(
                 nodes, roots, sourceVertices, indices, joints, inverseBind,
                 baseColor, metallic, roughness, animations);
+            if (materialIndex >= 0) {
+                var mat = _root.GetProperty("materials")[materialIndex];
+                if (mat.TryGetProperty("pbrMetallicRoughness", out var pbr) && pbr.TryGetProperty("baseColorFactor", out var factor))
+                    asset.BaseColorFactor = new(factor[0].GetSingle(),factor[1].GetSingle(),factor[2].GetSingle(),factor[3].GetSingle());
+                if (mat.TryGetProperty("normalTexture",out var normalSettings) && normalSettings.TryGetProperty("scale",out var scale)) asset.NormalScale=scale.GetSingle();
+                if (mat.TryGetProperty("occlusionTexture",out var aoSettings) && aoSettings.TryGetProperty("strength",out var strength)) asset.OcclusionStrength=strength.GetSingle();
+                foreach (var slot in new[]{"normalTexture","occlusionTexture"}) if(mat.TryGetProperty(slot,out var texture) && texture.TryGetProperty("texCoord",out var set) && set.GetInt32()!=0) throw new NotSupportedException("This material path supports TEXCOORD_0 only.");
+                if(mat.TryGetProperty("pbrMetallicRoughness",out var materialPbr)) foreach(var slot in new[]{"baseColorTexture","metallicRoughnessTexture"}) if(materialPbr.TryGetProperty(slot,out var texture) && texture.TryGetProperty("texCoord",out var set) && set.GetInt32()!=0) throw new NotSupportedException("This material path supports TEXCOORD_0 only.");
+            }
             asset._meshNodeIndex = meshNode;
             asset._normalMap = normalMap;
             asset._ormMap = ormMap; asset._occlusionMap = occlusionMap;

@@ -44,16 +44,18 @@ public sealed unsafe class SkinnedModelRenderer : IDisposable {
     private readonly Mesh _mesh, _floor;
     private readonly RootSignature _root;
     private readonly PipelineState _pipeline;
+    private readonly ulong _sceneOffset;
     private bool _disposed;
     [StructLayout(LayoutKind.Sequential)]
     private struct Joint { public Matrix4x4 Pose, Normal; }
     [StructLayout(LayoutKind.Sequential)]
-    private struct Scene { public Matrix4x4 Wvp, World, Normal; public Vector4 Surface, Camera; }
+    private struct Scene { public Matrix4x4 Wvp, World, Normal; public Vector4 Surface, Camera, BaseFactor, MaterialSettings; }
     /// <summary>Creates resident geometry and materials. Initialization performs one upload submission and wait.</summary>
     public SkinnedModelRenderer(GraphicsDevice device, ShaderCompiler compiler, SkinnedModel model, int frameSlots=2) {
         ArgumentNullException.ThrowIfNull(device); ArgumentNullException.ThrowIfNull(compiler); ArgumentNullException.ThrowIfNull(model);
         if(frameSlots is <1 or >3) throw new ArgumentOutOfRangeException(nameof(frameSlots));
         _model=model; _palette=new Matrix4x4[model.Skin.Joints.Length]; _joints=new Joint[_palette.Length+1]; _frames=new GpuResource[frameSlots];
+        _sceneOffset = ((ulong)_joints.Length*128+255)&~255UL;
         try {
             _root=Own(CreateSignature(device));
             string shader=ReadShader();
@@ -77,7 +79,7 @@ public sealed unsafe class SkinnedModelRenderer : IDisposable {
             SkinnedMeshVertex Floor(float x,float z,float u,float v)=>new(new(x,0,z),Vector3.UnitY,new(1,0,0,1),new(u,v),new(1,0,0,0),identity,identity,identity,identity);
             _floor=Own(device.CreateMesh<SkinnedMeshVertex>(upload,[Floor(-5,-5,0,0),Floor(-5,5,0,5),Floor(5,5,5,5),Floor(5,-5,5,0)],new ushort[]{0,1,2,0,2,3}));
             upload.Close();queue.Wait(queue.Submit(upload));
-            for(int i=0;i<_frames.Length;++i) _frames[i]=Own(device.CreateBuffer(checked((ulong)_joints.Length*128),BufferMemory.Upload));
+            for(int i=0;i<_frames.Length;++i) _frames[i]=Own(device.CreateBuffer(checked(_sceneOffset+512),BufferMemory.Upload));
         } catch { Dispose();throw; }
     }
     /// <summary>Records a skinned model and optional reference grid using a completed frame slot. Matrices use System.Numerics row-vector conventions.</summary>
@@ -93,12 +95,12 @@ public sealed unsafe class SkinnedModelRenderer : IDisposable {
         _joints[^1]=new(){Pose=Matrix4x4.Identity,Normal=Matrix4x4.Identity};
         _frames[frameSlot].Write<Joint>(_joints);
         commands.SetGraphicsPipeline(_pipeline);commands.SetGraphicsShaderBuffer(1,_frames[frameSlot]);commands.SetGraphicsTextureTables(2,_textures);
-        if(drawGrid) { Scene floor=new(){Wvp=viewProjection,World=Matrix4x4.Identity,Normal=Matrix4x4.Identity,Surface=new(0,1,1,1),Camera=new(camera,exposure)}; SetScene(commands,ref floor);commands.DrawMesh(_floor); }
+        if(drawGrid) { Scene floor=new(){Wvp=viewProjection,World=Matrix4x4.Identity,Normal=Matrix4x4.Identity,Surface=new(0,1,1,1),Camera=new(camera,exposure),BaseFactor=Vector4.One,MaterialSettings=Vector4.One}; SetScene(commands,ref floor,_frames[frameSlot],_sceneOffset);commands.DrawMesh(_floor); }
         if(!Matrix4x4.Invert(world,out var inverseWorld)) throw new ArgumentException("Singular world transform.",nameof(world));
-        Scene scene=new(){Wvp=world*viewProjection,World=world,Normal=Matrix4x4.Transpose(inverseWorld),Surface=new(_model.MetallicFactor,_model.RoughnessFactor,1,0),Camera=new(camera,exposure)};
-        SetScene(commands,ref scene);commands.DrawMesh(_mesh);
+        Scene scene=new(){Wvp=world*viewProjection,World=world,Normal=Matrix4x4.Transpose(inverseWorld),Surface=new(_model.MetallicFactor,_model.RoughnessFactor,1,0),Camera=new(camera,exposure),BaseFactor=_model.BaseColorFactor,MaterialSettings=new(_model.NormalScale,_model.OcclusionStrength,0,0)};
+        SetScene(commands,ref scene,_frames[frameSlot],_sceneOffset+256);commands.DrawMesh(_mesh);
     }
-    private static void SetScene(GraphicsCommandList commands,ref Scene scene)=>commands.SetGraphicsConstants(MemoryMarshal.Cast<Scene,uint>(MemoryMarshal.CreateReadOnlySpan(ref scene,1)));
+    private static void SetScene(GraphicsCommandList commands,ref Scene scene,GpuResource buffer,ulong offset) { buffer.Write<Scene>(MemoryMarshal.CreateReadOnlySpan(ref scene,1),offset); commands.SetGraphicsConstantBuffer(0,buffer,offset); }
     private T Own<T>(T value) where T:IDisposable { _owners.Add(value);return value; }
     private static ulong UploadBytes(SkinnedModel model) {
         ulong size=0;ModelImage?[] images=[model.BaseColor,model.NormalMap,model.MetallicRoughnessMap,model.OcclusionMap];
@@ -111,7 +113,7 @@ public sealed unsafe class SkinnedModelRenderer : IDisposable {
     }
     private static RootSignature CreateSignature(GraphicsDevice device) {
         D3D12_ROOT_PARAMETER* p=stackalloc D3D12_ROOT_PARAMETER[6];new Span<D3D12_ROOT_PARAMETER>(p,6).Clear();
-        p[0].ParameterType=D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;p[0].Anonymous.Constants.Num32BitValues=56;
+        p[0].ParameterType=D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_CBV;
         p[1].ParameterType=D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_SRV;p[1].ShaderVisibility=D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_VERTEX;p[1].Anonymous.Descriptor.RegisterSpace=1;
         D3D12_DESCRIPTOR_RANGE* ranges=stackalloc D3D12_DESCRIPTOR_RANGE[4];new Span<D3D12_DESCRIPTOR_RANGE>(ranges,4).Clear();
         for(int i=0;i<4;++i) {

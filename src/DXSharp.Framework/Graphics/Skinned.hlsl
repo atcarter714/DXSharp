@@ -38,6 +38,8 @@ cbuffer Scene : register(b0) {
     row_major float4x4 NormalToWorld;
     float4 Surface;
     float4 Camera;
+    float4 BaseFactor;
+    float4 MaterialSettings;
 };
 Texture2D<float4> BaseColor : register(t0);
 Texture2D<float4> NormalMap : register(t1);
@@ -63,9 +65,10 @@ float4 PS(Fragment i) : SV_Target {
     float3 T=normalize(i.tangent.xyz-N*dot(i.tangent.xyz,N));
     float3 B=cross(N,T)*i.tangent.w;
     float3 mapped=NormalMap.Sample(MaterialSampler,i.uv).xyz*2-1;
-    float3 albedo=BaseColor.Sample(MaterialSampler,i.uv).rgb;
+    float3 albedo=BaseColor.Sample(MaterialSampler,i.uv).rgb*BaseFactor.rgb;
     float3 orm=MetallicRoughness.Sample(MaterialSampler,i.uv).rgb;
-    float ao=Occlusion.Sample(MaterialSampler,i.uv).r;
+    float ao=lerp(1,Occlusion.Sample(MaterialSampler,i.uv).r,MaterialSettings.y);
+    mapped.xy*=MaterialSettings.x;
     if(Surface.w<0.5) N=normalize(T*mapped.x+B*mapped.y+N*mapped.z);
     else {
         float2 g=abs(frac(i.world.xz)-0.5)/max(fwidth(i.world.xz),0.0001);
