@@ -163,6 +163,7 @@ internal static class Program {
             Check( Native.Destroyed( ) >= 2004, "native destructor accounting" );
             AllocationQualification.Run( );
             AssetQualification.Run( );
+            CharacterQualification.RunPortable();
             FleetQualification.Run( );
             if ( OperatingSystem.IsWindows( ) ) MeshQualification.Run( );
             Console.WriteLine( $"PASS: {_checks} checks; {Native.Destroyed( )} native objects destroyed; no live objects." );

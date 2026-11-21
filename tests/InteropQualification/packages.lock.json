@@ -30,6 +30,13 @@
           "Microsoft.AI.DirectML": "[1.15.4, 1.15.4]"
         }
       },
+      "dxsharp.framework": {
+        "type": "Project",
+        "dependencies": {
+          "DXSharp.Assets": "[0.4.0-preview.4, )",
+          "DXSharp.Core": "[0.4.0-preview.4, )"
+        }
+      },
       "dxsharp.native": {
         "type": "Project"
       },
@@ -91,6 +98,13 @@
         "dependencies": {
           "DXSharp.Core": "[0.4.0-preview.4, )",
           "Microsoft.AI.DirectML": "[1.15.4, 1.15.4]"
+        }
+      },
+      "dxsharp.framework": {
+        "type": "Project",
+        "dependencies": {
+          "DXSharp.Assets": "[0.4.0-preview.4, )",
+          "DXSharp.Core": "[0.4.0-preview.4, )"
         }
       },
       "dxsharp.native": {

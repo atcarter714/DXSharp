@@ -210,4 +210,16 @@ public sealed unsafe partial class GraphicsCommandList {
         RequireDirectRecording( ); RequireSameDevice( texture ); Track( texture.Resource );
         SetDescriptorHeaps( texture.View ); SetGraphicsDescriptorTable( parameterIndex, texture.View );
     }
+    /// <summary>Binds consecutive single-texture root tables in one shared heap, preserving all material tables and retaining each resource/range.</summary>
+    public void SetGraphicsTextureTables(uint firstParameter, ReadOnlySpan<Texture2D> textures) {
+        RequireDirectRecording();
+        if (textures.IsEmpty) throw new ArgumentException("Supply at least one texture.", nameof(textures));
+        foreach (var texture in textures) {
+            RequireSameDevice(texture);
+            if (!ReferenceEquals(texture.View.Heap, textures[0].View.Heap)) throw new ArgumentException("Material textures must share one descriptor heap.", nameof(textures));
+        }
+        SetDescriptorHeaps(textures[0].View);
+        for (int i=0;i<textures.Length;++i) { Track(textures[i].Resource); SetGraphicsDescriptorTable(checked(firstParameter+(uint)i), textures[i].View); }
+    }
+
 }

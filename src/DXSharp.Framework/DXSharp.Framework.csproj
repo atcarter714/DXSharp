@@ -1,10 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>$(DotNetTargets)</TargetFramework>
-    <Description>Experimental DXSharp framework helpers.</Description>
+    <TargetFrameworks>$(DXSharpTargetFrameworks)</TargetFrameworks>
+    <Description>Game timing, lifecycle, animation and rendering services for DXSharp.</Description>
+    <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591;CS1570;CS1572;CS1573;CS1574;CS1584;CS1658</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../DXSharp.Dxc/DXSharp.Dxc.csproj" />
-    <ProjectReference Include="../DXSharp/DXSharp.csproj" />
+    <EmbeddedResource Include="Graphics/Skinned.hlsl" />
+    <ProjectReference Include="../DXSharp.Core/DXSharp.Core.csproj" />
+    <ProjectReference Include="../DXSharp.Assets/DXSharp.Assets.csproj" />
   </ItemGroup>
 </Project>

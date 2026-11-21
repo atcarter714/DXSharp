@@ -246,13 +246,26 @@ public sealed unsafe partial class GraphicsCommandList : GraphicsObject {
             Native.Interface.SetGraphicsRoot32BitConstants( 0, (uint)values.Length, pointer, destinationOffset );
     }
 
+    /// <summary>Binds a 256-byte-aligned root constant-buffer view and retains its backing resource. The shader controls the interpreted layout.</summary>
+    public void SetGraphicsConstantBuffer(uint parameterIndex, GpuResource buffer, ulong byteOffset = 0) {
+        RequireDirectRecording(); RequireSameDevice(buffer);
+        if (buffer.Memory == BufferMemory.Readback || byteOffset % 256 != 0) throw new ArgumentException("Use GPU-readable constant storage with a 256-byte-aligned offset.", nameof(byteOffset));
+        buffer.ValidateRange(byteOffset, 256); Track(buffer);
+        Native.Interface.SetGraphicsRootConstantBufferView(parameterIndex, checked(buffer.GpuAddress + byteOffset));
+    }
+
     /// <summary>Binds a structured or raw buffer to t0 for a graphics buffer root signature.</summary>
-    public void SetGraphicsShaderBuffer( GpuResource buffer ) {
+    public void SetGraphicsShaderBuffer( GpuResource buffer ) => SetGraphicsShaderBuffer( 1, buffer );
+
+    /// <summary>Binds a buffer SRV at an explicit graphics root parameter and aligned byte offset, retaining its resource through retirement.</summary>
+    public void SetGraphicsShaderBuffer( uint parameterIndex, GpuResource buffer, ulong byteOffset = 0 ) {
         Recording( );
         if ( buffer.SizeInBytes == 0 || buffer.Memory == BufferMemory.Readback )
             throw new ArgumentException( "A shader-readable buffer is required.", nameof(buffer) );
         Track( buffer );
-        Native.Interface.SetGraphicsRootShaderResourceView( 1, buffer.GpuAddress );
+        buffer.ValidateRange( byteOffset, 1 );
+        if (byteOffset % 16 != 0) throw new ArgumentException("Buffer SRV offset must be 16-byte aligned.", nameof(byteOffset));
+        Native.Interface.SetGraphicsRootShaderResourceView( parameterIndex, checked(buffer.GpuAddress + byteOffset) );
     }
 
     /// <summary>Binds a graphics root signature and pipeline.</summary>

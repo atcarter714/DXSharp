@@ -5,6 +5,6 @@
     <Description>WinForms desktop frame hosting for the modern DXSharp graphics API.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../DXSharp.Core/DXSharp.Core.csproj" />
+    <ProjectReference Include="../DXSharp.Framework/DXSharp.Framework.csproj" />
   </ItemGroup>
 </Project>

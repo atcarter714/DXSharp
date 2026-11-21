@@ -24,7 +24,7 @@ try {
         try {
             $assemblies = @($archive.Entries | Where-Object FullName -CLike "lib/*/$name.dll")
             if ($assemblies.Count -eq 0) { throw "No library assembly found in $path" }
-            if ($name -in @('DXSharp.Native', 'DXSharp.Core', 'DXSharp.DirectML', 'DXSharp.Framework.Desktop', 'DXSharp.Assets')) {
+            if ($name -in @('DXSharp.Native', 'DXSharp.Core', 'DXSharp.DirectML', 'DXSharp.Framework.Desktop', 'DXSharp.Assets', 'DXSharp.Framework')) {
                 foreach ($major in '10', '11') {
                     # NuGet normalizes the trailing zero of the Windows platform version.
                     $framework = if ($name -eq 'DXSharp.Assets') { "net$major.0" } else { "net$major.0-windows10.0.26100" }
@@ -59,6 +59,8 @@ try {
     <PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="DXSharp" Version="$version" />
+    <PackageReference Include="DXSharp.Dxc" Version="$version" />
     <PackageReference Include="DXSharp.Framework" Version="$version" />
     <PackageReference Include="DXSharp.Framework.Desktop" Version="$version" />
     <PackageReference Include="DXSharp.DirectML" Version="$version" />

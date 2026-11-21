@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Numerics;
 using DXSharp.Graphics;
+using Windows.Win32;
+using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace DXSharp.Framework.Desktop;
 
@@ -74,7 +76,7 @@ public static class DesktopGame {
         using var second = options.FramesInFlight == 2 ? new FrameSlot( device ) : null;
         using var swap = device.CreateSwapChain( queue, window.Handle, (uint)size.Width, (uint)size.Height );
         using var heap = device.CreateRenderTargetHeap( swap.BufferCount );
-        using var timer = new System.Windows.Forms.Timer { Interval = 1 };
+        using var timer = new System.Windows.Forms.Timer { Interval = 16 };
         var buffers = new GpuResource?[swap.BufferCount];
         var targets = new RenderTargetView[swap.BufferCount];
         DepthTarget? depth = null;
@@ -82,10 +84,12 @@ public static class DesktopGame {
         int frames = 0, resizes = 0;
         TimeSpan previous = TimeSpan.Zero;
         Exception? frameFailure = null;
+        bool rendering = false;
 
         try {
             AcquireBuffers( );
-            timer.Tick += ( _, _ ) => {
+            void RenderFrame(object? sender, EventArgs args) {
+                if (rendering) return;
                 if ( window.CloseRequested ) {
                     // Keep the HWND and its message pump alive until the presentation queue drains.
                     var drain = drainQueue( );
@@ -106,6 +110,7 @@ public static class DesktopGame {
                 if ( clientSize.Width <= 0 || clientSize.Height <= 0 ) return;
                 // Native presentation can dispatch messages. Keep nested timer ticks out of the frame.
                 timer.Stop( );
+                rendering = true;
                 try {
                     bool resized = clientSize != size;
                     if ( resized ) queue.WaitIdle( );
@@ -142,11 +147,22 @@ public static class DesktopGame {
                     if ( !window.CloseRequested && window.IsHandleCreated && !window.Disposing &&
                          options.FrameLimit > 0 && frames >= options.FrameLimit ) window.Close( );
                 } finally {
+                    rendering = false;
                     if ( window.IsHandleCreated && !window.Disposing ) timer.Start( );
                 }
-            };
+            }
+            void RenderIdle(object? sender, EventArgs args) {
+                // Present supplies pacing. Drain native messages before recording another frame.
+                while (!rendering && !window.CloseRequested && window.IsHandleCreated && !window.Disposing &&
+                       window.WindowState != FormWindowState.Minimized &&
+                       !PInvoke.PeekMessageW(out _, default, 0, 0, PEEK_MESSAGE_REMOVE_TYPE.PM_NOREMOVE))
+                    RenderFrame(null, EventArgs.Empty);
+            }
+            timer.Tick += RenderFrame; // Retain a wakeup for close-drain and minimized-state bookkeeping.
+            Application.Idle += RenderIdle;
             timer.Start( );
-            Application.Run( window );
+            try { Application.Run( window ); }
+            finally { Application.Idle -= RenderIdle; timer.Tick -= RenderFrame; }
             return new( frames, resizes );
         } catch ( Exception error ) {
             frameFailure = error;

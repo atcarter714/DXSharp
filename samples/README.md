@@ -18,3 +18,5 @@ Open `DXSharp.sln` or run a project with `dotnet run --project samples/<name> -c
 | [DxrHelloWorld](DxrHelloWorld) | DXR acceleration structures, shader table, and image readback |
 
 Every runnable sample project is included in DXSharp.sln and consumes the current SDK through project references. AdvancedSample remains reference source without a project file.
+
+CharacterLab adds persistent GPU skinning, animation playback and material maps; see [CharacterLab](CharacterLab/README.md).

@@ -11,6 +11,8 @@
     <ProjectReference Include="../../src/DXSharp.Core/DXSharp.Core.csproj" />
     <ProjectReference Include="../../src/DXSharp.DirectML/DXSharp.DirectML.csproj" />
     <ProjectReference Include="../../src/DXSharp.Assets/DXSharp.Assets.csproj" />
+    <ProjectReference Include="../../src/DXSharp.Framework/DXSharp.Framework.csproj" />
+    <None Include="../../samples/CharacterLab/Assets/animatedKnightInPlateArmour.glb" Link="CharacterLab/knight.glb" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Compile Include="../../samples/FleetBattler/ShipDesignerHud.cs" Link="Fleet/ShipDesignerHud.cs" />
     <Compile Include="../../samples/FleetBattler/GameCatalog.cs" Link="Fleet/GameCatalog.cs" />
     <Compile Include="../../samples/FleetBattler/ResearchCatalog.cs" Link="Fleet/ResearchCatalog.cs" />

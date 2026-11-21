@@ -48,3 +48,7 @@ Preview 3 adds bounded descriptor pools and upload rings with per-recording allo
 ## Preview 4 development: texture transfers
 
 Bounded readback rings, typed single-plane sampled Texture2D resources, explicit mip/array/cube descriptions, pitched subresource upload/readback and BC block transfer are implemented in the next increment. Native format/plane support is queried. DDS parsing, generated mips, depth/video planes and GPU-side queue handoffs remain outside this increment. See [texture transfers](tutorials/09-texture-transfers.md); runtime qualification is recorded by the exact CI commit.
+
+## Preview 4 development: framework and character workload
+
+Framework is now a modern Core/Assets consumer, with GameClock, AnimationPlayer and a persistent GPU skinning/material renderer. Its former experimental public helpers are removed in an explicit breaking migration; see [Framework vision](Framework-Vision.md). CharacterLab uses project references in the checkout and the same isolated package qualification as every other sample. Native camera/message bindings are shared through DXSharp.Native; Desktop schedules frames from idle with Present pacing and retains a timer wakeup for minimized/closing states. Qualification status belongs to the exact CI run, not this description.
