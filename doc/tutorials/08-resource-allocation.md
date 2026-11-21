@@ -49,4 +49,6 @@ For custom root signatures, `SetDescriptorHeaps`, `SetGraphicsDescriptorTable`, 
 
 ## Current boundary
 
-This increment provides bounded descriptor ranges, upload slices, managed recording leases, SRV writes, descriptor table binding and shared-pool RGBA8 texture uploads. It does not introduce a placed-resource memory allocator, a readback ring, general texture/mip/DDS loading, or GPU-side cross-queue handoff APIs. It does not pool the older convenience texture overload automatically; consumers opt in by supplying their pools.
+This increment provides bounded descriptor ranges, upload slices, managed recording leases, SRV writes, descriptor table binding and shared-pool RGBA8 texture uploads. It does not introduce a placed-resource memory allocator, DDS loading, or GPU-side cross-queue handoff APIs. It does not pool the older convenience texture overload automatically; consumers opt in by supplying their pools.
+
+Readback rings and general mip/array/cube transfers are covered in [the next lesson](09-texture-transfers.md).

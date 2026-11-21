@@ -12,7 +12,7 @@
       "dxsharp.core": {
         "type": "Project",
         "dependencies": {
-          "DXSharp.Native": "[0.4.0-preview.3, )",
+          "DXSharp.Native": "[0.4.0-preview.4, )",
           "Microsoft.Direct3D.D3D12": "[1.620.2, 1.620.2]",
           "Microsoft.Direct3D.DXC": "[1.9.2609.5, 1.9.2609.5]"
         }
@@ -20,7 +20,7 @@
       "dxsharp.framework.desktop": {
         "type": "Project",
         "dependencies": {
-          "DXSharp.Core": "[0.4.0-preview.3, )"
+          "DXSharp.Core": "[0.4.0-preview.4, )"
         }
       },
       "dxsharp.native": {

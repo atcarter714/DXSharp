@@ -44,3 +44,7 @@ Recording remains single-threaded per list. Applications synchronize owner dispo
 ## Allocation infrastructure in preview 3
 
 Preview 3 adds bounded descriptor pools and upload rings with per-recording allocation leases. See [resource allocation](tutorials/08-resource-allocation.md) for ownership, no-overwrite and exhaustion contracts. A retired recording must be reset before another submission because its suballocations may have been reclaimed. Multi-queue lifetime tracking does not supply queue ordering or resource barriers. Readback rings and general texture/pipeline expansion remain planned.
+
+## Preview 4 development: texture transfers
+
+Bounded readback rings, typed single-plane sampled Texture2D resources, explicit mip/array/cube descriptions, pitched subresource upload/readback and BC block transfer are implemented in the next increment. Native format/plane support is queried. DDS parsing, generated mips, depth/video planes and GPU-side queue handoffs remain outside this increment. See [texture transfers](tutorials/09-texture-transfers.md); runtime qualification is recorded by the exact CI commit.

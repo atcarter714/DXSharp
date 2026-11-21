@@ -13,9 +13,10 @@ internal sealed class AllocationLifetime( Action release ) : IDisposable {
     private bool _released;
     internal bool IsDisposed { get { lock ( Gate ) return _disposed; } }
     internal void RequireOwner( ) => ObjectDisposedException.ThrowIf( _disposed, this );
-    internal void RequireWritable( ) {
+    internal void RequireWritable( ) => RequireIdle( );
+    internal void RequireIdle( ) {
         RequireOwner( );
-        if ( _recordings != 0 ) throw new InvalidOperationException( "The allocation is referenced by a recording or pending submission. Retire or reset those recordings before writing." );
+        if ( _recordings != 0 ) throw new InvalidOperationException( "The allocation is referenced by a recording or pending submission. Retire or reset those recordings before CPU access." );
     }
     internal IDisposable Acquire( ) {
         lock ( Gate ) { RequireOwner( ); ++_recordings; return new RecordingLease( this ); }
