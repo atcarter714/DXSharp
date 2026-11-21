@@ -1,6 +1,6 @@
 using System.Numerics;
 using Windows.Win32;
-using Windows.Win32.Foundation;
+using System.Drawing;
 
 namespace DXSharp.CharacterLab;
 
@@ -10,7 +10,7 @@ sealed class OrbitCamera
     float _pitch = 0.12f;
     float _distance = 4.0f;
     bool _wasDragging;
-    POINT _lastCursor;
+    Point _lastCursor;
     readonly Dictionary<int, bool> _lastKeyState = [];
 
     public Vector3 Eye
@@ -27,14 +27,14 @@ sealed class OrbitCamera
 
     public void Update(float elapsedSeconds)
     {
-        if (PInvoke.GetActiveWindow().Value == 0)
+        if (PInvoke.GetActiveWindow().IsNull)
         {
             _wasDragging = false;
             return;
         }
 
         bool dragging = IsDown(0x01);
-        if (dragging && PInvoke.GetCursorPos(out POINT cursor))
+        if (dragging && PInvoke.GetCursorPos(out Point cursor))
         {
             if (_wasDragging)
             {
@@ -60,6 +60,6 @@ sealed class OrbitCamera
     }
 
     static bool IsDown(int virtualKey) =>
-        PInvoke.GetActiveWindow().Value != 0 && (PInvoke.GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+        !PInvoke.GetActiveWindow().IsNull && (PInvoke.GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 
 }
