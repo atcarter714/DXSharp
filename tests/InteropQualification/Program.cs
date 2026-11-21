@@ -165,7 +165,7 @@ internal static class Program {
             AssetQualification.Run( );
             CharacterQualification.RunPortable();
             FleetQualification.Run( );
-            if ( OperatingSystem.IsWindows( ) ) MeshQualification.Run( );
+            if ( OperatingSystem.IsWindows( ) ) { FeatureQueryQualification.Run(); MeshQualification.Run( ); }
             Console.WriteLine( $"PASS: {_checks} checks; {Native.Destroyed( )} native objects destroyed; no live objects." );
             return 0;
         } catch ( Exception exception ) { Console.Error.WriteLine( exception ); return 1; }

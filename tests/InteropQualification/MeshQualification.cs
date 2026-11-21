@@ -58,7 +58,8 @@ internal static unsafe class MeshQualification {
         RenderReceiver( device, compiler );
         var diagnostics = device.GetDiagnostics( );
         if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any(
-            message => message.Contains( "SEVERITY_ERROR" ) || message.Contains( "SEVERITY_CORRUPTION" ) ) )
+            message => message.Contains( "SEVERITY_ERROR" ) || message.Contains( "SEVERITY_CORRUPTION" ) ||
+                message.Contains( "CheckFeatureSupport is superseded", StringComparison.Ordinal ) ) )
             throw new InvalidOperationException( $"Mesh validation failed: {string.Join( Environment.NewLine, diagnostics.Messages )}" );
         Console.WriteLine( "PASS: indexed mesh pixels, UInt16/UInt32, instance streams, and early owner disposal." );
     }
