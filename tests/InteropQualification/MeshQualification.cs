@@ -46,6 +46,7 @@ internal static unsafe class MeshQualification {
         ValidateArguments( device, vertex, pixel );
         ValidateRecordingOwnership( device );
         GpuAllocationQualification.Run( device );
+        TextureTransferQualification.Run( device );
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: true );
         Render( device, vertex, pixel, instanceStepRate: 1, splitIndexFormats: false );
         Render( device, vertex, pixel, instanceStepRate: 2, splitIndexFormats: false );

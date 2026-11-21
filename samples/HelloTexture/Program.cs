@@ -1,12 +1,14 @@
 using DXSharp.Framework.Desktop;
 using DXSharp.Graphics;
 using DXSharp.Shaders;
+using Windows.Win32.Graphics.Dxgi.Common;
 
 namespace HelloTexture;
 
 internal static class Program {
     // Based on Microsoft's D3D12 Hello Texture sample. Vertex data is generated in HLSL.
     private const string Shader = """
+        cbuffer Options : register(b0) { float MipLevel; };
         Texture2D<float4> Checker : register(t0);
         SamplerState PointClamp : register(s0);
         struct Vertex { float4 position : SV_Position; float2 uv : TEXCOORD; };
@@ -18,7 +20,7 @@ internal static class Program {
             output.uv = uvs[id];
             return output;
         }
-        float4 PS(Vertex input) : SV_Target { return Checker.Sample(PointClamp, input.uv); }
+        float4 PS(Vertex input) : SV_Target { return Checker.SampleLevel(PointClamp, input.uv, MipLevel); }
         """;
 
     [STAThread]
@@ -39,17 +41,19 @@ internal static class Program {
         Console.WriteLine( device.AdapterName );
         using var uploadQueue = device.CreateCommandQueue( );
         using var compiler = new ShaderCompiler( );
-        using var root = device.CreateTextureRootSignature( );
+        using var root = device.CreateTextureRootSignature( 1, linearWrap: false );
         using var pipeline = device.CreateGraphicsPipeline( root, compiler.Compile( Shader, "VS", "vs_6_0" ), compiler.Compile( Shader, "PS", "ps_6_0" ) );
         const int size = 250; // Exercises row-pitch padding.
         using var descriptors = device.CreateDescriptorPool( 2 );
         using var uploadRing = device.CreateUploadRing( 1024 * 1024 );
         using var uploadAllocator = device.CreateCommandAllocator( );
         using var uploads = device.CreateCommandList( uploadAllocator );
-        using var texture = device.CreateSampledTexture2D( uploads, descriptors, uploadRing, size, size, Checkerboard( size ) );
-        byte[] alternate = Checkerboard( size );
-        for ( int i = 0; i < alternate.Length; i += 4 ) (alternate[i], alternate[i + 2]) = (alternate[i + 2], alternate[i]);
-        using var secondTexture = device.CreateSampledTexture2D( uploads, descriptors, uploadRing, size, size, alternate );
+        using var texture = device.CreateTexture2D( new(size, size, DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM, MipLevels: 3), descriptors );
+        using var secondTexture = device.CreateTexture2D( texture.Description, descriptors );
+        uploads.UploadTexture( texture, uploadRing, Mips( size, alternate: false ) );
+        uploads.UploadTexture( secondTexture, uploadRing, Mips( size, alternate: true ) );
+        uploads.Transition( texture, ResourceState.CopyDestination, ResourceState.PixelShaderResource );
+        uploads.Transition( secondTexture, ResourceState.CopyDestination, ResourceState.PixelShaderResource );
         uploads.Close( );
         uploadQueue.Wait( uploadQueue.Submit( uploads ) );
         Console.WriteLine( $"Shared texture heap: {descriptors.Capacity} descriptors; upload ring reclaimed {uploadRing.AvailableBytes} bytes." );
@@ -57,7 +61,9 @@ internal static class Program {
 
         var result = DesktopGame.Run( device, new( ) { Title = "DXSharp · Hello Texture", FrameLimit = frameLimit }, frame => {
             frame.Commands.SetGraphicsPipeline( pipeline );
-            frame.Commands.SetGraphicsTexture( (++frameIndex / 90 & 1) == 0 ? texture : secondTexture );
+            uint mip = (uint)(frameIndex++ / (frameLimit > 0 ? 1 : 90) % 3);
+            frame.Commands.SetGraphicsConstants( [BitConverter.SingleToUInt32Bits( mip )] );
+            frame.Commands.SetGraphicsTexture( (frameIndex / 270 & 1) == 0 ? texture : secondTexture, 1 );
             frame.Commands.Draw( 3 );
         } );
         var diagnostics = device.GetDiagnostics( );
@@ -66,6 +72,20 @@ internal static class Program {
         if ( frameLimit > 0 && result.Frames != frameLimit ) return 1;
         Console.WriteLine( $"HelloTexture closed cleanly after {result.Frames} frames." );
         return 0;
+    }
+
+    private static TextureSubresourceData[] Mips( int size, bool alternate ) {
+        var data = new TextureSubresourceData[3];
+        for ( int mip = 0; mip < data.Length; ++mip ) {
+            int width = Math.Max( 1, size >> mip );
+            var pixels = Checkerboard( width );
+            for ( int i = 0; i < pixels.Length; i += 4 ) {
+                if ( alternate ) (pixels[i], pixels[i + 2]) = (pixels[i + 2], pixels[i]);
+                if ( mip > 0 ) pixels[i + (mip == 1 ? 0 : 2)] = 220;
+            }
+            data[mip] = new( pixels, (uint)width * 4 );
+        }
+        return data;
     }
 
     private static byte[] Checkerboard( int size ) {

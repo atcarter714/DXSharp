@@ -11,3 +11,5 @@ The sample projects are the runnable references for these lessons. Each lesson g
 7. [Load and draw a static model](07-static-models.md)
 
 - [Descriptor pools and upload rings](08-resource-allocation.md): bounded allocation, recording leases, shared texture uploads and reclamation.
+
+- [Readback rings and texture subresources](09-texture-transfers.md): mip/array/cube uploads, pitched input, compressed block transfers and guarded CPU readback.
