@@ -17,10 +17,17 @@
           "Microsoft.Direct3D.DXC": "[1.9.2609.5, 1.9.2609.5]"
         }
       },
+      "dxsharp.framework": {
+        "type": "Project",
+        "dependencies": {
+          "DXSharp.Assets": "[0.4.0-preview.4, )",
+          "DXSharp.Core": "[0.4.0-preview.4, )"
+        }
+      },
       "dxsharp.framework.desktop": {
         "type": "Project",
         "dependencies": {
-          "DXSharp.Core": "[0.4.0-preview.4, )"
+          "DXSharp.Framework": "[0.4.0-preview.4, )"
         }
       },
       "dxsharp.native": {

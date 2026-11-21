@@ -1,0 +1,25 @@
+{
+  "asset": "animatedKnightInPlateArmour.glb",
+  "license": "CC0-1.0",
+  "licenseFile": "Assets/CC0-1.0.txt",
+  "creditsFile": "Assets/CREDITS.md",
+  "source": "https://github.com/patch-gg/anymove",
+  "runtimeFormat": "glTF 2.0 binary (GLB)",
+  "expected": {
+    "vertices": 37141,
+    "triangles": 59281,
+    "joints": 22,
+    "animations": [
+      "Idle",
+      "Walk",
+      "Walk_Root",
+      "Run",
+      "Run_Root",
+      "Attack",
+      "Hit",
+      "Jump",
+      "Kick"
+    ]
+  },
+  "sha256": "5b9423de432bd50be3e8dde47c969043af3b7d654bb045d4e7820015f8fb1ff3"
+}

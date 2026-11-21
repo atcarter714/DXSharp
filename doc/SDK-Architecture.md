@@ -111,3 +111,7 @@ The baseline was qualified with Windows and Linux native interop, Windows WARP s
 | Interop breadth | Generated COM and native lifetime qualification for the modern path | Inventory the legacy API by subsystem, add missing bindings and verify ABI and lifetime on supported architectures |
 
 Use the [DirectXTK12 component list](https://github.com/microsoft/DirectXTK12#documentation) to track toolkit capabilities and the legacy DXSharp surface to track native API coverage. Keep those acceptance criteria independent. A qualified asset workflow should ingest an authored scene, build it incrementally, package it, and render it from the packaged output on a clean consumer project.
+
+## Modern Framework development
+
+Preview 4 replaces the experimental RCW-dependent Framework helpers with shared game timing, animation and GPU-skinned rendering services. This is an explicit breaking migration of the old Framework API. Desktop now depends on Framework; Core remains independently usable. See [Framework vision and migration](Framework-Vision.md) and [CharacterLab](../samples/CharacterLab/README.md) for the current supported slice and the ordered Game Studio roadmap. Older sections above describe earlier baselines and must not be read as the current allocation/texture feature inventory; consult the support matrix and tutorial 09.

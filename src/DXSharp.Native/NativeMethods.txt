@@ -32,3 +32,8 @@ Windows.Win32.UI.Animation
 Windows.Win32.UI.Input
 Windows.Win32.UI.Input.GameInput
 Windows.Win32.UI.Input.XboxController
+
+PeekMessage
+GetAsyncKeyState
+GetActiveWindow
+GetCursorPos

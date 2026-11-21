@@ -23,7 +23,7 @@ try {
 
     Invoke-Sample 'ModernTriangle' @('run', '--project', 'samples/ModernTriangle', '-c', 'Debug', '--',
         '--warp', '--resize-test', "--evidence=artifacts/triangle-resize/net$RuntimeMajor")
-    foreach ($sample in 'BasicSample', 'HelloTexture', 'InstancedGrid', 'LitCube', 'PlanarShadows', 'StaticModelViewer') {
+    foreach ($sample in 'CharacterLab', 'BasicSample', 'HelloTexture', 'InstancedGrid', 'LitCube', 'PlanarShadows', 'StaticModelViewer') {
         Invoke-Sample $sample @('run', '--project', "samples/$sample", '-c', 'Debug', '--', '--warp', '--frames=4')
     }
     Invoke-Sample 'StaticModelViewer-textured' @('run', '--project', 'samples/StaticModelViewer', '-c', 'Debug', '--',

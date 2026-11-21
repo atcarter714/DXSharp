@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 
-SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Assets")
+SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Assets", "DXSharp.Framework")
 EXCLUDED = {"bin", "obj", "artifacts", ".vs"}
 
 

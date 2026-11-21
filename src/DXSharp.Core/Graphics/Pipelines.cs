@@ -120,7 +120,8 @@ public sealed unsafe partial class GraphicsDevice {
         }
     }
 
-    private RootSignature CreateRootSignature( in D3D12_VERSIONED_ROOT_SIGNATURE_DESC description ) {
+    /// <summary>Serializes a native root-signature description synchronously. All pointed-to parameter/range data must remain valid for this call.</summary>
+    public RootSignature CreateRootSignature( in D3D12_VERSIONED_ROOT_SIGNATURE_DESC description ) {
         int hr = SerializeRoot( description, out nint blobPointer, out nint errorPointer );
         try {
             Results.Check( hr, "SerializeVersionedRootSignature" );

@@ -63,3 +63,5 @@ For shader capability checks, run `ModernCompute` with `--latest-shader-model`. 
 Aaron Carter started DXSharp to prove that C# could support a full Direct3D 12 workflow with the feel of SlimDX and SharpDX. The original project brought up a broad set of DirectX bindings, examples, and build tools. Its hand-maintained COM wrappers also showed where ownership and interface projection needed to be simpler. The .NET 10 SDK builds on that experience with generated interop, explicit lifetimes, and repeatable GPU checks.
 
 For contributions, open an issue or a pull request with a small reproduction and the adapter, runtime, and validation details. DXSharp is [MIT licensed](LICENSE.md).
+
+The higher-level game runtime and tooling direction, including the experimental Framework migration, is documented in [Framework vision](doc/Framework-Vision.md).
