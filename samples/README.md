@@ -20,3 +20,5 @@ Open `DXSharp.sln` or run a project with `dotnet run --project samples/<name> -c
 Every runnable sample project is included in DXSharp.sln and consumes the current SDK through project references. AdvancedSample remains reference source without a project file.
 
 CharacterLab adds persistent GPU skinning, animation playback and material maps; see [CharacterLab](CharacterLab/README.md).
+
+`CharacterLab.Native` runs the same GPU-skinned scene as CharacterLab through the native Win32 host, with precompiled Framework shaders and no Windows Forms reference. Both samples participate in source and package qualification.

@@ -21,6 +21,12 @@
           "System.Text.Encoding.CodePages": "9.0.0"
         }
       },
+      "Microsoft.Direct3D.DXC": {
+        "type": "Direct",
+        "requested": "[1.9.2609.5, 1.9.2609.5]",
+        "resolved": "1.9.2609.5",
+        "contentHash": "jTWr7a2bMpqV+b0Uc7oxOo8ualplaUw3fsQ+p0kp9TwlWvvmREvt3SA4+Drl2Y0M31iscqZolrL3vpdnLoPpdg=="
+      },
       "NETStandard.Library": {
         "type": "Direct",
         "requested": "[2.0.3, )",

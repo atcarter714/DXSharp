@@ -49,6 +49,8 @@ try {
     Invoke-DotNet -Arguments @('pack', 'DXSharp.sln', '--configuration', $Configuration, '--no-build', '--no-restore', '-m:1')
     foreach ($major in '10', '11') {
         & (Join-Path $PSScriptRoot 'build/VerifyPackages.ps1') -Configuration $Configuration -RuntimeMajor $major
+        & python (Join-Path $PSScriptRoot 'build/verify_shader_build.py') --configuration $Configuration --runtime-major $major
+        if ($LASTEXITCODE -ne 0) { throw 'Shader build package qualification failed.' }
         & (Join-Path $PSScriptRoot 'build/VerifySamplePackages.ps1') -Configuration $Configuration -RuntimeMajor $major
     }
 } finally {
