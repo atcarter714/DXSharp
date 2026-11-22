@@ -17,14 +17,25 @@ try {
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($version)) {
         throw 'Unable to evaluate the package version.'
     }
-    foreach ($name in @('DXSharp', 'DXSharp.Dxc', 'DXSharp.Framework', 'DXSharp.Framework.Desktop', 'DXSharp.Native', 'DXSharp.Assets', 'DXSharp.Core', 'DXSharp.DirectML')) {
+    foreach ($name in @('DXSharp', 'DXSharp.Dxc', 'DXSharp.Framework', 'DXSharp.Framework.Desktop', 'DXSharp.Framework.Wpf', 'DXSharp.Native', 'DXSharp.Assets', 'DXSharp.Core', 'DXSharp.DirectML')) {
         $path = Join-Path $packageDirectory "$name.$version.nupkg"
         if (-not (Test-Path $path)) { throw "Missing package: $path" }
         $archive = [System.IO.Compression.ZipFile]::OpenRead($path)
         try {
+            $reader = [System.IO.StreamReader]::new($archive.GetEntry("$name.nuspec").Open())
+            try { [xml] $metadata = $reader.ReadToEnd() } finally { $reader.Dispose() }
+            $frameworkReferences = @($metadata.SelectNodes("//*[local-name()='frameworkReference']") | ForEach-Object { $_.GetAttribute('name') })
+            if ($name -eq 'DXSharp.Framework.Wpf' -and
+                ('Microsoft.WindowsDesktop.App.WPF' -notin $frameworkReferences -or 'Microsoft.WindowsDesktop.App.WindowsForms' -in $frameworkReferences)) {
+                throw 'The WPF package must declare WPF without acquiring Windows Forms.'
+            }
+            if ($name -in @('DXSharp.Native', 'DXSharp.Core', 'DXSharp.Framework', 'DXSharp.Assets') -and
+                @($frameworkReferences | Where-Object { $_ -like 'Microsoft.WindowsDesktop*' }).Count -gt 0) {
+                throw "Optional desktop framework leaked into $name."
+            }
             $assemblies = @($archive.Entries | Where-Object FullName -CLike "lib/*/$name.dll")
             if ($assemblies.Count -eq 0) { throw "No library assembly found in $path" }
-            if ($name -in @('DXSharp.Native', 'DXSharp.Core', 'DXSharp.DirectML', 'DXSharp.Framework.Desktop', 'DXSharp.Assets', 'DXSharp.Framework')) {
+            if ($name -in @('DXSharp.Native', 'DXSharp.Core', 'DXSharp.DirectML', 'DXSharp.Framework.Desktop', 'DXSharp.Framework.Wpf', 'DXSharp.Assets', 'DXSharp.Framework')) {
                 foreach ($major in '10', '11') {
                     # NuGet normalizes the trailing zero of the Windows platform version.
                     $framework = if ($name -eq 'DXSharp.Assets') { "net$major.0" } else { "net$major.0-windows10.0.26100" }

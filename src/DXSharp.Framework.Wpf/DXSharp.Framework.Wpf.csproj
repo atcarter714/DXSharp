@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>$(DXSharpTargetFrameworks)</TargetFrameworks>
+    <UseWPF>true</UseWPF>
+    <Description>Optional WPF HWND hosting for the modern DXSharp graphics framework.</Description>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DXSharp.Framework/DXSharp.Framework.csproj" />
+  </ItemGroup>
+</Project>

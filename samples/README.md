@@ -23,4 +23,6 @@ CharacterLab adds persistent GPU skinning, animation playback and material maps;
 
 `CharacterLab.Native` runs the same GPU-skinned scene as CharacterLab through the native Win32 host, with precompiled Framework shaders and no Windows Forms reference. Both samples participate in source and package qualification.
 
+`CharacterLab.Wpf` shares that scene through the optional WPF viewport, with WPF playback controls and a focus-isolated text editor. `--warp --host-test` exercises resize, current-DPI sizing, minimize/restore, unload/reload, render failure, restart and close/teardown. It joins the same source and isolated package gates. See [WPF hosting](../doc/Wpf-Hosting.md).
+
 See the [visual showcase and optional UI host plan](../doc/Sample-Showcase-Plan.md) for WPF/WinUI adapters and the upcoming media, spatial audio, DirectStorage and interactive DXR samples. These planned samples are not yet implemented.

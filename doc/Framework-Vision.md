@@ -36,4 +36,6 @@ Acceptance remains workload-based: CPU/GPU deformation agreement; clear allocati
 
 ## Shader and host continuation
 
-The next working slice adds precompiled Framework shader resources, typed runtime compiler options and a packaged incremental DXC task. FrameRenderer now separates frame slots/presentation from UI scheduling; DesktopGame keeps its API and NativeGame supplies an independent Win32 host. CharacterLab.Native shares the existing scene and has no WinForms reference. See [the shader/host contract](Shader-Build-and-Hosting.md) for packaging, cross-compilation limits and qualification. WinUI/WPF adapters and the full application lifecycle remain continuation work.
+The shader/host slice adds precompiled Framework shader resources, typed runtime compiler options and a packaged incremental DXC task. FrameRenderer separates frame slots/presentation from UI scheduling; DesktopGame keeps its API and NativeGame supplies an independent Win32 host. CharacterLab.Native shares the existing scene and has no WinForms reference. See [the shader/host contract](Shader-Build-and-Hosting.md) for packaging, cross-compilation limits and qualification.
+
+The optional `DXSharp.Framework.Wpf` adapter now hosts the shared CharacterLab scene with dispatcher scheduling, physical-pixel resize and explicit stop/drain ownership. See [WPF hosting](Wpf-Hosting.md). WinUI composition and the full Game/Application lifecycle remain continuation work; WPF/BAML NativeAOT is not inferred from the separate native interop gates.

@@ -8,6 +8,7 @@
     <ProjectReference Include="../../src/DXSharp.Framework/DXSharp.Framework.csproj" />
     <Compile Include="../CharacterLab/Program.cs" Link="Program.cs" />
     <Compile Include="../CharacterLab/OrbitCamera.cs" Link="OrbitCamera.cs" />
+    <Compile Include="../CharacterLab/CharacterScene.cs" Link="CharacterScene.cs" />
     <None Include="../CharacterLab/Assets/**/*" Link="Assets/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

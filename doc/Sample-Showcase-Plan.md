@@ -16,7 +16,7 @@ Keep Core and Framework independent of WPF and Windows App SDK dependencies. Eac
 | --- | --- | --- |
 | Native Win32 | Existing DXSharp.Framework | NativeGame and HWND FrameRenderer; no Windows Forms dependency |
 | Windows Forms | Existing DXSharp.Framework.Desktop | Existing DesktopGame adapter |
-| WPF | Proposed DXSharp.Framework.Wpf | HwndHost child HWND using the existing frame renderer; WPF dispatcher owns scheduling and teardown |
+| WPF | DXSharp.Framework.Wpf | D3D12Viewport child HWND and shared CharacterLab.Wpf scene; dispatcher scheduling and fenced teardown; see [contract](Wpf-Hosting.md) |
 | WinUI 3 | Proposed DXSharp.Framework.WinUI | Composition swap chain attached through Microsoft.UI.Xaml ISwapChainPanelNative; Windows App SDK dependency stays in this adapter |
 
 WPF's child HWND has airspace restrictions: WPF elements cannot freely overlap or transform it as ordinary composed content. D3DImage is a different path requiring a Direct3D9 surface bridge and synchronization; it is not a direct D3D12 swap-chain target. Start with an honest HwndHost sample and assess a composed surface bridge separately if editor overlays require it.

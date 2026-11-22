@@ -9,7 +9,7 @@ import shutil
 import xml.etree.ElementTree as ET
 from zipfile import ZipFile
 
-PACKAGE_IDS = ("DXSharp.Native", "DXSharp.Assets", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Framework", "DXSharp.Tools.Builds")
+PACKAGE_IDS = ("DXSharp.Native", "DXSharp.Assets", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Framework", "DXSharp.Framework.Wpf", "DXSharp.Tools.Builds")
 PREVIEW = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-(?:net10-)?preview\.[1-9][0-9]*")
 
 
