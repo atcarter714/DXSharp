@@ -33,3 +33,7 @@ The frame-time display measures CPU recording and presentation cadence separatel
 5. Deliver project templates, asset/animation inspection, shader reload, profiling, packaging and deployment as the initial Game Studio experience. Expand editor functionality from those working tools.
 
 Acceptance remains workload-based: CPU/GPU deformation agreement; clear allocation and fence ownership; package-only consumption of the same samples; JIT and NativeAOT on .NET 10/11; lifecycle/presentation checks and separately recorded hardware performance. Maintain the Windows API parity backlog alongside the framework work.
+
+## Shader and host continuation
+
+The next working slice adds precompiled Framework shader resources, typed runtime compiler options and a packaged incremental DXC task. FrameRenderer now separates frame slots/presentation from UI scheduling; DesktopGame keeps its API and NativeGame supplies an independent Win32 host. CharacterLab.Native shares the existing scene and has no WinForms reference. See [the shader/host contract](Shader-Build-and-Hosting.md) for packaging, cross-compilation limits and qualification. WinUI/WPF adapters and the full application lifecycle remain continuation work.

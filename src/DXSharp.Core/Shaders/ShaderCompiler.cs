@@ -24,7 +24,7 @@ public sealed record ShaderCompilation( int Status, ReadOnlyMemory<byte> Bytecod
 }
 
 /// <summary>A synchronous DXC compiler using generated COM, scoped source storage, and copied outputs.</summary>
-public sealed unsafe class ShaderCompiler : IDisposable {
+public sealed unsafe partial class ShaderCompiler : IDisposable {
     private readonly ComOwner<IDxcCompiler3> _compiler;
     private readonly object _gate = new( );
     /// <summary>Loads the packaged DXC compiler without depending on the working directory.</summary>
@@ -60,12 +60,12 @@ public sealed unsafe class ShaderCompiler : IDisposable {
         if ( options.Any( value => string.IsNullOrEmpty( value ) || value.Contains( '\0' ) ) ) throw new ArgumentException( "Compiler arguments cannot be empty or contain NUL." );
         byte[] bytes = Encoding.UTF8.GetBytes( source );
         using var nativeArguments = new Arguments( options );
-        using var includes = includeResolver is null ? null : new IncludeHandler( includeResolver );
+        using var includes = new IncludeHandler( includeResolver ?? (name => File.ReadAllBytes( name )) );
         lock ( _gate ) {
             fixed ( byte* input = bytes ) fixed ( nint* args = nativeArguments.Values ) {
                 DxcBuffer buffer = new( ) { Ptr = input, Size = (nuint)bytes.Length, Encoding = 65001 };
                 Guid resultId = typeof(IDxcResult).GUID;
-                Results.Check( _compiler.Interface.Compile( &buffer, (PCWSTR*)args, (uint)options.Count, includes!, &resultId, out nint resultPointer ), "Compiler3.Compile" );
+                Results.Check( _compiler.Interface.Compile( &buffer, (PCWSTR*)args, (uint)options.Count, includes, &resultId, out nint resultPointer ), "Compiler3.Compile" );
                 using var result = ComOwner<IDxcResult>.Adopt( resultPointer );
                 HRESULT status;
                 Results.Check( result.Interface.GetStatus( &status ), "DxcResult.GetStatus" );

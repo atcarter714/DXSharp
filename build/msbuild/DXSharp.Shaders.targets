@@ -1,0 +1,31 @@
+<Project>
+  <PropertyGroup>
+    <DXSharpBuildShaders Condition="'$(DXSharpBuildShaders)' == ''">true</DXSharpBuildShaders>
+    <DXSharpShaderDebug Condition="'$(DXSharpShaderDebug)' == '' and '$(Configuration)' == 'Debug'">true</DXSharpShaderDebug>
+    <DXSharpShaderDebug Condition="'$(DXSharpShaderDebug)' == ''">false</DXSharpShaderDebug>
+    <DXSharpShaderWarningsAsErrors Condition="'$(DXSharpShaderWarningsAsErrors)' == ''">false</DXSharpShaderWarningsAsErrors>
+    <DXSharpDxcVersion Condition="'$(DXSharpDxcVersion)' == ''">1.9.2609.5</DXSharpDxcVersion>
+    <DXSharpDxcToolPath Condition="'$(DXSharpDxcToolPath)' == ''">$(NuGetPackageRoot)microsoft.direct3d.dxc/$(DXSharpDxcVersion)/build/native/bin/x64/dxc.exe</DXSharpDxcToolPath>
+    <DXSharpShaderTaskAssembly Condition="'$(DXSharpShaderTaskAssembly)' == ''">$(MSBuildThisFileDirectory)../tasks/netstandard2.0/DXSharp.Tools.Builds.dll</DXSharpShaderTaskAssembly>
+  </PropertyGroup>
+  <UsingTask TaskName="DXSharp.Tools.Builds.Shaders.DxcTool" AssemblyFile="$(DXSharpShaderTaskAssembly)" />
+  <Target Name="CompileDXSharpShaders" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences"
+          Condition="'@(DXSharpShader)' != '' and '$(DesignTimeBuild)' != 'true' and '$(DXSharpBuildShaders)' == 'true'">
+    <ItemGroup>
+      <_DXSharpShader Include="@(DXSharpShader)">
+        <OutputFile Condition="'%(DXSharpShader.OutputFile)' == ''">$(IntermediateOutputPath)shaders/%(DXSharpShader.Filename).%(DXSharpShader.EntryPoint).%(DXSharpShader.Profile).dxil</OutputFile>
+        <LogicalName Condition="'%(DXSharpShader.LogicalName)' == ''">Shaders.%(DXSharpShader.Filename).%(DXSharpShader.EntryPoint).dxil</LogicalName>
+        <TargetPath Condition="'%(DXSharpShader.TargetPath)' == ''">Shaders/%(DXSharpShader.Filename).%(DXSharpShader.EntryPoint).dxil</TargetPath>
+      </_DXSharpShader>
+    </ItemGroup>
+    <DxcTool ShaderFiles="@(_DXSharpShader)" CompilerPath="$(DXSharpDxcToolPath)" ProjectDirectory="$(MSBuildProjectDirectory)"
+             DebugShaders="$(DXSharpShaderDebug)" WarningsAsErrors="$(DXSharpShaderWarningsAsErrors)">
+      <Output TaskParameter="Outputs" ItemName="_DXSharpShaderOutputs" />
+    </DxcTool>
+    <ItemGroup>
+      <EmbeddedResource Include="@(_DXSharpShaderOutputs)" Condition="'$(DXSharpEmbedShaders)' != 'false'" />
+      <Content Include="@(_DXSharpShaderOutputs)" Condition="'$(DXSharpEmbedShaders)' == 'false'" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+      <FileWrites Include="@(_DXSharpShaderOutputs);@(_DXSharpShaderOutputs->'%(Identity).state');@(_DXSharpShaderOutputs->'%(Identity).xml');@(_DXSharpShaderOutputs->'%(Identity).pdb')" />
+    </ItemGroup>
+  </Target>
+</Project>

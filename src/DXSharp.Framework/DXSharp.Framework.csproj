@@ -7,7 +7,20 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Graphics/Skinned.hlsl" />
+    <ProjectReference Include="../../tools/DXSharp.Tools.Builds/DXSharp.Tools.Builds.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" AdditionalProperties="Platform=AnyCPU" />
     <ProjectReference Include="../DXSharp.Core/DXSharp.Core.csproj" />
     <ProjectReference Include="../DXSharp.Assets/DXSharp.Assets.csproj" />
   </ItemGroup>
+  <PropertyGroup>
+    <DXSharpBuildShaders Condition="'$(OS)' != 'Windows_NT' and '$(DXSharpDxcToolPath)' == ''">false</DXSharpBuildShaders>
+    <DXSharpShaderTaskAssembly>$(RepoRootPath)artifacts/bin/DXSharp.Tools.Builds/$(Configuration)/netstandard2.0/DXSharp.Tools.Builds.dll</DXSharpShaderTaskAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <DXSharpShader Include="Graphics/Skinned.hlsl" EntryPoint="VS" Profile="vs_6_0" LogicalName="DXSharp.Framework.Graphics.Skinned.VS.dxil" />
+    <DXSharpShader Include="Graphics/Skinned.hlsl" EntryPoint="PS" Profile="ps_6_0" LogicalName="DXSharp.Framework.Graphics.Skinned.PS.dxil" />
+  </ItemGroup>
+  <Import Project="../../build/msbuild/DXSharp.Shaders.targets" />
+  <Target Name="RequireFrameworkShadersForPack" BeforeTargets="GenerateNuspec" Condition="'$(DXSharpBuildShaders)' != 'true'">
+    <Error Text="Framework packages require precompiled shaders. Build on Windows or set DXSharpDxcToolPath to a native DXC executable before packing." />
+  </Target>
 </Project>

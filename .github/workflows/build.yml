@@ -57,6 +57,7 @@ jobs:
             artifacts/test-results/**
             artifacts/api-coverage/**
             artifacts/sample-packages/**
+            artifacts/shader-build/**
             artifacts/packages/**
           if-no-files-found: warn
 
