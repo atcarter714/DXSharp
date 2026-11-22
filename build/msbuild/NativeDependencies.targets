@@ -13,7 +13,7 @@
           Condition="'$(Configuration)' == 'Debug'"
           Link="D3D12/%(Filename)%(Extension)" Pack="false" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
   </ItemGroup>
-  <ItemGroup Condition="'$(PkgMicrosoft_Direct3D_DXC)' != '' and '$(DXSharpCopyDxcRuntime)' != 'false'">
+  <ItemGroup Condition="'$(PkgMicrosoft_Direct3D_DXC)' != ''">
     <None Include="$(PkgMicrosoft_Direct3D_DXC)/build/native/bin/$(DXSharpNativeArchitecture)/dxcompiler.dll;$(PkgMicrosoft_Direct3D_DXC)/build/native/bin/$(DXSharpNativeArchitecture)/dxil.dll"
           Link="%(Filename)%(Extension)" Pack="false" ExcludeFromSingleFile="true" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

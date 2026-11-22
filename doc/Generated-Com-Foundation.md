@@ -1,5 +1,3 @@
-> Historical foundation notes. Current public bindings live in DXSharp.Native; current pins and coverage are in [API-Coverage.md](API-Coverage.md). The original private-projection and single-frame host descriptions below describe earlier increments. See [Framework-Vision.md](Framework-Vision.md) and [Shader-Build-and-Hosting.md](Shader-Build-and-Hosting.md) for the current framework/host contract.
-
 # Generated COM foundation
 
 This slice establishes a second, independently usable path through DXSharp: generated native projections, deterministic C# owners, explicit command recording, shader compilation, presentation, and DirectML tensor execution. It builds on the .NET 10 baseline. The original SDK and its samples remain available while their public surface is ported.

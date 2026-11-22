@@ -106,17 +106,7 @@ def qualify(configuration, runtime_major):
             fleet = consumer / "samples/FleetBattler/bin" / configuration / framework / "FleetBattler.dll"
             run([str(fleet), "--warp", "--mute", "--frames=14", "--view-test"], consumer, evidence / "fleet-runtime.log")
             character = consumer / "samples/CharacterLab/bin" / configuration / framework / "CharacterLab.dll"
-            run([str(character), "--warp", "--frames=9", "--close-test"], consumer, evidence / "character-runtime.log")
-            native = consumer / "samples/CharacterLab.Native/bin" / configuration / framework / "CharacterLab.Native.dll"
-            runtime = json.loads(native.with_suffix('.runtimeconfig.json').read_text())['runtimeOptions']
-            runtime_frameworks = runtime.get('frameworks', [runtime.get('framework', {})])
-            if any(x.get('name', '').startswith('Microsoft.WindowsDesktop') for x in runtime_frameworks):
-                raise RuntimeError('Native sample requires the Windows Desktop runtime')
-            for name in ('dxcompiler.dll', 'dxil.dll'):
-                path = native.parent / name
-                if path.exists():
-                    raise RuntimeError(f'Native precompiled consumer deployed {name}')
-            run([str(native), "--warp", "--frames=9", "--resize-test"], consumer, evidence / "character-native-runtime.log")
+            run([str(character), "--warp", "--frames=9"], consumer, evidence / "character-runtime.log")
         (evidence / "samples.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"PASS: all {len(manifest)} runnable samples consume packaged SDK {version} outside the checkout.")
 

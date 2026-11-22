@@ -50,18 +50,16 @@ public sealed unsafe class SkinnedModelRenderer : IDisposable {
     private struct Joint { public Matrix4x4 Pose, Normal; }
     [StructLayout(LayoutKind.Sequential)]
     private struct Scene { public Matrix4x4 Wvp, World, Normal; public Vector4 Surface, Camera, BaseFactor, MaterialSettings; }
-    /// <summary>Creates geometry/materials using the assembly's precompiled shaders. No compiler is invoked.</summary>
-    public SkinnedModelRenderer(GraphicsDevice device, SkinnedModel model, int frameSlots=2)
-        : this(device,model,LoadShader("VS"),LoadShader("PS"),frameSlots) { }
-    /// <summary>Creates geometry/materials with explicitly supplied precompiled shaders.</summary>
-    public SkinnedModelRenderer(GraphicsDevice device, SkinnedModel model, ShaderBytecode vertex, ShaderBytecode pixel, int frameSlots=2) {
-        ArgumentNullException.ThrowIfNull(device); ArgumentNullException.ThrowIfNull(model);
+    /// <summary>Creates resident geometry and materials. Initialization performs one upload submission and wait.</summary>
+    public SkinnedModelRenderer(GraphicsDevice device, ShaderCompiler compiler, SkinnedModel model, int frameSlots=2) {
+        ArgumentNullException.ThrowIfNull(device); ArgumentNullException.ThrowIfNull(compiler); ArgumentNullException.ThrowIfNull(model);
         if(frameSlots is <1 or >3) throw new ArgumentOutOfRangeException(nameof(frameSlots));
         _model=model; _palette=new Matrix4x4[model.Skin.Joints.Length]; _joints=new Joint[_palette.Length+1]; _frames=new GpuResource[frameSlots];
         _sceneOffset = ((ulong)_joints.Length*128+255)&~255UL;
         try {
             _root=Own(CreateSignature(device));
-            _pipeline=Own(device.CreateGraphicsPipeline(_root,vertex,pixel,[
+            string shader=ReadShader();
+            _pipeline=Own(device.CreateGraphicsPipeline(_root,compiler.Compile(shader,"VS","vs_6_0"),compiler.Compile(shader,"PS","ps_6_0"),[
                 new("POSITION",VertexFormat.Float3,0),new("NORMAL",VertexFormat.Float3,12),new("TANGENT",VertexFormat.Float4,24),
                 new("TEXCOORD",VertexFormat.Float2,40),new("BLENDWEIGHT",VertexFormat.Float4,48),new("BLENDINDICES",VertexFormat.UInt4,64)
             ],depthEnabled:true));
@@ -83,17 +81,6 @@ public sealed unsafe class SkinnedModelRenderer : IDisposable {
             upload.Close();queue.Wait(queue.Submit(upload));
             for(int i=0;i<_frames.Length;++i) _frames[i]=Own(device.CreateBuffer(checked(_sceneOffset+512),BufferMemory.Upload));
         } catch { Dispose();throw; }
-    }
-    /// <summary>Creates the renderer with explicit runtime compilation, for development and custom compiler configuration.</summary>
-    public SkinnedModelRenderer(GraphicsDevice device, ShaderCompiler compiler, SkinnedModel model, int frameSlots=2)
-        : this(device,model,Compile(compiler,"VS","vs_6_0"),Compile(compiler,"PS","ps_6_0"),frameSlots) { }
-    private static ShaderBytecode Compile(ShaderCompiler compiler,string entry,string profile) {
-        ArgumentNullException.ThrowIfNull(compiler);return ShaderBytecode.CopyFrom(compiler.Compile(ReadShader(),entry,profile).RequireSuccess().Bytecode.Span);
-    }
-    private static ShaderBytecode LoadShader(string entry) {
-        using var stream=typeof(SkinnedModelRenderer).Assembly.GetManifestResourceStream("DXSharp.Framework.Graphics.Skinned."+entry+".dxil")
-            ??throw new InvalidOperationException("Precompiled skinning shaders are missing. Build Framework with DXC before rendering.");
-        return ShaderBytecode.Load(stream);
     }
     /// <summary>Records a skinned model and optional reference grid using a completed frame slot. Matrices use System.Numerics row-vector conventions.</summary>
     public void Draw(GraphicsCommandList commands,SkeletonPose pose,Matrix4x4 world,Matrix4x4 viewProjection,Vector3 camera,int frameSlot,bool drawGrid=true,float exposure=1) {
