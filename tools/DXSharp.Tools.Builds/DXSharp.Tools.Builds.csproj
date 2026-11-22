@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- Build tasks intentionally ship under tasks rather than exposing a runtime reference assembly. -->
+    <NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
     <IsPackable>true</IsPackable><IncludeBuildOutput>false</IncludeBuildOutput>
     <Description>Incremental DXC shader compilation for SDK-style MSBuild projects.</Description>
   </PropertyGroup>
