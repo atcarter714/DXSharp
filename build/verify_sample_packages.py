@@ -108,6 +108,10 @@ def qualify(configuration, runtime_major):
             character = consumer / "samples/CharacterLab/bin" / configuration / framework / "CharacterLab.dll"
             run([str(character), "--warp", "--frames=9"], consumer, evidence / "character-runtime.log")
             native = consumer / "samples/CharacterLab.Native/bin" / configuration / framework / "CharacterLab.Native.dll"
+            runtime = json.loads(native.with_suffix('.runtimeconfig.json').read_text())['runtimeOptions']
+            runtime_frameworks = runtime.get('frameworks', [runtime.get('framework', {})])
+            if any(x.get('name', '').startswith('Microsoft.WindowsDesktop') for x in runtime_frameworks):
+                raise RuntimeError('Native sample requires the Windows Desktop runtime')
             for name in ('dxcompiler.dll', 'dxil.dll'):
                 path = native.parent / name
                 if path.exists():

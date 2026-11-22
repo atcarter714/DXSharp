@@ -59,7 +59,7 @@ def main():
             if (result.returncode == 0) != success:
                 raise RuntimeError(result.stdout)
             return result.stdout
-        run('restore', 'Test.csproj')
+        run('restore', 'Test.csproj', '--packages', str(consumer/'packages'))
         def build(*extra, success=True):
             return run('build', 'Test.csproj', '--no-restore', '-c', args.configuration, '-p:UseSharedCompilation=false', '-nodeReuse:false', *extra, success=success)
         first = build(); containers = sorted((consumer/'obj').rglob('*.dxil'))
