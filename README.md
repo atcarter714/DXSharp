@@ -29,6 +29,7 @@ The first command presents four frames and exits. The second verifies GPU comput
 | `DXSharp.Assets` | Static glTF/GLB models, materials, transforms, and decoded textures |
 | `DXSharp.Core` | D3D12, DXGI, DXC, and generated COM interop |
 | `DXSharp.Framework.Desktop` | WinForms presentation loop, swap-chain resize, and frame-slot retirement |
+| `DXSharp.Framework.Wpf` | Optional WPF child-HWND viewport using the shared frame renderer; [hosting contract](doc/Wpf-Hosting.md) |
 | `DXSharp.DirectML` | Device and operator ownership, tensor binding, and DirectML execution |
 | `DXSharp`, `DXSharp.Framework`, `DXSharp.Dxc` | Compatibility packages for the original RCW-based SDK |
 

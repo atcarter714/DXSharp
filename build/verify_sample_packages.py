@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 
-SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Assets", "DXSharp.Framework")
+SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Framework.Wpf", "DXSharp.Assets", "DXSharp.Framework")
 EXCLUDED = {"bin", "obj", "artifacts", ".vs"}
 
 
@@ -117,6 +117,12 @@ def qualify(configuration, runtime_major):
                 if path.exists():
                     raise RuntimeError(f'Native precompiled consumer deployed {name}')
             run([str(native), "--warp", "--frames=9", "--resize-test"], consumer, evidence / "character-native-runtime.log")
+            wpf = consumer / "samples/CharacterLab.Wpf/bin" / configuration / framework / "CharacterLab.Wpf.dll"
+            for name in ('dxcompiler.dll', 'dxil.dll'):
+                if (wpf.parent / name).exists():
+                    raise RuntimeError(f'WPF precompiled consumer deployed {name}')
+            run([str(wpf), "--warp", "--frames=9"], consumer, evidence / "character-wpf-runtime.log")
+            run([str(wpf), "--warp", "--host-test"], consumer, evidence / "character-wpf-host.log")
         (evidence / "samples.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"PASS: all {len(manifest)} runnable samples consume packaged SDK {version} outside the checkout.")
 

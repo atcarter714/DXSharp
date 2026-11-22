@@ -14,7 +14,7 @@ This matrix distinguishes declarations, managed workflows and runtime qualificat
 | Native runtime dependencies | Agility 1.620.2, DXC 1.9.2609.5, optional DirectML 1.15.4 |
 | Native declarations | CsWin32 0.3.371, Win32Metadata 71.0.45-preview, Agility 1.620.2 WinMD |
 | Compatibility packages | Existing RCW surface remains separate; modern AOT promises do not apply to it |
-| Desktop host | WinForms HWND swap chain |
+| Desktop hosts | Native Win32 and WinForms HWND presentation; optional WPF child-HWND viewport ([contract](Wpf-Hosting.md)); WinUI composition remains planned |
 | Linux | Portable native COM fixture only; no D3D12 renderer support |
 
 Samples default to .NET 10. Select the newer runtime with `-p:DXSharpRuntimeMajor=11` or the qualification scripts' `-RuntimeMajor 11` option. Each runtime has its own JIT/NativeAOT CI jobs and evidence. Building the checkout requires the pinned SDK; consuming the net10 package assets does not require changing an application's target to net11.

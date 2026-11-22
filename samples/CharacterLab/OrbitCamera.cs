@@ -12,6 +12,9 @@ sealed class OrbitCamera
     bool _wasDragging;
     Point _lastCursor;
     readonly Dictionary<int, bool> _lastKeyState = [];
+    internal Func<bool>? InputEnabled { get; set; }
+    internal Func<bool>? PointerEnabled { get; set; }
+    internal void Reset() { _yaw = 0.35f; _pitch = 0.12f; _distance = 4; _wasDragging = false; _lastKeyState.Clear(); }
 
     public Vector3 Eye
     {
@@ -27,13 +30,13 @@ sealed class OrbitCamera
 
     public void Update(float elapsedSeconds)
     {
-        if (PInvoke.GetActiveWindow().IsNull)
+        if (!CanReadInput)
         {
             _wasDragging = false;
             return;
         }
 
-        bool dragging = IsDown(0x01);
+        bool dragging = IsDown(0x01) && (PointerEnabled?.Invoke() ?? true);
         if (dragging && PInvoke.GetCursorPos(out Point cursor))
         {
             if (_wasDragging)
@@ -59,7 +62,7 @@ sealed class OrbitCamera
         return down && !wasDown;
     }
 
-    static bool IsDown(int virtualKey) =>
-        !PInvoke.GetActiveWindow().IsNull && (PInvoke.GetAsyncKeyState(virtualKey) & 0x8000) != 0;
+    bool CanReadInput => InputEnabled?.Invoke() ?? !PInvoke.GetActiveWindow().IsNull;
+    bool IsDown(int virtualKey) => CanReadInput && (PInvoke.GetAsyncKeyState(virtualKey) & 0x8000) != 0;
 
 }
