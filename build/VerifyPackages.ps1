@@ -46,12 +46,6 @@ try {
             }
         } finally { $archive.Dispose() }
     }
-    $toolArchive = [System.IO.Compression.ZipFile]::OpenRead((Join-Path $packageDirectory "DXSharp.Tools.Builds.$version.nupkg"))
-    try {
-        foreach ($entry in 'tasks/netstandard2.0/DXSharp.Tools.Builds.dll', 'buildTransitive/DXSharp.Tools.Builds.targets') {
-            if ($null -eq $toolArchive.GetEntry($entry)) { throw "Missing shader build asset: $entry" }
-        }
-    } finally { $toolArchive.Dispose() }
     @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>

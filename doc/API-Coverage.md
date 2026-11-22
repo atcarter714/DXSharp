@@ -1,6 +1,6 @@
 # DirectX API coverage
 
-The modern SDK exposes public native bindings through DXSharp.Native. Core builds its owned graphics API on the same declarations. Consumers can use the generated interfaces and NativeInterface<T> without generating another set of DirectX types.
+The preview 3 candidate exposes public native bindings through DXSharp.Native. Core builds its owned graphics API on the same declarations. Consumers can use the generated interfaces and NativeInterface<T> without generating another set of DirectX types.
 
 The baseline is Microsoft.Windows.SDK.Win32Metadata 71.0.45-preview, CsWin32 0.3.371, Agility 1.620.2 D3D12 metadata, .NET 10/11, and Windows x64. The Windows metadata package supplies the non-D3D12 families; its modular D3D12 provider selects the pinned Agility WinMD. Exactly one D3D12 provider is selected. Native API names live under Windows.Win32. Entry points and constants use Windows.Win32.PInvoke. NativeInterface<T> ownership helpers live under DXSharp.Interop.
 
@@ -31,9 +31,6 @@ ApiCoverage reads the pinned WinMD and built assembly with System.Reflection.Met
 | DirectComposition | 62 / 62 | 294 / 294 |
 | XInput | 16 / 16 | 117 / 117 |
 | GameInput | 80 / 80 | 802 / 802 |
-| Window messages and HWND APIs | 198 / 198 | 3314 / 3314 |
-| High DPI | 7 / 7 | 56 / 56 |
-| Keyboard and mouse | 46 / 46 | 605 / 605 |
 
 These counts measure the pinned metadata surface. They do not verify every overload, ABI layout, callback, native version, feature tier, or driver. In particular, interface generation through ID3D12Device16 does not imply that the selected runtime or adapter implements every interface. Query the required interface and check feature support before use.
 

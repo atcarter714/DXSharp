@@ -65,5 +65,3 @@ Aaron Carter started DXSharp to prove that C# could support a full Direct3D 12 w
 For contributions, open an issue or a pull request with a small reproduction and the adapter, runtime, and validation details. DXSharp is [MIT licensed](LICENSE.md).
 
 The higher-level game runtime and tooling direction, including the experimental Framework migration, is documented in [Framework vision](doc/Framework-Vision.md).
-
-The Preview 4 shader and native-window increment is documented in [Shader build and hosting](doc/Shader-Build-and-Hosting.md). It retains the WinForms API while sharing frame rendering with the native Win32 host and adds precompiled shader assets.

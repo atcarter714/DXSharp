@@ -19,7 +19,6 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "$Name failed with exit code $LASTEXITCODE." }
     }
 
-    Invoke-Sample 'CharacterLab-native' @('run', '--project', 'samples/CharacterLab.Native', '-c', 'Debug', '--', '--warp', '--frames=9', '--resize-test')
     Invoke-Sample 'DepthStencil' @('run', '--project', 'samples/DepthStencil', '-c', 'Debug', '--', '--warp')
 
     Invoke-Sample 'ModernTriangle' @('run', '--project', 'samples/ModernTriangle', '-c', 'Debug', '--',
