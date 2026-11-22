@@ -23,7 +23,7 @@
       },
       "Microsoft.Direct3D.DXC": {
         "type": "Direct",
-        "requested": "[1.9.2609.5, )",
+        "requested": "[1.9.2609.5, 1.9.2609.5]",
         "resolved": "1.9.2609.5",
         "contentHash": "jTWr7a2bMpqV+b0Uc7oxOo8ualplaUw3fsQ+p0kp9TwlWvvmREvt3SA4+Drl2Y0M31iscqZolrL3vpdnLoPpdg=="
       },

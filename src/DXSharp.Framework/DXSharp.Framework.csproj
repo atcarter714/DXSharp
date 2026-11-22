@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Graphics/Skinned.hlsl" />
-    <ProjectReference Include="../../tools/DXSharp.Tools.Builds/DXSharp.Tools.Builds.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" AdditionalProperties="Platform=AnyCPU" />
+    <ProjectReference Include="../../tools/DXSharp.Tools.Builds/DXSharp.Tools.Builds.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" GlobalPropertiesToRemove="PublishAot;PublishTrimmed;SelfContained;RuntimeIdentifier;RuntimeIdentifiers" AdditionalProperties="Platform=AnyCPU" />
     <ProjectReference Include="../DXSharp.Core/DXSharp.Core.csproj" />
     <ProjectReference Include="../DXSharp.Assets/DXSharp.Assets.csproj" />
   </ItemGroup>
