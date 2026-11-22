@@ -49,7 +49,7 @@ CharacterLab and CharacterLab.Native compile the same Program/OrbitCamera source
 
 - verify_shader_build.py uses a fresh external consumer of the packed task; verifies two entry points, spaces, unchanged builds, transitive includes, changed definitions, errors, deleted includes, debug PDBs, dependency manifests and Clean.
 - The Windows COM fixture covers typed runtime compilation/includes, owned bytecode load/save and precompiled pipeline creation. The native-host fixture covers presentation, resize, frame reuse, render exceptions, close/drain and destroyed HWNDs under JIT/NativeAOT.
-- Package qualification builds all 14 runnable samples on .NET 10/11. Both CharacterLab hosts run from those packages, including native resize and compiler-free deployment checks.
+- Package qualification builds all 14 runnable samples on .NET 10/11. Both CharacterLab hosts run from those packages, including native resize, compiler-free deployment checks and WinForms dispatch after renderer retirement.
 - The existing sample matrix continues to exercise the WinForms adapter and GPU/CPU skinning correctness. WindowsAndMessaging, HiDpi and KeyboardAndMouse declarations are now namespace roots and coverage-gated, alongside the prior native families.
 
 ## Remaining work

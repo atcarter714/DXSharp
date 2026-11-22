@@ -70,6 +70,10 @@ internal static class Program {
             var desktop=DesktopGame.Run(device,new(){Title="DXSharp · Character Lab — GPU Skinning",ClientSize=new(1280,800),EnableDepth=true,FramesInFlight=2,FrameLimit=frameLimit},
                 frame=>Draw(new(frame.Commands,frame.Target,frame.Size,frame.Elapsed,frame.FrameSlotIndex)),(window,stats)=>{
                     if(UpdateTitle(stats.Frames) is {} title)window.Text=title;
+                    if(args.Contains("--close-test") && stats.Frames==1) window.FormClosed+=(_,_)=>{
+                        // Exercise dispatch after renderer retirement; queued timers must be inert.
+                        Thread.Sleep(40);Application.DoEvents();
+                    };
                 });
             var result=new RenderStatistics(desktop.Frames,desktop.Resizes);
 #endif

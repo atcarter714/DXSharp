@@ -54,13 +54,14 @@ public static class DesktopGame {
             EnableDepth = options.EnableDepth, FramesInFlight = options.FramesInFlight, FrameLimit = options.FrameLimit
         } );
         using var timer = new System.Windows.Forms.Timer { Interval = 16 };
-        var clock = Stopwatch.StartNew( ); TimeSpan previous = clock.Elapsed; bool rendering = false;
+        var clock = Stopwatch.StartNew( ); TimeSpan previous = clock.Elapsed; bool rendering = false, closing = false;
         void Draw( RenderFrame frame ) => draw( new( frame.Commands, frame.Target, frame.Size, frame.Elapsed ) { FrameSlotIndex = frame.FrameSlotIndex } );
         void Tick( object? sender, EventArgs args ) {
-            if ( rendering ) return;
+            if ( rendering || closing || window.IsDisposed ) return;
             if ( window.CloseRequested ) {
                 var drain = renderer.BeginDrain( );
                 if ( !drain.IsCompleted ) return;
+                closing = true; timer.Stop( );
                 drain.GetAwaiter( ).GetResult( ); renderer.Dispose( ); window.FinishClose( ); return;
             }
             if ( window.IsDisposed || window.Disposing || window.WindowState == FormWindowState.Minimized ) { previous = clock.Elapsed; return; }

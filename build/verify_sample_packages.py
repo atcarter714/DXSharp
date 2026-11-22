@@ -106,7 +106,7 @@ def qualify(configuration, runtime_major):
             fleet = consumer / "samples/FleetBattler/bin" / configuration / framework / "FleetBattler.dll"
             run([str(fleet), "--warp", "--mute", "--frames=14", "--view-test"], consumer, evidence / "fleet-runtime.log")
             character = consumer / "samples/CharacterLab/bin" / configuration / framework / "CharacterLab.dll"
-            run([str(character), "--warp", "--frames=9"], consumer, evidence / "character-runtime.log")
+            run([str(character), "--warp", "--frames=9", "--close-test"], consumer, evidence / "character-runtime.log")
             native = consumer / "samples/CharacterLab.Native/bin" / configuration / framework / "CharacterLab.Native.dll"
             runtime = json.loads(native.with_suffix('.runtimeconfig.json').read_text())['runtimeOptions']
             runtime_frameworks = runtime.get('frameworks', [runtime.get('framework', {})])
