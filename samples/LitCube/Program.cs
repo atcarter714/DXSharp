@@ -12,17 +12,39 @@ internal static class Program {
             row_major float4x4 WorldViewProjection;
             row_major float4x4 World;
         };
-        struct Vertex { float4 position : SV_Position; float3 color : COLOR; };
+        struct Vertex {
+            float4 position : SV_Position;
+            float3 worldPosition : WORLDPOS;
+            float3 normal : NORMAL;
+            float3 color : COLOR;
+        };
         struct VertexInput { float3 position : POSITION; float3 normal : NORMAL; float3 color : COLOR; };
         Vertex VS(VertexInput input) {
-            float3 normal = mul(input.normal, (float3x3)World);
-            float light = 0.28 + 0.72 * saturate(dot(normal, normalize(float3(0.45, 0.8, 0.65))));
             Vertex output;
             output.position = mul(float4(input.position, 1), WorldViewProjection);
-            output.color = input.color * light;
+            output.worldPosition = mul(float4(input.position, 1), World).xyz;
+            output.normal = mul(input.normal, (float3x3)World);
+            output.color = input.color;
             return output;
         }
-        float4 PS(Vertex input) : SV_Target { return float4(input.color, 1); }
+        float4 PS(Vertex input) : SV_Target {
+            float3 n = normalize(input.normal);
+            float3 v = normalize(float3(0, 1.4, 5.8) - input.worldPosition);
+            float3 l = normalize(float3(-3.5, 4.0, 4.0) - input.worldPosition);
+            float ndotl = saturate(dot(n, l));
+            float3 h = normalize(l + v);
+            float specular = pow(saturate(dot(n, h)), 48) * ndotl;
+            float fill = saturate(dot(n, normalize(float3(1, 0.25, -0.6))));
+            float hemisphere = n.y * 0.5 + 0.5;
+            float3 ambient = lerp(float3(0.025, 0.03, 0.05), float3(0.12, 0.16, 0.22), hemisphere);
+            float3 linearColor = input.color * (ambient + float3(1.05, 0.9, 0.7) * ndotl
+                + float3(0.1, 0.2, 0.34) * fill) + float3(1.0, 0.92, 0.8) * specular * 0.65;
+            // The target is UNORM, so perform the linear-to-sRGB transfer here.
+            linearColor = saturate(linearColor);
+            float3 srgb = lerp(12.92 * linearColor, 1.055 * pow(linearColor, 1.0 / 2.4) - 0.055,
+                step(0.0031308, linearColor));
+            return float4(srgb, 1);
+        }
         """;
 
     [StructLayout(LayoutKind.Sequential)]

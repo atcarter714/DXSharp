@@ -59,7 +59,10 @@ string[] families = [
     "Windows.Win32.Graphics.DirectComposition",
     "Windows.Win32.UI.Input.XboxController",
     "Windows.Win32.UI.Input.GameInput",
-    "Windows.Win32.Storage.DirectStorage"
+    "Windows.Win32.Storage.DirectStorage",
+    "Windows.Win32.UI.WindowsAndMessaging",
+    "Windows.Win32.UI.HiDpi",
+    "Windows.Win32.UI.Input.KeyboardAndMouse"
 ];
 
 var exportedFunctions = new HashSet<string>( StringComparer.Ordinal );
