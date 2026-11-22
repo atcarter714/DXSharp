@@ -60,6 +60,9 @@ def main():
                 raise RuntimeError(result.stdout)
             return result.stdout
         run('restore', 'Test.csproj', '--packages', str(consumer/'packages'))
+        compiler_path = Path(run('msbuild', 'Test.csproj', '-getProperty:DXSharpDxcToolPath', '-nologo').strip())
+        if not compiler_path.is_file():
+            raise RuntimeError(f'Resolved compiler does not exist: {compiler_path}')
         def build(*extra, success=True):
             return run('build', 'Test.csproj', '--no-restore', '-c', args.configuration, '-p:UseSharedCompilation=false', '-nodeReuse:false', *extra, success=success)
         first = build(); containers = sorted((consumer/'obj').rglob('*.dxil'))

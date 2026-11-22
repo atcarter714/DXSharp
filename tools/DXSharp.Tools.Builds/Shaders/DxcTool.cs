@@ -33,7 +33,7 @@ public sealed class DxcTool : Microsoft.Build.Utilities.Task {
         var outputs = new List<ITaskItem>();
         try {
             CompilerPath = Path.GetFullPath(CompilerPath);
-            if (!File.Exists(CompilerPath)) throw new FileNotFoundException("The pinned DXC executable was not found.", CompilerPath);
+            if (!File.Exists(CompilerPath)) throw new FileNotFoundException("The pinned DXC executable was not found: " + CompilerPath, CompilerPath);
             var compiler = new StringBuilder(HashFile(CompilerPath));
             foreach (var name in new[] { "dxcompiler.dll", "dxil.dll", "../lib/libdxcompiler.so", "../lib/libdxil.so" }) {
                 string path = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(CompilerPath)!, name));
