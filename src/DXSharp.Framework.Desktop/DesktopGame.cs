@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Numerics;
 using DXSharp.Graphics;
+using DXSharp.Framework.Hosting;
 using Windows.Win32;
 using Windows.Win32.UI.WindowsAndMessaging;
 
@@ -37,159 +38,51 @@ public readonly record struct DesktopFrame( GraphicsCommandList Commands, Render
 /// <param name="Resizes">Number of back-buffer size changes after initialization.</param>
 public readonly record struct DesktopRunResult( int Frames, int Resizes );
 
-/// <summary>Runs a WinForms frame loop with two back buffers and one or two frame slots.</summary>
+/// <summary>WinForms scheduling over the shared frame renderer.</summary>
 public static class DesktopGame {
-    /// <summary>Runs a windowed render loop on the calling STA thread until the window closes.</summary>
-    /// <param name="device">A caller-owned device that stays alive for the duration of the run.</param>
-    /// <param name="options">Window dimensions, depth, presentation limit and number of frame slots.</param>
-    /// <param name="draw">Records scene commands into the borrowed frame before submission.</param>
-    /// <param name="framePresented">Optional callback on the calling thread after each present call.</param>
-    /// <returns>Presentation and resize totals.</returns>
-    /// <exception cref="InvalidOperationException">The calling thread is outside an STA.</exception>
+    /// <summary>Runs on the calling STA thread. The device remains caller-owned.</summary>
     public static DesktopRunResult Run( GraphicsDevice device, DesktopGameOptions options, Action<DesktopFrame> draw,
         Action<Form, DesktopRunResult>? framePresented = null ) {
-        ArgumentNullException.ThrowIfNull( device );
-        ArgumentNullException.ThrowIfNull( options );
-        ArgumentNullException.ThrowIfNull( draw );
-        if ( options.ClientSize.Width <= 0 || options.ClientSize.Height <= 0 || options.FrameLimit < 0 || options.FramesInFlight is < 1 or > 2 )
-            throw new ArgumentOutOfRangeException( nameof(options) );
-        if ( Thread.CurrentThread.GetApartmentState( ) != ApartmentState.STA )
-            throw new InvalidOperationException( "The desktop game must run on an STA thread." );
-
-        using var icon = Environment.ProcessPath is { } path && OperatingSystem.IsWindows( )
-            ? Icon.ExtractAssociatedIcon( path ) : null;
+        ArgumentNullException.ThrowIfNull( device ); ArgumentNullException.ThrowIfNull( options ); ArgumentNullException.ThrowIfNull( draw );
+        if ( Thread.CurrentThread.GetApartmentState( ) != ApartmentState.STA ) throw new InvalidOperationException( "The desktop game must run on an STA thread." );
+        using var icon = Environment.ProcessPath is { } path ? Icon.ExtractAssociatedIcon( path ) : null;
         using var window = new GameWindow { Text = options.Title, ClientSize = options.ClientSize, StartPosition = FormStartPosition.CenterScreen };
         if ( icon is not null ) window.Icon = icon;
         window.Show( );
-        var queue = device.CreateCommandQueue( );
-        Task? drain = null;
-        try { return RunWindow( device, options, draw, framePresented, window, queue, Drain ); }
-        finally { if ( drain is null ) queue.Dispose( ); }
-
-        Task Drain( ) => drain ??= Task.Run( queue.Dispose );
-    }
-
-    private static DesktopRunResult RunWindow( GraphicsDevice device, DesktopGameOptions options, Action<DesktopFrame> draw,
-        Action<Form, DesktopRunResult>? framePresented, GameWindow window, CommandQueue queue, Func<Task> drainQueue ) {
-        Size size = window.ClientSize;
-        using var first = new FrameSlot( device );
-        using var second = options.FramesInFlight == 2 ? new FrameSlot( device ) : null;
-        using var swap = device.CreateSwapChain( queue, window.Handle, (uint)size.Width, (uint)size.Height );
-        using var heap = device.CreateRenderTargetHeap( swap.BufferCount );
+        using var renderer = new FrameRenderer( device, window.Handle, new( ) {
+            Title = options.Title, ClientSize = window.ClientSize, ClearColor = options.ClearColor,
+            EnableDepth = options.EnableDepth, FramesInFlight = options.FramesInFlight, FrameLimit = options.FrameLimit
+        } );
         using var timer = new System.Windows.Forms.Timer { Interval = 16 };
-        var buffers = new GpuResource?[swap.BufferCount];
-        var targets = new RenderTargetView[swap.BufferCount];
-        DepthTarget? depth = null;
-        var clock = Stopwatch.StartNew( );
-        int frames = 0, resizes = 0;
-        TimeSpan previous = TimeSpan.Zero;
-        Exception? frameFailure = null;
-        bool rendering = false;
-
-        try {
-            AcquireBuffers( );
-            void RenderFrame(object? sender, EventArgs args) {
-                if (rendering) return;
-                if ( window.CloseRequested ) {
-                    // Keep the HWND and its message pump alive until the presentation queue drains.
-                    var drain = drainQueue( );
-                    if ( !drain.IsCompleted ) return;
-                    timer.Stop( );
-                    if ( drain.IsCompletedSuccessfully ) {
-                        ReleaseBuffers( );
-                        swap.Dispose( );
-                    }
-                    window.FinishClose( );
-                    return;
-                }
-                if ( window.Disposing || !window.IsHandleCreated || window.WindowState == FormWindowState.Minimized ) {
-                    previous = clock.Elapsed;
-                    return;
-                }
-                Size clientSize = window.ClientSize;
-                if ( clientSize.Width <= 0 || clientSize.Height <= 0 ) return;
-                // Native presentation can dispatch messages. Keep nested timer ticks out of the frame.
-                timer.Stop( );
-                rendering = true;
-                try {
-                    bool resized = clientSize != size;
-                    if ( resized ) queue.WaitIdle( );
-                    int slotIndex = second is null ? 0 : frames & 1;
-                    var slot = slotIndex == 0 ? first : second!;
-                    if ( slot.Completion != 0 ) queue.Wait( slot.Completion );
-                    var commands = slot.Begin( );
-                    if ( resized ) {
-                        ReleaseBuffers( );
-                        swap.Resize( (uint)clientSize.Width, (uint)clientSize.Height );
-                        size = clientSize;
-                        AcquireBuffers( );
-                        ++resizes;
-                    }
-                    uint index = swap.CurrentBackBufferIndex;
-                    var buffer = buffers[index]!;
-                    var target = targets[index];
-                    commands.Transition( buffer, ResourceState.Present, ResourceState.RenderTarget );
-                    commands.SetViewport( (uint)size.Width, (uint)size.Height );
-                    Vector4 clear = options.ClearColor;
-                    commands.Clear( target, clear.X, clear.Y, clear.Z, clear.W );
-                    if ( depth is null ) commands.SetRenderTarget( target );
-                    else commands.SetRenderTarget( target, depth, clearDepth: true );
-                    TimeSpan now = clock.Elapsed;
-                    draw( new( commands, target, size, now - previous ) { FrameSlotIndex = slotIndex } );
-                    previous = now;
-                    commands.Transition( buffer, ResourceState.RenderTarget, ResourceState.Present );
-                    commands.Close( );
-                    slot.Completion = queue.Submit( commands );
-                    if ( second is null ) queue.Wait( slot.Completion );
-                    swap.Present( );
-                    ++frames;
-                    framePresented?.Invoke( window, new( frames, resizes ) );
-                    if ( !window.CloseRequested && window.IsHandleCreated && !window.Disposing &&
-                         options.FrameLimit > 0 && frames >= options.FrameLimit ) window.Close( );
-                } finally {
-                    rendering = false;
-                    if ( window.IsHandleCreated && !window.Disposing ) timer.Start( );
-                }
+        var clock = Stopwatch.StartNew( ); TimeSpan previous = clock.Elapsed; bool rendering = false, closing = false;
+        void Draw( RenderFrame frame ) => draw( new( frame.Commands, frame.Target, frame.Size, frame.Elapsed ) { FrameSlotIndex = frame.FrameSlotIndex } );
+        void Tick( object? sender, EventArgs args ) {
+            if ( rendering || closing || window.IsDisposed ) return;
+            if ( window.CloseRequested ) {
+                var drain = renderer.BeginDrain( );
+                if ( !drain.IsCompleted ) return;
+                closing = true; timer.Stop( );
+                drain.GetAwaiter( ).GetResult( ); renderer.Dispose( ); window.FinishClose( ); return;
             }
-            void RenderIdle(object? sender, EventArgs args) {
-                // Present supplies pacing. Drain native messages before recording another frame.
-                while (!rendering && !window.CloseRequested && window.IsHandleCreated && !window.Disposing &&
-                       window.WindowState != FormWindowState.Minimized &&
-                       !PInvoke.PeekMessageW(out _, default, 0, 0, PEEK_MESSAGE_REMOVE_TYPE.PM_NOREMOVE))
-                    RenderFrame(null, EventArgs.Empty);
-            }
-            timer.Tick += RenderFrame; // Retain a wakeup for close-drain and minimized-state bookkeeping.
-            Application.Idle += RenderIdle;
-            timer.Start( );
-            try { Application.Run( window ); }
-            finally { Application.Idle -= RenderIdle; timer.Tick -= RenderFrame; }
-            return new( frames, resizes );
-        } catch ( Exception error ) {
-            frameFailure = error;
-            throw;
-        } finally {
-            timer.Stop( );
-            try { drainQueue( ).GetAwaiter( ).GetResult( ); }
-            catch ( Exception drainFailure ) when ( frameFailure is not null ) {
-                throw new AggregateException( "Rendering and presentation queue shutdown both failed.", frameFailure, drainFailure );
-            } finally { ReleaseBuffers( ); }
+            if ( window.IsDisposed || window.Disposing || window.WindowState == FormWindowState.Minimized ) { previous = clock.Elapsed; return; }
+            rendering = true; timer.Stop( );
+            try {
+                TimeSpan now = clock.Elapsed;
+                if ( renderer.Render( window.ClientSize, now - previous, Draw ) ) {
+                    var stats = renderer.Statistics; framePresented?.Invoke( window, new( stats.Frames, stats.Resizes ) );
+                    if ( options.FrameLimit > 0 && stats.Frames >= options.FrameLimit ) window.Close( );
+                }
+                previous = now;
+            } finally { rendering = false; if ( !window.IsDisposed ) timer.Start( ); }
         }
-
-        void AcquireBuffers( ) {
-            for ( uint i = 0; i < swap.BufferCount; ++i ) {
-                buffers[i] = swap.AcquireBackBuffer( i );
-                targets[i] = device.CreateRenderTargetView( buffers[i]!, heap, i );
-            }
-            if ( options.EnableDepth ) depth = device.CreateDepthTarget( (uint)size.Width, (uint)size.Height );
+        void Idle( object? sender, EventArgs args ) {
+            while ( !rendering && !window.CloseRequested && !window.IsDisposed && window.WindowState != FormWindowState.Minimized &&
+                !PInvoke.PeekMessageW( out _, default, 0, 0, PEEK_MESSAGE_REMOVE_TYPE.PM_NOREMOVE ) ) Tick( null, EventArgs.Empty );
         }
-
-        void ReleaseBuffers( ) {
-            depth?.Dispose( );
-            depth = null;
-            foreach ( var buffer in buffers ) buffer?.Dispose( );
-            Array.Clear( buffers );
-            Array.Clear( targets );
-        }
+        timer.Tick += Tick; Application.Idle += Idle; timer.Start( );
+        try { Application.Run( window ); }
+        finally { timer.Stop( ); Application.Idle -= Idle; timer.Tick -= Tick; }
+        var result = renderer.Statistics; return new( result.Frames, result.Resizes );
     }
 
     private sealed class GameWindow : Form {
@@ -215,29 +108,4 @@ public static class DesktopGame {
         }
     }
 
-    private sealed class FrameSlot : IDisposable {
-        private readonly CommandAllocator _allocator;
-        private readonly GraphicsCommandList _commands;
-        internal ulong Completion;
-
-        internal FrameSlot( GraphicsDevice device ) {
-            _allocator = device.CreateCommandAllocator( );
-            try {
-                _commands = device.CreateCommandList( _allocator );
-                try { _commands.Close( ); }
-                catch { _commands.Dispose( ); throw; }
-            } catch { _allocator.Dispose( ); throw; }
-        }
-
-        internal GraphicsCommandList Begin( ) {
-            _allocator.Reset( );
-            _commands.Reset( _allocator );
-            return _commands;
-        }
-
-        public void Dispose( ) {
-            _commands.Dispose( );
-            _allocator.Dispose( );
-        }
-    }
 }

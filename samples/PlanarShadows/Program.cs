@@ -7,10 +7,12 @@ using DXSharp.Shaders;
 namespace PlanarShadows;
 
 internal static class Program {
-    private static readonly Vector3 Light = Vector3.Normalize(new Vector3(-0.6f, 1, 0.45f));
+    // A low key light exposes the projected silhouette outside each pyramid's base.
+    private static readonly Vector3 Light = Vector3.Normalize(new Vector3(-1, 0.65f, 0.55f));
     private const string Shader = """
         cbuffer Scene : register(b0) {
             row_major float4x4 transform;
+            row_major float4x4 world;
             float4 tint;
         };
         struct Vertex { float4 position : SV_Position; float3 local : LOCAL; float light : LIGHT; };
@@ -20,7 +22,7 @@ internal static class Program {
                 float2(-1,-1), float2(1,1), float2(1,-1)
             };
             Vertex v;
-            v.local = float3(corners[id].x, 0, corners[id].y) * 5;
+            v.local = float3(corners[id].x, 0, corners[id].y) * 6;
             v.position = mul(float4(v.local, 1), transform);
             v.light = 1;
             return v;
@@ -31,11 +33,16 @@ internal static class Program {
                 float3(-1,0,1), float3(0,1.65,0)
             };
             const uint indices[12] = { 0,1,4, 1,2,4, 2,3,4, 3,0,4 };
-            const float light[4] = { 0.6, 0.8, 1.0, 0.72 };
+            uint face = (id / 3) * 3;
+            float3 a = corners[indices[face]];
+            float3 b = corners[indices[face + 1]];
+            float3 c = corners[indices[face + 2]];
+            float3 normal = normalize(cross(c - a, b - a));
             Vertex v;
             v.local = corners[indices[id]];
             v.position = mul(float4(v.local, 1), transform);
-            v.light = lerp(1, light[id / 3], tint.a);
+            normal = normalize(mul(normal, (float3x3)world));
+            v.light = lerp(1, 0.3 + 0.7 * saturate(dot(normal, normalize(float3(-1, 0.65, 0.55)))), tint.a);
             return v;
         }
         float4 FloorPS(Vertex v) : SV_Target {
@@ -52,7 +59,7 @@ internal static class Program {
     ];
 
     [StructLayout(LayoutKind.Sequential)]
-    private readonly record struct DrawConstants(Matrix4x4 Transform, Vector4 Tint);
+    private readonly record struct DrawConstants(Matrix4x4 Transform, Matrix4x4 World, Vector4 Tint);
 
     [STAThread]
     public static int Main(string[] args) {
@@ -71,7 +78,7 @@ internal static class Program {
         });
         Console.WriteLine(device.AdapterName);
         using var compiler = new ShaderCompiler();
-        using var root = device.CreateGraphicsConstantsRootSignature(20);
+        using var root = device.CreateGraphicsConstantsRootSignature(36);
         using var floor = CreatePipeline("FloorVS", "FloorPS");
         using var pyramid = CreatePipeline("PyramidVS", "PyramidPS");
 
@@ -87,7 +94,7 @@ internal static class Program {
         }, frame => {
             time += Math.Min((float)frame.Elapsed.TotalSeconds, 0.1f);
             float orbit = 0.38f + time * 0.28f;
-            var eye = new Vector3(8.5f * MathF.Sin(orbit), 5.8f, 8.5f * MathF.Cos(orbit));
+            var eye = new Vector3(10.2f * MathF.Sin(orbit), 7.2f, 10.2f * MathF.Cos(orbit));
             var view = Matrix4x4.CreateLookAt(eye, Vector3.Zero, Vector3.UnitY);
             var projection = Matrix4x4.CreatePerspectiveFieldOfView(
                 MathF.PI / 3, (float)frame.Size.Width / frame.Size.Height, 0.1f, 50);
@@ -100,11 +107,11 @@ internal static class Program {
             }
 
             frame.Commands.SetGraphicsPipeline(floor);
-            Draw(frame.Commands, viewProjection, new(0.25f, 0.29f, 0.36f, 1), 6);
+            Draw(frame.Commands, viewProjection, Matrix4x4.Identity, new(0.36f, 0.42f, 0.5f, 1), 6);
 
             frame.Commands.SetGraphicsPipeline(pyramid);
-            foreach (var world in worlds) Draw(frame.Commands, world * shadow * viewProjection, new(0.09f, 0.11f, 0.16f, 0), 12);
-            for (int i = 0; i < worlds.Length; i++) Draw(frame.Commands, worlds[i] * viewProjection, Objects[i].Color, 12);
+            foreach (var world in worlds) Draw(frame.Commands, world * shadow * viewProjection, world, new(0.045f, 0.06f, 0.085f, 0), 12);
+            for (int i = 0; i < worlds.Length; i++) Draw(frame.Commands, worlds[i] * viewProjection, worlds[i], Objects[i].Color, 12);
         });
         var diagnostics = device.GetDiagnostics();
         foreach (string message in diagnostics.Messages) Console.WriteLine(message);
@@ -118,8 +125,8 @@ internal static class Program {
                 compiler.Compile(Shader, ps, "ps_6_0"), PixelFormat.Rgba8Unorm, depthEnabled: true);
     }
 
-    private static void Draw(GraphicsCommandList commands, Matrix4x4 transform, Vector4 tint, uint vertices) {
-        var constants = new DrawConstants(transform, tint);
+    private static void Draw(GraphicsCommandList commands, Matrix4x4 transform, Matrix4x4 world, Vector4 tint, uint vertices) {
+        var constants = new DrawConstants(transform, world, tint);
         commands.SetGraphicsConstants(MemoryMarshal.Cast<DrawConstants, uint>(MemoryMarshal.CreateReadOnlySpan(ref constants, 1)));
         commands.Draw(vertices);
     }

@@ -37,3 +37,7 @@ PeekMessage
 GetAsyncKeyState
 GetActiveWindow
 GetCursorPos
+
+Windows.Win32.UI.WindowsAndMessaging
+Windows.Win32.UI.HiDpi
+Windows.Win32.UI.Input.KeyboardAndMouse
