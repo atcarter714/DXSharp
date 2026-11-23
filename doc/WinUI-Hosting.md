@@ -28,7 +28,7 @@ Await `StopAsync` before disposing the viewport, scene resources or device. It d
 
 Run `dotnet run --project samples/CharacterLab.WinUI -c Release`. The sample uses an unpackaged x64 apphost and bundles the Windows App SDK runtime with `WindowsAppSDKSelfContained=true`; it still requires the selected .NET runtime. An MSIX packaging project is unnecessary. Launch the generated executable when deploying; invoking its DLL with `dotnet` bypasses the apphost's embedded activation manifest.
 
-The code-created application explicitly provides WinUI XAML type metadata and initializes control resources before creating its window. Normal markup-based WinUI applications receive that metadata from the XAML compiler.
+The code-created application explicitly provides WinUI XAML type metadata and initializes control resources before creating its window. Normal markup-based WinUI applications receive that metadata from the XAML compiler. Explicit dispatcher shutdown keeps the UI thread alive until post-close checks and GPU resource disposal finish; an incomplete qualification cannot return a successful exit code.
 
 The same CharacterScene and OrbitCamera sources serve WinForms, native Win32, WPF and WinUI. WinUI playback controls, a text editor and an overlaid XAML badge demonstrate composition without a second renderer. Shaders remain precompiled, and runtime DXC binaries are excluded.
 

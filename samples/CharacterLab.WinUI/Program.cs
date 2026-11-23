@@ -7,7 +7,8 @@ using DXSharp.Graphics;
 namespace DXSharp.CharacterLab.WinUI;
 
 internal static class Program {
-    internal static int ExitCode;
+    internal static int ExitCode = 1;
+    internal static bool HadUnhandledException;
     [STAThread]
     private static int Main( string[] args ) {
         try {
@@ -32,7 +33,8 @@ internal sealed class CharacterApplication : Application, IXamlMetadataProvider 
     private CharacterWindow? _window;
     internal CharacterApplication( string[] arguments ) {
         _arguments = arguments;
-        UnhandledException += ( _, args ) => { Console.Error.WriteLine( args.Exception ); Program.ExitCode = 1; args.Handled = true; _window?.CloseOrderly( ); };
+        Application.DispatcherShutdownMode = Microsoft.UI.Xaml.DispatcherShutdownMode.OnExplicitShutdown;
+        UnhandledException += ( _, args ) => { Console.Error.WriteLine( args.Exception ); Program.ExitCode = 1; Program.HadUnhandledException = true; args.Handled = true; _window?.CloseOrderly( ); };
     }
     protected override async void OnLaunched( LaunchActivatedEventArgs args ) {
         GraphicsDevice? device = null;
@@ -56,14 +58,18 @@ internal sealed class CharacterApplication : Application, IXamlMetadataProvider 
             if ( limit > 0 && _window.Statistics.Frames != limit ) throw new InvalidOperationException( "WinUI frame limit was not reached." );
             var diagnostics = device.GetDiagnostics( );
             foreach ( var message in diagnostics.Messages ) Console.WriteLine( message );
-            if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any( m => m.Contains( "SEVERITY_ERROR" ) || m.Contains( "SEVERITY_CORRUPTION" ) ) ) Program.ExitCode = 1;
+            if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any( m => m.Contains( "SEVERITY_ERROR" ) || m.Contains( "SEVERITY_CORRUPTION" ) ) || Program.HadUnhandledException ) throw new InvalidOperationException( "WinUI qualification reported a device or unhandled UI failure." );
             if ( AppDomain.CurrentDomain.GetAssemblies( ).Any( a => a.GetName( ).Name is "System.Windows.Forms" or "PresentationFramework" ) )
                 throw new InvalidOperationException( "WinUI sample loaded another desktop UI framework." );
             Console.WriteLine( $"PASS: WinUI CharacterLab presented {scene.Frames} GPU-skinned frames through composition; mean CPU recording {scene.MeanRecordingMilliseconds:F2} ms." );
+            Program.ExitCode = 0;
         } catch ( Exception error ) { Console.Error.WriteLine( error ); Program.ExitCode = 1; }
         finally {
-            if ( _window is not null ) await _window.StopAsync( );
-            scene?.Dispose( ); device?.Dispose( ); Exit( );
+            try {
+                try { if ( _window is not null ) await _window.StopAsync( ); }
+                finally { try { scene?.Dispose( ); } finally { device?.Dispose( ); } }
+            } catch ( Exception error ) { Console.Error.WriteLine( error ); Program.ExitCode = 1; }
+            finally { Exit( ); }
         }
     }
 }
