@@ -63,7 +63,13 @@ public sealed class D3D12Viewport : UserControl, IDisposable {
         }
     }
     /// <summary>Whether the viewport, rather than a WinUI editor/control, owns keyboard focus.</summary>
-    public bool HasInputFocus => FocusState != Microsoft.UI.Xaml.FocusState.Unfocused;
+    public bool HasInputFocus {
+        get {
+            CheckThread( ); var active = PInvoke.GetActiveWindow( );
+            return FocusState != Microsoft.UI.Xaml.FocusState.Unfocused && !active.IsNull &&
+                (_ownerWindow == 0 || active == new HWND( _ownerWindow ));
+        }
+    }
     /// <summary>Whether pointer polling belongs to the viewport or its captured drag.</summary>
     public bool AcceptsPointerInput => HasInputFocus && (_inside || _captured);
     /// <summary>Host-driven suspension, for example when an owning view is inactive.</summary>

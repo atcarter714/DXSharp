@@ -27,6 +27,15 @@ internal static class WinUIHostQualification {
         Require( FocusManager.TryMoveFocus( FocusNavigationDirection.Next ) && viewport.HasInputFocus, "Tab entry did not reach the viewport." );
         Require( FocusManager.TryMoveFocus( FocusNavigationDirection.Previous ) && !viewport.HasInputFocus, "Tab exit did not leave the viewport." );
 
+        viewport.Focus( FocusState.Programmatic );
+        var other = new Window { Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = "Other active window" } };
+        try {
+            other.Activate( ); await Task.Delay( 120 );
+            Require( !viewport.HasInputFocus, "Inactive viewport continued accepting keyboard input." );
+        } finally { other.Close( ); window.Activate( ); }
+        viewport.Focus( FocusState.Programmatic );
+        await Frames( viewport, viewport.Statistics.Frames + 2 );
+
         var scale = viewport.CompositionScale;
         viewport.Panel.RenderTransform = new ScaleTransform { ScaleX = 1.25, ScaleY = 1.5 };
         await Frames( viewport, viewport.Statistics.Frames + 4 );
@@ -48,7 +57,7 @@ internal static class WinUIHostQualification {
         paused = viewport.Statistics.Frames; await Task.Delay( 120 );
         Require( viewport.Statistics.Frames == paused, "Unloaded WinUI host kept presenting." );
         window.SceneArea.Children.Insert( 0, viewport ); await Frames( viewport, paused + 3 );
-        Console.WriteLine( "PASS: WinUI composition presentation, physical resize, XAML scale, text focus, tab entry/exit, suspension, minimize/restore and unload/reload." );
+        Console.WriteLine( "PASS: WinUI composition presentation, physical resize, XAML scale, text focus, tab entry/exit, activation isolation, suspension, minimize/restore and unload/reload." );
 
         await viewport.StopAsync( );
         var failed = new TaskCompletionSource<Exception>( TaskCreationOptions.RunContinuationsAsynchronously );

@@ -1,5 +1,7 @@
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Markup;
+using Microsoft.UI.Xaml.XamlTypeInfo;
 using DXSharp.Graphics;
 
 namespace DXSharp.CharacterLab.WinUI;
@@ -9,6 +11,7 @@ internal static class Program {
     [STAThread]
     private static int Main( string[] args ) {
         try {
+            Console.WriteLine( "Host: WinUI 3 composition; unpackaged apphost." );
             WinRT.ComWrappersSupport.InitializeComWrappers( );
             Application.Start( parameters => {
                 SynchronizationContext.SetSynchronizationContext( new DispatcherQueueSynchronizationContext( DispatcherQueue.GetForCurrentThread( ) ) );
@@ -19,18 +22,24 @@ internal static class Program {
     }
 }
 
-internal sealed class CharacterApplication : Application {
+internal sealed class CharacterApplication : Application, IXamlMetadataProvider {
+    private XamlControlsXamlMetaDataProvider? _metadata;
+    private XamlControlsXamlMetaDataProvider Metadata => _metadata ??= new( );
+    IXamlType IXamlMetadataProvider.GetXamlType( Type type ) => Metadata.GetXamlType( type );
+    IXamlType IXamlMetadataProvider.GetXamlType( string name ) => Metadata.GetXamlType( name );
+    XmlnsDefinition[] IXamlMetadataProvider.GetXmlnsDefinitions( ) => Metadata.GetXmlnsDefinitions( );
     private readonly string[] _arguments;
     private CharacterWindow? _window;
     internal CharacterApplication( string[] arguments ) {
         _arguments = arguments;
-        Resources.MergedDictionaries.Add( new Microsoft.UI.Xaml.Controls.XamlControlsResources( ) );
         UnhandledException += ( _, args ) => { Console.Error.WriteLine( args.Exception ); Program.ExitCode = 1; args.Handled = true; _window?.CloseOrderly( ); };
     }
     protected override async void OnLaunched( LaunchActivatedEventArgs args ) {
         GraphicsDevice? device = null;
         CharacterScene? scene = null;
         try {
+            XamlControlsXamlMetaDataProvider.Initialize( );
+            Resources.MergedDictionaries.Add( new Microsoft.UI.Xaml.Controls.XamlControlsResources( ) );
             int limit = int.Parse( _arguments.FirstOrDefault( a => a.StartsWith( "--frames=" ) )?[9..] ?? "0" );
             string model = _arguments.FirstOrDefault( a => a.StartsWith( "--model=" ) )?[8..] ?? System.IO.Path.Combine( AppContext.BaseDirectory, "Assets", "animatedKnightInPlateArmour.glb" );
 #if DEBUG

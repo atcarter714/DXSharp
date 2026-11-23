@@ -74,7 +74,7 @@ internal sealed class CharacterWindow : Window {
     internal void Restart( Action<RenderFrame>? draw = null ) {
         Failure = null; Viewport.Start( _device, new( ) { EnableDepth = true, FramesInFlight = 2 }, draw ?? _scene.Draw, this );
     }
-    internal async Task StopAsync( ) { await Viewport.StopAsync( ); if ( _closing ) Viewport.Dispose( ); }
+    internal async Task StopAsync( ) { await Viewport.StopAsync( ); Viewport.Dispose( ); }
     internal async void CloseOrderly( ) {
         if ( _closing ) return;
         _closing = true;
