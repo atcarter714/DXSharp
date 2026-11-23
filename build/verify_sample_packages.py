@@ -14,9 +14,11 @@ EXCLUDED = {"bin", "obj", "artifacts", ".vs"}
 
 
 def run(arguments, directory, log, executable=False):
+    # Isolated package caches must not remain loaded in reusable MSBuild nodes.
+    environment = {**os.environ, "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0"}
     with log.open("w", encoding="utf-8") as output:
         process = subprocess.Popen(arguments if executable else ["dotnet", *arguments], cwd=directory, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
+                                   stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", env=environment)
         for line in process.stdout:
             print(line, end="", flush=True)
             output.write(line)
@@ -99,8 +101,8 @@ def qualify(configuration, runtime_major):
         for key, pattern in (("local", "DXSharp.*"), ("nuget.org", "*")):
             ET.SubElement(ET.SubElement(mapping, "packageSource", key=key), "package", pattern=pattern)
         ET.ElementTree(config).write(consumer / "NuGet.Config", encoding="utf-8", xml_declaration=True)
-        run(["restore", "Samples.slnx", "--packages", str(consumer / "packages"), "-m:1", "-p:Platform=Any CPU"], consumer, evidence / "restore.log")
-        run(["build", "Samples.slnx", "-c", configuration, "--no-restore", "-m:1", "-p:Platform=Any CPU"], consumer, evidence / "build.log")
+        run(["restore", "Samples.slnx", "--packages", str(consumer / "packages"), "-m:1", "-nr:false", "-p:Platform=Any CPU"], consumer, evidence / "restore.log")
+        run(["build", "Samples.slnx", "-c", configuration, "--no-restore", "-m:1", "-nr:false", "-p:UseSharedCompilation=false", "-p:Platform=Any CPU"], consumer, evidence / "build.log")
         if os.name == "nt":
             # The developer shell's Platform variable must not change the built output path.
             fleet = consumer / "samples/FleetBattler/bin" / configuration / framework / "FleetBattler.dll"
