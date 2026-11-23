@@ -24,8 +24,9 @@ internal static class WinUIHostQualification {
         Require( viewport.Focus( FocusState.Programmatic ) && viewport.HasInputFocus, "Cannot focus the WinUI viewport." );
         window.Editor.Focus( FocusState.Programmatic );
         Require( !viewport.HasInputFocus && Equals( FocusManager.GetFocusedElement( viewport.XamlRoot ), window.Editor ), "Viewport stole text editor focus." );
-        Require( FocusManager.TryMoveFocus( FocusNavigationDirection.Next ) && viewport.HasInputFocus, "Tab entry did not reach the viewport." );
-        Require( FocusManager.TryMoveFocus( FocusNavigationDirection.Previous ) && !viewport.HasInputFocus, "Tab exit did not leave the viewport." );
+        var navigation = new FindNextElementOptions { SearchRoot = window.Content };
+        Require( FocusManager.TryMoveFocus( FocusNavigationDirection.Next, navigation ) && viewport.HasInputFocus, "Tab entry did not reach the viewport." );
+        Require( FocusManager.TryMoveFocus( FocusNavigationDirection.Previous, navigation ) && !viewport.HasInputFocus, "Tab exit did not leave the viewport." );
 
         viewport.Focus( FocusState.Programmatic );
         var other = new Window { Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = "Other active window" } };
