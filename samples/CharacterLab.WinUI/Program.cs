@@ -33,7 +33,7 @@ internal sealed class CharacterApplication : Application, IXamlMetadataProvider 
     private CharacterWindow? _window;
     internal CharacterApplication( string[] arguments ) {
         _arguments = arguments;
-        Application.DispatcherShutdownMode = Microsoft.UI.Xaml.DispatcherShutdownMode.OnExplicitShutdown;
+        this.DispatcherShutdownMode = Microsoft.UI.Xaml.DispatcherShutdownMode.OnExplicitShutdown;
         UnhandledException += ( _, args ) => { Console.Error.WriteLine( args.Exception ); Program.ExitCode = 1; Program.HadUnhandledException = true; args.Handled = true; _window?.CloseOrderly( ); };
     }
     protected override async void OnLaunched( LaunchActivatedEventArgs args ) {
