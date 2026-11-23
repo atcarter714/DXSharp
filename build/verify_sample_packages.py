@@ -9,13 +9,13 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 
-SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Framework.Wpf", "DXSharp.Assets", "DXSharp.Framework")
+SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Framework.Wpf", "DXSharp.Framework.WinUI", "DXSharp.Assets", "DXSharp.Framework")
 EXCLUDED = {"bin", "obj", "artifacts", ".vs"}
 
 
-def run(arguments, directory, log):
+def run(arguments, directory, log, executable=False):
     with log.open("w", encoding="utf-8") as output:
-        process = subprocess.Popen(["dotnet", *arguments], cwd=directory, stdout=subprocess.PIPE,
+        process = subprocess.Popen(arguments if executable else ["dotnet", *arguments], cwd=directory, stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
         for line in process.stdout:
             print(line, end="", flush=True)
@@ -123,6 +123,15 @@ def qualify(configuration, runtime_major):
                     raise RuntimeError(f'WPF precompiled consumer deployed {name}')
             run([str(wpf), "--warp", "--frames=9"], consumer, evidence / "character-wpf-runtime.log")
             run([str(wpf), "--warp", "--host-test"], consumer, evidence / "character-wpf-host.log")
+            winui_project = consumer / 'samples/CharacterLab.WinUI/CharacterLab.WinUI.csproj'
+            winui = Path(subprocess.check_output(['dotnet', 'msbuild', str(winui_project), f'-p:Configuration={configuration}', '-p:Platform=Any CPU', '-getProperty:TargetPath', '-nologo'], cwd=consumer, text=True).strip()).with_suffix('.exe')
+            if not winui.is_file():
+                raise RuntimeError(f'Missing WinUI apphost: {winui}')
+            for name in ('dxcompiler.dll', 'dxil.dll'):
+                if (winui.parent / name).exists():
+                    raise RuntimeError(f'WinUI precompiled consumer deployed {name}')
+            run([str(winui), '--warp', '--frames=9'], consumer, evidence / 'character-winui-runtime.log', executable=True)
+            run([str(winui), '--warp', '--host-test'], consumer, evidence / 'character-winui-host.log', executable=True)
         (evidence / "samples.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"PASS: all {len(manifest)} runnable samples consume packaged SDK {version} outside the checkout.")
 

@@ -3,12 +3,38 @@ using DXSharp.Graphics;
 using DXSharp.Shaders;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Dxgi;
 
 namespace InteropQualification;
 
 internal static class HostShaderQualification {
     internal static void Run() {
         using var device = GraphicsDevice.Create(new() { UseWarp = true });
+        using (var queue = device.CreateCommandQueue()) {
+            using var chain = device.CreateCompositionSwapChain(queue, 64, 48);
+            if (!chain.IsComposition || chain.BufferCount != 2) throw new InvalidOperationException("Composition swap-chain identity failed.");
+            using (var buffer = chain.AcquireBackBuffer(0)) { }
+            chain.SetCompositionScale(1.25f, 1.5f);
+            queue.WaitIdle(); chain.Resize(80, 72);
+            using var native = chain.QueryNativeInterface<IDXGISwapChain2>();
+            unsafe {
+                DXGI_SWAP_CHAIN_DESC1 description;
+                System.Runtime.InteropServices.Marshal.ThrowExceptionForHR((int)native.Interface.GetDesc1(&description));
+                DXGI_MATRIX_3X2_F matrix;
+                System.Runtime.InteropServices.Marshal.ThrowExceptionForHR((int)native.Interface.GetMatrixTransform(&matrix));
+                if (description.Width != 80 || description.Height != 72 ||
+                    Math.Abs(matrix._11 - .8f) > .00001f || Math.Abs(matrix._22 - 1f/1.5f) > .00001f)
+                    throw new InvalidOperationException("Composition description or inverse scale did not survive resize.");
+            }
+            bool rejected = false;
+            try { chain.SetCompositionScale(float.NaN, 1); } catch (ArgumentOutOfRangeException) { rejected = true; }
+            if (!rejected) throw new InvalidOperationException("Non-finite composition scale accepted.");
+            using var compute = device.CreateCommandQueue(QueueKind.Compute);
+            rejected = false;
+            try { using var invalid = device.CreateCompositionSwapChain(compute, 64, 48); } catch (ArgumentException) { rejected = true; }
+            if (!rejected) throw new InvalidOperationException("Composition accepted a non-direct queue.");
+        }
+        Console.WriteLine("PASS: composition factory ABI, owned interface query, buffers, resize, inverse scale and invalid input guards.");
         string folder = Path.Combine(Path.GetTempPath(), "dxsharp include " + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(folder);
         try {
             string source = Path.Combine(folder, "test.hlsl");

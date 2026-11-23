@@ -25,4 +25,6 @@ CharacterLab adds persistent GPU skinning, animation playback and material maps;
 
 `CharacterLab.Wpf` shares that scene through the optional WPF viewport, with WPF playback controls and a focus-isolated text editor. `--warp --host-test` exercises resize, current-DPI sizing, minimize/restore, unload/reload, render failure, restart and close/teardown. It joins the same source and isolated package gates. See [WPF hosting](../doc/Wpf-Hosting.md).
 
-See the [visual showcase and optional UI host plan](../doc/Sample-Showcase-Plan.md) for WPF/WinUI adapters and the upcoming media, spatial audio, DirectStorage and interactive DXR samples. These planned samples are not yet implemented.
+`CharacterLab.WinUI` shares the scene through the optional WinUI 3 composition viewport, with playback controls, independent text input and a genuine XAML overlay. The unpackaged app bundles its Windows App SDK runtime. `--warp --host-test` checks scale, resize, focus, suspension, unload/reload, restart and teardown. See [WinUI hosting](../doc/WinUI-Hosting.md).
+
+See the [visual showcase and optional UI host plan](../doc/Sample-Showcase-Plan.md) for WPF/WinUI adapters and the upcoming media, spatial audio, DirectStorage and interactive DXR samples. The media, storage and interactive DXR showcases remain planned.

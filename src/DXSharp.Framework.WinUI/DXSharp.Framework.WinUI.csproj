@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="Platform">
+  <PropertyGroup>
+    <TargetFrameworks>$(DXSharpTargetFrameworks)</TargetFrameworks>
+    <UseWinUI>true</UseWinUI><WindowsPackageType>None</WindowsPackageType>
+    <Platform>x64</Platform><PlatformTarget>x64</PlatformTarget><RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <Description>Optional WinUI 3 composition hosting for the modern DXSharp graphics framework.</Description>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../DXSharp.Framework/DXSharp.Framework.csproj" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" />
+  </ItemGroup>
+</Project>

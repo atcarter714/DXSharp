@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="Platform">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>$(DotNetTargets)</TargetFramework>
+    <UseWinUI>true</UseWinUI><UseWindowsForms>false</UseWindowsForms>
+    <WindowsPackageType>None</WindowsPackageType><WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <Platform>x64</Platform><PlatformTarget>x64</PlatformTarget><RuntimeIdentifier>win-x64</RuntimeIdentifier><SelfContained>false</SelfContained>
+    <ApplicationManifest>app.manifest</ApplicationManifest><DXSharpCopyDxcRuntime>false</DXSharpCopyDxcRuntime>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/DXSharp.Framework.WinUI/DXSharp.Framework.WinUI.csproj" />
+    <Compile Include="../CharacterLab/CharacterScene.cs" Link="CharacterScene.cs" />
+    <Compile Include="../CharacterLab/OrbitCamera.cs" Link="OrbitCamera.cs" />
+    <None Include="../CharacterLab/Assets/**/*" Link="Assets/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
