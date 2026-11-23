@@ -22,6 +22,8 @@ try {
     Invoke-Sample 'CharacterLab-native' @('run', '--project', 'samples/CharacterLab.Native', '-c', 'Debug', '--', '--warp', '--frames=9', '--resize-test')
     Invoke-Sample 'CharacterLab-wpf' @('run', '--project', 'samples/CharacterLab.Wpf', '-c', 'Debug', '--', '--warp', '--frames=9')
     Invoke-Sample 'CharacterLab-wpf-host' @('run', '--project', 'samples/CharacterLab.Wpf', '-c', 'Debug', '--', '--warp', '--host-test')
+    Invoke-Sample 'CharacterLab-winui' @('run', '--project', 'samples/CharacterLab.WinUI', '-c', 'Debug', '--', '--warp', '--frames=9')
+    Invoke-Sample 'CharacterLab-winui-host' @('run', '--project', 'samples/CharacterLab.WinUI', '-c', 'Debug', '--', '--warp', '--host-test')
     Invoke-Sample 'DepthStencil' @('run', '--project', 'samples/DepthStencil', '-c', 'Debug', '--', '--warp')
 
     Invoke-Sample 'ModernTriangle' @('run', '--project', 'samples/ModernTriangle', '-c', 'Debug', '--',

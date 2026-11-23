@@ -25,8 +25,8 @@ public readonly record struct RenderFrame( GraphicsCommandList Commands, RenderT
 /// <summary>Completed presentations and surface resizes.</summary>
 public readonly record struct RenderStatistics( int Frames, int Resizes );
 
-/// <summary>Window-system-independent frame slots and HWND presentation. Public methods run on the creating thread; drain work runs on a worker.</summary>
-/// <remarks>The host owns the HWND and must keep it alive until Drain completes. The device remains caller-owned.</remarks>
+/// <summary>Window-system-independent frame slots with HWND or composition presentation. Public methods run on the creating thread; drain work runs on a worker.</summary>
+/// <remarks>The host owns its presentation surface and keeps it alive until drain completes. The device remains caller-owned.</remarks>
 public sealed class FrameRenderer : IDisposable {
     private readonly int _thread = Environment.CurrentManagedThreadId;
     private readonly GraphicsDevice _device;
@@ -45,7 +45,16 @@ public sealed class FrameRenderer : IDisposable {
     public RenderStatistics Statistics { get; private set; }
 
     /// <summary>Creates presentation resources for an externally owned live HWND.</summary>
-    public FrameRenderer( GraphicsDevice device, nint window, WindowRenderOptions options ) {
+    public FrameRenderer( GraphicsDevice device, nint window, WindowRenderOptions options ) : this( device, window, options, false ) { }
+    /// <summary>Creates composition presentation resources. The caller attaches the queried native swap chain to its UI surface.</summary>
+    public static FrameRenderer CreateForComposition( GraphicsDevice device, WindowRenderOptions options ) => new( device, 0, options, true );
+    /// <summary>Queries an independently owned native view of the presentation chain. Detach the host and dispose this view before renderer disposal.</summary>
+    public DXSharp.Interop.NativeInterface<T> QuerySwapChainInterface<T>( ) where T : class {
+        CheckThread( ); ObjectDisposedException.ThrowIf( _disposed, this ); return _swap.QueryNativeInterface<T>( );
+    }
+    /// <summary>Applies composition scale on the creating thread. HWND renderers reject this operation.</summary>
+    public void SetCompositionScale( float scaleX, float scaleY ) { CheckThread( ); ObjectDisposedException.ThrowIf( _disposed, this ); _swap.SetCompositionScale( scaleX, scaleY ); }
+    private FrameRenderer( GraphicsDevice device, nint window, WindowRenderOptions options, bool composition ) {
         ArgumentNullException.ThrowIfNull( device ); ArgumentNullException.ThrowIfNull( options );
         if ( options.ClientSize.Width <= 0 || options.ClientSize.Height <= 0 || options.FramesInFlight is < 1 or > 3 || options.FrameLimit < 0 )
             throw new ArgumentOutOfRangeException( nameof(options) );
@@ -53,7 +62,8 @@ public sealed class FrameRenderer : IDisposable {
         _queue = device.CreateCommandQueue( );
         var owners = new List<IDisposable>( );
         try {
-            _swap = device.CreateSwapChain( _queue, window, (uint)_size.Width, (uint)_size.Height ); owners.Add( _swap );
+            _swap = composition ? device.CreateCompositionSwapChain( _queue, (uint)_size.Width, (uint)_size.Height ) :
+                device.CreateSwapChain( _queue, window, (uint)_size.Width, (uint)_size.Height ); owners.Add( _swap );
             _heap = device.CreateRenderTargetHeap( _swap.BufferCount ); owners.Add( _heap );
             _slots = new FrameSlot[options.FramesInFlight];
             for ( int i = 0; i < _slots.Length; ++i ) { _slots[i] = new( device ); owners.Add( _slots[i] ); }

@@ -28,6 +28,7 @@ flowchart TD
 | `DXSharp.Core` | Device and queue ownership, buffers and resource states, descriptors, pipelines, HWND swap chains, DXC, and a bounded DXR surface |
 | `DXSharp.DirectML` | Same-device tensor binding and synchronous compiled Add and GEMM execution with optional fused ReLU |
 | `DXSharp.Framework.Desktop` | A WinForms-owned STA loop, one or two fenced frame slots, resize, depth target, and presentation |
+| `DXSharp.Framework.WinUI` | Optional WinUI 3 SwapChainPanel composition over the shared frame renderer |
 | `DXSharp.Framework.Wpf` | Optional WPF dispatcher scheduling and a child-HWND viewport over the shared frame renderer |
 | `DXSharp`, `DXSharp.Dxc`, `DXSharp.Framework` | Compatibility types, RCWs, older wrappers and framework. The compatibility tests still exercise this path. BasicSample uses the current desktop host. |
 
@@ -89,7 +90,7 @@ Split frame-slot management and presentation from the WinForms message loop. Def
 | Avalonia | A Windows sample using `NativeControlHost` and a child HWND |
 | Headless | The same renderer into offscreen targets with readback and no UI dispatcher |
 
-Qualify resize, DPI changes, host teardown, and device removal in each adapter. Embedded WinUI composition is a separate surface kind from the HWND swap chain available today. [WinUI SwapChainPanel](https://learn.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.swapchainpanel) · [WPF HWND hosting](https://learn.microsoft.com/dotnet/desktop/wpf/advanced/hosting-win32-content-in-wpf) · [Avalonia native Windows controls](https://docs.avaloniaui.net/docs/platform-specific-guides/windows)
+Qualify resize, DPI changes, host teardown, and device removal in each adapter. The optional WinUI adapter uses the shared composition surface; the WPF adapter uses the HWND surface. See the [WinUI contract](WinUI-Hosting.md) and [WPF contract](Wpf-Hosting.md). [WinUI SwapChainPanel](https://learn.microsoft.com/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.swapchainpanel) · [WPF HWND hosting](https://learn.microsoft.com/dotnet/desktop/wpf/advanced/hosting-win32-content-in-wpf) · [Avalonia native Windows controls](https://docs.avaloniaui.net/docs/platform-specific-guides/windows)
 
 ### NoesisGUI adapter
 

@@ -15,6 +15,7 @@ sealed class OrbitCamera
     internal Func<bool>? InputEnabled { get; set; }
     internal Func<bool>? PointerEnabled { get; set; }
     internal void Reset() { _yaw = 0.35f; _pitch = 0.12f; _distance = 4; _wasDragging = false; _lastKeyState.Clear(); }
+    internal void Zoom(float amount) => _distance = Math.Clamp(_distance + amount, 2, 9);
 
     public Vector3 Eye
     {

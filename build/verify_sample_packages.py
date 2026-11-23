@@ -9,14 +9,16 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 
-SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Framework.Wpf", "DXSharp.Assets", "DXSharp.Framework")
+SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Framework.Wpf", "DXSharp.Framework.WinUI", "DXSharp.Assets", "DXSharp.Framework")
 EXCLUDED = {"bin", "obj", "artifacts", ".vs"}
 
 
-def run(arguments, directory, log):
+def run(arguments, directory, log, executable=False):
+    # Isolated package caches must not remain loaded in reusable MSBuild nodes.
+    environment = {**os.environ, "MSBUILDDISABLENODEREUSE": "1", "DOTNET_CLI_USE_MSBUILD_SERVER": "0"}
     with log.open("w", encoding="utf-8") as output:
-        process = subprocess.Popen(["dotnet", *arguments], cwd=directory, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
+        process = subprocess.Popen(arguments if executable else ["dotnet", *arguments], cwd=directory, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", env=environment)
         for line in process.stdout:
             print(line, end="", flush=True)
             output.write(line)
@@ -99,8 +101,8 @@ def qualify(configuration, runtime_major):
         for key, pattern in (("local", "DXSharp.*"), ("nuget.org", "*")):
             ET.SubElement(ET.SubElement(mapping, "packageSource", key=key), "package", pattern=pattern)
         ET.ElementTree(config).write(consumer / "NuGet.Config", encoding="utf-8", xml_declaration=True)
-        run(["restore", "Samples.slnx", "--packages", str(consumer / "packages"), "-m:1", "-p:Platform=Any CPU"], consumer, evidence / "restore.log")
-        run(["build", "Samples.slnx", "-c", configuration, "--no-restore", "-m:1", "-p:Platform=Any CPU"], consumer, evidence / "build.log")
+        run(["restore", "Samples.slnx", "--packages", str(consumer / "packages"), "-m:1", "-nr:false", "-p:Platform=Any CPU"], consumer, evidence / "restore.log")
+        run(["build", "Samples.slnx", "-c", configuration, "--no-restore", "-m:1", "-nr:false", "-p:UseSharedCompilation=false", "-p:Platform=Any CPU"], consumer, evidence / "build.log")
         if os.name == "nt":
             # The developer shell's Platform variable must not change the built output path.
             fleet = consumer / "samples/FleetBattler/bin" / configuration / framework / "FleetBattler.dll"
@@ -123,6 +125,15 @@ def qualify(configuration, runtime_major):
                     raise RuntimeError(f'WPF precompiled consumer deployed {name}')
             run([str(wpf), "--warp", "--frames=9"], consumer, evidence / "character-wpf-runtime.log")
             run([str(wpf), "--warp", "--host-test"], consumer, evidence / "character-wpf-host.log")
+            winui_project = consumer / 'samples/CharacterLab.WinUI/CharacterLab.WinUI.csproj'
+            winui = Path(subprocess.check_output(['dotnet', 'msbuild', str(winui_project), f'-p:Configuration={configuration}', '-p:Platform=Any CPU', '-getProperty:TargetPath', '-nologo'], cwd=consumer, text=True).strip()).with_suffix('.exe')
+            if not winui.is_file():
+                raise RuntimeError(f'Missing WinUI apphost: {winui}')
+            for name in ('dxcompiler.dll', 'dxil.dll'):
+                if (winui.parent / name).exists():
+                    raise RuntimeError(f'WinUI precompiled consumer deployed {name}')
+            run([str(winui), '--warp', '--frames=9'], consumer, evidence / 'character-winui-runtime.log', executable=True)
+            run([str(winui), '--warp', '--host-test'], consumer, evidence / 'character-winui-host.log', executable=True)
         (evidence / "samples.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"PASS: all {len(manifest)} runnable samples consume packaged SDK {version} outside the checkout.")
 
