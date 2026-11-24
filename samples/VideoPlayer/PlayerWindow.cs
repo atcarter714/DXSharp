@@ -65,7 +65,7 @@ internal sealed class PlayerWindow : Window {
                 try { _timeline.Maximum = Math.Max(1,Player.Duration.TotalSeconds); _timeline.Value = Math.Min(_timeline.Maximum,Player.Position.TotalSeconds); }
                 finally { _updating = false; }
                 var s = Player.Statistics; var f = LatestFrame;
-                _status.Text = $"{Player.Position:mm\\:ss\\.fff} / {Player.Duration:mm\\:ss} · {(Player.IsPaused ? "PAUSED" : Player.IsEnded ? "ENDED" : "PLAYING")} · {f.Width}×{f.Height} · audio {(Player.HasAudio ? "present" : "none")}\n" +
+                _status.Text = $"{Player.Position:mm\\:ss\\.fff} / {Player.Duration:mm\\:ss} · {(Player.IsEnded ? "ENDED" : Player.IsPaused ? "PAUSED" : "PLAYING")} · {f.Width}×{f.Height} · audio {(Player.HasAudio ? "present" : "none")}\n" +
                     $"Transferred {s.FramesTransferred} · dropped {s.FramesDropped?.ToString() ?? "unavailable"} · video PTS − A/V clock {s.PresentationOffset.TotalMilliseconds:+0.0;-0.0;0.0} ms · hardware decode unmeasured\n{s.TransferPath}";
             }
             if (_limit > 0 && stats.Frames >= _limit && VideoFrames > 1) CloseOrderly();

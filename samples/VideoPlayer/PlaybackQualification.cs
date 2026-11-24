@@ -15,6 +15,7 @@ internal static class PlaybackQualification {
         Require(colored > 5000,"Decoded color pattern is missing or channel data are blank.");
         player.Pause(); await Task.Delay(80); var paused = player.Position; await Task.Delay(180);
         Require(player.IsPaused && Math.Abs((player.Position-paused).TotalMilliseconds)<50,"Paused presentation clock advanced.");
+        Console.WriteLine("PASS: decoded BGRA pattern, fixture duration and paused presentation clock.");
         player.Volume=.25; player.Muted=true; Require(player.Muted && Math.Abs(player.Volume-.25)<.001,"Volume/mute state failed."); player.Muted=false;
         long generation=player.Generation; player.Seek(TimeSpan.FromSeconds(2));
         await Until(() => !player.IsSeeking && Math.Abs(player.Position.TotalSeconds-2)<.2,player);
@@ -45,9 +46,9 @@ internal static class PlaybackQualification {
         Require(disposed,"Disposed player accepted playback."); player.Dispose();
         Console.WriteLine("PASS: video player drained shutdown and inert post-close callbacks. Audio-less CI fixture; audible A/V synchronization requires hardware review.");
     }
-    private static async Task Until(Func<bool> predicate,MediaPlayer player) {
+    private static async Task Until(Func<bool> predicate,MediaPlayer player, [System.Runtime.CompilerServices.CallerArgumentExpression(nameof(predicate))] string condition = "") {
         var watch=Stopwatch.StartNew();
-        while(!predicate()) { player.ThrowIfFailed(); if(watch.Elapsed>TimeSpan.FromSeconds(20)) throw new TimeoutException("Media qualification timed out."); await Task.Delay(10); }
+        while(!predicate()) { player.ThrowIfFailed(); if(watch.Elapsed>TimeSpan.FromSeconds(20)) throw new TimeoutException($"Media qualification timed out: {condition}; position={player.Position.TotalSeconds:F3}, duration={player.Duration.TotalSeconds:F3}, ready={player.IsReady}, seeking={player.IsSeeking}, paused={player.IsPaused}, ended={player.IsEnded}."); await Task.Delay(10); }
     }
     private static void Require(bool condition,string message) { if(!condition) throw new InvalidOperationException(message); }
 }

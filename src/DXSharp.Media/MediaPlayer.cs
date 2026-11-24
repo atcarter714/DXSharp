@@ -78,7 +78,7 @@ public sealed class MediaPlayer : IDisposable {
     public void Seek(TimeSpan position) {
         RequireSource(); double seconds = position.TotalSeconds;
         if (seconds < 0 || !double.IsFinite(seconds) || !double.IsFinite(Engine.GetDuration()) || seconds > Engine.GetDuration()) throw new ArgumentOutOfRangeException(nameof(position));
-        ++_generation; _offset = default; CheckResult((int)Engine.SetCurrentTime(seconds));
+        ++_generation; _offset = default; CheckResult((int)(_extended is null ? Engine.SetCurrentTime(seconds) : _extended.Interface.SetCurrentTimeEx(seconds, MF_MEDIA_ENGINE_SEEK_MODE.MF_MEDIA_ENGINE_SEEK_MODE_NORMAL)));
     }
     private void RequireSource() { Check(); if (!_opened) throw new InvalidOperationException("Open a media source first."); ThrowIfFailed(); }
     /// <summary>Monotonically increasing source/seek generation for invalidating borrowed frames.</summary>
@@ -108,17 +108,20 @@ public sealed class MediaPlayer : IDisposable {
     /// <summary>Native end-of-stream looping.</summary>
     public bool Loop { get => Engine.GetLoop(); set => CheckResult((int)Engine.SetLoop(value)); }
     /// <summary>Throws a reported asynchronous media/decoder/output error on the application thread.</summary>
-    public void ThrowIfFailed() { Check(); int error = _notify.Error; if (error != 0) throw new COMException($"Media Engine reported error {_notify.ErrorCode} (HRESULT 0x{error:X8}).", error); }
+    public void ThrowIfFailed() { Check(); int error = Volatile.Read(ref _notify.Error); if (error != 0) throw new COMException($"Media Engine reported error {Volatile.Read(ref _notify.ErrorCode)} (HRESULT 0x{error:X8}).", error); }
     /// <summary>Returns one due frame. Poll on the render thread; S_FALSE, seeking and audio-only sources return false without allocation.</summary>
     public unsafe bool TryGetFrame(out VideoFrame frame) {
         RequireSource(); frame = default;
-        if (!IsReady || IsSeeking || !HasVideo) return false;
+        if (!IsReady || !HasVideo) return false;
         uint width = 0, height = 0; CheckResult((int)Engine.GetNativeVideoSize(&width, &height));
         if (width == 0 || height == 0) return false;
         if (width != _width || height != _height) CreateBitmap(width, height);
         int result = (int)Engine.OnVideoStreamTick(out long ticks); CheckResult(result); if (result != 0) return false;
         RECT destination = new(0, 0, checked((int)width), checked((int)height)); MFARGB border = new() { rgbAlpha = 255 };
         CheckResult((int)Engine.TransferVideoFrame(_bitmap!.Interface, null, &destination, &border));
+        // Continue ticking/transferring while seeking so the native frame-server can complete its presentation transition.
+        // Suppress publication of the old seek generation until the engine reports completion.
+        if (IsSeeking) return false;
         _view!.ReadArray(0, _pixels, 0, _pixels.Length);
         var time = TimeSpan.FromTicks(ticks); _offset = time - Position; ++_frames;
         frame = new(width, height, width * 4, _pixels, time, _generation); return true;
