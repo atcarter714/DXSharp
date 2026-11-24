@@ -45,6 +45,9 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+      - name: Ensure Media Foundation is installed
+        shell: pwsh
+        run: ./build/EnsureMediaFoundation.ps1
       - name: Check the requested version and source branch
         id: version
         shell: pwsh

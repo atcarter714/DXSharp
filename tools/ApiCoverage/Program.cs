@@ -53,6 +53,7 @@ string[] families = [
     "Windows.Win32.Graphics.DirectWrite",
     "Windows.Win32.Graphics.Imaging",
     "Windows.Win32.Media.Audio",
+    "Windows.Win32.Media.MediaFoundation",
     "Windows.Win32.UI.Input",
     "Windows.Win32.Devices.HumanInterfaceDevice",
     "Windows.Win32.UI.Animation",

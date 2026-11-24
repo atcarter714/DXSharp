@@ -59,7 +59,13 @@ public sealed unsafe partial class GraphicsDevice {
     /// <param name="constantCount">Number of inline DWORDs. Zero omits the constant parameter.</param>
     /// <param name="linearWrap">Uses a linear repeat sampler at s0 when true and point clamp when false.</param>
     /// <returns>The owning root signature. Bind the texture at parameter one when constants are present.</returns>
-    public RootSignature CreateTextureRootSignature( uint constantCount, bool linearWrap ) {
+    public RootSignature CreateTextureRootSignature( uint constantCount, bool linearWrap ) => CreateTextureRootSignature( constantCount, linearWrap, linearWrap );
+
+    /// <summary>Creates a texture signature with independent filtering and address-mode choices.</summary>
+    /// <param name="constantCount">Inline DWORD constants at b0, or zero.</param>
+    /// <param name="linearFiltering">True for linear filtering, false for point filtering.</param>
+    /// <param name="wrap">True for repeating UV coordinates, false for clamping to texture edges.</param>
+    public RootSignature CreateTextureRootSignature( uint constantCount, bool linearFiltering, bool wrap ) {
         if ( constantCount > 63 ) throw new ArgumentOutOfRangeException( nameof(constantCount) );
         D3D12_DESCRIPTOR_RANGE range = new( ) { RangeType = D3D12_DESCRIPTOR_RANGE_TYPE.D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NumDescriptors = 1 };
         D3D12_ROOT_PARAMETER parameter = new( ) {
@@ -71,10 +77,10 @@ public sealed unsafe partial class GraphicsDevice {
         int textureSlot = constantCount == 0 ? 0 : 1;
         if ( constantCount != 0 ) parameters[0] = InlineConstants( constantCount );
         parameters[textureSlot] = parameter;
-        var address = linearWrap ? D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_WRAP
+        var address = wrap ? D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_WRAP
             : D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
         D3D12_STATIC_SAMPLER_DESC sampler = new( ) {
-            Filter = linearWrap ? D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_LINEAR : D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_POINT,
+            Filter = linearFiltering ? D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_LINEAR : D3D12_FILTER.D3D12_FILTER_MIN_MAG_MIP_POINT,
             AddressU = address, AddressV = address, AddressW = address,
             MaxAnisotropy = 1, MaxLOD = float.MaxValue,
             ComparisonFunc = D3D12_COMPARISON_FUNC.D3D12_COMPARISON_FUNC_ALWAYS,

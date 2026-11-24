@@ -24,6 +24,7 @@ ApiCoverage reads the pinned WinMD and built assembly with System.Reflection.Met
 | Direct2D | 359 / 359 | 1600 / 1600 |
 | DirectWrite | 207 / 207 | 1287 / 1287 |
 | WIC | 139 / 139 | 948 / 948 |
+| Media Foundation, including pinned D3D12 video declarations | 1650 / 1650 | 8484 / 8484 |
 | Audio, including XAudio2 and DirectSound | 474 / 474 | 3647 / 3647 |
 | Raw input | 20 / 20 | 91 / 91 |
 | DirectInput and HID | 141 / 141 | 5546 / 5546 |

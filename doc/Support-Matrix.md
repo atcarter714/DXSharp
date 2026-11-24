@@ -30,7 +30,8 @@ Samples default to .NET 10. Select the newer runtime with `-p:DXSharpRuntimeMajo
 | D2D/DirectWrite/WIC/composition | Pinned declarations | Native escape hatch | Family-specific end-to-end qualification remains |
 | Audio/input | Pinned audio, Raw Input, DirectInput/HID, XInput and older GameInput | Selected sample-local behavior | Current GameInput, X3DAudio and reusable audio/input integrations remain |
 | DirectStorage | Missing separate metadata source | None | Explicitly unsupported/unqualified |
-| Media Foundation/D3D12 video | Not projected | None | Separate binding and workload qualification remains |
+| Media Foundation | Pinned namespace projected and name/IID coverage checked | Optional Media Engine frame-server playback; WIC/CPU transfer and D3D12 texture rendering | Fixture playback, colors, clock/seek/loop and shutdown; audible A/V sync remains hardware qualification |
+| D3D12 video | Pinned declarations under Media.MediaFoundation | Native escape hatch; no owned decode/encode workflow | Direct video-command-queue workloads remain unqualified |
 | Advanced D3D12 features | Availability varies by pinned interface | Selected native recording paths | Query interface/features and qualify each claimed workflow |
 
 CI validates only the matrix recorded for its exact commit. A skipped hardware capability is not a pass, compilation is not execution, and a name/IID gate is not a complete ABI proof. Retain adapter/driver/runtime details with hardware results. See [qualification](SDK-Release-Qualification.md), [coverage and migration notes](API-Coverage.md), and [the parity roadmap](Competitive-Parity-Roadmap.md).

@@ -1,0 +1,12 @@
+{
+  "origin": "Original FFmpeg-generated DXSharp test pattern; MIT licensed with this repository.",
+  "width": 320,
+  "height": 180,
+  "framesPerSecond": 24,
+  "durationSeconds": 6,
+  "audio": "880 Hz pulses synchronized to the white flash; 48 kHz AAC stereo/mono as encoded",
+  "files": {
+    "test-av.mp4": "def5fc5bf10be167ddde071087c71dfbca644a046f6e3e3b5e64acdb650a6cef",
+    "test-video.mp4": "4a741edddd69fecb2405b454a5d64abffcdd1c9d1969830823cb695ddac2c962"
+  }
+}

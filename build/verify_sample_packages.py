@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 
-SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Framework.Wpf", "DXSharp.Framework.WinUI", "DXSharp.Assets", "DXSharp.Framework")
+SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Framework.Wpf", "DXSharp.Framework.WinUI", "DXSharp.Assets", "DXSharp.Framework", "DXSharp.Media")
 EXCLUDED = {"bin", "obj", "artifacts", ".vs"}
 
 
@@ -134,6 +134,12 @@ def qualify(configuration, runtime_major):
                     raise RuntimeError(f'WinUI precompiled consumer deployed {name}')
             run([str(winui), '--warp', '--frames=9'], consumer, evidence / 'character-winui-runtime.log', executable=True)
             run([str(winui), '--warp', '--host-test'], consumer, evidence / 'character-winui-host.log', executable=True)
+            media_project = consumer / 'samples/VideoPlayer/VideoPlayer.csproj'
+            media = Path(subprocess.check_output(['dotnet', 'msbuild', str(media_project), f'-p:Configuration={configuration}', '-p:Platform=Any CPU', '-getProperty:TargetPath', '-nologo'], cwd=consumer, text=True).strip()).with_suffix('.exe')
+            for name in ('dxcompiler.dll', 'dxil.dll'):
+                if (media.parent / name).exists():
+                    raise RuntimeError(f'Media precompiled consumer deployed {name}')
+            run([str(media), '--warp', '--test'], consumer, evidence / 'video-player.log', executable=True)
         (evidence / "samples.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"PASS: all {len(manifest)} runnable samples consume packaged SDK {version} outside the checkout.")
 

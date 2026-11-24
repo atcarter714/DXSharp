@@ -36,6 +36,9 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+      - name: Ensure Media Foundation is installed
+        shell: pwsh
+        run: ./build/EnsureMediaFoundation.ps1
       - name: Restore, build, ABI tests, pack, and consume packages
         shell: pwsh
         run: ./build.ps1 -Configuration ${{ matrix.configuration }}
@@ -85,6 +88,10 @@ jobs:
         env:
           DXSHARP_FLEET_EVIDENCE: artifacts/sample-results/fleet-system.ppm
         run: ./build/VerifyInterop.ps1 -Configuration Release -RuntimeMajor ${{ matrix.runtime }} -PublishAot
+      - name: Ensure Media Foundation is installed
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./build/EnsureMediaFoundation.ps1
       - name: WARP sample qualification
         if: runner.os == 'Windows'
         shell: pwsh
