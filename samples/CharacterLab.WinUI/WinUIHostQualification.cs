@@ -21,6 +21,19 @@ internal static class WinUIHostQualification {
         window.AppWindow.Resize( new SizeInt32( 1000, 700 ) );
         await Frames( viewport, viewport.Statistics.Frames + 3 );
         Require( viewport.PixelSize != original && viewport.Statistics.Resizes > 0 && rendered == viewport.PixelSize, "WinUI resize did not reach the physical back buffers." );
+        // Coalesced resize/move bursts must keep the dispatcher alive and ultimately render the latest physical size.
+        var turn = System.Diagnostics.Stopwatch.StartNew( );
+        for ( int i = 0; i < 24; ++i ) {
+            var rectangle = window.AppWindow.Position;
+            window.AppWindow.MoveAndResize( new RectInt32( rectangle.X + (i % 2 == 0 ? 1 : -1), rectangle.Y,
+                920 + i % 4 * 23, 640 + i % 3 * 17 ) );
+            await Task.Delay( 15 );
+            Require( turn.Elapsed < TimeSpan.FromSeconds( 5 ), "WinUI dispatcher stalled during move/resize." ); turn.Restart( );
+        }
+        int before = viewport.Statistics.Frames;
+        await Frames( viewport, before + 4 );
+        Require( rendered == viewport.PixelSize, "Resize burst did not settle on the latest physical dimensions." );
+        Console.WriteLine( "PASS: WinUI move/resize burst kept dispatching and settled on the final back-buffer size." );
         Require( viewport.Focus( FocusState.Programmatic ) && viewport.HasInputFocus, "Cannot focus the WinUI viewport." );
         window.Editor.Focus( FocusState.Programmatic );
         Require( !viewport.HasInputFocus && Equals( FocusManager.GetFocusedElement( viewport.XamlRoot ), window.Editor ), "Viewport stole text editor focus." );

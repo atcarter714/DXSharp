@@ -22,6 +22,7 @@ Windows.Win32.Graphics.Dxgi
 Windows.Win32.Graphics.Dxgi.Common
 Windows.Win32.Graphics.Imaging
 Windows.Win32.Graphics.Imaging.D2D
+Windows.Win32.Media.MediaFoundation
 Windows.Win32.Media.Audio
 Windows.Win32.Media.Audio.Apo
 Windows.Win32.Media.Audio.DirectMusic
@@ -41,3 +42,7 @@ GetCursorPos
 Windows.Win32.UI.WindowsAndMessaging
 Windows.Win32.UI.HiDpi
 Windows.Win32.UI.Input.KeyboardAndMouse
+CoInitializeEx
+CoUninitialize
+PropVariantClear
+SetEvent

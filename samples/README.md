@@ -28,3 +28,5 @@ CharacterLab adds persistent GPU skinning, animation playback and material maps;
 `CharacterLab.WinUI` shares the scene through the optional WinUI 3 composition viewport, with playback controls, independent text input and a genuine XAML overlay. The unpackaged app bundles its Windows App SDK runtime. `--warp --host-test` checks scale, resize, focus, suspension, unload/reload, restart and teardown. See [WinUI hosting](../doc/WinUI-Hosting.md).
 
 See the [visual showcase and optional UI host plan](../doc/Sample-Showcase-Plan.md) for WPF/WinUI adapters and the upcoming media, spatial audio, DirectStorage and interactive DXR samples. The media, storage and interactive DXR showcases remain planned.
+
+`VideoPlayer` demonstrates Media Foundation frame-server playback through DXSharp D3D12 textures, with WinUI open/play/pause/seek/loop/volume controls and live transfer diagnostics. The original generated test clip includes synchronized flashes and audio pulses. Run `dotnet run --project samples/VideoPlayer -c Release`; use `-- --file="C:\Media\clip.mp4"` for a local file or `-- --warp --test` for bounded CI checks. See [media playback](../doc/Media-Playback.md).

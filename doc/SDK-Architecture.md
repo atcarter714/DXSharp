@@ -28,6 +28,7 @@ flowchart TD
 | `DXSharp.Core` | Device and queue ownership, buffers and resource states, descriptors, pipelines, HWND swap chains, DXC, and a bounded DXR surface |
 | `DXSharp.DirectML` | Same-device tensor binding and synchronous compiled Add and GEMM execution with optional fused ReLU |
 | `DXSharp.Framework.Desktop` | A WinForms-owned STA loop, one or two fenced frame slots, resize, depth target, and presentation |
+| `DXSharp.Media` | Optional Media Foundation playback and reusable D3D12 video-texture rendering |
 | `DXSharp.Framework.WinUI` | Optional WinUI 3 SwapChainPanel composition over the shared frame renderer |
 | `DXSharp.Framework.Wpf` | Optional WPF dispatcher scheduling and a child-HWND viewport over the shared frame renderer |
 | `DXSharp`, `DXSharp.Dxc`, `DXSharp.Framework` | Compatibility types, RCWs, older wrappers and framework. The compatibility tests still exercise this path. BasicSample uses the current desktop host. |

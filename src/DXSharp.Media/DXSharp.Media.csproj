@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>$(DXSharpTargetFrameworks)</TargetFrameworks>
+    <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
+    <Description>Owned Media Foundation frame-server playback and D3D12 video-texture presentation for DXSharp.</Description>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../DXSharp.Framework/DXSharp.Framework.csproj" /></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../tools/DXSharp.Tools.Builds/DXSharp.Tools.Builds.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" GlobalPropertiesToRemove="PublishAot;PublishTrimmed;SelfContained;RuntimeIdentifier;RuntimeIdentifiers" AdditionalProperties="Platform=AnyCPU" />
+    <DXSharpShader Include="Video.hlsl" EntryPoint="VS" Profile="vs_6_0" LogicalName="DXSharp.Media.Video.VS.dxil" />
+    <DXSharpShader Include="Video.hlsl" EntryPoint="PS" Profile="ps_6_0" LogicalName="DXSharp.Media.Video.PS.dxil" />
+  </ItemGroup>
+  <PropertyGroup>
+    <DXSharpBuildShaders Condition="'$(OS)' != 'Windows_NT' and '$(DXSharpDxcToolPath)' == ''">false</DXSharpBuildShaders>
+    <DXSharpShaderTaskAssembly>$(RepoRootPath)artifacts/bin/DXSharp.Tools.Builds/$(Configuration)/netstandard2.0/DXSharp.Tools.Builds.dll</DXSharpShaderTaskAssembly>
+  </PropertyGroup>
+  <Import Project="../../build/msbuild/DXSharp.Shaders.targets" />
+  <Target Name="RequireMediaShadersForPack" BeforeTargets="GenerateNuspec" Condition="'$(DXSharpBuildShaders)' != 'true'"><Error Text="Media packages require precompiled shaders. Build on Windows or set DXSharpDxcToolPath." /></Target>
+</Project>

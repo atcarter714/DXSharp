@@ -22,6 +22,7 @@ public sealed class D3D12Viewport : UserControl, IDisposable {
     private readonly int _thread = Environment.CurrentManagedThreadId;
     private readonly SwapChainPanel _panel = new( );
     private readonly Stopwatch _clock = new( );
+    private readonly Action<RenderFrame> _record;
     private GraphicsDevice? _device;
     private WindowRenderOptions? _options;
     private Action<RenderFrame>? _draw;
@@ -33,11 +34,11 @@ public sealed class D3D12Viewport : UserControl, IDisposable {
     private TimeSpan _previous;
     private Vector2 _appliedScale;
     private nint _ownerWindow;
-    private bool _started, _subscribed, _drawing, _disposed, _inside, _captured, _suspended;
+    private bool _started, _subscribed, _drawing, _disposed, _inside, _captured, _suspended, _scheduled;
 
     /// <summary>Creates a viewport usable as ordinary composed WinUI content.</summary>
     public D3D12Viewport( ) {
-        Content = _panel; IsTabStop = true;
+        _record = Record; Content = _panel; IsTabStop = true;
         Loaded += OnLoaded; Unloaded += OnUnloaded;
         PointerEntered += ( _, _ ) => _inside = true;
         PointerExited += ( _, _ ) => _inside = false;
@@ -142,12 +143,28 @@ public sealed class D3D12Viewport : UserControl, IDisposable {
             var scale = CompositionScale; renderer.SetCompositionScale( scale.X, scale.Y );
             Marshal.ThrowExceptionForHR( panel.Interface.SetSwapChain( chain.Pointer ) );
             _renderer = renderer; _panelNative = panel; _chainNative = chain; _appliedScale = scale;
+            renderer.SurfaceResized += ReattachSwapChain;
         } catch {
             if ( panel is not null ) panel.Interface.SetSwapChain( 0 );
             chain?.Dispose( ); panel?.Dispose( ); renderer.Dispose( ); throw;
         }
     }
+    private void ReattachSwapChain( ) => Marshal.ThrowExceptionForHR( _panelNative!.Interface.SetSwapChain( _chainNative!.Pointer ) );
     private void OnRendering( object? sender, object args ) {
+        if ( _scheduled || !_started || _disposed ) return;
+        _scheduled = true;
+        // Leave the XAML composition callback before recording or notifying subscribers that may mutate layout.
+        if ( !DispatcherQueue.TryEnqueue( RenderTurn ) ) _scheduled = false;
+    }
+    private void RenderTurn( ) {
+        try { RenderOnce( ); }
+        finally { _scheduled = false; }
+    }
+    private void Record( RenderFrame frame ) {
+        // Accumulate time across skipped GPU-busy turns; animation must not slow down when frames are unavailable.
+        _previous = _clock.Elapsed; _draw!( frame );
+    }
+    private void RenderOnce( ) {
         if ( !_started || _disposed || _drawing || _stop is { IsCompleted: false } ) return;
         var now = _clock.Elapsed;
         if ( _suspended || !IsLoaded || Visibility != Visibility.Visible ||
@@ -160,9 +177,8 @@ public sealed class D3D12Viewport : UserControl, IDisposable {
             if ( scale != _appliedScale ) { _renderer!.SetCompositionScale( scale.X, scale.Y ); _appliedScale = scale; }
             bool presented;
             _drawing = true;
-            try { presented = _renderer!.Render( size, now - _previous, _draw! ); }
+            try { presented = _renderer!.RenderAvailable( size, now - _previous, _record ); }
             finally { _drawing = false; }
-            _previous = now;
             if ( presented ) {
                 var statistics = Statistics; FramePresented?.Invoke( statistics );
                 if ( _options!.FrameLimit > 0 && statistics.Frames >= _options.FrameLimit ) _ = FinishAsync( );
@@ -178,7 +194,7 @@ public sealed class D3D12Viewport : UserControl, IDisposable {
     private async Task RetireAsync( ) {
         var renderer = _renderer;
         if ( renderer is null ) return;
-        _retired = Statistics; _renderer = null;
+        _retired = Statistics; _renderer = null; renderer.SurfaceResized -= ReattachSwapChain;
         try { await renderer.BeginDrain( ); }
         finally {
             try { if ( _panelNative is not null ) Marshal.ThrowExceptionForHR( _panelNative.Interface.SetSwapChain( 0 ) ); }

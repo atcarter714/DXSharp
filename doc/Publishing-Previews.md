@@ -1,6 +1,6 @@
 # Publishing DXSharp previews
 
-Preview 3 shipped five modern package IDs. Preview 4 development adds Framework, the DXC build tool and the optional WPF and WinUI hosts. The candidate set is defined in `build/release_packages.py`: `DXSharp.Native`, `DXSharp.Assets`, `DXSharp.Core`, `DXSharp.DirectML`, `DXSharp.Framework.Desktop`, `DXSharp.Framework`, `DXSharp.Framework.Wpf`, `DXSharp.Framework.WinUI` and `DXSharp.Tools.Builds`. Library assets target .NET 10/11 for Windows x64 (Assets is portable; the build tool targets netstandard2.0). Legacy compatibility projects remain independently buildable CI artifacts. Published versions remain immutable.
+Preview 3 shipped five modern package IDs. Preview 4 development adds Framework, the DXC build tool the optional WPF and WinUI hosts, and Media playback. The candidate set is defined in `build/release_packages.py`: `DXSharp.Native`, `DXSharp.Assets`, `DXSharp.Core`, `DXSharp.DirectML`, `DXSharp.Framework.Desktop`, `DXSharp.Framework`, `DXSharp.Framework.Wpf`, `DXSharp.Framework.WinUI`, `DXSharp.Media` and `DXSharp.Tools.Builds`. Library assets target .NET 10/11 for Windows x64 (Assets is portable; the build tool targets netstandard2.0). Legacy compatibility projects remain independently buildable CI artifacts. Published versions remain immutable.
 
 ## One-time configuration
 
