@@ -35,6 +35,13 @@ public sealed unsafe class SwapChain : GraphicsObject {
         if ( syncInterval > 4 ) throw new ArgumentOutOfRangeException( nameof(syncInterval) );
         int hr = _native.Interface.Present( syncInterval, 0 ); Results.Check( hr, "SwapChain.Present" ); return hr;
     }
+    /// <summary>Attempts presentation without waiting for DXGI dependencies. False means retry the same frame before recording another back buffer.</summary>
+    public bool TryPresent( uint syncInterval = 1 ) {
+        if ( syncInterval > 4 ) throw new ArgumentOutOfRangeException( nameof(syncInterval) );
+        int hr = _native.Interface.Present( syncInterval, DXGI_PRESENT.DXGI_PRESENT_DO_NOT_WAIT );
+        if ( hr == unchecked((int)0x887A000A) ) return false; // DXGI_ERROR_WAS_STILL_DRAWING
+        Results.Check( hr, "SwapChain.Present(nonblocking)" ); return true;
+    }
     /// <summary>Resizes after the caller drains the presentation queue with <see cref="CommandQueue.WaitIdle"/>
     /// and releases all back-buffer references.</summary>
     public void Resize( uint width, uint height ) {

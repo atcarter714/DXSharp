@@ -7,6 +7,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest><DXSharpCopyDxcRuntime>false</DXSharpCopyDxcRuntime>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/WinUISampleDiagnostics.cs" Link="WinUISampleDiagnostics.cs" />
     <ProjectReference Include="../../src/DXSharp.Framework.WinUI/DXSharp.Framework.WinUI.csproj" />
     <ProjectReference Include="../../src/DXSharp.Media/DXSharp.Media.csproj" />
     <None Update="Assets/*.mp4;Assets/manifest.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

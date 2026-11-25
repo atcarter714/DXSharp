@@ -25,6 +25,10 @@ internal static class PlaybackQualification {
         Require(Math.Abs(player.Statistics.PresentationOffset.TotalSeconds)<.5,"Video PTS is far from Media Engine clock.");
         window.AppWindow.Resize(new SizeInt32(840,660)); await Until(() => window.Statistics.Resizes>0,player);
         Require(window.Viewport.PixelSize.Width>0,"Resize lost the presentation surface.");
+        for (int i=0;i<12;++i) { window.AppWindow.Resize(new SizeInt32(840+i%3*32,660+i%2*24)); await Task.Delay(20); }
+        int resizedFrames=window.Statistics.Frames;
+        await Until(() => window.Statistics.Frames>resizedFrames+3,player);
+        Require(window.Viewport.Failure is null,"Video viewport failed during resize burst.");
         player.Loop=false; player.Seek(player.Duration-TimeSpan.FromMilliseconds(150)); player.Play(); await Until(() => player.IsEnded,player);
         player.Loop=true; player.Seek(player.Duration-TimeSpan.FromMilliseconds(120)); player.Play(); await Until(() => player.Position.TotalSeconds<1 && !player.IsSeeking,player);
         Require(!player.IsEnded,"Loop did not restart playback.");

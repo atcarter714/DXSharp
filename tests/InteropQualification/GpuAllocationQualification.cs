@@ -49,6 +49,8 @@ internal static unsafe class GpuAllocationQualification {
         Results.Check( queueB.Native.Interface.Wait( gate.Interface, 2 ), "QueueB.Wait(allocation gate)" );
         try {
             ulong a = queueA.Submit( commandsA ), b = queueB.Submit( commandsB );
+            Check( !queueA.TryWait( a ) && !queueB.TryWait( b ), "nonblocking polls retain GPU-gated submissions" );
+            Invalid<ArgumentOutOfRangeException>( ( ) => queueA.TryWait( ulong.MaxValue ) );
             slice.Dispose( ); range.Dispose( );
             Check( ring.AvailableBytes == 0 && descriptors.AvailableCount == 0, "early owner disposal preserves submitted ranges" );
             Invalid<ObjectDisposedException>( ( ) => slice.Write<uint>( [0] ) );
@@ -56,6 +58,7 @@ internal static unsafe class GpuAllocationQualification {
             Check( !ring.TryAllocate( 256, out _ ), "timed-out waits retain slices" );
             Results.Check( gate.Interface.Signal( 1 ), "Signal(first allocation gate)" );
             queueA.Wait( a );
+            Check( queueA.TryWait( a ), "nonblocking poll observes the completed submission" );
             Check( ring.AvailableBytes == 0 && descriptors.AvailableCount == 0, "first queue retirement cannot reclaim second queue's use" );
             Results.Check( gate.Interface.Signal( 2 ), "Signal(second allocation gate)" );
             queueB.Wait( b );

@@ -1,3 +1,4 @@
+using DXSharp.Samples;
 using DXSharp.Framework.Hosting;
 using DXSharp.Framework.WinUI;
 using DXSharp.Graphics;
@@ -58,7 +59,7 @@ internal sealed class PlayerWindow : Window {
         Grid.SetRow(controlScroll,3); root.Children.Add(controlScroll); Grid.SetRow(_status,4); root.Children.Add(_status);
         Content = root; AppWindow.Resize(new SizeInt32(1180,780));
         Open(file); Player.Volume = .65;
-        Viewport.RenderFailed += error => { Failure = error; CloseOrderly(); };
+        Viewport.RenderFailed += error => { WinUISampleDiagnostics.Error( error ); Failure = error; CloseOrderly(); };
         Viewport.FramePresented += stats => {
             if (stats.Frames % 12 == 0 && !_mediaError) {
                 _updating = true;
@@ -73,7 +74,7 @@ internal sealed class PlayerWindow : Window {
         Viewport.Start(device,new() { FramesInFlight = 2 },frame => {
             if (_mediaError) return;
             try { _renderer.Draw(frame); }
-            catch (COMException error) { _mediaError = true; Console.Error.WriteLine(error); _status.Text = $"Playback error: {error.Message}"; Failure = error; }
+            catch (COMException error) { _mediaError = true; WinUISampleDiagnostics.Error(error); _status.Text = $"Playback error: {error.Message}"; Failure = error; }
         },this);
         AppWindow.Closing += (_,e) => { if (!_closed) { e.Cancel = true; CloseOrderly(); } };
         Closed += (_,_) => _completion.TrySetResult();

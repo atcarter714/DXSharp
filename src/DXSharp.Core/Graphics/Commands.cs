@@ -362,6 +362,19 @@ public sealed class CommandQueue : GraphicsObject {
             return value;
         }
     }
+    /// <summary>Polls a submitted fence without waiting for the GPU or a busy queue. Completed submissions release their retained resources.</summary>
+    public bool TryWait( ulong value ) {
+        if ( !Monitor.TryEnter( _gate ) ) return false;
+        try {
+            ObjectDisposedException.ThrowIf( IsDisposed, this );
+            if ( value > _nextValue ) throw new ArgumentOutOfRangeException( nameof(value) );
+            foreach ( var pending in _pending )
+                if ( pending.Value <= value && pending.SignalFailure < 0 ) throw new GraphicsException( "CommandQueue.Signal", pending.SignalFailure );
+            ulong completed = _fence.Interface.GetCompletedValue( );
+            if ( completed == ulong.MaxValue ) throw new GraphicsException( "Fence/device removed", _device.Interface.GetDeviceRemovedReason( ).Value );
+            RetireThrough( completed ); return completed >= value;
+        } finally { Monitor.Exit( _gate ); }
+    }
     /// <summary>Waits for a submitted value. A timeout retains pending resources and prevents premature reuse.</summary>
     public void Wait( ulong value, TimeSpan? timeout = null ) {
         lock ( _gate ) {

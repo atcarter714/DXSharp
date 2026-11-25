@@ -1,3 +1,4 @@
+using DXSharp.Samples;
 using DXSharp.Framework.Hosting;
 using DXSharp.Framework.WinUI;
 using DXSharp.Graphics;
@@ -56,7 +57,10 @@ internal sealed class CharacterWindow : Window {
         scene.Camera.InputEnabled = ( ) => Viewport.HasInputFocus;
         scene.Camera.PointerEnabled = ( ) => Viewport.AcceptsPointerInput;
         Viewport.WheelScrolled += delta => scene.Camera.Zoom( -delta / 120f * .3f );
-        Viewport.RenderFailed += error => { Failure = error; if ( !testing ) CloseOrderly( ); };
+        Viewport.RenderFailed += error => {
+            if ( !testing || error is not ApplicationException { Message: "intentional WinUI render failure" } ) WinUISampleDiagnostics.Error( error );
+            Failure = error; if ( !testing ) CloseOrderly( );
+        };
         Viewport.FramePresented += statistics => {
             if ( scene.UpdateTitle( statistics.Frames ) is { } title ) Title = title;
             if ( statistics.Frames == 1 || statistics.Frames % 30 == 0 ) {

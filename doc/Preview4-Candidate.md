@@ -8,6 +8,7 @@ Before publication:
 
 - Complete Windows Debug/Release source and isolated package qualification on .NET 10/11, including VideoPlayer.
 - Pass native COM JIT/NativeAOT gates, native API coverage and shader package checks.
+- Retest both WinUI samples on affected hardware: no VideoPlayer `0xC000027B` startup/activation failure, no CharacterLab move/resize freeze, successful repeated close/reopen and monitor DPI changes. Preserve diagnostic logs for any recurrence.
 - Review Media Lab on hardware with its audio-bearing fixture: play/pause/seek/loop, correct audio/video alignment, resize and repeated open/close. Record actual decoder/transfer behavior and unsupported cases.
 - Document Framework's breaking migration and the JIT-only qualification of optional desktop/media workloads.
 - Finalize matching versioned release notes only when the candidate is approved for publication; merging a versioned release-note file triggers the release workflow.
