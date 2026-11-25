@@ -1,6 +1,6 @@
 # SDK support matrix
 
-This matrix distinguishes declarations, managed workflows and runtime qualification. Preview 3 adds .NET 10/11 assets; it does not declare every native feature production-qualified.
+This matrix distinguishes declarations, managed workflows and runtime qualification. Preview 4 ships .NET 10/11 assets, modern Framework/hosts and the first reusable media path; it does not declare every native feature production-qualified.
 
 ## Build and deployment
 
@@ -44,12 +44,16 @@ Recording remains single-threaded per list. Applications synchronize owner dispo
 
 ## Allocation infrastructure in preview 3
 
-Preview 3 adds bounded descriptor pools and upload rings with per-recording allocation leases. See [resource allocation](tutorials/08-resource-allocation.md) for ownership, no-overwrite and exhaustion contracts. A retired recording must be reset before another submission because its suballocations may have been reclaimed. Multi-queue lifetime tracking does not supply queue ordering or resource barriers. Readback rings and general texture/pipeline expansion remain planned.
+Preview 3 adds bounded descriptor pools and upload rings with per-recording allocation leases. See [resource allocation](tutorials/08-resource-allocation.md) for ownership, no-overwrite and exhaustion contracts. A retired recording must be reset before another submission because its suballocations may have been reclaimed. Multi-queue lifetime tracking does not supply queue ordering or resource barriers. Preview 4 extends this infrastructure with readback rings and typed texture transfers; general pipeline expansion remains separate work.
 
-## Preview 4 development: texture transfers
+## Preview 4: texture transfers
 
 Bounded readback rings, typed single-plane sampled Texture2D resources, explicit mip/array/cube descriptions, pitched subresource upload/readback and BC block transfer are implemented in the next increment. Native format/plane support is queried. DDS parsing, generated mips, depth/video planes and GPU-side queue handoffs remain outside this increment. See [texture transfers](tutorials/09-texture-transfers.md); runtime qualification is recorded by the exact CI commit.
 
-## Preview 4 development: framework and character workload
+## Preview 4: framework and character workload
 
 Framework is now a modern Core/Assets consumer, with GameClock, AnimationPlayer and a persistent GPU skinning/material renderer. Its former experimental public helpers are removed in an explicit breaking migration; see [Framework vision](Framework-Vision.md). CharacterLab uses project references in the checkout and the same isolated package qualification as every other sample. Native camera/message bindings are shared through DXSharp.Native; Desktop schedules frames from idle with Present pacing and retains a timer wakeup for minimized/closing states. Qualification status belongs to the exact CI run, not this description.
+
+## Preview 4 hardware acceptance
+
+Aaron accepted the WinUI samples on Roci (RTX 3080 Ti) on 2026-11-25, reporting that crashes/freezes were resolved and functionality/stability passed. The [hardware record](qualification/WinUI-RTX3080Ti-2026-11-25.md) distinguishes this from a soak, cross-vendor coverage and measured audio latency. Coarse WinUI slider increments are tracked in [#49](https://github.com/atcarter714/DXSharp/issues/49).

@@ -15,3 +15,7 @@ Before publication:
 - Qualify and publish the immutable candidate, then verify every public NuGet package with a fresh public-feed consumer.
 
 The generated Media Foundation/D3D12 video inventory is distinct from runtime-qualified playback. Direct D3D12 video commands, zero-copy video transfer and independently measured audio-output latency are not claims of this candidate.
+
+## Accepted code cutoff
+
+[PR #48](https://github.com/atcarter714/DXSharp/pull/48) passed [all six CI jobs](https://github.com/atcarter714/DXSharp/actions/runs/45662746089), and Aaron accepted functionality/stability on Roci on 2026-11-25. See the [hardware record](qualification/WinUI-RTX3080Ti-2026-11-25.md). WinUI fractional slider increments are deferred to [#49](https://github.com/atcarter714/DXSharp/issues/49). The versioned [Preview 4 notes](releases/0.4.0-preview.4.md) initiate fresh qualification and publication; acceptance is not a claim that the new public-feed packages have already been published or verified.
