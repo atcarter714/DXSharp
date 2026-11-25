@@ -7,9 +7,13 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
+import urllib.error
+import urllib.request
 import xml.etree.ElementTree as ET
 
 SDK_PACKAGES = ("DXSharp.Native", "DXSharp.Core", "DXSharp.DirectML", "DXSharp.Framework.Desktop", "DXSharp.Framework.Wpf", "DXSharp.Framework.WinUI", "DXSharp.Assets", "DXSharp.Framework", "DXSharp.Media")
+PUBLIC_PACKAGES = (*SDK_PACKAGES, "DXSharp.Tools.Builds")
 EXCLUDED = {"bin", "obj", "artifacts", ".vs"}
 
 
@@ -31,17 +35,41 @@ def copy_source(source, destination):
                     ignore=lambda path, names: [name for name in names if name in EXCLUDED or (name.startswith("packages.") and name.endswith(".lock.json"))])
 
 
-def qualify(configuration, runtime_major):
+def wait_for_public_feed(version, timeout=600):
+    deadline = time.monotonic() + timeout
+    pending = set(PUBLIC_PACKAGES)
+    while pending:
+        for package in sorted(pending):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError(f"NuGet.org indexing timed out for {version}: {sorted(pending)}")
+            try:
+                url = f"https://api.nuget.org/v3-flatcontainer/{package.lower()}/index.json"
+                with urllib.request.urlopen(url, timeout=min(15, remaining)) as response:
+                    versions = json.load(response)["versions"]
+                if version in versions:
+                    pending.remove(package)
+            except (urllib.error.URLError, TimeoutError, OSError):
+                pass  # Feed visibility/network failures retry only within the bounded indexing window.
+        if pending:
+            print(f"Waiting for NuGet.org {version}: {', '.join(sorted(pending))}", flush=True)
+            time.sleep(min(15, max(0, deadline - time.monotonic())))
+
+
+def qualify(configuration, runtime_major, version=None, public_feed=False):
     root = Path(__file__).resolve().parent.parent
     framework = f"net{runtime_major}.0-windows10.0.26100.0"
     packages = root / "artifacts/packages" / configuration
-    evidence = root / "artifacts/sample-packages" / configuration / f"net{runtime_major}"
+    evidence = root / ("artifacts/public-packages" if public_feed else "artifacts/sample-packages") / configuration / f"net{runtime_major}"
     evidence.mkdir(parents=True, exist_ok=True)
-    version = subprocess.check_output(["dotnet", "msbuild", str(root / "src/DXSharp.Core/DXSharp.Core.csproj"),
+    version = version or subprocess.check_output(["dotnet", "msbuild", str(root / "src/DXSharp.Core/DXSharp.Core.csproj"),
                                        "-getProperty:PackageVersion", "-nologo"], text=True).strip()
-    for package in SDK_PACKAGES:
-        if not (packages / f"{package}.{version}.nupkg").is_file():
-            raise FileNotFoundError(f"Missing SDK package: {package} {version}")
+    if public_feed:
+        wait_for_public_feed(version)
+    else:
+        for package in SDK_PACKAGES:
+            if not (packages / f"{package}.{version}.nupkg").is_file():
+                raise FileNotFoundError(f"Missing SDK package: {package} {version}")
     source_projects = sorted(project for project in (root / "samples").rglob("*.csproj")
                              if not set(project.relative_to(root).parts) & EXCLUDED)
     if not source_projects:
@@ -85,20 +113,34 @@ def qualify(configuration, runtime_major):
 </PropertyGroup></Project>""".replace("net10.0-windows10.0.26100.0", framework), encoding="utf-8")
         versions = ET.parse(root / "Directory.Packages.props")
         group = ET.SubElement(versions.getroot(), "ItemGroup")
-        for package in SDK_PACKAGES:
+        for package in PUBLIC_PACKAGES:
             ET.SubElement(group, "PackageVersion", Include=package, Version=f"[{version}]")
         versions.write(consumer / "Directory.Packages.props", encoding="utf-8", xml_declaration=True)
         solution = ET.Element("Solution")
         for entry in manifest:
             ET.SubElement(solution, "Project", Path=entry["project"])
+        if public_feed:
+            shader = consumer / "tools/ShaderConsumer"
+            shader.mkdir(parents=True)
+            (shader / "ShaderConsumer.csproj").write_text(f"""<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>{framework}</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="DXSharp.Tools.Builds" PrivateAssets="all" />
+    <DXSharpShader Include="Smoke.hlsl" EntryPoint="CS" Profile="cs_6_0" LogicalName="PublicFeed.Smoke.CS.dxil" />
+  </ItemGroup>
+</Project>""", encoding="utf-8")
+            (shader / "Smoke.hlsl").write_text("[numthreads(1,1,1)] void CS() {}\n", encoding="utf-8")
+            ET.SubElement(solution, "Project", Path="tools/ShaderConsumer/ShaderConsumer.csproj")
         ET.ElementTree(solution).write(consumer / "Samples.slnx", encoding="utf-8", xml_declaration=True)
         config = ET.Element("configuration")
         sources = ET.SubElement(config, "packageSources")
         ET.SubElement(sources, "clear")
-        ET.SubElement(sources, "add", key="local", value=str(packages))
+        if not public_feed:
+            ET.SubElement(sources, "add", key="local", value=str(packages))
         ET.SubElement(sources, "add", key="nuget.org", value="https://api.nuget.org/v3/index.json")
         mapping = ET.SubElement(config, "packageSourceMapping")
-        for key, pattern in (("local", "DXSharp.*"), ("nuget.org", "*")):
+        rules = (("nuget.org", "*"),) if public_feed else (("local", "DXSharp.*"), ("nuget.org", "*"))
+        for key, pattern in rules:
             ET.SubElement(ET.SubElement(mapping, "packageSource", key=key), "package", pattern=pattern)
         ET.ElementTree(config).write(consumer / "NuGet.Config", encoding="utf-8", xml_declaration=True)
         run(["restore", "Samples.slnx", "--packages", str(consumer / "packages"), "-m:1", "-nr:false", "-p:Platform=Any CPU"], consumer, evidence / "restore.log")
@@ -142,11 +184,20 @@ def qualify(configuration, runtime_major):
             run([str(media), '--warp', '--test'], consumer, evidence / 'video-player.log', executable=True)
         (evidence / "samples.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         print(f"PASS: all {len(manifest)} runnable samples consume packaged SDK {version} outside the checkout.")
+        if public_feed:
+            bytecode = list((consumer / "tools/ShaderConsumer/obj").rglob("Smoke.CS.cs_6_0.dxil"))
+            if len(bytecode) != 1 or bytecode[0].read_bytes()[:4] != b"DXBC":
+                raise RuntimeError("The public DXC build-task package did not produce its shader container.")
+            print(f"PASS: NuGet.org-only fresh package cache, all ten SDK package IDs, and public DXC MSBuild task on .NET {runtime_major}.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--configuration", choices=("Debug", "Release"), default="Debug")
     parser.add_argument("--runtime-major", choices=("10", "11"), default="10")
+    parser.add_argument("--version")
+    parser.add_argument("--public-feed", action="store_true", help="Use only NuGet.org with a new package cache; wait for indexing and verify the public shader task.")
     args = parser.parse_args()
-    qualify(args.configuration, args.runtime_major)
+    if args.public_feed and not args.version:
+        parser.error("--public-feed requires an explicit --version")
+    qualify(args.configuration, args.runtime_major, args.version, args.public_feed)

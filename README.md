@@ -6,7 +6,7 @@ DXSharp exposes D3D12 devices, queues, resources, pipelines, and swap chains thr
 
 ![DXSharp logo](https://raw.githubusercontent.com/atcarter714/DXSharp/main/file/img/DXSharp_Logo_00_512.png)
 
-[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [Support matrix](doc/Support-Matrix.md) · [Preview release](https://github.com/atcarter714/DXSharp/releases/tag/v0.4.0-preview.3) · [Publishing](doc/Publishing-Previews.md) · [Parity roadmap](doc/Competitive-Parity-Roadmap.md) · [MIT license](LICENSE.md)
+[Samples](samples/README.md) · [Tutorials](doc/tutorials/README.md) · [SDK qualification](doc/SDK-Release-Qualification.md) · [Support matrix](doc/Support-Matrix.md) · [Preview release](https://github.com/atcarter714/DXSharp/releases/tag/v0.4.0-preview.4) · [Publishing](doc/Publishing-Previews.md) · [Parity roadmap](doc/Competitive-Parity-Roadmap.md) · [MIT license](LICENSE.md)
 
 ## Start here
 
@@ -25,15 +25,17 @@ The first command presents four frames and exits. The second verifies GPU comput
 
 | Package | Responsibility |
 | --- | --- |
-| `DXSharp.Native` | Public generated DirectX graphics, audio, input, DXC, and DirectML interfaces |
-| `DXSharp.Assets` | Static glTF/GLB models, materials, transforms, and decoded textures |
+| `DXSharp.Native` | Public generated graphics, media, audio, input, DXC, and DirectML interfaces |
+| `DXSharp.Assets` | Static/skinned glTF/GLB models, animation data, materials, transforms, and decoded textures |
 | `DXSharp.Core` | D3D12, DXGI, DXC, and generated COM interop |
 | `DXSharp.Framework.Desktop` | WinForms presentation loop, swap-chain resize, and frame-slot retirement |
 | `DXSharp.Media` | Media Foundation frame-server playback and precompiled D3D12 video-texture rendering; [media contract](doc/Media-Playback.md) |
 | `DXSharp.Framework.WinUI` | Optional WinUI 3 composition viewport and XAML overlays; [hosting contract](doc/WinUI-Hosting.md) |
 | `DXSharp.Framework.Wpf` | Optional WPF child-HWND viewport using the shared frame renderer; [hosting contract](doc/Wpf-Hosting.md) |
 | `DXSharp.DirectML` | Device and operator ownership, tensor binding, and DirectML execution |
-| `DXSharp`, `DXSharp.Framework`, `DXSharp.Dxc` | Compatibility packages for the original RCW-based SDK |
+| `DXSharp.Framework` | Modern game timing, animation, GPU skinning/materials and shared frame rendering; [breaking migration](doc/Framework-Vision.md) |
+| `DXSharp.Tools.Builds` | Incremental DXC shader compilation and embedding/staging through MSBuild |
+| `DXSharp`, `DXSharp.Dxc` | Compatibility packages for the original RCW-based SDK |
 
 The modern API uses public CsWin32 declarations from `DXSharp.Native` and .NET source-generated COM projections. [API coverage](doc/API-Coverage.md) records the pinned metadata coverage and remaining qualification. Managed owners release their native references deterministically. A command list takes its own references to the objects it records, and the queue holds them through fence completion. This lets applications give resources explicit lifetimes even when work is still in flight.
 

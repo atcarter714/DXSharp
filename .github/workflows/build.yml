@@ -36,6 +36,9 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+      - name: Verify public-feed consumer isolation
+        shell: pwsh
+        run: python -m unittest discover -s build/tests
       - name: Ensure Media Foundation is installed
         shell: pwsh
         run: ./build/EnsureMediaFoundation.ps1

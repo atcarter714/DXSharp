@@ -14,7 +14,7 @@ In a separate directory, create `FirstGpuApp.csproj`:
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DXSharp.Core" Version="0.4.0-net10-preview.1" />
+    <PackageReference Include="DXSharp.Core" Version="0.4.0-preview.4" />
   </ItemGroup>
 </Project>
 ```

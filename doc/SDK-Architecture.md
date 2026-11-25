@@ -31,7 +31,9 @@ flowchart TD
 | `DXSharp.Media` | Optional Media Foundation playback and reusable D3D12 video-texture rendering |
 | `DXSharp.Framework.WinUI` | Optional WinUI 3 SwapChainPanel composition over the shared frame renderer |
 | `DXSharp.Framework.Wpf` | Optional WPF dispatcher scheduling and a child-HWND viewport over the shared frame renderer |
-| `DXSharp`, `DXSharp.Dxc`, `DXSharp.Framework` | Compatibility types, RCWs, older wrappers and framework. The compatibility tests still exercise this path. BasicSample uses the current desktop host. |
+| `DXSharp.Framework` | Modern timing, animation, GPU skinning/materials and shared frame rendering; explicit Preview 4 migration below |
+| `DXSharp.Tools.Builds` | Incremental DXC MSBuild shader compilation and embedding/staging |
+| `DXSharp`, `DXSharp.Dxc` | Original compatibility types, RCWs and older wrappers; verified independently of modern Framework |
 
 ### Release documentation
 

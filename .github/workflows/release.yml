@@ -69,6 +69,8 @@ jobs:
       - name: Qualify SDK, packages, WARP, and NativeAOT
         shell: pwsh
         run: |
+          python -m unittest discover -s build/tests
+          if ($LASTEXITCODE -ne 0) { throw 'Public-feed consumer isolation tests failed.' }
           ./build/VerifyRestoreIsolation.ps1
           ./build.ps1 -Configuration Release
           foreach ($major in '10', '11') {
@@ -213,5 +215,60 @@ jobs:
         run: |
           cp "doc/releases/$RELEASE_VERSION.md" published-notes.md
           printf '\nNuGet.org accepted the qualified packages and their symbols from [this publishing run](%s/%s/actions/runs/%s). Feed indexing and symbol validation may take additional time.\n' \
+            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> published-notes.md
+          gh release edit "v$RELEASE_VERSION" --notes-file published-notes.md
+
+  verify-public:
+    name: Verify public NuGet consumers (.NET ${{ matrix.runtime }})
+    needs: [qualify, publish]
+    runs-on: windows-2025
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: ['10', '11']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          dotnet-version: 10.0.403
+      - name: Ensure Media Foundation is installed
+        shell: pwsh
+        run: ./build/EnsureMediaFoundation.ps1
+      - name: Restore and exercise only public NuGet packages
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ needs.qualify.outputs.version }}
+        run: |
+          python build/verify_sample_packages.py --configuration Release --runtime-major ${{ matrix.runtime }} --version $env:RELEASE_VERSION --public-feed
+          if ($LASTEXITCODE -ne 0) { throw 'Public NuGet consumer qualification failed.' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-nuget-net${{ matrix.runtime }}
+          path: artifacts/public-packages/**
+          if-no-files-found: warn
+
+  record-public-verification:
+    name: Record public-feed verification
+    needs: [qualify, publish, verify-public]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      RELEASE_VERSION: ${{ needs.qualify.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Attach the public restore results to the prerelease
+        run: |
+          gh release view "v$RELEASE_VERSION" --json body --jq .body > published-notes.md
+          printf '\nPublic NuGet.org-only verification passed on .NET 10 and 11: fresh package caches, all ten package IDs, the DXC MSBuild task, and all 17 sample consumers including bounded WinUI/media runtime checks. Evidence: [publishing run](%s/%s/actions/runs/%s).\n' \
             "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> published-notes.md
           gh release edit "v$RELEASE_VERSION" --notes-file published-notes.md
