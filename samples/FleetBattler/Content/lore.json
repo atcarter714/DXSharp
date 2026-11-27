@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "fragments": [
+    {
+      "id": "sealed-crate",
+      "text": "The receiver stands on six identical feet. Five ring hollow under a wrench. The sixth holds spare feedstock and a bank of charged cells, packed by whoever expected to service the antenna next. The landing crew can bring the cache online here."
+    },
+    {
+      "id": "yard-shim",
+      "text": "Berth Four can fit a spine straight in sunlight or straight in shadow. Never both. The night shift sent up a steel shim with fourteen file marks, one for each weld that crept as the yard cooled. Their forewoman wants the Orbital Fabrication team to measure it before stores melts it down."
+    },
+    {
+      "id": "yard-scrap",
+      "text": "The new fabrication jig just released its first spine. Both ends met the survey lasers on the first pass. Stores had set aside a second set of beams in case the crew had to cut one end free again. The forewoman signed them back into inventory and took her shim home."
+    },
+    {
+      "id": "night-shift",
+      "text": "The parcel reached Earth thirty years late. Inside: a child's brass sundial and the first shift roster from a cylinder that has never seen a sunrise. The registrar asks for a spectrum of the star the builders called home. A small grant covers telescope time."
+    },
+    {
+      "id": "radiator",
+      "text": "Pale stripes appeared on the dark side of the collector swarm. The survey crew took them for cities until one went cold at precisely the end of a shift. They are foundry radiators. Someone out there still takes weekends."
+    },
+    {
+      "id": "clock",
+      "text": "The outer-system beacon counts years by dropping a bead into a glass spiral. There are eleven hundred beads in the tube. Its builders expected visitors to arrive between ticks. The keeper has offered us their spare timing crystal."
+    },
+    {
+      "id": "the-second-watch",
+      "text": "The navigation beacon spends eleven minutes of each orbit listening behind Ceres. Someone on the surface has used that shadow to transmit pressure readings for years. The relay watch offers an archive of the timing errors."
+    },
+    {
+      "id": "receiver-ceramics",
+      "text": "The receiver footings are ceramic. Each tile has the same fingerprints pressed into its underside. The survey crew has found two crates of spares that will make fine insulation in the depots."
+    },
+    {
+      "id": "long-baseline",
+      "text": "The source you tracked through the array appeared again in the cold receiver. It has a regular frequency drift consistent with a transmitter in orbit. The crews have agreed to compare clocks before choosing who makes the next call."
+    },
+    {
+      "id": "mirror-proof",
+      "text": "The first mirror panel threw a pencil of light across the terminator. It missed the test tower by two kilometres. The board has approved a second power allocation for a slower slew and another attempt."
+    },
+    {
+      "id": "combine-concession",
+      "text": "The Ceres Combine has filed a competing claim over your survey corridor. It offers equipment now if your system pays a permanent royalty on industrial ore. Publishing the assay places the discovery in the public record and gives your labs the validation data."
+    },
+    {
+      "id": "europa-tidal-clock",
+      "text": "Three passes caught the same polarization reversal over a fracture in Europa's ice. The signal tracks the moon's tidal flexure. The survey team can publish the whole time series or sell Helix the exclusive raw spectra to fund more flights."
+    },
+    {
+      "id": "charon-baseline",
+      "text": "The occultation record shows a second dip after Charon clears the guide star. It belongs to a dark fragment on the same line of sight. Resolving the pair gives our survey teams a calibrated reference for separating nearby objects."
+    },
+    {
+      "id": "titan-return",
+      "text": "A failed Helix probe is still transmitting from Titan's haze. Its return packet contains years of atmospheric soundings and a sealed cache of reserve cells. Helix will make the soundings available to our labs if we return the packet."
+    },
+    {
+      "id": "triton-nightside",
+      "text": "The scout caught a narrow spray above Triton's night side. Repeat passes find a vent that remains active through local winter. The chemistry team can use the plume data to refine its models of buried volatiles."
+    }
+  ]
+}

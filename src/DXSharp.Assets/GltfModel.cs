@@ -75,6 +75,7 @@ public static class GltfModel {
         var images = new Dictionary<SharpGLTF.Schema2.Image, StaticTexture>( ReferenceEqualityComparer.Instance );
         var bounds = new List<(Vector3 Min, Vector3 Max)>( );
         var instances = new List<StaticModelInstance>( );
+        var markers = new List<StaticModelMarker>();
         var primitiveIndices = new Dictionary<MeshPrimitive, int>( ReferenceEqualityComparer.Instance );
         var nodes = new Stack<(Node Node, Matrix4x4 Parent)>( );
         foreach ( var node in scene.VisualChildren.Reverse( ) )
@@ -88,7 +89,10 @@ public static class GltfModel {
             foreach ( var child in node.VisualChildren.Reverse( ) )
                 nodes.Push( (child, world) );
 
-            if ( node.Mesh is not { } mesh ) continue;
+            if ( node.Mesh is not { } mesh ) {
+                if ( !string.IsNullOrWhiteSpace( node.Name ) ) markers.Add( new( node.Name, world ) );
+                continue;
+            }
             if ( node.Skin is not null || node.GetGpuInstancing( ) is not null )
                 throw new NotSupportedException( $"Node {node.LogicalIndex} uses skinning or a GPU instancing extension." );
             float determinant = world.GetDeterminant( );
@@ -127,7 +131,7 @@ public static class GltfModel {
 
         if ( instances.Count == 0 )
             throw new InvalidDataException( "The selected glTF scene does not contain triangle meshes." );
-        return new( primitives.ToArray( ), instances.ToArray( ), min, max );
+        return new( primitives.ToArray( ), instances.ToArray( ), min, max, markers.ToArray() );
     }
 
     private static StaticModelPrimitive ReadPrimitive( MeshPrimitive primitive, Dictionary<SharpGLTF.Schema2.Image, StaticTexture> images ) {

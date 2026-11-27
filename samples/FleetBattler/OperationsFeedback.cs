@@ -10,7 +10,7 @@ internal sealed partial class FleetHud {
     internal static string SiteName( PlanetFacility facility ) => FleetSimulation.Facility( facility ).Name;
 
     private void OperationsFeedback( Layout layout, FleetSimulation fleet, ReadOnlySpan<Vector4> bodies,
-        ReadOnlySpan<MapSite> sites, MapHover hover, int speed, int planet ) {
+        ReadOnlySpan<MapSite> sites, MapHover hover, float speed, int planet ) {
         foreach ( var site in sites ) {
             if ( site.Remaining <= 0 ) {
                 if ( site.Facility == PlanetFacility.Yard )

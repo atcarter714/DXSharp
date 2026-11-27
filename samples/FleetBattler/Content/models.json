@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "Corvette",
+      "file": "../Models/Corvette.gltf",
+      "scale": 0.05,
+      "flatten": false
+    },
+    {
+      "id": "Scout",
+      "file": "../Models/SurveyScout.gltf",
+      "scale": 0.083,
+      "flatten": false
+    },
+    {
+      "id": "Miner",
+      "file": "../Models/Freighter.gltf",
+      "scale": 0.05,
+      "flatten": false
+    },
+    {
+      "id": "Freighter",
+      "file": "../Models/Freighter.gltf",
+      "scale": 0.05,
+      "flatten": false
+    },
+    {
+      "id": "Colony",
+      "file": "../Models/Freighter.gltf",
+      "scale": 0.05,
+      "flatten": false
+    },
+    {
+      "id": "Frigate",
+      "file": "../Models/EscortFrigate.gltf",
+      "scale": 0.055,
+      "flatten": false
+    },
+    {
+      "id": "Prospector",
+      "file": "../Models/AssayTender.gltf",
+      "scale": 0.05,
+      "flatten": true,
+      "nozzleOffset": 0.65,
+      "nozzleAft": 1.25,
+      "plumeWidth": 0.13
+    },
+    {
+      "id": "Destroyer",
+      "file": "../Models/Corvette.gltf",
+      "scale": 0.05,
+      "flatten": false
+    },
+    {
+      "id": "Cruiser",
+      "file": "../Models/Corvette.gltf",
+      "scale": 0.05,
+      "flatten": false
+    },
+    {
+      "id": "Battleship",
+      "file": "../Models/Corvette.gltf",
+      "scale": 0.05,
+      "flatten": false
+    },
+    {
+      "id": "Carrier",
+      "file": "../Models/SpindleCarrier.gltf",
+      "scale": 0.05,
+      "flatten": true,
+      "nozzleOffset": 0.65,
+      "nozzleAft": 1.25,
+      "plumeWidth": 0.13
+    },
+    {
+      "id": "Titan",
+      "file": "../Models/Corvette.gltf",
+      "scale": 0.05,
+      "flatten": false
+    }
+  ]
+}

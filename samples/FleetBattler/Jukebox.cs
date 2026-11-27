@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace FleetBattler;
 
 internal sealed class Jukebox {
-    private static readonly string[] Situations = ["system", "galaxy", "contested", "victory"];
-    private static readonly string[] Defaults = ["@survey", "@cartography", "@signal", "@arrival"];
+    private static readonly string[] Situations = ["system", "galaxy", "contested", "victory", "title"];
+    private static readonly string[] Defaults = ["@survey", "@cartography", "@signal", "@arrival", "@survey"];
     private readonly string[][] _tracks = Defaults.Select( track => new[] { track } ).ToArray( );
 
     internal bool Shuffle { get; private set; }
@@ -65,18 +65,19 @@ internal sealed class Jukebox {
         float.IsFinite( level ) ? Math.Clamp( level, 0, 1 ) : fallback;
 }
 
-internal enum MusicSituation { System, Galaxy, Contested, Victory }
+internal enum MusicSituation { System, Galaxy, Contested, Victory, Title }
 
 internal sealed class MusicDirector( bool hasVictoryCue ) {
     private readonly HashSet<int> _celebrated = new( );
     private int _system = -1;
     internal MusicSituation Situation { get; private set; }
 
-    internal bool Update( int system, bool galaxy, bool contested, bool won ) {
+    internal bool Update( int system, bool galaxy, bool contested, bool won, bool title = false ) {
+        if ( title ) { Situation = MusicSituation.Title; _system = -1; return false; }
         bool continuingVictory = Situation == MusicSituation.Victory && _system == system;
         _system = system;
         bool startVictory = hasVictoryCue && won && !galaxy && !contested && !continuingVictory && _celebrated.Add( system );
-        Situation = galaxy ? MusicSituation.Galaxy : contested ? MusicSituation.Contested
+        Situation = contested ? MusicSituation.Contested : galaxy ? MusicSituation.Galaxy
             : won && (continuingVictory || startVictory) ? MusicSituation.Victory : MusicSituation.System;
         return startVictory;
     }

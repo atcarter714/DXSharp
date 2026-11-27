@@ -31,6 +31,7 @@ internal readonly record struct ShipDesign( WeaponKind Weapon, bool Plating, Shi
     internal int Range => WeaponStats.Range + ComputerStats.Range;
     internal int Reload => Math.Max( 8, WeaponStats.Reload + ComputerStats.Reload );
     internal int Damage => WeaponStats.Damage;
+    internal EffectStyle ShotEffect => WeaponStats.Effect ?? (Weapon == WeaponKind.Rail ? EffectStyle.Rail : EffectStyle.Pulse);
     internal int PowerAvailable => PowerStats.Supply;
     internal int PowerUsed => WeaponStats.Draw + ArmorStats.Draw + ShieldStats.Draw + ComputerStats.Draw + DriveStats.Draw;
     internal bool Valid => PowerUsed <= PowerAvailable;
@@ -52,15 +53,7 @@ internal readonly record struct ShipDesign( WeaponKind Weapon, bool Plating, Shi
         ModuleSlot.Drive => this with { Drive = (DriveModule)option }, _ => throw new ArgumentOutOfRangeException( nameof(slot) )
     };
 
-    internal ShipDesign Cycle( ModuleSlot slot ) => slot switch {
-        ModuleSlot.Weapon => this with { Weapon = Weapon == WeaponKind.Rail ? WeaponKind.Pulse : WeaponKind.Rail },
-        ModuleSlot.Armor => this with { Plating = !Plating },
-        ModuleSlot.Shield => this with { Shielding = (ShieldModule)(((int)Shielding + 1) % 3) },
-        ModuleSlot.Computer => this with { Computer = (ComputerModule)(((int)Computer + 1) % 3) },
-        ModuleSlot.Power => this with { Reactor = Reactor == ReactorModule.Standard ? ReactorModule.HighOutput : ReactorModule.Standard },
-        ModuleSlot.Drive => this with { Drive = (DriveModule)(((int)Drive + 1) % 3) },
-        _ => throw new ArgumentOutOfRangeException( nameof(slot) )
-    };
+    internal ShipDesign Cycle( ModuleSlot slot ) => Install( slot, (Variant( slot ) + 1) % GameCatalog.Options( slot ).Length );
 
     internal string Installed( ModuleSlot slot ) => GameCatalog.Module( slot, Variant( slot ) ).Name;
 }
@@ -72,7 +65,15 @@ internal sealed partial class FleetSimulation {
         if ( frigate ) FrigateDesign = FrigateDesign.Cycle( slot );
         else Design = Design.Cycle( slot );
     }
-    internal FlightStats Flight( int squad ) => Flight( Role( squad ), _squads[squad].Design, DriveUpgrade && IsPlayerSquad( squad ) );
+    internal FlightStats Flight( int squad ) {
+        bool player = IsPlayerSquad( squad );
+        var flight = Flight( Role( squad ), _squads[squad].Design, DriveUpgrade && player );
+        if ( !player ) return flight;
+        return flight with {
+            Acceleration = flight.Acceleration * (Researched( ResearchTopic.Radiators ) ? 1.15f : 1),
+            TurnRate = flight.TurnRate * (Researched( ResearchTopic.AttitudeJets ) ? 1.25f : 1)
+        };
+    }
 
     internal static FlightStats Flight( HullRole role, ShipDesign design, bool improved ) {
         var baseline = GameCatalog.Hull( role ).Flight;

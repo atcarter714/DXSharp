@@ -8,6 +8,7 @@ internal sealed partial class FleetSimulation {
     private readonly int[] _population = new int[CelestialSystem.BodyCount], _nextGrowth = new int[CelestialSystem.BodyCount],
         _colonyWork = new int[CelestialSystem.BodyCount];
     private readonly FleetSelection?[] _colonyShips = new FleetSelection?[CelestialSystem.BodyCount];
+    private readonly int[] _climateReady = new int[CelestialSystem.BodyCount];
 
     internal bool ColonySupplied( int body ) => body == Homeworld && Established ||
         SiteRemaining( body, PlanetFacility.Solar ) == 0 || DepotAt( body ) == 0;
@@ -17,6 +18,34 @@ internal sealed partial class FleetSimulation {
 
     internal bool Colonizable( int body ) => body > 0 && body < _bodies.Length && body != 2 && body != CelestialSystem.OuterBelt &&
         (!Solar || body is not (8 or 9 or 10 or SolarCatalog.Halley));
+
+    internal int NaturalHabitability( int body ) => Solar ? SolarCatalog.Get( body ).Habitability : body switch {
+        1 when SystemIndex >= CelestialSystem.AuthoredCount => Exoplanets.Get( SystemIndex ).Habitability,
+        1 => SystemIndex == Proxima ? 42 : 33,
+        3 => 14,
+        _ => 0
+    };
+
+    internal int Habitability( int body ) => NaturalHabitability( body ) + (ClimateRemaining( body ) == 0 ? 20 : 0);
+    internal int ClimateRemaining( int body ) => Remaining( _climateReady[body] );
+    private static readonly ResourceCost ClimateCost = new( 55, 100, 30 );
+
+    internal string? ClimateBlock( int body ) {
+        if ( !Frontier || !Colonizable( body ) || NaturalHabitability( body ) is < 20 or >= 70 || !Planet( body ).Surveyed )
+            return "NO MARGINAL WORLD TO CONDITION";
+        if ( ClimateRemaining( body ) >= 0 ) return "CLIMATE PROJECT ALREADY ORDERED";
+        if ( !Researched( ResearchTopic.ClimateEngineering ) ) return "RESEARCH CLIMATE ENGINEERING";
+        if ( SiteRemaining( body, PlanetFacility.Habitat ) != 0 || SiteRemaining( body, PlanetFacility.Solar ) != 0 )
+            return "NEEDS LOCAL HABITAT AND SOLAR ARRAY";
+        return CanAfford( ClimateCost ) ? null : "NEEDS 55 ORE / 100 ENERGY / 30 SCI";
+    }
+
+    internal bool BeginClimateProject( int body ) {
+        if ( ClimateBlock( body ) is not null ) return false;
+        Spend( ClimateCost );
+        _climateReady[body] = Tick + 3600;
+        return true;
+    }
 
     internal ColonyStatus Colony( int body ) => new( _population[body], Slots( body ).Surface * 6, _colonyWork[body], _colonyShips[body] );
     internal int SurfaceWorkLimit( int body ) => Math.Min( Slots( body ).Surface, (_population[body] + 3) / 4 );
@@ -32,6 +61,13 @@ internal sealed partial class FleetSimulation {
         if ( !Frontier || !Colonizable( body ) ) return "NO SETTLEMENT SITE";
         if ( !Planet( body ).Surveyed ) return "SURVEY THE BODY FIRST";
         if ( _population[body] > 0 ) return "COLONY ALREADY ESTABLISHED";
+        if ( FrontierProgression && Habitability( body ) < 70 ) {
+            if ( !HabitationUpgrade ) return "RESEARCH HABITAT ENGINEERING";
+            if ( Habitability( body ) < 38 && !Researched( ResearchTopic.ClosedEcology ) )
+                return "RESEARCH CLOSED-LOOP ECOLOGY";
+            if ( Habitability( body ) < 38 && SiteRemaining( body, PlanetFacility.Habitat ) != 0 )
+                return "BUILD A LOCAL ORBITAL HABITAT";
+        }
         if ( DepotAt( body ) != 0 ) return "BUILD A LANDING DEPOT FIRST";
         if ( _colonyShips[body] is not null ) return "COLONY SHIP ALREADY ASSIGNED";
         if ( selection is not { } unit || !ValidColonyShip( unit ) ) return "SELECT A COLONY SHIP";

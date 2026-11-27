@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "id": "receiver-cache",
+      "system": "Proxima",
+      "title": "Stores under the antenna",
+      "source": "Proxima / landing crew",
+      "fragment": "sealed-crate",
+      "artwork": "Receiver",
+      "accept": "Unload at Proxima",
+      "ore": 16,
+      "energy": 8
+    },
+    {
+      "id": "yard-shift",
+      "title": "A shim from Berth Four",
+      "source": "Earth orbit / assembly night shift",
+      "fragment": "yard-shim",
+      "artwork": "Yard",
+      "accept": "Send the jig to the lab",
+      "tick": 240,
+      "science": 8
+    },
+    {
+      "id": "first-jig",
+      "title": "The first hull off the jig",
+      "source": "Berth Four / stores office",
+      "fragment": "yard-scrap",
+      "artwork": "Corvette",
+      "accept": "Return the stock to the yard",
+      "requires": "Industry",
+      "ore": 28
+    },
+    {
+      "id": "dead-letter",
+      "title": "The last forwarding address",
+      "source": "Luna / dead letter office",
+      "fragment": "night-shift",
+      "artwork": "Flyby",
+      "accept": "Take the observation grant",
+      "surveys": 2,
+      "science": 6
+    },
+    {
+      "id": "cold-side",
+      "title": "The cold side of the sky",
+      "source": "Thermal survey / anomaly 18",
+      "fragment": "radiator",
+      "artwork": "Burn",
+      "accept": "License the thermal map",
+      "requires": "Radiators",
+      "energy": 12
+    },
+    {
+      "id": "millennial-watch",
+      "title": "The slow clock",
+      "source": "Deep baseline / timing archive",
+      "fragment": "clock",
+      "artwork": "Receiver",
+      "accept": "Accept the crystal",
+      "requires": "Occultation",
+      "science": 18
+    },
+    {
+      "id": "the-second-watch",
+      "title": "Nightside relays",
+      "source": "Ceres / beacon maintenance",
+      "system": "Sol",
+      "fragment": "the-second-watch",
+      "artwork": "Receiver",
+      "accept": "Fund the relay watch",
+      "requires": "Occultation",
+      "science": 12
+    },
+    {
+      "id": "receiver-ceramics",
+      "title": "The spare tiles",
+      "source": "Receiver World / materials bench",
+      "system": "Proxima",
+      "fragment": "receiver-ceramics",
+      "artwork": "Mine",
+      "accept": "Move the tiles into stores",
+      "surveys": 2,
+      "ore": 24
+    },
+    {
+      "id": "long-baseline",
+      "title": "The second receiver",
+      "source": "Deep baseline / transport office",
+      "system": "Proxima",
+      "fragment": "long-baseline",
+      "artwork": "Scout",
+      "accept": "Calibrate the second receiver",
+      "requires": "frontier.survey-baseline",
+      "science": 16
+    },
+    {
+      "id": "mirror-proof",
+      "title": "First light on the mirror",
+      "source": "Orbital works / acceptance board",
+      "system": "Sol",
+      "fragment": "mirror-proof",
+      "artwork": "Yard",
+      "accept": "Reserve test power",
+      "requires": "frontier.soletta",
+      "energy": 24
+    },
+    {
+      "id": "combine-concession", "title": "The Combine wants first refusal",
+      "source": "Ceres Combine / concessions desk", "body": "ceres", "fragment": "combine-concession",
+      "artwork": "Mine", "accept": "Sign the concession",
+      "ore": 85, "energy": 20, "oreRoyalty": 20,
+      "declineReward": { "label": "Publish an open assay", "science": 25 }
+    },
+    {
+      "id": "europa-tidal-clock", "title": "A clock under the ice",
+      "source": "Europa / survey telemetry", "body": "europa", "fragment": "europa-tidal-clock",
+      "artwork": "Scout", "accept": "Publish the time series", "science": 22,
+      "declineReward": { "label": "Trade the raw spectra to Helix", "energy": 35 }
+    },
+    {
+      "id": "charon-baseline", "title": "A shadow moves twice",
+      "source": "Charon / occultation team", "body": "charon", "fragment": "charon-baseline",
+      "artwork": "Scout", "accept": "Calibrate the survey array", "unlock": "frontier.survey-baseline",
+      "declineReward": { "label": "Sell the occultation record", "ore": 55, "energy": 40 }
+    },
+    {
+      "id": "titan-return", "title": "The lost return packet",
+      "source": "Titan / Helix Survey Consortium", "body": "titan", "fragment": "titan-return",
+      "artwork": "Lab", "accept": "Return the packet to Helix", "science": 35,
+      "declineReward": { "label": "Keep the power cells", "energy": 40 }
+    },
+    {
+      "id": "triton-nightside", "title": "Night-side plumes",
+      "source": "Triton / long-baseline interferometer", "body": "triton", "fragment": "triton-nightside",
+      "artwork": "Lab", "accept": "Archive the plume chemistry", "science": 48
+    }
+  ]
+}

@@ -7,7 +7,9 @@
   "scenes": [
     {
       "nodes": [
-        0
+        0,
+        1,
+        2
       ]
     }
   ],
@@ -15,7 +17,9 @@
     {
       "name": "Lancer escort corvette",
       "mesh": 0
-    }
+    },
+    {"name": "exhaust_port", "translation": [-8.9, 0.03, 24]},
+    {"name": "exhaust_starboard", "translation": [8.9, 0.03, 24]}
   ],
   "meshes": [
     {

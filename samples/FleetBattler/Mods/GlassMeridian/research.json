@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "projects": [
+    {
+      "id": "meridian.shadow-clocks",
+      "name": "Shadow Transit Clocks",
+      "branch": "Sensors",
+      "benefit": "+6 ore per survey",
+      "description": "Time a collector as it blinks across a star. Its shadow gives the survey tug a second baseline for measuring distant deposits.",
+      "artwork": "Flyby",
+      "science": 35,
+      "energy": 20,
+      "work": 960,
+      "requires": [
+        "Astrometry"
+      ],
+      "surveyBonus": 6
+    }
+  ]
+}

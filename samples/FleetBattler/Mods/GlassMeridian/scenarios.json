@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "glass-meridian",
+      "name": "Glass Meridian",
+      "ore": 110,
+      "energy": 65,
+      "science": 24,
+      "raids": false,
+      "events": [
+        "meridian.first-light",
+        "meridian.shadow-pay",
+        "cold-side"
+      ]
+    }
+  ]
+}

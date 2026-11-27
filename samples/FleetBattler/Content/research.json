@@ -262,6 +262,374 @@
       "energy": 20,
       "science": 44,
       "work": 1500
+    },
+    {
+      "id": "ColdTraps",
+      "branch": "Industry",
+      "name": "Volatile Cold Traps",
+      "benefit": "+1 ore per producing body per cycle",
+      "description": "Cold fingers catch volatile feedstock before it escapes a warm separator. Crews recover the condensate at the end of each shift.",
+      "artwork": "Mine",
+      "requires": [
+        "SurfaceEngineering"
+      ],
+      "ore": 28,
+      "energy": 24,
+      "science": 60,
+      "work": 1800,
+      "extractionBonus": 1
+    },
+    {
+      "id": "Radiators",
+      "branch": "Propulsion",
+      "name": "Droplet Radiators",
+      "benefit": "+15% transfer acceleration",
+      "description": "A stream of cooling droplets carries heat away from the drive. Magnetic collectors return the droplets to the loop before the next burn.",
+      "artwork": "Burn",
+      "requires": [
+        "Drive",
+        "Industry"
+      ],
+      "ore": 32,
+      "energy": 45,
+      "science": 55,
+      "work": 2000
+    },
+    {
+      "id": "AttitudeJets",
+      "branch": "Propulsion",
+      "name": "Vernier Clusters",
+      "benefit": "+25% hull turn rate",
+      "description": "A ring of small attitude jets applies torque at both ends of the keel. Heavy hulls can turn their engines retrograde earlier.",
+      "artwork": "Burn",
+      "requires": [
+        "Radiators",
+        "Astrometry"
+      ],
+      "ore": 30,
+      "energy": 46,
+      "science": 72,
+      "work": 2400
+    },
+    {
+      "id": "Occultation",
+      "branch": "Sensors",
+      "name": "Stellar Occultation Survey",
+      "benefit": "+4 ore per completed survey",
+      "description": "Watch the brief dip as a minor body passes a background star. A better estimate of its size guides the sample tug.",
+      "artwork": "Flyby",
+      "requires": [
+        "Astrometry",
+        "OrbitalEngineering"
+      ],
+      "ore": 20,
+      "energy": 36,
+      "science": 65,
+      "work": 2100,
+      "surveyBonus": 4
+    },
+    {
+      "id": "ParallelSlips",
+      "branch": "Warfare",
+      "name": "Parallel Assembly Slips",
+      "benefit": "20% shorter naval hull build time",
+      "description": "Construct service trunks on a second slip while the yard lays down the keel. Queued orders retain their original estimates.",
+      "artwork": "Yard",
+      "requires": [
+        "HeavyFrames",
+        "Industry"
+      ],
+      "ore": 54,
+      "energy": 38,
+      "science": 82,
+      "work": 2700
+    },
+    {
+      "id": "ThermalStores",
+      "branch": "Infrastructure",
+      "name": "Thermal Storage Banks",
+      "benefit": "+150 energy storage capacity",
+      "description": "Banks of phase-change salt absorb surplus energy during the sunlit portion of an orbit.",
+      "artwork": "Mine",
+      "requires": [
+        "OrbitalEngineering"
+      ],
+      "ore": 34,
+      "energy": 24,
+      "science": 54,
+      "work": 1800
+    },
+    {
+      "id": "ConvoyWindows",
+      "branch": "Doctrine",
+      "name": "Convoy Departure Windows",
+      "benefit": "Reduce fleet upkeep by 1 energy per cycle",
+      "description": "Coordinate resupply at shared departure windows. One tug can now serve several hulls before returning to berth.",
+      "artwork": "Flyby",
+      "requires": [
+        "Drive",
+        "Habitation"
+      ],
+      "ore": 22,
+      "energy": 28,
+      "science": 58,
+      "work": 1920,
+      "upkeepReduction": 1
+    },
+    {
+      "id": "solar.foils",
+      "branch": "Industry",
+      "name": "Solar Furnace Foils",
+      "requires": [
+        "Industry"
+      ],
+      "artwork": "Mine",
+      "description": "Segmented mirrors heat ore at the mine face. The refinery can now separate metal before loading the return tug.",
+      "benefit": "+1 ore per producing body",
+      "ore": 20,
+      "energy": 25,
+      "science": 42,
+      "work": 1560,
+      "extractionBonus": 1
+    },
+    {
+      "id": "solar.mass-stream",
+      "branch": "Industry",
+      "name": "Mass Stream Sorting",
+      "requires": [
+        "solar.foils"
+      ],
+      "artwork": "Mine",
+      "description": "Charge identical grains and sort each stream by its curvature through an induction ring. Tailings become ballast for the return run.",
+      "benefit": "+2 ore per producing body",
+      "ore": 20,
+      "energy": 25,
+      "science": 44,
+      "work": 1620,
+      "extractionBonus": 2
+    },
+    {
+      "id": "solar.pulsars",
+      "branch": "Sensors",
+      "name": "Pulsar Clock Array",
+      "requires": [
+        "Astrometry"
+      ],
+      "artwork": "Flyby",
+      "description": "Pulse arrival times give detached scouts a common clock beyond the last relay.",
+      "benefit": "Survey at 6 work per tick",
+      "ore": 20,
+      "energy": 25,
+      "science": 52,
+      "work": 1860,
+      "scanRate": 6
+    },
+    {
+      "id": "solar.parallax",
+      "branch": "Sensors",
+      "name": "Swarm Parallax",
+      "requires": [
+        "solar.pulsars"
+      ],
+      "artwork": "Receiver",
+      "description": "Pairs of collectors a million kilometres apart record the same occultation and triangulate buried ice.",
+      "benefit": "+8 ore per survey",
+      "ore": 20,
+      "energy": 25,
+      "science": 56,
+      "work": 1980,
+      "surveyBonus": 8
+    },
+    {
+      "id": "solar.heat",
+      "branch": "Infrastructure",
+      "name": "Heat Exchange Depots",
+      "requires": [
+        "Habitation"
+      ],
+      "artwork": "Yard",
+      "description": "Docked ships exchange coolant with a common thermal reservoir during the night shift.",
+      "benefit": "Reduce upkeep by 1 energy per cycle",
+      "ore": 20,
+      "energy": 25,
+      "science": 42,
+      "work": 1560,
+      "upkeepReduction": 1
+    },
+    {
+      "id": "solar.freight",
+      "branch": "Doctrine",
+      "name": "Cycler Freight Tables",
+      "requires": [
+        "solar.heat"
+      ],
+      "artwork": "Burn",
+      "description": "Cargo crews rendezvous with regularly returning habitats. The long leg of the journey needs no dedicated transport.",
+      "benefit": "Reduce upkeep by 2 energy per cycle",
+      "ore": 20,
+      "energy": 25,
+      "science": 44,
+      "work": 1620,
+      "upkeepReduction": 2
+    },
+    {
+      "id": "ClosedEcology",
+      "branch": "Infrastructure",
+      "name": "Closed-loop ecology",
+      "benefit": "SUPPORT SETTLEMENT ON HARSH WORLDS",
+      "description": "Reclaim water, nutrients and air with redundant biological loops. Harsh settlements still need a local orbital habitat.",
+      "artwork": "Yard",
+      "energy": 22,
+      "science": 45,
+      "work": 1650,
+      "requires": [
+        "Habitation",
+        "SurfaceEngineering"
+      ]
+    },
+    {
+      "id": "ClimateEngineering",
+      "branch": "Infrastructure",
+      "name": "Climate engineering",
+      "benefit": "RUN LOCAL TERRAFORMING PROJECTS",
+      "description": "Use orbital power and atmospheric processing to warm or cool marginal surfaces. Improvements take time and raise the settlement rating of the target body.",
+      "artwork": "Yard",
+      "energy": 38,
+      "science": 85,
+      "work": 2500,
+      "requires": [
+        "ClosedEcology",
+        "OrbitalEngineering"
+      ]
+    },
+    {
+      "id": "frontier.ion",
+      "name": "Ion pulse shaping",
+      "branch": "Warfare",
+      "benefit": "PULSE SHOTS GAIN RANGE AND ION TRACERS",
+      "description": "Use staged discharge to keep the pulse collimated through a long intercept.",
+      "artwork": "Corvette",
+      "requires": [
+        "Weapons",
+        "PrecisionSensors"
+      ],
+      "energy": 30,
+      "science": 55,
+      "work": 1600,
+      "rangeBonus": 3,
+      "pulseEffect": "Ion"
+    },
+    {
+      "id": "frontier.radiator-logistics",
+      "name": "Radiator logistics",
+      "branch": "Industry",
+      "benefit": "REDUCE INDUSTRIAL POWER OVERHEAD",
+      "description": "Standardize coolant fittings so yards can service visiting ships without keeping a dedicated auxiliary loop online.",
+      "artwork": "Yard",
+      "requires": [
+        "Radiators",
+        "Industry"
+      ],
+      "energy": 27,
+      "science": 50,
+      "work": 1570,
+      "upkeepReduction": 1
+    },
+    {
+      "id": "frontier.survey-baseline",
+      "name": "Sparse baseline surveying",
+      "branch": "Sensors",
+      "benefit": "MORE SCIENTIFICALLY VALUABLE SURVEYS",
+      "description": "Coordinate scout transponders across independent orbits to reject instrument drift.",
+      "artwork": "Scout",
+      "requires": [
+        "Astrometry",
+        "Occultation"
+      ],
+      "energy": 24,
+      "science": 65,
+      "work": 1800,
+      "scanRate": 5,
+      "surveyBonus": 3
+    },
+    {
+      "id": "frontier.refinery-slag",
+      "name": "Closed slag reclamation",
+      "branch": "Industry",
+      "benefit": "MORE ORE FROM ONLINE EXTRACTION",
+      "description": "Repeat the separation pass on tailings and save the dense fractions for orbital fabrication.",
+      "artwork": "Mine",
+      "requires": [
+        "HeavyIndustry"
+      ],
+      "energy": 35,
+      "science": 60,
+      "work": 1750,
+      "extractionBonus": 2
+    },
+    {
+      "id": "frontier.habitat-segments",
+      "name": "Habitat segmentation",
+      "branch": "Infrastructure",
+      "benefit": "REDUCE THE POWER LOAD OF HABITAT SUPPORT",
+      "description": "Pressure-isolated cells let a construction crew commission useful volume before closing the whole cylinder.",
+      "artwork": "Yard",
+      "requires": [
+        "Habitation",
+        "OrbitalEngineering"
+      ],
+      "energy": 42,
+      "science": 75,
+      "work": 2200,
+      "upkeepReduction": 1
+    },
+    {
+      "id": "frontier.soletta",
+      "name": "Soletta engineering",
+      "branch": "Infrastructure",
+      "benefit": "UNLOCK THE ORBITAL MIRROR ARRAY",
+      "description": "Build a segmented orbital reflector and a microwave relay to deliver power to the sites below. The mirrors require an inhabited construction base.",
+      "artwork": "Yard",
+      "requires": [
+        "frontier.habitat-segments",
+        "ClimateEngineering"
+      ],
+      "energy": 85,
+      "science": 110,
+      "work": 3000
+    },
+    {
+      "id": "frontier.aperture",
+      "name": "Distributed aperture control",
+      "branch": "Doctrine",
+      "benefit": "LONGER-RANGE FIRE CONTROL",
+      "description": "Compare phased returns from escort ships spread across the local orbit before committing to a firing solution.",
+      "artwork": "Corvette",
+      "requires": [
+        "frontier.ion",
+        "GunneryDoctrine"
+      ],
+      "energy": 48,
+      "science": 90,
+      "work": 2300,
+      "rangeBonus": 3
+    },
+    {
+      "id": "frontier.thermal-drill",
+      "name": "Thermal bore telemetry",
+      "branch": "Sensors",
+      "benefit": "HIGHER EXTRACTION RETURNS AFTER SURVEY",
+      "description": "Measure heat flow and map fractures before a bore commits its cutters.",
+      "artwork": "Mine",
+      "requires": [
+        "WideSearch",
+        "SurfaceEngineering"
+      ],
+      "energy": 22,
+      "science": 46,
+      "work": 1500,
+      "extractionBonus": 1,
+      "surveyBonus": 4
     }
   ]
 }

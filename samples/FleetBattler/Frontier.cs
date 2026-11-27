@@ -16,6 +16,7 @@ internal sealed partial class FleetSimulation {
     private bool _secured;
     private int _nextPatrol;
     internal const int RaidPreparation = 2400, PatrolInterval = 4200;
+    private const int FirstRaidEarliest = SolarCatalog.EarthYearTicks / 2;
     internal string Objective => !Solar ? !ExpeditionArrived ? "NO SOL SENSOR COVERAGE" : ReceiverSecured ? "FIRST CROSSING COMPLETE"
         : ReceiverOnline ? "DEFEND THE PROXIMA RECEIVER" : "SURVEY RECEIVER WORLD / BUILD AN ORBITAL LAB"
         : RaidWarningTicks > 0 ? "PREPARE ESCORTS FOR THE INBOUND RAID"
@@ -92,20 +93,21 @@ internal sealed partial class FleetSimulation {
             Ore = Math.Min( MineCost, Ore + 2 );
         AdvancePiracy( );
         if ( !_battle ) return;
-        if ( _raidsLaunched == 0 && _raidTick == 0 && HasOperatingMine( ) ) {
-            _raidTick = Tick + RaidPreparation;
+        bool raidReady = !FrontierProgression || Tick >= FirstRaidEarliest && _surveyedProspects >= 3;
+        if ( _raidsLaunched == 0 && _raidTick == 0 && raidReady && FirstMineBody( beyondHome: FrontierProgression ) != 0 ) {
+            _raidTick = Tick + (FrontierProgression ? RaidDelay() : RaidPreparation);
             SendDispatch( FrontierEvent.Distress );
         }
         if ( _raidsLaunched == 0 && _raidTick != 0 && Tick >= _raidTick ) LaunchRaid( PaidPatrol ? 1 : 2, FrontierEvent.Raid );
         if ( _raidsLaunched == 1 && AmberCount == 0 && CorvettesLaunched > 0 ) LaunchRaid( 3, FrontierEvent.Counterattack );
         if ( !_secured && _raidsLaunched == 2 && AmberCount == 0 ) {
             _secured = true;
-            _nextPatrol = Tick + PatrolInterval;
+            _nextPatrol = Tick + (FrontierProgression ? RaidDelay() : PatrolInterval);
             SendDispatch( FrontierEvent.Secured );
         }
-        if ( _secured && AmberCount == 0 && Tick >= _nextPatrol && HasOperatingMine( ) ) {
+        if ( _secured && AmberCount == 0 && Tick >= _nextPatrol && FirstMineBody( beyondHome: FrontierProgression ) != 0 ) {
             LaunchRaid( 2, FrontierEvent.Interdiction );
-            _nextPatrol = Tick + PatrolInterval;
+            _nextPatrol = Tick + (FrontierProgression ? RaidDelay() : PatrolInterval);
         }
         if ( AmberCount == 0 || Tick % 90 != 0 ) return;
 
@@ -129,15 +131,19 @@ internal sealed partial class FleetSimulation {
 
     private bool HasOperatingMine( ) => FirstMineBody( ) != 0;
 
-    private int FirstMineBody( ) {
-        for ( int i = 1; i < _mines.Length; ++i )
-            if ( ExtractionRemaining( i ) == 0 ) return i;
+    private int RaidDelay() => 4_800 + (int)((_seed ^ (uint)Tick * 2654435761u) % 3_601);
+
+    private int FirstMineBody( bool beyondHome = false ) {
+        for ( int body = 1; body < _bodies.Length; ++body )
+            if ( (!beyondHome || PirateRaidBody( body )) && ExtractionIncome( body, Tick ) > 0 ) return body;
         return 0;
     }
 
     private Vector2 FirstMinePosition( ) {
-        int body = FirstMineBody( );
-        return body == 0 ? _bodies[Homeworld].Center : ExtractionPosition( body );
+        int body = FirstMineBody( beyondHome: FrontierProgression );
+        if ( body == 0 ) return _bodies[Homeworld].Center;
+        var facility = Remaining( _mines[body] ) == 0 ? PlanetFacility.Mine : PlanetFacility.Skimmer;
+        return SitePositionAt( body, facility, Tick, _bodies[body].Center );
     }
 
     private void LaunchRaid( int count, FrontierEvent incident ) {

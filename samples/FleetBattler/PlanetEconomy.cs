@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum PlanetFacility { Mine, Lab, Depot, Yard, Solar, Habitat, Observatory, Skimmer, SurfaceStore, OrbitalStore }
+internal enum PlanetFacility { Mine, Lab, Depot, Yard, Solar, Habitat, Observatory, Skimmer, SurfaceStore, OrbitalStore, Soletta }
 internal readonly record struct WingOrder( int Body, ShipDesign Design, int Duration, int Cost );
 internal readonly record struct SiteOrder( int Body, PlanetFacility Facility );
 
@@ -26,9 +26,9 @@ internal sealed partial class FleetSimulation {
     private readonly int[] _labs = new int[CelestialSystem.BodyCount];
 
     internal int Science { get; private set; }
-    internal bool WeaponUpgrade { get; private set; }
-    internal bool IndustryUpgrade { get; private set; }
-    internal bool DriveUpgrade { get; private set; }
+    internal bool WeaponUpgrade => Researched( ResearchTopic.Weapons );
+    internal bool IndustryUpgrade => Researched( ResearchTopic.Industry );
+    internal bool DriveUpgrade => Researched( ResearchTopic.Drive );
     internal int YardBody {
         get {
             int pending = -1;
@@ -145,7 +145,7 @@ internal sealed partial class FleetSimulation {
         if ( Frontier ) return StartResearch( ResearchTopic.Industry );
         if ( IndustryUpgrade || Science < IndustryCost || Lost ) return false;
         Science -= IndustryCost;
-        IndustryUpgrade = true;
+        PlayerFaction.Unlock( ResearchTopic.Industry );
         return true;
     }
 
@@ -206,7 +206,7 @@ internal sealed partial class FleetSimulation {
         PlanetFacility.Mine => _mines, PlanetFacility.Lab => _labs, PlanetFacility.Depot => _depots,
         PlanetFacility.Yard => _yards, PlanetFacility.Solar => _solarArrays, PlanetFacility.Habitat => _habitats,
         PlanetFacility.Observatory => _observatories, PlanetFacility.Skimmer => _skimmers,
-        PlanetFacility.SurfaceStore => _surfaceStores, PlanetFacility.OrbitalStore => _orbitalStores,
+        PlanetFacility.SurfaceStore => _surfaceStores, PlanetFacility.OrbitalStore => _orbitalStores, PlanetFacility.Soletta => _solettas,
         _ => throw new ArgumentOutOfRangeException( nameof(facility) )
     };
 
@@ -214,19 +214,22 @@ internal sealed partial class FleetSimulation {
         if ( Frontier ) return StartResearch( ResearchTopic.Weapons );
         if ( Science < UpgradeCost || WeaponUpgrade || Lost ) return false;
         Science -= UpgradeCost;
-        WeaponUpgrade = true;
+        PlayerFaction.Unlock( ResearchTopic.Weapons );
         return true;
     }
 
     private void AdvancePlanets( ) {
         RefreshSurveys( );
+        int extraction = 0;
+        bool production = (Tick + 1) % EconomyInterval == 0;
         for ( int body = 1; body < _bodies.Length; ++body ) {
             if ( _surveyUnits[body] is { } unit && InSurveyRange( unit, body ) ) {
                 int rate = IsScoutSquad( unit.Squad ) ? ScoutScanRate : 1;
                 if ( _survey[body] == 0 ) ++StartedScans;
                 _survey[body] = Math.Min( SurveyRequired, _survey[body] + rate );
                 if ( _survey[body] == SurveyRequired ) {
-                    Ore = Math.Min( ResourceCapacity.Ore, Ore + (Frontier ? 10 + (Researched( ResearchTopic.WideSearch ) ? Tech( ResearchTopic.WideSearch ).SurveyBonus : 0) : 40) );
+                    Ore = Math.Min( ResourceCapacity.Ore, Ore + (Frontier ? 10 + PlayerFaction.Survey + (Researched( ResearchTopic.WideSearch ) ? Tech( ResearchTopic.WideSearch ).SurveyBonus : 0) +
+                        (Researched( ResearchTopic.Occultation ) ? Tech( ResearchTopic.Occultation ).SurveyBonus : 0) : 40) );
                     if ( Frontier ) RevealProspect( body );
                     ++CompletedSurveys;
                     LastSurveyBody = body;
@@ -241,12 +244,14 @@ internal sealed partial class FleetSimulation {
                     MarkSite( body, facility, SiteDeadlines( facility )[body] );
                 }
             }
-            if ( (Tick + 1) % IncomeInterval != 0 ) continue;
-            int extraction = ExtractionIncome( body, Tick + 1 );
-            if ( extraction > 0 ) Ore = Math.Min( ResourceCapacity.Ore, Ore + extraction );
-            if ( _labs[body] > 0 && _labs[body] <= Tick + 1 ) Science = Math.Min( ResourceCapacity.Science, Science + 6 );
-            if ( _observatories[body] > 0 && _observatories[body] <= Tick + 1 ) Science = Math.Min( ResourceCapacity.Science, Science + 10 );
+            if ( production ) extraction += ExtractionIncome( body, Tick + 1 );
+            if ( (Tick + 1) % ScienceInterval != 0 ) continue;
+            if ( _labs[body] > 0 && _labs[body] <= Tick + 1 ) Science = Math.Min( ResourceCapacity.Science,
+                Science + SiteOutput( body, PlanetFacility.Lab ) );
+            if ( _observatories[body] > 0 && _observatories[body] <= Tick + 1 ) Science = Math.Min( ResourceCapacity.Science,
+                Science + SiteOutput( body, PlanetFacility.Observatory ) );
         }
+        if ( extraction > 0 ) Ore = Math.Min( ResourceCapacity.Ore, Ore + AfterRoyalty( extraction ) );
     }
 
     private void MarkSite( int body, PlanetFacility facility, int deadline ) {
