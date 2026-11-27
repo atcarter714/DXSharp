@@ -9,26 +9,46 @@ internal sealed partial class FleetSimulation {
     internal int PirateEnergyLost { get; private set; }
     internal int LastPiracyBody { get; private set; }
     internal int PirateControlledBody { get; private set; } = -1;
+    internal int BlockadedSites => BitOperations.PopCount( _pirateControl );
+    internal int BlockadeOrePerCycle { get; private set; }
+    internal int BlockadeEnergyPerCycle { get; private set; }
+    private uint _pirateControl;
+    internal bool IsPirateControlled( int body ) => (_pirateControl & (1u << body)) != 0;
+    private static ReadOnlySpan<PlanetFacility> RaidTargets =>
+        [PlanetFacility.Skimmer, PlanetFacility.Mine, PlanetFacility.Depot, PlanetFacility.Lab, PlanetFacility.Yard, PlanetFacility.Solar,
+            PlanetFacility.Habitat, PlanetFacility.Soletta];
 
     private void AdvancePiracy( ) {
-        if ( !_battle || Tick % IncomeInterval != 0 ) return;
+        if ( !_battle ) return;
+        if ( FactionCount( FactionId.Raiders ) != 0 && Tick % EconomyInterval != 0 ) return;
         PirateControlledBody = -1;
+        _pirateControl = 0;
+        BlockadeOrePerCycle = BlockadeEnergyPerCycle = 0;
         if ( FactionCount( FactionId.Raiders ) == 0 ) return;
         for ( int body = 1; body < _bodies.Length; ++body ) {
+            if ( RaidTarget( body ) is not { } facility ) continue;
             int income = ExtractionIncome( body, Tick );
-            if ( income == 0 ) continue;
-            var position = ExtractionPosition( body );
-            int pirates = 0, escorts = 0;
+            var position = SitePositionAt( body, facility, Tick, _bodies[body].Center );
+            int pirates = 0, escorts = 0, attacker = -1;
             for ( int ship = 0; ship < Count; ++ship ) {
                 if ( !Alive( ship ) || Vector2.DistanceSquared( _positions[ship], position ) > PirateControlRadius * PirateControlRadius ) continue;
-                if ( FactionOf( ship ) == FactionId.Raiders ) ++pirates;
+                if ( FactionOf( ship ) == FactionId.Raiders ) { ++pirates; attacker = ship; }
                 else if ( FactionOf( ship ) == FactionId.Sol && IsWarship( Role( SquadronOf( ship ) ) ) ) escorts += NavalWeight( Role( SquadronOf( ship ) ) );
             }
             if ( pirates <= escorts ) continue;
             PirateControlledBody = body;
-            int ore = Math.Min( Ore, Math.Max( 1, income / 2 ) );
+            _pirateControl |= 1u << body;
+            if ( FrontierProgression ) {
+                DamageSite( body, facility, 8 + 3 * pirates );
+                Emit( _positions[attacker], position, (int)FactionId.Raiders, burst: false, EffectStyle.Thermal );
+                LastEngagementTick = Tick;
+            }
+            int levy = Math.Max( 1, income / 2 );
+            BlockadeOrePerCycle += levy;
+            BlockadeEnergyPerCycle += pirates;
+            int ore = Math.Min( Ore, levy );
             int energy = Math.Min( Energy, pirates );
-            if ( ore == 0 && energy == 0 ) continue;
+            if ( ore == 0 && energy == 0 && !FrontierProgression ) continue;
             Ore -= ore;
             Energy -= energy;
             LastPiracyBody = body;
@@ -37,6 +57,19 @@ internal sealed partial class FleetSimulation {
             ++PiracyCycles;
         }
     }
+
+    private PlanetFacility? RaidTarget( int body ) {
+        if ( FrontierProgression && !PirateRaidBody( body ) ) return null;
+        PlanetFacility? disabled = null;
+        foreach ( var facility in RaidTargets ) {
+            if ( SiteRemaining( body, facility ) != 0 || (!FrontierProgression && facility is not (PlanetFacility.Mine or PlanetFacility.Skimmer)) ) continue;
+            if ( SiteIntegrity( body, facility ) > 0 ) return facility;
+            disabled ??= facility;
+        }
+        return disabled;
+    }
+
+    private bool PirateRaidBody( int body ) => !Solar || body != Homeworld && SolarCatalog.Get( body ).Parent != Homeworld;
 
     private void PlotPirateRaid( int squad ) {
         ref var raider = ref _squads[squad];
@@ -47,9 +80,9 @@ internal sealed partial class FleetSimulation {
         float score = float.NegativeInfinity;
         if ( escorts < strength ) {
             for ( int body = 1; body < _bodies.Length; ++body ) {
+                if ( RaidTarget( body ) is not { } facility ) continue;
                 int income = ExtractionIncome( body, Tick );
-                if ( income == 0 ) continue;
-                var site = ExtractionPosition( body );
+                var site = SitePositionAt( body, facility, Tick, _bodies[body].Center );
                 int guard = LocalEscortStrength( site, 36, out _ );
                 if ( guard >= strength ) continue;
                 float value = income * 4 - guard * 12 - Vector2.Distance( center, site ) * 0.08f;
@@ -94,6 +127,4 @@ internal sealed partial class FleetSimulation {
         return weight;
     }
 
-    private Vector2 ExtractionPosition( int body ) => SitePositionAt( body,
-        Remaining( _skimmers[body] ) == 0 ? PlanetFacility.Skimmer : PlanetFacility.Mine, Tick, _bodies[body].Center );
 }

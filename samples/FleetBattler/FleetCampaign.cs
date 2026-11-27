@@ -16,15 +16,26 @@ internal sealed class FleetCampaign( FleetSimulation sol, uint seed ) {
     internal ReadOnlySpan<FleetTransit> Transfers => global::System.Runtime.InteropServices.CollectionsMarshal.AsSpan( _transfers );
     private bool _offeredCharter, _reportedEnding;
 
+    internal CampaignFaction PlayerFaction => sol.PlayerFaction;
+    internal int FirstDepartureTick => _firstDepartureTick;
+    private int _firstDepartureTick;
     internal Expedition? InTransit { get; private set; }
     internal bool Arrived => _systems[FleetSimulation.Proxima]?.ExpeditionArrived == true;
     internal int HullsAt( int index ) => index == 0 ? sol.CyanCount : _systems[index]?.CyanCount ?? 0;
+    internal FleetSimulation? OccupiedSystem( int index ) =>
+        index == 0 ? sol : _systems[index] is { ExpeditionArrived: true } colony ? colony : null;
 
     internal FleetSimulation System( int index ) {
         if ( index == 0 ) return sol;
         int ships = sol.Frontier ? FleetSimulation.DefaultShips : sol.Capacity - FleetSimulation.WingSize * FleetSimulation.WingGoal;
-        return _systems[index] ??= new FleetSimulation( ships, unchecked(seed + (uint)index * 1177),
-            rivalPatrol: true, system: index, battle: true, frontier: sol.Frontier );
+        if ( _systems[index] is not { } system ) {
+            system = new FleetSimulation( ships, unchecked(seed + (uint)index * 1177),
+                rivalPatrol: true, system: index, battle: true, frontier: sol.Frontier ) { FrontierProgression = sol.FrontierProgression };
+            system.AttachFaction( PlayerFaction );
+            _systems[index] = system;
+        }
+        if ( sol.FrontierProgression ) system.AlignEphemeris( sol.Tick );
+        return system;
     }
 
     internal bool Depart( ReadOnlySpan<bool> selected ) {
@@ -34,6 +45,7 @@ internal sealed class FleetCampaign( FleetSimulation sol, uint seed ) {
     }
 
     internal int FlightTicks( int source, int destination ) {
+        if ( sol.FrontierProgression && !Arrived ) return FleetSimulation.ExpeditionDuration;
         int duration = 420 + (int)(SystemDistance( source, destination ) * 1080);
         return sol.FusionUpgrade ? duration * 3 / 4 : duration;
     }
@@ -43,6 +55,11 @@ internal sealed class FleetCampaign( FleetSimulation sol, uint seed ) {
 
     internal string? TravelBlock( FleetSimulation origin, int destination, ReadOnlySpan<bool> selected, bool survey ) {
         if ( !origin.Frontier || (uint)destination >= (uint)_systems.Length || destination == origin.SystemIndex ) return "CHOOSE ANOTHER SYSTEM";
+        if ( sol.FrontierProgression && !Arrived ) {
+            if ( origin.SystemIndex != 0 || destination != FleetSimulation.Proxima ) return "FIRST CROSSING MUST DEPART SOL FOR PROXIMA";
+            if ( survey ) return "SURVEY AFTER THE FIRST LANDING";
+            return origin.LaunchBlock( selected );
+        }
         int count = 0;
         bool scout = false, civilianOnly = true;
         for ( int ship = 0; ship < Math.Min( origin.Count, selected.Length ); ++ship ) {
@@ -67,6 +84,11 @@ internal sealed class FleetCampaign( FleetSimulation sol, uint seed ) {
 
     internal bool Travel( FleetSimulation origin, int destination, ReadOnlySpan<bool> selected, bool survey ) {
         if ( TravelBlock( origin, destination, selected, survey ) is not null ) return false;
+        if ( sol.FrontierProgression && !Arrived ) {
+            if ( !Depart( selected ) ) return false;
+            _firstDepartureTick = sol.Tick;
+            return true;
+        }
         var target = System( destination );
         int arrival = checked(sol.Tick + FlightTicks( origin.SystemIndex, destination ));
         var hulls = origin.RemoveTravelHulls( selected );
@@ -80,7 +102,11 @@ internal sealed class FleetCampaign( FleetSimulation sol, uint seed ) {
         if ( !sol.Frontier ) return;
         var destination = _systems[FleetSimulation.Proxima];
         for ( int i = 1; i < _systems.Length; ++i ) {
-            if ( _systems[i] is not { ExpeditionArrived: true } active ) continue;
+            if ( _systems[i] is not { } active ) continue;
+            if ( !active.ExpeditionArrived ) {
+                if ( sol.FrontierProgression ) active.AlignEphemeris( sol.Tick );
+                continue;
+            }
             active.Step( );
             ReportResearch( active, ref _remoteResearchSeen[i] );
         }

@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "assembly",
+      "name": "Orbital Assembly",
+      "description": "Earth has commissioned a flight laboratory and a working shipyard. Choose a research program, fit a corvette and launch it from the home yard.",
+      "ore": 180,
+      "energy": 110,
+      "science": 85,
+      "raids": true,
+      "startingSites": [
+        "Lab",
+        "Yard",
+        "Solar"
+      ],
+      "events": [
+        "yard-shift",
+        "first-jig",
+        "cold-side"
+      ]
+    },
+    {
+      "id": "frontier",
+      "name": "First Crossing",
+      "ore": 50,
+      "energy": 25,
+      "science": 0,
+      "raids": true,
+      "events": [
+        "dead-letter",
+        "cold-side",
+        "receiver-cache",
+        "the-second-watch",
+        "receiver-ceramics",
+        "long-baseline",
+        "mirror-proof",
+        "combine-concession",
+        "europa-tidal-clock",
+        "charon-baseline",
+        "titan-return",
+        "triton-nightside"
+      ],
+      "description": "Survey new worlds from Earth orbit. Build extraction sites, defend convoys and send your first expedition to Proxima.",
+      "frontierProgression": true
+    },
+    {
+      "id": "quiet-sun",
+      "name": "The Quiet Sun Survey",
+      "ore": 85,
+      "energy": 48,
+      "science": 50,
+      "raids": false,
+      "events": [
+        "dead-letter",
+        "cold-side",
+        "millennial-watch",
+        "the-second-watch",
+        "mirror-proof",
+        "combine-concession",
+        "europa-tidal-clock",
+        "charon-baseline",
+        "titan-return",
+        "triton-nightside"
+      ],
+      "description": "A peaceful survey commission with a stocked laboratory. Chart the outer worlds and investigate the signals in their shadows.",
+      "startingSites": [
+        "Lab"
+      ],
+      "frontierProgression": true
+    }
+  ]
+}

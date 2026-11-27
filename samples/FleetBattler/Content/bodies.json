@@ -1,0 +1,314 @@
+{
+  "version": 1,
+  "bodies": [
+    {
+      "id": "sun",
+      "index": 0,
+      "name": "SUN",
+      "kind": "G TYPE STAR",
+      "parent": -1,
+      "eccentricity": 0.0,
+      "radius": 0.12,
+      "phase": 0.0,
+      "color": [
+        1.0,
+        0.8,
+        0.43
+      ],
+      "mapAxis": 0.0,
+      "periodDays": 0.0,
+      "habitability": 0,
+      "class": "Star",
+      "rotationHours": 609.12
+    },
+    {
+      "id": "earth",
+      "index": 1,
+      "name": "EARTH",
+      "kind": "HOMEWORLD",
+      "parent": 0,
+      "eccentricity": 0.0167,
+      "radius": 0.052,
+      "phase": 0.22,
+      "color": [
+        0.22,
+        0.53,
+        0.82
+      ],
+      "axisAu": 1.0,
+      "habitability": 100,
+      "class": "Terrestrial",
+      "rotationHours": 23.9345
+    },
+    {
+      "id": "jupiter",
+      "index": 2,
+      "name": "JUPITER",
+      "kind": "GAS GIANT",
+      "parent": 0,
+      "eccentricity": 0.0484,
+      "radius": 0.106,
+      "phase": 0.84,
+      "color": [
+        0.82,
+        0.65,
+        0.51
+      ],
+      "axisAu": 5.2029,
+      "habitability": 0,
+      "class": "GasGiant",
+      "rotationHours": 9.925
+    },
+    {
+      "id": "moon",
+      "index": 3,
+      "name": "MOON",
+      "kind": "EARTH SATELLITE",
+      "parent": 1,
+      "eccentricity": 0.0549,
+      "radius": 0.023,
+      "phase": 0.17,
+      "color": [
+        0.65,
+        0.67,
+        0.72
+      ],
+      "mapAxis": 0.36,
+      "periodDays": 27.32166,
+      "habitability": 28,
+      "class": "Moon",
+      "rotationHours": 655.7
+    },
+    {
+      "id": "arrokoth",
+      "index": 4,
+      "name": "ARROKOTH",
+      "kind": "KUIPER BELT OBJECT",
+      "parent": 0,
+      "eccentricity": 0.044,
+      "radius": 0.012,
+      "phase": 0.09,
+      "color": [
+        0.68,
+        0.46,
+        0.35
+      ],
+      "axisAu": 44.6,
+      "habitability": 0,
+      "class": "SmallBody",
+      "rotationHours": 15
+    },
+    {
+      "id": "mercury",
+      "index": 5,
+      "name": "MERCURY",
+      "kind": "ROCKY PLANET",
+      "parent": 0,
+      "eccentricity": 0.2056,
+      "radius": 0.023,
+      "phase": 0.73,
+      "color": [
+        0.65,
+        0.58,
+        0.54
+      ],
+      "axisAu": 0.3871,
+      "habitability": 18,
+      "class": "Terrestrial",
+      "rotationHours": 1407.6
+    },
+    {
+      "id": "venus",
+      "index": 6,
+      "name": "VENUS",
+      "kind": "CLOUD WORLD",
+      "parent": 0,
+      "eccentricity": 0.0068,
+      "radius": 0.047,
+      "phase": 0.54,
+      "color": [
+        0.92,
+        0.7,
+        0.44
+      ],
+      "axisAu": 0.7233,
+      "habitability": 22,
+      "class": "Terrestrial",
+      "rotationHours": -5832.5
+    },
+    {
+      "id": "mars",
+      "index": 7,
+      "name": "MARS",
+      "kind": "ROCKY PLANET",
+      "parent": 0,
+      "eccentricity": 0.0934,
+      "radius": 0.033,
+      "phase": 0.33,
+      "color": [
+        0.78,
+        0.39,
+        0.25
+      ],
+      "axisAu": 1.5237,
+      "habitability": 54,
+      "class": "Terrestrial",
+      "rotationHours": 24.6229
+    },
+    {
+      "id": "saturn",
+      "index": 8,
+      "name": "SATURN",
+      "kind": "RINGED GAS GIANT",
+      "parent": 0,
+      "eccentricity": 0.0539,
+      "radius": 0.082,
+      "phase": 0.35,
+      "color": [
+        0.79,
+        0.68,
+        0.5
+      ],
+      "axisAu": 9.5367,
+      "rings": true,
+      "habitability": 0,
+      "class": "GasGiant",
+      "rotationHours": 10.7
+    },
+    {
+      "id": "uranus",
+      "index": 9,
+      "name": "URANUS",
+      "kind": "ICE GIANT",
+      "parent": 0,
+      "eccentricity": 0.0473,
+      "radius": 0.063,
+      "phase": 0.7,
+      "color": [
+        0.52,
+        0.83,
+        0.84
+      ],
+      "axisAu": 19.1892,
+      "habitability": 0,
+      "class": "IceGiant",
+      "rotationHours": -17.2
+    },
+    {
+      "id": "neptune",
+      "index": 10,
+      "name": "NEPTUNE",
+      "kind": "ICE GIANT",
+      "parent": 0,
+      "eccentricity": 0.0086,
+      "radius": 0.061,
+      "phase": 0.92,
+      "color": [
+        0.29,
+        0.48,
+        0.84
+      ],
+      "axisAu": 30.0699,
+      "habitability": 0,
+      "class": "IceGiant",
+      "rotationHours": 16.1
+    },
+    {
+      "id": "ceres",
+      "index": 11,
+      "name": "CERES",
+      "kind": "MAIN BELT DWARF",
+      "parent": 0,
+      "eccentricity": 0.0758,
+      "radius": 0.014,
+      "phase": 0.47,
+      "color": [
+        0.57,
+        0.54,
+        0.51
+      ],
+      "axisAu": 2.768,
+      "habitability": 24,
+      "class": "SmallBody",
+      "rotationHours": 9.074
+    },
+    {
+      "id": "vesta",
+      "index": 12,
+      "name": "VESTA",
+      "kind": "MAIN BELT ASTEROID",
+      "parent": 0,
+      "eccentricity": 0.0889,
+      "radius": 0.011,
+      "phase": 0.28,
+      "color": [
+        0.74,
+        0.63,
+        0.52
+      ],
+      "axisAu": 2.362,
+      "habitability": 12,
+      "class": "SmallBody",
+      "rotationHours": 5.342
+    },
+    {
+      "id": "pluto",
+      "index": 13,
+      "name": "PLUTO",
+      "kind": "KUIPER BELT DWARF",
+      "parent": 0,
+      "eccentricity": 0.249,
+      "radius": 0.016,
+      "phase": 0.66,
+      "color": [
+        0.78,
+        0.63,
+        0.59
+      ],
+      "axisAu": 39.48,
+      "habitability": 11,
+      "class": "SmallBody",
+      "rotationHours": 153.2928
+    },
+    {
+      "id": "halley",
+      "index": 14,
+      "name": "HALLEY",
+      "kind": "PERIODIC COMET",
+      "parent": 0,
+      "eccentricity": 0.967,
+      "radius": 0.01,
+      "phase": 0.012,
+      "color": [
+        0.6,
+        0.84,
+        0.96
+      ],
+      "axisAu": 17.94,
+      "retrogradeComet": true,
+      "habitability": 0,
+      "class": "SmallBody",
+      "rotationHours": 52.8
+    },
+    {
+      "id": "charon", "index": 15, "name": "CHARON", "kind": "PLUTO SATELLITE",
+      "parent": 13, "mapAxis": 0.19, "periodDays": 6.3872, "rotationHours": 153.2928,
+      "radius": 0.009, "phase": 0.24, "color": [0.64, 0.56, 0.53], "class": "Moon", "habitability": 7
+    },
+    {
+      "id": "europa", "index": 16, "name": "EUROPA", "kind": "JUPITER ICE MOON",
+      "parent": 2, "mapAxis": 0.28, "periodDays": 3.551, "rotationHours": 85.224,
+      "eccentricity": 0.009, "radius": 0.017, "phase": 0.44, "color": [0.74, 0.65, 0.54], "class": "Moon", "habitability": 14
+    },
+    {
+      "id": "titan", "index": 17, "name": "TITAN", "kind": "SATURN HAZE MOON",
+      "parent": 8, "mapAxis": 0.37, "periodDays": 15.945, "rotationHours": 382.68,
+      "eccentricity": 0.029, "radius": 0.025, "phase": 0.61, "color": [0.82, 0.53, 0.26], "class": "Moon", "habitability": 19
+    },
+    {
+      "id": "triton", "index": 18, "name": "TRITON", "kind": "NEPTUNE CAPTURED MOON",
+      "parent": 10, "mapAxis": 0.24, "periodDays": 5.877, "rotationHours": -141.048, "retrogradeOrbit": true,
+      "radius": 0.016, "phase": 0.38, "color": [0.65, 0.76, 0.79], "class": "Moon", "habitability": 11
+    }
+  ]
+}

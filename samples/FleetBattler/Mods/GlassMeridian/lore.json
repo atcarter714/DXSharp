@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "fragments": [
+    {
+      "id": "meridian.bread",
+      "text": "On the first day the collectors outshine Venus, a baker on Luna puts a loaf in the window. It browns in the reflected light. For a week the ovens stay cold. Then the mirrors drift apart on their separate orbits, and bread goes back to costing money."
+    },
+    {
+      "id": "meridian.ledger",
+      "text": "Every collector carries a scratch across one corner. They looked like manufacturing defects until the shadow clocks resolved the pattern: a tally. Each mirror records the ore owed to the settlement that launched it. The oldest debt is still drawing interest."
+    }
+  ]
+}

@@ -7,7 +7,7 @@ using StbImageSharp;
 namespace FleetBattler;
 
 internal static class SpaceDraw {
-    internal const uint Constants = 60;
+    internal const uint Constants = 63;
     internal static readonly Vector4 Cyan = new( 0.20f, 0.83f, 1.0f, 1 );
     internal static readonly Vector4 Amber = new( 1.0f, 0.58f, 0.24f, 1 );
     internal static readonly Vector4 Neutral = new( 0.81f, 0.88f, 0.66f, 1 );
@@ -28,6 +28,7 @@ internal static class SpaceDraw {
             float4 SiteTint;
             float4 Selected;
             float4 Order;
+            float3 BodySpin;
         };
 
         float4 VS(uint id : SV_VertexID) : SV_Position {
@@ -66,22 +67,14 @@ internal static class SpaceDraw {
             return Line(length(delta) - axis, Viewport.w * 0.45);
         }
 
-        float3 Body(float3 sky, float2 pixel, float4 body, uint kind) {
+        """ + SpaceMaterials.Hlsl + """
+
+        float3 Body(float3 sky, float2 pixel, float4 body, uint kind, float spin = 0) {
             float2 p = (pixel - body.xy) / body.z;
             [branch] if (any(abs(p) > (kind == 0 ? 3.6 : 2.5))) return sky;
             float d = length(p);
             if (kind == 0) {
-                float a = atan2(p.y, p.x);
-                float corona = exp(-max(d - 0.94, 0) * 6.5) *
-                    (0.77 + 0.23 * sin(a * 23 + Noise(p*7)*4 + Viewport.z*0.35));
-                float limb = max(d - 0.95, 0);
-                float nearGlow = exp(-limb*limb*14.5);
-                float farGlow = exp(-limb*limb*1.55) * (1-smoothstep(3.1,3.55,d));
-                sky += float3(1,0.35,0.065) * (corona*0.37 + nearGlow*0.16);
-                sky += float3(1,0.49,0.16) * farGlow * 0.12;
-                float granules = Noise(p*21 + Viewport.z*0.08);
-                return lerp(sky, lerp(float3(0.98,0.38,0.08),float3(1,0.94,0.64),0.58 + granules*0.42),
-                            1 - smoothstep(0.95, 1.01, d));
+                return StellarSurface(sky, p, d, Viewport.z, Star.w);
             }
 
             float2 ringPlane = float2(p.x * 0.947 - p.y * 0.321, p.x * 0.321 + p.y * 0.947);
@@ -96,37 +89,49 @@ internal static class SpaceDraw {
 
             float3 n = float3(p.x, -p.y, sqrt(saturate(1 - d*d)));
             float2 towardSun = Star.xy - body.xy;
-            float3 light = normalize(float3(towardSun.x, -towardSun.y, max(length(towardSun)*0.60, 1)));
+            // The projected star direction supplies the sky-plane components. The third
+            // component is the signed projection along the orthographic view direction.
+            float3 light = normalize(float3(towardSun.x, -towardSun.y, kind == 5 || (kind == 3 && SiteTint.w == 0 && all(body.xy == Site.xy)) ? 0 : body.w) + float3(0,0,0.00001));
             float diffuse = 0.14 + 0.86 * saturate(dot(n, light));
             float3 albedo;
+            bool iceGiant = kind == 6;
             if (kind == 1) {
-                float land = Noise(n.xy*6.5 + n.z*2.7) * 0.72 + Noise(n.xy*16.0)*0.28;
+                float longitude = atan2(n.x,n.z) + spin;
+                float2 map = float2(cos(longitude),sin(longitude))*sqrt(saturate(1-n.y*n.y)) + n.y*float2(1.3,2.1);
+                float land = Noise(map*2.6)*0.54 + Noise(map*6.8)*0.30 + Noise(map*19)*0.16;
                 albedo = lerp(float3(0.12,0.38,0.76), float3(0.30,0.62,0.38), smoothstep(0.49,0.60,land));
-                float cloud = smoothstep(0.62,0.83,Noise(n.xy*float2(7,19) + n.z*3));
+                albedo = lerp(albedo,float3(0.84,0.92,0.96),smoothstep(0.74,0.93,abs(n.y)+0.14*Noise(map*14)));
+                float2 wind = map*float2(5,11) + float2(Noise(map*4 + 3.2), Noise(map*4)*1.9);
+                float cloud = smoothstep(0.48,0.77,Noise(wind)*0.68 + Noise(wind*3.7)*0.32);
                 albedo = lerp(albedo,float3(0.86,0.94,0.99),cloud*0.58);
-                sky += float3(0.16,0.42,0.83) * exp(-abs(d-1.0)*16.0) * 0.24;
-            } else if (kind == 2 || kind == 4) {
-                float bands = 0.5 + 0.5*sin(n.y*27 + Noise(n.xy*5)*2.4 + n.x*0.8);
+                float daylight = smoothstep(-0.19,0.36,dot(n,light));
+                float horizon = pow(1-saturate(n.z),3);
+                albedo += float3(0.03,0.29,0.59)*horizon*(0.18+daylight);
+                float ocean = 1-smoothstep(0.49,0.60,land);
+                albedo += float3(0.65,0.78,0.86)*ocean*(1-cloud)*pow(saturate(dot(n,normalize(light+float3(0,0,1)))),42);
+                sky += float3(0.06,0.31,0.64)*exp(-max(d-1,0)*34)*(0.12+0.68*daylight);
+            } else if (kind == 2 || kind == 4 || iceGiant) {
+                float longitude = atan2(n.x,n.z) + spin;
+                float2 belts = float2(cos(longitude),sin(longitude)) + n.y*float2(.8,3.1);
+                float turbulence = Noise(belts*float2(5,18))*2.8 + Noise(belts*31)*0.8;
+                float bands = 0.5 + 0.5*sin(n.y*29 + turbulence);
                 albedo = lerp(float3(0.58,0.34,0.28),float3(0.97,0.78,0.56),bands);
+                if (iceGiant) albedo = lerp(float3(.16,.32,.67),float3(.55,.84,.93),bands);
+                float storm = length(float2(atan2(sin(longitude-.38),cos(longitude-.38))*3.7,(n.y+0.27)*10));
+                if (!iceGiant) albedo = lerp(albedo,float3(0.71,0.32,0.19)*(0.85+0.15*cos(storm*17)),1-smoothstep(0.65,1.1,storm));
             } else if (kind == 5) {
                 albedo = float3(0.76,0.42,0.30) * (0.62 + 0.33*Noise(p*11));
-            } else if (MoonOrbit.w > 0) {
+            } else if (kind == 3 && MoonOrbit.w > 0) {
                 float2 uv = float2(0.5 + atan2(n.x,max(n.z,0.0001)) / 6.2831853, acos(clamp(n.y,-1,1)) / 3.14159265);
-                albedo = MoonMap.SampleLevel(MoonSampler,float2(frac(uv.x+Viewport.z*0.005),clamp(uv.y,0.002,0.998)),0).rgb;
+                albedo = MoonMap.SampleLevel(MoonSampler,float2(frac(uv.x+spin/6.2831853),clamp(uv.y,0.002,0.998)),0).rgb;
                 return lerp(sky,pow(saturate(albedo*diffuse),1.0/2.2),1-smoothstep(0.97,1.015,d));
             } else {
-                albedo = float3(0.69,0.73,0.79) * (0.47 + 0.48*Noise(p*11));
+                albedo = Regolith(n, light, spin);
+                diffuse = 1;
             }
             sky = lerp(sky, albedo * diffuse, 1 - smoothstep(0.97,1.015,d));
             if (kind == 2 && ringInFront) sky = lerp(sky,ringTint,rings*0.65);
             return sky;
-        }
-
-        float3 MapNode(float2 pixel, float4 node) {
-            float d = length(pixel - node.xy) / max(1, Viewport.y / 720);
-            float disk = 1 - smoothstep(4.5,6,d);
-            float border = (1 - smoothstep(1,2,abs(d-13))) * (0.38 + node.z*0.55);
-            return lerp(float3(0.34,0.52,0.93),float3(0.21,0.88,1),node.z) * (disk+border+0.34*exp(-d*0.14));
         }
 
         float4 PS(float4 position : SV_Position) : SV_Target {
@@ -135,16 +140,22 @@ internal static class SpaceDraw {
             float2 dust = p * float2(3.2,5.8) + float2(1.2,-1.8);
             float nebula = saturate(Noise(dust)*0.66 + Noise(dust*2.5)*0.34 - 0.30);
             float band = exp(-abs(p.y - p.x*0.34 + 0.12)*4.1);
-            float3 sky = float3(0.018,0.026,0.055) + float3(0.12,0.092,0.22)*nebula*band
+            float3 sky = float3(0.008,0.011,0.022) + float3(0.067,0.044,0.096)*nebula*band
                        + float3(0.016,0.058,0.081)*saturate(1-length(p+float2(0.36,-0.23)));
-            sky += Stars(p, 68, 0.69)*0.39 + Stars(p+0.19, 29, 0.88)*0.74;
+            sky += (Stars(p, 68, 0.69)*0.39 + Stars(p+0.19, 29, 0.88)*0.74) * (Viewport.w == 0 ? .20 : .50);
 
             if (Viewport.w == 0) {
-                float arm = atan2(p.y,p.x) + length(p)*9.4;
-                float spiral = pow(saturate(0.53 + 0.47*sin(3*arm)),3) * exp(-length(p)*4);
-                sky += float3(0.10,0.15,0.27) * spiral * (0.45 + 0.55*Noise(p*36));
-                sky += MapNode(pixel, Star) + MapNode(pixel, Rocky) + MapNode(pixel, Giant)
-                     + MapNode(pixel, Moon) + MapNode(pixel, Orbits) + MapNode(pixel, MoonOrbit);
+                float2 center = Star.xy + Star.zw*.5 + Rocky.xy;
+                float diameter = max(1,min(Star.z,Star.w))*Rocky.z;
+                float2 disk = (pixel-center)/diameter/float2(1.17,.98);
+                float r = length(disk);
+                float angle = atan2(disk.y,disk.x) - r*8.7;
+                float lanes = pow(.5 + .5*cos(angle*3),4) * (1-smoothstep(.30,.53,r));
+                float dustLane = .27 + .73*Noise(disk*22 + Noise(disk*7)*2.2);
+                float halo = exp(-r*6.2);
+                float nucleus = exp(-r*r*220);
+                sky = sky*.55 + float3(.21,.34,.48)*lanes*dustLane*.43
+                    + float3(.58,.28,.13)*halo*.37 + float3(.57,.32,.15)*nucleus*.47;
                 return float4(saturate(sky),1);
             }
 
@@ -152,15 +163,21 @@ internal static class SpaceDraw {
             float3 nearPoint = mul(float4(ndc,0,1), InverseViewProjection).xyz;
             float3 ray = mul(float4(0,0,1,0), InverseViewProjection).xyz;
             float2 world = (nearPoint - ray*(nearPoint.y/ray.y)).xz;
+            float2 field = world * .0095;
+            float distortion = Noise(field*.47 + 2.6);
+            float clouds = Noise(field*1.9 + distortion*2.3)*.58 + Noise(field*5.7-distortion)*.29 + Noise(field*16)*.13;
+            float filament = smoothstep(.43,.82,clouds)*exp(-abs(field.y + field.x*.28)*.17);
+            sky += lerp(float3(.020,.037,.052),float3(.069,.037,.077),distortion) * filament;
             bool solar = SiteTint.x > 0.99 && SiteTint.w == 0;
             float tracks = Orbit(world,Orbits.xy,Orbits.z,solar ? 0.0167 : 0.16) + Orbit(world,Orbits.xy,Orbits.w,solar ? 0.0484 : 0.12)
                          + Orbit(world,MoonOrbit.xy,MoonOrbit.z,solar ? 0.0549 : 0.08);
             sky += float3(0.066,0.108,0.172) * saturate(tracks);
 
             sky = Body(sky,pixel,Star,0);
-            sky = Body(sky,pixel,Giant,solar ? 4 : 2);
-            sky = Body(sky,pixel,Rocky,1);
-            sky = Body(sky,pixel,Moon,3);
+            sky += StellarFlare(pixel, Star.xy, Star.z, Viewport.xy);
+            sky = Body(sky,pixel,Giant,solar ? 4 : fmod(SiteTint.z, 2) > .5 ? 6 : 2, BodySpin.y);
+            sky = Body(sky,pixel,Rocky,SiteTint.z > 1.5 ? 7 : 1, BodySpin.x);
+            sky = Body(sky,pixel,Moon,3, BodySpin.z);
             if (SiteTint.w == 0 && Site.w > 0) {
                 float belt = Orbit(world,Orbits.xy,Site.w,solar ? 0.044 : 0.06);
                 sky += float3(0.15,0.17,0.22) * belt;
@@ -188,7 +205,7 @@ internal static class SpaceDraw {
             float selectionRadius = max(Selected.z, Viewport.w*11);
             float selectionRing = Line(length(selectionDelta)-selectionRadius, Viewport.w*0.65);
             float bracket = step(0.7, max(abs(normalize(selectionDelta + 0.0001).x),abs(normalize(selectionDelta + 0.0001).y)));
-            sky = lerp(sky,float3(0.28,0.92,1),selectionRing*bracket*0.8*Selected.w);
+            sky = lerp(sky,float3(0.28,0.92,1),selectionRing*bracket*0.56*Selected.w);
             float2 orderVector = Order.xy - Selected.xy;
             float orderT = dot(selectionDelta,orderVector) / max(dot(orderVector,orderVector),0.0001);
             float commandDash = step(0.35,frac(orderT*length(orderVector)/(Viewport.w*12)));
@@ -222,7 +239,7 @@ internal static class SpaceDraw {
     internal static void Record( GraphicsCommandList commands, PipelineState pipeline, SampledTexture2D moon, bool useMoonMap, FleetSimulation fleet, FleetSelection selected,
         Matrix4x4 viewProjection, Matrix4x4 inverse, int width, int height, float halfHeight, bool showSelection = true, float interpolation = 1 ) {
         float r = fleet.BoardRadius;
-        float seconds = ComputeTraffic.RenderTime( fleet.Tick, interpolation );
+        float seconds = ComputeTraffic.RenderTime( fleet.WorldTick, interpolation );
         var bodies = fleet.Bodies;
         float worldPerPixel = halfHeight * 2 / height;
         var center = fleet.VisualCenter( selected, interpolation );
@@ -231,12 +248,21 @@ internal static class SpaceDraw {
         int side = fleet.Capturing >= 0 ? fleet.Capturing : fleet.Owner;
         var tint = side switch { 0 => Cyan, 1 => Amber, _ => Neutral };
         float progress = fleet.CaptureTicks > 0 ? (float)fleet.CaptureTicks / FleetSimulation.CaptureDuration : fleet.Owner >= 0 ? 1 : 0;
-        Span<Vector4> values = stackalloc Vector4[15];
+        Span<Vector4> values = stackalloc Vector4[16];
         MemoryMarshal.CreateReadOnlySpan( ref inverse, 1 ).CopyTo( MemoryMarshal.Cast<Vector4, Matrix4x4>( values[..4] ) );
         values[4] = new( width, height, seconds, worldPerPixel );
-        for ( int i = 0; i < CelestialSystem.OuterBelt; ++i )
-            values[5 + i] = CelestialSystem.Project( fleet.VisualBody( i, interpolation ), r, viewProjection, width, height, halfHeight, fleet.Frontier ? CelestialSystem.FrontierBodyDisplayScale : 1 );
-        values[9] = new( bodies[0].Center.X, bodies[0].Center.Y, (fleet.Solar ? SolarCatalog.Get( 1 ).Axis : CelestialSystem.RockyAxis) * r, (fleet.Solar ? SolarCatalog.Get( 2 ).Axis : CelestialSystem.GiantAxis) * r );
+        var towardEye = -Vector3.Normalize( Vector3.TransformNormal( Vector3.UnitZ, inverse ) );
+        var star = fleet.VisualBody( 0, interpolation ).Center;
+        for ( int i = 0; i < CelestialSystem.OuterBelt; ++i ) {
+            var pose = fleet.VisualBody( i, interpolation );
+            var projected = CelestialSystem.Project( pose, r, viewProjection, width, height, halfHeight,
+                fleet.Frontier ? CelestialSystem.FrontierBodyDisplayScale : 1 );
+            var direction = star - pose.Center;
+            projected.W = (direction.X * towardEye.X + direction.Y * towardEye.Z) / worldPerPixel;
+            if ( i == 0 ) projected.W = fleet.SystemIndex >= CelestialSystem.AuthoredCount ? Exoplanets.Get( fleet.SystemIndex ).Temperature : 5772;
+            values[5 + i] = projected;
+        }
+        values[9] = new( bodies[0].Center.X, bodies[0].Center.Y, (fleet.Solar ? SolarCatalog.Get( 1 ).Axis : fleet.SystemIndex >= CelestialSystem.AuthoredCount ? Exoplanets.Get( fleet.SystemIndex ).InnerAxis : CelestialSystem.RockyAxis) * r, (fleet.Solar ? SolarCatalog.Get( 2 ).Axis : fleet.SystemIndex >= CelestialSystem.AuthoredCount ? Exoplanets.Get( fleet.SystemIndex ).OuterAxis : CelestialSystem.GiantAxis) * r );
         var earth = fleet.VisualBody( 1, interpolation );
         values[10] = new( earth.Center.X, earth.Center.Y, (fleet.Solar ? SolarCatalog.Get( 3 ).Axis : CelestialSystem.MoonAxis) * r, useMoonMap ? 1 : 0 );
         values[11] = new( fleet.Site.X, fleet.Site.Y, fleet.SiteRadius, progress );
@@ -246,27 +272,34 @@ internal static class SpaceDraw {
             values[11] = belt with { W = (fleet.Solar ? SolarCatalog.Get( CelestialSystem.OuterBelt ).Axis : CelestialSystem.BeltAxis) * r };
         }
         values[12] = fleet.Solar ? new Vector4( 1, 0, 0, 0 ) : fleet.ChartOnly ? new Vector4( 0, 1, 0, 0 ) : fleet.Frontier ? Vector4.Zero : tint;
+        if ( fleet.Frontier && fleet.SystemIndex >= CelestialSystem.AuthoredCount ) {
+            ref readonly var profile = ref Exoplanets.Get( fleet.SystemIndex );
+            // Store independent body material flags without enlarging the root constants.
+            values[12].Z = (profile.OuterClass == BodyClass.IceGiant ? 1 : 0) + (profile.Habitability < 70 ? 2 : 0);
+        }
         values[13] = new( center.X, center.Y, selected.IsShip ? 2.8f : 3.5f + MathF.Sqrt( fleet.ShipCount( selected.Squad ) ) * 2.3f, showSelection ? 1 : 0 );
         float orderMode = !showSelection || plan.Order == FlightOrder.Idle ? 0
             : !fleet.Frontier ? 1 : 0;
         values[14] = new( target.X, target.Y, orderMode, (float)plan.Order );
+        values[15] = new( Spin( 1, 26 ), Spin( 2, 12 ), Spin( 3, 936 ), 0 );
         Draw( commands, pipeline, moon, values );
+
+        float Spin( int body, float fallback ) =>
+            SolarCatalog.SpinRadians( fleet.WorldTick, interpolation, fleet.Solar ? SolarCatalog.Get( body ).RotationHours : fallback );
     }
 
-    internal static void RecordGalaxy( GraphicsCommandList commands, PipelineState pipeline, SampledTexture2D moon, int currentSystem, int width, int height, bool frontier ) {
-        Span<Vector4> values = stackalloc Vector4[15];
+    internal static void RecordGalaxy( GraphicsCommandList commands, PipelineState pipeline, SampledTexture2D moon, int width, int height, bool frontier, GalaxyView chart = default ) {
+        Span<Vector4> values = stackalloc Vector4[16];
         values.Clear( );
         values[4] = new( width, height, 0, 0 );
-        for ( int i = 0; i < CelestialSystem.MapPositions.Length; ++i ) {
-            var pixel = FleetHud.GalaxyNodePixel( i, width, height, frontier );
-            values[5 + i] = new( pixel.X, pixel.Y, i == currentSystem ? 1 : 0, 0 );
-        }
+        values[5] = FleetHud.GalaxyAreaPixel( width, height, frontier );
+        values[6] = new( chart.Offset.X * width, chart.Offset.Y * height, chart.Scale, 0 );
         Draw( commands, pipeline, moon, values );
     }
 
     private static void Draw( GraphicsCommandList commands, PipelineState pipeline, SampledTexture2D moon, ReadOnlySpan<Vector4> values ) {
         commands.SetGraphicsPipeline( pipeline );
-        commands.SetGraphicsConstants( MemoryMarshal.Cast<Vector4, uint>( values ) );
+        commands.SetGraphicsConstants( MemoryMarshal.Cast<Vector4, uint>( values )[..(int)Constants] );
         commands.SetGraphicsTexture( moon, 1 );
         commands.Draw( 3 );
     }

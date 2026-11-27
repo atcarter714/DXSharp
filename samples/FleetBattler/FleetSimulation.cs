@@ -14,13 +14,21 @@ internal enum FlightOrder { Idle, Move, Orbit, Survey, Attack }
 internal readonly record struct FlightPlan( FlightOrder Order, Vector2 Destination, int Body, int Target );
 
 internal sealed class FleetClock {
+    internal const float DefaultSpeed = .25f, MinSpeed = .125f, MaxSpeed = 4;
+    private static ReadOnlySpan<float> Speeds => [MinSpeed, DefaultSpeed, .5f, .75f, 1, 1.5f, 2, 3, MaxSpeed];
+
+    internal static float Change( float current, bool faster ) {
+        int index = Speeds.IndexOf( current );
+        return Speeds[Math.Clamp( index + (faster ? 1 : -1), 0, Speeds.Length - 1 )];
+    }
+
     private double _remaining;
     internal float Interpolation => (float)(_remaining / FleetSimulation.StepSeconds);
     internal void Reset( ) => _remaining = 0;
 
-    internal float Advance( FleetSimulation fleet, double elapsed, int speed, bool paused, Action? afterStep = null ) {
+    internal float Advance( FleetSimulation fleet, double elapsed, float speed, bool paused, Action? afterStep = null ) {
         if ( paused ) return 0;
-        double scaled = Math.Clamp( elapsed, 0, 0.125 ) * (speed * 0.25);
+        double scaled = Math.Clamp( elapsed, 0, 0.125 ) * speed;
         _remaining += scaled;
         while ( _remaining >= FleetSimulation.StepSeconds ) {
             fleet.Step( );
@@ -41,8 +49,9 @@ internal sealed partial class FleetSimulation {
     private const float Pitch = 3.9f, MaxSpeed = 36, ApproachGain = 1.8f, Response = 0.09f;
     private const float AvoidRadius = 2.55f, TurnStep = 5.3f * (float)StepSeconds;
     internal const float OrbitalTurnStep = 2.8f * (float)StepSeconds;
-    private readonly int[] _grid, _next, _squadOfShip;
+    private readonly int[] _grid, _occupiedCells, _next, _squadOfShip;
     private readonly int _gridSide;
+    private int _occupiedCellCount;
     private readonly Order[] _shipOrders;
     private readonly float[] _thrust;
     private readonly BodyPose[] _bodies, _previousBodies;
@@ -107,10 +116,12 @@ internal sealed partial class FleetSimulation {
         int cyan = frontier ? 3 : (ships + 1) / 2;
         int largestSquad = (cyan + SquadsPerFaction - 1) / SquadsPerFaction;
         float formationRadius = MathF.Ceiling( MathF.Sqrt( largestSquad * 1.6f ) ) * Pitch;
-        BoardRadius = MathF.Max( 92 + system * 12, formationRadius * 2.85f + 22 );
+        BoardRadius = MathF.Max( 92 + Math.Min( system, CelestialSystem.AuthoredCount - 1 ) * 12, formationRadius * 2.85f + 22 );
         _gridSide = (int)MathF.Ceiling( 2.8f * NavigationRadius / AvoidRadius ) + 3;
         _grid = new int[_gridSide * _gridSide];
-        CelestialSystem.Evaluate( SystemIndex, 0, BoardRadius, _bodies );
+        Array.Fill( _grid, -1 );
+        _occupiedCells = new int[capacity];
+        CelestialSystem.Evaluate( SystemIndex, 0, BoardRadius, _bodies, Frontier );
         _bodies.CopyTo( _previousBodies, 0 );
         _targetLimit = NavigationRadius - formationRadius * 0.6f;
         Site = new( BoardRadius * 0.14f, -BoardRadius * 0.07f );
@@ -134,11 +145,36 @@ internal sealed partial class FleetSimulation {
         }
     }
 
+    private int _ephemerisEpoch;
+    internal int WorldTick => _ephemerisEpoch + Tick;
+
+    internal void AlignEphemeris( int campaignTick ) {
+        if ( ExpeditionArrived || Solar ) return;
+        _ephemerisEpoch = campaignTick - Tick;
+        CelestialSystem.Evaluate( SystemIndex, WorldTick, BoardRadius, _bodies, Frontier );
+        _bodies.CopyTo( _previousBodies, 0 );
+    }
+
     internal int SystemIndex { get; }
     internal bool CanChartSystem( int system ) => (uint)system < CelestialSystem.Systems.Length &&
         (!Frontier || system == 0 || AstrometryUpgrade);
     internal bool Solar => Frontier && SystemIndex == 0;
     internal string BodyName( int body ) => _bodyNames[body] ?? (Solar ? SolarCatalog.Get( body ).Name : CelestialSystem.Name( SystemIndex, body ));
+    internal string BodyClassName( int body ) {
+        var profile = Exoplanets.Get( SystemIndex );
+        var type = Solar ? SolarCatalog.Get( body ).Class : body switch {
+            0 => BodyClass.Star, 3 => BodyClass.Moon,
+            1 => SystemIndex < CelestialSystem.AuthoredCount ? BodyClass.Terrestrial : profile.InnerClass,
+            2 => SystemIndex < CelestialSystem.AuthoredCount ? BodyClass.GasGiant : profile.OuterClass,
+            _ => BodyClass.SmallBody
+        };
+        return type switch {
+            BodyClass.Star => SystemIndex >= CelestialSystem.AuthoredCount ? $"MAIN SEQUENCE / {profile.Temperature} K" : "PRIMARY STAR",
+            BodyClass.Terrestrial => "TERRESTRIAL", BodyClass.SuperEarth => "SUPER-EARTH",
+            BodyClass.IceGiant => "ICE GIANT", BodyClass.GasGiant => "GAS GIANT",
+            BodyClass.Moon => "MOON", _ => "SMALL BODY"
+        };
+    }
     internal string SystemName => Solar ? "SOLAR SYSTEM" : CelestialSystem.Systems[SystemIndex];
     internal ReadOnlySpan<BodyPose> Bodies => _bodies;
     internal BodyPose VisualBody( int body, float interpolation ) =>
@@ -324,12 +360,14 @@ internal sealed partial class FleetSimulation {
         if ( !Frontier ) UpdateRival( );
 
         _bodies.CopyTo( _previousBodies, 0 );
-        CelestialSystem.Evaluate( SystemIndex, Tick + 1, BoardRadius, _bodies );
-        Array.Fill( _grid, -1 );
+        CelestialSystem.Evaluate( SystemIndex, WorldTick + 1, BoardRadius, _bodies, Frontier );
+        for ( int i = 0; i < _occupiedCellCount; ++i ) _grid[_occupiedCells[i]] = -1;
+        _occupiedCellCount = 0;
         for ( int ship = Count - 1; ship >= 0; --ship ) {
             if ( !Alive( ship ) ) continue;
             var cell = Cell( _positions[ship] );
             int index = cell.Y * _gridSide + cell.X;
+            if ( _grid[index] == -1 ) _occupiedCells[_occupiedCellCount++] = index;
             _next[ship] = _grid[index];
             _grid[index] = ship;
         }
@@ -375,6 +413,12 @@ internal sealed partial class FleetSimulation {
                     ? solo.Enemy != 0 ? Chase( ref solo, _positions[ship], i, out _ )
                         : onCourse ? Navigate( ref solo, out _, out aim, out thrust ) : Resolve( ref solo, 1, out _ )
                     : slot;
+                int contact = (solo.Detached ? solo.Enemy : squad.Order.Enemy) - 1;
+                if ( Frontier && Alive( contact ) ) {
+                    FlyCombatIntercept( ship, contact, goal, flight );
+                    sum += _positions[ship];
+                    continue;
+                }
                 if ( Frontier && squad.Faction == 0 && solo.Detached && solo.Body == 0 && solo.Enemy == 0 )
                     solo = PlotTransfer( new( i, ship ), 0, false, _positions[ship] );
                 if ( onCourse ) {
@@ -501,8 +545,15 @@ internal sealed partial class FleetSimulation {
     }
 
     internal int FillInstances( Span<ShipInstance> destination, FleetSelection selected, ReadOnlySpan<bool> selection = default,
-        bool groupHulls = false, float interpolation = 1, bool groupMiners = false, bool groupFrigates = false ) {
+        bool groupHulls = false, float interpolation = 1, bool groupMiners = false, bool groupFrigates = false, Span<int> roleCounts = default ) {
         if ( destination.Length != ActiveCount ) throw new ArgumentException( "Instance span must match the active ship count.", nameof(destination) );
+        Span<int> roleOffsets = stackalloc int[roleCounts.Length];
+        if ( !roleCounts.IsEmpty ) {
+            roleCounts.Clear( );
+            for ( int i = 0; i < SquadCount; ++i ) roleCounts[(int)Role( i )] += ShipCount( i );
+            int offset = 0;
+            for ( int i = 0; i < roleCounts.Length; ++i ) { roleOffsets[i] = offset; offset += roleCounts[i]; }
+        }
         int corvettes = ActiveCount, miners = 0, frigates = 0;
         if ( groupHulls ) {
             for ( int i = 0; i < SquadCount; ++i ) {
@@ -528,7 +579,7 @@ internal sealed partial class FleetSimulation {
                 bool highlighted = selection.IsEmpty ? ship == selected.Ship || !selected.IsShip && i == selected.Squad : selection[ship];
                 var color = squad.Role == HullRole.Colony ? new Vector4( 0.58f, 1.9f, 1.31f, 1 ) : tint;
                 if ( highlighted ) color.W = 1.66f;
-                destination[frigate ? frigateIndex++ : scout ? scoutIndex++ : miner ? minerIndex++ : index++] = new( VisualPosition( ship, interpolation ),
+                destination[!roleCounts.IsEmpty ? roleOffsets[(int)squad.Role]++ : frigate ? frigateIndex++ : scout ? scoutIndex++ : miner ? minerIndex++ : index++] = new( VisualPosition( ship, interpolation ),
                     interpolation == 1 ? _headings[ship] : Vector2.Normalize( Vector2.Lerp( _previousHeadings[ship], _headings[ship], interpolation ) ), color,
                     new Vector4( _thrust[ship], (ship % 173) * 0.618f, displayScale, (float)_hull[ship] / hullPoints + (highlighted ? 2 : 0) ) );
             }
@@ -539,7 +590,12 @@ internal sealed partial class FleetSimulation {
     internal ulong StateHash( ) {
         ulong hash = 14695981039346656037;
         if ( Frontier ) {
-            Append( (uint)Charter ); Append( (uint)CharterEconomy ); Append( _specializations );
+            Append( (uint)Charter ); Append( (uint)CharterEconomy );
+            Append( (uint)_ephemerisEpoch );
+            Append( (uint)OreRoyalty );
+            foreach ( var project in PlayerFaction.Projects ) Append( (uint)project );
+            Append( _pirateControl );
+            foreach ( byte damage in _siteDamage ) Append( damage );
             Append( (uint)_reservedTravelBerths ); Append( (uint)_nextShipName );
             foreach ( int upgrade in _siteUpgrades ) Append( (uint)upgrade );
             foreach ( var hull in WarshipBlueprints ) AppendDesign( Blueprint( hull ) );
@@ -573,7 +629,7 @@ internal sealed partial class FleetSimulation {
             Append( (uint)(_surveyUnits[body]?.Squad ?? -1) ); Append( (uint)(_surveyUnits[body]?.Ship ?? -1) );
             Append( (uint)_survey[body] ); Append( (uint)_mines[body] ); Append( (uint)_labs[body] );
             if ( Frontier ) {
-                Append( (uint)_population[body] ); Append( (uint)_nextGrowth[body] ); Append( (uint)_colonyWork[body] );
+                Append( (uint)_population[body] ); Append( (uint)_nextGrowth[body] ); Append( (uint)_colonyWork[body] ); Append( (uint)_climateReady[body] );
                 Append( (uint)(_colonyShips[body]?.Squad ?? -1) ); Append( (uint)(_colonyShips[body]?.Ship ?? -1) );
                 foreach ( var facility in Facilities ) Append( (uint)SiteDeadlines( facility )[body] );
             }

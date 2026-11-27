@@ -2,12 +2,13 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum HudIcon { Ore, Energy, Science, Colony, Design, Orders, Log, Merge, Split, Yard, Build, Repair, Retreat, Health, Ship, Chart, Route, Signal, Rally, Launch, Crew, Play, Pause }
+internal enum HudIcon { Ore, Energy, Science, Colony, Design, Orders, Log, Merge, Split, Yard, Build, Repair, Retreat, Health, Ship, Chart, Route, Signal, Rally, Launch, Crew, Play, Pause, Flyby }
 
 internal sealed partial class FleetHud {
     private static readonly Vector4 OreTint = new( 0.92f, 0.68f, 0.44f, 1 );
     private static readonly Vector4 EnergyTint = new( 0.99f, 0.84f, 0.36f, 1 );
     private static readonly Vector4 ScienceTint = new( 0.48f, 0.85f, 1, 1 );
+    private static readonly HudIcon[] BranchIcons = [HudIcon.Yard, HudIcon.Flyby, HudIcon.Signal, HudIcon.Ship, HudIcon.Build, HudIcon.Rally];
     private static readonly ulong[] Icons = [
         0x020e3ae7ddf1c, 0x00820c7e30c30, 0x0d8e7793dce36, 0x1ff1e3eef8e08, 0x08b1f77c70e08,
         0x1fe0dd83760ff, 0x0f913a44e913e, 0x02041cfe20a22, 0x088a08fe70408, 0x18f5ff55ff5e3, 0x03c187f306180, 0x0437df1c7030c, 0x00020c3ffff00, 0x03870e7ff838e, 0x01993ffffc704,
@@ -19,6 +20,7 @@ internal sealed partial class FleetHud {
         0x18e09c7d06e9c, // Crew
         0x01061c7870604, // Play
         0x0d9b366cd9b36, // Pause
+        0x1030411370c7c, // Flyby
     ];
 
     private void Icon( HudIcon icon, float x, float y, float size, Vector4 tint ) {
@@ -34,8 +36,8 @@ internal sealed partial class FleetHud {
     }
 
     private void Wallet( FleetSimulation fleet, float x, float y, bool income = false ) {
-        Resource( HudIcon.Ore, fleet.Ore, fleet.OreIncome, OreTint, x );
-        Resource( HudIcon.Energy, fleet.Energy, fleet.EnergyIncome - fleet.EnergyUpkeep, EnergyTint, x + (income ? 98 : 55) );
+        Resource( HudIcon.Ore, fleet.Ore, fleet.OreIncome - fleet.BlockadeOrePerCycle, OreTint, x );
+        Resource( HudIcon.Energy, fleet.Energy, fleet.EnergyIncome - fleet.EnergyUpkeep - fleet.BlockadeEnergyPerCycle, EnergyTint, x + (income ? 98 : 55) );
         Resource( HudIcon.Science, fleet.Science, fleet.ScienceIncome, ScienceTint, x + (income ? 196 : 110) );
 
         void Resource( HudIcon icon, int balance, int rate, Vector4 tint, float left ) {
@@ -53,7 +55,7 @@ internal sealed partial class FleetHud {
     private const int YardPages = ((int)HullBlueprint.Count + YardPageSize - 1) / YardPageSize;
     private static float YardLeft( Layout layout ) => (layout.Width - YardWidth) / 2;
 
-    private void DrawShipyard( Layout layout, FleetSimulation fleet, int body, int speed, int page ) {
+    private void DrawShipyard( Layout layout, FleetSimulation fleet, int body, float speed, int page ) {
         float x = YardLeft( layout ), y = YardTop;
         _overlay = 2;
         PanelAt( x, y, YardWidth, YardHeight, EnergyTint );
@@ -137,15 +139,17 @@ internal sealed partial class FleetHud {
 
     private static readonly string[] ResearchLabels = ["INDUSTRY", "PROPULSION", "SENSORS", "HULLS", "STRUCTURES", "DOCTRINE"];
 
-    private void ResearchPanel( float x, float y, FleetSimulation fleet, int speed, ResearchBranch branch ) {
+    private void ResearchPanel( float x, float y, FleetSimulation fleet, float speed, ResearchBranch branch ) {
         for ( int i = 0; i < ResearchLabels.Length; ++i )
-            IconButton( x + 10 + i % 3 * 110, y + 39 + i / 3 * 23, 106, HudIcon.Science, ResearchLabels[i], true, i == (int)branch );
+            IconButton( x + 10 + i % 3 * 110, y + 39 + i / 3 * 23, 106, BranchIcons[i], ResearchLabels[i], true, i == (int)branch % (int)ResearchBranch.Count );
         Span<char> line = stackalloc char[64];
         if ( fleet.ResearchRate == 0 ) Text( "BUILD A LAB OR OBSERVATORY TO START", x + 11, y + 94, 1, Label );
         else {
             line.TryWrite( $"LAB THROUGHPUT {fleet.ResearchRate}X / {fleet.ScienceIncome} SCI PER CYCLE", out int n );
             Text( line[..n], x + 11, y + 94, 1, Label );
         }
+        int pages = ResearchCatalog.Current.PageCount( branch );
+        if ( pages > 1 ) Button( x + 254, y + 87, 85, $"PAGE {(int)branch / (int)ResearchBranch.Count + 1}/{pages} >", true );
         var topics = ResearchCatalog.Current.Topics( branch );
         for ( int i = 0; i < topics.Length; ++i ) {
             var topic = topics[i];

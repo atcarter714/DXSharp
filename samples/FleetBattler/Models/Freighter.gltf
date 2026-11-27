@@ -7,7 +7,9 @@
   "scenes": [
     {
       "nodes": [
-        0
+        0,
+        1,
+        2
       ]
     }
   ],
@@ -15,7 +17,9 @@
     {
       "name": "Mule modular freighter",
       "mesh": 0
-    }
+    },
+    {"name": "exhaust_port", "translation": [-11.2, 0.84, 48]},
+    {"name": "exhaust_starboard", "translation": [11.2, 0.84, 48]}
   ],
   "meshes": [
     {

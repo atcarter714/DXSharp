@@ -29,6 +29,7 @@ internal static class FleetQualification {
         VerifyMerchantChoices( );
         VerifyColoniesAndStorage( );
         VerifyPiracy( );
+        VerifyExplorationCampaign( );
         VerifySolarPresentation( );
         VerifyCampaignHud( );
         VerifyGalaxyTravelAndDesign( );
@@ -233,14 +234,18 @@ internal static class FleetQualification {
         var clock = new FleetClock( );
         fleet.Move( new FleetSelection( 0, 0 ), Vector2.Zero );
         for ( int frame = 0; frame < 120; ++frame ) clock.Advance( fleet, 1.0 / 60, 1, paused: false );
-        Require( fleet.Tick is 29 or 30 && clock.Interpolation is >= 0 and <= 1 &&
-            fleet.VisualPosition( 0, 0 ) != fleet.VisualPosition( 0, 1 ), "1x advances at quarter speed with a presentation interval" );
+        Require( fleet.Tick == 120 && clock.Interpolation is >= 0 and <= 1 &&
+            fleet.VisualPosition( 0, 0 ) != fleet.VisualPosition( 0, 1 ), "1x advances 60 ticks per second with a presentation interval" );
         int before = fleet.Tick;
         float interpolation = clock.Interpolation;
         clock.Advance( fleet, 1, 4, paused: true );
         Require( fleet.Tick == before && clock.Interpolation == interpolation, "pause freezes both simulation and interpolated presentation" );
         for ( int frame = 0; frame < 120; ++frame ) clock.Advance( fleet, 1.0 / 60, 4, paused: false );
-        Require( fleet.Tick - before is 119 or 120, "4x reaches the original simulation speed" );
+        Require( fleet.Tick - before is 479 or 480, "4x advances four times as many ticks" );
+        before = fleet.Tick;
+        for ( int frame = 0; frame < 120; ++frame ) clock.Advance( fleet, 1.0 / 60, FleetClock.DefaultSpeed, paused: false );
+        Require( fleet.Tick - before is 29 or 30 && FleetClock.Change( FleetClock.DefaultSpeed, faster: false ) == .125f &&
+            FleetClock.Change( FleetClock.DefaultSpeed, faster: true ) == .5f, "campaign starts at quarter speed with fractional control in both directions" );
     }
 
     private static void VerifyPlanetEconomy( ) {
@@ -267,7 +272,7 @@ internal static class FleetQualification {
         var miner = new FleetSelection( 1, 1 );
         Require( fleet.Established && fleet.CyanCount == 3 && fleet.AmberCount == 0 && !fleet.Won &&
             fleet.Planet( home ).Surveyed && fleet.Role( 0 ) == HullRole.Scout && fleet.Role( 1 ) == HullRole.Miner &&
-            fleet.Role( 2 ) == HullRole.Miner && fleet.Dispatch( 0 ) == FrontierEvent.Arrival && fleet.Energy == 25,
+            fleet.Role( 2 ) == HullRole.Miner && fleet.Dispatch( 0 ) == FrontierEvent.Arrival && fleet.Energy == 25 && fleet.SurfaceWorkLimit( home ) == 2,
             "Sol starts with the homeworld, scout, two constructors, and energy" );
         for ( int system = 1; system < CelestialSystem.MapPositions.Length; ++system ) {
             var remote = new FleetSimulation( 3, 37, system: system, battle: true, frontier: true );
@@ -285,15 +290,15 @@ internal static class FleetQualification {
             fleet.YardQueue( home ).Length == 1 && fleet.CyanCount == 3 && fleet.NavalReserved == 0 &&
             !fleet.BeginSurvey( miner, prospect ) && fleet.BeginSurvey( scout, prospect ),
             "the Earth dock builds civilian hulls while the scout discovers deposits" );
-        AdvanceUntil( fleet, () => fleet.HasDeposit( prospect ), "the scout reaches and surveys the hidden deposit", 1800 );
+        AdvanceSurvey( fleet, prospect, "the scout reaches and surveys the hidden deposit" );
         Require( fleet.DepositYield( prospect ) == 12 && fleet.Dispatch( 1 ) == FrontierEvent.Prospect &&
             !fleet.BuildFacility( prospect, PlanetFacility.Skimmer, scout ), "the survey reveals a specific yield and scouts cannot construct" );
-        Require( fleet.Slots( home ) is { Surface: 3 } && fleet.SurfaceWorkLimit( home ) == 2 && fleet.Slots( prospect ) is { Surface: 0, Orbit: 5 } &&
+        Require( fleet.Slots( home ) is { Surface: 3 } && fleet.Slots( prospect ) is { Surface: 0, Orbit: 5 } &&
             fleet.Slots( 3 ) is { Surface: 1, Orbit: 3 } && !fleet.BuildFacility( prospect, PlanetFacility.Mine, miner ) &&
             fleet.BuildFacility( prospect, PlanetFacility.Skimmer, miner ), "gas giants permit orbital extraction and reject surface construction" );
         var campaign = new FleetCampaign( fleet, 37 );
         _ = campaign.System( FleetSimulation.Proxima );
-        AdvanceUntil( fleet, () => fleet.Planet( prospect ).MineRemaining == 0, "arrival starts and completes construction", 1800 );
+        AdvanceUntil( fleet, () => fleet.Planet( prospect ).MineRemaining == 0, "arrival starts and completes construction", 3600 );
         campaign.Advance( );
         Require( campaign.TryTakeEvent( out var distress ) && distress == new CampaignEvent( CampaignEventKind.Distress, fleet ) &&
             !campaign.TryTakeEvent( out _ ), "the raid decision is delivered once, even with a remote chart open" );
@@ -359,9 +364,9 @@ internal static class FleetQualification {
         const int home = FleetSimulation.Homeworld, prospect = 2;
         var fleet = new FleetSimulation( 3, 37, frontier: true );
         Require( fleet.BeginSurvey( new( 0 ), prospect ), "recovery test begins a survey" );
-        AdvanceUntil( fleet, () => fleet.HasDeposit( prospect ), "recovery prospect surveyed", 1800 );
+        AdvanceSurvey( fleet, prospect, "recovery prospect surveyed" );
         Require( fleet.BuildFacility( prospect, PlanetFacility.Skimmer, new( 1 ) ), "recovery funding" );
-        AdvanceUntil( fleet, () => fleet.Ore >= 235, "mine funds fleet and infrastructure", 4200 );
+        AdvanceUntil( fleet, () => fleet.Ore >= 235, "mine funds fleet and infrastructure", 6000 );
         Require( fleet.BuildYard( home, new( 2 ) ) && !fleet.BuildYard( prospect, new( 1 ) ) &&
             !fleet.BuildFacility( home, PlanetFacility.Depot, new( 2 ) ) && fleet.NavalCapacity == 0,
             "uninhabited worlds cannot staff yards, pending yards grant no capacity, and builders cannot double-book" );
@@ -482,6 +487,18 @@ internal static class FleetQualification {
             FleetHud.Hit( new( 600, 215 ), 660, 500, fleet, belt ).Action == HudAction.ToggleBuildCatalog &&
             FleetHud.Hit( new( 465, 249 ), 660, 500, fleet, belt, buildCatalog: true ) == new HudHit( HudAction.BuildSite, (int)PlanetFacility.Skimmer ),
             "only the separate catalog offers orbital extraction on the belt" );
+
+        var flyby = new FleetSimulation( 3, 37, frontier: true );
+        Require( flyby.FlyPast( scout, FleetSimulation.Homeworld ), "plot a powered approach, ballistic assist and capture" );
+        int flightTicks = flyby.RouteTicks( scout );
+        bool gravityAssist = false, braking = false;
+        for ( int i = 0; i < flightTicks; ++i ) {
+            gravityAssist |= flyby.RoutePhase( scout ) == NavigationPhase.GravityAssist;
+            braking |= flyby.RoutePhase( scout ) == NavigationPhase.Brake;
+            flyby.Step();
+        }
+        Require( gravityAssist && braking && flyby.Plan( scout ).Body == 3 && flyby.RoutePhase( scout ) == NavigationPhase.Parked,
+            "the assist includes a ballistic segment and arrives in Luna orbit" );
     }
 
     private static void VerifyProjectCancellation( ) {
@@ -502,7 +519,7 @@ internal static class FleetQualification {
             "a lab needs a constructor and cancellation refunds both resources" );
 
         Require( fleet.BeginSurvey( scout, moon ), "survey the Moon to discover a construction site" );
-        AdvanceUntil( fleet, () => fleet.HasDeposit( moon ), "Moon survey completes", 1800 );
+        AdvanceSurvey( fleet, moon, "Moon survey completes" );
         originalOre = fleet.Ore;
         Require( fleet.ConstructionBlock( moon, PlanetFacility.Mine, miner ) == "FOUND A COLONY FIRST" &&
             fleet.BuildFacility( moon, PlanetFacility.Skimmer, miner ) && fleet.SiteEnRoute( moon, PlanetFacility.Skimmer ),
@@ -606,17 +623,16 @@ internal static class FleetQualification {
         var fleet = new FleetSimulation( 3, seed, frontier: true );
         var campaign = new FleetCampaign( fleet, seed );
         var chart = campaign.System( FleetSimulation.Proxima );
-        ulong initialChart = chart.StateHash( );
         Require( !fleet.QueueShip( home, HullBlueprint.Colony ) && fleet.BeginSurvey( new( 0 ), giant ),
             "a civilian dock cannot produce a colony ship" );
-        AdvanceUntil( fleet, () => fleet.HasDeposit( giant ), "survey the giant for orbital extraction", 2000 );
+        AdvanceSurvey( fleet, giant, "survey the giant for orbital extraction" );
         campaign.Advance( );
         Require( campaign.TryTakeEvent( out var program ) && program.Kind == CampaignEventKind.EconomicCharter &&
             fleet.AdoptCharter( EconomicCharter.Power ) && !fleet.AdoptCharter( EconomicCharter.Extraction ),
             "the first survey posts a choice that permanently selects one economy effect" );
         Require( fleet.BuildFacility( giant, PlanetFacility.Skimmer, new( 1 ) ) &&
             fleet.BeginSurvey( new( 0 ), moon ), "prospecting and orbital construction can proceed together" );
-        AdvanceUntil( fleet, () => fleet.HasDeposit( moon ) && fleet.Ore >= 250, "colony program funding", 4500 );
+        AdvanceUntil( fleet, () => fleet.HasDeposit( moon ) && fleet.Ore >= 250, "colony program funding", fleet.RouteTicks( new( 1 ) ) + 4500 );
         Require( fleet.BuildYard( home, new( 2 ) ) && fleet.BuildFacility( home, PlanetFacility.SurfaceStore ) &&
             fleet.SiteWorker( home, PlanetFacility.SurfaceStore ) is null && fleet.ResourceCapacity.Ore == 400,
             "surface crews begin a warehouse while the space constructor builds the yard" );
@@ -634,7 +650,7 @@ internal static class FleetQualification {
         Require( fleet.ConstructionBlock( moon, PlanetFacility.Yard, new( 1 ) ) == "SHIPYARD NEEDS 6 POPULATION" &&
             fleet.ColonyBlock( moon, unit ) == "BUILD A LANDING DEPOT FIRST" &&
             fleet.BuildFacility( moon, PlanetFacility.Depot, new( 1 ) ), "survey alone cannot establish a colony or an orbital shipyard" );
-        AdvanceUntil( fleet, () => fleet.DepotAt( moon ) == 0, "landing depot supplies the colony", 2000 );
+        AdvanceUntil( fleet, () => fleet.DepotAt( moon ) == 0, "landing depot supplies the colony", fleet.RouteTicks( new( 1 ) ) + 2000 );
         Require( fleet.ResourceCapacity is { Ore: 830, Energy: 750, Science: 500 } &&
             !fleet.BeginColony( giant, unit ) && fleet.BeginColony( moon, unit ) &&
             fleet.SiteRemaining( moon, PlanetFacility.Mine ) < 0 && fleet.Colony( moon ).WorkRemaining == FleetSimulation.ColonyDuration,
@@ -679,7 +695,7 @@ internal static class FleetQualification {
 
         Require( fleet.Orbit( new( 0 ), home ) && fleet.Orbit( new( 2 ), home ), "scout and constructor return to the departure port" );
         AdvanceUntil( fleet, () => fleet.RouteTicks( new( 0 ) ) == 0 && fleet.RouteTicks( new( 2 ) ) == 0,
-            "expedition ships dock in Earth orbit", 2200 );
+            "expedition ships dock in Earth orbit", Math.Max( fleet.RouteTicks( new( 0 ) ), fleet.RouteTicks( new( 2 ) ) ) + 2 );
         var selected = new bool[fleet.Capacity];
         selected[0] = selected[2] = selected[escort] = true;
         int originShips = fleet.CyanCount;
@@ -687,13 +703,15 @@ internal static class FleetQualification {
             fleet.CyanCount == originShips - 3 && fleet.NavalUsed == 0 &&
             !campaign.Depart( selected ), "departure atomically removes the expedition from Sol and prevents a duplicate" );
         var expedition = campaign.InTransit.GetValueOrDefault( );
+        ulong chartBeforeArrival = chart.StateHash( );
         CampaignUntil( () => fleet.Tick == expedition.ArrivalTick - 1, "expedition is approaching Proxima", FleetSimulation.ExpeditionDuration );
-        Require( chart.StateHash( ) == initialChart && !chart.CanSeeContacts && campaign.HullsAt( FleetSimulation.Proxima ) == 0 &&
+        Require( chart.StateHash( ) == chartBeforeArrival && !chart.CanSeeContacts && campaign.HullsAt( FleetSimulation.Proxima ) == 0 &&
             !campaign.TryTakeEvent( out _ ), "visiting a remote chart cannot advance remote state or reveal the expedition before arrival" );
         fleet.Step( );
         campaign.Advance( );
         var destination = campaign.System( FleetSimulation.Proxima );
         var unviewed = new FleetCampaign( new FleetSimulation( 3, seed, frontier: true ), seed ).System( FleetSimulation.Proxima );
+        unviewed.AttachFaction( fleet.PlayerFaction );
         Require( campaign.InTransit is null && campaign.Arrived && campaign.HullsAt( FleetSimulation.Proxima ) == 3 &&
             destination.Tick == 0 && unviewed.Receive( expedition, fleet.Tick ) && destination.StateHash( ) == unviewed.StateHash( ) &&
             campaign.TryTakeEvent( out var arrival ) && arrival == new CampaignEvent( CampaignEventKind.Arrival, destination ) &&
@@ -761,9 +779,10 @@ internal static class FleetQualification {
         const int body = 2;
         var fleet = new FleetSimulation( 3, 37, battle: true, frontier: true );
         Require( fleet.BeginSurvey( new( 0 ), body ), "piracy fixture surveys a prospect" );
-        AdvanceUntil( fleet, () => fleet.HasDeposit( body ), "survey completes", 2000 );
+        AdvanceSurvey( fleet, body, "survey completes" );
         Require( fleet.BuildFacility( body, PlanetFacility.Skimmer, new( 1 ) ), "piracy fixture opens a trade route" );
-        AdvanceUntil( fleet, () => fleet.RaidWarningTicks > 0, "mining triggers advance warning", 2200 );
+        int commissioning = fleet.RouteTicks( new( 1 ) ) + FleetSimulation.Facility( PlanetFacility.Skimmer ).Duration;
+        AdvanceUntil( fleet, () => fleet.RaidWarningTicks > 0, "mining triggers advance warning", commissioning + 120 );
         int warning = fleet.RaidWarningTicks, energy = fleet.Energy;
         Require( fleet.FundPatrol( ) && !fleet.FundPatrol( ) && fleet.RaidWarningTicks == warning + 900 &&
             fleet.Energy == energy - 15, "paid patrol spends energy once and buys time" );
@@ -775,6 +794,37 @@ internal static class FleetQualification {
         int cycles = fleet.PiracyCycles;
         for ( int i = 0; i < 2 * FleetSimulation.IncomeInterval; ++i ) fleet.Step( );
         Require( fleet.PiracyCycles == cycles && fleet.PirateControlledBody == -1, "theft stops after raiders are cleared" );
+    }
+
+    private static void VerifyExplorationCampaign( ) {
+        var scenario = ScenarioCatalog.Load( "frontier" );
+        var fleet = new FleetSimulation( 3, 37, battle: true, frontier: true );
+        fleet.StartScenario( scenario with { StartingSites = [PlanetFacility.Skimmer], Stores = new( 120, 90 ) } );
+        var concession = scenario.Events.Single( story => story.Id == "combine-concession" );
+        var baseline = scenario.Events.Single( story => story.Id == "charon-baseline" );
+        Require( !fleet.MeetsTrigger( concession ) && !fleet.MeetsTrigger( baseline ) &&
+            baseline.Body == SolarCatalog.Charon && SolarCatalog.Get( baseline.Body ).Parent == SolarCatalog.Pluto &&
+            fleet.RequiresDrive( SolarCatalog.Charon ) && !fleet.RequiresDrive( SolarCatalog.Europa ),
+            "anomalies stay locked until their survey, and satellites inherit the parent's operating range" );
+
+        FleetSelection scout = new( 0 );
+        foreach ( int body in new[] { 3, 7, SolarCatalog.Ceres } ) {
+            Require( fleet.BeginSurvey( scout, body ), "the exploration route accepts a survey order" );
+            AdvanceUntil( fleet, () => fleet.Planet( body ).Surveyed, $"body {body} surveyed", 14_400 );
+        }
+        Require( fleet.MeetsTrigger( concession ) && !fleet.MeetsTrigger( baseline ) && fleet.RaidWarningTicks == 0 && fleet.ActiveRaids == 0,
+            "only the matching survey triggers its concession, and home-system development alone is safe" );
+        Require( fleet.BuildFacility( SolarCatalog.Ceres, PlanetFacility.Skimmer, new( 1 ) ), "open an outer extraction site" );
+        AdvanceUntil( fleet, () => fleet.SiteRemaining( SolarCatalog.Ceres, PlanetFacility.Skimmer ) == 0, "outer site commissions", 14_400 );
+        int gross = fleet.OreIncome;
+        fleet.ClaimDispatch( concession.Accept );
+        Require( fleet.OreRoyalty == 20 && fleet.OreIncome < gross, "signing with Ceres levies a real extraction royalty" );
+        AdvanceUntil( fleet, () => fleet.RaidWarningTicks > 0, "established outer trade attracts a warning", SolarCatalog.EarthYearTicks / 2 );
+        Require( fleet.RaidWarningTicks is >= 4800 and <= 8400, "the raid preparation window starts late and varies by seed" );
+        AdvanceUntil( fleet, () => fleet.IsPirateControlled( SolarCatalog.Ceres ), "pirates blockade the exposed outer site", 20_000 );
+        Require( fleet.BlockadeOrePerCycle > 0 && fleet.BlockadeEnergyPerCycle > 0 && fleet.BlockadedSites == 1 &&
+            fleet.SiteIntegrity( SolarCatalog.Ceres, PlanetFacility.Skimmer ) < 100 && !fleet.IsPirateControlled( 3 ) && !fleet.IsPirateControlled( 1 ),
+            "pirate blockade exposes its economic penalties and damages the outer site without blockading Earth or Luna" );
     }
 
     private static void VerifySolarPresentation( ) {
@@ -796,8 +846,9 @@ internal static class FleetQualification {
             briefing: new( "TITLE", "SOURCE", "TEXT", ContentArt.Scout, "ACCEPT", "DISMISS" ) ) == new HudHit( HudAction.Briefing, 1 ),
             "briefing hit tests use the same layout as the drawn accept button" );
         var menu = new BodyMenu( new( 650, 490 ), 3 );
-        Require( FleetHud.Hit( new( 525, 474 ), 660, 500, fleet, -1, menu ) == new HudHit( HudAction.Context, (int)PlanetAction.Construction ),
-            "the lower-right clamped menu keeps the Build Catalog row actionable" );
+        Require( FleetHud.Hit( new( 525, 450 ), 660, 500, fleet, -1, menu ) == new HudHit( HudAction.Context, (int)PlanetAction.Construction ) &&
+            FleetHud.Hit( new( 525, 474 ), 660, 500, fleet, -1, menu ) == new HudHit( HudAction.Context, (int)PlanetAction.Flyby ),
+            "the lower-right clamped menu keeps the Build Catalog and Flyby rows actionable" );
     }
 
     private static void VerifyCampaignHud( ) {
@@ -807,10 +858,12 @@ internal static class FleetQualification {
             FleetHud.StarDate( 0 ) == new DateOnly( 2184, 1, 1 ) && FleetHud.StarDate( 240 ) == new DateOnly( 2184, 1, 7 ),
             "the suggested crew selects an idle scout and constructor and the star date derives from ticks" );
         var route = new GalaxyRoute( 0, FleetSimulation.Proxima, "", "LOCKED", 2 );
-        Require( FleetHud.HitGalaxy( new( 202, 154 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route ) == new GalaxyHit( GalaxyAction.Fleet, 0 ) &&
-            FleetHud.HitGalaxy( new( 335, 223 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route ) == new GalaxyHit( GalaxyAction.Star, 1 ) &&
-            FleetHud.HitGalaxy( new( 275, 463 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route ).Action == GalaxyAction.None &&
-            FleetHud.HitGalaxy( new( 275, 463 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route with { Block = null } ).Action == GalaxyAction.Move,
+        var solNode = FleetHud.GalaxyNodePixel( 0, 660, 500, true );
+        var proximaNode = FleetHud.GalaxyNodePixel( 1, 660, 500, true );
+        Require( FleetHud.HitGalaxy( solNode + new Vector2( 21, 0 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route ) == new GalaxyHit( GalaxyAction.Fleet, 0 ) &&
+            FleetHud.HitGalaxy( proximaNode, 660, 500, true, [3, 0, 0, 0, 0, 0], route ) == new GalaxyHit( GalaxyAction.Star, 1 ) &&
+            FleetHud.HitGalaxy( new( 460, 462 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route ).Action == GalaxyAction.None &&
+            FleetHud.HitGalaxy( new( 460, 462 ), 660, 500, true, [3, 0, 0, 0, 0, 0], route with { Block = null } ).Action == GalaxyAction.Move,
             "the galaxy map shares badge and route action bounds and only exposes movement when legal" );
         Require( FleetHud.HitBriefing( new( 210, 360 ), 660, 500 ) == new HudHit( HudAction.Briefing, 1 ) &&
             FleetHud.HitBriefing( new( 210, 394 ), 660, 500 ) == new HudHit( HudAction.Briefing, 0 ) &&
@@ -1039,6 +1092,12 @@ internal static class FleetQualification {
         AdvanceUntil( fleet, () => fleet.WingsBuilt == FleetSimulation.WingGoal, "upgraded wing finishes" );
         Require( fleet.Count == fleet.Capacity && fleet.QueuedWings == 0 && fleet.Won && !fleet.QueueWing( ),
             "victory counts completed wings and respects spawn capacity" );
+    }
+
+    private static void AdvanceSurvey( FleetSimulation fleet, int body, string name ) {
+        var planet = fleet.Planet( body );
+        int travel = planet.SurveyUnit is { } scout ? fleet.RouteTicks( scout ) : 0;
+        AdvanceUntil( fleet, () => fleet.Planet( body ).Surveyed, name, travel + planet.SurveyRequired + 2 );
     }
 
     private static void AdvanceUntil( FleetSimulation fleet, Func<bool> condition, string name, int limit = 900 ) {

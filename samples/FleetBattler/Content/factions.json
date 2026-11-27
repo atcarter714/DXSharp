@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "factions": [
+    {
+      "id": "Sol",
+      "name": "Sol Authority",
+      "tint": [
+        0.66,
+        1.55,
+        2.25,
+        1.04
+      ],
+      "hostiles": [
+        "Rival"
+      ]
+    },
+    {
+      "id": "Raiders",
+      "name": "Breakwater Freeholds",
+      "tint": [
+        2.9,
+        0.89,
+        0.37,
+        1.11
+      ],
+      "hostiles": [
+        "Sol",
+        "Merchants",
+        "Rival",
+        "Compact",
+        "Consortium"
+      ]
+    },
+    {
+      "id": "Merchants",
+      "name": "Free Merchants",
+      "tint": [
+        0.82,
+        1.42,
+        0.97,
+        1
+      ],
+      "hostiles": []
+    },
+    {
+      "id": "Rival",
+      "name": "Rival Command",
+      "tint": [
+        2.9,
+        0.89,
+        0.37,
+        1.11
+      ],
+      "hostiles": []
+    },
+    {
+      "id": "Compact",
+      "name": "Ceres Combine",
+      "tint": [
+        1.35,
+        1.22,
+        0.68,
+        1
+      ],
+      "hostiles": []
+    },
+    {
+      "id": "Consortium",
+      "name": "Helix Survey Consortium",
+      "tint": [
+        1.24,
+        1,
+        1.64,
+        1
+      ],
+      "hostiles": []
+    },
+    {
+      "id": "Asteri",
+      "name": "Asteri Observatory",
+      "tint": [0.38, 1.76, 1.24, 1.0],
+      "hostiles": []
+    },
+    {
+      "id": "Veyran",
+      "name": "Veyran Enclave",
+      "tint": [1.85, 0.44, 1.30, 1.0],
+      "hostiles": ["Sol"]
+    }
+  ]
+}

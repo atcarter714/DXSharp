@@ -7,7 +7,9 @@
   "scenes": [
     {
       "nodes": [
-        0
+        0,
+        1,
+        2
       ]
     }
   ],
@@ -15,7 +17,9 @@
     {
       "name": "Kestrel survey scout",
       "mesh": 0
-    }
+    },
+    {"name": "exhaust_port", "translation": [-5.05, -0.07, 14]},
+    {"name": "exhaust_starboard", "translation": [5.05, -0.07, 14]}
   ],
   "meshes": [
     {

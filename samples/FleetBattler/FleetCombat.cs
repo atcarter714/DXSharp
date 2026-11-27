@@ -18,12 +18,13 @@ internal sealed partial class FleetSimulation {
     private readonly CombatEvent[] _events = new CombatEvent[EffectCapacity];
     private int _eventCursor, _eventCount;
 
-    private readonly record struct CombatEvent( Vector2 From, Vector2 To, int Tick, int Faction, bool Burst, WeaponKind Weapon );
+    private readonly record struct CombatEvent( Vector2 From, Vector2 To, int Tick, int Faction, bool Burst, EffectStyle Effect );
 
     internal int ActiveCount => CyanCount + AmberCount + MerchantCount;
     internal int CyanCount => _factionCount[0];
-    internal int AmberCount => _factionCount[(int)FactionId.Raiders] + _factionCount[(int)FactionId.Rival];
-    internal int MerchantCount => _factionCount[(int)FactionId.Merchants] + _factionCount[(int)FactionId.Compact] + _factionCount[(int)FactionId.Consortium];
+    internal int AmberCount => _factionCount[(int)FactionId.Raiders] + _factionCount[(int)FactionId.Rival] + _factionCount[(int)FactionId.Veyran];
+    internal int MerchantCount => _factionCount[(int)FactionId.Merchants] + _factionCount[(int)FactionId.Compact] +
+        _factionCount[(int)FactionId.Consortium] + _factionCount[(int)FactionId.Asteri];
     internal int FactionCount( FactionId faction ) => _factionCount[(int)faction];
     internal FactionId FactionOf( int ship ) => (FactionId)SideOf( ship );
     internal bool IsHostile( int from, int toward ) => Relationship( (FactionId)from, (FactionId)toward ) == Disposition.Hostile;
@@ -85,6 +86,31 @@ internal sealed partial class FleetSimulation {
         return order.Target;
     }
 
+    private void FlyCombatIntercept( int ship, int target, Vector2 destination, FlightStats flight ) {
+        const float dt = (float)StepSeconds;
+        var displacement = destination - _positions[ship];
+        float distance = displacement.Length();
+        // Match the contact's velocity at stand-off. The closing speed falls with remaining braking distance.
+        float acceleration = flight.Acceleration * .42f;
+        float speed = MathF.Min( flight.Cruise * .72f, MathF.Sqrt( 2 * acceleration * distance ) );
+        var closing = distance > .05f ? displacement * (speed / distance) : Vector2.Zero;
+        _velocities[ship] += GravityAt( _positions[ship] ) * dt;
+        var relative = _velocities[target] + closing - _velocities[ship];
+        float correction = relative.Length();
+        if ( correction < .03f ) {
+            _positions[ship] += _velocities[ship] * dt;
+            _thrust[ship] = float.Lerp( _thrust[ship], 0, .18f );
+            return;
+        }
+        var burn = relative / correction;
+        _headings[ship] = TurnToward( _headings[ship], burn, OrbitalTurnStep * flight.TurnRate );
+        float alignment = Math.Clamp( (Vector2.Dot( _headings[ship], burn ) - .86f) / .14f, 0, 1 );
+        float impulse = MathF.Min( correction, acceleration * dt * alignment );
+        _velocities[ship] += burn * impulse;
+        _positions[ship] += _velocities[ship] * dt;
+        _thrust[ship] = float.Lerp( _thrust[ship], impulse / (acceleration * dt), .18f );
+    }
+
     private void UpdateRival( ) {
         if ( !_rivalPatrol || Tick < 240 || (Tick - 240) % 90 != 0 || CyanCount == 0 ) return;
         int reserves = Tick >= 1_140 ? 3 : Tick >= 600 ? 2 : 1;
@@ -142,7 +168,10 @@ internal sealed partial class FleetSimulation {
             _nextShot[ship] = Tick + (Frontier ? design.Reload : 38) + ship % 9;
             ++ShotsFired;
             LastEngagementTick = Tick;
-            Emit( _positions[ship], _positions[target], side, burst: false, weapon );
+            var effect = Frontier ? design.ShotEffect : EffectStyle.Pulse;
+            if ( Frontier && side == (int)FactionId.Sol && effect == EffectStyle.Pulse && PlayerFaction.PulseEffect is { } researched )
+                effect = researched;
+            Emit( _positions[ship], _positions[target], side, burst: false, effect );
         }
 
         for ( int ship = 0; ship < Count; ++ship ) {
@@ -214,8 +243,8 @@ internal sealed partial class FleetSimulation {
         return target;
     }
 
-    private void Emit( Vector2 from, Vector2 to, int faction, bool burst, WeaponKind weapon = WeaponKind.None ) {
-        _events[_eventCursor] = new( from, to, Tick, faction, burst, weapon );
+    private void Emit( Vector2 from, Vector2 to, int faction, bool burst, EffectStyle effect = EffectStyle.Pulse ) {
+        _events[_eventCursor] = new( from, to, Tick, faction, burst, effect );
         _eventCursor = (_eventCursor + 1) % EffectCapacity;
         _eventCount = Math.Min( _eventCount + 1, EffectCapacity );
     }
@@ -228,7 +257,7 @@ internal sealed partial class FleetSimulation {
             int age = Tick - pulse.Tick;
             if ( age >= lifetime ) continue;
             output[count++] = new( new Vector4( pulse.From.X, pulse.From.Y, pulse.To.X, pulse.To.Y ),
-                new Vector4( (float)age / lifetime, pulse.Faction, pulse.Burst ? 1 : 0, pulse.Weapon == WeaponKind.Rail ? 1 : 0 ) );
+                new Vector4( (float)age / lifetime, pulse.Faction, pulse.Burst ? 1 : 0, (float)pulse.Effect ) );
         }
         return count;
     }

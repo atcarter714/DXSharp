@@ -4,7 +4,8 @@ namespace FleetBattler;
 
 internal readonly record struct ResourceCost( int Ore, int Energy, int Science = 0 );
 internal enum ResearchTopic { Industry, Weapons, Drive, Habitation, Astrometry, Escorts, Fusion, FleetLogistics, HeavyIndustry,
-    PrecisionSensors, WideSearch, HeavyFrames, CapitalFrames, GunneryDoctrine, ShieldDoctrine, SurfaceEngineering, OrbitalEngineering, Count }
+    PrecisionSensors, WideSearch, HeavyFrames, CapitalFrames, GunneryDoctrine, ShieldDoctrine, SurfaceEngineering, OrbitalEngineering,
+    ColdTraps, Radiators, AttitudeJets, Occultation, ParallelSlips, ThermalStores, ConvoyWindows, ClosedEcology, ClimateEngineering, Count }
 internal readonly record struct HullPlan( string Name, HullRole Role, ResourceCost Cost, int Duration );
 internal enum HullBlueprint { Scout, Miner, Corvette, Colony, Frigate, MiningShip, Destroyer, Cruiser, Battleship, Carrier, Titan, Count }
 internal readonly record struct ShipyardOrder( HullBlueprint Hull, ShipDesign Design, ResourceCost Cost, int Duration );
@@ -18,76 +19,86 @@ internal sealed partial class FleetSimulation {
     private readonly int[] _yardQueueSizes = new int[CelestialSystem.BodyCount], _yardShipReady = new int[CelestialSystem.BodyCount];
     private int _navalReserved, _minersReserved, _scoutsReserved, _colonyReserved;
     private int _researchWork;
-    private uint _specializations;
+    internal CampaignFaction PlayerFaction { get; private set; } = new();
+
+    internal void AttachFaction( CampaignFaction faction ) => PlayerFaction = faction;
+    internal string FactionName( FactionId faction ) => faction == FactionId.Sol ? PlayerFaction.Name : Factions.Name( faction );
+
     internal int Energy { get; private set; }
+    internal bool FrontierProgression { get; set; }
+    private int EconomyInterval => FrontierProgression ? 720 : IncomeInterval;
+    private int ScienceInterval => FrontierProgression ? EconomyInterval * 2 : EconomyInterval;
     internal bool Established => Frontier && Solar;
     internal ResearchTopic? ActiveResearch { get; private set; }
-    internal int ResearchRate => ScienceIncome == 0 ? 0 : Math.Max( 1, (ScienceIncome + 5) / 6 );
+    internal int ResearchRate => ScienceIncome == 0 ? 0 : FrontierProgression ? Math.Clamp( 1 + ScienceIncome / 18, 1, 3 ) : Math.Max( 1, (ScienceIncome + 5) / 6 );
     internal int ResearchRemaining => ResearchRate == 0 || ActiveResearch is null ? 0 : (_researchWork + ResearchRate - 1) / ResearchRate;
-    internal float ResearchProgress => ActiveResearch is { } topic ? 1 - (float)_researchWork / Tech( topic ).Duration : 0;
-    internal bool HabitationUpgrade { get; private set; }
-    internal bool AstrometryUpgrade { get; private set; }
-    internal int FireControlDamage => WeaponUpgrade ? Tech( ResearchTopic.Weapons ).Damage : 0;
-    internal int FireControlRange => (WeaponUpgrade ? Tech( ResearchTopic.Weapons ).Range : 0) +
+    internal float ResearchProgress => ActiveResearch is { } topic ? 1 - (float)_researchWork / ResearchWork( Tech( topic ) ) : 0;
+    internal bool HabitationUpgrade => Researched( ResearchTopic.Habitation );
+    internal bool AstrometryUpgrade => Researched( ResearchTopic.Astrometry );
+    internal int FireControlDamage => PlayerFaction.Damage + (WeaponUpgrade ? Tech( ResearchTopic.Weapons ).Damage : 0);
+    internal int FireControlRange => PlayerFaction.Range + (WeaponUpgrade ? Tech( ResearchTopic.Weapons ).Range : 0) +
         (Researched( ResearchTopic.GunneryDoctrine ) ? Tech( ResearchTopic.GunneryDoctrine ).Range : 0);
-    internal int ScoutScanRate => Researched( ResearchTopic.PrecisionSensors ) ? Tech( ResearchTopic.PrecisionSensors ).ScanRate
-        : AstrometryUpgrade ? Tech( ResearchTopic.Astrometry ).ScanRate : 2;
-    internal bool EscortsUpgrade { get; private set; }
-    internal bool FusionUpgrade { get; private set; }
+    internal int ScoutScanRate => Math.Max( PlayerFaction.Scan, Researched( ResearchTopic.PrecisionSensors ) ? Tech( ResearchTopic.PrecisionSensors ).ScanRate
+        : AstrometryUpgrade ? Tech( ResearchTopic.Astrometry ).ScanRate : 2 );
+    internal bool EscortsUpgrade => Researched( ResearchTopic.Escorts );
+    internal bool FusionUpgrade => Researched( ResearchTopic.Fusion );
     internal ResearchTopic LastTechnology { get; private set; }
     internal int CompletedResearch { get; private set; }
     internal YardLaunch LastLaunch { get; private set; }
     internal int ShipsLaunched { get; private set; }
     internal int CorvettesLaunched { get; private set; }
-    internal int EnergyIncome => (Established ? EarthOutput : 0) + StructureOutput( PlanetFacility.Solar ) + (CharterEconomy == EconomicCharter.Power ? 1 : 0);
-    internal int EnergyUpkeep => Math.Max( 0, (NavalUsed + 1) / 2 +
+    internal int EnergyIncome => (Established ? EarthOutput : 0) + StructureOutput( PlanetFacility.Solar ) +
+        StructureOutput( PlanetFacility.Soletta ) + (CharterEconomy == EconomicCharter.Power ? 1 : 0);
+    internal int EnergyUpkeep => Math.Max( 0, -PlayerFaction.Upkeep + (NavalUsed + 1) / 2 +
         (Online( _labs ) + Online( _yards ) + Online( _depots ) + Online( _observatories )) / 3 -
-        (Researched( ResearchTopic.FleetLogistics ) ? Tech( ResearchTopic.FleetLogistics ).UpkeepReduction : 0) );
+        (Researched( ResearchTopic.FleetLogistics ) ? Tech( ResearchTopic.FleetLogistics ).UpkeepReduction : 0) -
+        (Researched( ResearchTopic.ConvoyWindows ) ? Tech( ResearchTopic.ConvoyWindows ).UpkeepReduction : 0) );
     internal int ScienceIncome => StructureOutput( PlanetFacility.Lab ) + StructureOutput( PlanetFacility.Observatory );
     internal ResourceCost ResourceCapacity {
         get {
             if ( !Frontier ) return new( 999, 999, 999 );
             int ground = Online( _surfaceStores ), orbit = Online( _orbitalStores );
-            return new( 400 + 250 * ground + 180 * orbit, 400 + 100 * ground + 250 * orbit, 400 + 50 * ground + 50 * orbit );
+            return new( 400 + 250 * ground + 180 * orbit, 400 + 100 * ground + 250 * orbit + (Researched( ResearchTopic.ThermalStores ) ? 150 : 0), 400 + 50 * ground + 50 * orbit );
         }
     }
+
+    internal int OreRoyalty { get; private set; }
+    private int AfterRoyalty( int gross ) => gross - (gross * OreRoyalty + 99) / 100;
 
     internal int OreIncome {
         get {
             int sum = 0;
             for ( int body = 1; body < _bodies.Length; ++body ) sum += ExtractionIncome( body, Tick );
-            return sum;
+            return AfterRoyalty( sum );
         }
     }
 
     internal int ExtractionIncome( int body, int tick ) {
         int sum = _mines[body] > 0 && _mines[body] <= tick ? Frontier ? DepositYield( body ) : 8 : 0;
         if ( _mines[body] > 0 && _mines[body] <= tick && Frontier )
-            sum = Math.Max( 1, sum * Facility( PlanetFacility.Mine ).Output / 2 ) + SiteUpgradeBonus( body, PlanetFacility.Mine );
+            sum = Math.Max( 1, sum * Facility( PlanetFacility.Mine ).Output / 2 ) * SiteIntegrity( body, PlanetFacility.Mine ) / 100 +
+                SiteUpgradeBonus( body, PlanetFacility.Mine ) * SiteIntegrity( body, PlanetFacility.Mine ) / 100;
         if ( _skimmers[body] > 0 && _skimmers[body] <= tick )
-            sum += Math.Max( 1, OrbitalExtractionYield( body ) * Facility( PlanetFacility.Skimmer ).Output / 2 ) + SiteUpgradeBonus( body, PlanetFacility.Skimmer );
+            sum += (Math.Max( 1, OrbitalExtractionYield( body ) * Facility( PlanetFacility.Skimmer ).Output / 2 ) +
+                SiteUpgradeBonus( body, PlanetFacility.Skimmer )) * SiteIntegrity( body, PlanetFacility.Skimmer ) / 100;
         if ( sum > 0 && CharterEconomy == EconomicCharter.Extraction ) ++sum;
         if ( sum > 0 && Researched( ResearchTopic.HeavyIndustry ) ) sum += Tech( ResearchTopic.HeavyIndustry ).ExtractionBonus;
-        return sum;
+        if ( sum > 0 && Researched( ResearchTopic.ColdTraps ) ) sum += Tech( ResearchTopic.ColdTraps ).ExtractionBonus;
+        return sum > 0 ? sum + PlayerFaction.Extraction : 0;
     }
 
     internal int OrbitalExtractionYield( int body ) => Colonizable( body ) ? DepositYield( body ) / 2 : DepositYield( body );
 
     internal static Technology Tech( ResearchTopic topic ) => ResearchCatalog.Current[topic];
 
-    internal bool Researched( ResearchTopic topic ) => topic switch {
-        ResearchTopic.Industry => IndustryUpgrade, ResearchTopic.Weapons => WeaponUpgrade, ResearchTopic.Drive => DriveUpgrade,
-        ResearchTopic.Habitation => HabitationUpgrade, ResearchTopic.Astrometry => AstrometryUpgrade,
-        ResearchTopic.Escorts => EscortsUpgrade, ResearchTopic.Fusion => FusionUpgrade,
-        >= ResearchTopic.FleetLogistics and < ResearchTopic.Count => (_specializations & (1u << (int)topic)) != 0, _ => false
-    };
+    internal bool Researched( ResearchTopic topic ) => PlayerFaction.Knows( topic );
 
     internal string? ResearchBlock( ResearchTopic topic ) {
-        if ( !Frontier || (uint)topic >= (uint)ResearchTopic.Count ) return "PROJECT UNAVAILABLE";
+        if ( !Frontier || (uint)topic >= (uint)ResearchCatalog.Current.Count ) return "PROJECT UNAVAILABLE";
         var tech = Tech( topic );
         if ( Researched( topic ) ) return "COMPLETE";
         if ( tech.Exclusive is { } group ) {
-            for ( int i = 0; i < (int)ResearchTopic.Count; ++i ) {
+            for ( int i = 0; i < ResearchCatalog.Current.Count; ++i ) {
                 var other = (ResearchTopic)i;
                 if ( other != topic && Researched( other ) && Tech( other ).Exclusive == group )
                     return $"SPECIALIZED IN {Tech( other ).Name}";
@@ -95,7 +106,8 @@ internal sealed partial class FleetSimulation {
         }
         foreach ( var prerequisite in tech.Requires )
             if ( !Researched( prerequisite ) ) return Tech( prerequisite ).Name;
-        if ( ActiveResearch is not null ) return "ANOTHER PROJECT ACTIVE";
+        if ( PlayerFaction.ResearchSystem is { } researchSystem )
+            return researchSystem == this ? "ANOTHER PROJECT ACTIVE" : $"RESEARCH ACTIVE IN {researchSystem.SystemName}";
         if ( ScienceIncome == 0 ) return "BUILD A LAB";
         return CanAfford( tech.Cost ) ? null : "INSUFFICIENT RESOURCES";
     }
@@ -106,14 +118,18 @@ internal sealed partial class FleetSimulation {
         if ( !CanResearch( topic ) ) return false;
         var tech = Tech( topic );
         Spend( tech.Cost );
+        PlayerFaction.ResearchSystem = this;
         ActiveResearch = topic;
-        _researchWork = tech.Duration;
+        _researchWork = ResearchWork( tech );
         return true;
     }
+
+    private int ResearchWork( Technology tech ) => FrontierProgression ? tech.Duration * 8 : tech.Duration;
 
     internal bool CancelResearch( ) {
         if ( ActiveResearch is not { } topic ) return false;
         Refund( Tech( topic ).Cost );
+        PlayerFaction.ResearchSystem = null;
         ActiveResearch = null;
         _researchWork = 0;
         return true;
@@ -121,29 +137,27 @@ internal sealed partial class FleetSimulation {
 
     private void AdvanceIndustry( ) {
         if ( !Frontier ) return;
-        if ( (Tick + 1) % IncomeInterval == 0 ) {
+        if ( (Tick + 1) % EconomyInterval == 0 ) {
             Energy = Math.Clamp( Energy + EnergyIncome - EnergyUpkeep, 0, ResourceCapacity.Energy );
             GatherBeltOre( );
+            RestoreSites();
         }
         AdvanceContracts( );
         if ( ActiveResearch is { } topic && (_researchWork -= ResearchRate) <= 0 ) {
-            switch ( topic ) {
-                case ResearchTopic.Industry: IndustryUpgrade = true; break;
-                case ResearchTopic.Weapons: WeaponUpgrade = true; break;
-                case ResearchTopic.Drive: DriveUpgrade = true; break;
-                case ResearchTopic.Habitation: HabitationUpgrade = true; break;
-                case ResearchTopic.Astrometry: AstrometryUpgrade = true; break;
-                case ResearchTopic.Escorts: EscortsUpgrade = true; break;
-                case ResearchTopic.Fusion: FusionUpgrade = true; break;
-                default: _specializations |= 1u << (int)topic; break;
-            }
+            PlayerFaction.Unlock( topic );
+            PlayerFaction.ResearchSystem = null;
             ActiveResearch = null;
             _researchWork = 0;
             LastTechnology = topic;
             ++CompletedResearch;
         }
         for ( int body = 1; body < _bodies.Length; ++body ) {
-            if ( _yardQueueSizes[body] == 0 || _yardShipReady[body] > Tick + 1 ) continue;
+            if ( _yardQueueSizes[body] == 0 ) continue;
+            if ( SiteIntegrity( body, PlanetFacility.Yard ) < 50 ) {
+                ++_yardShipReady[body];
+                continue;
+            }
+            if ( _yardShipReady[body] > Tick + 1 ) continue;
             var order = YardQueue( body )[0];
             var position = YardPosition( body, Tick + 1 );
             var radial = Vector2.Normalize( position - _bodies[body].Center );
@@ -202,9 +216,11 @@ internal sealed partial class FleetSimulation {
         var role = BlueprintRole( blueprint );
         var definition = GameCatalog.Hull( role );
         if ( definition.Naval == 0 ) return new( definition.Name, role, definition.Cost, definition.Ticks );
+        int ticks = Math.Max( 30, definition.Ticks - (IndustryUpgrade ? definition.ImprovedTicks : 0) ) + design.ExtraTicks;
+        if ( Researched( ResearchTopic.ParallelSlips ) ) ticks = (ticks * 4 + 4) / 5;
         return new( definition.Name, role, new( Math.Max( 0, definition.Cost.Ore - (IndustryUpgrade ? definition.ImprovedOre : 0) ) + design.ExtraOre,
             definition.Cost.Energy + design.ExtraEnergy, definition.Cost.Science ),
-            Math.Max( 30, definition.Ticks - (IndustryUpgrade ? definition.ImprovedTicks : 0) ) + design.ExtraTicks );
+            ticks );
     }
 
     private static bool MiningBelt( int system, int body ) => system == 0

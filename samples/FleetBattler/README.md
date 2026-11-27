@@ -16,9 +16,9 @@ The Frontier scenario opens at Earth with one science scout, two constructors, 5
 | Q / V / Y / U | Cycle stance, flee, repair, or refit |
 | Colony / Research / Design / Orders / Log | Inspect resources, run research, fit and save class-specific warship designs, find yards, or read illustrated dispatches |
 | Tab / Escape / F4 | Open Colony, close the top panel, or open the dispatch log |
-| Space / − / + | Pause or resume, slow down, or speed up. Both maps offer 1×, 2×, and 4× |
+| Space / − / + | Pause or resume, slow down, or speed up. Both maps offer 0.125×, 0.25×, 0.5×, 0.75×, 1×, 1.5×, 2×, 3×, and 4× |
 | Scroll / middle-drag / arrow keys | Zoom toward the pointer or pan |
-| Shift + middle-drag / Home / F | Rotate through 360° with limited tilt, reset the camera, or focus the inspected object |
+| Shift + middle-drag / Home / End / F | Tilt and rotate, reset to Earth, frame the whole system, or follow the inspected body |
 | G / F11 / M | Galaxy map / fullscreen / mute |
 
 ## Playing Frontier
@@ -29,21 +29,25 @@ The Frontier scenario opens at Earth with one science scout, two constructors, 5
 4. **Fit and build ships.** Open **Design**, choose a hull, select a slot, and drag a module card onto that slot. Clicking a card and then its slot also works. **Save Design** commits a valid fit, with the station queue preserving the ordered version. Frigates, destroyers, cruisers, battleships, carriers, and titans unlock through hull research. Ships use names from their hull lists, and new hulls consume naval capacity and energy upkeep.
 5. **Use the fleet controls.** Normal ships fire at enemies in range. Aggressive corvettes also pursue nearby hostiles when free of other orders. Passive ships fire only at explicit attack targets. **Flee** orders a retreat and sets passive stance. **Fix** routes a damaged hull to the nearest reachable orbital yard. A green cross identifies repairs in orbit, which cost 1 energy per service interval. **Fit** sends a corvette to a yard to install the current valid blueprint. Refit costs 10 ore and 4 energy plus module premiums, paid after arrival.
 6. **Choose an agreement.** The merchant dispatch offers either 25 ore and an allied trading contact for 12 energy, or 18 science for 15 ore. A trade agreement exchanges 5 energy for 12 ore every fifth income cycle when affordable. Your choice is recorded and cannot be taken twice.
-7. **Escort production.** Pirates contest extraction sites. When they outnumber the local combat escort, they take up to half that site's ore output and one energy per raider each income cycle. They pick less-protected extraction sites and withdraw from locally superior military forces. The first piracy briefing offers a paid Ceres patrol that delays and weakens the raid. Amber patrols can return after the first raid sequence. Rival Command remains a military opponent.
+7. **Escort production.** In progression campaigns, the Breakwater Freeholds start watching after three surveys, six campaign months, and the start of extraction away from Earth and Luna. The warning window varies by campaign seed. The Freeholds blockade lightly defended sites outside Earth and Luna. Each cycle drains local ore and energy and damages the targeted facility. The HUD reports active blockades and per-cycle losses, the colony ledger shows net income, and each site's inventory shows its integrity. The Ceres Combine offers a patrol that delays and weakens the first raid. Rival Command remains a military opponent.
+
+8. **Follow the anomalies.** A survey at Ceres opens a concession negotiation with the Combine. Sign for supplies and owe a permanent local extraction royalty, or publish the assay for science. Europa, Titan, Triton, and Charon have their own survey dispatches. Charon's occultation record can calibrate a faction-wide surveying upgrade.
 
 ## Navigation
 
 Ships start and launch in host-relative parking orbits. The cyan route traces the remaining transfer and the diamond marks the predicted insertion. Gold brackets follow the live host or moving ship. A dashed connector separates the object's current position from the intercept. Attack pursuit updates its short-horizon lead as the target moves. Civilian hulls, armor mass, drive modules, and propulsion research affect cruise speed, acceleration, or turning. Open-space orders enter a stellar parking orbit at the selected radius.
 
-**Long Burn Drive** expands the operating envelope to the outer belt. Long-range corvette modules extend reach within the current technology limits. Sol's tactical projection uses rounded semimajor axes and eccentricities from the [JPL J2000 approximate elements](https://ssd.jpl.nasa.gov/planets/approx_pos.html) and NASA's fact sheets for [Ceres and Vesta](https://nssdc.gsfc.nasa.gov/planetary/factsheet/asteroidfact.html), [Pluto](https://nssdc.gsfc.nasa.gov/planetary/factsheet/plutofact.html), and [Halley](https://nssdc.gsfc.nasa.gov/planetary/factsheet/cometfact.html). Orbital spacing is 29% wider than the previous map and Sol transfers include longer burn and coast time. The [Kuiper Belt](https://science.nasa.gov/solar-system/kuiper-belt/) is a region bounded by two tracks. Survey [Arrokoth](https://science.nasa.gov/solar-system/kuiper-belt/arrokoth-2014-mu69/) or Pluto as individual bodies. Phases and radii are illustrative. The GPU asteroid field stays within the [main belt](https://science.nasa.gov/solar-system/asteroids/) between Mars and Jupiter, and uses the fractional simulation clock for rendering.
+**Long Burn Drive** expands the operating envelope to the outer belt. Moons inherit the range requirement of their parent system. Sol's heliocentric spacing increased by about 27%, and the Earth–Luna spacing more than doubled. The expanded chart includes Charon, Europa, Titan, and retrograde Triton. Positions and distances are compressed for play, with authored satellite periods. [JPL approximate planetary elements](https://ssd.jpl.nasa.gov/planets/approx_pos.html) · [JPL satellite elements](https://ssd.jpl.nasa.gov/sats/orbits.html) · [NASA Pluto and Charon fact sheet](https://nssdc.gsfc.nasa.gov/planetary/factsheet/plutofact.html).
+
+The main belt defaults to 36 visible debris bodies on eccentric Keplerian paths, with gaps in the semimajor-axis distribution around two major Jupiter resonances. Ceres and Vesta remain individual destinations. Campaign vessels are represented by simulation entities. GPU freighter traffic is available through `--traffic` in skirmish and stress runs. [NASA asteroid orbits and Kirkwood gaps](https://science.nasa.gov/learn/basics-of-space-flight/chapter1-3/).
 
 ### The First Crossing
 
-The campaign starts on 2184.01.01. At 1× an Earth sidereal orbit takes 16 minutes of unpaused play and advances the date by about 365 days. Other Sol orbits use the same calendar, with compressed tactical distances. Local ship speeds use their existing simulation units.
+The campaign starts on 2184.01.01 at 0.25×. An Earth sidereal orbit takes 16 minutes of unpaused play at that speed and four minutes at 1×. Either setting advances the date by about 365 days per orbit. Orbital periods, body spin, transfers and the displayed date advance from the fixed-step campaign clock. Distances and ship acceleration use compressed tactical units.
 
-1. Open **Galaxy** and click the ship badge beside **Sol**. Select an idle scout from the roster or press **Find Scout**. Shift adds and Ctrl toggles selections.
-2. Click **Proxima**, then **Survey** to cross and automatically scan the first reachable unsurveyed body on arrival. **Move Fleet** and right-click issue movement orders. Double-click a star or badge to open the system.
-3. The first scout arrival opens regular routes in both directions. Select a local fleet and right-click another system, or select the system and press **Move Fleet**. Transit uses the campaign clock and continues while viewing another map.
+1. Open **Galaxy** and select **Proxima**. The first-crossing panel shows the next unmet requirement and enables **Launch Expedition** once the route is ready.
+2. Use **Rally Crew** to select or return an idle scout and constructor to Earth orbit. The shared roster shows the selected fleet. Shift adds and Ctrl toggles selections.
+3. The expedition's arrival opens regular routes in both directions. Open Proxima and assign an outer-body survey directly. For later transfers, select a fleet and right-click another system or press **Move Fleet**. **Survey** sends a scout and scans the first reachable unsurveyed body on arrival.
 4. Explore telescope charts before landing. They show major bodies with reduced detail and hide local contacts. An arrival briefing offers **Focus Arrival**.
 5. Send a constructor to surveyed Receiver World to build an orbital research lab and restore the receiver. Choose whether to share its data with the Consortium or defend an independent claim.
 
@@ -87,7 +91,9 @@ Launch with `--skirmish` or an explicit `--ships=<count>` to play the original r
 | Standard | 60 | 32 s | 8 s |
 | After industry research (24 science) | 42 | 20 s | 5 s |
 
-Research affects new orders. The yard keeps the cost and duration already committed to its queue. The 1× setting runs at a quarter of the previous pace, and 4× matches the old 1×. Ship positions and headings interpolate between fixed simulation ticks. Each system retains its fleet, survey assignments, colonies, resources, production queue, and research while you visit another system.
+The yard keeps the cost and duration already committed to its queue. The 1× setting runs 60 ticks per second. The campaign defaults to 0.25× or 15 ticks per second, and pause stops campaign time. Ship positions and headings interpolate between simulation ticks. Each system retains its fleet, survey assignments, colonies, stockpiles and production queue. Completed research follows the player faction. Choose its name using **Faction** on the title screen or Ctrl+Shift+F2 in a campaign.
+
+The opening camera follows Earth until you manually pan, zoom toward a point or focus another target. **Home** restores Earth tracking. In tactical engagements, ships carry their orbital momentum into the intercept, drift under the local gravity model and turn before applying their main thrust. Drive performance affects acceleration and turn rate, and the intercept controller slows the approach to match the target's motion at standoff range.
 
 ```powershell
 dotnet run --project samples/FleetBattler -c Release
@@ -132,3 +138,59 @@ The FBX converter runs at authoring time. The game reads the resulting GLB. See 
 The [operations art atlas](Art/OperationsAtlas.jpg) depicts a scout, ore hauler, corvette, orbital shipyard, extraction rig, and research station. The artwork appears in the outliner and planet inspector. The assets use the repository's [MIT license](../../LICENSE.md). The [fleet roadmap](../../doc/FleetBattler.md) describes the larger game and content pipeline.
 
 The [receiver briefing illustration](Art/ReceiverBriefing.jpg) was generated for the sample and staged in the HUD atlas at startup. The navigation and signal glyphs use the existing bitmap HUD batch.
+
+## Content packs and Houdini exports
+
+Launch without arguments to open the title screen. The read-only Technology Archive lets you browse projects and prerequisites before choosing Launch Campaign. Orbital Assembly starts with a funded research lab and operational shipyard. Use Research and Design in flight to queue a project or customize a hull. The designer renders the selected hull model, including content-pack replacements. Use the arrow keys and Enter or click a title menu row. Esc opens flight settings. Return to Title ends the current session. From the repository root, try the Glass Meridian campaign with:
+
+~~~powershell
+dotnet run --project samples/FleetBattler -- --mod=samples/FleetBattler/Mods/GlassMeridian --scenario=glass-meridian
+~~~
+
+Pass the same arguments with `--validate-content` for a headless catalog and hull import check. Repeat `--mod=<directory>` in load order. Each JSON file has version 1 and a named record array. A later file replaces the entire record with the same case-insensitive ID. Omit files to inherit bundled records. Module keys combine slot and ID.
+
+| File | Record array | Authoring contract |
+| --- | --- | --- |
+| research.json | projects | Give new projects a namespaced ID, existing branch, cost, work in ticks, artwork, and prerequisite IDs. New projects support extractionBonus, surveyBonus, upkeepReduction, scanRate, damageBonus, rangeBonus and an optional pulseEffect. Additional branch pages appear automatically. |
+| scenarios.json | scenarios | Set the menu description, starting resources, raids, optional startingSites, and ordered events. Enable `frontierProgression` for longer economy and research cycles, staged settlement, and first-crossing requirements. |
+| events.json | events | Reference one lore fragment. Set `system` to Sol (default), an authored system name or a generated system designation such as DX 017. Use `body` to require a survey of a particular target, by stable body ID in Sol or by displayed name in another system. Set `unlock` to complete a research ID on acceptance and `oreRoyalty` to apply a percentage to future local extraction. An optional `declineReward` object supplies the alternate choice label and its rewards. Both choices credit the event system's local stores up to capacity. |
+| lore.json | fragments | Original narrative text keyed by ID. |
+| modules.json | modules | Add consecutive numeric variant IDs to Drive, Power, Shield or Computer. Set power demand, cost, performance and an optional research ID. Weapon modules can set `effect` to `Pulse`, `Rail`, `Ion` or `Thermal`. These IDs also work for `pulseEffect` in research. Click a module to fit it or drag it onto its slot, then save the design. |
+| models.json | models | Override one hull role with a glTF or GLB path relative to the catalog, display scale, flatten flag and plume half-width. Legacy paired nozzle positions are used for models without markers. |
+| bodies.json | bodies | Override a solar body by stable ID and retain its index. Set parent index, axisAu or mapAxis, orbital period in days, eccentricity, initial phase in turns, display radius, color, rings, class and habitability. |
+| factions.json | factions | Set campaign faction names, HDR tint and hostile relationships. Hostility is reciprocal. |
+| quotes.json | quotes | Loading screen text and credit. |
+
+In Houdini, build in metres, Y up, bow along negative Z, with the center of rotation at the origin. Export triangle meshes with normals, UV0 and base-color materials. Keep each variant in its own GLB or bundle every glTF sidecar. Use flatten=true to apply node transforms. Inspect AssayTender and SpindleCarrier for instanced components, radiator clearance and paired nozzles. Socket distances in the manifest are tactical units after model scale and before the hull role's instance scale. Coast and ballistic flyby phases cut main thrust. For new gameplay roles extend HullRole, blueprint mapping, hull definitions, names and model records. For an additional solar body append a bodies.json record after its parent, update BodyCount and review survey bit masks and shader body limits. Body periods are in campaign days; the tactical display compresses distances.
+
+Right-click a body and choose the named flyby route. A Luna pass continues to Mars, a Jupiter pass to Europa, and a Pluto pass to Charon. Guidance evaluates both sides of the moving flyby body and matches velocities at both ends of the unpowered hyperbola. Powered transfers ramp thrust up and down and reserve time to turn before braking into the destination orbit. See [JPL orbital mechanics](https://spsweb.fltops.jpl.nasa.gov/portaldataops/mpg/MPG_Docs/MPG%20Book/Release/Chapter7-OrbitalMechanics.pdf).
+
+### Thruster emitters
+
+Place an empty transform at the lip of each nozzle in Houdini. Name it `exhaust_port`, `exhaust_starboard`, or any other unique name beginning with `exhaust_`. Aim its local **+Z** axis in the direction the plasma should travel. Export the transforms as named empty glTF/GLB nodes in the same scene as the hull. Keep parent transforms on export. The importer applies the accumulated node transform and hull scale to the socket, then the game applies the ship's orientation and instance scale. Tune `plumeWidth` in the hull's manifest in tactical units. The legacy `nozzleOffset` and `nozzleAft` also use tactical units.
+
+For a Houdini cook pipeline, preserve the same names and transforms in the resulting glTF/GLB. Fleet Battler currently loads that exported asset at startup.
+
+### Frontier progression and galaxy generation
+
+**First Crossing**, the default campaign, and **The Quiet Sun Survey** produce ore and energy every 12 seconds and science every 24 seconds at 1×. Research work takes eight times the authored base work with a cap on lab throughput. The faction can run one project at a time, paid from and staffed by its host system. **Orbital Assembly** uses the accelerated sandbox economy.
+
+Research Habitat Engineering to settle marginal surfaces, then Closed-loop Ecology and a local orbital habitat for harsher ones. Climate Engineering opens **Condition World** in the planetary inspector. The surveyed target needs an online habitat and solar array, plus local funds. Conditioning takes 3,600 ticks and adds 20 points to that world's rating. Further engineering unlocks the orbital Soletta. Its construction requires a habitat and solar array and takes 10,800 ticks once work starts.
+
+Raiders can blockade a built site, steal local ore and energy, and damage its infrastructure. Integrity affects production, and shipyards below half integrity stall. Assign escorts or drive the pirates away to end the blockade and let repair crews restore integrity using local energy.
+
+The first Proxima crossing requires Pulsed Fusion, a colony, Earth's orbital shipyard, 145 ore and 185 energy. Bring an idle scout and constructor to Earth orbit and leave at least one ship in Sol. The galaxy map's crew control can select or rally the required hulls.
+
+The map contains six authored systems and 122 deterministic systems. Generated systems use representative main-sequence stars, Kepler periods from stellar mass and semimajor axis, and an insolation-based surface rating with an atmosphere penalty. The display compresses distances. Each remote system loads on demand and begins advancing on player arrival. The Asteri and Veyran field local patrols in a subset of generated systems. The favorable-surface rate is a gameplay choice. Kepler occurrence estimates refer to rocky planets in habitable zones, which are a different population from worlds humans could settle without specialised infrastructure. [NASA planet taxonomy](https://science.nasa.gov/exoplanets/exoplanet-catalog/) · [Bryson et al., Kepler DR25 occurrence study](https://doi.org/10.3847/1538-3881/abc418).
+
+### Body authoring in Houdini
+
+Use a sphere centered at the origin, +Y as the north pole, latitude running from north at V=0 to south at V=1, and U wrapping around the equator. Bake seam-safe textures in a 2:1 equirectangular layout. Use sRGB for base color and linear data for height, tangent-space normal (+Y green), roughness and metalness. Keep clouds and atmospheric scattering separate from the surface. Export optional rings as a separate annulus in the equatorial plane with opacity and color independent of the planet. Retain the real radius and orbital inputs in your authoring project and put the compressed display radius and orbit properties in `bodies.json`. Supported classes are Star, Terrestrial, SuperEarth, IceGiant, GasGiant, Moon and SmallBody.
+
+The procedural renderer's reusable material contract in `SpaceMaterials.cs` returns albedo, normal, height, metalness and roughness. The shipped rock material computes height and the shading normal together. The stellar material uses animated granulation, limb darkening, sunspots and prominence loops. The current tactical renderer consumes body metadata and evaluates procedural surfaces, with a base-color texture slot for the Moon. Arbitrary per-body texture sets and Houdini mesh exports use the authoring convention above and require renderer bindings before they can replace the procedural surface. [NASA Solar Dynamics Observatory prominence imagery](https://science.nasa.gov/earth/earth-observatory/prominence-from-the-solar-dynamics-observatory-43717/).
+
+`rotationHours` is the signed sidereal rotation period in hours. Use a negative value for retrograde rotation or zero for a fixed surface. The surface follows the campaign clock through pause and time acceleration. [NASA Planetary Fact Sheet](https://nssdc.gsfc.nasa.gov/planetary/factsheet/).
+
+The galaxy overview groups systems along a spiral chart. Rings and labels mark key, occupied, or selected systems. Hover any star to reveal its designation, and select it to see the route and available orders in the right-hand panel. Use the mouse wheel to zoom around the pointer, middle-drag to pan, and Home to restore the overview.
+
+The particle renderer blends additive sprites from a shared atlas before scene bloom. Bloom extracts highlights from the display-referred scene into floating-point textures, blurs two scales on both axes, and composites in linear light before drawing the HUD. Ship exhaust uses the same nozzle transforms as the main plumes. The current emitters cover stellar wisps, exhaust motes, and combat explosions. [Atlas credits](Art/Particles/CREDITS.md).

@@ -11,13 +11,14 @@ internal readonly record struct SiteSlots( int Surface, int Orbit ) {
 internal record struct ConstructionSite( FleetSelection? Worker, Vector2 Orbit, bool Working );
 
 internal sealed partial class FleetSimulation {
-    internal const int FacilityCount = 10;
+    internal const int FacilityCount = (int)PlanetFacility.Soletta + 1;
     internal static ReadOnlySpan<PlanetFacility> Facilities => [
         PlanetFacility.Mine, PlanetFacility.Observatory, PlanetFacility.Skimmer, PlanetFacility.Lab,
         PlanetFacility.Yard, PlanetFacility.Depot, PlanetFacility.Solar, PlanetFacility.Habitat,
-        PlanetFacility.SurfaceStore, PlanetFacility.OrbitalStore
+        PlanetFacility.SurfaceStore, PlanetFacility.OrbitalStore, PlanetFacility.Soletta
     ];
     private readonly int[] _solarArrays = new int[CelestialSystem.BodyCount];
+    private readonly int[] _solettas = new int[CelestialSystem.BodyCount];
     private readonly int[] _habitats = new int[CelestialSystem.BodyCount], _observatories = new int[CelestialSystem.BodyCount],
         _skimmers = new int[CelestialSystem.BodyCount], _surfaceStores = new int[CelestialSystem.BodyCount],
         _orbitalStores = new int[CelestialSystem.BodyCount];
@@ -27,6 +28,7 @@ internal sealed partial class FleetSimulation {
     internal static FacilityPlan Facility( PlanetFacility facility ) => GameCatalog.Facility( facility );
 
     private readonly int[] _siteUpgrades = new int[CelestialSystem.BodyCount * FacilityCount];
+    private readonly byte[] _siteDamage = new byte[CelestialSystem.BodyCount * FacilityCount];
     private ref int UpgradeDeadline( int body, PlanetFacility facility ) => ref _siteUpgrades[body * FacilityCount + (int)facility];
 
     internal int SiteUpgradeRemaining( int body, PlanetFacility facility ) => Remaining( UpgradeDeadline( body, facility ) );
@@ -34,10 +36,30 @@ internal sealed partial class FleetSimulation {
         SiteUpgradeRemaining( body, facility ) == 0 ? Facility( facility ).UpgradeBonus : 0;
     internal int StructureOutput( PlanetFacility facility ) {
         int output = 0;
-        var plan = Facility( facility );
         for ( int body = 1; body < _bodies.Length; ++body )
-            if ( SiteRemaining( body, facility ) == 0 ) output += plan.Output + SiteUpgradeBonus( body, facility );
+            if ( SiteRemaining( body, facility ) == 0 ) output += SiteOutput( body, facility );
         return output;
+    }
+
+    internal int SiteIntegrity( int body, PlanetFacility facility ) => 100 - _siteDamage[body * FacilityCount + (int)facility];
+    internal int SiteOutput( int body, PlanetFacility facility ) =>
+        (Facility( facility ).Output + SiteUpgradeBonus( body, facility )) * SiteIntegrity( body, facility ) / 100;
+
+    private void DamageSite( int body, PlanetFacility facility, int damage ) {
+        ref byte state = ref _siteDamage[body * FacilityCount + (int)facility];
+        state = (byte)Math.Min( 100, state + damage );
+    }
+
+    private void RestoreSites() {
+        for ( int body = 1; body < _bodies.Length; ++body ) {
+            if ( IsPirateControlled( body ) ) continue;
+            foreach ( var facility in Facilities ) {
+                ref byte damage = ref _siteDamage[body * FacilityCount + (int)facility];
+                if ( damage == 0 || Energy == 0 ) continue;
+                --Energy;
+                damage = (byte)Math.Max( 0, damage - 15 );
+            }
+        }
     }
 
     internal string? UpgradeBlock( int body, PlanetFacility facility ) {
@@ -97,6 +119,16 @@ internal sealed partial class FleetSimulation {
             if ( DepotAt( body ) != 0 ) return "SHIPYARD NEEDS AN ONLINE DEPOT";
         }
         if ( facility == PlanetFacility.Habitat && !Researched( ResearchTopic.Habitation ) ) return "REQUIRES HABITAT ENGINEERING";
+        if ( facility == PlanetFacility.Habitat && FrontierProgression ) {
+            if ( !Researched( ResearchTopic.OrbitalEngineering ) ) return "REQUIRES ORBITAL ENGINEERING";
+            if ( SiteRemaining( body, PlanetFacility.Depot ) != 0 || SiteIntegrity( body, PlanetFacility.Depot ) < 50 )
+                return "REQUIRES A WORKING LOCAL DEPOT";
+        }
+        if ( facility == PlanetFacility.Soletta ) {
+            if ( plan.Requirement is { } technology && !Researched( technology ) ) return $"REQUIRES {Tech( technology ).Name}";
+            if ( SiteRemaining( body, PlanetFacility.Habitat ) != 0 || SiteRemaining( body, PlanetFacility.Solar ) != 0 )
+                return "NEEDS AN ORBITAL HABITAT AND SOLAR ARRAY";
+        }
         if ( plan.Layer == SiteLayer.Orbit ) {
             if ( unit is not { } worker || !ValidConstructor( worker ) ) return "SELECT A CONSTRUCTOR";
             if ( !CanReach( worker, body ) ) return "OUTSIDE CONSTRUCTOR RANGE";
@@ -126,9 +158,12 @@ internal sealed partial class FleetSimulation {
             SetOrder( worker, orbit );
         }
         Spend( plan.Cost );
-        SiteDeadlines( facility )[body] = Tick + plan.Duration;
+        SiteDeadlines( facility )[body] = Tick + ConstructionDuration( facility );
         return true;
     }
+
+    internal int ConstructionDuration( PlanetFacility facility ) =>
+        Facility( facility ).Duration * (FrontierProgression && facility == PlanetFacility.Habitat ? 6 : 1);
 
     internal FleetSelection? SiteWorker( int body, PlanetFacility facility ) => Construction( body, facility ).Worker;
     internal bool SiteEnRoute( int body, PlanetFacility facility ) =>
@@ -166,22 +201,24 @@ internal sealed partial class FleetSimulation {
     internal Vector2 SitePosition( int body, PlanetFacility facility, float interpolation ) =>
         SitePositionAt( body, facility, Math.Max( 0, Tick - 1 + interpolation ), VisualBody( body, interpolation ).Center );
 
-    private Vector2 SitePositionAt( int body, PlanetFacility facility, float tick, Vector2 center ) {
+    private Vector2 FacilityOrbit( int body, PlanetFacility facility ) {
         var orbit = Construction( body, facility ).Orbit;
+        if ( orbit.X > 0 ) return orbit;
+        float phase = facility switch {
+            PlanetFacility.Lab => MathF.PI, PlanetFacility.Depot => MathF.PI / 2,
+            PlanetFacility.Solar => MathF.PI / 4, _ => -MathF.PI / 2
+        };
+        return new( OrbitRadius( body, 1 ) + 4, phase );
+    }
+
+    private Vector2 SitePositionAt( int body, PlanetFacility facility, float tick, Vector2 center ) {
         if ( Frontier && Facility( facility ).Layer == SiteLayer.Surface ) {
             float offset = facility switch { PlanetFacility.Mine => -1.4f, PlanetFacility.Observatory => 1.2f, _ => 2.8f };
             var (surfaceY, surfaceX) = MathF.SinCos( offset + 0.003f * tick );
             return center + new Vector2( surfaceX, surfaceY ) * (_bodies[body].Radius * 0.84f);
         }
-        if ( orbit.X > 0 ) {
-            var (sin, cos) = MathF.SinCos( orbit.Y + tick * OrbitRate( orbit.X ) );
-            return center + new Vector2( cos, sin ) * orbit.X;
-        }
-        float phase = facility switch {
-            PlanetFacility.Lab => MathF.PI, PlanetFacility.Depot => MathF.PI / 2,
-            PlanetFacility.Solar => MathF.PI / 4, _ => -MathF.PI / 2
-        };
-        var (y, x) = MathF.SinCos( tick * (float)StepSeconds * 0.23f + phase );
-        return center + new Vector2( x, y ) * (OrbitRadius( body, 1 ) + 4);
+        var orbit = FacilityOrbit( body, facility );
+        var (sin, cos) = MathF.SinCos( orbit.Y + tick * OrbitRate( body, orbit.X ) );
+        return center + new Vector2( cos, sin ) * orbit.X;
     }
 }
