@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "events": [
+    {
+      "id": "meridian.first-light",
+      "title": "Bread by second sunrise",
+      "source": "Meridian cooperative / kitchen log",
+      "fragment": "meridian.bread",
+      "artwork": "Burn",
+      "accept": "Accept the surplus power",
+      "tick": 180,
+      "energy": 12
+    },
+    {
+      "id": "meridian.shadow-pay",
+      "title": "The mirror ledger",
+      "source": "Meridian cooperative / audit",
+      "fragment": "meridian.ledger",
+      "artwork": "Flyby",
+      "accept": "Collect the survey dividend",
+      "requires": "meridian.shadow-clocks",
+      "ore": 25,
+      "science": 10
+    }
+  ]
+}

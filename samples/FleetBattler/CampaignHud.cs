@@ -8,7 +8,7 @@ internal sealed partial class FleetHud {
     internal static DateOnly StarDate( int campaignTick ) =>
         new DateOnly( 2184, 1, 1 ).AddDays( (int)SolarCatalog.CalendarDays( campaignTick ) );
 
-    private void ClockPanel( Layout layout, int tick, int speed, bool paused, string mapButton ) {
+    private void ClockPanel( Layout layout, int tick, float speed, bool paused, string mapButton ) {
         float x = layout.ClockX;
         Rect( x, 16, 184, 34, Well );
         var date = StarDate( tick );
@@ -17,10 +17,10 @@ internal sealed partial class FleetHud {
         Text( text[..length], x + 42, 20, 1.2f, White );
         Rect( x + 3, 19, 29, 28, Active );
         Icon( paused ? HudIcon.Play : HudIcon.Pause, x + 10, 26, 14, paused ? EnergyTint : SpaceDraw.Cyan );
-        Button( x + 120, 28, 20, "-", speed > 1 );
-        text.TryWrite( $"{speed}X", out length );
-        Text( text[..length], x + 146, 36, 1, paused ? EnergyTint : SpaceDraw.Cyan );
-        Button( x + 161, 28, 20, "+", speed < 4 );
+        Button( x + 111, 28, 18, "-", speed > FleetClock.MinSpeed );
+        text.TryWrite( $"{speed:0.###}X", out length );
+        FitText( text[..length], x + 132, 36, 29, .85f, paused ? EnergyTint : SpaceDraw.Cyan );
+        Button( x + 163, 28, 18, "+", speed < FleetClock.MaxSpeed );
         Text( paused ? "PAUSED" : "CAMPAIGN DATE", x + 42, 37, 0.9f, paused ? EnergyTint : Label );
         Button( layout.Width - 82, 22, 66, mapButton, true );
     }
@@ -28,8 +28,8 @@ internal sealed partial class FleetHud {
     private static HudHit HitClock( Layout layout, Vector2 p ) {
         float x = layout.ClockX;
         if ( Contains( p, x + 3, 19, 29, 28 ) ) return new( HudAction.Pause );
-        if ( Contains( p, x + 120, 28, 20, 21 ) ) return new( HudAction.Slower );
-        if ( Contains( p, x + 161, 28, 20, 21 ) ) return new( HudAction.Speed );
+        if ( Contains( p, x + 111, 28, 18, 21 ) ) return new( HudAction.Slower );
+        if ( Contains( p, x + 163, 28, 18, 21 ) ) return new( HudAction.Speed );
         if ( Contains( p, layout.Width - 82, 22, 66, 21 ) ) return new( HudAction.Galaxy );
         return default;
     }

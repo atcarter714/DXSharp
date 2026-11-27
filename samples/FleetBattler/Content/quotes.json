@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "quotes": [
+    {
+      "id": "unarmed",
+      "text": "There's no such thing as an unarmed spaceship.",
+      "credit": "Attributed to Isaac Arthur"
+    },
+    {
+      "id": "brute-force",
+      "text": "When brute force isn't working, you aren't using enough of it.",
+      "credit": "Yard crew maxim"
+    },
+    {
+      "id": "clarke-third-law",
+      "text": "Any sufficiently advanced technology is indistinguishable from magic.",
+      "credit": "Arthur C. Clarke",
+      "source": "https://clarkefoundation.org/arthur-c-clarke-biography/"
+    },
+    {
+      "id": "einstein-mystery",
+      "text": "The most beautiful experience we can have is the mysterious.",
+      "credit": "Albert Einstein",
+      "source": "https://history.aip.org/exhibits/einstein/einstein.pdf"
+    },
+    {
+      "id": "sagan-home",
+      "text": "Look again at that dot. That's here. That's home. That's us.",
+      "credit": "Carl Sagan",
+      "source": "https://www.planetary.org/worlds/pale-blue-dot"
+    },
+    {
+      "id": "tsiolkovsky-cradle",
+      "text": "Earth is the cradle of humanity, but one cannot live in a cradle forever.",
+      "credit": "Konstantin Tsiolkovsky",
+      "source": "https://www.nasa.gov/history/space-station-20th-historical-origins-of-iss/"
+    }
+  ]
+}

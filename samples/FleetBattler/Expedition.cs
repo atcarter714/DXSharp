@@ -53,6 +53,7 @@ internal sealed partial class FleetSimulation {
         if ( !Solar || !FusionUpgrade ) return "RESEARCH PULSED FUSION IN SOL";
         if ( ColoniesFounded == 0 ) return "FOUND A COLONY BEFORE LAUNCH";
         if ( YardAt( Homeworld ) != 0 ) return "FINISH EARTH'S ORBITAL SHIPYARD";
+        if ( SiteIntegrity( Homeworld, PlanetFacility.Yard ) < 50 ) return "RESTORE EARTH'S ORBITAL SHIPYARD";
         int count = 0;
         bool scout = false, constructor = false;
         for ( int ship = 0; ship < Math.Min( selected.Length, Count ); ++ship ) {
@@ -66,13 +67,15 @@ internal sealed partial class FleetSimulation {
         if ( !scout || !constructor ) return "SELECT A SCOUT AND A CONSTRUCTOR";
         if ( count >= CyanCount ) return "LEAVE ONE SHIP IN SOL";
         if ( count > 8 ) return "MAXIMUM EIGHT EXPEDITION HULLS";
-        return CanAfford( CrossingCost ) ? null : "NEEDS 65 ORE AND 100 ENERGY";
+        return CanAfford( ExpeditionCost ) ? null : $"NEEDS {ExpeditionCost.Ore} ORE AND {ExpeditionCost.Energy} ENERGY";
     }
+
+    private ResourceCost ExpeditionCost => FrontierProgression ? new( 145, 185 ) : CrossingCost;
 
     internal Expedition? Depart( ReadOnlySpan<bool> selected, int campaignTick ) {
         if ( LaunchBlock( selected ) is not null ) return null;
         int arrival = checked(campaignTick + ExpeditionDuration);
-        Spend( CrossingCost );
+        Spend( ExpeditionCost );
         _expeditionDeparted = true;
         return new( Proxima, arrival, RemoveTravelHulls( selected ), ArrivalSupplies );
     }
@@ -120,6 +123,7 @@ internal sealed partial class FleetSimulation {
     }
 
     internal void ReceiveTravelHulls( ReadOnlySpan<ExpeditionHull> hulls, ResourceCost supplies, bool survey ) {
+        bool firstArrival = !_expeditionArrived;
         _expeditionArrived = true;
         Refund( supplies );
         Span<int> groups = stackalloc int[hulls.Length];
@@ -147,6 +151,11 @@ internal sealed partial class FleetSimulation {
             if ( !survey || hull.Role != HullRole.Scout ) continue;
             for ( int body = 1; body < _bodies.Length; ++body )
                 if ( BeginSurvey( new( squad, ship ), body ) ) break;
+        }
+        if ( firstArrival && SystemIndex >= CelestialSystem.AuthoredCount && SystemIndex % 3 == 0 && TravelBerths >= 2 ) {
+            var faction = SystemIndex % 2 == 0 ? FactionId.Asteri : FactionId.Veyran;
+            int patrol = AddSquad( 2, (int)faction, _bodies[2].Center, HullRole.Frigate );
+            Park( patrol, 2, Tick );
         }
     }
 

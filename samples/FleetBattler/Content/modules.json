@@ -8,7 +8,8 @@
       "draw": 3,
       "damage": 13,
       "range": 16,
-      "reload": 38
+      "reload": 38,
+      "effect": "Pulse"
     },
     {
       "slot": "Weapon",
@@ -17,7 +18,8 @@
       "draw": 4,
       "damage": 22,
       "range": 21,
-      "reload": 64
+      "reload": 64,
+      "effect": "Rail"
     },
     {
       "slot": "Armor",
@@ -123,6 +125,51 @@
       "handling": 0.93,
       "reach": 1.2,
       "requires": "Fusion"
+    },
+    {
+      "slot": "Drive",
+      "id": 3,
+      "name": "Argon ion cluster",
+      "draw": 2,
+      "handling": 0.79,
+      "reach": 1.16,
+      "energy": 3
+    },
+    {
+      "slot": "Drive",
+      "id": 4,
+      "name": "Radiator tug drive",
+      "draw": 5,
+      "handling": 1.17,
+      "reach": 1.31,
+      "ore": 9,
+      "requires": "Radiators"
+    },
+    {
+      "slot": "Power",
+      "id": 2,
+      "name": "Fission pile",
+      "supply": 15,
+      "ore": 3,
+      "ticks": 75
+    },
+    {
+      "slot": "Power",
+      "id": 3,
+      "name": "Swarm power receiver",
+      "supply": 21,
+      "energy": 14,
+      "ticks": 120,
+      "requires": "solar.heat"
+    },
+    {
+      "slot": "Computer",
+      "id": 3,
+      "name": "Parallax tracker",
+      "draw": 2,
+      "range": 5,
+      "ore": 6,
+      "requires": "solar.pulsars"
     }
   ]
 }

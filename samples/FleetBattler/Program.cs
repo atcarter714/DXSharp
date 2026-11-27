@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using DXSharp.Assets;
 using DXSharp.Framework.Desktop;
 using DXSharp.Graphics;
@@ -9,6 +10,10 @@ using DXSharp.Samples;
 namespace FleetBattler;
 
 internal static class Program {
+    [DllImport( "user32.dll", EntryPoint = "SendMessageW" )]
+    private static extern nint SendWindowMessage( nint window, uint message, nuint buttons, nint coordinate );
+
+    private const uint MouseMoveMessage = 0x0200, LeftDownMessage = 0x0201, LeftUpMessage = 0x0202;
     private const float DefaultTilt = 1.068f;
     private const int StationSlots = 1 + FleetSimulation.FacilityCount * (CelestialSystem.BodyCount - 1);
     private const int EffectSlots = FleetSimulation.EffectCapacity + BattleDraw.RouteCapacity +
@@ -17,28 +22,49 @@ internal static class Program {
     [STAThread]
     public static int Main( string[] args ) {
         try {
-            return Run( args );
+            FleetContent.Configure( args.Where( arg => arg.StartsWith( "--mod=", StringComparison.Ordinal ) ).Select( arg => arg[6..] ) );
+            var settings = new GameSettings { Muted = args.Contains( "--mute" ), Fullscreen = args.Contains( "--fullscreen" ) };
+            if ( args.Contains( "--validate-content" ) ) {
+                _ = ScenarioCatalog.Load( Option( args, "--scenario=", "frontier" ) );
+                _ = ResearchCatalog.Current;
+                _ = SolarCatalog.Get( 0 );
+                GameCatalog.Validate( );
+                foreach ( var file in HullModel.Read( args ).Select( model => model.File ).Distinct( ) ) _ = GltfModel.Load( file );
+                Console.WriteLine( $"PASS: scenarios, lore, events, {ResearchCatalog.Current.Count} projects and hull models loaded." );
+                return 0;
+            }
+            if ( int.Parse( Option( args, "--benchmark-ticks=", "0" ) ) > 0 ) return Run( args, settings );
+            Application.SetUnhandledExceptionMode( UnhandledExceptionMode.ThrowException );
+            ApplicationConfiguration.Initialize( );
+            bool menu = !args.Any( a => a.StartsWith( "--scenario=" ) || a.StartsWith( "--ships=" ) || a.StartsWith( "--frames=" ) ||
+                a is "--skirmish" or "--view-test" or "--resize-test" or "--galaxy" );
+            settings.AudioTest = args.Contains( "--audio-test" );
+            settings.ShowMenu = menu || args.Contains( "--menu-test" ) || settings.AudioTest;
+            settings.MenuTest = args.Contains( "--menu-test" );
+            return Run( args, settings );
         } catch ( Exception error ) {
             Console.Error.WriteLine( error );
             return 1;
         }
     }
 
-    private static int Run( string[] args ) {
+    private static int Run( string[] args, GameSettings settings ) {
         int ticks = int.Parse( Option( args, "--benchmark-ticks=", "0" ) );
         ArgumentOutOfRangeException.ThrowIfNegative( ticks );
         int ships = int.Parse( Option( args, "--ships=", FleetSimulation.DefaultShips.ToString( ) ) );
         uint seed = uint.Parse( Option( args, "--seed=", "37" ) );
         bool frontier = ticks == 0 && !args.Contains( "--skirmish" ) &&
             !args.Any( arg => arg.StartsWith( "--ships=", StringComparison.Ordinal ) );
+        FleetScenario? scenario = frontier ? ScenarioCatalog.Load( Option( args, "--scenario=", "frontier" ) ) : null;
         if ( frontier ) { _ = ResearchCatalog.Current; GameCatalog.Validate( ); }
-        var fleet = new FleetSimulation( ships, seed, rivalPatrol: ticks == 0, battle: ticks == 0, frontier: frontier );
+        var fleet = new FleetSimulation( ships, seed, rivalPatrol: ticks == 0, battle: ticks == 0 && (scenario?.Raids ?? true), frontier: frontier );
+        if ( scenario is not null && !settings.ShowMenu ) fleet.StartScenario( scenario );
         if ( ticks > 0 ) {
             Benchmark( fleet, ticks );
             return 0;
         }
 
-        int frameLimit = int.Parse( Option( args, "--frames=", "0" ) );
+        int frameLimit = settings.MenuTest ? 12 : int.Parse( Option( args, "--frames=", "0" ) );
         ArgumentOutOfRangeException.ThrowIfNegative( frameLimit );
         bool resizeTest = args.Contains( "--resize-test" );
         if ( resizeTest && frameLimit is > 0 and < 6 )
@@ -47,12 +73,13 @@ internal static class Program {
         bool viewTest = args.Contains( "--view-test" );
         if ( viewTest && (!frontier || frameLimit is > 0 and < 14) )
             throw new ArgumentException( "View qualification requires the Frontier scenario and at least fourteen frames." );
-        if ( viewTest && frameLimit == 0 ) frameLimit = 14;
-        int trafficCount = int.Parse( Option( args, "--traffic=", ComputeTraffic.DefaultAgents.ToString( ) ) );
+        if ( viewTest ) {
+            QualifyCampaign();
+            if ( frameLimit == 0 ) frameLimit = 15;
+        }
+        int trafficCount = frontier ? 0 : int.Parse( Option( args, "--traffic=", "0" ) );
         int debrisCount = int.Parse( Option( args, "--debris=", ComputeTraffic.DefaultDebris.ToString( ) ) );
 
-        Application.SetUnhandledExceptionMode( UnhandledExceptionMode.ThrowException );
-        ApplicationConfiguration.Initialize( );
 #if DEBUG
         const bool debugLayer = true;
 #else
@@ -64,29 +91,28 @@ internal static class Program {
             EnableDebugLayer = debugLayer && !args.Contains( "--no-debug" )
         } );
         string models = Path.Combine( AppContext.BaseDirectory, "Models" );
-        string corvettePath = Path.Combine( models, "Corvette.gltf" );
-        string shipModel = Option( args, "--ship-model=", corvettePath );
         Console.WriteLine( device.AdapterName );
         Console.WriteLine( $"{fleet.Count:N0} ships, {fleet.Count * FleetDraw.InstanceStride:N0} tactical instance bytes per frame." );
         Console.WriteLine( $"{trafficCount:N0} compute-steered traffic ships and {debrisCount:N0} compute-orbiting debris bodies." );
         Console.WriteLine( "Click or drag to select. Shift adds, Ctrl toggles. Right-click a body for survey and orbit orders. Left-click a body to inspect it." );
 
         using var compiler = new ShaderCompiler( );
+        using var bloom = new SceneBloom( device, compiler );
         using var root = device.CreateTextureRootSignature( FleetDraw.MaterialConstants, linearWrap: true );
         using var pipeline = FleetDraw.CreatePipeline( device, root, compiler, depthEnabled: true );
-        using var thrustRoot = device.CreateGraphicsConstantsRootSignature( 20 );
+        using var thrustRoot = device.CreateGraphicsConstantsRootSignature( FleetDraw.ThrusterConstants );
         using var thrust = FleetDraw.CreateThrusters( device, thrustRoot, compiler );
         using var battleRoot = device.CreateGraphicsConstantsRootSignature( BattleDraw.ConstantCount );
         using var effects = BattleDraw.CreateEffects( device, battleRoot, compiler );
         using var markers = BattleDraw.CreateMarkers( device, battleRoot, compiler );
         using var traffic = new ComputeTraffic( device, compiler, trafficCount, debrisCount );
-        using var audio = new FleetAudio( args.Contains( "--mute" ) );
+        using var audio = new FleetAudio( settings.Muted );
         using var spaceRoot = device.CreateTextureRootSignature( SpaceDraw.Constants, linearWrap: true );
         using var space = SpaceDraw.CreatePipeline( device, spaceRoot, compiler );
         using var hudRoot = device.CreateTextureRootSignature( 4, linearWrap: true );
         using var hud = FleetHud.CreatePipeline( device, hudRoot, compiler );
-        using var first = device.CreateBuffer( (ulong)(fleet.Capacity + StationSlots) * FleetDraw.InstanceStride, BufferMemory.Upload );
-        using var second = device.CreateBuffer( (ulong)(fleet.Capacity + StationSlots) * FleetDraw.InstanceStride, BufferMemory.Upload );
+        using var first = device.CreateBuffer( (ulong)(Math.Max( fleet.Capacity, 320 ) + StationSlots + 1) * FleetDraw.InstanceStride, BufferMemory.Upload );
+        using var second = device.CreateBuffer( (ulong)(Math.Max( fleet.Capacity, 320 ) + StationSlots + 1) * FleetDraw.InstanceStride, BufferMemory.Upload );
         using var firstHud = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
         using var secondHud = device.CreateBuffer( FleetHud.BufferBytes, BufferMemory.Upload );
         using var firstEffects = device.CreateBuffer( EffectSlots * BattleDraw.EffectStride, BufferMemory.Upload );
@@ -94,27 +120,24 @@ internal static class Program {
         using var queue = device.CreateCommandQueue( );
         using var allocator = device.CreateCommandAllocator( );
         using var commands = device.CreateCommandList( allocator );
-        using var corvettes = new StaticMeshSet( device, commands, GltfModel.Load( shipModel ), shipModel == corvettePath ? 0.05f : 1,
-            flattenScene: shipModel != corvettePath );
-        using var frigates = LoadModel( "--frigate-model=", "EscortFrigate.gltf", 0.055f );
-        using var scouts = LoadModel( "--scout-model=", "SurveyScout.gltf", 0.083f );
+        using var hullMeshes = new HullMeshes( device, commands, HullModel.Read( args ) );
         using var freighters = LoadModel( "--freighter-model=", "Freighter.gltf", 0.05f );
-        string? minerPath = args.FirstOrDefault( arg => arg.StartsWith( "--miner-model=", StringComparison.Ordinal ) )?[14..];
-        using var minerOverride = minerPath is null ? null : new StaticMeshSet( device, commands, GltfModel.Load( minerPath ), flattenScene: true );
         using var relay = LoadModel( "--station-model=", "MiningRelay.gltf", 0.12f );
         using var habitats = LoadModel( "--habitat-model=", "ONeillHabitat.gltf", 0.05f );
-        using var receiver = frontier ? LoadModel( "--receiver-model=", "ProximaReceiver.gltf", 0.13f ) : null;
+        using var receiver = LoadModel( "--receiver-model=", "ProximaReceiver.gltf", 0.13f );
         string defaultMoon = Path.Combine( AppContext.BaseDirectory, "Celestial", "Moon.jpg" );
         string? moonPath = args.FirstOrDefault( value => value.StartsWith( "--moon-map=", StringComparison.Ordinal ) )?[11..];
         if ( moonPath is null && File.Exists( defaultMoon ) ) moonPath = defaultMoon;
         using var moon = SpaceDraw.LoadMoon( device, commands, moonPath );
+        using var menuArt = FleetHud.LoadMenuArtwork( device, commands );
         using var atlas = FleetHud.LoadAtlas( device, commands );
+        using var particles = new SpaceParticles( device, commands, compiler, 2 );
         commands.Close( );
         queue.Wait( queue.Submit( commands ) );
 
-        var result = Present( device, pipeline, thrust, space, moon, moonPath is not null, atlas, hud, effects, markers, traffic, audio, fleet, seed,
-            corvettes, frigates, scouts, freighters, minerOverride ?? freighters, relay, habitats, receiver, [first, second], [firstHud, secondHud], [firstEffects, secondEffects],
-            frameLimit, resizeTest, viewTest, args.Contains( "--fullscreen" ), args.Contains( "--galaxy" ) );
+        var result = Present( device, pipeline, thrust, space, moon, moonPath is not null, atlas, menuArt, hud, effects, markers, traffic, audio, bloom, particles, fleet, seed,
+            hullMeshes, freighters, relay, habitats, receiver, [first, second], [firstHud, secondHud], [firstEffects, secondEffects],
+            frameLimit, resizeTest, viewTest, settings, args.Contains( "--galaxy" ), scenario );
         var diagnostics = device.GetDiagnostics( );
         foreach ( string message in diagnostics.Messages ) Console.WriteLine( message );
         if ( diagnostics.DeviceRemovedReason < 0 || diagnostics.Messages.Any(
@@ -130,14 +153,71 @@ internal static class Program {
         }
     }
 
+    private static void QualifyCampaign() {
+        var assembly = new FleetSimulation( FleetSimulation.DefaultShips, 37, frontier: true, battle: false );
+        assembly.StartScenario( ScenarioCatalog.Load( "assembly" ) );
+        var damaged = new ExpeditionHull( HullRole.Corvette, default, 20, 0, 0, FleetStance.Passive, "SERVICE TEST" );
+        int first = assembly.Count;
+        assembly.ReceiveTravelHulls( [damaged, damaged], default, survey: false );
+        if ( !assembly.OrderService( first, ServiceOrder.Repair ) || !assembly.OrderService( first + 1, ServiceOrder.Repair ) )
+            throw new InvalidOperationException( "Repair qualification could not select the precommissioned yard." );
+        for ( int tick = 0; tick < 1800 && assembly.CompletedServices < 2; ++tick ) {
+            assembly.Step();
+            for ( int ship = first; ship <= first + 1; ++ship ) {
+                var position = assembly.Positions[ship];
+                if ( !float.IsFinite( position.X ) || !float.IsFinite( position.Y ) )
+                    throw new InvalidOperationException( "A repair berth produced a non-finite ship position." );
+            }
+        }
+        if ( assembly.CompletedServices != 2 ) throw new InvalidOperationException( "Both corvettes must finish repairs." );
+
+        var frontier = new FleetSimulation( FleetSimulation.DefaultShips, 37, frontier: true, battle: false );
+        frontier.StartScenario( ScenarioCatalog.Load( "frontier" ) );
+        var campaign = new FleetCampaign( frontier, 37 );
+        if ( campaign.TravelBlock( frontier, FleetSimulation.Proxima, [true, false, false], false ) != "RESEARCH PULSED FUSION IN SOL" )
+            throw new InvalidOperationException( "The galaxy map bypassed the first-crossing prerequisites." );
+        frontier.Step();
+        var proxima = campaign.System( FleetSimulation.Proxima );
+        var scout = new ExpeditionHull( HullRole.Scout, default, 50, 0, 0, FleetStance.Passive, "CHARTER TEST" );
+        int solOre = frontier.Ore;
+        if ( !proxima.Receive( new( FleetSimulation.Proxima, frontier.Tick, [scout], new( 45, 20 ) ), frontier.Tick ) ||
+             proxima.WorldTick != frontier.WorldTick || proxima.Ore != 45 || frontier.Ore != solOre ||
+             proxima.RequiresDrive( CelestialSystem.OuterBelt ) || !frontier.RequiresDrive( CelestialSystem.OuterBelt ) ||
+             !proxima.BeginSurvey( new( proxima.FirstPlayerSquad() ), CelestialSystem.OuterBelt ) )
+            throw new InvalidOperationException( "The arriving scout must be able to survey Proxima's outer belt without Sol's drive unlock." );
+        frontier.PlayerFaction.Unlock( ResearchTopic.Drive );
+        if ( !proxima.DriveUpgrade ) throw new InvalidOperationException( "Completed technology must be available to the faction in Proxima." );
+        int favorable = 0;
+        for ( int system = CelestialSystem.AuthoredCount; system < CelestialSystem.SystemCount; ++system )
+            if ( Exoplanets.Get( system ).Habitability >= 70 ) ++favorable;
+        var alienSystem = campaign.System( 126 );
+        alienSystem.ReceiveTravelHulls( [new( HullRole.Scout, default, 50, 0, 0, FleetStance.Passive, "CHARTER TEST" )], default, survey: false );
+        if ( CelestialSystem.MapPositions.Length != 128 || favorable is < 1 or > 10 || alienSystem.FactionCount( FactionId.Asteri ) != 2 )
+            throw new InvalidOperationException( $"Procedural galaxy qualification failed with {favorable} favorable worlds." );
+        float earth = SolarCatalog.SpinRadians( 10, 1, SolarCatalog.Get( 1 ).RotationHours );
+        float venus = SolarCatalog.SpinRadians( 10, 1, SolarCatalog.Get( 6 ).RotationHours );
+        if ( earth is < 1.55f or > 1.65f || venus >= 0 || SolarCatalog.SpinRadians( 10, 1, 0 ) != 0 )
+            throw new InvalidOperationException( "Expected sidereal Earth rotation, retrograde Venus, and a fixed surface at zero hours." );
+        var route = new GalaxyRoute( 0, FleetSimulation.Proxima, "", "RESEARCH PULSED FUSION", 0 );
+        var chart = GalaxyView.Overview.ZoomAt( new( .54f, .48f ), 2 ).Pan( new( .05f, -.04f ) );
+        var hulls = new int[CelestialSystem.SystemCount];
+        bool picked = false;
+        for ( int i = CelestialSystem.AuthoredCount; i < CelestialSystem.SystemCount && !picked; ++i ) {
+            var node = FleetHud.GalaxyNodePixel( i, 1280, 800, true, chart );
+            picked = FleetHud.HitGalaxy( node, 1280, 800, true, hulls, route, chart: chart ) == new GalaxyHit( GalaxyAction.Star, i );
+        }
+        if ( !picked ) throw new InvalidOperationException( "Generated star markers must remain selectable after map zoom and pan." );
+        Console.WriteLine( $"PASS: Two corvettes repaired, 128 systems charted, {favorable} favorable generated worlds, first contact spawned." );
+    }
+
     private static DesktopRunResult Present( GraphicsDevice device, PipelineState pipeline, PipelineState thrust, PipelineState space, SampledTexture2D moon, bool useMoonMap,
-        SampledTexture2D atlas, PipelineState hudPipeline, PipelineState effectsPipeline, PipelineState markers, ComputeTraffic traffic, FleetAudio audio,
-        FleetSimulation initial, uint seed, StaticMeshSet corvettes, StaticMeshSet frigates, StaticMeshSet scouts, StaticMeshSet freighters, StaticMeshSet minerMeshes, StaticMeshSet relay, StaticMeshSet habitats, StaticMeshSet? receiver,
-        GpuResource[] uploads, GpuResource[] hudUploads, GpuResource[] effectsUploads, int frameLimit, bool resizeTest, bool viewTest, bool startFullscreen, bool startGalaxy ) {
+        SampledTexture2D atlas, SampledTexture2D menuArt, PipelineState hudPipeline, PipelineState effectsPipeline, PipelineState markers, ComputeTraffic traffic, FleetAudio audio, SceneBloom bloom, SpaceParticles particles,
+        FleetSimulation initial, uint seed, HullMeshes hullMeshes, StaticMeshSet freighters, StaticMeshSet relay, StaticMeshSet habitats, StaticMeshSet? receiver,
+        GpuResource[] uploads, GpuResource[] hudUploads, GpuResource[] effectsUploads, int frameLimit, bool resizeTest, bool viewTest, GameSettings settings, bool startGalaxy, FleetScenario? scenario ) {
         var campaign = new FleetCampaign( initial, seed );
         var fleet = initial;
-        var instances = new ShipInstance[fleet.Capacity + StationSlots];
-        var habitatInstances = new ShipInstance[CelestialSystem.BodyCount];
+        var instances = new ShipInstance[Math.Max( fleet.Capacity, 320 ) + StationSlots + 1];
+        var habitatInstances = new ShipInstance[CelestialSystem.BodyCount * 2];
         var screenBodies = new Vector4[CelestialSystem.BodyCount];
         var screenSites = new MapSite[StationSlots];
         int siteCount = 0;
@@ -156,17 +236,22 @@ internal static class Program {
         long hostileAlertUntil = 0;
         string? routeNotice = null;
         int routeTarget = FleetSimulation.Proxima;
+        var galaxyView = GalaxyView.Overview;
         var galaxyHulls = new int[CelestialSystem.Systems.Length];
+        var systemsVisited = new HashSet<int>();
         bool oreShort = false, galaxy = startGalaxy || viewTest, sawGalaxy = false;
-        int slotsUsed = 0, systemsVisited = 0, previousOwner = -1, speed = 1;
+        int slotsUsed = 0, previousOwner = -1;
+        float speed = initial.Frontier ? FleetClock.DefaultSpeed : 1;
         int surveysHeard = 0, wingsHeard = 0, yardState = -1, sitesHeard = 0, buildsHeard = 0;
         BodyMenu? menu = null;
         Form? renameEditor = null;
         CommandTab commandTab = CommandTab.Hidden;
         int dispatch = 0, dispatchesSeen = initial.DispatchCount, fleetScroll = 0;
         var designer = new ShipDesigner( );
+        var researchDesk = new ResearchDesk();
         bool shipDetails = false;
         int raidersSeen = 0;
+        var pendingStories = scenario?.Events.ToList( ) ?? [];
         var briefings = new Queue<(Briefing Text, Action? Accept, Action? Dismiss)>();
         Briefing? CurrentBriefing( ) => briefings.TryPeek( out var next ) ? next.Text : null;
         int yardInspector = -1, launchesSeen = 0, servicesSeen = 0, scansHeard = 0;
@@ -177,8 +262,9 @@ internal static class Program {
         int piracySeen = 0, coloniesSeen = 0;
         var clock = new FleetClock( );
         bool paused = false;
-        float zoom = initial.Solar ? 0.64f : 0.85f, tilt = DefaultTilt, yaw = 0;
+        float zoom = initial.Solar ? 0.38f : 0.85f, tilt = DefaultTilt, yaw = 0;
         Vector2 cameraFocus = initial.Solar ? initial.Bodies[FleetSimulation.Homeworld].Center : default;
+        int trackedBody = initial.Solar ? FleetSimulation.Homeworld : -1;
         bool tilting = false;
         Point? panStart = null, dragStart = null;
         Point dragEnd = default, lastClickPoint = default;
@@ -189,8 +275,81 @@ internal static class Program {
         Matrix4x4 inverseViewProjection = default, viewProjection = default;
         Size viewport = default;
         var work = Screen.PrimaryScreen?.WorkingArea.Size ?? new Size( 1600, 900 );
-        var windowSize = new Size( Math.Min( 1600, Math.Max( 480, work.Width - 48 ) ),
-            Math.Min( 900, Math.Max( 320, work.Height - 92 ) ) );
+        var windowSize = new Size( Math.Max( 320, work.Width - 20 ), Math.Max( 240, work.Height - 52 ) );
+        using var catalogs = FleetContent.Read( "scenarios", "scenarios" );
+        var choices = catalogs.RootElement.GetProperty( "scenarios" ).EnumerateArray( ).Select( row => new ScenarioChoice(
+            Id: row.GetProperty( "id" ).GetString( )!, Name: row.GetProperty( "name" ).GetString( )!.ToUpperInvariant( ),
+            Description: row.TryGetProperty( "description", out var text ) ? text.GetString( )!.ToUpperInvariant( ) : "EXPLORE SOL AND ESTABLISH AN INTERSTELLAR COLONY." ) )
+            .Append( new( "", "FLEET SKIRMISH", "COMMAND A FLEET IN A CONTESTED SYSTEM." ) ).ToArray();
+        using var quotes = FleetContent.Read( "quotes", "quotes" );
+        var sayings = quotes.RootElement.GetProperty( "quotes" ).EnumerateArray().Select( row =>
+            $"{row.GetProperty( "text" ).GetString()}  /  {row.GetProperty( "credit" ).GetString()}".ToUpperInvariant() ).ToArray();
+        int quoteIndex = sayings.Length > 0 ? Random.Shared.Next( sayings.Length ) : 0;
+        string quote = sayings.Length > 0 ? sayings[quoteIndex] : "";
+        long audioTestDeadline = Environment.TickCount64 + 35_000;
+        TimeSpan? pausePosition = null;
+        int firstScenario = Math.Max( 0, Array.FindIndex( choices, entry => entry.Id == (settings.MenuTest ? "assembly" : "frontier") ) );
+        var flow = new GameFlow( choices, firstScenario, settings.ShowMenu );
+        var archive = new ResearchDesk();
+        var menuLabels = new string[8];
+        string factionName = initial.PlayerFaction.Name;
+
+        string ActionLabel( MenuAction action ) => action switch {
+            MenuAction.Launch => flow.Scenario.Skirmish ? "LAUNCH SKIRMISH" : "LAUNCH CAMPAIGN",
+            MenuAction.NextScenario => "CHANGE SCENARIO  >",
+            MenuAction.Faction => $"FACTION / {factionName}",
+            MenuAction.ResearchArchive => "TECHNOLOGY ARCHIVE",
+            MenuAction.Resume => "RESUME FLIGHT",
+            MenuAction.ReturnToTitle => "RETURN TO TITLE",
+            MenuAction.Sound => audio.Muted ? "SOUND  OFF" : "SOUND  ON",
+            MenuAction.Display => display.Active ? "DISPLAY  FULLSCREEN" : "DISPLAY  WINDOWED",
+            MenuAction.Exit => "EXIT GAME",
+            MenuAction.Music => $"[-]   MUSIC {audio.MusicPercent}%   [+]",
+            _ => throw new ArgumentOutOfRangeException( nameof(action) )
+        };
+
+        void Activate( Form window, MenuAction action, int volumeStep = 5 ) {
+            switch ( action ) {
+                case MenuAction.Music: audio.AdjustMusic( volumeStep ); return;
+                case MenuAction.Faction: RenameFaction( window ); return;
+                case MenuAction.Sound: audio.Toggle(); return;
+                case MenuAction.Display: display.Toggle( window ); return;
+                case MenuAction.Exit: window.Close(); return;
+                default: flow.Navigate( action ); break;
+            }
+            if ( action == MenuAction.Launch && sayings.Length > 1 ) {
+                quoteIndex = (quoteIndex + 1) % sayings.Length;
+                quote = sayings[quoteIndex];
+            }
+        }
+
+        void StartCampaign() {
+            var choice = flow.Scenario;
+            scenario = choice.Skirmish ? null : ScenarioCatalog.Load( choice.Id );
+            initial = new FleetSimulation( FleetSimulation.DefaultShips, seed, rivalPatrol: true,
+                battle: scenario?.Raids ?? true, frontier: !choice.Skirmish );
+            if ( scenario is not null ) initial.StartScenario( scenario );
+            initial.PlayerFaction.Name = factionName;
+            campaign = new FleetCampaign( initial, seed );
+            traffic.Reset();
+            Array.Clear( selections );
+            Array.Clear( notices );
+            briefings.Clear();
+            pendingStories = scenario?.Events.ToList() ?? [];
+            designer = new ShipDesigner();
+            researchDesk = new ResearchDesk();
+            clock.Reset();
+            paused = false;
+            speed = initial.Frontier ? FleetClock.DefaultSpeed : 1;
+            galaxyView = GalaxyView.Overview;
+            routeTarget = FleetSimulation.Proxima;
+            routeNotice = null;
+            rosterPage = yardPage = 0;
+            Enter( 0 );
+            designer.Open( fleet, HullBlueprint.Corvette );
+            flow.FinishLoading();
+        }
+
         var run = DesktopGame.Run( device, new( ) {
             Title = "DXSharp · Fleet Battler", EnableDepth = true, FramesInFlight = uploads.Length, FrameLimit = frameLimit,
             ClientSize = viewTest ? new Size( 780, 490 ) : windowSize, ClearColor = new( 0.017f, 0.025f, 0.048f, 1 )
@@ -198,11 +357,28 @@ internal static class Program {
             viewport = frame.Size;
             slotsUsed |= 1 << frame.FrameSlotIndex;
             var hudUpload = hudUploads[frame.FrameSlotIndex];
-            audio.SetSituation( fleet.SystemIndex, galaxy, fleet.Contested || fleet.InBattle, fleet.Won );
+            audio.SetSituation( fleet.SystemIndex, galaxy, fleet.Contested || fleet.InBattle, fleet.Won,
+                title: flow.IsTitle );
+            if ( flow.Screen == GameScreen.ResearchArchive ) {
+                hud.ResearchStation( archive, null, viewport.Width, viewport.Height, frame.Commands, hudPipeline, hudUpload );
+                return;
+            }
+            if ( flow.Screen != GameScreen.Flight ) {
+                bool pause = flow.Screen == GameScreen.PauseMenu;
+                var actions = flow.Actions;
+                var labels = menuLabels.AsSpan( 0, actions.Length );
+                for ( int row = 0; row < labels.Length; ++row ) labels[row] = ActionLabel( actions[row] );
+                hud.DrawMenu( frame.Commands, hudPipeline, hudUpload, menuArt, viewport.Width, viewport.Height, flow.Screen,
+                    pause ? scenario?.Name ?? "SKIRMISH" : flow.Scenario.Name,
+                    pause ? "RETURN TO FLIGHT OR ADJUST DISPLAY AND SOUND." : flow.Scenario.Description,
+                    labels, flow.Focus, quote );
+                if ( flow.Screen == GameScreen.Loading ) StartCampaign();
+                return;
+            }
             float elapsed = clock.Advance( initial.Frontier ? initial : fleet, frame.Elapsed.TotalSeconds, speed, paused || briefings.Count > 0, campaign.Advance );
             QueueCampaignBriefings( );
             interpolation = clock.Interpolation;
-            if ( !galaxy ) systemsVisited |= 1 << fleet.SystemIndex;
+            if ( !galaxy ) systemsVisited.Add( fleet.SystemIndex );
             if ( previousOwner != fleet.Owner ) {
                 if ( fleet.Owner == 0 ) audio.Cue( "capture" );
                 previousOwner = fleet.Owner;
@@ -271,7 +447,7 @@ internal static class Program {
             if ( fleet.ActiveRaids > raidersSeen ) {
                 raidersSeen = fleet.ActiveRaids;
                 if ( raidersSeen > 3 ) {
-                    hostileAlert = "AMBER PIRATES RETURN";
+                    hostileAlert = $"{Factions.Name( FactionId.Raiders )} RETURN";
                     hostileAlertUntil = Environment.TickCount64 + 9_000;
                     audio.Cue( "hostile" );
                 }
@@ -288,11 +464,14 @@ internal static class Program {
             }
             if ( galaxy ) {
                 sawGalaxy = true;
-                SpaceDraw.RecordGalaxy( frame.Commands, space, moon, fleet.SystemIndex, viewport.Width, viewport.Height, fleet.Frontier );
+                SpaceDraw.RecordGalaxy( frame.Commands, space, moon, viewport.Width, viewport.Height, fleet.Frontier, galaxyView );
                 UpdateGalaxyHulls( );
                 selection.Prune( fleet );
+                var route = RouteView();
+                var hoverHit = mouse is { } chartCursor && CurrentBriefing() is null ? FleetHud.HitGalaxy( new( chartCursor.X, chartCursor.Y ),
+                    viewport.Width, viewport.Height, fleet.Frontier, galaxyHulls, route, galaxyRoster ? fleet : null, rosterPage, galaxyView ) : default;
                 hud.RecordGalaxy( frame.Commands, hudPipeline, hudUpload, fleet.SystemIndex, viewport.Width, viewport.Height,
-                    fleet.Frontier, initial.AstrometryUpgrade, galaxyHulls, RouteView( ), initial.Frontier ? initial.Tick : fleet.Tick, speed, paused, CurrentBriefing( ), galaxyRoster ? fleet : null, selection, rosterPage, campaign.Transfers, notices, Environment.TickCount64 );
+                    fleet.Frontier, initial.AstrometryUpgrade, galaxyHulls, route, initial.Frontier ? initial.Tick : fleet.Tick, speed, paused, CurrentBriefing( ), galaxyRoster ? fleet : null, selection, rosterPage, campaign.Transfers, notices, Environment.TickCount64, campaign, galaxyView, hoverHit.Action == GalaxyAction.Star ? hoverHit.System : -1 );
                 return;
             }
 
@@ -302,30 +481,35 @@ internal static class Program {
             float radius = fleet.BoardRadius;
             float aspect = (float)viewport.Width / viewport.Height;
             float halfHeight = radius * zoom / MathF.Min( aspect, 1 );
-            var focus = new Vector3( cameraFocus.X, 0, cameraFocus.Y );
+            if ( trackedBody >= 0 ) cameraFocus = fleet.VisualBody( trackedBody, interpolation ).Center;
+            var cameraTarget = new Vector3( cameraFocus.X, 0, cameraFocus.Y );
             var (elevation, horizontal) = MathF.SinCos( tilt );
             var (side, forward) = MathF.SinCos( yaw );
-            var view = Matrix4x4.CreateLookAt( focus + 1.83f * radius * new Vector3( side * horizontal, elevation, forward * horizontal ),
-                focus, Vector3.UnitY );
+            var view = Matrix4x4.CreateLookAt( cameraTarget + 1.83f * radius * new Vector3( side * horizontal, elevation, forward * horizontal ),
+                cameraTarget, Vector3.UnitY );
             var projection = Matrix4x4.CreateOrthographic( 2 * halfHeight * aspect, 2 * halfHeight, 0.1f, 5 * radius );
             viewProjection = view * projection;
             Matrix4x4.Invert( viewProjection, out inverseViewProjection );
             for ( int i = 0; i < fleet.Bodies.Length; ++i )
                 screenBodies[i] = CelestialSystem.Project( fleet.VisualBody( i, interpolation ), radius, viewProjection, viewport.Width, viewport.Height, halfHeight, fleet.Frontier ? CelestialSystem.FrontierBodyDisplayScale : 1 );
 
+            float visualTime = ComputeTraffic.RenderTime( fleet.WorldTick, interpolation );
+            particles.Begin( screenBodies[0], viewport, visualTime );
+            var stellarCenter = fleet.VisualBody( 0, interpolation ).Center;
             bool computeActive = traffic.ShipCount != 0 || traffic.DebrisCount != 0;
-            if ( computeActive ) traffic.RecordCompute( frame.Commands, fleet, elapsed, interpolation );
+            if ( computeActive ) traffic.RecordCompute( frame.Commands, fleet, elapsed, interpolation, frame.FrameSlotIndex );
             SpaceDraw.Record( frame.Commands, space, moon, useMoonMap, fleet, selected, viewProjection, inverseViewProjection,
                 viewport.Width, viewport.Height, halfHeight, showSelection: unit is not null, interpolation: interpolation );
             if ( computeActive ) {
                 traffic.RecordDebris( frame.Commands, viewProjection, viewport.Width, viewport.Height, halfHeight );
-                if ( fleet.CanSeeContacts )
-                    traffic.RecordFreighters( frame.Commands, pipeline, freighters, viewProjection, viewport.Height / (2 * halfHeight) );
+                if ( !fleet.Frontier && fleet.CanSeeContacts )
+                    traffic.RecordFreighters( frame.Commands, pipeline, freighters, viewProjection, viewport.Height / (2 * halfHeight), stellarCenter );
                 traffic.Finish( frame.Commands );
             }
 
             var active = instances.AsSpan( 0, fleet.CanSeeContacts ? fleet.ActiveCount : 0 );
-            uint corvetteCount = active.IsEmpty ? 0 : (uint)fleet.FillInstances( active, selected, selection.Ships, groupHulls: true, interpolation: interpolation, groupMiners: fleet.Frontier, groupFrigates: true );
+            Span<int> roleCounts = stackalloc int[hullMeshes.RoleCount];
+            if ( !active.IsEmpty ) fleet.FillInstances( active, selected, selection.Ships, interpolation: interpolation, roleCounts: roleCounts );
             siteCount = 0;
             int stationStart = active.Length;
             int nextStation = stationStart, habitatCount = 0;
@@ -353,7 +537,7 @@ internal static class Program {
                 if ( FleetSimulation.Facility( facility ).Layer == SiteLayer.Surface || remaining < 0 && !yard ) return;
                 var position = fleet.SitePosition( body, facility, interpolation );
                 var pixel = CommandSelection.Project( position, viewProjection, new( viewport.Width, viewport.Height ) );
-                int duration = FleetSimulation.Facility( facility ).Duration;
+                int duration = fleet.ConstructionDuration( facility );
                 int shipRemaining = yard ? fleet.ShipRemaining( body ) : 0;
                 bool producing = shipRemaining > 0;
                 screenSites[siteCount++] = new( pixel, body, facility, producing ? shipRemaining : remaining,
@@ -369,6 +553,8 @@ internal static class Program {
                     if ( receiver is not null && fleet.SystemIndex == FleetSimulation.Proxima &&
                          body == FleetSimulation.Homeworld && facility == PlanetFacility.Lab )
                         receiverInstance = Station( position, 1, remaining, duration, Vector4.One );
+                    else if ( facility == PlanetFacility.Soletta )
+                        habitatInstances[habitatCount++] = Station( position, 2.72f, remaining, duration, new( 1.18f, .92f, .62f, 1 ) );
                     else if ( facility == PlanetFacility.Habitat )
                         habitatInstances[habitatCount++] = Station( position, 1.18f, remaining, duration, new( 1.15f, 1.37f, 1.85f, 1 ) );
                     else AddStation( position, size, Math.Max( 0, remaining ), duration, tint );
@@ -379,10 +565,10 @@ internal static class Program {
             int receiverStart = nextStation + habitatCount;
             if ( receiverInstance is { } station ) instances[receiverStart] = station;
             upload.Write<ShipInstance>( instances.AsSpan( 0, receiverStart + (receiverInstance.HasValue ? 1 : 0) ) );
-            FleetDraw.Record( frame.Commands, pipeline, relay, upload, (uint)(nextStation - stationStart), viewProjection, (uint)stationStart );
-            FleetDraw.Record( frame.Commands, pipeline, habitats, upload, (uint)habitatCount, viewProjection, (uint)nextStation );
+            FleetDraw.Record( frame.Commands, pipeline, relay, upload, (uint)(nextStation - stationStart), viewProjection, (uint)stationStart, stellarCenter );
+            FleetDraw.Record( frame.Commands, pipeline, habitats, upload, (uint)habitatCount, viewProjection, (uint)nextStation, stellarCenter );
             if ( receiverInstance.HasValue )
-                FleetDraw.Record( frame.Commands, pipeline, receiver!, upload, 1, viewProjection, (uint)receiverStart );
+                FleetDraw.Record( frame.Commands, pipeline, receiver!, upload, 1, viewProjection, (uint)receiverStart, stellarCenter );
 
             void AddStation( Vector2 position, float size, int remaining, int duration, Vector4 tint ) =>
                 instances[nextStation++] = Station( position, size, remaining, duration, tint );
@@ -393,16 +579,17 @@ internal static class Program {
                     new( 0, 0, size * (0.38f + 0.62f * progress), remaining > 0 ? -1 : 0 ) );
             }
             if ( !active.IsEmpty ) {
-                FleetDraw.RecordThrusters( frame.Commands, thrust, upload, (uint)active.Length, viewProjection, (float)(fleet.Tick * FleetSimulation.StepSeconds) );
-                FleetDraw.Record( frame.Commands, pipeline, corvettes, upload, corvetteCount, viewProjection );
-                uint miners = fleet.Frontier ? (uint)(fleet.MerchantCount + fleet.ActiveMiners( ) + fleet.ActiveColonyShips( ) + fleet.ActiveProspectors) : 0;
-                uint frigateCount = (uint)fleet.ActiveFrigates;
-                uint scoutsStart = corvetteCount + frigateCount;
-                uint scoutsEnd = (uint)active.Length - miners;
-                FleetDraw.Record( frame.Commands, pipeline, frigates, upload, frigateCount, viewProjection, corvetteCount );
-                FleetDraw.Record( frame.Commands, pipeline, scouts, upload, scoutsEnd - scoutsStart, viewProjection, scoutsStart );
-                FleetDraw.Record( frame.Commands, pipeline, minerMeshes, upload, miners, viewProjection, scoutsEnd );
-                BattleDraw.Record( frame.Commands, markers, upload, (uint)active.Length, viewProjection, viewport.Width, viewport.Height, halfHeight, effects: false );
+                uint firstInstance = 0;
+                for ( int role = 0; role < roleCounts.Length; ++role ) {
+                    uint count = (uint)roleCounts[role];
+                    if ( count == 0 ) continue;
+                    FleetDraw.Record( frame.Commands, pipeline, hullMeshes[role], upload, count, viewProjection, firstInstance, stellarCenter );
+                    FleetDraw.RecordThrusters( frame.Commands, thrust, upload, count, viewProjection,
+                        (float)(fleet.Tick * FleetSimulation.StepSeconds), firstInstance, hullMeshes.Emitters( role ) );
+                    particles.Exhaust( active.Slice( (int)firstInstance, (int)count ), hullMeshes.Emitters( role ), viewProjection,
+                        viewport, viewport.Height / (2 * halfHeight), visualTime );
+                    firstInstance += count;
+                }
             }
             int pulseCount = fleet.FillEffects( effects.AsSpan( 0, FleetSimulation.EffectCapacity ) );
             if ( fleet.Frontier && selection.Primary >= 0 ) {
@@ -438,13 +625,15 @@ internal static class Program {
             if ( fleet.ReceiverOnline && receiverInstance is { } transmitter )
                 effects[pulseCount++] = BattleDraw.ReceiverSignal( transmitter.Center, fleet.Tick, interpolation );
             if ( fleet.Frontier ) pulseCount += BattleDraw.FillRepairs( fleet, effects.AsSpan( pulseCount ), interpolation );
-            pulseCount += BattleDraw.FillSolarTracks( fleet, effects.AsSpan( pulseCount ) );
+            pulseCount += BattleDraw.FillSolarTracks( fleet, effects.AsSpan( pulseCount ), interpolation );
             if ( pulseCount != 0 ) {
                 var pulses = effectsUploads[frame.FrameSlotIndex];
                 pulses.Write<BattleEffect>( effects.AsSpan( 0, pulseCount ) );
                 BattleDraw.Record( frame.Commands, effectsPipeline, pulses, (uint)pulseCount, viewProjection,
                     viewport.Width, viewport.Height, halfHeight, effects: true );
             }
+            particles.Explosions( effects.AsSpan( 0, pulseCount ), viewProjection, viewport );
+            particles.Draw( frame );
             var drag = dragStart is { } start && IsDrag( start, dragEnd ) ? DragRect( start, dragEnd ) : (Vector4?)null;
             MapHover hover = default;
             if ( fleet.Frontier && menu is null && panStart is null && dragStart is null && mouse is { } pointer &&
@@ -468,41 +657,81 @@ internal static class Program {
                         viewProjection, new( viewport.Width, viewport.Height ) );
                 }
             }
+            if ( commandTab == CommandTab.Research && CurrentBriefing() is null && !galaxy ) {
+                hud.ResearchStation( researchDesk, fleet, viewport.Width, viewport.Height, frame.Commands, hudPipeline, hudUpload );
+                return;
+            }
+            bloom.Apply( frame, screenBodies[0] );
+            if ( !active.IsEmpty )
+                BattleDraw.Record( frame.Commands, markers, upload, (uint)active.Length, viewProjection, viewport.Width, viewport.Height, halfHeight, effects: false );
             hud.Record( frame.Commands, hudPipeline, hudUpload, fleet, selected, viewport.Width, viewport.Height, oreShort, screenBodies.AsSpan( 0, fleet.Bodies.Length ),
                 selection.Count, planet, null, drag,
                 fleet.Frontier ? null : CommandSelection.Project( fleet.Site, viewProjection, new( viewport.Width, viewport.Height ) ),
                 selection.Ships, speed, paused, unit, menu, yardPixel, commandTab, dispatch, screenSites.AsSpan( 0, siteCount ), hover, yardInspector, buildCatalog, researchBranch, catalogLayer,
                 Environment.TickCount64 < hostileAlertUntil ? hostileAlert : null, fleetScroll, designer, CurrentBriefing( ), fleet.Solar ? kuiperLabels : default, shipDetails, initial.Frontier ? initial.Tick : fleet.Tick, yardPage,
-                mouse is { } cursor ? new Vector2( cursor.X, cursor.Y ) : null, notices, Environment.TickCount64 );
+                mouse is { } cursor ? new Vector2( cursor.X, cursor.Y ) : null, notices, Environment.TickCount64, interpolation: interpolation );
+            if ( commandTab == CommandTab.Fleet && CurrentBriefing() is null && menu is null && !designer.Dragging ) {
+                var box = FleetHud.DesignerPreview( viewport.Width, viewport.Height );
+                if ( box.W > 0 ) {
+                    int role = (int)FleetSimulation.BlueprintRole( designer.Hull );
+                    var (center, extent) = hullMeshes.Bounds( role );
+                    float angle = (Environment.TickCount64 % 60000) * (MathF.Tau / 60000);
+                    var eye = center + extent * new Vector3( 3 * MathF.Sin( angle ), 1.4f, 3 * MathF.Cos( angle ) );
+                    float size = 2.1f * extent;
+                    var camera = Matrix4x4.CreateLookAt( eye, center, Vector3.UnitY ) *
+                        Matrix4x4.CreateOrthographic( size * Math.Max( 1, box.Z / box.W ), size * Math.Max( 1, box.W / box.Z ), extent, 6 * extent );
+                    var placement = Matrix4x4.CreateScale( box.Z / viewport.Width, box.W / viewport.Height, 0.00001f ) *
+                        Matrix4x4.CreateTranslation( (2*box.X + box.Z)/viewport.Width - 1, 1 - (2*box.Y + box.W)/viewport.Height, 0 );
+                    uint slot = (uint)(instances.Length - 1);
+                    upload.Write<ShipInstance>( [new( Vector2.Zero, -Vector2.UnitY, Vector4.One, new( 0, 0, 1, 1 ) )],
+                        (ulong)slot * FleetDraw.InstanceStride );
+                    FleetDraw.Record( frame.Commands, pipeline, hullMeshes[role], upload, 1, camera * placement, slot );
+                }
+            }
         }, ( window, result ) => {
             if ( result.Frames == 1 ) {
-                if ( startFullscreen ) display.Toggle( window );
+                if ( settings.Fullscreen ) display.Toggle( window );
                 window.KeyPreview = true;
                 window.KeyDown += ( _, e ) => {
+                    if ( flow.Screen != GameScreen.Flight ) {
+                        e.SuppressKeyPress = true;
+                        if ( e.KeyCode == Keys.Escape ) { flow.Back(); return; }
+                        var actions = flow.Actions;
+                        if ( actions.IsEmpty ) return;
+                        if ( e.KeyCode == Keys.Down ) flow.MoveFocus( 1 );
+                        if ( e.KeyCode == Keys.Up ) flow.MoveFocus( -1 );
+                        if ( e.KeyCode == Keys.Enter ) Activate( window, actions[flow.Focus] );
+                        if ( actions[flow.Focus] == MenuAction.Music && e.KeyCode is Keys.Left or Keys.Right )
+                            audio.AdjustMusic( e.KeyCode == Keys.Left ? -5 : 5 );
+                        return;
+                    }
+                    if ( e.KeyCode == Keys.Escape ) {
+                        e.SuppressKeyPress = true;
+                        flow.Back();
+                        dragStart = panStart = null;
+                        designer.Release( default );
+                        window.Capture = false;
+                        return;
+                    }
                     if ( briefings.Count > 0 ) {
                         if ( e.KeyCode == Keys.Enter ) ResolveBriefing( accept: true );
-                        if ( e.KeyCode == Keys.Escape && CurrentBriefing( ) is { EscapeDismisses: true } )
-                            ResolveBriefing( accept: false );
                         e.SuppressKeyPress = true;
                         return;
                     }
                     switch ( e.KeyCode ) {
                         case Keys.F11: display.Toggle( window ); break;
                         case Keys.G: ToggleGalaxy( window ); break;
-                        case Keys.Escape when menu is not null: menu = null; break;
-                        case Keys.Escape when yardInspector >= 0: yardInspector = -1; break;
-                        case Keys.Escape when commandTab != CommandTab.Hidden:
-                            designer.Release( default );
-                            window.Capture = false;
-                            commandTab = CommandTab.Hidden;
-                            break;
-                        case Keys.Escape when buildCatalog: buildCatalog = false; break;
-                        case Keys.Escape when !galaxy: planet = -1; shipDetails = false; break;
+                        case Keys.Home when galaxy: galaxyView = GalaxyView.Overview; break;
                         case Keys.Home when !galaxy: ResetCamera( ); break;
+                        case Keys.End when !galaxy:
+                            TrackBody( 0 );
+                            zoom = OverviewZoom();
+                            break;
+                        case Keys.F2 when e.Control && e.Shift: RenameFaction( window ); break;
                         case Keys.F2 when !galaxy && fleet.Frontier && !fleet.ChartOnly: Rename( window, e.Control ); break;
                         case Keys.F when !galaxy:
-                            if ( planet >= 0 ) cameraFocus = ClampCamera( fleet.Bodies[planet].Center );
-                            else if ( selection.SurveyUnit( fleet ) is { } focusUnit ) cameraFocus = ClampCamera( fleet.Center( focusUnit ) );
+                            if ( planet >= 0 ) TrackBody( planet );
+                            else if ( selection.SurveyUnit( fleet ) is { } focusUnit ) SetCameraFocus( fleet.Center( focusUnit ) );
                             break;
                         case Keys.Left or Keys.Right or Keys.Up or Keys.Down when !galaxy:
                             var motion = e.KeyCode switch {
@@ -510,7 +739,7 @@ internal static class Program {
                                 Keys.Up => new Vector2( 0, -1 ), _ => new Vector2( 0, 1 )
                             };
                             var (sine, cosine) = MathF.SinCos( yaw );
-                            cameraFocus = ClampCamera( cameraFocus + new Vector2( cosine * motion.X + sine * motion.Y,
+                            SetCameraFocus( cameraFocus + new Vector2( cosine * motion.X + sine * motion.Y,
                                 -sine * motion.X + cosine * motion.Y ) * (0.07f * zoom * fleet.BoardRadius) );
                             break;
                         case Keys.Tab when !galaxy && !fleet.ChartOnly && fleet.Frontier: Command( CommandAction.Toggle ); break;
@@ -545,12 +774,36 @@ internal static class Program {
                     e.SuppressKeyPress = true;
                 };
                 window.MouseDown += ( _, e ) => {
+                    if ( flow.Screen == GameScreen.ResearchArchive ) {
+                        if ( e.Button == MouseButtons.Left && hud.ResearchStation( archive, null, viewport.Width, viewport.Height, click: new( e.X, e.Y ) ) )
+                            flow.Back();
+                        return;
+                    }
+                    if ( flow.Screen != GameScreen.Flight ) {
+                        var actions = flow.Actions;
+                        int row = FleetHud.MenuHit( viewport.Width, viewport.Height, new( e.X, e.Y ), actions.Length );
+                        if ( row >= 0 ) {
+                            flow.FocusRow( row );
+                            if ( e.Button == MouseButtons.Left ) Activate( window, actions[row],
+                                FleetHud.MenuRightHalf( viewport.Width, viewport.Height, e.X ) ? 5 : -5 );
+                        }
+                        return;
+                    }
                     if ( CurrentBriefing( ) is not null ) {
                         var briefingHit = FleetHud.HitBriefing( new( e.X, e.Y ), viewport.Width, viewport.Height );
                         if ( e.Button == MouseButtons.Left && briefingHit.Action == HudAction.Briefing ) ResolveBriefing( briefingHit.Index == 1 );
                         return;
                     }
+                    if ( commandTab == CommandTab.Research && !galaxy ) {
+                        if ( e.Button == MouseButtons.Left && hud.ResearchStation( researchDesk, fleet, viewport.Width, viewport.Height, click: new( e.X, e.Y ) ) )
+                            commandTab = CommandTab.Hidden;
+                        return;
+                    }
                     if ( galaxy ) {
+                        if ( e.Button == MouseButtons.Middle ) {
+                            panStart = e.Location;
+                            window.Capture = true;
+                        }
                         if ( e.Button is MouseButtons.Left or MouseButtons.Right )
                             GalaxyCommand( window, new( e.X, e.Y ), e.Button == MouseButtons.Right, e.Clicks );
                         return;
@@ -590,8 +843,15 @@ internal static class Program {
                                     routeTarget = FleetSimulation.Proxima;
                                     break;
                                 case HudAction.ResearchDetails:
-                                    var tech = FleetSimulation.Tech( (ResearchTopic)hit.Index );
-                                    briefings.Enqueue( (new( tech.Name, "RESEARCH DOSSIER", tech.Description, tech.Artwork,
+                                    var topic = (ResearchTopic)hit.Index;
+                                    var tech = FleetSimulation.Tech( topic );
+                                    var successors = Enumerable.Range( 0, ResearchCatalog.Current.Count ).Select( i => (ResearchTopic)i )
+                                        .Where( id => FleetSimulation.Tech( id ).Requires.Contains( topic ) );
+                                    string leads = string.Join( ", ", successors.Select( id => FleetSimulation.Tech( id ).Name ) );
+                                    string dependencies = string.Join( ", ", tech.Requires.Select( id => FleetSimulation.Tech( id ).Name ) );
+                                    string dossier = tech.Description + (dependencies.Length == 0 ? "" : $"\nREQUIRES {dependencies}") +
+                                        (leads.Length == 0 ? "" : $"\nOPENS {leads}");
+                                    briefings.Enqueue( (new( tech.Name, "RESEARCH DOSSIER", dossier, tech.Artwork,
                                         "BACK TO RESEARCH", "CLOSE", tech.Benefit ), null, null) );
                                     break;
                                 case HudAction.Galaxy: ToggleGalaxy( window ); break;
@@ -611,6 +871,10 @@ internal static class Program {
                                 case HudAction.ToggleBuildCatalog: buildCatalog = !buildCatalog; catalogLayer = SiteLayer.Orbit; break;
                                 case HudAction.BuildLayer: catalogLayer = catalogLayer == SiteLayer.Orbit ? SiteLayer.Surface : SiteLayer.Orbit; break;
                                 case HudAction.Colonize: Settle( hit.Index ); break;
+                                case HudAction.Climate:
+                                    if ( fleet.ClimateBlock( hit.Index ) is { } climateBlock ) Notify( climateBlock );
+                                    else if ( fleet.BeginClimateProject( hit.Index ) ) Notify( "CLIMATE PROJECT STARTED" );
+                                    break;
                                 case HudAction.CancelColony:
                                     if ( fleet.CancelColony( hit.Index ) ) Notify( "SETTLEMENT ORDER CANCELED" );
                                     break;
@@ -644,7 +908,7 @@ internal static class Program {
                                 case HudAction.Squad when fleet.ShipCount( hit.Index ) > 0:
                                     selection.Squadron( fleet, hit.Index, ModifierSelection( ) );
                                     planet = yardInspector = -1;
-                                    if ( e.Clicks >= 2 ) cameraFocus = ClampCamera( fleet.Center( hit.Index ) );
+                                    if ( e.Clicks >= 2 ) SetCameraFocus( fleet.Center( hit.Index ) );
                                     break;
                             }
                         }
@@ -682,8 +946,18 @@ internal static class Program {
                 };
                 window.MouseLeave += ( _, _ ) => mouse = null;
                 window.MouseMove += ( _, e ) => {
+                    if ( flow.Screen != GameScreen.Flight ) {
+                        flow.FocusRow( FleetHud.MenuHit( viewport.Width, viewport.Height, new( e.X, e.Y ), flow.Actions.Length ) );
+                        return;
+                    }
                     mouse = e.Location;
-                    if ( galaxy ) return;
+                    if ( galaxy ) {
+                        if ( panStart is { } last && e.Button == MouseButtons.Middle ) {
+                            galaxyView = galaxyView.Pan( new( (e.X - last.X) / (float)viewport.Width, (e.Y - last.Y) / (float)viewport.Height ) );
+                            panStart = e.Location;
+                        }
+                        return;
+                    }
                     if ( dragStart is not null ) { dragEnd = e.Location; return; }
                     if ( panStart is not { } previous ) return;
                     if ( e.Button != MouseButtons.Middle ) { panStart = null; return; }
@@ -692,11 +966,20 @@ internal static class Program {
                         tilt = Math.Clamp( tilt + (e.Y - previous.Y) * 0.005f, 0.50f, 1.36f );
                     } else if ( TryPick( previous, viewport, inverseViewProjection, out var from ) &&
                          TryPick( e.Location, viewport, inverseViewProjection, out var to ) )
-                        cameraFocus = ClampCamera( cameraFocus + from - to );
+                        SetCameraFocus( cameraFocus + from - to );
                     panStart = e.Location;
                 };
-                window.MouseCaptureChanged += ( _, _ ) => { if ( !window.Capture ) panStart = dragStart = null; };
+                window.MouseCaptureChanged += ( _, _ ) => {
+                    // WinForms releases capture before raising MouseUp. Let that handler finish the gesture.
+                    if ( window.Capture || window.IsDisposed ) return;
+                    window.BeginInvoke( () => {
+                        if ( window.Capture ) return;
+                        panStart = dragStart = null;
+                        designer.Release( default );
+                    } );
+                };
                 window.MouseUp += ( _, e ) => {
+                    if ( flow.Screen != GameScreen.Flight ) return;
                     if ( commandTab == CommandTab.Fleet && designer.Dragging && e.Button == MouseButtons.Left ) {
                         designer.Release( CurrentBriefing( ) is null
                             ? FleetHud.HitDesigner( new( e.X, e.Y ), viewport.Width, viewport.Height, designer ) : default );
@@ -740,14 +1023,67 @@ internal static class Program {
                     }
                 };
                 window.MouseWheel += ( _, e ) => {
+                    if ( flow.Screen != GameScreen.Flight ) return;
+                    if ( galaxy ) {
+                        if ( CurrentBriefing() is null ) galaxyView = galaxyView.ZoomAt(
+                            new( e.X / (float)viewport.Width, e.Y / (float)viewport.Height ), MathF.Pow( 1.24f, e.Delta / 120f ) );
+                        return;
+                    }
+                    if ( commandTab == CommandTab.Research ) return;
                     if ( !galaxy && briefings.Count == 0 && menu is null && FleetHud.ScrollOutliner( new( e.X, e.Y ), viewport.Width,
                         viewport.Height, fleet, Math.Sign( e.Delta ), ref fleetScroll ) ) return;
                     if ( galaxy || menu is not null || FleetHud.Hit( new( e.X, e.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, researchBranch: researchBranch, catalogLayer: catalogLayer, fleetScroll: fleetScroll, briefing: CurrentBriefing( ), shipDetails: shipDetails, yardPage: yardPage ).Action != HudAction.None ) return;
-                    float nextZoom = Math.Clamp( zoom * MathF.Pow( 0.85f, e.Delta / 120f ), 0.12f, fleet.Solar ? 4.6f : fleet.Frontier ? 2.8f : 2.5f );
+                    float nextZoom = Math.Clamp( zoom * MathF.Pow( 0.85f, e.Delta / 120f ), 0.12f, OverviewZoom() );
                     if ( TryPick( e.Location, viewport, inverseViewProjection, out var anchor ) )
-                        cameraFocus = ClampCamera( cameraFocus + (anchor - cameraFocus) * (1 - nextZoom / zoom) );
+                        SetCameraFocus( cameraFocus + (anchor - cameraFocus) * (1 - nextZoom / zoom) );
                     zoom = nextZoom;
                 };
+            }
+            if ( settings.AudioTest ) {
+                if ( Environment.TickCount64 > audioTestDeadline )
+                    throw new InvalidOperationException( $"Music did not advance during {flow.Screen}." );
+                if ( flow.Screen == GameScreen.MainMenu && audio.MusicPosition > TimeSpan.FromMilliseconds( 500 ) )
+                    Activate( window, MenuAction.Launch );
+                else if ( flow.Screen == GameScreen.Flight && audio.MusicPosition > TimeSpan.FromMilliseconds( 500 ) ) {
+                    pausePosition = audio.MusicPosition;
+                    flow.Back();
+                } else if ( flow.Screen == GameScreen.PauseMenu && audio.MusicPosition > pausePosition + TimeSpan.FromMilliseconds( 750 ) ) {
+                    Console.WriteLine( "PASS: Title music played and the flight soundtrack advanced through pause." );
+                    window.Close();
+                }
+            }
+            if ( settings.MenuTest ) {
+                switch ( result.Frames ) {
+                    case 1: Activate( window, MenuAction.ResearchArchive ); break;
+                    case 3:
+                        if ( flow.Screen != GameScreen.ResearchArchive || fleet.Tick != 0 )
+                            throw new InvalidOperationException( "Browsing the archive must leave the campaign idle." );
+                        if ( hud.ResearchStation( archive, null, viewport.Width, viewport.Height,
+                             click: FleetHud.ResearchBackPixel( viewport.Width, viewport.Height ) ) ) flow.Back();
+                        if ( flow.Screen != GameScreen.MainMenu ) throw new InvalidOperationException( "The archive did not return to the title." );
+                        break;
+                    case 4: Activate( window, MenuAction.Launch ); break;
+                    case 7:
+                        if ( flow.Screen != GameScreen.Flight || scenario?.StartingSites.Length == 0 || !fleet.StartResearch( ResearchTopic.Industry ) )
+                            throw new InvalidOperationException( "The explicit launch did not start a playable campaign." );
+                        flow.Back();
+                        break;
+                    case 8: Activate( window, MenuAction.Resume ); break;
+                    case 9:
+                        SelectTab( CommandTab.Fleet );
+                        designer.Open( fleet, HullBlueprint.Corvette );
+                        break;
+                    case 10:
+                        if ( flow.Screen != GameScreen.Flight || commandTab != CommandTab.Fleet || designer.Hull != HullBlueprint.Corvette )
+                            throw new InvalidOperationException( "Designer launch failed." );
+                        designer.Click( fleet, new( DesignerControl.Slot, (int)ModuleSlot.Power ) );
+                        designer.Click( fleet, new( DesignerControl.Module, 2 ) );
+                        designer.Release( new( DesignerControl.Module, 2 ) );
+                        designer.Click( fleet, new( DesignerControl.Save ) );
+                        if ( fleet.Blueprint( HullBlueprint.Corvette ).Variant( ModuleSlot.Power ) != 2 )
+                            throw new InvalidOperationException( "New reactor fit failed to save." );
+                        break;
+                }
             }
             if ( resizeTest && result.Frames == 2 ) window.ClientSize = new( 800, 520 );
             if ( resizeTest && result.Frames == 4 ) window.ClientSize = new( 710, 575 );
@@ -764,7 +1100,28 @@ internal static class Program {
                     if ( !fleet.QueueShip( FleetSimulation.Homeworld, HullBlueprint.Miner ) )
                         throw new InvalidOperationException( "View qualification could not place the civilian dock order." );
                 }
-                if ( result.Frames == 7 ) SelectTab( CommandTab.Research );
+                if ( result.Frames == 7 ) {
+                    yardInspector = -1;
+                    commandTab = CommandTab.Hidden;
+                    float scale = Math.Clamp( MathF.Min( viewport.Height / 500f, viewport.Width / 660f ), 0.8f, 2.5f );
+                    ClickWindow( new( (int)(40 * scale), (int)(114 * scale) ) );
+                    if ( selection.Count == 0 )
+                        throw new InvalidOperationException( "The Fleet Outliner did not select a fleet." );
+                    var (start, end) = (new Point( viewport.Width / 2, viewport.Height / 3 ),
+                        new Point( viewport.Width / 2 + 24, viewport.Height / 3 + 24 ));
+                    SendWindowMessage( window.Handle, LeftDownMessage, 1, EncodePoint( start ) );
+                    SendWindowMessage( window.Handle, MouseMoveMessage, 1, EncodePoint( end ) );
+                    SendWindowMessage( window.Handle, LeftUpMessage, 0, EncodePoint( end ) );
+                    if ( selection.Count != 0 )
+                        throw new InvalidOperationException( "World drag could not replace the Fleet Outliner selection." );
+                    SelectTab( CommandTab.Research );
+
+                    void ClickWindow( Point point ) {
+                        SendWindowMessage( window.Handle, LeftDownMessage, 1, EncodePoint( point ) );
+                        SendWindowMessage( window.Handle, LeftUpMessage, 0, EncodePoint( point ) );
+                    }
+                    static nint EncodePoint( Point point ) => (point.Y << 16) | (point.X & 0xffff);
+                }
                 if ( result.Frames == 8 ) { SelectTab( CommandTab.Hidden ); buildCatalog = true; }
                 if ( result.Frames == 9 ) {
                     buildCatalog = false;
@@ -772,9 +1129,11 @@ internal static class Program {
                     designer.Open( fleet, HullBlueprint.Frigate );
                 }
                 if ( result.Frames == 10 ) {
-                    if ( !fleet.BeginSurvey( new( fleet.FirstPlayerSquad( ) ), 3 ) )
+                    var scout = new FleetSelection( fleet.FirstPlayerSquad( ) );
+                    if ( !fleet.BeginSurvey( scout, 3 ) )
                         throw new InvalidOperationException( "View qualification could not dispatch the scout." );
-                    for ( int i = 0; i < 1800 && !fleet.HasMerchantOffer; ++i ) fleet.Step( );
+                    int scanWindow = fleet.RouteTicks( scout ) + fleet.Planet( 3 ).SurveyRequired + 2;
+                    for ( int i = 0; i < scanWindow && !fleet.HasMerchantOffer; ++i ) fleet.Step( );
                     if ( !fleet.HasMerchantOffer ) throw new InvalidOperationException( "View qualification did not reach the merchant offer." );
                     dispatch = fleet.DispatchCount - 1;
                     SelectTab( CommandTab.Events );
@@ -785,6 +1144,20 @@ internal static class Program {
                 }
                 if ( result.Frames == 13 ) {
                     galaxy = true;
+                    if ( pendingStories.FirstOrDefault( s => s.Id == "receiver-cache" ) is { } cache ) {
+                        var remote = campaign.System( FleetSimulation.Proxima );
+                        var scout = new ExpeditionHull( HullRole.Scout, default, 50, 0, 0, FleetStance.Passive, "SURVEYOR" );
+                        if ( campaign.OccupiedSystem( remote.SystemIndex ) is not null ||
+                             !remote.Receive( new( remote.SystemIndex, 0, [scout], default ), initial.Tick ) )
+                            throw new InvalidOperationException( "Proxima stockpile qualification could not establish the expedition." );
+                        var homeStores = (initial.Ore, initial.Energy, initial.Science);
+                        QueueCampaignBriefings();
+                        var dispatchOffer = briefings.Single( offer => offer.Text == cache.Briefing );
+                        dispatchOffer.Accept!();
+                        if ( new ResourceCost( remote.Ore, remote.Energy, remote.Science ) != cache.Accept.Stores ||
+                             homeStores != (initial.Ore, initial.Energy, initial.Science) )
+                            throw new InvalidOperationException( "The expedition cache must credit Proxima's stockpile only." );
+                    }
                     briefings.Enqueue( (new( "EXPEDITION ARRIVED", "PROXIMA / FLIGHT OPERATIONS",
                         "Receiver World is in sensor range.", ContentArt.Receiver, "FOCUS ARRIVAL", "KEEP CURRENT VIEW" ), null, null) );
                 }
@@ -792,6 +1165,7 @@ internal static class Program {
                     menu = null;
                     buildCatalog = true;
                     catalogLayer = SiteLayer.Surface;
+                    planet = FleetSimulation.Homeworld;
                     Rename( window, forceFleet: false );
                     if ( renameEditor is not { Modal: false, Visible: true } || paused )
                         throw new InvalidOperationException( "Rename qualification did not open a modeless editor with the simulation running." );
@@ -800,22 +1174,44 @@ internal static class Program {
                     if ( renameEditor is not { Visible: true } || paused )
                         throw new InvalidOperationException( "Rendering did not advance with the rename editor open." );
                     renameEditor.Close( );
+                    galaxy = false;
+                    briefings.Clear();
+                    buildCatalog = false;
+                    planet = 0;
+                    SetCameraFocus( fleet.Bodies[0].Center );
+                    zoom = .28f;
+                    paused = true;
                 }
             }
         } );
         if ( resizeTest && slotsUsed != 3 )
             throw new InvalidOperationException( "Resize qualification did not exercise both frame slots." );
-        if ( viewTest && (!sawGalaxy || systemsVisited != 5 || display.Active) )
+        if ( viewTest && (!sawGalaxy || !systemsVisited.SetEquals( [0, 2] ) || display.Active) )
             throw new InvalidOperationException( "View qualification did not exercise the galaxy, both systems, and fullscreen restoration." );
         return run;
 
-        Vector2 ClampCamera( Vector2 center ) => Vector2.Clamp( center, new( -fleet.NavigationRadius ), new( fleet.NavigationRadius ) );
+        Vector2 ClampCamera( Vector2 center ) => float.IsFinite( center.X ) && float.IsFinite( center.Y )
+            ? Vector2.Clamp( center, new( -fleet.NavigationRadius ), new( fleet.NavigationRadius ) )
+            : fleet.Bodies[FleetSimulation.Homeworld].Center;
+
+        float OverviewZoom() => fleet.Solar ? fleet.NavigationRadius / fleet.BoardRadius * .88f : fleet.Frontier ? 2.8f : 2.5f;
 
         void ResetCamera( ) {
-            zoom = fleet.Solar ? 0.64f : 0.85f;
+            zoom = fleet.Solar ? 0.38f : 0.85f;
             yaw = 0;
             tilt = DefaultTilt;
             cameraFocus = fleet.Solar ? fleet.Bodies[FleetSimulation.Homeworld].Center : default;
+            trackedBody = fleet.Solar ? FleetSimulation.Homeworld : -1;
+        }
+
+        void TrackBody( int body ) {
+            trackedBody = body;
+            cameraFocus = fleet.Bodies[body].Center;
+        }
+
+        void SetCameraFocus( Vector2 position ) {
+            trackedBody = -1;
+            cameraFocus = ClampCamera( position );
         }
 
         static SelectionMode ModifierSelection( ) {
@@ -827,13 +1223,14 @@ internal static class Program {
         void ToggleGalaxy( Form window ) {
             designer.Release( default );
             galaxy = !galaxy;
+            galaxyRoster = galaxy && fleet.CyanCount > 0;
             routeNotice = null;
             menu = null;
             panStart = dragStart = null;
             window.Capture = false;
         }
 
-        void ChangeSpeed( bool increase ) => speed = increase ? Math.Min( 4, speed * 2 ) : Math.Max( 1, speed / 2 );
+        void ChangeSpeed( bool increase ) => speed = FleetClock.Change( speed, increase );
 
         void QueueWing( ) {
             if ( fleet.QueueWing( ) ) {
@@ -854,6 +1251,13 @@ internal static class Program {
         }
 
         void QueueCampaignBriefings( ) {
+            for ( int i = 0; i < pendingStories.Count; ) {
+                var story = pendingStories[i];
+                var origin = campaign.OccupiedSystem( story.SystemIndex );
+                if ( origin is null || !origin.MeetsTrigger( story ) ) { ++i; continue; }
+                pendingStories.RemoveAt( i );
+                briefings.Enqueue( (story.Briefing, () => origin.ClaimDispatch( story.Accept ), () => origin.ClaimDispatch( story.Decline )) );
+            }
             while ( campaign.TryTakeEvent( out var entry ) ) {
                 var system = entry.System;
                 switch ( entry.Kind ) {
@@ -863,14 +1267,15 @@ internal static class Program {
                             "OPEN RESEARCH", "DISMISS", tech.Benefit ), () => {
                             if ( fleet != system ) Enter( system.SystemIndex );
                             galaxy = false;
-                            researchBranch = tech.Branch;
+                            researchBranch = ResearchCatalog.Current.PageOf( entry.Technology );
+                            researchDesk.Select( entry.Technology );
                             yardInspector = -1;
                             commandTab = CommandTab.Research;
                         }, null) );
                         audio.Cue( "launch" );
                         break;
                     case CampaignEventKind.EconomicCharter:
-                        briefings.Enqueue( (new( "THE FRONTIER CHARTER", "SOL AUTHORITY / FIRST SURVEY",
+                        briefings.Enqueue( (new( "THE FRONTIER CHARTER", $"{system.PlayerFaction.Name} / FIRST SURVEY",
                             "The first confirmed deposit has unlocked public investment. Set a permanent priority for Sol: extraction grants for new operations or long-term power contracts.",
                             ContentArt.Mine, "FUND EXTRACTION", "FUND POWER",
                             "+1 ORE PER ACTIVE EXTRACTION SITE EACH CYCLE", "+1 ENERGY EACH CYCLE IN SOL",
@@ -881,9 +1286,9 @@ internal static class Program {
                             }) );
                         break;
                     case CampaignEventKind.Distress:
-                        briefings.Enqueue( (new( "THE FIRST PIRATES", "SOL AUTHORITY / EXTRACTION DISPATCH",
+                        briefings.Enqueue( (new( "THE FIRST PIRATES", $"{system.PlayerFaction.Name} / EXTRACTION DISPATCH",
                             "Unregistered hulls are following our outbound ore shipments. Their transponders went dark as the first convoy left. " +
-                            "The Ceres Compact offers a patrol to hold them off while our own escorts get ready.",
+                            "The Ceres Combine offers a patrol to hold them off while our own escorts get ready.",
                             ContentArt.Corvette, "FUND CERES PATROL", "PREPARE OUR OWN FLEET",
                             "15 ENERGY / +60 SECONDS AT 1X / ONE FEWER RAIDER", "KEEP OUR ENERGY / PREPARE FOR THE FULL RAID",
                             EscapeDismisses: false ), () => Notify( system.FundPatrol( )
@@ -921,25 +1326,32 @@ internal static class Program {
 
         GalaxyRoute RouteView( ) {
             int source = fleet.SystemIndex;
+            if ( source == 0 && routeTarget == FleetSimulation.Proxima && campaign.InTransit is { } expedition ) {
+                float progress = (float)(initial.Tick - campaign.FirstDepartureTick) / (expedition.ArrivalTick - campaign.FirstDepartureTick);
+                return new( 0, routeTarget, $"FIRST CROSSING / {expedition.Hulls.Length} HULLS IN TRANSIT",
+                    null, 0, InTransit: true, Progress: progress );
+            }
             foreach ( var flight in campaign.Transfers ) {
                 if ( flight.Source != source || flight.Destination != routeTarget || selection.Count != 0 ) continue;
                 int remaining = Math.Max( 0, flight.Arrival - initial.Tick );
-                return new( source, routeTarget, $"IN TRANSIT / {flight.Hulls.Length} HULLS / {Math.Ceiling( remaining * FleetSimulation.StepSeconds * 4 / speed )} SEC",
+                return new( source, routeTarget, $"IN TRANSIT / {flight.Hulls.Length} HULLS / {Math.Ceiling( remaining * FleetSimulation.StepSeconds / speed )} SEC",
                     null, 0, InTransit: true, Progress: (float)(initial.Tick - flight.Departure) / (flight.Arrival - flight.Departure) );
             }
             var block = campaign.TravelBlock( fleet, routeTarget, selection.Ships, survey: false );
             bool canSurvey = block is null && campaign.TravelBlock( fleet, routeTarget, selection.Ships, survey: true ) is null;
             string status = routeNotice ?? (campaign.Arrived ? "SELECT A FLEET / RIGHT CLICK A DESTINATION TO MOVE"
+                : fleet.FrontierProgression ? "FIRST CROSSING / EQUIP A SCOUT AND CONSTRUCTOR FOR PROXIMA"
                 : "FIRST CROSSING / SEND ONE IDLE SCOUT FROM SOL TO PROXIMA");
-            string? quote = source == routeTarget ? null : $"TRANSIT / {(int)Math.Ceiling( campaign.FlightTicks( source, routeTarget ) * FleetSimulation.StepSeconds * 4 / speed )} SEC";
-            return new( source, routeTarget, status, block, selection.Count, CanSurvey: canSurvey, Quote: quote );
+            string? quote = source == routeTarget ? null : $"TRANSIT / {(int)Math.Ceiling( campaign.FlightTicks( source, routeTarget ) * FleetSimulation.StepSeconds / speed )} SEC";
+            return new( source, routeTarget, status, block, selection.Count, CanSurvey: canSurvey, Quote: quote,
+                RallyCrew: fleet.FrontierProgression && !campaign.Arrived && source == 0 && routeTarget == FleetSimulation.Proxima );
         }
 
         void GalaxyCommand( Form window, Vector2 pointer, bool rightClick, int clicks ) {
             selection.Prune( fleet );
             UpdateGalaxyHulls( );
             var hit = FleetHud.HitGalaxy( pointer, viewport.Width, viewport.Height, fleet.Frontier, galaxyHulls, RouteView( ),
-                galaxyRoster ? fleet : null, rosterPage );
+                galaxyRoster ? fleet : null, rosterPage, galaxyView );
             if ( rightClick && hit.Action != GalaxyAction.Star ) return;
             switch ( hit.Action ) {
                 case GalaxyAction.Return: ToggleGalaxy( window ); break;
@@ -967,6 +1379,12 @@ internal static class Program {
                 case GalaxyAction.RosterPrevious: --rosterPage; break;
                 case GalaxyAction.RosterNext: ++rosterPage; break;
                 case GalaxyAction.FindScout:
+                    if ( fleet.FrontierProgression && !campaign.Arrived && fleet.SystemIndex == 0 ) {
+                        routeNotice = fleet.SelectExpedition( selection ) > 0 ? "EXPEDITION CREW SELECTED" :
+                            fleet.RallyExpedition() ? "CREW ORDERED TO EARTH ORBIT / TRY AGAIN AFTER ARRIVAL" :
+                            "NEEDS AN IDLE SCOUT AND CONSTRUCTOR IN EARTH ORBIT";
+                        break;
+                    }
                     int scout = -1;
                     for ( int i = 0; i < fleet.Count; ++i )
                         if ( fleet.TravelReady( i ) && fleet.Role( fleet.SquadronOf( i ) ) == HullRole.Scout ) { scout = i; break; }
@@ -1101,6 +1519,19 @@ internal static class Program {
             }
         }
 
+        void RenameFaction( Form window ) {
+            if ( renameEditor is { } existing ) { existing.Activate(); return; }
+            var editor = CreateNameEditor( "faction", factionName, name => {
+                if ( string.IsNullOrWhiteSpace( name ) ) return;
+                factionName = name.Trim();
+                campaign.PlayerFaction.Name = factionName;
+                if ( !flow.IsTitle ) Notify( $"FACTION / {factionName}" );
+            } );
+            renameEditor = editor;
+            editor.FormClosed += ( _, _ ) => renameEditor = null;
+            editor.Show( window );
+        }
+
         void Rename( Form window, bool forceFleet, int outlinerSquad = -1 ) {
             if ( renameEditor is { } existing ) {
                 existing.Activate( );
@@ -1184,6 +1615,13 @@ internal static class Program {
                     PlanetAction.Mine => body > 0 && fleet.Colony( body ).Population > 0 ? PlanetFacility.Mine : PlanetFacility.Skimmer,
                     PlanetAction.Lab => PlanetFacility.Lab, _ => PlanetFacility.Depot
                 } );
+                return;
+            }
+            if ( action == PlanetAction.Flyby ) {
+                if ( selection.Count == 0 ) { Notify( "SELECT SHIPS FOR A FLYBY" ); return; }
+                if ( !selection.Issue( fleet, default, flyby: body ) ) { Notify( "NO FLYBY SOLUTION WITH CURRENT DRIVE" ); return; }
+                Notify( $"VIA {fleet.BodyName( body )} TO {fleet.BodyName( fleet.FlybyDestination( body ) )}" );
+                audio.Cue( "order" );
                 return;
             }
             if ( action == PlanetAction.Orbit ) {

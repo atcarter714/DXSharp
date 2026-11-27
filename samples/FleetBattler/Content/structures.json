@@ -140,6 +140,20 @@
       "upgradeOre": 22,
       "upgradeEnergy": 8,
       "upgradeTicks": 380
+    },
+    {
+      "id": "Soletta",
+      "name": "Soletta mirror array",
+      "layer": "Orbit",
+      "ore": 280,
+      "energy": 180,
+      "ticks": 10800,
+      "output": 32,
+      "upgradeBonus": 8,
+      "requires": "frontier.soletta",
+      "upgradeOre": 140,
+      "upgradeEnergy": 95,
+      "upgradeTicks": 5400
     }
   ]
 }

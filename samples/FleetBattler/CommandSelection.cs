@@ -101,7 +101,7 @@ internal sealed class CommandSelection {
         return result;
     }
 
-    internal bool Issue( FleetSimulation fleet, Vector2 destination, int orbit = -1, int hostile = -1 ) {
+    internal bool Issue( FleetSimulation fleet, Vector2 destination, int orbit = -1, int hostile = -1, int flyby = -1 ) {
         if ( Count == 0 || fleet.Lost ) return false;
         bool issued = false;
         Span<int> selectedPerSquad = stackalloc int[fleet.SquadCount];
@@ -128,6 +128,7 @@ internal sealed class CommandSelection {
 
         void Order( FleetSelection selection, Vector2 center ) {
             if ( hostile >= 0 ) { issued |= fleet.Attack( selection, hostile ); }
+            else if ( flyby >= 0 ) issued |= fleet.FlyPast( selection, flyby );
             else if ( orbit >= 0 ) issued |= fleet.Orbit( selection, orbit );
             else {
                 var offset = center - centroid;
