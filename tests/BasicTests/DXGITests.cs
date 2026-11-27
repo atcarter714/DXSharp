@@ -89,8 +89,8 @@ internal class DXGITests
 
 		// Check equality operator
 		bool all_the_same = r1 == r2 && r3 == r4 && r1 == r3;
-		Assert.That( all_the_same,
-			"Rationals intended to be 60/1 are not equal", new[] { r1, r2, r3, r4 } );
+		Assert.That( all_the_same, Is.True,
+			$"Expected all four rationals to equal 60/1. Got {r1}, {r2}, {r3}, {r4}." );
 
 		// Check basic rational reduction:
 		r1 = (120, 2);
