@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -36,6 +37,10 @@ internal static class FleetContent {
             }
         }
         var merged = new JsonArray( records.Values.Select( row => row.DeepClone( ) ).ToArray( ) );
-        return JsonSerializer.SerializeToDocument( new JsonObject { ["version"] = 1, [table] = merged } );
+        // Write through Utf8JsonWriter: JsonSerializer needs reflection metadata that NativeAOT disables.
+        var buffer = new ArrayBufferWriter<byte>( );
+        using ( var writer = new Utf8JsonWriter( buffer ) )
+            new JsonObject { ["version"] = 1, [table] = merged }.WriteTo( writer );
+        return JsonDocument.Parse( buffer.WrittenMemory );
     }
 }
