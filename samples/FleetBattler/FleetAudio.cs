@@ -14,7 +14,9 @@ internal sealed class FleetAudio : IDisposable {
     private string? _lastPlayed, _playingTrack;
     private bool _muted;
     private int _playRequest;
-    private long _alertUntil;
+    private long _alertUntil, _retryAt, _lastProgress;
+    private TimeSpan _position;
+    private bool _preparing;
     private readonly HashSet<string> _badTracks = new( StringComparer.OrdinalIgnoreCase );
 
     internal FleetAudio( bool muted ) {
@@ -40,14 +42,38 @@ internal sealed class FleetAudio : IDisposable {
         }
     }
 
-    internal void SetSituation( int system, bool galaxy, bool contested, bool victory ) {
+    internal void SetSituation( int system, bool galaxy, bool contested, bool victory, bool title = false ) {
         var previous = _director.Situation;
-        bool startVictory = _director.Update( system, galaxy, contested, victory );
+        bool startVictory = _director.Update( system, galaxy, contested, victory, title );
         if ( _muted ) _director.FinishVictory( );
         bool continuing = _initialized && _rotations[(int)_director.Situation] == _rotations[(int)previous];
         _initialized = true;
-        if ( !_available || _muted || continuing && !startVictory ) return;
-        PlayNext( );
+        if ( !_available || _muted ) return;
+        if ( !continuing || startVictory ) { PlayNext(); return; }
+        if ( _preparing ) return;
+        long now = Environment.TickCount64;
+        if ( _playingTrack is null ) {
+            if ( now >= _retryAt ) PlayNext();
+            return;
+        }
+        var position = _music.Position;
+        if ( position > _position ) {
+            _position = position;
+            _lastProgress = now;
+        } else if ( now - _lastProgress >= 8000 ) {
+            if ( _music.NaturalDuration.HasTimeSpan && _music.NaturalDuration.TimeSpan - position < TimeSpan.FromSeconds( 1 ) )
+                _director.FinishVictory();
+            else if ( _badTracks.Add( _playingTrack ) )
+                Console.WriteLine( $"Fleet music stopped advancing: {_playingTrack}" );
+            PlayNext();
+        }
+    }
+
+    internal bool Muted => _muted;
+    internal TimeSpan MusicPosition => _music.Position;
+    internal int MusicPercent => (int)Math.Round( _music.Volume * 100 );
+    internal void AdjustMusic( int amount ) {
+        if ( _available ) _music.Volume = Math.Clamp( (MusicPercent + amount) / 100d, 0, 1 );
     }
 
     internal void Toggle( ) {
@@ -55,6 +81,7 @@ internal sealed class FleetAudio : IDisposable {
         _muted = !_muted;
         if ( _muted ) {
             ++_playRequest;
+            _preparing = false;
             _director.FinishVictory( );
             CloseMusic( );
             _effect.Close( );
@@ -92,6 +119,7 @@ internal sealed class FleetAudio : IDisposable {
     private async void PlayNext( ) {
         if ( _muted || !_available || !_initialized ) return;
         int request = ++_playRequest;
+        _preparing = true;
         CloseMusic( );
         var situation = _director.Situation;
         var rotation = _rotations[(int)situation];
@@ -116,6 +144,9 @@ internal sealed class FleetAudio : IDisposable {
                 _lastPlayed = choice;
                 _music.Open( new Uri( file ) );
                 _music.Play( );
+                _position = TimeSpan.Zero;
+                _lastProgress = Environment.TickCount64;
+                _preparing = false;
                 return;
             } catch ( Exception error ) when ( error is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or NotSupportedException or ArgumentException ) {
                 if ( request != _playRequest ) return;
@@ -123,6 +154,9 @@ internal sealed class FleetAudio : IDisposable {
                 if ( _badTracks.Add( choice ) ) Console.WriteLine( $"Fleet music track {choice}: {error.Message}" );
             }
         }
+        _preparing = false;
+        _retryAt = Environment.TickCount64 + 5000;
+        if ( !victory ) _badTracks.Clear();
         if ( victory ) {
             _director.FinishVictory( );
             PlayNext( );

@@ -310,8 +310,8 @@ internal static unsafe class MeshQualification {
         for ( int i = ComputeTraffic.PrimaryBodies; i < bodies.Length; ++i ) {
             var rock = bodies[i];
             float lane = new Vector2( rock.X, rock.Y ).Length( ) / fleet.BoardRadius;
-            if ( rock.Z is < 0.09f or > 0.62f || !float.IsFinite( lane ) || lane < inner - 1e-5f || lane > outer + 1e-5f )
-                throw new InvalidOperationException( $"Debris {i} left the main asteroid belt." );
+            if ( rock.Z is < 0.05f or > 0.31f || !float.IsFinite( lane ) || lane < inner - 1e-5f || lane > outer + 1e-5f )
+                throw new InvalidOperationException( $"Debris {i} has radius {rock.Z} and belt distance {lane} outside the configured ranges." );
         }
         Span<Vector4> earlier = stackalloc Vector4[1];
         priorRock.Read<Vector4>( earlier );
@@ -334,13 +334,13 @@ internal static unsafe class MeshQualification {
         using var queue = device.CreateCommandQueue( );
         using var allocator = device.CreateCommandAllocator( );
         using var commands = device.CreateCommandList( allocator );
-        using var traffic = new ComputeTraffic( device, compiler, ComputeTraffic.DefaultAgents, ComputeTraffic.DefaultDebris );
+        using var traffic = new ComputeTraffic( device, compiler, 32, ComputeTraffic.DefaultDebris );
         using var corvettes = Upload( "Corvette.gltf", 0.05f );
         using var scouts = Upload( "SurveyScout.gltf", 0.083f );
         using var freighters = Upload( "Freighter.gltf", 0.05f );
         using var relay = Upload( "MiningRelay.gltf", 0.12f );
         using var fleetRoot = device.CreateTextureRootSignature( FleetDraw.MaterialConstants, linearWrap: true );
-        using var thrustRoot = device.CreateGraphicsConstantsRootSignature( 20 );
+        using var thrustRoot = device.CreateGraphicsConstantsRootSignature( FleetDraw.ThrusterConstants );
         using var thrust = FleetDraw.CreateThrusters( device, thrustRoot, compiler );
         using var battleRoot = device.CreateGraphicsConstantsRootSignature( BattleDraw.ConstantCount );
         using var effects = BattleDraw.CreateEffects( device, battleRoot, compiler );
@@ -390,7 +390,7 @@ internal static unsafe class MeshQualification {
         traffic.RecordDebris( commands, matrix, (int)width, (int)height, halfHeight );
         traffic.RecordFreighters( commands, fleetPipeline, freighters, matrix, height / (2 * halfHeight) );
         traffic.Finish( commands );
-        FleetDraw.RecordThrusters( commands, thrust, instances, active, matrix, (float)(fleet.Tick * FleetSimulation.StepSeconds) );
+        FleetDraw.RecordThrusters( commands, thrust, instances, active, matrix, (float)(fleet.Tick * FleetSimulation.StepSeconds), 0, [new( new( .45f, 0, 1.2f ), Vector3.UnitZ, .12f )] );
         FleetDraw.Record( commands, fleetPipeline, relay, instances, 1, matrix, active );
         FleetDraw.Record( commands, fleetPipeline, corvettes, instances, corvetteCount, matrix );
         FleetDraw.Record( commands, fleetPipeline, scouts, instances, active - corvetteCount, matrix, corvetteCount );

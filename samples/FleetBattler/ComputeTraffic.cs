@@ -7,7 +7,7 @@ using DXSharp.Shaders;
 namespace FleetBattler;
 
 internal sealed class ComputeTraffic : IDisposable {
-    internal const int DefaultAgents = 32, DefaultDebris = 256;
+    internal const int DefaultDebris = 36;
     internal const int MaxAgents = 65_536, MaxDebris = 16_384;
     private const uint GroupSize = 64, DetailedFreighterLimit = 1024;
     // Steering needs the primary worlds only. Keep the root constants within the D3D12 limit.
@@ -17,6 +17,14 @@ internal sealed class ComputeTraffic : IDisposable {
     private readonly GpuResource? _agents, _instances, _bodies;
     private readonly int _bodyCount;
     private readonly GpuResource[] _jobBuffers;
+    private readonly PipelineState? _summarize;
+    private readonly GpuResource? _totals;
+    private readonly GpuResource?[] _readbacks = new GpuResource?[2];
+    private readonly int[] _pendingSystem = [-1, -1];
+    private readonly Vector4[] _partials;
+    private int _lastSample;
+    internal float? MeanSpeed { get; private set; }
+    internal Vector2 TrafficCenter { get; private set; }
     private int _lastSystem = -1;
 
     private const string DebrisShader = """
@@ -50,9 +58,10 @@ internal sealed class ComputeTraffic : IDisposable {
         ShipCount = (uint)ships;
         DebrisCount = (uint)debris;
         _bodyCount = PrimaryBodies + debris;
+        _partials = new Vector4[Math.Max( 1, (ships + 63) / 64 )];
         try {
             string compute = File.ReadAllText( Path.Combine( AppContext.BaseDirectory, "Shaders", "Traffic.hlsl" ) );
-            using var computeRoot = device.CreateRootSignature( 3, OrbitParameters + 4 * PrimaryBodies );
+            using var computeRoot = device.CreateRootSignature( 4, OrbitParameters + 4 * PrimaryBodies );
             _orbits = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "OrbitField", "cs_6_0" ) );
             _steering = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "Steering", "cs_6_0" ) );
             using var debrisRoot = device.CreateGraphicsBufferRootSignature( 20 );
@@ -69,7 +78,11 @@ internal sealed class ComputeTraffic : IDisposable {
             _agents = device.CreateBuffer( (ulong)Math.Max( ships, 1 ) * 16, unorderedAccess: true );
             _instances = device.CreateBuffer( (ulong)Math.Max( ships, 1 ) * FleetDraw.InstanceStride, unorderedAccess: true );
             _bodies = device.CreateBuffer( (ulong)_bodyCount * 16, unorderedAccess: true );
-            _jobBuffers = [_agents, _instances, _bodies];
+            _summarize = device.CreateComputePipeline( computeRoot, compiler.Compile( compute, "Summarize", "cs_6_0" ) );
+            ulong bytes = (ulong)_partials.Length * 16;
+            _totals = device.CreateBuffer( bytes, unorderedAccess: true );
+            for ( int i = 0; i < _readbacks.Length; ++i ) _readbacks[i] = device.CreateBuffer( bytes, BufferMemory.Readback );
+            _jobBuffers = [_agents, _instances, _bodies, _totals];
         } catch {
             Dispose( );
             throw;
@@ -81,13 +94,13 @@ internal sealed class ComputeTraffic : IDisposable {
     internal GpuResource Instances => _instances!;
     internal GpuResource Bodies => _bodies!;
 
-    internal void RecordCompute( GraphicsCommandList commands, FleetSimulation fleet, float elapsed, float interpolation = 1 ) {
+    internal void RecordCompute( GraphicsCommandList commands, FleetSimulation fleet, float elapsed, float interpolation = 1, int retiredSlot = -1 ) {
         Span<uint> constants = stackalloc uint[OrbitParameters + 4 * PrimaryBodies];
         constants[0] = ShipCount;
         constants[1] = (uint)_bodyCount;
         constants[2] = _lastSystem == fleet.SystemIndex ? 0u : 1u;
         constants[3] = BitConverter.SingleToUInt32Bits( Math.Clamp( elapsed, 0, 0.05f ) );
-        constants[4] = BitConverter.SingleToUInt32Bits( RenderTime( fleet.Tick, interpolation ) );
+        constants[4] = BitConverter.SingleToUInt32Bits( RenderTime( fleet.WorldTick, interpolation ) );
         constants[5] = BitConverter.SingleToUInt32Bits( fleet.BoardRadius );
         constants[6] = (uint)fleet.SystemIndex;
         int count = Math.Min( PrimaryBodies, fleet.Bodies.Length );
@@ -95,7 +108,7 @@ internal sealed class ComputeTraffic : IDisposable {
         var (inner, outer) = Belt( fleet.Solar );
         constants[8] = BitConverter.SingleToUInt32Bits( inner );
         constants[9] = BitConverter.SingleToUInt32Bits( outer );
-        constants[10] = 0;
+        constants[10] = BitConverter.SingleToUInt32Bits( fleet.Solar ? SolarCatalog.Spacing : 0 );
         constants[11] = 0;
         var bodyConstants = MemoryMarshal.Cast<uint, Vector4>( constants[OrbitParameters..] );
         bodyConstants.Clear( );
@@ -107,14 +120,45 @@ internal sealed class ComputeTraffic : IDisposable {
         commands.Transition( _agents!, ResourceState.Common, ResourceState.UnorderedAccess );
         commands.Transition( Instances, ResourceState.Common, ResourceState.UnorderedAccess );
         commands.Transition( Bodies, ResourceState.Common, ResourceState.UnorderedAccess );
+        commands.Transition( _totals!, ResourceState.Common, ResourceState.UnorderedAccess );
         var jobs = new ComputeJobBatch( commands, _jobBuffers );
         const uint agents = 1 << 0, instances = 1 << 1, bodies = 1 << 2;
         jobs.Dispatch( _orbits!, (uint)_bodyCount, GroupSize, 0, bodies, constants );
         jobs.Dispatch( _steering!, ShipCount, GroupSize, agents | bodies, agents | instances, constants );
+        if ( _lastSystem != fleet.SystemIndex ) MeanSpeed = null;
+        if ( retiredSlot >= 0 && ShipCount > 0 ) {
+            var staging = _readbacks[retiredSlot]!;
+            if ( _pendingSystem[retiredSlot] == fleet.SystemIndex ) {
+                staging.Read<Vector4>( _partials );
+                Vector4 sum = default;
+                foreach ( var partial in _partials ) sum += partial;
+                if ( sum.W == ShipCount ) {
+                    MeanSpeed = sum.Z / sum.W;
+                    TrafficCenter = new Vector2( sum.X, sum.Y ) / sum.W;
+                }
+            }
+            _pendingSystem[retiredSlot] = -1;
+            if ( _lastSystem != fleet.SystemIndex || fleet.Tick - _lastSample >= 30 ) {
+                jobs.Dispatch( _summarize!, ShipCount, GroupSize, agents, 8, constants );
+                commands.Transition( _totals!, ResourceState.UnorderedAccess, ResourceState.CopySource );
+                commands.CopyBuffer( _totals!, staging, staging.SizeInBytes );
+                commands.Transition( _totals!, ResourceState.CopySource, ResourceState.UnorderedAccess );
+                _pendingSystem[retiredSlot] = fleet.SystemIndex;
+                _lastSample = fleet.Tick;
+            }
+        }
+        commands.Transition( _totals!, ResourceState.UnorderedAccess, ResourceState.Common );
         commands.Transition( _agents!, ResourceState.UnorderedAccess, ResourceState.Common );
         commands.Transition( Instances, ResourceState.UnorderedAccess, ResourceState.VertexAndConstantBuffer );
         commands.Transition( Bodies, ResourceState.UnorderedAccess, ResourceState.NonPixelShaderResource );
         _lastSystem = fleet.SystemIndex;
+    }
+
+    internal void Reset() {
+        _lastSystem = -1;
+        Array.Fill( _pendingSystem, -1 );
+        MeanSpeed = null;
+        TrafficCenter = default;
     }
 
     internal static float RenderTime( int tick, float interpolation ) =>
@@ -136,10 +180,10 @@ internal sealed class ComputeTraffic : IDisposable {
     }
 
     internal void RecordFreighters( GraphicsCommandList commands, PipelineState materialPipeline, StaticMeshSet mesh,
-        Matrix4x4 viewProjection, float pixelsPerUnit ) {
+        Matrix4x4 viewProjection, float pixelsPerUnit, Vector2? star = null ) {
         if ( ShipCount == 0 ) return;
         if ( ShipCount <= DetailedFreighterLimit && pixelsPerUnit >= 2.2f ) {
-            FleetDraw.Record( commands, materialPipeline, mesh, Instances, ShipCount, viewProjection );
+            FleetDraw.Record( commands, materialPipeline, mesh, Instances, ShipCount, viewProjection, star: star );
             return;
         }
         ReadOnlySpan<Matrix4x4> constants = [viewProjection];
@@ -155,6 +199,9 @@ internal sealed class ComputeTraffic : IDisposable {
     }
 
     public void Dispose( ) {
+        foreach ( var buffer in _readbacks ) buffer?.Dispose( );
+        _totals?.Dispose( );
+        _summarize?.Dispose( );
         _bodies?.Dispose( );
         _instances?.Dispose( );
         _agents?.Dispose( );

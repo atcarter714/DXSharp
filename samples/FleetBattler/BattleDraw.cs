@@ -107,7 +107,18 @@ internal static class BattleDraw {
                 clip(flare*(1-input.style.x)-0.10);
                 return float4(lerp(faction,float3(1,0.92,0.67),core)*flare*(1-input.style.x),1);
             }
-            if (input.style.w > 0.5) {
+            if (input.style.w == 2) {
+                float width = exp(-abs(input.uv.y)*3.7);
+                float wave = .44 + .56*pow(.5+.5*cos(input.uv.x*34-input.style.x*13),3);
+                clip(width*wave-.16);
+                return float4(float3(.51,.64,.98)*wave*width*(1-input.style.x*.66),1);
+            }
+            if (input.style.w == 3) {
+                float front = 1-smoothstep(.08,.28,abs(input.uv.x-input.style.x));
+                clip(front*(1-abs(input.uv.y))-.18);
+                return float4(float3(1,.30,.07)*front,1);
+            }
+            if (input.style.w == 1) {
                 float streak = 1 - smoothstep(0.03,0.14,abs(input.uv.x - saturate(input.style.x * 1.6)));
                 clip(streak * (1 - abs(input.uv.y)) - 0.12);
                 return float4(lerp(faction,float3(1,0.87,0.38),0.8)*streak,1);
@@ -199,14 +210,16 @@ internal static class BattleDraw {
         }
     }
 
-    internal static int FillSolarTracks( FleetSimulation fleet, Span<BattleEffect> output ) {
+    internal static int FillSolarTracks( FleetSimulation fleet, Span<BattleEffect> output, float interpolation = 1 ) {
         if ( !fleet.Solar ) return 0;
         float scale = fleet.BoardRadius;
         int next = 0;
         for ( int i = 0; i < SolarTracks.Length; i += OrbitSegments + 1 ) {
+            int body = CelestialSystem.FrontierBodyCount + i / (OrbitSegments + 1);
+            var origin = body < CelestialSystem.BodyCount ? fleet.VisualBody( SolarCatalog.Get( body ).Parent, interpolation ).Center : Vector2.Zero;
             for ( int j = 0; j < OrbitSegments; ++j ) {
-                var from = SolarTracks[i + j] * scale;
-                var to = SolarTracks[i + j + 1] * scale;
+                var from = origin + SolarTracks[i + j] * scale;
+                var to = origin + SolarTracks[i + j + 1] * scale;
                 output[next++] = new( new( from.X, from.Y, to.X, to.Y ), new( 0, 0, 5, 0 ) );
             }
         }

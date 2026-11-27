@@ -2,13 +2,15 @@ using System.Numerics;
 
 namespace FleetBattler;
 
-internal enum DesignerControl { None, Close, Hull, Slot, Module, Save, Reset }
+internal enum DesignerControl { None, Close, Hull, Slot, Module, Save, Reset, NextPage }
 internal readonly record struct DesignerHit( DesignerControl Control, int Index = 0 );
 
 internal sealed class ShipDesigner {
     internal HullBlueprint Hull { get; private set; } = HullBlueprint.Corvette;
     internal ShipDesign Draft { get; private set; }
     internal ModuleSlot Slot { get; private set; }
+    internal const int PageSize = 4;
+    internal int Page { get; private set; }
     internal int Option { get; private set; } = -1;
     internal string Message { get; private set; } = "SELECT OR DRAG A MODULE";
     internal bool Dragging { get; private set; }
@@ -17,6 +19,7 @@ internal sealed class ShipDesigner {
         Hull = hull;
         Draft = fleet.Blueprint( hull );
         Slot = ModuleSlot.Weapon;
+        Page = 0;
         Option = -1;
         Dragging = false;
         Message = "SELECT OR DRAG A MODULE";
@@ -24,10 +27,13 @@ internal sealed class ShipDesigner {
 
     internal void Click( FleetSimulation fleet, DesignerHit hit ) {
         switch ( hit.Control ) {
+            case DesignerControl.NextPage:
+                Page = (Page + 1) % ((GameCatalog.Options( Slot ).Length + PageSize - 1) / PageSize);
+                Option = -1; Dragging = false; break;
             case DesignerControl.Hull: Open( fleet, (HullBlueprint)hit.Index ); break;
             case DesignerControl.Slot:
                 if ( Option >= 0 && Slot == (ModuleSlot)hit.Index ) Drop( (ModuleSlot)hit.Index );
-                else { Slot = (ModuleSlot)hit.Index; Option = -1; Message = "SELECT OR DRAG A MODULE"; }
+                else { Slot = (ModuleSlot)hit.Index; Page = 0; Option = -1; Message = "SELECT OR DRAG A MODULE"; }
                 break;
             case DesignerControl.Module:
                 var module = GameCatalog.Module( Slot, hit.Index );
@@ -51,7 +57,8 @@ internal sealed class ShipDesigner {
     internal void Release( DesignerHit target ) {
         if ( !Dragging ) return;
         Dragging = false;
-        if ( target.Control == DesignerControl.Slot ) Drop( (ModuleSlot)target.Index );
+        if ( target.Control == DesignerControl.Module && target.Index == Option ) Drop( Slot );
+        else if ( target.Control == DesignerControl.Slot ) Drop( (ModuleSlot)target.Index );
     }
 
     private void Drop( ModuleSlot target ) {
@@ -78,6 +85,13 @@ internal sealed partial class FleetHud {
         float width = Math.Min( 920, layout.Width - 28 );
         float height = Math.Min( 550, layout.Height - 75 );
         return new( (layout.Width - width) * 0.5f, 60, width, height );
+    }
+
+    internal static Vector4 DesignerPreview( int width, int height ) {
+        float scale = HudScale( width, height );
+        var a = DesignerArea( new( width / scale, height / scale ) );
+        float h = a.SlotY( 0 ) - a.Y - 61;
+        return h >= 26 && a.Height >= 285 ? new Vector4( a.FitX, a.Y + 34, a.FitWidth, h ) * scale : default;
     }
 
     private void DrawDesigner( Layout layout, FleetSimulation fleet, ShipDesigner designer, Vector2? pointer ) {
@@ -108,7 +122,7 @@ internal sealed partial class FleetHud {
 
         float previewHeight = a.SlotY( 0 ) - y - 61;
         if ( previewHeight >= 26 ) {
-            Art( HullArt( hull.Role ), a.FitX, y + 34, a.FitWidth, previewHeight, crop: true );
+            Rect( a.FitX, y + 34, a.FitWidth, previewHeight, Well );
             Rect( a.FitX, y + 34 + previewHeight, a.FitWidth, 17, Well );
             FitText( hull.Name, a.FitX + 5, y + 38 + previewHeight, a.FitWidth - 10, 1, SpaceDraw.Cyan );
         }
@@ -138,17 +152,28 @@ internal sealed partial class FleetHud {
         Button( stat, a.ModuleY - 56, a.StatsWidth - 3, "RESET FIT", true );
 
         var options = GameCatalog.Options( designer.Slot );
-        float cardWidth = a.OptionWidth( options.Length );
-        for ( int i = 0; i < options.Length; ++i ) {
-            var option = options[i];
+        int offset = designer.Page * ShipDesigner.PageSize;
+        int visible = Math.Min( ShipDesigner.PageSize, options.Length - offset );
+        float cardWidth = a.OptionWidth( visible );
+        for ( int i = 0; i < visible; ++i ) {
+            var option = options[offset + i];
             bool unlocked = option.Requirement is not { } requirement || fleet.Researched( requirement );
             float left = x + 12 + i * (cardWidth + 5);
-            Rect( left, a.ModuleY, cardWidth, 43, designer.Option == i ? Active : Well );
+            Rect( left, a.ModuleY, cardWidth, 43, designer.Option == offset + i ? Active : Well );
             FitText( option.Name, left + 4, a.ModuleY + 6, cardWidth - 8, 1, unlocked ? White : Disabled );
             if ( unlocked ) {
-                FitText( option.Supply > 0 ? $"+{option.Supply} POWER" : $"{option.Draw} POWER", left + 4, a.ModuleY + 22, cardWidth - 8, 0.9f, EnergyTint );
+                string performance = designer.Slot switch {
+                    ModuleSlot.Weapon => $"{option.Damage} DMG / {option.Range} RANGE",
+                    ModuleSlot.Armor or ModuleSlot.Shield => $"{option.Health} HP",
+                    ModuleSlot.Power => $"{option.Supply} POWER SUPPLY",
+                    ModuleSlot.Drive => $"{option.Handling:P0} HANDLING",
+                    _ => $"{option.Range:+0;-0;0} RANGE / {option.Reload:+0;-0;0} RELOAD"
+                };
+                FitText( performance, left + 4, a.ModuleY + 19, cardWidth - 8, 0.9f, ScienceTint );
+                FitText( $"{option.Draw} POWER DRAW", left + 4, a.ModuleY + 31, cardWidth - 8, 0.9f, EnergyTint );
             } else FitText( FleetSimulation.Tech( option.Requirement!.Value ).Name, left + 4, a.ModuleY + 22, cardWidth - 8, 0.9f, Disabled );
         }
+        if ( options.Length > ShipDesigner.PageSize ) Button( x + a.Width - 99, a.ModuleY + 48, 86, "MORE MODULES", true );
         FitText( designer.Message, x + 12, a.ModuleY + 56, a.Width - 24, 1, draft.Valid ? Label : SpaceDraw.Amber );
         if ( designer.Dragging && designer.Option >= 0 && pointer is { } pixel ) {
             var point = Vector2.Clamp( pixel / _scale + new Vector2( 12, -14 ), new( 4, 54 ), new( layout.Width - 151, layout.Height - 28 ) );
@@ -170,10 +195,12 @@ internal sealed partial class FleetHud {
                 return new( DesignerControl.Hull, (int)FleetSimulation.WarshipBlueprints[i] );
         for ( int i = 0; i < (int)ModuleSlot.Count; ++i )
             if ( Contains( p, a.FitX, a.SlotY( i ), a.FitWidth, 18 ) ) return new( DesignerControl.Slot, i );
-        int count = GameCatalog.Options( designer.Slot ).Length;
+        int total = GameCatalog.Options( designer.Slot ).Length;
+        if ( total > ShipDesigner.PageSize && Contains( p, a.X + a.Width - 99, a.ModuleY + 48, 86, 21 ) ) return new( DesignerControl.NextPage );
+        int count = Math.Min( ShipDesigner.PageSize, total - designer.Page * ShipDesigner.PageSize );
         float cardWidth = a.OptionWidth( count );
         for ( int i = 0; i < count; ++i )
-            if ( Contains( p, a.X + 12 + i * (cardWidth + 5), a.ModuleY, cardWidth, 43 ) ) return new( DesignerControl.Module, i );
+            if ( Contains( p, a.X + 12 + i * (cardWidth + 5), a.ModuleY, cardWidth, 43 ) ) return new( DesignerControl.Module, designer.Page * ShipDesigner.PageSize + i );
         if ( Contains( p, a.StatsX, a.ModuleY - 32, a.StatsWidth - 3, 21 ) ) return new( DesignerControl.Save );
         if ( Contains( p, a.StatsX, a.ModuleY - 56, a.StatsWidth - 3, 21 ) ) return new( DesignerControl.Reset );
         return default;

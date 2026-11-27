@@ -115,7 +115,25 @@ public sealed unsafe class TextureReadback : IDisposable {
 
 public sealed unsafe partial class GraphicsDevice {
     /// <summary>Creates a typed sampled texture in CopyDestination state, with supplied mip/array counts and no initialized data.</summary>
-    public Texture2D CreateTexture2D( Texture2DDescription description, DescriptorPool descriptors ) {
+    public Texture2D CreateTexture2D( Texture2DDescription description, DescriptorPool descriptors ) =>
+        CreateTexture2D( description, descriptors, renderTarget: false );
+
+    /// <summary>Creates a sampled texture that can also be bound as a single color target.</summary>
+    public Texture2D CreateRenderTexture( Texture2DDescription description, DescriptorPool descriptors ) {
+        if ( description.SubresourceCount != 1 || description.Cube )
+            throw new ArgumentException( "A render texture must have one mip and one slice.", nameof(description) );
+        return CreateTexture2D( description, descriptors, renderTarget: true );
+    }
+
+    /// <summary>Creates a render-target view for a texture created with <see cref="CreateRenderTexture"/>.</summary>
+    public RenderTargetView CreateRenderTargetView( Texture2D texture, DescriptorHeap heap, uint index ) {
+        ArgumentNullException.ThrowIfNull( texture );
+        if ( (texture.Resource.Native.Interface.GetDesc().Flags & D3D12_RESOURCE_FLAGS.D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET) == 0 )
+            throw new ArgumentException( "The texture must support rendering.", nameof(texture) );
+        return CreateRenderTargetView( texture.Resource, heap, index );
+    }
+
+    private Texture2D CreateTexture2D( Texture2DDescription description, DescriptorPool descriptors, bool renderTarget ) {
         ArgumentNullException.ThrowIfNull( descriptors ); RequireSameDevice( descriptors.Heap );
         if ( descriptors.Kind != DescriptorKind.Resource || !descriptors.ShaderVisible ) throw new ArgumentException( "Use a shader-visible resource descriptor pool.", nameof(descriptors) );
         var native = description.NativeDescription( );
@@ -129,6 +147,11 @@ public sealed unsafe partial class GraphicsDevice {
             throw new NotSupportedException( "The device cannot use this format as a sampled Texture2D." );
         if ( description.Cube && (support.Support1 & D3D12_FORMAT_SUPPORT1.D3D12_FORMAT_SUPPORT1_TEXTURECUBE) == 0 )
             throw new NotSupportedException( "The device cannot sample this format as a cube." );
+        if ( renderTarget ) {
+            if ( (support.Support1 & D3D12_FORMAT_SUPPORT1.D3D12_FORMAT_SUPPORT1_RENDER_TARGET) == 0 )
+                throw new NotSupportedException( "The device cannot render to this texture format." );
+            native.Flags = D3D12_RESOURCE_FLAGS.D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+        }
         int count = checked((int)description.SubresourceCount);
         var footprints = new D3D12_PLACED_SUBRESOURCE_FOOTPRINT[count]; var rows = new uint[count]; var bytes = new ulong[count]; ulong size;
         fixed ( D3D12_PLACED_SUBRESOURCE_FOOTPRINT* f = footprints ) fixed ( uint* r = rows ) fixed ( ulong* b = bytes )
@@ -159,6 +182,23 @@ public sealed unsafe partial class GraphicsDevice {
 }
 
 public sealed unsafe partial class GraphicsCommandList {
+    /// <summary>Copies a single-sample color target into a matching sampled texture and restores the target's render state.</summary>
+    /// <remarks>The destination must be in CopyDestination state. It remains there after recording.</remarks>
+    public void CopyRenderTarget( RenderTargetView source, Texture2D destination ) {
+        Recording();
+        RequireSameDevice( destination );
+        RequireSameDevice( source.Resource );
+        var native = source.Resource.Native.Interface.GetDesc();
+        var texture = destination.Description;
+        if ( native.Width != texture.Width || native.Height != texture.Height || native.Format != texture.Format ||
+             native.SampleDesc.Count != 1 || native.MipLevels != 1 || native.DepthOrArraySize != 1 || texture.SubresourceCount != 1 )
+            throw new ArgumentException( "The color target and destination texture must have matching single-sample layouts.", nameof(destination) );
+        Transition( source.Resource, ResourceState.RenderTarget, ResourceState.CopySource );
+        Track( destination );
+        Native.Interface.CopyResource( destination.Resource.Native.Interface, source.Resource.Native.Interface );
+        Transition( source.Resource, ResourceState.CopySource, ResourceState.RenderTarget );
+    }
+
     /// <summary>Transitions all mip/array subresources. Applications supply the actual before/after states.</summary>
     public void Transition( Texture2D texture, ResourceState before, ResourceState after ) { RequireSameDevice( texture ); Transition( texture.Resource, before, after ); }
     /// <summary>Copies supplied mip/array data into a texture already in CopyDestination state. No transition is implicit.</summary>

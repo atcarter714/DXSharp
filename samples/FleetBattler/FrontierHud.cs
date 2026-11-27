@@ -23,7 +23,7 @@ internal sealed partial class FleetHud {
         return count;
     }
 
-    private void CommandPanel( Layout layout, FleetSimulation fleet, CommandTab tab, int dispatch, int speed, ResearchBranch researchBranch ) {
+    private void CommandPanel( Layout layout, FleetSimulation fleet, CommandTab tab, int dispatch, float speed, ResearchBranch researchBranch ) {
         if ( layout.Width >= 1110 ) {
             for ( int i = 0; i < TabNames.Length; ++i )
                 IconButton( layout.Width - 446 + i * 71, 19, 68, TabIcons[i], TabNames[i], true, (int)tab == i + 1 );
@@ -39,19 +39,21 @@ internal sealed partial class FleetHud {
         int length;
         switch ( tab ) {
             case CommandTab.Economy:
-                Text( "COLONY ECONOMY", x + 11, y + 42, 1.25f, White );
+                Text( $"{fleet.SystemName} / LOCAL ECONOMY", x + 11, y + 42, 1.25f, White );
                 Text( "STOCKPILE AND INCOME PER CYCLE", x + 11, y + 62, 1, Label );
                 Wallet( fleet, x + 11, y + 81, income: true );
-                Text( "ORE / CONSTRUCTION AND HULL MATERIAL", x + 11, y + 103, 1, OreTint );
+                if ( fleet.PiracyCycles > 0 )
+                    FitText( $"PIRACY TOTAL / -{fleet.PirateOreLost} ORE / -{fleet.PirateEnergyLost} ENERGY", x + 11, y + 103, OfficeWidth - 20, 1, OreTint );
+                else Text( "ORE / CONSTRUCTION AND HULL MATERIAL", x + 11, y + 103, 1, OreTint );
                 Text( $"ENERGY / {fleet.EnergyUpkeep} UPKEEP PER CYCLE", x + 11, y + 119, 1, EnergyTint );
                 Text( "SCIENCE / RESEARCH PROJECTS", x + 11, y + 135, 1, ScienceTint );
-                if ( fleet.Established ) {
+                if ( fleet.Established || fleet.ExpeditionArrived ) {
                     var cap = fleet.ResourceCapacity;
                     label.TryWrite( $"CAP / {cap.Ore} ORE / {cap.Energy} ENERGY / {cap.Science} SCI", out int capLength );
                     Text( label[..capLength], x + 11, y + 152, 1, White );
                     if ( fleet.MerchantAgreement == MerchantDecision.Trade )
                         Text( "TRADE / 5 ENERGY FOR 12 ORE EVERY 5 CYCLES", x + 11, y + 170, 1, EnergyTint );
-                    IconButton( x + 10, y + 193, 328, HudIcon.Yard, "OPEN EARTH CIVILIAN DOCK", true );
+                    if ( fleet.Established ) IconButton( x + 10, y + 193, 328, HudIcon.Yard, "OPEN EARTH CIVILIAN DOCK", true );
                 } else Text( "NO SOL PRESENCE IN THIS SYSTEM", x + 11, y + 155, 1, Label );
                 break;
             case CommandTab.Research:
@@ -93,7 +95,7 @@ internal sealed partial class FleetHud {
                     FrontierEvent.Secured => Tile.Yard, _ => Tile.Miner
                 }, x + 11, y + 42, 101, 66 );
                 Text( title, x + 121, y + 46, 1.23f, White );
-                Text( incident == FrontierEvent.MerchantOffer ? "FREE MERCHANTS" : "SOL AUTHORITY DISPATCH", x + 121, y + 68, 1, Label );
+                FitText( incident == FrontierEvent.MerchantOffer ? "FREE MERCHANTS" : $"{fleet.PlayerFaction.Name} DISPATCH", x + 121, y + 68, OfficeWidth - 131, 1, Label );
                 Text( first, x + 11, y + 115, 1, Label );
                 Text( second, x + 11, y + 130, 1, Label );
                 if ( incident == FrontierEvent.MerchantOffer ) MerchantChoice( x, y, fleet );
@@ -123,11 +125,11 @@ internal sealed partial class FleetHud {
         FrontierEvent.Arrival => ("FRONTIER CHARTER", "SURVEY A MOON OR PLANET WITH YOUR SCOUT", "SEND A CONSTRUCTOR TO BUILD ON A DEPOSIT"),
         FrontierEvent.Prospect => ("ORE SIGNATURE CONFIRMED", "SELECT A CONSTRUCTOR AND INSPECT THE BODY", "PLACE AN EXTRACTION RIG"),
         FrontierEvent.Distress => ("THE FIRST PIRATES", "UNREGISTERED HULLS ARE TRACKING YOUR CARGO", "PROTECT EXTRACTION WITH ESCORTS OR PATROLS"),
-        FrontierEvent.Raid => ("AMBER RAID INBOUND", "RAIDERS ARE APPROACHING YOUR SITES", "OPEN A SHIPYARD TO ORDER ESCORTS"),
+        FrontierEvent.Raid => ($"{Factions.Name( FactionId.Raiders )} INBOUND", "RAIDERS ARE APPROACHING YOUR SITES", "OPEN A SHIPYARD TO ORDER ESCORTS"),
         FrontierEvent.Counterattack => ("RIVAL COMMAND CONTACT", "RAIL CORVETTES ARE APPROACHING", "RAIL SHOTS BYPASS SHIELDS"),
         FrontierEvent.MerchantOffer => ("MERCHANT OFFER", "A HAULER OFFERS TO SUPPLY THE NEW SETTLEMENT", "FUND A TRADE ROUTE OR BUY THEIR SURVEY DATA"),
         FrontierEvent.Secured => ("FIRST RAIDS REPELLED", "THE ROUTE IS OPEN BUT RAIDS CAN RETURN", "BUILD A COLONY AND RESEARCH DEEP SKY ASTROMETRY"),
-        FrontierEvent.Interdiction => ("AMBER PIRATES RETURN", "RAIDERS ARE BACK ON THE EXTRACTION ROUTE", "KEEP AN ESCORT AT YOUR HIGHEST YIELD SITE"),
+        FrontierEvent.Interdiction => ($"{Factions.Name( FactionId.Raiders )} RETURN", "RAIDERS ARE BACK ON THE EXTRACTION ROUTE", "KEEP AN ESCORT AT YOUR HIGHEST YIELD SITE"),
         _ => throw new ArgumentOutOfRangeException( nameof(incident) )
     };
 
@@ -148,6 +150,8 @@ internal sealed partial class FleetHud {
             for ( int i = 0; i < (int)ResearchBranch.Count; ++i )
                 if ( Contains( relative, 10 + i % 3 * 110, 39 + i / 3 * 23, 106, 21 ) )
                     return new( HudAction.ResearchPage, i );
+            if ( ResearchCatalog.Current.PageCount( researchBranch ) > 1 && Contains( relative, 254, 87, 85, 21 ) )
+                return new( HudAction.ResearchPage, (int)ResearchCatalog.Current.NextPage( researchBranch ) );
             var topics = ResearchCatalog.Current.Topics( researchBranch );
             for ( int i = 0; i < topics.Length; ++i ) {
                 var topic = topics[i];

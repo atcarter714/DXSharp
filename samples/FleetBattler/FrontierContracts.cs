@@ -38,7 +38,7 @@ internal sealed partial class FleetSimulation {
             ? Disposition.Allied : Factions.Attitude( from, to );
 
     private void AdvanceContracts( ) {
-        if ( MerchantAgreement != MerchantDecision.Trade || (Tick + 1) % (IncomeInterval * 5) != 0 ||
+        if ( MerchantAgreement != MerchantDecision.Trade || (Tick + 1) % (EconomyInterval * 5) != 0 ||
              Energy < 5 || Ore > ResourceCapacity.Ore - 12 ) return;
         Energy -= 5;
         Ore += 12;

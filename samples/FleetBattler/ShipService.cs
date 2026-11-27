@@ -49,7 +49,7 @@ internal sealed partial class FleetSimulation {
         int result = -1;
         float distance = float.PositiveInfinity;
         for ( int body = 1; body < _bodies.Length; ++body ) {
-            if ( YardAt( body ) != 0 || !CanReach( unit, body ) ) continue;
+            if ( YardAt( body ) != 0 || SiteIntegrity( body, PlanetFacility.Yard ) < 50 || !CanReach( unit, body ) ) continue;
             float candidate = Vector2.DistanceSquared( from, YardAtPosition( body ) );
             if ( candidate >= distance ) continue;
             result = body;
@@ -80,7 +80,7 @@ internal sealed partial class FleetSimulation {
             return true;
         }
         if ( yard < 0 ) return false;
-        var orbit = Construction( yard, PlanetFacility.Yard ).Orbit;
+        var orbit = FacilityOrbit( yard, PlanetFacility.Yard );
         var order = PlotTransfer( unit, yard, false, fixedBerth: new( orbit.X, orbit.Y + 0.14f ) );
         order.Service = service;
         order.ServiceTicks = 0;
@@ -96,7 +96,7 @@ internal sealed partial class FleetSimulation {
             ref var order = ref _shipOrders[ship];
             if ( order.Service == ServiceOrder.None || order.Transfer.End != 0 ) continue;
             if ( order.Service == ServiceOrder.Retreat ) { order.Service = ServiceOrder.None; continue; }
-            if ( Tick - _lastHit[ship] < 60 || YardAt( order.Body - 1 ) != 0 ) continue;
+            if ( Tick - _lastHit[ship] < 60 || YardAt( order.Body - 1 ) != 0 || SiteIntegrity( order.Body - 1, PlanetFacility.Yard ) < 50 ) continue;
             int period = order.Service == ServiceOrder.Refit ? 180 : 60;
             if ( order.ServiceTicks < period ) ++order.ServiceTicks;
             if ( order.ServiceTicks < period ) continue;

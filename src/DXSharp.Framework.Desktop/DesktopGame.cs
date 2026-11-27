@@ -31,6 +31,8 @@ public sealed record DesktopGameOptions {
 public readonly record struct DesktopFrame( GraphicsCommandList Commands, RenderTargetView Target, Size Size, TimeSpan Elapsed ) {
     /// <summary>The frame slot whose prior submission has retired. Use it to select per-slot upload storage.</summary>
     public int FrameSlotIndex { get; init; }
+    /// <summary>The borrowed depth target, when enabled. Rebind it when returning from offscreen passes.</summary>
+    public DepthTarget? Depth { get; init; }
 }
 
 /// <summary>Totals from a desktop run or a presentation callback.</summary>
@@ -55,7 +57,9 @@ public static class DesktopGame {
         } );
         using var timer = new System.Windows.Forms.Timer { Interval = 16 };
         var clock = Stopwatch.StartNew( ); TimeSpan previous = clock.Elapsed; bool rendering = false, closing = false;
-        void Draw( RenderFrame frame ) => draw( new( frame.Commands, frame.Target, frame.Size, frame.Elapsed ) { FrameSlotIndex = frame.FrameSlotIndex } );
+        void Draw( RenderFrame frame ) => draw( new( frame.Commands, frame.Target, frame.Size, frame.Elapsed ) {
+            FrameSlotIndex = frame.FrameSlotIndex, Depth = frame.Depth
+        } );
         void Tick( object? sender, EventArgs args ) {
             if ( rendering || closing || window.IsDisposed ) return;
             if ( window.CloseRequested ) {

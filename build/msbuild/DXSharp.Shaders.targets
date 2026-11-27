@@ -6,9 +6,11 @@
     <DXSharpShaderWarningsAsErrors Condition="'$(DXSharpShaderWarningsAsErrors)' == ''">false</DXSharpShaderWarningsAsErrors>
     <DXSharpDxcVersion Condition="'$(DXSharpDxcVersion)' == ''">1.9.2609.5</DXSharpDxcVersion>
     <DXSharpDxcToolPath Condition="'$(DXSharpDxcToolPath)' == ''">$(NuGetPackageRoot)/microsoft.direct3d.dxc/$(DXSharpDxcVersion)/build/native/bin/x64/dxc.exe</DXSharpDxcToolPath>
+    <!-- Keep reusable Visual Studio MSBuild workers from locking the repository's task build output. -->
+    <_DXSharpShaderTaskFactory Condition="'$(MSBuildRuntimeType)' == 'Full' and '$(DXSharpShaderTaskAssembly)' != ''">TaskHostFactory</_DXSharpShaderTaskFactory>
     <DXSharpShaderTaskAssembly Condition="'$(DXSharpShaderTaskAssembly)' == ''">$(MSBuildThisFileDirectory)../tasks/netstandard2.0/DXSharp.Tools.Builds.dll</DXSharpShaderTaskAssembly>
   </PropertyGroup>
-  <UsingTask TaskName="DXSharp.Tools.Builds.Shaders.DxcTool" AssemblyFile="$(DXSharpShaderTaskAssembly)" />
+  <UsingTask TaskName="DXSharp.Tools.Builds.Shaders.DxcTool" AssemblyFile="$(DXSharpShaderTaskAssembly)" TaskFactory="$(_DXSharpShaderTaskFactory)" />
   <Target Name="CompileDXSharpShaders" BeforeTargets="AssignTargetPaths" DependsOnTargets="ResolveProjectReferences"
           Condition="'@(DXSharpShader)' != '' and '$(DesignTimeBuild)' != 'true' and '$(DXSharpBuildShaders)' == 'true'">
     <ItemGroup>

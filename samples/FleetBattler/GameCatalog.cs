@@ -4,6 +4,7 @@ namespace FleetBattler;
 
 internal static class CatalogJson {
     internal static JsonDocument Open( string name ) {
+        if ( name != "ship-names" ) return FleetContent.Read( name, name );
         string path = Path.Combine( AppContext.BaseDirectory, "Content", name + ".json" );
         try {
             using var stream = File.OpenRead( path );
@@ -42,10 +43,9 @@ internal static class CatalogJson {
             : throw new InvalidDataException( $"Unknown {typeof(T).Name} '{name}'." );
     }
 
-    internal static ResearchTopic? Requirement( JsonElement item ) {
-        if ( !item.TryGetProperty( "requires", out var node ) ) return null;
-        var topic = EnumId<ResearchTopic>( node );
-        return topic != ResearchTopic.Count ? topic : throw new InvalidDataException( "Invalid research requirement." );
+    internal static ResearchTopic? Requirement( JsonElement item, string key = "requires" ) {
+        if ( !item.TryGetProperty( key, out var node ) ) return null;
+        return ResearchCatalog.Current.Resolve( node.GetString( ) ?? "" );
     }
 
     internal static ResourceCost Cost( JsonElement item ) =>
@@ -55,8 +55,9 @@ internal static class CatalogJson {
 internal sealed record HullDefinition( string Name, ResourceCost Cost, int Ticks, int Naval, int HitPoints,
     FlightStats Flight, float Scale, ResearchTopic? Requirement, int ImprovedOre, int ImprovedTicks );
 
+internal enum EffectStyle { Pulse, Rail, Ion, Thermal }
 internal sealed record ModuleDefinition( string Name, int Draw, int Supply, int Health, int Damage, int Range, int Reload,
-    int Ore, int Energy, int Ticks, float Handling, float Reach, ResearchTopic? Requirement );
+    int Ore, int Energy, int Ticks, float Handling, float Reach, ResearchTopic? Requirement, EffectStyle? Effect );
 
 internal static class GameCatalog {
     private static readonly Lazy<HullDefinition[]> Hulls = new( ReadHulls );
@@ -99,12 +100,19 @@ internal static class GameCatalog {
     private static ModuleDefinition[][] ReadModules( ) {
         using var doc = CatalogJson.Open( "modules" );
         int[] counts = [2, 2, 3, 3, 2, 3];
-        var table = counts.Select( count => new ModuleDefinition[count] ).ToArray( );
-        foreach ( var row in doc.RootElement.GetProperty( "modules" ).EnumerateArray( ) ) {
+        var rows = doc.RootElement.GetProperty( "modules" );
+        foreach ( var row in rows.EnumerateArray() ) {
             var slot = CatalogJson.EnumId<ModuleSlot>( row.GetProperty( "slot" ) );
             if ( slot == ModuleSlot.Count ) throw new InvalidDataException( "Unknown module slot." );
+            int max = slot is ModuleSlot.Weapon or ModuleSlot.Armor ? 1 : 255;
+            int id = CatalogJson.Int( row, "id", 0, max );
+            counts[(int)slot] = Math.Max( counts[(int)slot], id + 1 );
+        }
+        var table = counts.Select( count => new ModuleDefinition[count] ).ToArray();
+        foreach ( var row in rows.EnumerateArray() ) {
+            var slot = CatalogJson.EnumId<ModuleSlot>( row.GetProperty( "slot" ) );
             var options = table[(int)slot];
-            int id = CatalogJson.Int( row, "id", 0, options.Length - 1 );
+            int id = row.GetProperty( "id" ).GetInt32();
             if ( options[id] is not null ) throw new InvalidDataException( $"Duplicate {slot} module {id}." );
             options[id] = new( CatalogJson.Text( row, "name", 26 ), CatalogJson.Int( row, "draw", 0, 50, 0 ),
                 CatalogJson.Int( row, "supply", 0, 50, 0 ), CatalogJson.Int( row, "health", 0, 100, 0 ),
@@ -112,7 +120,7 @@ internal static class GameCatalog {
                 CatalogJson.Int( row, "reload", -20, 180, 0 ), CatalogJson.Int( row, "ore", 0, 120, 0 ),
                 CatalogJson.Int( row, "energy", 0, 100, 0 ), CatalogJson.Int( row, "ticks", 0, 480, 0 ),
                 CatalogJson.Number( row, "handling", 0.55f, 1.6f, 1 ), CatalogJson.Number( row, "reach", 1, 1.5f, 1 ),
-                CatalogJson.Requirement( row ) );
+                CatalogJson.Requirement( row ), row.TryGetProperty( "effect", out var effect ) ? CatalogJson.EnumId<EffectStyle>( effect ) : null );
         }
         if ( table.Any( row => row.Any( entry => entry is null ) ) ) throw new InvalidDataException( "Every module variant requires an entry." );
         return table;

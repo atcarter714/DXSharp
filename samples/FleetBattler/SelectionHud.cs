@@ -6,8 +6,9 @@ internal sealed partial class FleetHud {
     private static Vector4 SelectionDetailsArea( Layout layout ) =>
         new( layout.Width - 311, 242, 297, MathF.Min( 246, layout.Bottom - 247 ) );
 
-    private void SelectionDetails( Layout layout, FleetSimulation fleet, ReadOnlySpan<bool> selected, FleetSelection unit, int speed ) {
-        var panel = SelectionDetailsArea( layout );
+    private void SelectionDetails( Layout layout, FleetSimulation fleet, ReadOnlySpan<bool> selected, FleetSelection unit, float speed,
+        Vector4? area = null ) {
+        var panel = area ?? SelectionDetailsArea( layout );
         if ( panel.W < 90 ) return;
         float x = panel.X, y = panel.Y;
         PanelAt( x, y, panel.Z, panel.W, SpaceDraw.Cyan );

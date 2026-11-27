@@ -65,18 +65,25 @@ public sealed unsafe partial class GraphicsDevice {
     /// <param name="constantCount">Inline DWORD constants at b0, or zero.</param>
     /// <param name="linearFiltering">True for linear filtering, false for point filtering.</param>
     /// <param name="wrap">True for repeating UV coordinates, false for clamping to texture edges.</param>
-    public RootSignature CreateTextureRootSignature( uint constantCount, bool linearFiltering, bool wrap ) {
-        if ( constantCount > 63 ) throw new ArgumentOutOfRangeException( nameof(constantCount) );
-        D3D12_DESCRIPTOR_RANGE range = new( ) { RangeType = D3D12_DESCRIPTOR_RANGE_TYPE.D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NumDescriptors = 1 };
-        D3D12_ROOT_PARAMETER parameter = new( ) {
-            ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
-            ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_PIXEL
-        };
-        parameter.Anonymous.DescriptorTable = new( ) { NumDescriptorRanges = 1, pDescriptorRanges = &range };
-        D3D12_ROOT_PARAMETER* parameters = stackalloc D3D12_ROOT_PARAMETER[2];
+    public RootSignature CreateTextureRootSignature( uint constantCount, bool linearFiltering, bool wrap ) =>
+        CreateTextureRootSignature( constantCount, 1, linearFiltering, wrap );
+
+    /// <summary>Creates a graphics texture signature with a single-resource table for each consecutive pixel shader register.</summary>
+    public RootSignature CreateTextureRootSignature( uint constantCount, uint textureCount, bool linearFiltering, bool wrap ) {
+        if ( textureCount is 0 or > 16 ) throw new ArgumentOutOfRangeException( nameof(textureCount) );
+        if ( constantCount > 64 - textureCount ) throw new ArgumentOutOfRangeException( nameof(constantCount) );
+        D3D12_DESCRIPTOR_RANGE* ranges = stackalloc D3D12_DESCRIPTOR_RANGE[(int)textureCount];
+        D3D12_ROOT_PARAMETER* parameters = stackalloc D3D12_ROOT_PARAMETER[(int)textureCount + 1];
         int textureSlot = constantCount == 0 ? 0 : 1;
         if ( constantCount != 0 ) parameters[0] = InlineConstants( constantCount );
-        parameters[textureSlot] = parameter;
+        for ( int i = 0; i < textureCount; ++i ) {
+            ranges[i] = new() { RangeType = D3D12_DESCRIPTOR_RANGE_TYPE.D3D12_DESCRIPTOR_RANGE_TYPE_SRV, NumDescriptors = 1, BaseShaderRegister = (uint)i };
+            parameters[textureSlot + i] = new() {
+                ParameterType = D3D12_ROOT_PARAMETER_TYPE.D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE,
+                ShaderVisibility = D3D12_SHADER_VISIBILITY.D3D12_SHADER_VISIBILITY_PIXEL
+            };
+            parameters[textureSlot + i].Anonymous.DescriptorTable = new() { NumDescriptorRanges = 1, pDescriptorRanges = &ranges[i] };
+        }
         var address = wrap ? D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_WRAP
             : D3D12_TEXTURE_ADDRESS_MODE.D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
         D3D12_STATIC_SAMPLER_DESC sampler = new( ) {
@@ -89,7 +96,7 @@ public sealed unsafe partial class GraphicsDevice {
         D3D12_VERSIONED_ROOT_SIGNATURE_DESC description = default;
         description.Version = D3D_ROOT_SIGNATURE_VERSION.D3D_ROOT_SIGNATURE_VERSION_1_0;
         description.Anonymous.Desc_1_0 = new( ) {
-            NumParameters = (uint)textureSlot + 1, pParameters = parameters,
+            NumParameters = (uint)textureSlot + textureCount, pParameters = parameters,
             Flags = D3D12_ROOT_SIGNATURE_FLAGS.D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT,
             NumStaticSamplers = 1, pStaticSamplers = &sampler
         };
@@ -176,7 +183,12 @@ public sealed unsafe partial class GraphicsDevice {
     /// <param name="depthStencil">Single-sample depth-stencil state matching the bound depth-stencil target.</param>
     /// <returns>An independently owned pipeline state.</returns>
     public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
-        ReadOnlySpan<VertexElement> inputLayout, PixelFormat targetFormat, DepthStencilState depthStencil ) {
+        ReadOnlySpan<VertexElement> inputLayout, PixelFormat targetFormat, DepthStencilState depthStencil ) =>
+        CreateGraphicsPipeline( root, vertex, pixel, inputLayout, targetFormat, depthStencil, additiveBlend: false );
+
+    /// <summary>Creates a graphics pipeline with optional additive color blending.</summary>
+    public PipelineState CreateGraphicsPipeline( RootSignature root, ShaderCompilation vertex, ShaderCompilation pixel,
+        ReadOnlySpan<VertexElement> inputLayout, PixelFormat targetFormat, DepthStencilState depthStencil, bool additiveBlend ) {
         ArgumentNullException.ThrowIfNull( depthStencil );
         var nativeDepthStencil = depthStencil.ToNative( );
         RequireSameDevice( root );
@@ -222,8 +234,9 @@ public sealed unsafe partial class GraphicsDevice {
                 description.RasterizerState.CullMode = D3D12_CULL_MODE.D3D12_CULL_MODE_NONE;
                 description.RasterizerState.DepthClipEnable = true;
                 description.BlendState.RenderTarget.AsSpan( )[0] = new( ) {
-                    SrcBlend = D3D12_BLEND.D3D12_BLEND_ONE, DestBlend = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOp = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
-                    SrcBlendAlpha = D3D12_BLEND.D3D12_BLEND_ONE, DestBlendAlpha = D3D12_BLEND.D3D12_BLEND_ZERO, BlendOpAlpha = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
+                    BlendEnable = additiveBlend, SrcBlend = D3D12_BLEND.D3D12_BLEND_ONE,
+                    DestBlend = additiveBlend ? D3D12_BLEND.D3D12_BLEND_ONE : D3D12_BLEND.D3D12_BLEND_ZERO, BlendOp = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
+                    SrcBlendAlpha = D3D12_BLEND.D3D12_BLEND_ONE, DestBlendAlpha = additiveBlend ? D3D12_BLEND.D3D12_BLEND_ONE : D3D12_BLEND.D3D12_BLEND_ZERO, BlendOpAlpha = D3D12_BLEND_OP.D3D12_BLEND_OP_ADD,
                     LogicOp = D3D12_LOGIC_OP.D3D12_LOGIC_OP_NOOP, RenderTargetWriteMask = 15
                 };
                 description.DepthStencilState = nativeDepthStencil;

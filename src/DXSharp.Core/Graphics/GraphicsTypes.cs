@@ -4,6 +4,8 @@ namespace DXSharp.Graphics;
 public enum PixelFormat {
     /// <summary>Four unsigned normalized eight-bit channels in red, green, blue, alpha order.</summary>
     Rgba8Unorm = 28,
+    /// <summary>Four half-precision floating-point channels in red, green, blue, alpha order.</summary>
+    Rgba16Float = 10,
     /// <summary>Four unsigned normalized eight-bit channels in blue, green, red, alpha order.</summary>
     Bgra8Unorm = 87
 }
