@@ -89,14 +89,18 @@ public sealed class StaticModelPrimitive {
 /// <param name="WorldTransform">The mesh-to-scene transform in row-vector convention.</param>
 public readonly record struct StaticModelInstance( int PrimitiveIndex, Matrix4x4 WorldTransform );
 
+/// <summary>A named empty node placed in model space.</summary>
+public readonly record struct StaticModelMarker( string Name, Matrix4x4 Transform );
+
 /// <summary>Contains the shared geometry, instance transforms, and bounds of a static scene.</summary>
 public sealed class StaticModel {
     private readonly StaticModelPrimitive[] _primitives;
     private readonly StaticModelInstance[] _instances;
 
-    internal StaticModel( StaticModelPrimitive[] primitives, StaticModelInstance[] instances, Vector3 min, Vector3 max ) {
+    internal StaticModel( StaticModelPrimitive[] primitives, StaticModelInstance[] instances, Vector3 min, Vector3 max, StaticModelMarker[] markers ) {
         _primitives = primitives;
         _instances = instances;
+        Markers = markers;
         BoundsMin = min;
         BoundsMax = max;
     }
@@ -106,6 +110,9 @@ public sealed class StaticModel {
 
     /// <summary>Gets the placed primitives in scene traversal order.</summary>
     public ReadOnlySpan<StaticModelInstance> Instances => _instances;
+
+    /// <summary>Gets the named empty nodes and their accumulated scene transforms.</summary>
+    public ReadOnlyMemory<StaticModelMarker> Markers { get; }
 
     /// <summary>Gets the lower corner of the conservative axis-aligned scene bounds.</summary>
     public Vector3 BoundsMin { get; }

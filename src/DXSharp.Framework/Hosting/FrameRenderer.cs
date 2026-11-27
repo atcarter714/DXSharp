@@ -21,7 +21,10 @@ public sealed record WindowRenderOptions {
 }
 
 /// <summary>Borrowed frame resources valid only during the render callback.</summary>
-public readonly record struct RenderFrame( GraphicsCommandList Commands, RenderTargetView Target, Size Size, TimeSpan Elapsed, int FrameSlotIndex );
+public readonly record struct RenderFrame( GraphicsCommandList Commands, RenderTargetView Target, Size Size, TimeSpan Elapsed, int FrameSlotIndex ) {
+    /// <summary>The optional borrowed depth target for this frame.</summary>
+    public DepthTarget? Depth { get; init; }
+}
 /// <summary>Completed presentations and surface resizes.</summary>
 public readonly record struct RenderStatistics( int Frames, int Resizes );
 
@@ -114,7 +117,7 @@ public sealed class FrameRenderer : IDisposable {
             commands.SetViewport( (uint)size.Width, (uint)size.Height );
             var c = _options.ClearColor; commands.Clear( target, c.X, c.Y, c.Z, c.W );
             if ( _depth is null ) commands.SetRenderTarget( target ); else commands.SetRenderTarget( target, _depth, clearDepth: true );
-            draw( new( commands, target, size, elapsed, slotIndex ) );
+            draw( new( commands, target, size, elapsed, slotIndex ) { Depth = _depth } );
             commands.Transition( buffer, ResourceState.RenderTarget, ResourceState.Present ); commands.Close( );
             slot.Completion = _queue.Submit( commands );
             if ( nonblocking ) {
