@@ -171,7 +171,9 @@ internal sealed partial class FleetSimulation {
         float radius = fixedBerth?.X ?? (waypoint is null ? OrbitRadius( host, count ) : MathF.Max( local.Length( ), OrbitRadius( 0, count ) ));
         float distance = waypoint is null ? MathF.Abs( Vector2.Distance( from, _bodies[host].Center ) - radius ) : Vector2.Distance( from, waypoint.Value );
         var flight = Flight( unit.Squad );
-        float traverse = (Solar ? 3.4f : 2.1f) + distance / (Solar ? flight.Cruise * 0.78f : flight.Cruise);
+        // On the campaign calendar the cruise leg of an interplanetary transfer takes weeks to months.
+        float cruise = distance / (Solar ? flight.Cruise * 0.78f : flight.Cruise) * (FrontierProgression ? Pacing.Table.InSystemTransfer : 1);
+        float traverse = (Solar ? 3.4f : 2.1f) + cruise;
         float turn = MathF.PI / (OrbitalTurnStep * flight.TurnRate) * (float)StepSeconds;
         int arrival = start + (int)MathF.Ceiling( MathF.Max( traverse, turn * 5 ) / (float)StepSeconds );
         var velocity = departureVelocity ?? (unit.IsShip ? _velocities[unit.Ship] : SquadVelocity( unit.Squad ));
@@ -213,7 +215,7 @@ internal sealed partial class FleetSimulation {
         if ( length < 1 ) return default;
         Vector2 normal = new( -chord.Y / length, chord.X / length );
         Span<BodyPose> bodies = stackalloc BodyPose[_bodies.Length];
-        CelestialSystem.Evaluate( SystemIndex, _ephemerisEpoch + middle, BoardRadius, bodies, Frontier );
+        EvaluateBodies( _ephemerisEpoch + middle, bodies );
         float bend = 0;
         for ( int i = 0; i < bodies.Length; ++i ) {
             var delta = bodies[i].Center - from;
@@ -232,7 +234,7 @@ internal sealed partial class FleetSimulation {
 
     private Vector2 BodyCenterAt( int host, int tick ) {
         Span<BodyPose> bodies = stackalloc BodyPose[_bodies.Length];
-        CelestialSystem.Evaluate( SystemIndex, _ephemerisEpoch + tick, BoardRadius, bodies, Frontier );
+        EvaluateBodies( _ephemerisEpoch + tick, bodies );
         return bodies[host].Center;
     }
 

@@ -49,9 +49,10 @@ internal static class CelestialSystem {
         _ => throw new ArgumentOutOfRangeException( nameof(body) )
     };
 
-    internal static void Evaluate( int system, int tick, float radius, Span<BodyPose> bodies, bool campaign = false ) {
+    // moonOffsetDays lengthens every satellite period, so fast moons stay readable on the campaign calendar.
+    internal static void Evaluate( int system, int tick, float radius, Span<BodyPose> bodies, bool campaign = false, double moonOffsetDays = 0 ) {
         if ( system == 0 && bodies.Length == BodyCount ) {
-            SolarCatalog.Evaluate( tick, radius, bodies );
+            SolarCatalog.Evaluate( tick, radius, bodies, moonOffsetDays );
             return;
         }
         if ( system >= AuthoredCount ) {
@@ -61,7 +62,7 @@ internal static class CelestialSystem {
             bodies[0] = new( primary, profile.StarRadius * radius );
             bodies[1] = new( primary + OrbitPoint( profile.InnerAxis * radius, profile.Eccentricity, profile.Phase + campaignDays / profile.InnerPeriod ), profile.InnerRadius * radius );
             bodies[2] = new( primary + OrbitPoint( profile.OuterAxis * radius, GiantEccentricity, profile.Phase + .43 + campaignDays / profile.OuterPeriod ), profile.OuterRadius * radius );
-            bodies[3] = new( bodies[1].Center + OrbitPoint( MoonAxis * radius, MoonEccentricity, profile.Phase + campaignDays / 39 ), .022f * radius );
+            bodies[3] = new( bodies[1].Center + OrbitPoint( MoonAxis * radius, MoonEccentricity, profile.Phase + campaignDays / (39 + moonOffsetDays) ), .022f * radius );
             if ( bodies.Length > OuterBelt )
                 bodies[OuterBelt] = new( primary + OrbitPoint( BeltAxis * radius, .06f, profile.Phase + campaignDays / 1100 ), .028f * radius );
             return;
@@ -70,7 +71,7 @@ internal static class CelestialSystem {
         var sun = new Vector2( -0.31f + system * 0.045f, -0.33f + system * 0.07f ) * radius;
         var rocky = sun + OrbitPoint( RockyAxis * radius, RockyEccentricity, 0.24 + system * 0.25 + days / 115 );
         var giant = sun + OrbitPoint( GiantAxis * radius, GiantEccentricity, 0.98 + system * 0.16 + days / 310 );
-        var moon = rocky + OrbitPoint( MoonAxis * radius, MoonEccentricity, 0.21 + system * 0.21 + days / 39 );
+        var moon = rocky + OrbitPoint( MoonAxis * radius, MoonEccentricity, 0.21 + system * 0.21 + days / (39 + moonOffsetDays) );
         bodies[0] = new( sun, 0.117f * radius );
         bodies[1] = new( rocky, 0.064f * radius );
         bodies[2] = new( giant, 0.103f * radius );

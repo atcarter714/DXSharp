@@ -87,7 +87,7 @@ internal sealed partial class FleetSimulation {
     internal PlanetStatus Planet( int body ) =>
         new( _survey[body], ExtractionRemaining( body ), Remaining( _labs[body] ), _surveyUnits[body], SurveyRequired );
 
-    private int SurveyRequired => Frontier ? FrontierSurveyDuration : SurveyDuration;
+    private int SurveyRequired => !Frontier ? SurveyDuration : FrontierProgression ? Pacing.Table.SurveyTicks : FrontierSurveyDuration;
 
     private int Remaining( int deadline ) => deadline == 0 ? -1 : Math.Max( 0, deadline - Tick );
 

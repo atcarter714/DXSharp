@@ -17,6 +17,8 @@ internal sealed class FleetCampaign( FleetSimulation sol, uint seed ) {
     private bool _offeredCharter, _reportedEnding;
 
     internal CampaignFaction PlayerFaction => sol.PlayerFaction;
+    // Campaign scenarios run on the campaign calendar (see Pacing).
+    internal bool Calendar => sol.FrontierProgression;
     internal int FirstDepartureTick => _firstDepartureTick;
     private int _firstDepartureTick;
     internal Expedition? InTransit { get; private set; }
@@ -45,7 +47,8 @@ internal sealed class FleetCampaign( FleetSimulation sol, uint seed ) {
     }
 
     internal int FlightTicks( int source, int destination ) {
-        if ( sol.FrontierProgression && !Arrived ) return FleetSimulation.ExpeditionDuration;
+        if ( sol.FrontierProgression )
+            return !Arrived ? sol.CrossingTicks : Pacing.InterstellarTicks( SystemDistance( source, destination ), sol.FusionUpgrade, sol.Researched );
         int duration = 420 + (int)(SystemDistance( source, destination ) * 1080);
         return sol.FusionUpgrade ? duration * 3 / 4 : duration;
     }

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "about": "Campaign pacing. At 1x speed one game day passes each real second, so 'days' below are also real seconds at 1x. Skirmish and sandbox scenarios keep their tactical timings and ignore this table. A content pack can override any row by id.",
+  "pacing": [
+    { "id": "proxima-crossing", "days": 730, "note": "Sol to Proxima with the pulsed fusion drive, before propulsion research. The first crossing and every later trip scale from this reference." },
+    { "id": "crossing-overhead", "days": 150, "note": "Fixed spin-up, departure and braking time of any interstellar trip; the rest scales with chart distance." },
+    { "id": "pre-fusion", "factor": 1.333, "note": "Interstellar trip time multiplier before Pulsed Fusion is researched." },
+    { "id": "transit.Radiators", "factor": 0.85, "note": "Better heat rejection lets drives run hotter." },
+    { "id": "transit.AttitudeJets", "factor": 0.9, "note": "Tighter burns waste less of the transfer." },
+    { "id": "transit.ConvoyWindows", "factor": 0.9, "note": "Planned departure windows shorten the trip." },
+    { "id": "transit.frontier.radiator-logistics", "factor": 0.9, "note": "Radiator logistics keeps the drive at full power for longer." },
+    { "id": "in-system-transfer", "factor": 3, "note": "Multiplier on the cruise part of an in-system transfer, so planet-to-planet trips take weeks to months." },
+
+    { "id": "survey", "days": 45, "note": "Orbital survey of one body at a scan rate of 1. Scouts with better sensors finish sooner." },
+    { "id": "structure-scale", "factor": 30, "note": "Multiplier on structures.json build ticks: a 180-tick mine takes 90 days and a 360-tick yard 180 days." },
+    { "id": "build.Habitat", "days": 540, "note": "Orbital habitats take about 18 months." },
+    { "id": "build.Soletta", "days": 1460, "note": "The orbital mirror is a four-year project." },
+    { "id": "hull-scale", "factor": 12, "note": "Multiplier on hulls.json build ticks: a corvette takes about a month and a titan about a year." },
+    { "id": "research-scale", "factor": 8, "note": "Multiplier on research.json work. At one lab a 1500-work project takes 200 days; more labs speed it up to three times." },
+    { "id": "economy-cycle", "days": 60, "note": "Production, upkeep and belt mining settle every cycle; science settles every second cycle." },
+    { "id": "colony-landing", "days": 90, "note": "Time for a colony ship to land and set up once in orbit." },
+    { "id": "colony-growth", "days": 180, "note": "Time for a supplied colony to grow by one population." },
+    { "id": "climate-project", "days": 730, "note": "Climate engineering on a colony world." },
+    { "id": "first-raid", "days": 365, "note": "Raiders never threaten Sol before this date." },
+    { "id": "raid-delay-min", "days": 120, "note": "Shortest warning before a raid or between patrols." },
+    { "id": "raid-delay-max", "days": 210, "note": "Longest warning before a raid or between patrols." },
+    { "id": "moon-period-offset", "days": 8, "note": "Added to every moon's orbital period on the campaign calendar so fast moons such as Phobos don't spin around their planet." }
+  ]
+}

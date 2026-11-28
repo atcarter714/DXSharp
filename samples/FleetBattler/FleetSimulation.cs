@@ -150,9 +150,14 @@ internal sealed partial class FleetSimulation {
     internal void AlignEphemeris( int campaignTick ) {
         if ( ExpeditionArrived || Solar ) return;
         _ephemerisEpoch = campaignTick - Tick;
-        CelestialSystem.Evaluate( SystemIndex, WorldTick, BoardRadius, _bodies, Frontier );
+        EvaluateBodies( WorldTick, _bodies );
         _bodies.CopyTo( _previousBodies, 0 );
     }
+
+    // Body poses at a world tick. Campaign scenarios read the ephemeris on the campaign calendar.
+    private void EvaluateBodies( int worldTick, Span<BodyPose> bodies ) =>
+        CelestialSystem.Evaluate( SystemIndex, CalendarTick( worldTick ), BoardRadius, bodies, Frontier,
+            FrontierProgression ? Pacing.Table.MoonPeriodOffsetDays : 0 );
 
     internal int SystemIndex { get; }
     internal bool CanChartSystem( int system ) => (uint)system < CelestialSystem.Systems.Length &&
@@ -359,7 +364,7 @@ internal sealed partial class FleetSimulation {
         if ( !Frontier ) UpdateRival( );
 
         _bodies.CopyTo( _previousBodies, 0 );
-        CelestialSystem.Evaluate( SystemIndex, WorldTick + 1, BoardRadius, _bodies, Frontier );
+        EvaluateBodies( WorldTick + 1, _bodies );
         _grid.Clear();
         for ( int ship = Count - 1; ship >= 0; --ship ) {
             if ( !Alive( ship ) ) continue;

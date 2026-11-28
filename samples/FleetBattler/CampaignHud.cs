@@ -1,16 +1,55 @@
+using System.Globalization;
 using System.Numerics;
 
 namespace FleetBattler;
 
 internal readonly record struct MinorNotice( string? Text, long Time );
 
-internal sealed partial class FleetHud {
-    internal static DateOnly StarDate( int campaignTick ) =>
-        new DateOnly( 2184, 1, 1 ).AddDays( (int)SolarCatalog.CalendarDays( campaignTick ) );
+// A duration in simulation ticks. On the campaign calendar it reads as days, months or years of game time;
+// elsewhere as real seconds at the current speed. The "c" format is a compact form for narrow buttons.
+internal readonly struct GameSpan( int ticks, float speed, bool calendar ) : ISpanFormattable {
+    public bool TryFormat( Span<char> destination, out int written, ReadOnlySpan<char> format, IFormatProvider? provider ) {
+        bool compact = format is "c";
+        var culture = CultureInfo.InvariantCulture;
+        if ( !calendar ) {
+            int seconds = (int)Math.Ceiling( ticks * FleetSimulation.StepSeconds / speed );
+            return compact ? destination.TryWrite( culture, $"{seconds}S", out written ) : destination.TryWrite( culture, $"{seconds} SEC", out written );
+        }
+        double days = Pacing.DaysOf( Math.Max( 0, ticks ) );
+        if ( days < 60 ) {
+            int whole = Math.Max( 1, (int)Math.Ceiling( days ) );
+            return compact ? destination.TryWrite( culture, $"{whole}D", out written )
+                : destination.TryWrite( culture, $"{whole} {(whole == 1 ? "DAY" : "DAYS")}", out written );
+        }
+        if ( days < 365 ) {
+            double months = days / 30.44;
+            return compact ? destination.TryWrite( culture, $"{months:0.#}MO", out written ) : destination.TryWrite( culture, $"{months:0.#} MONTHS", out written );
+        }
+        double years = days / SolarCatalog.EarthYearDays;
+        return compact ? destination.TryWrite( culture, $"{years:0.0}Y", out written ) : destination.TryWrite( culture, $"{years:0.0} YEARS", out written );
+    }
 
-    private void ClockPanel( Layout layout, int tick, float speed, bool paused, string mapButton ) {
+    public string ToString( string? format, IFormatProvider? provider ) {
+        Span<char> text = stackalloc char[24];
+        return TryFormat( text, out int written, format, provider ) ? new string( text[..written] ) : "";
+    }
+
+    public override string ToString( ) => ToString( null, null );
+}
+
+internal sealed partial class FleetHud {
+    // Campaign scenarios show durations on the game calendar; set by each Record call.
+    private bool _calendar;
+    private GameSpan TimeLeft( int ticks, float speed ) => new( ticks, speed, _calendar );
+
+    // The star date from calendar minutes; see FleetSimulation.CalendarTick for campaign ticks.
+    internal static DateOnly StarDate( int calendarMinutes ) =>
+        new DateOnly( 2184, 1, 1 ).AddDays( (int)SolarCatalog.CalendarDays( calendarMinutes ) );
+
+    private void ClockPanel( Layout layout, int campaignTick, float speed, bool paused, string mapButton ) {
         float x = layout.ClockX;
         Rect( x, 16, 184, 34, Well );
+        int tick = Pacing.CalendarMinutes( campaignTick, _calendar );
         var date = StarDate( tick );
         Span<char> text = stackalloc char[24];
         int hour = (tick / 60) % 24;

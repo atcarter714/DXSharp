@@ -40,7 +40,6 @@ internal sealed partial class FleetHud {
         _glyphs[_count++] = new( new Vector4( x, y, width, height ) * _scale,
             lit ? Vector4.One : new( 0.32f, 0.41f, 0.49f, 1 ), (uint)tile, crop ? 1u : 0u, 4, _overlay );
 
-    private static int Seconds( int ticks, float speed ) => (int)Math.Ceiling( ticks * FleetSimulation.StepSeconds / (speed) );
 
     private static string PhaseName( NavigationPhase phase ) => phase switch {
         NavigationPhase.GravityAssist => "GRAVITY ASSIST", NavigationPhase.Burn => "DEPARTURE BURN", NavigationPhase.Coast => "COAST",
@@ -69,7 +68,7 @@ internal sealed partial class FleetHud {
         Progress( new( 23, top + 69 ), 138, fleet.RouteProgress( unit ),
             phase == NavigationPhase.Brake ? EnergyTint : SpaceDraw.Cyan );
         Span<char> text = stackalloc char[24];
-        text.TryWrite( $"ARRIVAL IN {Seconds( remaining, speed )} SEC", out int length );
+        text.TryWrite( $"ARRIVAL IN {TimeLeft( remaining, speed )}", out int length );
         Text( text[..length], 23, top + 56, 1, Label );
     }
 
@@ -89,8 +88,8 @@ internal sealed partial class FleetHud {
         var colony = fleet.Colony( body );
         var colonyUnit = status.Surveyed && colony.Population == 0 ? fleet.FindColonyShip( body, selectedShips ) : null;
         if ( colony.Ship is not null ) {
-            text.TryWrite( $"{(fleet.Settling( body ) ? "SETTLING" : "COLONY SHIP EN ROUTE")} / {Seconds( colony.WorkRemaining, speed )} SEC", out length );
-            Progress( new( x + 10, y + 56 ), width - 20, 1 - (float)colony.WorkRemaining / FleetSimulation.ColonyDuration, SpaceDraw.Cyan );
+            text.TryWrite( $"{(fleet.Settling( body ) ? "SETTLING" : "COLONY SHIP EN ROUTE")} / {TimeLeft( colony.WorkRemaining, speed )}", out length );
+            Progress( new( x + 10, y + 56 ), width - 20, 1 - (float)colony.WorkRemaining / fleet.ColonyLandingTicks, SpaceDraw.Cyan );
         } else if ( colony.Population > 0 )
             text.TryWrite( $"POP {colony.Population}/{colony.Housing} / {(fleet.ColonySupplied( body ) ? "SUPPLIED" : "NEEDS POWER OR DEPOT")}", out length );
         else if ( status.Surveyed ) {
@@ -118,7 +117,7 @@ internal sealed partial class FleetHud {
             Button( x + 9, y + 61, 78, catalogLayer == SiteLayer.Orbit ? "SURFACE" : "ORBIT", true );
         else if ( ShowClimate( fleet, body ) ) {
             int remaining = fleet.ClimateRemaining( body );
-            Button( x + 9, y + 61, 104, remaining > 0 ? $"CLIMATE {Seconds( remaining, speed )}S" :
+            Button( x + 9, y + 61, 104, remaining > 0 ? $"CLIMATE {TimeLeft( remaining, speed ):c}" :
                 remaining == 0 ? "CLIMATE +20" : "CONDITION WORLD", remaining < 0 );
         } else {
             text.TryWrite( $"S {surface}/{fleet.SurfaceWorkLimit( body )}  O {orbital}/{slots.Orbit}", out length );
@@ -147,9 +146,9 @@ internal sealed partial class FleetHud {
             if ( project ) {
                 var worker = fleet.SiteWorker( body, facility );
                 int id = worker is { IsShip: true } assigned ? assigned.Ship + 1 : (worker?.Squad ?? -1) + 1;
-                if ( plan.Layer == SiteLayer.Surface ) text.TryWrite( $"LOCAL CREW / {Seconds( remaining, speed )} SEC", out length );
+                if ( plan.Layer == SiteLayer.Surface ) text.TryWrite( $"LOCAL CREW / {TimeLeft( remaining, speed )}", out length );
                 else if ( fleet.SiteEnRoute( body, facility ) ) text.TryWrite( $"EN ROUTE / UNIT {id:D2}", out length );
-                else text.TryWrite( $"UNIT {id:D2} / {Seconds( remaining, speed )} SEC", out length );
+                else text.TryWrite( $"UNIT {id:D2} / {TimeLeft( remaining, speed )}", out length );
                 Rect( x + width - 28, top + 3, 18, layout.InspectorRow - 7, Well );
                 Text( "X", x + width - 23, top + 7, 1, SpaceDraw.Amber );
                 if ( !fleet.SiteEnRoute( body, facility ) )
@@ -166,7 +165,7 @@ internal sealed partial class FleetHud {
                 };
                 int integrity = fleet.SiteIntegrity( body, facility );
                 if ( integrity < 100 ) text.TryWrite( $"INTEGRITY {integrity}% / {(fleet.IsPirateControlled( body ) ? "BLOCKADED" : "REPAIRING")}", out length );
-                else if ( upgrade > 0 ) text.TryWrite( $"UPGRADING / {Seconds( upgrade, speed )} SEC", out length );
+                else if ( upgrade > 0 ) text.TryWrite( $"UPGRADING / {TimeLeft( upgrade, speed )}", out length );
                 else text.TryWrite( $"+{amount} {kindText}{(upgrade == 0 ? " / II" : "")}", out length );
                 if ( upgrade < 0 && plan.UpgradeBonus > 0 )
                     Text( "UP", x + width - 26, top + 7, 1, fleet.UpgradeBlock( body, facility ) is null ? EnergyTint : Disabled );

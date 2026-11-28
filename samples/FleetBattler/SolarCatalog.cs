@@ -58,13 +58,14 @@ internal static class SolarCatalog {
         return (float)(Math.IEEERemainder( days * 24 / hours, 1 ) * Math.Tau);
     }
 
-    internal static void Evaluate( int tick, float radius, Span<BodyPose> bodies ) {
+    internal static void Evaluate( int tick, float radius, Span<BodyPose> bodies, double moonOffsetDays = 0 ) {
         double days = CalendarDays( tick );
         bodies[0] = new( Vector2.Zero, Catalog[0].Radius * radius );
         for ( int i = 1; i < bodies.Length; ++i ) {
             ref readonly var body = ref Catalog[i];
+            double period = body.Parent > 0 ? body.Period + moonOffsetDays : body.Period;
             var position = bodies[body.Parent].Center +
-                TrackOffset( i, body.Phase + days / body.Period ) * radius;
+                TrackOffset( i, body.Phase + days / period ) * radius;
             bodies[i] = new( position, body.Radius * radius );
         }
     }

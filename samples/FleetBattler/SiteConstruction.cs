@@ -162,8 +162,12 @@ internal sealed partial class FleetSimulation {
         return true;
     }
 
-    internal int ConstructionDuration( PlanetFacility facility ) =>
-        Facility( facility ).Duration * (FrontierProgression && facility == PlanetFacility.Habitat ? 6 : 1);
+    internal int ConstructionDuration( PlanetFacility facility ) {
+        if ( !FrontierProgression ) return Facility( facility ).Duration;
+        var table = Pacing.Table;
+        int fixedTicks = table.StructureTicks[(int)facility];
+        return fixedTicks > 0 ? fixedTicks : Pacing.Scale( Facility( facility ).Duration, table.StructureScale );
+    }
 
     internal FleetSelection? SiteWorker( int body, PlanetFacility facility ) => Construction( body, facility ).Worker;
     internal bool SiteEnRoute( int body, PlanetFacility facility ) =>

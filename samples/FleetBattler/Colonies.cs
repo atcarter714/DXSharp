@@ -6,7 +6,9 @@ internal readonly record struct ColonyStatus( int Population, int Housing, int W
 
 internal sealed partial class FleetSimulation {
     internal const int ColonyDuration = 900, ColonyLandingPopulation = 3, YardPopulation = 6;
-    private const int ColonyGrowthInterval = 1350;
+    private const int SkirmishGrowthInterval = 1350;
+    private int ColonyGrowthInterval => FrontierProgression ? Pacing.Table.ColonyGrowthTicks : SkirmishGrowthInterval;
+    internal int ColonyLandingTicks => FrontierProgression ? Pacing.Table.ColonyLandingTicks : ColonyDuration;
     private readonly int[] _population = new int[CelestialSystem.BodyCount], _nextGrowth = new int[CelestialSystem.BodyCount],
         _colonyWork = new int[CelestialSystem.BodyCount];
     private readonly FleetSelection?[] _colonyShips = new FleetSelection?[CelestialSystem.BodyCount];
@@ -45,7 +47,7 @@ internal sealed partial class FleetSimulation {
     internal bool BeginClimateProject( int body ) {
         if ( ClimateBlock( body ) is not null ) return false;
         Spend( ClimateCost );
-        _climateReady[body] = Tick + 3600;
+        _climateReady[body] = Tick + (FrontierProgression ? Pacing.Table.ClimateTicks : 3600);
         return true;
     }
 
@@ -103,7 +105,7 @@ internal sealed partial class FleetSimulation {
         order.Settlement = true;
         SetOrder( unit, order );
         _colonyShips[body] = unit;
-        _colonyWork[body] = ColonyDuration;
+        _colonyWork[body] = ColonyLandingTicks;
         return true;
     }
 

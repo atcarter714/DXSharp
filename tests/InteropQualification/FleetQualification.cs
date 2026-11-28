@@ -30,6 +30,7 @@ internal static class FleetQualification {
         VerifyColoniesAndStorage( );
         VerifyPiracy( );
         VerifyExplorationCampaign( );
+        VerifyCampaignPacing( );
         VerifySolarPresentation( );
         VerifyCampaignHud( );
         VerifyGalaxyTravelAndDesign( );
@@ -809,24 +810,86 @@ internal static class FleetQualification {
             fleet.RequiresDrive( SolarCatalog.Charon ) && !fleet.RequiresDrive( SolarCatalog.Europa ),
             "anomalies stay locked until their survey, and satellites inherit the parent's operating range" );
 
+        // Campaign transfers and surveys run on the paced calendar; allow a long cruise across the inner system.
+        var pacing = Pacing.Table;
+        int cruise = Pacing.Ticks( 240 );
         FleetSelection scout = new( 0 );
         foreach ( int body in new[] { 3, 7, SolarCatalog.Ceres } ) {
             Require( fleet.BeginSurvey( scout, body ), "the exploration route accepts a survey order" );
-            AdvanceUntil( fleet, () => fleet.Planet( body ).Surveyed, $"body {body} surveyed", 14_400 );
+            AdvanceUntil( fleet, () => fleet.Planet( body ).Surveyed, $"body {body} surveyed", pacing.SurveyTicks + cruise );
         }
         Require( fleet.MeetsTrigger( concession ) && !fleet.MeetsTrigger( baseline ) && fleet.RaidWarningTicks == 0 && fleet.ActiveRaids == 0,
             "only the matching survey triggers its concession, and home-system development alone is safe" );
         Require( fleet.BuildFacility( SolarCatalog.Ceres, PlanetFacility.Skimmer, new( 1 ) ), "open an outer extraction site" );
-        AdvanceUntil( fleet, () => fleet.SiteRemaining( SolarCatalog.Ceres, PlanetFacility.Skimmer ) == 0, "outer site commissions", 14_400 );
+        AdvanceUntil( fleet, () => fleet.SiteRemaining( SolarCatalog.Ceres, PlanetFacility.Skimmer ) == 0, "outer site commissions",
+            fleet.ConstructionDuration( PlanetFacility.Skimmer ) + cruise );
         int gross = fleet.OreIncome;
         fleet.ClaimDispatch( concession.Accept );
         Require( fleet.OreRoyalty == 20 && fleet.OreIncome < gross, "signing with Ceres levies a real extraction royalty" );
-        AdvanceUntil( fleet, () => fleet.RaidWarningTicks > 0, "established outer trade attracts a warning", FleetSimulation.FirstRaidEarliest );
-        Require( fleet.RaidWarningTicks is >= 4800 and <= 8400, "the raid preparation window starts late and varies by seed" );
-        AdvanceUntil( fleet, () => fleet.IsPirateControlled( SolarCatalog.Ceres ), "pirates blockade the exposed outer site", 20_000 );
+        AdvanceUntil( fleet, () => fleet.RaidWarningTicks > 0, "established outer trade attracts a warning", fleet.FirstRaidTick );
+        Require( fleet.Tick >= fleet.FirstRaidTick && fleet.RaidWarningTicks >= pacing.RaidDelayMinTicks - 1 && fleet.RaidWarningTicks <= pacing.RaidDelayMaxTicks,
+            "the raid preparation window starts late and varies by seed" );
+        AdvanceUntil( fleet, () => fleet.IsPirateControlled( SolarCatalog.Ceres ), "pirates blockade the exposed outer site",
+            pacing.RaidDelayMaxTicks + cruise + 3 * pacing.EconomyCycleTicks );
         Require( fleet.BlockadeOrePerCycle > 0 && fleet.BlockadeEnergyPerCycle > 0 && fleet.BlockadedSites == 1 &&
             fleet.SiteIntegrity( SolarCatalog.Ceres, PlanetFacility.Skimmer ) < 100 && !fleet.IsPirateControlled( 3 ) && !fleet.IsPirateControlled( 1 ),
             "pirate blockade exposes its economic penalties and damages the outer site without blockading Earth or Luna" );
+    }
+
+    private static void VerifyCampaignPacing( ) {
+        var table = Pacing.Table;
+        Require( table.CrossingTicks == Pacing.Ticks( 730 ) && Pacing.TicksPerDay * Pacing.CalendarMinutesPerTick == SolarCatalog.TicksPerDay &&
+            Pacing.CalendarMinutes( Pacing.TicksPerDay, campaign: true ) == SolarCatalog.TicksPerDay &&
+            Pacing.CalendarMinutes( Pacing.TicksPerDay, campaign: false ) == Pacing.TicksPerDay,
+            "the campaign calendar passes one game day per real second at 1x and the first crossing defaults to two years" );
+
+        var sandbox = new FleetSimulation( 3, 37, frontier: true );
+        var sol = new FleetSimulation( 3, 37, frontier: true );
+        sol.StartScenario( ScenarioCatalog.Load( "frontier" ) );
+        Require( sol.FrontierProgression && !sandbox.FrontierProgression && sol.Planet( FleetSimulation.Homeworld ).Surveyed &&
+            sol.Planet( 7 ).SurveyRequired == table.SurveyTicks && sandbox.Planet( 7 ).SurveyRequired == FleetSimulation.FrontierSurveyDuration &&
+            FleetHud.StarDate( sol.CalendarTick( Pacing.Ticks( SolarCatalog.EarthYearDays ) ) ) == new DateOnly( 2184, 12, 31 ) &&
+            FleetHud.StarDate( sandbox.CalendarTick( SolarCatalog.EarthYearTicks ) ) == new DateOnly( 2184, 12, 31 ),
+            "the campaign keeps Earth surveyed when it switches calendars and dates a sidereal year in 365 campaign days" );
+        Require( sol.Hull( HullBlueprint.Corvette ).Duration == Pacing.Scale( sandbox.Hull( HullBlueprint.Corvette ).Duration, table.HullScale ) &&
+            sol.ConstructionDuration( PlanetFacility.Mine ) == Pacing.Scale( FleetSimulation.Facility( PlanetFacility.Mine ).Duration, table.StructureScale ) &&
+            sandbox.ConstructionDuration( PlanetFacility.Mine ) == FleetSimulation.Facility( PlanetFacility.Mine ).Duration &&
+            sol.ConstructionDuration( PlanetFacility.Habitat ) > sol.ConstructionDuration( PlanetFacility.Yard ) &&
+            sol.ColonyLandingTicks == table.ColonyLandingTicks && sandbox.ColonyLandingTicks == FleetSimulation.ColonyDuration,
+            "campaign hulls, structures and colonies take paced durations while the sandbox keeps tactical timings" );
+
+        var campaign = new FleetCampaign( sol, 37 );
+        int preFusion = sol.CrossingTicks;
+        sol.PlayerFaction.Unlock( ResearchTopic.Fusion );
+        int crossing = sol.CrossingTicks;
+        sol.PlayerFaction.Unlock( ResearchTopic.Radiators );
+        Require( campaign.Calendar && preFusion > crossing && crossing == table.CrossingTicks &&
+            sol.CrossingTicks < crossing && campaign.FlightTicks( 0, FleetSimulation.Proxima ) == sol.CrossingTicks &&
+            sandbox.CrossingTicks == FleetSimulation.ExpeditionDuration,
+            "Sol to Proxima takes the paced crossing with fusion, and propulsion research shortens it" );
+        Require( Pacing.InterstellarTicks( Pacing.ProximaDistance * 3, true, _ => false ) > table.CrossingTicks * 2 &&
+            Pacing.InterstellarTicks( Pacing.ProximaDistance / 2, true, _ => false ) is var shortHop &&
+            shortHop > table.CrossingOverheadTicks && shortHop < table.CrossingTicks,
+            "interstellar trips scale with chart distance above a fixed overhead" );
+
+        Span<BodyPose> tactical = stackalloc BodyPose[CelestialSystem.BodyCount];
+        Span<BodyPose> paced = stackalloc BodyPose[CelestialSystem.BodyCount];
+        int day = sol.CalendarTick( Pacing.Ticks( 3 ) );
+        SolarCatalog.Evaluate( day, 100, tactical );
+        SolarCatalog.Evaluate( day, 100, paced, table.MoonPeriodOffsetDays );
+        bool planetsAgree = true, moonsSlower = true;
+        for ( int i = 1; i < CelestialSystem.BodyCount; ++i ) {
+            if ( SolarCatalog.Get( i ).Parent == 0 ) planetsAgree &= tactical[i].Center == paced[i].Center;
+            else if ( i == SolarCatalog.Europa ) moonsSlower &= tactical[i].Center != paced[i].Center;
+        }
+        Require( table.MoonPeriodOffsetDays > 0 && planetsAgree && moonsSlower, "the moon period offset slows satellites without moving planets" );
+
+        Require( new GameSpan( Pacing.Ticks( 730 ), 4, true ).ToString( ) == "2.0 YEARS" &&
+            new GameSpan( Pacing.Ticks( 45 ), 4, true ).ToString( ) == "45 DAYS" &&
+            new GameSpan( Pacing.Ticks( 1 ), 1, true ).ToString( ) == "1 DAY" &&
+            $"{new GameSpan( Pacing.Ticks( 120 ), 1, true ):c}" == "3.9MO" &&
+            new GameSpan( 90, 1, false ).ToString( ) == "2 SEC",
+            "campaign durations read as game days, months and years; the sandbox keeps real seconds" );
     }
 
     private static void VerifySolarPresentation( ) {

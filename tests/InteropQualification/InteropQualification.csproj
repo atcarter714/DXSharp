@@ -30,6 +30,7 @@
     <None Include="../../samples/FleetBattler/Art/*.jpg" Link="Art/%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Compile Include="../../samples/FleetBattler/FleetContent.cs" Link="FleetContent.cs" />
+    <Compile Include="../../samples/FleetBattler/Pacing.cs" Link="Pacing.cs" />
     <Compile Include="../../samples/FleetBattler/ScenarioCatalog.cs" Link="ScenarioCatalog.cs" />
     <Compile Include="../../samples/FleetBattler/GravityAssist.cs" Link="GravityAssist.cs" />
     <Compile Include="../../samples/FleetBattler/OrbitalNavigation.cs" Link="OrbitalNavigation.cs" />

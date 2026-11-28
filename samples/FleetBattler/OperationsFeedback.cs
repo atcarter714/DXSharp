@@ -56,7 +56,7 @@ internal sealed partial class FleetHud {
                 if ( !site.Producing && fleet.SiteEnRoute( site.Body, site.Facility ) )
                     detailLength = CopyStatus( "CONSTRUCTOR EN ROUTE", detail );
                 else if ( site.Remaining > 0 )
-                    detail.TryWrite( $"{Seconds( site.Remaining, speed )} SEC LEFT / {fleet.BodyName( site.Body )}", out detailLength );
+                    detail.TryWrite( $"{TimeLeft( site.Remaining, speed )} LEFT / {fleet.BodyName( site.Body )}", out detailLength );
                 else detail.TryWrite( $"ONLINE / {fleet.BodyName( site.Body )} / CLICK TO INSPECT", out detailLength );
                 break;
             default:

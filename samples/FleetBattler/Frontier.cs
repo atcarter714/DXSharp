@@ -18,6 +18,7 @@ internal sealed partial class FleetSimulation {
     private int _nextPatrol;
     internal const int RaidPreparation = 2400, PatrolInterval = 4200;
     internal const int FirstRaidEarliest = 7_200;
+    internal int FirstRaidTick => FrontierProgression ? Pacing.Table.FirstRaidTicks : FirstRaidEarliest;
     internal string Objective => !Solar ? !ExpeditionArrived ? "NO SOL SENSOR COVERAGE" : ReceiverSecured ? "FIRST CROSSING COMPLETE"
         : ReceiverOnline ? "DEFEND THE PROXIMA RECEIVER" : "SURVEY RECEIVER WORLD / BUILD AN ORBITAL LAB"
         : RaidWarningTicks > 0 ? "PREPARE ESCORTS FOR THE INBOUND RAID"
@@ -93,7 +94,7 @@ internal sealed partial class FleetSimulation {
             Ore = Math.Min( MineCost, Ore + 2 );
         AdvancePiracy( );
         if ( !_battle ) return;
-        bool raidReady = !FrontierProgression || Tick >= FirstRaidEarliest && _surveyedProspects >= 3;
+        bool raidReady = !FrontierProgression || Tick >= FirstRaidTick && _surveyedProspects >= 3;
         if ( _raidsLaunched == 0 && _raidTick == 0 && raidReady && FirstMineBody( beyondHome: FrontierProgression ) != 0 ) {
             _raidTick = Tick + (FrontierProgression ? RaidDelay() : RaidPreparation);
             SendDispatch( FrontierEvent.Distress );
@@ -131,7 +132,11 @@ internal sealed partial class FleetSimulation {
 
     private bool HasOperatingMine( ) => FirstMineBody( ) != 0;
 
-    private int RaidDelay() => 4_800 + (int)((_seed ^ (uint)Tick * 2654435761u) % 3_601);
+    private int RaidDelay() {
+        var table = Pacing.Table;
+        uint span = (uint)(table.RaidDelayMaxTicks - table.RaidDelayMinTicks) + 1;
+        return table.RaidDelayMinTicks + (int)((_seed ^ (uint)Tick * 2654435761u) % span);
+    }
 
     private int FirstMineBody( bool beyondHome = false ) {
         for ( int body = 1; body < _bodies.Length; ++body )

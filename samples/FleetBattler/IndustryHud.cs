@@ -80,7 +80,7 @@ internal sealed partial class FleetHud {
             Text( hull.Name, x + 50, row + 5, 1, White );
             string? block = fleet.ShipOrderBlock( body, blueprint );
             Cost( hull.Cost, x + 50, row + 17 );
-            if ( block is null ) label.TryWrite( $"{Seconds( hull.Duration, speed )} SEC", out length );
+            if ( block is null ) label.TryWrite( $"{TimeLeft( hull.Duration, speed )}", out length );
             else length = CopyStatus( block, label );
             Text( label[..length], x + 50, row + 29, 1, block is null ? Label : Disabled );
             if ( block is null ) Button( x + 170, row + 13, 37, "ADD", true );
@@ -97,7 +97,7 @@ internal sealed partial class FleetHud {
             var order = orders[i];
             FitText( fleet.Hull( order.Hull ).Name, x + 239, row + 4, 139, 1, White );
             int remaining = fleet.ShipRemaining( body );
-            if ( i == 0 ) label.TryWrite( $"BUILDING / {Seconds( remaining, speed )} SEC", out length );
+            if ( i == 0 ) label.TryWrite( $"BUILDING / {TimeLeft( remaining, speed )}", out length );
             else length = CopyStatus( "WAITING", label );
             Text( label[..length], x + 239, row + 15, 1, Label );
             if ( i == 0 ) Progress( new( x + 239, row + 25 ), 128, 1f - (float)remaining / order.Duration, EnergyTint );
@@ -169,7 +169,7 @@ internal sealed partial class FleetHud {
                 continue;
             }
             if ( fleet.ActiveResearch == topic ) {
-                line.TryWrite( $"{Seconds( fleet.ResearchRemaining, speed )} SEC LEFT", out int length );
+                line.TryWrite( $"{TimeLeft( fleet.ResearchRemaining, speed )} LEFT", out int length );
                 Text( line[..length], x + 17 + inset, row + 33, 1, ScienceTint );
                 Progress( new( x + 145, row + 36 ), 105, fleet.ResearchProgress, ScienceTint );
                 Button( x + 270, row + 25, 64, "CANCEL", true );
@@ -178,8 +178,7 @@ internal sealed partial class FleetHud {
                 FitText( line[..length], x + 17 + inset, row + 34, 310 - inset, 1, Disabled );
             } else {
                 Cost( tech.Cost, x + 17 + inset, row + 33 );
-                int rate = Math.Max( 1, fleet.ResearchRate );
-                line.TryWrite( $"{Seconds( (tech.Duration + rate - 1) / rate, speed )} SEC", out int length );
+                line.TryWrite( $"{TimeLeft( fleet.ResearchTicks( tech ), speed )}", out int length );
                 Text( line[..length], x + 139 + inset, row + 34, 1, Label );
                 Button( x + 270, row + 25, 64, "START", fleet.CanResearch( topic ) );
             }

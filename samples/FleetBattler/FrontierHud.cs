@@ -68,7 +68,7 @@ internal sealed partial class FleetHud {
                     if ( !fleet.CanOpenYard( body ) ) continue;
                     int jobs = fleet.YardQueue( body ).Length;
                     if ( jobs == 0 ) label.TryWrite( $"{fleet.BodyName( body )}  /  IDLE", out length );
-                    else label.TryWrite( $"{fleet.BodyName( body )}  /  {jobs} QUEUED  /  {Seconds( fleet.ShipRemaining( body ), speed )} SEC", out length );
+                    else label.TryWrite( $"{fleet.BodyName( body )}  /  {jobs} QUEUED  /  {TimeLeft( fleet.ShipRemaining( body ), speed )}", out length );
                     IconButton( x + 10, y + 77 + row++ * 21, 328, HudIcon.Yard, label[..length], true );
                 }
                 if ( row == 0 ) Text( "NO SOL PRODUCTION SITES", x + 11, y + 79, 1, Label );

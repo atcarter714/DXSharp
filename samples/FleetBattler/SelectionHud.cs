@@ -45,7 +45,7 @@ internal sealed partial class FleetHud {
         Icon( HudIcon.Retreat, x + 10, y + 81, 12, EnergyTint );
         FitText( line[..length], x + 29, y + 84, 252, 1, Label );
         int ticks = fleet.RouteTicks( unit );
-        if ( ticks > 0 ) line.TryWrite( $"ARRIVAL IN {Seconds( ticks, speed )} SEC", out length );
+        if ( ticks > 0 ) line.TryWrite( $"ARRIVAL IN {TimeLeft( ticks, speed )}", out length );
         else line.TryWrite( $"{FleetSimulation.RoleName( role )} / {fleet.Service( unit )}", out length );
         Icon( HudIcon.Orders, x + 10, y + 99, 12, ScienceTint );
         FitText( line[..length], x + 29, y + 102, 256, 1, Label );

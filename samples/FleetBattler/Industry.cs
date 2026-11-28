@@ -25,8 +25,26 @@ internal sealed partial class FleetSimulation {
     internal string FactionName( FactionId faction ) => faction == FactionId.Sol ? PlayerFaction.Name : Factions.Name( faction );
 
     internal int Energy { get; private set; }
-    internal bool FrontierProgression { get; set; }
-    private int EconomyInterval => FrontierProgression ? 720 : IncomeInterval;
+    private bool _frontierProgression;
+    // Campaign scenarios run on the campaign calendar and take their durations from Content/pacing.json.
+    internal bool FrontierProgression {
+        get => _frontierProgression;
+        set {
+            if ( _frontierProgression == value ) return;
+            int survey = SurveyRequired;
+            _frontierProgression = value;
+            // Bodies surveyed before the switch (Sol's homeworld) stay surveyed; growth restarts on the new calendar.
+            for ( int body = 1; body < _survey.Length; ++body ) {
+                if ( _survey[body] >= survey ) _survey[body] = SurveyRequired;
+                if ( _population[body] > 0 ) _nextGrowth[body] = Tick + ColonyGrowthInterval;
+            }
+            EvaluateBodies( WorldTick, _bodies );
+            _bodies.CopyTo( _previousBodies, 0 );
+        }
+    }
+    // The tick the ephemeris and star date read: calendar minutes, 24 per campaign tick.
+    internal int CalendarTick( int tick ) => Pacing.CalendarMinutes( tick, FrontierProgression );
+    private int EconomyInterval => FrontierProgression ? Pacing.Table.EconomyCycleTicks : IncomeInterval;
     private int ScienceInterval => FrontierProgression ? EconomyInterval * 2 : EconomyInterval;
     internal bool Established => Frontier && Solar;
     internal ResearchTopic? ActiveResearch { get; private set; }
@@ -124,7 +142,12 @@ internal sealed partial class FleetSimulation {
         return true;
     }
 
-    private int ResearchWork( Technology tech ) => FrontierProgression ? tech.Duration * 8 : tech.Duration;
+    private int ResearchWork( Technology tech ) => FrontierProgression ? Pacing.Scale( tech.Duration, Pacing.Table.ResearchScale ) : tech.Duration;
+    // Remaining research ticks for a project at the current lab throughput.
+    internal int ResearchTicks( Technology tech ) {
+        int rate = Math.Max( 1, ResearchRate );
+        return (ResearchWork( tech ) + rate - 1) / rate;
+    }
 
     internal bool CancelResearch( ) {
         if ( ActiveResearch is not { } topic ) return false;
@@ -215,13 +238,15 @@ internal sealed partial class FleetSimulation {
     internal HullPlan Hull( HullBlueprint blueprint, ShipDesign design ) {
         var role = BlueprintRole( blueprint );
         var definition = GameCatalog.Hull( role );
-        if ( definition.Naval == 0 ) return new( definition.Name, role, definition.Cost, definition.Ticks );
+        if ( definition.Naval == 0 ) return new( definition.Name, role, definition.Cost, BuildTicks( definition.Ticks ) );
         int ticks = Math.Max( 30, definition.Ticks - (IndustryUpgrade ? definition.ImprovedTicks : 0) ) + design.ExtraTicks;
         if ( Researched( ResearchTopic.ParallelSlips ) ) ticks = (ticks * 4 + 4) / 5;
         return new( definition.Name, role, new( Math.Max( 0, definition.Cost.Ore - (IndustryUpgrade ? definition.ImprovedOre : 0) ) + design.ExtraOre,
             definition.Cost.Energy + design.ExtraEnergy, definition.Cost.Science ),
-            ticks );
+            BuildTicks( ticks ) );
     }
+
+    private int BuildTicks( int ticks ) => FrontierProgression ? Pacing.Scale( ticks, Pacing.Table.HullScale ) : ticks;
 
     private static bool MiningBelt( int system, int body ) => system == 0
         ? body is SolarCatalog.Ceres or SolarCatalog.Vesta or SolarCatalog.Pluto or CelestialSystem.OuterBelt

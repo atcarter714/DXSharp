@@ -77,11 +77,16 @@ internal sealed partial class FleetSimulation {
         return CanAfford( ExpeditionCost ) ? null : $"NEEDS {ExpeditionCost.Ore} ORE AND {ExpeditionCost.Energy} ENERGY";
     }
 
+    // The first crossing to Proxima: a fixed sandbox flight, or the campaign's paced trip shortened by propulsion research.
+    internal int CrossingTicks => FrontierProgression
+        ? Pacing.InterstellarTicks( Pacing.ProximaDistance, FusionUpgrade, Researched )
+        : ExpeditionDuration;
+
     internal ResourceCost ExpeditionCost => FrontierProgression ? new( 145, 185 ) : CrossingCost;
 
     internal Expedition? Depart( ReadOnlySpan<bool> selected, int campaignTick ) {
         if ( LaunchBlock( selected ) is not null ) return null;
-        int arrival = checked(campaignTick + ExpeditionDuration);
+        int arrival = checked(campaignTick + CrossingTicks);
         Spend( ExpeditionCost );
         _expeditionDeparted = true;
         return new( Proxima, arrival, RemoveTravelHulls( selected ), ArrivalSupplies );

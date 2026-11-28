@@ -130,6 +130,7 @@ internal sealed partial class FleetHud {
         int selectionCount = -1, int planet = -1, string? notice = null, Vector4? drag = null, Vector2? beacon = null,
         ReadOnlySpan<bool> selectedShips = default, float speed = 1, bool paused = false, FleetSelection? surveyUnit = null, BodyMenu? menu = null, Vector2? yard = null, CommandTab commandTab = CommandTab.Hidden, int dispatch = 0, ReadOnlySpan<MapSite> sites = default, MapHover hover = default, int yardInspector = -1, bool buildCatalog = false, ResearchBranch researchBranch = ResearchBranch.Industry, SiteLayer catalogLayer = SiteLayer.Orbit, string? hostileAlert = null, int fleetScroll = 0, ShipDesigner? designer = null, Briefing? briefing = null, ReadOnlySpan<Vector2> kuiperLabels = default, bool shipDetails = false, int campaignTick = 0, int yardPage = 0, Vector2? pointer = null, ReadOnlySpan<MinorNotice> notices = default, long noticeNow = 0, float interpolation = 1 ) {
         if ( width < 350 || height < 240 ) return;
+        _calendar = fleet.FrontierProgression;
         Begin( width, height );
         var layout = new Layout( width / _scale, height / _scale );
         Span<char> text = stackalloc char[72];
@@ -219,7 +220,7 @@ internal sealed partial class FleetHud {
         Rect( right + 9, 108, 153, 2, Well );
         if ( fraction > 0 ) Rect( right + 9, 108, 153 * fraction, 2, siteTint );
         if ( fleet.BlockadedSites > 0 ) text.TryWrite( $"-{fleet.BlockadeOrePerCycle} ORE -{fleet.BlockadeEnergyPerCycle} EN / CYCLE", out length );
-        else if ( fleet.RaidWarningTicks > 0 ) text.TryWrite( $"INBOUND / {Seconds( fleet.RaidWarningTicks, speed )} SEC", out length );
+        else if ( fleet.RaidWarningTicks > 0 ) text.TryWrite( $"INBOUND / {TimeLeft( fleet.RaidWarningTicks, speed )}", out length );
         else if ( fleet.OreRoyalty > 0 ) text.TryWrite( $"CERES COMBINE / {fleet.OreRoyalty}% ORE LEVY", out length );
         else if ( fleet.Frontier ) text.TryWrite( $"NAVAL {fleet.NavalUsed}+{fleet.NavalReserved}/{fleet.NavalCapacity}", out length );
         else text.TryWrite( $"WINGS {fleet.WingsBuilt}/{FleetSimulation.WingGoal}  AMBER {fleet.AmberCount}", out length );
@@ -328,7 +329,7 @@ internal sealed partial class FleetHud {
 
         PanelAt( 14, layout.Bottom, layout.Width - 28, 50, SpaceDraw.Cyan );
         int routeTicks = selectionCount > 0 && fleet.Frontier && surveyUnit is not null ? fleet.RouteTicks( selected ) : 0;
-        string? flightStatus = routeTicks > 0 ? $"{PhaseName( fleet.RoutePhase( selected ) )} / ETA {Seconds( routeTicks, speed )} SEC" : null;
+        string? flightStatus = routeTicks > 0 ? $"{PhaseName( fleet.RoutePhase( selected ) )} / ETA {TimeLeft( routeTicks, speed )}" : null;
         string instruction = notice ?? (fleet.Recovering ? "FLEET LOST / REBUILD AT HOMEWORLD OR A YARD"
             : flightStatus ?? (fleet.Frontier ? fleet.Objective
             : fleet.Lost ? "DEFEAT / CYAN FLEET LOST"
@@ -379,7 +380,7 @@ internal sealed partial class FleetHud {
         var status = fleet.Planet( planet );
         Span<char> line = stackalloc char[32];
         string phase = status.SurveyUnit is null ? "SURVEY" : fleet.SurveyWorking( planet ) ? "SCANNING" : "EN ROUTE";
-        line.TryWrite( $"{phase} {status.Survey * 100 / FleetSimulation.SurveyDuration} PCT", out int length );
+        line.TryWrite( $"{phase} {(int)(status.SurveyProgress * 100)} PCT", out int length );
         if ( status.Surveyed && fleet.HasDeposit( planet ) )
             line.TryWrite( $"DEPOSIT / {fleet.DepositYield( planet )} ORE", out length );
         Text( status.Surveyed && !fleet.HasDeposit( planet ) ? "SURVEY COMPLETE" : line[..length], right + 9, 174, 1.1f, status.Surveyed ? SpaceDraw.Cyan : Label );

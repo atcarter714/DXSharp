@@ -43,7 +43,7 @@ The main belt defaults to 36 visible debris bodies on eccentric Keplerian paths,
 
 ### The First Crossing
 
-The campaign starts on 2184.01.01 at 1×. Each real second advances one campaign hour at that rate. At 32×, one Earth sidereal orbit takes roughly four and a half minutes. Orbital periods, body spin, transfers and the displayed date advance from the fixed-step campaign clock. Distances and ship acceleration use compressed tactical units.
+The campaign starts on 2184.01.01 at 1×. Each real second advances one campaign day at that rate, so one Earth sidereal orbit takes about six minutes and roughly eleven seconds at 32×. Orbital periods, transfers and the displayed date advance from the fixed-step campaign clock; body spin stays on the presentation clock so surfaces stay readable. Construction, research, surveys and travel are measured on that calendar and read in days, months or years. The first crossing to Proxima takes two years with the pulsed fusion drive, and propulsion research shortens every interstellar trip. Distances and ship acceleration use compressed tactical units. Scenarios without `frontierProgression` keep the hourly calendar and tactical timings.
 
 1. Open **Galaxy** and select **Proxima**. The first-crossing panel shows the next unmet requirement and enables **Launch Expedition** once the route is ready.
 2. Use **Rally Crew** to select or return an idle scout and constructor to Earth orbit. The shared roster shows the selected fleet. Shift adds and Ctrl toggles selections.
@@ -61,6 +61,7 @@ The installed sample loads the versioned JSON files in `Content` at startup. Edi
 | [hulls.json](Content/hulls.json) | Hull names, prices, construction time, naval weight, health, flight stats, display scale, and research unlocks |
 | [modules.json](Content/modules.json) | Slot variants, power, stats, cost, and technology requirements |
 | [structures.json](Content/structures.json) | Surface or orbital placement, costs, build times, outputs, and upgrade requirements |
+| [pacing.json](Content/pacing.json) | Campaign tempo: the Sol to Proxima crossing, research that shortens interstellar trips, and how long surveys, construction, hulls, research, economy cycles, colonies and raids take in game days |
 | [ship-names.json](Content/ship-names.json) | Name pools per hull role |
 
 Keep built-in IDs and slot types so catalog references still resolve. Research dependencies and exclusive groups are validated on load. Orbital guidance, combat scheduling, and rendering remain in C# and HLSL.
@@ -152,7 +153,7 @@ Pass the same arguments with `--validate-content` for a headless catalog and hul
 | File | Record array | Authoring contract |
 | --- | --- | --- |
 | research.json | projects | Give new projects a namespaced ID, existing branch, cost, work in ticks, artwork, and prerequisite IDs. New projects support extractionBonus, surveyBonus, upkeepReduction, scanRate, damageBonus, rangeBonus and an optional pulseEffect. Additional branch pages appear automatically. |
-| scenarios.json | scenarios | Set the menu description, starting resources, raids, optional startingSites, and ordered events. Enable `frontierProgression` for longer economy and research cycles, staged settlement, and first-crossing requirements. |
+| scenarios.json | scenarios | Set the menu description, starting resources, raids, optional startingSites, and ordered events. Enable `frontierProgression` for the campaign calendar, the paced durations in pacing.json, staged settlement, and first-crossing requirements. |
 | events.json | events | Reference one lore fragment. Set `system` to Sol (default), an authored system name or a generated system designation such as DX 017. Use `body` to require a survey of a particular target, by stable body ID in Sol or by displayed name in another system. Set `unlock` to complete a research ID on acceptance and `oreRoyalty` to apply a percentage to future local extraction. An optional `declineReward` object supplies the alternate choice label and its rewards. Both choices credit the event system's local stores up to capacity. |
 | lore.json | fragments | Original narrative text keyed by ID. |
 | modules.json | modules | Add consecutive numeric variant IDs to Drive, Power, Shield or Computer. Set power demand, cost, performance and an optional research ID. Drive modules can set `exhaust` to `Thermal`, `HighThrust`, `Ion`, or `Fusion`. Weapon modules can set `effect` to `Pulse`, `Rail`, `Ion` or `Thermal`. These IDs also work for `pulseEffect` in research. Click a module to fit it or drag it onto its slot, then save the design. |
@@ -160,6 +161,7 @@ Pass the same arguments with `--validate-content` for a headless catalog and hul
 | bodies.json | bodies | Override a solar body by stable ID and retain its index. Set parent index, axisAu or mapAxis, orbital period in days, eccentricity, initial phase in turns, display radius, color, rings, class and habitability. |
 | factions.json | factions | Set campaign faction names, HDR tint and hostile relationships. Hostility is reciprocal. |
 | quotes.json | quotes | Loading screen text and credit. |
+| pacing.json | pacing | Override a row by ID. Durations are `days` of game time (also real seconds at 1×); multipliers are `factor`. `proxima-crossing` is the Sol to Proxima trip with fusion; other routes scale by chart distance above `crossing-overhead`. Add `transit.<research ID>` rows to make a project shorten interstellar trips and `build.<structure>` rows to fix one structure's build time. |
 
 In Houdini, build in metres, Y up, bow along negative Z, with the center of rotation at the origin. Export triangle meshes with normals, UV0 and base-color materials. Keep each variant in its own GLB or bundle every glTF sidecar. Use flatten=true to apply node transforms. Inspect AssayTender and SpindleCarrier for instanced components, radiator clearance and paired nozzles. Socket distances in the manifest are tactical units after model scale and before the hull role's instance scale. Coast and ballistic flyby phases cut main thrust. For new gameplay roles extend HullRole, blueprint mapping, hull definitions, names and model records. For an additional solar body append a bodies.json record after its parent, update BodyCount and review survey bit masks and shader body limits. Body periods are in campaign days; the tactical display compresses distances.
 

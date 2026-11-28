@@ -1385,7 +1385,7 @@ internal static class Program {
             string status = routeNotice ?? (campaign.Arrived ? "SELECT A FLEET / RIGHT CLICK A DESTINATION TO MOVE"
                 : fleet.FrontierProgression ? "FIRST CROSSING / EQUIP A SCOUT AND CONSTRUCTOR FOR PROXIMA"
                 : "FIRST CROSSING / SEND ONE IDLE SCOUT FROM SOL TO PROXIMA");
-            string? quote = source == routeTarget ? null : $"TRANSIT / {(int)Math.Ceiling( campaign.FlightTicks( source, routeTarget ) * FleetSimulation.StepSeconds / speed )} SEC";
+            string? quote = source == routeTarget ? null : $"TRANSIT / {new GameSpan( campaign.FlightTicks( source, routeTarget ), speed, campaign.Calendar )}";
             var cost = fleet.ExpeditionCost;
             var (scout, builder) = firstCrossing ? fleet.ReadyExpeditionCrew() : (-1, -1);
             string? readiness = firstCrossing ? $"CREW {(scout >= 0 ? 1 : 0) + (builder >= 0 ? 1 : 0)}/2 / {fleet.Ore}/{cost.Ore} ORE / {fleet.Energy}/{cost.Energy} EN" : null;

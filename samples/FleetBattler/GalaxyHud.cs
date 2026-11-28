@@ -33,6 +33,7 @@ internal sealed partial class FleetHud {
         GalaxyRoute route, int campaignTick, float speed, bool paused, Briefing? briefing = null, FleetSimulation? roster = null,
         CommandSelection? selected = null, int rosterPage = 0, ReadOnlySpan<FleetTransit> transfers = default, ReadOnlySpan<MinorNotice> notices = default, long noticeNow = 0, FleetCampaign? campaign = null, GalaxyView chart = default, int hovered = -1 ) {
         if ( width < 350 || height < 240 ) return;
+        _calendar = campaign?.Calendar ?? roster?.FrontierProgression ?? false;
         Begin( width, height );
         var layout = new Layout( width / _scale, height / _scale );
         PanelAt( 14, 12, layout.Width - 28, 41, SpaceDraw.Cyan );
