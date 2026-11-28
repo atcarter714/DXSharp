@@ -30,7 +30,7 @@ internal sealed partial class FleetSimulation {
             var center = Fleet.BodyCenterAt( Body, whole );
             var next = Fleet.BodyCenterAt( Body, whole + 1 );
             var (p, v) = Orbit.State( (tick - Middle) * StepSeconds );
-            return (Vector2.Lerp( center, next, tick - whole ) + Radial * p.X + Tangent * p.Y,
+            return (Mix( center, next, tick - whole ) + Radial * p.X + Tangent * p.Y,
                 (next - center) / (float)StepSeconds + Radial * v.X + Tangent * v.Y);
         }
     }

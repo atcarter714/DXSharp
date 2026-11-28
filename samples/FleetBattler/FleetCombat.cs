@@ -108,7 +108,11 @@ internal sealed partial class FleetSimulation {
         float speed = MathF.Min( flight.Cruise * .72f, MathF.Sqrt( 2 * acceleration * distance ) );
         var closing = distance > .05f ? displacement * (speed / distance) : Vector2.Zero;
         _velocities[ship] += GravityAt( _positions[ship] ) * dt;
-        var relative = _velocities[target] + closing - _velocities[ship];
+        // Two ships intercepting each other would otherwise keep matching each other's velocity and race off the chart.
+        var wanted = _velocities[target] + closing;
+        float wantedSpeed = wanted.Length();
+        if ( wantedSpeed > flight.Cruise ) wanted *= flight.Cruise / wantedSpeed;
+        var relative = wanted - _velocities[ship];
         float correction = relative.Length();
         if ( correction < .03f ) {
             _positions[ship] += _velocities[ship] * dt;

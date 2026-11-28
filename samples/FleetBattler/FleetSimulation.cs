@@ -206,6 +206,10 @@ internal sealed partial class FleetSimulation {
     internal Vector2 Center( int squad ) => _squads[squad].Center;
     internal Vector2 Target( int squad ) => _squads[squad].Anchor;
     internal Vector2 Center( FleetSelection selected ) => selected.IsShip ? _positions[selected.Ship] : Center( selected.Squad );
+    // Vector2.Lerp may fuse its multiply and add when the CPU has FMA, so the JIT and NativeAOT builds round
+    // differently and the same replay drifts apart. Simulation state blends with this unfused form instead.
+    private static Vector2 Mix( Vector2 from, Vector2 to, float amount ) => from * (1 - amount) + to * amount;
+
     internal Vector2 VisualPosition( int ship, float interpolation ) => Vector2.Lerp( _previousPositions[ship], _positions[ship], interpolation );
     internal Vector2 VisualCenter( FleetSelection selected, float interpolation ) {
         if ( selected.IsShip ) return VisualPosition( selected.Ship, interpolation );
@@ -442,7 +446,7 @@ internal sealed partial class FleetSimulation {
                     _headings[ship] = TurnToward( _headings[ship], wish, Frontier ? TurnStep * flight.TurnRate : TurnStep );
                     desired *= 0.22f + 0.78f * MathF.Max( Vector2.Dot( _headings[ship], wish ), 0 );
                 }
-                var velocity = Vector2.Lerp( _velocities[ship], desired, localResponse );
+                var velocity = Mix( _velocities[ship], desired, localResponse );
                 if ( error.LengthSquared( ) < 0.0001f && velocity.LengthSquared( ) < 0.0001f && avoid == Vector2.Zero ) {
                     _positions[ship] = goal;
                     velocity = Vector2.Zero;
