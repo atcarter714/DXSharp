@@ -17,6 +17,12 @@ internal sealed class FleetAudio : IDisposable {
     private long _alertUntil, _retryAt, _lastProgress;
     private TimeSpan _position;
     private bool _preparing;
+    private PlaylistRotation? _playingRotation;
+    private long _startedAt, _fadeOutAt, _contactSince, _quietSince;
+    private int _contactSystem = -1;
+    private bool _contact;
+    private double _volume;
+    private const int MinimumPlayMs = 28_000, FadeMs = 2_200;
     private readonly HashSet<string> _badTracks = new( StringComparer.OrdinalIgnoreCase );
 
     internal FleetAudio( bool muted ) {
@@ -31,7 +37,8 @@ internal sealed class FleetAudio : IDisposable {
         _rotations = _jukebox.CreateRotations( Random.Shared );
         _director = new( _rotations[(int)MusicSituation.System] != _rotations[(int)MusicSituation.Victory] );
         try {
-            _music.Volume = _jukebox.MusicVolume;
+            _volume = _jukebox.MusicVolume;
+            _music.Volume = 0;
             _effect.Volume = _jukebox.EffectsVolume;
             _music.MediaEnded += OnEnded;
             _music.MediaFailed += OnFailed;
@@ -43,26 +50,45 @@ internal sealed class FleetAudio : IDisposable {
     }
 
     internal void SetSituation( int system, bool galaxy, bool contested, bool victory, bool title = false ) {
-        var previous = _director.Situation;
-        bool startVictory = _director.Update( system, galaxy, contested, victory, title );
+        long now = Environment.TickCount64;
+        if ( title || system != _contactSystem ) {
+            _contactSystem = system;
+            _contact = false;
+            _contactSince = _quietSince = 0;
+        }
+        if ( contested && !title ) {
+            _quietSince = 0;
+            if ( _contactSince == 0 ) _contactSince = now;
+            _contact |= now - _contactSince >= 1_500;
+        } else {
+            _contactSince = 0;
+            if ( _quietSince == 0 ) _quietSince = now;
+            if ( now - _quietSince >= 20_000 ) _contact = false;
+        }
+        _director.Update( system, galaxy, _contact, victory, title );
         if ( _muted ) _director.FinishVictory( );
-        bool continuing = _initialized && _rotations[(int)_director.Situation] == _rotations[(int)previous];
         _initialized = true;
         if ( !_available || _muted ) return;
-        if ( !continuing || startVictory ) { PlayNext(); return; }
         if ( _preparing ) return;
-        long now = Environment.TickCount64;
         if ( _playingTrack is null ) {
             if ( now >= _retryAt ) PlayNext();
             return;
         }
         var position = _music.Position;
+        if ( _playingRotation != _rotations[(int)_director.Situation] && position.TotalMilliseconds >= MinimumPlayMs && _fadeOutAt == 0 )
+            _fadeOutAt = now;
+        if ( _fadeOutAt != 0 && now - _fadeOutAt >= FadeMs ) { PlayNext(); return; }
+        double gain = Math.Clamp( (now - _startedAt) / (double)FadeMs, 0, 1 );
+        if ( _fadeOutAt != 0 ) gain *= 1 - (now - _fadeOutAt) / (double)FadeMs;
+        if ( _music.NaturalDuration.HasTimeSpan )
+            gain *= Math.Clamp( (_music.NaturalDuration.TimeSpan - position).TotalMilliseconds / FadeMs, 0, 1 );
+        _music.Volume = _volume * gain;
         if ( position > _position ) {
             _position = position;
             _lastProgress = now;
         } else if ( now - _lastProgress >= 8000 ) {
             if ( _music.NaturalDuration.HasTimeSpan && _music.NaturalDuration.TimeSpan - position < TimeSpan.FromSeconds( 1 ) )
-                _director.FinishVictory();
+                FinishPlayingVictory();
             else if ( _badTracks.Add( _playingTrack ) )
                 Console.WriteLine( $"Fleet music stopped advancing: {_playingTrack}" );
             PlayNext();
@@ -71,9 +97,9 @@ internal sealed class FleetAudio : IDisposable {
 
     internal bool Muted => _muted;
     internal TimeSpan MusicPosition => _music.Position;
-    internal int MusicPercent => (int)Math.Round( _music.Volume * 100 );
+    internal int MusicPercent => (int)Math.Round( _volume * 100 );
     internal void AdjustMusic( int amount ) {
-        if ( _available ) _music.Volume = Math.Clamp( (MusicPercent + amount) / 100d, 0, 1 );
+        if ( _available ) _volume = Math.Clamp( (MusicPercent + amount) / 100d, 0, 1 );
     }
 
     internal void Toggle( ) {
@@ -106,8 +132,12 @@ internal sealed class FleetAudio : IDisposable {
 
     private void OnEnded( object? sender, EventArgs args ) {
         if ( _playingTrack is null ) return;
-        _director.FinishVictory( );
+        FinishPlayingVictory();
         PlayNext( );
+    }
+
+    private void FinishPlayingVictory() {
+        if ( _playingRotation == _rotations[(int)MusicSituation.Victory] ) _director.FinishVictory();
     }
 
     private void OnFailed( object? sender, ExceptionEventArgs args ) {
@@ -141,11 +171,13 @@ internal sealed class FleetAudio : IDisposable {
                     if ( request != _playRequest ) return;
                 }
                 _playingTrack = choice;
+                _playingRotation = rotation;
                 _lastPlayed = choice;
                 _music.Open( new Uri( file ) );
+                _music.Volume = 0;
                 _music.Play( );
                 _position = TimeSpan.Zero;
-                _lastProgress = Environment.TickCount64;
+                _startedAt = _lastProgress = Environment.TickCount64;
                 _preparing = false;
                 return;
             } catch ( Exception error ) when ( error is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or NotSupportedException or ArgumentException ) {
@@ -165,6 +197,8 @@ internal sealed class FleetAudio : IDisposable {
 
     private void CloseMusic( ) {
         _playingTrack = null;
+        _playingRotation = null;
+        _fadeOutAt = 0;
         _music.Close( );
     }
 

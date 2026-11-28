@@ -32,6 +32,11 @@ internal readonly record struct ShipDesign( WeaponKind Weapon, bool Plating, Shi
     internal int Reload => Math.Max( 8, WeaponStats.Reload + ComputerStats.Reload );
     internal int Damage => WeaponStats.Damage;
     internal EffectStyle ShotEffect => WeaponStats.Effect ?? (Weapon == WeaponKind.Rail ? EffectStyle.Rail : EffectStyle.Pulse);
+    internal ExhaustStyle Exhaust( HullRole role ) => DriveStats.Exhaust ?? (role switch {
+        HullRole.Scout or HullRole.Prospector => ExhaustStyle.Ion,
+        HullRole.Colony or HullRole.Carrier or HullRole.Titan => ExhaustStyle.Fusion,
+        _ => ExhaustStyle.Thermal
+    });
     internal int PowerAvailable => PowerStats.Supply;
     internal int PowerUsed => WeaponStats.Draw + ArmorStats.Draw + ShieldStats.Draw + ComputerStats.Draw + DriveStats.Draw;
     internal bool Valid => PowerUsed <= PowerAvailable;

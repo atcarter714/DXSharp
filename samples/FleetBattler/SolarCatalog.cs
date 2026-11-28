@@ -7,10 +7,11 @@ internal readonly record struct SolarBody( string Name, string Kind, int Parent,
     int Habitability = 0, BodyClass Class = BodyClass.SmallBody, float RotationHours = 24, bool RetrogradeOrbit = false, string Id = "" );
 
 internal static class SolarCatalog {
-    internal const float Spacing = 3.2f;
+    internal const float Spacing = 4.25f;
     internal const double EarthYearDays = 365.25636;
-    internal const int EarthYearTicks = 14_400;
-    internal static double CalendarDays( int tick ) => Math.Max( 0, tick ) * (EarthYearDays / EarthYearTicks);
+    internal const int TicksPerDay = 24 * 60;
+    internal const int EarthYearTicks = (int)(EarthYearDays * TicksPerDay);
+    internal static double CalendarDays( double tick ) => Math.Max( 0, tick ) / TicksPerDay;
     internal const float MainBeltInnerAu = 2.1f, MainBeltOuterAu = 3.3f;
     internal const float KuiperInnerAu = 30, KuiperOuterAu = 50;
     internal const int Ceres = 11, Vesta = 12, Pluto = 13, Halley = 14, Charon = 15, Europa = 16, Titan = 17, Triton = 18;
@@ -53,7 +54,7 @@ internal static class SolarCatalog {
 
     internal static float SpinRadians( int tick, float interpolation, float hours ) {
         if ( hours == 0 ) return 0;
-        double days = (Math.Max( 0, tick - 1 + (double)interpolation )) * (EarthYearDays / EarthYearTicks);
+        double days = CalendarDays( tick - 1 + (double)interpolation );
         return (float)(Math.IEEERemainder( days * 24 / hours, 1 ) * Math.Tau);
     }
 

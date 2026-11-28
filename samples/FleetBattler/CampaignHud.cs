@@ -13,8 +13,9 @@ internal sealed partial class FleetHud {
         Rect( x, 16, 184, 34, Well );
         var date = StarDate( tick );
         Span<char> text = stackalloc char[24];
-        text.TryWrite( $"{date.Year:D4}.{date.Month:D2}.{date.Day:D2}", out int length );
-        Text( text[..length], x + 42, 20, 1.2f, White );
+        int hour = (tick / 60) % 24;
+        text.TryWrite( $"{date.Year:D4}.{date.Month:D2}.{date.Day:D2} {hour:D2}:00", out int length );
+        FitText( text[..length], x + 39, 20, 140, 1.1f, White );
         Rect( x + 3, 19, 29, 28, Active );
         Icon( paused ? HudIcon.Play : HudIcon.Pause, x + 10, 26, 14, paused ? EnergyTint : SpaceDraw.Cyan );
         Button( x + 111, 28, 18, "-", speed > FleetClock.MinSpeed );

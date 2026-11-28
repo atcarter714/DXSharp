@@ -88,10 +88,16 @@ internal sealed class SpaceParticles : IDisposable {
         foreach ( var ship in ships ) {
             float throttle = ship.Motion.X;
             if ( throttle < .08f ) continue;
+            var style = (ExhaustStyle)(int)ship.Motion.Y;
+            Vector3 color = style switch {
+                ExhaustStyle.HighThrust => new( 1, .62f, .22f ), ExhaustStyle.Ion => new( .31f, .69f, 1 ),
+                ExhaustStyle.Fusion => new( .77f, .44f, 1 ), _ => new( 1, .44f, .19f )
+            };
             foreach ( var emitter in emitters ) {
                 float seed = ship.Motion.Y + emitter.Position.X * .36f;
-                for ( int i = 0; i < 4; ++i ) {
-                    float age = Frac( time * 1.85f + seed + i * .25f );
+                int sparks = style == ExhaustStyle.HighThrust ? 7 : style == ExhaustStyle.Ion ? 3 : 5;
+                for ( int i = 0; i < sparks; ++i ) {
+                    float age = Frac( time * 1.85f + seed + (float)i / sparks );
                     var local = emitter.Position + emitter.Direction * (emitter.Width * (1 + 24 * throttle * age));
                     local.X += MathF.Sin( seed * 19 + i * 2.4f ) * emitter.Width * age;
                     local.Y += MathF.Cos( seed * 19 + i * 2.4f ) * emitter.Width * age;
@@ -99,7 +105,7 @@ internal sealed class SpaceParticles : IDisposable {
                     var world = ship.Center + (right * local.X - ship.Heading * local.Z) * ship.Motion.Z;
                     var (pixel, depth) = Project( world, local.Y * ship.Motion.Z, view, size );
                     float radius = Math.Clamp( emitter.Width * ship.Motion.Z * pixelsPerUnit * (.62f + .85f * age), 1, 42 );
-                    Add( pixel, radius, depth, new( 1, .57f, .27f, throttle * Fade( age ) * .86f ), i == 1 ? 10 : 11, seed + age );
+                    Add( pixel, radius, depth, new( color, throttle * Fade( age ) * .9f ), i % 3 == 1 ? 10 : 11, seed + age );
                 }
             }
         }

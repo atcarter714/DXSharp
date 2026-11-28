@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace FleetBattler;
 
 internal readonly record struct ColonyStatus( int Population, int Housing, int WorkRemaining, FleetSelection? Ship );
@@ -55,6 +57,25 @@ internal sealed partial class FleetSimulation {
         for ( int squad = 0; squad < SquadCount; ++squad )
             if ( IsPlayerSquad( squad ) && Role( squad ) == HullRole.Colony ) count += ShipCount( squad );
         return count;
+    }
+
+    internal FleetSelection? FindColonyShip( int body, ReadOnlySpan<bool> selected ) {
+        if ( !Colonizable( body ) ) return null;
+        FleetSelection? nearby = null;
+        float closest = float.PositiveInfinity;
+        float range = OrbitRadius( body, 1 ) + 10;
+        for ( int ship = 0; ship < Count; ++ship ) {
+            var unit = new FleetSelection( SquadronOf( ship ), ship );
+            if ( !ValidColonyShip( unit ) || !CanReach( unit, body ) ) continue;
+            var order = EffectiveOrder( unit );
+            if ( order.Settlement || order.Service != ServiceOrder.None || order.Enemy != 0 ) continue;
+            if ( ship < selected.Length && selected[ship] ) return unit;
+            float distance = Vector2.DistanceSquared( _positions[ship], _bodies[body].Center );
+            if ( order.Body != body + 1 && distance > range * range || distance >= closest ) continue;
+            closest = distance;
+            nearby = unit;
+        }
+        return nearby;
     }
 
     internal string? ColonyBlock( int body, FleetSelection? selection ) {

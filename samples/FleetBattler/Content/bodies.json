@@ -309,6 +309,162 @@
       "id": "triton", "index": 18, "name": "TRITON", "kind": "NEPTUNE CAPTURED MOON",
       "parent": 10, "mapAxis": 0.24, "periodDays": 5.877, "rotationHours": -141.048, "retrogradeOrbit": true,
       "radius": 0.016, "phase": 0.38, "color": [0.65, 0.76, 0.79], "class": "Moon", "habitability": 11
+    },
+    {
+      "id": "phobos", "index": 19, "name": "PHOBOS", "kind": "NATURAL SATELLITE",
+      "parent": 7, "mapAxis": 0.15, "periodDays": 0.31891, "rotationHours": 7.65384,
+      "eccentricity": 0.015, "radius": 0.008, "phase": 0.7426,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "deimos", "index": 20, "name": "DEIMOS", "kind": "NATURAL SATELLITE",
+      "parent": 7, "mapAxis": 0.23, "periodDays": 1.26244, "rotationHours": 30.29856,
+      "eccentricity": 0.0003, "radius": 0.006, "phase": 0.3607,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "io", "index": 21, "name": "IO", "kind": "NATURAL SATELLITE",
+      "parent": 2, "mapAxis": 0.22, "periodDays": 1.762732, "rotationHours": 42.30557,
+      "eccentricity": 0.004, "radius": 0.018, "phase": 0.9787,
+      "color": [0.91, 0.67, 0.31], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "ganymede", "index": 22, "name": "GANYMEDE", "kind": "NATURAL SATELLITE",
+      "parent": 2, "mapAxis": 0.43, "periodDays": 7.155588, "rotationHours": 171.73411,
+      "eccentricity": 0.001, "radius": 0.024, "phase": 0.5967,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "callisto", "index": 23, "name": "CALLISTO", "kind": "NATURAL SATELLITE",
+      "parent": 2, "mapAxis": 0.58, "periodDays": 16.69044, "rotationHours": 400.57056,
+      "eccentricity": 0.007, "radius": 0.022, "phase": 0.2148,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "mimas", "index": 24, "name": "MIMAS", "kind": "NATURAL SATELLITE",
+      "parent": 8, "mapAxis": 0.23, "periodDays": 0.942422, "rotationHours": 22.61813,
+      "eccentricity": 0.02, "radius": 0.008, "phase": 0.8328,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "enceladus", "index": 25, "name": "ENCELADUS", "kind": "NATURAL SATELLITE",
+      "parent": 8, "mapAxis": 0.28, "periodDays": 1.37022, "rotationHours": 32.88528,
+      "eccentricity": 0.005, "radius": 0.01, "phase": 0.4508,
+      "color": [0.82, 0.89, 0.96], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "tethys", "index": 26, "name": "TETHYS", "kind": "NATURAL SATELLITE",
+      "parent": 8, "mapAxis": 0.34, "periodDays": 1.8878, "rotationHours": 45.3072,
+      "eccentricity": 0.001, "radius": 0.011, "phase": 0.0689,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "dione", "index": 27, "name": "DIONE", "kind": "NATURAL SATELLITE",
+      "parent": 8, "mapAxis": 0.42, "periodDays": 2.7369, "rotationHours": 65.6856,
+      "eccentricity": 0.002, "radius": 0.011, "phase": 0.6869,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "rhea", "index": 28, "name": "RHEA", "kind": "NATURAL SATELLITE",
+      "parent": 8, "mapAxis": 0.51, "periodDays": 4.5182, "rotationHours": 108.4368,
+      "eccentricity": 0.001, "radius": 0.014, "phase": 0.305,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "hyperion", "index": 29, "name": "HYPERION", "kind": "NATURAL SATELLITE",
+      "parent": 8, "mapAxis": 0.59, "periodDays": 21.2766, "rotationHours": 0,
+      "eccentricity": 0.104, "radius": 0.008, "phase": 0.923,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "iapetus", "index": 30, "name": "IAPETUS", "kind": "NATURAL SATELLITE",
+      "parent": 8, "mapAxis": 0.73, "periodDays": 79.3215, "rotationHours": 1903.716,
+      "eccentricity": 0.029, "radius": 0.014, "phase": 0.541,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "phoebe", "index": 31, "name": "PHOEBE", "kind": "NATURAL SATELLITE",
+      "parent": 8, "mapAxis": 0.95, "periodDays": 550.3, "rotationHours": 9.27,
+      "eccentricity": 0.164, "radius": 0.007, "phase": 0.1591,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4, "retrogradeOrbit": true
+    },
+    {
+      "id": "miranda", "index": 32, "name": "MIRANDA", "kind": "NATURAL SATELLITE",
+      "parent": 9, "mapAxis": 0.21, "periodDays": 1.413479, "rotationHours": 33.9235,
+      "eccentricity": 0.001, "radius": 0.01, "phase": 0.7771,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "ariel", "index": 33, "name": "ARIEL", "kind": "NATURAL SATELLITE",
+      "parent": 9, "mapAxis": 0.29, "periodDays": 2.5204, "rotationHours": 60.4896,
+      "eccentricity": 0.001, "radius": 0.013, "phase": 0.3951,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "umbriel", "index": 34, "name": "UMBRIEL", "kind": "NATURAL SATELLITE",
+      "parent": 9, "mapAxis": 0.36, "periodDays": 4.1442, "rotationHours": 99.4608,
+      "eccentricity": 0.004, "radius": 0.013, "phase": 0.0132,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "titania", "index": 35, "name": "TITANIA", "kind": "NATURAL SATELLITE",
+      "parent": 9, "mapAxis": 0.47, "periodDays": 8.705869, "rotationHours": 208.94086,
+      "eccentricity": 0.002, "radius": 0.015, "phase": 0.6312,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "oberon", "index": 36, "name": "OBERON", "kind": "NATURAL SATELLITE",
+      "parent": 9, "mapAxis": 0.57, "periodDays": 13.463237, "rotationHours": 323.11769,
+      "eccentricity": 0.002, "radius": 0.015, "phase": 0.2492,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "proteus", "index": 37, "name": "PROTEUS", "kind": "NATURAL SATELLITE",
+      "parent": 10, "mapAxis": 0.16, "periodDays": 1.1223, "rotationHours": 26.9352,
+      "eccentricity": 0.001, "radius": 0.009, "phase": 0.8673,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "nereid", "index": 38, "name": "NEREID", "kind": "NATURAL SATELLITE",
+      "parent": 10, "mapAxis": 0.52, "periodDays": 360.13, "rotationHours": 0,
+      "eccentricity": 0.751, "radius": 0.008, "phase": 0.4853,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "styx", "index": 39, "name": "STYX", "kind": "NATURAL SATELLITE",
+      "parent": 13, "mapAxis": 0.27, "periodDays": 20.16, "rotationHours": 483.84,
+      "eccentricity": 0.025, "radius": 0.005, "phase": 0.1033,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "nix", "index": 40, "name": "NIX", "kind": "NATURAL SATELLITE",
+      "parent": 13, "mapAxis": 0.33, "periodDays": 24.85, "rotationHours": 596.4,
+      "eccentricity": 0.015, "radius": 0.006, "phase": 0.7214,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "kerberos", "index": 41, "name": "KERBEROS", "kind": "NATURAL SATELLITE",
+      "parent": 13, "mapAxis": 0.4, "periodDays": 32.17, "rotationHours": 772.08,
+      "eccentricity": 0.002, "radius": 0.005, "phase": 0.3394,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "hydra", "index": 42, "name": "HYDRA", "kind": "NATURAL SATELLITE",
+      "parent": 13, "mapAxis": 0.48, "periodDays": 38.2, "rotationHours": 916.8,
+      "eccentricity": 0.006, "radius": 0.006, "phase": 0.9574,
+      "color": [0.61, 0.66, 0.72], "class": "Moon", "habitability": 4
+    },
+    {
+      "id": "pallas", "index": 43, "name": "PALLAS", "kind": "MAIN BELT ASTEROID",
+      "parent": 0, "axisAu": 2.77215, "rotationHours": 7.813,
+      "eccentricity": 0.231, "radius": 0.012, "phase": 0.5755,
+      "color": [0.61, 0.59, 0.55], "class": "SmallBody", "habitability": 4
+    },
+    {
+      "id": "psyche", "index": 44, "name": "PSYCHE", "kind": "MAIN BELT ASTEROID",
+      "parent": 0, "axisAu": 2.9277, "rotationHours": 4.196,
+      "eccentricity": 0.1339, "radius": 0.011, "phase": 0.1935,
+      "color": [0.61, 0.59, 0.55], "class": "SmallBody", "habitability": 4
     }
   ]
 }

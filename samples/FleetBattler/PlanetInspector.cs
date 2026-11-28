@@ -73,7 +73,7 @@ internal sealed partial class FleetHud {
         Text( text[..length], 23, top + 56, 1, Label );
     }
 
-    private void InspectPlanet( Layout layout, FleetSimulation fleet, int body, FleetSelection? unit, float speed, bool catalog, SiteLayer catalogLayer ) {
+    private void InspectPlanet( Layout layout, FleetSimulation fleet, int body, FleetSelection? unit, ReadOnlySpan<bool> selectedShips, float speed, bool catalog, SiteLayer catalogLayer ) {
         float x = layout.InspectorX, y = InspectorTop, width = layout.InspectorWidth;
         PanelAt( x, y, width, body == 0 ? 60 : layout.InspectorHeight, catalog ? EnergyTint : SpaceDraw.Cyan );
         Text( fleet.BodyName( body ), x + 10, y + 8, 1.6f, White );
@@ -87,14 +87,15 @@ internal sealed partial class FleetHud {
         Span<char> text = stackalloc char[58];
         int length;
         var colony = fleet.Colony( body );
+        var colonyUnit = status.Surveyed && colony.Population == 0 ? fleet.FindColonyShip( body, selectedShips ) : null;
         if ( colony.Ship is not null ) {
             text.TryWrite( $"{(fleet.Settling( body ) ? "SETTLING" : "COLONY SHIP EN ROUTE")} / {Seconds( colony.WorkRemaining, speed )} SEC", out length );
             Progress( new( x + 10, y + 56 ), width - 20, 1 - (float)colony.WorkRemaining / FleetSimulation.ColonyDuration, SpaceDraw.Cyan );
         } else if ( colony.Population > 0 )
             text.TryWrite( $"POP {colony.Population}/{colony.Housing} / {(fleet.ColonySupplied( body ) ? "SUPPLIED" : "NEEDS POWER OR DEPOT")}", out length );
         else if ( status.Surveyed ) {
-            if ( unit is { } colonyUnit && fleet.Role( colonyUnit.Squad ) == HullRole.Colony &&
-                 fleet.ColonyBlock( body, unit ) is { } need ) length = CopyStatus( need, text );
+            if ( fleet.Colonizable( body ) && fleet.ColonyBlock( body, colonyUnit ) is { } need && (colonyUnit is not null || fleet.DepotAt( body ) == 0) )
+                length = CopyStatus( need, text );
             else text.TryWrite( $"SURVEYED / {fleet.DepositYield( body )} ORE POTENTIAL", out length );
         }
         else if ( status.SurveyUnit is { } scout ) {
@@ -109,7 +110,7 @@ internal sealed partial class FleetHud {
             Button( x + width - 66, y + 24, 57, status.SurveyUnit is null ? "SCAN" : "CANCEL", true );
         if ( status.Surveyed && fleet.Colonizable( body ) && colony.Population == 0 )
             Button( x + width - 77, y + 24, 68, colony.Ship is null ? "SETTLE" : "CANCEL",
-                colony.Ship is not null || fleet.ColonyBlock( body, unit ) is null );
+                colony.Ship is not null || fleet.ColonyBlock( body, colonyUnit ) is null );
 
         var slots = fleet.Slots( body );
         int surface = fleet.OccupiedSlots( body, SiteLayer.Surface ), orbital = fleet.OccupiedSlots( body, SiteLayer.Orbit );

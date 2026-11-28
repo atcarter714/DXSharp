@@ -5,8 +5,8 @@ namespace FleetBattler;
 internal readonly record struct BodyPose( Vector2 Center, float Radius );
 
 internal static class CelestialSystem {
-    internal const int OuterBelt = 4, FrontierBodyCount = 5, BodyCount = 19;
-    internal const float FrontierBodyDisplayScale = 1.12f;
+    internal const int OuterBelt = 4, FrontierBodyCount = 5, BodyCount = 45;
+    internal const float FrontierBodyDisplayScale = 1.4f;
     internal const float BeltAxis = 1.72f;
     internal const float RockyAxis = 0.45f, GiantAxis = 0.91f, MoonAxis = 0.145f;
     internal const float RockyEccentricity = 0.16f, GiantEccentricity = 0.12f, MoonEccentricity = 0.08f;

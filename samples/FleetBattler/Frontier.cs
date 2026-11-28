@@ -11,12 +11,13 @@ internal sealed partial class FleetSimulation {
     // A one-survivor wing can retain three storage slots while consuming one naval slot.
     private const int FrontierCapacity = 320, MaxWorkers = 5;
     private readonly FrontierEvent[] _dispatches = new FrontierEvent[9];
-    private int _raidTick, _raidsLaunched, _deposits;
+    private int _raidTick, _raidsLaunched;
+    private ulong _deposits;
     private int _surveyedProspects;
     private bool _secured;
     private int _nextPatrol;
     internal const int RaidPreparation = 2400, PatrolInterval = 4200;
-    private const int FirstRaidEarliest = SolarCatalog.EarthYearTicks / 2;
+    internal const int FirstRaidEarliest = 7_200;
     internal string Objective => !Solar ? !ExpeditionArrived ? "NO SOL SENSOR COVERAGE" : ReceiverSecured ? "FIRST CROSSING COMPLETE"
         : ReceiverOnline ? "DEFEND THE PROXIMA RECEIVER" : "SURVEY RECEIVER WORLD / BUILD AN ORBITAL LAB"
         : RaidWarningTicks > 0 ? "PREPARE ESCORTS FOR THE INBOUND RAID"
@@ -45,7 +46,6 @@ internal sealed partial class FleetSimulation {
     }
     internal bool Frontier { get; }
     internal int DispatchCount { get; private set; }
-    internal int Deposits => _deposits;
     internal int ActiveRaids => _raidsLaunched;
     internal bool Recovering => Established && CyanCount == 0 && !Won;
     private int ActiveScouts( ) {
@@ -58,7 +58,7 @@ internal sealed partial class FleetSimulation {
     internal HullRole Role( int squad ) => _squads[squad].Role;
     internal ShipDesign Loadout( int ship ) => _squads[_squadOfShip[ship]].Design;
     internal FrontierEvent Dispatch( int index ) => _dispatches[index];
-    internal bool HasDeposit( int body ) => Frontier && (_deposits & (1 << body)) != 0;
+    internal bool HasDeposit( int body ) => Frontier && (_deposits & (1ul << body)) != 0;
     internal int DepositYield( int body ) => HasDeposit( body ) ? ProspectYield( body ) : 0;
     private int ProspectYield( int body ) => body == CelestialSystem.OuterBelt ? 20 : (body + SystemIndex) % 2 == 0 ? 12 : 8;
 
@@ -80,7 +80,7 @@ internal sealed partial class FleetSimulation {
 
     private void RevealProspect( int body ) {
         ++_surveyedProspects;
-        _deposits |= 1 << body;
+        _deposits |= 1ul << body;
         if ( _surveyedProspects == 1 ) {
             SendDispatch( FrontierEvent.Prospect );
             SendDispatch( FrontierEvent.MerchantOffer );

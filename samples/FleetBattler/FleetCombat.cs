@@ -32,6 +32,19 @@ internal sealed partial class FleetSimulation {
     internal int ShipsLost { get; private set; }
     internal int LastEngagementTick { get; private set; } = -10_000;
     internal bool InBattle => Tick - LastEngagementTick < 150;
+    internal bool MusicContact() {
+        if ( !Frontier ) return Contested || InBattle;
+        if ( BlockadedSites > 0 ) return true;
+        if ( !CanSeeContacts || CyanCount == 0 || AmberCount == 0 ) return false;
+        const float contactRadius = 58;
+        for ( int hostile = 0; hostile < Count; ++hostile ) {
+            if ( !Alive( hostile ) || !IsHostile( (int)FactionId.Sol, SideOf( hostile ) ) ) continue;
+            for ( int ship = 0; ship < Count; ++ship )
+                if ( Alive( ship ) && SideOf( ship ) == 0 && Vector2.DistanceSquared( _positions[ship], _positions[hostile] ) < contactRadius * contactRadius )
+                    return true;
+        }
+        return false;
+    }
     internal bool Won => Frontier ? _secured : WingsBuilt == WingGoal || AmberCount == 0 && CyanCount > 0;
     internal bool Lost => !Frontier && CyanCount == 0 && !Won;
 
@@ -230,7 +243,7 @@ internal sealed partial class FleetSimulation {
         int target = -1;
         for ( int y = Math.Max( 1, cell.Y - reach ); y <= Math.Min( _gridSide - 2, cell.Y + reach ); ++y ) {
             for ( int x = Math.Max( 1, cell.X - reach ); x <= Math.Min( _gridSide - 2, cell.X + reach ); ++x ) {
-                int other = _grid[y * _gridSide + x];
+                int other = _grid.GetValueOrDefault( y * _gridSide + x, -1 );
                 for ( int visited = 0; other >= 0 && visited < 8; ++visited, other = _next[other] ) {
                     if ( !IsHostile( side, SideOf( other ) ) || combatOnly && !IsWarship( Role( SquadronOf( other ) ) ) ) continue;
                     float d = Vector2.DistanceSquared( origin, _positions[other] );

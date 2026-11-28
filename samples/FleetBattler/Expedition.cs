@@ -22,16 +22,23 @@ internal sealed partial class FleetSimulation {
     }
 
     internal int SelectExpedition( CommandSelection selection ) {
-        Span<int> crew = stackalloc int[2] { -1, -1 };
+        var (scout, builder) = ReadyExpeditionCrew();
+        if ( scout < 0 || builder < 0 ) return 0;
+        selection.Click( this, scout, false, SelectionMode.Replace );
+        selection.Click( this, builder, false, SelectionMode.Add );
+        return selection.Count;
+    }
+
+    internal (int Scout, int Builder) ReadyExpeditionCrew() {
+        int scout = -1, builder = -1;
         for ( int ship = 0; ship < Count; ++ship ) {
             if ( !ExpeditionReadyInOrbit( ship ) ) continue;
-            int role = Role( SquadronOf( ship ) ) switch { HullRole.Scout => 0, HullRole.Miner => 1, _ => -1 };
-            if ( role >= 0 && crew[role] < 0 ) crew[role] = ship;
+            var role = Role( SquadronOf( ship ) );
+            if ( scout < 0 && role == HullRole.Scout ) scout = ship;
+            if ( builder < 0 && role == HullRole.Miner ) builder = ship;
+            if ( scout >= 0 && builder >= 0 ) break;
         }
-        if ( crew[0] < 0 || crew[1] < 0 ) return 0;
-        selection.Click( this, crew[0], false, SelectionMode.Replace );
-        selection.Click( this, crew[1], false, SelectionMode.Add );
-        return selection.Count;
+        return (scout, builder);
     }
 
     internal bool RallyExpedition( ) {
@@ -51,7 +58,7 @@ internal sealed partial class FleetSimulation {
     internal string? LaunchBlock( ReadOnlySpan<bool> selected ) {
         if ( _expeditionDeparted ) return "EXPEDITION ALREADY DISPATCHED";
         if ( !Solar || !FusionUpgrade ) return "RESEARCH PULSED FUSION IN SOL";
-        if ( ColoniesFounded == 0 ) return "FOUND A COLONY BEFORE LAUNCH";
+        if ( !FrontierProgression && ColoniesFounded == 0 ) return "FOUND A COLONY BEFORE LAUNCH";
         if ( YardAt( Homeworld ) != 0 ) return "FINISH EARTH'S ORBITAL SHIPYARD";
         if ( SiteIntegrity( Homeworld, PlanetFacility.Yard ) < 50 ) return "RESTORE EARTH'S ORBITAL SHIPYARD";
         int count = 0;
@@ -70,7 +77,7 @@ internal sealed partial class FleetSimulation {
         return CanAfford( ExpeditionCost ) ? null : $"NEEDS {ExpeditionCost.Ore} ORE AND {ExpeditionCost.Energy} ENERGY";
     }
 
-    private ResourceCost ExpeditionCost => FrontierProgression ? new( 145, 185 ) : CrossingCost;
+    internal ResourceCost ExpeditionCost => FrontierProgression ? new( 145, 185 ) : CrossingCost;
 
     internal Expedition? Depart( ReadOnlySpan<bool> selected, int campaignTick ) {
         if ( LaunchBlock( selected ) is not null ) return null;

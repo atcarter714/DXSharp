@@ -56,8 +56,9 @@ internal sealed record HullDefinition( string Name, ResourceCost Cost, int Ticks
     FlightStats Flight, float Scale, ResearchTopic? Requirement, int ImprovedOre, int ImprovedTicks );
 
 internal enum EffectStyle { Pulse, Rail, Ion, Thermal }
+internal enum ExhaustStyle { Thermal, HighThrust, Ion, Fusion }
 internal sealed record ModuleDefinition( string Name, int Draw, int Supply, int Health, int Damage, int Range, int Reload,
-    int Ore, int Energy, int Ticks, float Handling, float Reach, ResearchTopic? Requirement, EffectStyle? Effect );
+    int Ore, int Energy, int Ticks, float Handling, float Reach, ResearchTopic? Requirement, EffectStyle? Effect, ExhaustStyle? Exhaust );
 
 internal static class GameCatalog {
     private static readonly Lazy<HullDefinition[]> Hulls = new( ReadHulls );
@@ -120,7 +121,8 @@ internal static class GameCatalog {
                 CatalogJson.Int( row, "reload", -20, 180, 0 ), CatalogJson.Int( row, "ore", 0, 120, 0 ),
                 CatalogJson.Int( row, "energy", 0, 100, 0 ), CatalogJson.Int( row, "ticks", 0, 480, 0 ),
                 CatalogJson.Number( row, "handling", 0.55f, 1.6f, 1 ), CatalogJson.Number( row, "reach", 1, 1.5f, 1 ),
-                CatalogJson.Requirement( row ), row.TryGetProperty( "effect", out var effect ) ? CatalogJson.EnumId<EffectStyle>( effect ) : null );
+                CatalogJson.Requirement( row ), row.TryGetProperty( "effect", out var effect ) ? CatalogJson.EnumId<EffectStyle>( effect ) : null,
+                row.TryGetProperty( "exhaust", out var exhaust ) ? CatalogJson.EnumId<ExhaustStyle>( exhaust ) : null );
         }
         if ( table.Any( row => row.Any( entry => entry is null ) ) ) throw new InvalidDataException( "Every module variant requires an entry." );
         return table;

@@ -35,7 +35,7 @@ void OrbitField(uint3 threadId : SV_DispatchThreadID) {
         lane = au;
         inner = 2.1;
         outer = 3.3;
-        rate = 0.02617994/pow(au,1.5);
+        rate = 0.00071677/pow(au,1.5);
     }
     float mean = fmod(Unit(seed*13)*6.2831853 + Time*rate,6.2831853);
     float e = min(lerp(0.025,0.14,Unit(seed*47)),min(lane-inner,outer-lane)/lane);

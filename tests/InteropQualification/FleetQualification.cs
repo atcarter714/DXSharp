@@ -243,9 +243,10 @@ internal static class FleetQualification {
         for ( int frame = 0; frame < 120; ++frame ) clock.Advance( fleet, 1.0 / 60, 4, paused: false );
         Require( fleet.Tick - before is 479 or 480, "4x advances four times as many ticks" );
         before = fleet.Tick;
-        for ( int frame = 0; frame < 120; ++frame ) clock.Advance( fleet, 1.0 / 60, FleetClock.DefaultSpeed, paused: false );
-        Require( fleet.Tick - before is 29 or 30 && FleetClock.Change( FleetClock.DefaultSpeed, faster: false ) == .125f &&
-            FleetClock.Change( FleetClock.DefaultSpeed, faster: true ) == .5f, "campaign starts at quarter speed with fractional control in both directions" );
+        for ( int frame = 0; frame < 120; ++frame ) clock.Advance( fleet, 1.0 / 60, FleetClock.MaxSpeed, paused: false );
+        Require( fleet.Tick - before is 3839 or 3840 && SolarCatalog.CalendarDays( 60 ) == 1d / 24 &&
+            FleetClock.Change( FleetClock.DefaultSpeed, faster: false ) == .75f && FleetClock.Change( 16, faster: true ) == 32,
+            "one real second advances one campaign hour with fractional and high-speed controls" );
     }
 
     private static void VerifyPlanetEconomy( ) {
@@ -298,7 +299,8 @@ internal static class FleetQualification {
             fleet.BuildFacility( prospect, PlanetFacility.Skimmer, miner ), "gas giants permit orbital extraction and reject surface construction" );
         var campaign = new FleetCampaign( fleet, 37 );
         _ = campaign.System( FleetSimulation.Proxima );
-        AdvanceUntil( fleet, () => fleet.Planet( prospect ).MineRemaining == 0, "arrival starts and completes construction", 3600 );
+        int commissioning = fleet.RouteTicks( miner ) + FleetSimulation.Facility( PlanetFacility.Skimmer ).Duration;
+        AdvanceUntil( fleet, () => fleet.Planet( prospect ).MineRemaining == 0, "arrival starts and completes construction", commissioning + 120 );
         campaign.Advance( );
         Require( campaign.TryTakeEvent( out var distress ) && distress == new CampaignEvent( CampaignEventKind.Distress, fleet ) &&
             !campaign.TryTakeEvent( out _ ), "the raid decision is delivered once, even with a remote chart open" );
@@ -366,7 +368,7 @@ internal static class FleetQualification {
         Require( fleet.BeginSurvey( new( 0 ), prospect ), "recovery test begins a survey" );
         AdvanceSurvey( fleet, prospect, "recovery prospect surveyed" );
         Require( fleet.BuildFacility( prospect, PlanetFacility.Skimmer, new( 1 ) ), "recovery funding" );
-        AdvanceUntil( fleet, () => fleet.Ore >= 235, "mine funds fleet and infrastructure", 6000 );
+        AdvanceUntil( fleet, () => fleet.Ore >= 235, "mine funds fleet and infrastructure", fleet.RouteTicks( new( 1 ) ) + 3500 );
         Require( fleet.BuildYard( home, new( 2 ) ) && !fleet.BuildYard( prospect, new( 1 ) ) &&
             !fleet.BuildFacility( home, PlanetFacility.Depot, new( 2 ) ) && fleet.NavalCapacity == 0,
             "uninhabited worlds cannot staff yards, pending yards grant no capacity, and builders cannot double-book" );
@@ -819,7 +821,7 @@ internal static class FleetQualification {
         int gross = fleet.OreIncome;
         fleet.ClaimDispatch( concession.Accept );
         Require( fleet.OreRoyalty == 20 && fleet.OreIncome < gross, "signing with Ceres levies a real extraction royalty" );
-        AdvanceUntil( fleet, () => fleet.RaidWarningTicks > 0, "established outer trade attracts a warning", SolarCatalog.EarthYearTicks / 2 );
+        AdvanceUntil( fleet, () => fleet.RaidWarningTicks > 0, "established outer trade attracts a warning", FleetSimulation.FirstRaidEarliest );
         Require( fleet.RaidWarningTicks is >= 4800 and <= 8400, "the raid preparation window starts late and varies by seed" );
         AdvanceUntil( fleet, () => fleet.IsPirateControlled( SolarCatalog.Ceres ), "pirates blockade the exposed outer site", 20_000 );
         Require( fleet.BlockadeOrePerCycle > 0 && fleet.BlockadeEnergyPerCycle > 0 && fleet.BlockadedSites == 1 &&
@@ -855,7 +857,7 @@ internal static class FleetQualification {
         var fleet = new FleetSimulation( 3, 37, frontier: true );
         var selection = new CommandSelection( fleet.Capacity );
         Require( fleet.SelectExpedition( selection ) == 2 && selection.Ships[0] && selection.Ships[1] &&
-            FleetHud.StarDate( 0 ) == new DateOnly( 2184, 1, 1 ) && FleetHud.StarDate( 240 ) == new DateOnly( 2184, 1, 7 ),
+            FleetHud.StarDate( 0 ) == new DateOnly( 2184, 1, 1 ) && FleetHud.StarDate( 1440 ) == new DateOnly( 2184, 1, 2 ),
             "the suggested crew selects an idle scout and constructor and the star date derives from ticks" );
         var route = new GalaxyRoute( 0, FleetSimulation.Proxima, "", "LOCKED", 2 );
         var solNode = FleetHud.GalaxyNodePixel( 0, 660, 500, true );

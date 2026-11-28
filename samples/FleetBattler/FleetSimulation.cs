@@ -14,8 +14,8 @@ internal enum FlightOrder { Idle, Move, Orbit, Survey, Attack }
 internal readonly record struct FlightPlan( FlightOrder Order, Vector2 Destination, int Body, int Target );
 
 internal sealed class FleetClock {
-    internal const float DefaultSpeed = .25f, MinSpeed = .125f, MaxSpeed = 4;
-    private static ReadOnlySpan<float> Speeds => [MinSpeed, DefaultSpeed, .5f, .75f, 1, 1.5f, 2, 3, MaxSpeed];
+    internal const float DefaultSpeed = 1, MinSpeed = .125f, MaxSpeed = 32;
+    private static ReadOnlySpan<float> Speeds => [MinSpeed, .25f, .5f, .75f, DefaultSpeed, 1.5f, 2, 3, 4, 8, 16, MaxSpeed];
 
     internal static float Change( float current, bool faster ) {
         int index = Speeds.IndexOf( current );
@@ -23,19 +23,20 @@ internal sealed class FleetClock {
     }
 
     private double _remaining;
-    internal float Interpolation => (float)(_remaining / FleetSimulation.StepSeconds);
+    internal float Interpolation => (float)Math.Clamp( _remaining / FleetSimulation.StepSeconds, 0, 1 );
     internal void Reset( ) => _remaining = 0;
 
     internal float Advance( FleetSimulation fleet, double elapsed, float speed, bool paused, Action? afterStep = null ) {
         if ( paused ) return 0;
         double scaled = Math.Clamp( elapsed, 0, 0.125 ) * speed;
-        _remaining += scaled;
-        while ( _remaining >= FleetSimulation.StepSeconds ) {
+        _remaining = Math.Min( _remaining + scaled, 192 * FleetSimulation.StepSeconds );
+        int steps = 0;
+        for ( ; steps < 96 && _remaining >= FleetSimulation.StepSeconds; ++steps ) {
             fleet.Step( );
             afterStep?.Invoke( );
             _remaining -= FleetSimulation.StepSeconds;
         }
-        return (float)scaled;
+        return (float)(steps * FleetSimulation.StepSeconds);
     }
 }
 
@@ -49,9 +50,9 @@ internal sealed partial class FleetSimulation {
     private const float Pitch = 3.9f, MaxSpeed = 36, ApproachGain = 1.8f, Response = 0.09f;
     private const float AvoidRadius = 2.55f, TurnStep = 5.3f * (float)StepSeconds;
     internal const float OrbitalTurnStep = 2.8f * (float)StepSeconds;
-    private readonly int[] _grid, _occupiedCells, _next, _squadOfShip;
+    private readonly Dictionary<int, int> _grid;
+    private readonly int[] _next, _squadOfShip;
     private readonly int _gridSide;
-    private int _occupiedCellCount;
     private readonly Order[] _shipOrders;
     private readonly float[] _thrust;
     private readonly BodyPose[] _bodies, _previousBodies;
@@ -118,9 +119,7 @@ internal sealed partial class FleetSimulation {
         float formationRadius = MathF.Ceiling( MathF.Sqrt( largestSquad * 1.6f ) ) * Pitch;
         BoardRadius = MathF.Max( 92 + Math.Min( system, CelestialSystem.AuthoredCount - 1 ) * 12, formationRadius * 2.85f + 22 );
         _gridSide = (int)MathF.Ceiling( 2.8f * NavigationRadius / AvoidRadius ) + 3;
-        _grid = new int[_gridSide * _gridSide];
-        Array.Fill( _grid, -1 );
-        _occupiedCells = new int[capacity];
+        _grid = new( capacity );
         CelestialSystem.Evaluate( SystemIndex, 0, BoardRadius, _bodies, Frontier );
         _bodies.CopyTo( _previousBodies, 0 );
         _targetLimit = NavigationRadius - formationRadius * 0.6f;
@@ -361,14 +360,12 @@ internal sealed partial class FleetSimulation {
 
         _bodies.CopyTo( _previousBodies, 0 );
         CelestialSystem.Evaluate( SystemIndex, WorldTick + 1, BoardRadius, _bodies, Frontier );
-        for ( int i = 0; i < _occupiedCellCount; ++i ) _grid[_occupiedCells[i]] = -1;
-        _occupiedCellCount = 0;
+        _grid.Clear();
         for ( int ship = Count - 1; ship >= 0; --ship ) {
             if ( !Alive( ship ) ) continue;
             var cell = Cell( _positions[ship] );
             int index = cell.Y * _gridSide + cell.X;
-            if ( _grid[index] == -1 ) _occupiedCells[_occupiedCellCount++] = index;
-            _next[ship] = _grid[index];
+            _next[ship] = _grid.GetValueOrDefault( index, -1 );
             _grid[index] = ship;
         }
 
@@ -496,7 +493,7 @@ internal sealed partial class FleetSimulation {
         var steering = Vector2.Zero;
         for ( int y = cell.Y - 1; y <= cell.Y + 1; ++y ) {
             for ( int x = cell.X - 1; x <= cell.X + 1; ++x ) {
-                int other = _grid[y * _gridSide + x];
+                int other = _grid.GetValueOrDefault( y * _gridSide + x, -1 );
                 // Bound work even when a stress scenario piles many units into one cell.
                 for ( int visited = 0; other >= 0 && visited < 6; ++visited, other = _next[other] ) {
                     if ( other == ship || !Alive( other ) ) continue;
@@ -572,6 +569,7 @@ internal sealed partial class FleetSimulation {
             var tint = Factions.ShipTint( (FactionId)squad.Faction );
             var hull = Frontier ? GameCatalog.Hull( squad.Role ) : null;
             float displayScale = hull?.Scale ?? (scout ? 0.75f : 1f);
+            int exhaust = Frontier ? (int)squad.Design.Exhaust( squad.Role ) : 0;
             int hullPoints = hull?.HitPoints ?? HullCapacity;
             int end = squad.First + squad.Count;
             for ( int ship = squad.First; ship < end; ++ship ) {
@@ -581,7 +579,8 @@ internal sealed partial class FleetSimulation {
                 if ( highlighted ) color.W = 1.66f;
                 destination[!roleCounts.IsEmpty ? roleOffsets[(int)squad.Role]++ : frigate ? frigateIndex++ : scout ? scoutIndex++ : miner ? minerIndex++ : index++] = new( VisualPosition( ship, interpolation ),
                     interpolation == 1 ? _headings[ship] : Vector2.Normalize( Vector2.Lerp( _previousHeadings[ship], _headings[ship], interpolation ) ), color,
-                    new Vector4( _thrust[ship], (ship % 173) * 0.618f, displayScale, (float)_hull[ship] / hullPoints + (highlighted ? 2 : 0) ) );
+                    new Vector4( _thrust[ship], exhaust + (ship % 173) / 173f,
+                        displayScale, (float)_hull[ship] / hullPoints + (highlighted ? 2 : 0) ) );
             }
         }
         return corvettes;
@@ -594,14 +593,15 @@ internal sealed partial class FleetSimulation {
             Append( (uint)_ephemerisEpoch );
             Append( (uint)OreRoyalty );
             foreach ( var project in PlayerFaction.Projects ) Append( (uint)project );
-            Append( _pirateControl );
+            Append( (uint)_pirateControl ); Append( (uint)(_pirateControl >> 32) );
             foreach ( byte damage in _siteDamage ) Append( damage );
             Append( (uint)_reservedTravelBerths ); Append( (uint)_nextShipName );
             foreach ( int upgrade in _siteUpgrades ) Append( (uint)upgrade );
             foreach ( var hull in WarshipBlueprints ) AppendDesign( Blueprint( hull ) );
             Append( _expeditionArrived ? 1u : 0u ); Append( _expeditionDeparted ? 1u : 0u );
             Append( (uint)_nextPatrol ); Append( PaidPatrol ? 1u : 0u );
-            Append( (uint)_nextFleetId ); Append( (uint)_raidTick ); Append( (uint)_raidsLaunched ); Append( (uint)_deposits ); Append( _secured ? 1u : 0u );
+            Append( (uint)_nextFleetId ); Append( (uint)_raidTick ); Append( (uint)_raidsLaunched );
+            Append( (uint)_deposits ); Append( (uint)(_deposits >> 32) ); Append( _secured ? 1u : 0u );
             Append( DriveUpgrade ? 1u : 0u ); Append( HabitationUpgrade ? 1u : 0u ); Append( AstrometryUpgrade ? 1u : 0u );
             Append( EscortsUpgrade ? 1u : 0u ); Append( FusionUpgrade ? 1u : 0u );
             Append( (uint)PiracyCycles ); Append( (uint)PirateOreLost ); Append( (uint)PirateEnergyLost );

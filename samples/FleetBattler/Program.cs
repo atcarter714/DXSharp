@@ -187,6 +187,17 @@ internal static class Program {
             throw new InvalidOperationException( "The arriving scout must be able to survey Proxima's outer belt without Sol's drive unlock." );
         frontier.PlayerFaction.Unlock( ResearchTopic.Drive );
         if ( !proxima.DriveUpgrade ) throw new InvalidOperationException( "Completed technology must be available to the faction in Proxima." );
+        proxima.ReceiveTravelHulls( [new( HullRole.Colony, default, 50, 0, 0, FleetStance.Passive, "COLONY TEST" )], default, survey: false );
+        if ( proxima.FindColonyShip( FleetSimulation.Homeworld, [] ) is null )
+            throw new InvalidOperationException( "An orbiting colony ship must be offered without selecting a hull." );
+
+        var stagingFleet = new FleetSimulation( FleetSimulation.DefaultShips, 37, frontier: true, battle: false );
+        var staging = ScenarioCatalog.Load( "frontier" ) with { StartingSites = [PlanetFacility.Yard], Stores = new( 200, 200 ) };
+        stagingFleet.StartScenario( staging );
+        stagingFleet.PlayerFaction.Unlock( ResearchTopic.Fusion );
+        var crew = new CommandSelection( stagingFleet.Capacity );
+        if ( stagingFleet.SelectExpedition( crew ) != 2 || stagingFleet.Depart( crew.Ships, stagingFleet.Tick ) is not { Hulls.Length: 2 } )
+            throw new InvalidOperationException( "A commissioned yard, fusion, and ready expedition pair must unlock the first crossing." );
         int favorable = 0;
         for ( int system = CelestialSystem.AuthoredCount; system < CelestialSystem.SystemCount; ++system )
             if ( Exoplanets.Get( system ).Habitability >= 70 ) ++favorable;
@@ -194,9 +205,9 @@ internal static class Program {
         alienSystem.ReceiveTravelHulls( [new( HullRole.Scout, default, 50, 0, 0, FleetStance.Passive, "CHARTER TEST" )], default, survey: false );
         if ( CelestialSystem.MapPositions.Length != 128 || favorable is < 1 or > 10 || alienSystem.FactionCount( FactionId.Asteri ) != 2 )
             throw new InvalidOperationException( $"Procedural galaxy qualification failed with {favorable} favorable worlds." );
-        float earth = SolarCatalog.SpinRadians( 10, 1, SolarCatalog.Get( 1 ).RotationHours );
-        float venus = SolarCatalog.SpinRadians( 10, 1, SolarCatalog.Get( 6 ).RotationHours );
-        if ( earth is < 1.55f or > 1.65f || venus >= 0 || SolarCatalog.SpinRadians( 10, 1, 0 ) != 0 )
+        float earth = SolarCatalog.SpinRadians( 360, 1, SolarCatalog.Get( 1 ).RotationHours );
+        float venus = SolarCatalog.SpinRadians( 360, 1, SolarCatalog.Get( 6 ).RotationHours );
+        if ( earth is < 1.55f or > 1.65f || venus >= 0 || SolarCatalog.SpinRadians( 360, 1, 0 ) != 0 )
             throw new InvalidOperationException( "Expected sidereal Earth rotation, retrograde Venus, and a fixed surface at zero hours." );
         var route = new GalaxyRoute( 0, FleetSimulation.Proxima, "", "RESEARCH PULSED FUSION", 0 );
         var chart = GalaxyView.Overview.ZoomAt( new( .54f, .48f ), 2 ).Pan( new( .05f, -.04f ) );
@@ -264,11 +275,13 @@ internal static class Program {
         bool paused = false;
         float zoom = initial.Solar ? 0.38f : 0.85f, tilt = DefaultTilt, yaw = 0;
         Vector2 cameraFocus = initial.Solar ? initial.Bodies[FleetSimulation.Homeworld].Center : default;
+        float viewZoom = zoom, viewTilt = tilt, viewYaw = yaw;
+        Vector2 viewFocus = cameraFocus;
         int trackedBody = initial.Solar ? FleetSimulation.Homeworld : -1;
         bool tilting = false;
         Point? panStart = null, dragStart = null;
         Point dragEnd = default, lastClickPoint = default;
-        int lastClickShip = -1;
+        int lastClickShip = -1, lastClickBody = -1;
         long lastClickTime = 0;
         SelectionMode dragMode = SelectionMode.Replace;
         float interpolation = 1;
@@ -357,7 +370,7 @@ internal static class Program {
             viewport = frame.Size;
             slotsUsed |= 1 << frame.FrameSlotIndex;
             var hudUpload = hudUploads[frame.FrameSlotIndex];
-            audio.SetSituation( fleet.SystemIndex, galaxy, fleet.Contested || fleet.InBattle, fleet.Won,
+            audio.SetSituation( fleet.SystemIndex, galaxy, fleet.MusicContact(), fleet.Won,
                 title: flow.IsTitle );
             if ( flow.Screen == GameScreen.ResearchArchive ) {
                 hud.ResearchStation( archive, null, viewport.Width, viewport.Height, frame.Commands, hudPipeline, hudUpload );
@@ -480,11 +493,20 @@ internal static class Program {
             var selected = unit ?? selection.Focus( fleet );
             float radius = fleet.BoardRadius;
             float aspect = (float)viewport.Width / viewport.Height;
-            float halfHeight = radius * zoom / MathF.Min( aspect, 1 );
-            if ( trackedBody >= 0 ) cameraFocus = fleet.VisualBody( trackedBody, interpolation ).Center;
-            var cameraTarget = new Vector3( cameraFocus.X, 0, cameraFocus.Y );
-            var (elevation, horizontal) = MathF.SinCos( tilt );
-            var (side, forward) = MathF.SinCos( yaw );
+            float blend = 1 - MathF.Exp( -12 * (float)Math.Clamp( frame.Elapsed.TotalSeconds, 0, .1 ) );
+            if ( trackedBody >= 0 ) {
+                var center = fleet.VisualBody( trackedBody, interpolation ).Center;
+                viewFocus += center - cameraFocus;
+                cameraFocus = center;
+            }
+            viewFocus = Vector2.Lerp( viewFocus, cameraFocus, blend );
+            viewZoom = float.Lerp( viewZoom, zoom, blend );
+            viewTilt = float.Lerp( viewTilt, tilt, blend );
+            viewYaw += MathF.IEEERemainder( yaw - viewYaw, MathF.Tau ) * blend;
+            float halfHeight = radius * viewZoom / MathF.Min( aspect, 1 );
+            var cameraTarget = new Vector3( viewFocus.X, 0, viewFocus.Y );
+            var (elevation, horizontal) = MathF.SinCos( viewTilt );
+            var (side, forward) = MathF.SinCos( viewYaw );
             var view = Matrix4x4.CreateLookAt( cameraTarget + 1.83f * radius * new Vector3( side * horizontal, elevation, forward * horizontal ),
                 cameraTarget, Vector3.UnitY );
             var projection = Matrix4x4.CreateOrthographic( 2 * halfHeight * aspect, 2 * halfHeight, 0.1f, 5 * radius );
@@ -733,10 +755,10 @@ internal static class Program {
                             if ( planet >= 0 ) TrackBody( planet );
                             else if ( selection.SurveyUnit( fleet ) is { } focusUnit ) SetCameraFocus( fleet.Center( focusUnit ) );
                             break;
-                        case Keys.Left or Keys.Right or Keys.Up or Keys.Down when !galaxy:
+                        case Keys.Left or Keys.Right or Keys.Up or Keys.Down or Keys.W or Keys.A or Keys.S or Keys.D when !galaxy && !e.Control:
                             var motion = e.KeyCode switch {
-                                Keys.Left => new Vector2( -1, 0 ), Keys.Right => new Vector2( 1, 0 ),
-                                Keys.Up => new Vector2( 0, -1 ), _ => new Vector2( 0, 1 )
+                                Keys.Left or Keys.A => new Vector2( -1, 0 ), Keys.Right or Keys.D => new Vector2( 1, 0 ),
+                                Keys.Up or Keys.W => new Vector2( 0, -1 ), _ => new Vector2( 0, 1 )
                             };
                             var (sine, cosine) = MathF.SinCos( yaw );
                             SetCameraFocus( cameraFocus + new Vector2( cosine * motion.X + sine * motion.Y,
@@ -1004,8 +1026,21 @@ internal static class Program {
                             return;
                         }
                         int hitBody = ship < 0 ? hitSite >= 0 ? screenSites[hitSite].Body : PickBody( e.Location ) : -1;
-                        if ( hitBody >= 0 ) { planet = hitBody; yardInspector = -1; buildCatalog = false; }
+                        if ( hitBody >= 0 ) {
+                            long now = Environment.TickCount64;
+                            var tolerance = SystemInformation.DoubleClickSize;
+                            bool doubleClick = e.Clicks >= 2 || lastClickBody == hitBody && now - lastClickTime <= SystemInformation.DoubleClickTime &&
+                                Math.Abs( lastClickPoint.X - e.X ) <= tolerance.Width && Math.Abs( lastClickPoint.Y - e.Y ) <= tolerance.Height;
+                            if ( doubleClick ) TrackBody( hitBody );
+                            lastClickBody = doubleClick ? -1 : hitBody;
+                            lastClickTime = now;
+                            lastClickPoint = e.Location;
+                            planet = hitBody;
+                            yardInspector = -1;
+                            buildCatalog = false;
+                        }
                         else {
+                            lastClickBody = -1;
                             long now = Environment.TickCount64;
                             var tolerance = SystemInformation.DoubleClickSize;
                             bool squad = ship >= 0 && dragMode == SelectionMode.Replace && (e.Clicks >= 2 ||
@@ -1033,8 +1068,8 @@ internal static class Program {
                     if ( !galaxy && briefings.Count == 0 && menu is null && FleetHud.ScrollOutliner( new( e.X, e.Y ), viewport.Width,
                         viewport.Height, fleet, Math.Sign( e.Delta ), ref fleetScroll ) ) return;
                     if ( galaxy || menu is not null || FleetHud.Hit( new( e.X, e.Y ), viewport.Width, viewport.Height, fleet, planet, commandTab: commandTab, yardInspector: yardInspector, buildCatalog: buildCatalog, hasSelection: selection.Count != 0, dispatch: dispatch, researchBranch: researchBranch, catalogLayer: catalogLayer, fleetScroll: fleetScroll, briefing: CurrentBriefing( ), shipDetails: shipDetails, yardPage: yardPage ).Action != HudAction.None ) return;
-                    float nextZoom = Math.Clamp( zoom * MathF.Pow( 0.85f, e.Delta / 120f ), 0.12f, OverviewZoom() );
-                    if ( TryPick( e.Location, viewport, inverseViewProjection, out var anchor ) )
+                    float nextZoom = Math.Clamp( zoom * MathF.Pow( 0.85f, e.Delta / 120f ), 0.045f, OverviewZoom() );
+                    if ( trackedBody < 0 && TryPick( e.Location, viewport, inverseViewProjection, out var anchor ) )
                         SetCameraFocus( cameraFocus + (anchor - cameraFocus) * (1 - nextZoom / zoom) );
                     zoom = nextZoom;
                 };
@@ -1201,12 +1236,17 @@ internal static class Program {
             yaw = 0;
             tilt = DefaultTilt;
             cameraFocus = fleet.Solar ? fleet.Bodies[FleetSimulation.Homeworld].Center : default;
+            viewFocus = cameraFocus;
+            viewZoom = zoom;
+            viewTilt = tilt;
+            viewYaw = yaw;
+            lastClickBody = -1;
             trackedBody = fleet.Solar ? FleetSimulation.Homeworld : -1;
         }
 
         void TrackBody( int body ) {
             trackedBody = body;
-            cameraFocus = fleet.Bodies[body].Center;
+            cameraFocus = fleet.VisualBody( body, interpolation ).Center;
         }
 
         void SetCameraFocus( Vector2 position ) {
@@ -1338,13 +1378,28 @@ internal static class Program {
                     null, 0, InTransit: true, Progress: (float)(initial.Tick - flight.Departure) / (flight.Arrival - flight.Departure) );
             }
             var block = campaign.TravelBlock( fleet, routeTarget, selection.Ships, survey: false );
+            bool firstCrossing = fleet.FrontierProgression && !campaign.Arrived && source == 0 && routeTarget == FleetSimulation.Proxima;
+            bool automaticCrew = firstCrossing && block is not null && SuggestedCrewBlock() is null;
+            if ( automaticCrew ) block = null;
             bool canSurvey = block is null && campaign.TravelBlock( fleet, routeTarget, selection.Ships, survey: true ) is null;
             string status = routeNotice ?? (campaign.Arrived ? "SELECT A FLEET / RIGHT CLICK A DESTINATION TO MOVE"
                 : fleet.FrontierProgression ? "FIRST CROSSING / EQUIP A SCOUT AND CONSTRUCTOR FOR PROXIMA"
                 : "FIRST CROSSING / SEND ONE IDLE SCOUT FROM SOL TO PROXIMA");
             string? quote = source == routeTarget ? null : $"TRANSIT / {(int)Math.Ceiling( campaign.FlightTicks( source, routeTarget ) * FleetSimulation.StepSeconds / speed )} SEC";
-            return new( source, routeTarget, status, block, selection.Count, CanSurvey: canSurvey, Quote: quote,
-                RallyCrew: fleet.FrontierProgression && !campaign.Arrived && source == 0 && routeTarget == FleetSimulation.Proxima );
+            var cost = fleet.ExpeditionCost;
+            var (scout, builder) = firstCrossing ? fleet.ReadyExpeditionCrew() : (-1, -1);
+            string? readiness = firstCrossing ? $"CREW {(scout >= 0 ? 1 : 0) + (builder >= 0 ? 1 : 0)}/2 / {fleet.Ore}/{cost.Ore} ORE / {fleet.Energy}/{cost.Energy} EN" : null;
+            return new( source, routeTarget, status, block, automaticCrew ? 2 : selection.Count, CanSurvey: canSurvey, Quote: quote,
+                RallyCrew: firstCrossing, FusionResearch: firstCrossing && !fleet.FusionUpgrade, Readiness: readiness );
+        }
+
+        string? SuggestedCrewBlock() {
+            var (scout, builder) = fleet.ReadyExpeditionCrew();
+            if ( scout < 0 || builder < 0 ) return "RALLY A SCOUT AND CONSTRUCTOR TO EARTH";
+            Span<bool> crew = stackalloc bool[fleet.Count];
+            crew.Clear();
+            crew[scout] = crew[builder] = true;
+            return fleet.LaunchBlock( crew );
         }
 
         void GalaxyCommand( Form window, Vector2 pointer, bool rightClick, int clicks ) {
@@ -1392,6 +1447,12 @@ internal static class Program {
                     routeNotice = scout < 0 ? "NO IDLE SCOUT IN THIS SYSTEM / FINISH OR CANCEL ITS ORDER" : "SCOUT SELECTED / CHOOSE MOVE OR SURVEY";
                     break;
                 case GalaxyAction.View: Enter( routeTarget ); break;
+                case GalaxyAction.FusionResearch:
+                    galaxy = false;
+                    SelectTab( CommandTab.Research );
+                    researchBranch = ResearchCatalog.Current.PageOf( ResearchTopic.Fusion );
+                    researchDesk.Select( ResearchTopic.Fusion );
+                    break;
                 case GalaxyAction.Move: IssueTravel( survey: false ); break;
                 case GalaxyAction.Survey: IssueTravel( survey: true ); break;
             }
@@ -1399,6 +1460,11 @@ internal static class Program {
 
         void IssueTravel( bool survey ) {
             routeNotice = campaign.TravelBlock( fleet, routeTarget, selection.Ships, survey );
+            if ( routeNotice is not null && !survey && fleet.FrontierProgression && fleet.Solar && !campaign.Arrived &&
+                 routeTarget == FleetSimulation.Proxima && SuggestedCrewBlock() is null ) {
+                fleet.SelectExpedition( selection );
+                routeNotice = null;
+            }
             if ( routeNotice is not null || !campaign.Travel( fleet, routeTarget, selection.Ships, survey ) ) return;
             selection.Prune( fleet );
             audio.Cue( "launch" );
@@ -1511,7 +1577,7 @@ internal static class Program {
         }
 
         void Settle( int body ) {
-            var unit = selection.SurveyUnit( fleet );
+            var unit = fleet.FindColonyShip( body, selection.Ships );
             if ( fleet.ColonyBlock( body, unit ) is { } reason ) { Notify( reason ); return; }
             if ( unit is { } selected && fleet.BeginColony( body, selected ) ) {
                 Notify( $"COLONY SHIP DISPATCHED / {fleet.BodyName( body )}" );

@@ -3,11 +3,12 @@ using DXSharp.Graphics;
 
 namespace FleetBattler;
 
-internal enum GalaxyAction { None, Return, Star, Fleet, Move, FindScout, View, Pause, Slower, Faster, Survey, RosterRow, RosterClose, RosterPrevious, RosterNext }
+internal enum GalaxyAction { None, Return, Star, Fleet, Move, FindScout, View, Pause, Slower, Faster, Survey, RosterRow, RosterClose, RosterPrevious, RosterNext, FusionResearch }
 
 internal readonly record struct GalaxyHit( GalaxyAction Action, int System = -1 );
 internal readonly record struct GalaxyRoute( int Source, int Destination, string Status, string? Block, int Selected,
-    bool InTransit = false, float Progress = 0, bool CanSurvey = false, string? Quote = null, bool RallyCrew = false );
+    bool InTransit = false, float Progress = 0, bool CanSurvey = false, string? Quote = null, bool RallyCrew = false,
+    bool FusionResearch = false, string? Readiness = null );
 
 internal readonly record struct GalaxyView( float Zoom, Vector2 Offset ) {
     internal static GalaxyView Overview => new( 1, Vector2.Zero );
@@ -237,7 +238,8 @@ internal sealed partial class FleetHud {
             Progress( new( x + 10, y + 74 ), w - 20, route.Progress, SpaceDraw.Cyan );
         } else {
             FitText( route.Quote ?? "LOCAL SYSTEM", x + 10, y + 50, w - 20, 1, EnergyTint );
-            WrapText( route.Block ?? "READY TO DEPART", x + 10, y + 68, w - 20, 29, 1, Label );
+            WrapText( route.Block ?? "READY TO DEPART", x + 10, y + 68, w - 20, 22, 1, route.Block is null ? SpaceDraw.Cyan : Label );
+            if ( route.Readiness is { } readiness ) FitText( readiness, x + 10, y + 91, w - 20, .86f, Label );
             for ( int i = 0; i < 4; ++i ) {
                 var button = RouteButton( panel, i );
                 var action = RouteAction( route, i );
@@ -252,6 +254,7 @@ internal sealed partial class FleetHud {
             GalaxyAction.FindScout => rallyCrew ? (HudIcon.Crew, "RALLY CREW", "CREW" ) : (HudIcon.Crew, "FIND SCOUT", "SCOUT"),
             GalaxyAction.Move => rallyCrew ? (HudIcon.Launch, "LAUNCH EXPEDITION", "LAUNCH") : (HudIcon.Launch, "MOVE FLEET", "MOVE"),
             GalaxyAction.Survey => (HudIcon.Science, "SURVEY", "SURVEY"),
+            GalaxyAction.FusionResearch => (HudIcon.Science, "FUSION RESEARCH", "RESEARCH"),
             GalaxyAction.View => (HudIcon.Chart, "VIEW SYSTEM", "VIEW"),
             _ => (HudIcon.Ship, "", "")
         };
@@ -265,6 +268,7 @@ internal sealed partial class FleetHud {
         1 => GalaxyAction.FindScout,
         2 when route.Destination != route.Source => GalaxyAction.Move,
         3 when route.CanSurvey => GalaxyAction.Survey,
+        3 when route.FusionResearch => GalaxyAction.FusionResearch,
         _ => GalaxyAction.None
     };
 

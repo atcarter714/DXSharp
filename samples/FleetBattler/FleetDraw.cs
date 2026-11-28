@@ -85,18 +85,21 @@ internal static class FleetDraw {
         Output VS(Input input, uint vertex : SV_VertexID) {
             const float2 corners[6] = {float2(-1,0),float2(1,0),float2(-1,1),float2(-1,1),float2(1,0),float2(1,1)};
             float2 uv = corners[vertex % 6];
-            float phase = AxisAndTime.w * 19 + input.motion.y * 31.7 + Socket.x * 5;
+            uint style = (uint)input.motion.y;
+            float phase = AxisAndTime.w * (style == 1 ? 26 : 19) + frac(input.motion.y) * 31.7 + Socket.x * 5;
             float3 axis = AxisAndTime.xyz;
             float3 basis = normalize(cross(abs(axis.y) > .97 ? float3(1,0,0) : float3(0,1,0), axis));
             if (vertex >= 6) basis = cross(axis, basis);
-            float length = Socket.w * (3 + 12 * input.motion.x) * (1 + 0.07 * sin(phase));
+            float length = Socket.w * (3 + (style == 2 ? 17 : style == 1 ? 16 : 12) * input.motion.x) * (1 + 0.07 * sin(phase));
             float3 local = Socket.xyz + axis * uv.y * length + basis * uv.x * Socket.w * 1.65;
             float2 right = float2(-input.heading.y,input.heading.x);
             float2 world = input.center + (right * local.x - input.heading * local.z) * input.motion.z;
             Output output;
             output.position = mul(float4(world.x,local.y * input.motion.z,world.y,1),ViewProjection);
             output.uv = uv;
-            output.glow = float4(input.tint.z > input.tint.x ? float3(1,0.285,0.075) : float3(1,0.14,0.045),input.motion.x);
+            float3 tint = style == 2 ? float3(.12,.55,1) : style == 3 ? float3(.64,.30,1) :
+                          style == 1 ? float3(1,.36,.12) : float3(1,.17,.045);
+            output.glow = float4(tint,input.motion.x);
             output.phase = phase;
             return output;
         }
@@ -109,7 +112,7 @@ internal static class FleetDraw {
             float cells = 0.84 + 0.16 * cos(distance * 54 - input.phase);
             float halo = exp(-radial * radial * 1.6) * fade;
             float core = exp(-radial * radial * 10) * fade * cells;
-            float3 plasma = (input.glow.rgb * halo * .72 + core * float3(1,.75,.42)) * sqrt(input.glow.a);
+            float3 plasma = (input.glow.rgb * halo * .96 + core * lerp(input.glow.rgb,1,.65) * 1.35) * sqrt(input.glow.a);
             return float4(plasma, 0);
         }
         """;

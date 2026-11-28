@@ -76,8 +76,8 @@ internal sealed partial class FleetHud {
                 float sphereDepth = sqrt(saturate(1-d*d));
                 float ringDepth = ringPlane.y * sqrt(3.15*3.15-1);
                 bool ringVisible = (input.bits.x & 1) != 0 && ring >= 1.24 && ring <= 2.05 && (d > 1 || ringDepth > sphereDepth);
-                uint body = (input.bits.x >> 1) & 31;
-                float spin = (input.bits.x >> 6) * (6.2831853 / 65535.0) - 3.1415927;
+                uint body = (input.bits.x >> 1) & 63;
+                float spin = (input.bits.x >> 7) * (6.2831853 / 65535.0) - 3.1415927;
                 bool atmosphere = (body >= 6 && body <= 10) || body == 17;
                 clip(d <= 1 || ringVisible ? 1 : -1);
                 float sunAngle = asfloat(input.bits.y);
@@ -232,13 +232,17 @@ internal sealed partial class FleetHud {
                 ref readonly var world = ref SolarCatalog.Get( i );
                 float radius = MathF.Max( center.Z, 2 ) * 2.2f;
                 float spin = SolarCatalog.SpinRadians( fleet.WorldTick, interpolation, world.RotationHours );
-                uint packedSpin = (uint)Math.Clamp( (spin / MathF.Tau + .5f) * 65535f, 0, 65535 ) << 6;
+                uint packedSpin = (uint)Math.Clamp( (spin / MathF.Tau + .5f) * 65535f, 0, 65535 ) << 7;
                 _glyphs[_count++] = new( new( center.X - radius, center.Y - radius, radius * 2, radius * 2 ),
                     new( world.Color, 1 ), packedSpin | ((uint)i << 1) | (world.Rings ? 1u : 0u), BitConverter.SingleToUInt32Bits( MathF.Atan2( light.Y, light.X ) ), 6, 0 );
             }
         }
         for ( int i = 0; i < bodies.Length; ++i ) {
             var body = bodies[i] / _scale;
+            if ( fleet.Solar && i != planet && SolarCatalog.Get( i ).Parent > 0 ) {
+                var parent = bodies[SolarCatalog.Get( i ).Parent] / _scale;
+                if ( Vector2.DistanceSquared( new( parent.X, parent.Y ), new( body.X, body.Y ) ) < 42 * 42 ) continue;
+            }
             var name = fleet.BodyName( i );
             float textWidth = TextWidth( name.Length, 1 );
             float x = body.X - textWidth / 2, y = body.Y + body.Z + 9;
@@ -278,7 +282,7 @@ internal sealed partial class FleetHud {
 
         if ( yard is { } yardPixel ) MapLabel( yardPixel, "YARD", layout, fleet, planet );
         if ( planet >= 0 && layout.PlanetVisible ) {
-            if ( fleet.Frontier ) InspectPlanet( layout, fleet, planet, surveyUnit, speed, buildCatalog, catalogLayer );
+            if ( fleet.Frontier ) InspectPlanet( layout, fleet, planet, surveyUnit, selectedShips, speed, buildCatalog, catalogLayer );
             else PlanetPanel( fleet, planet, right, surveyUnit );
         }
         else if ( layout.PlanetVisible ) {
